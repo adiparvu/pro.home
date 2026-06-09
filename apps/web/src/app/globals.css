@@ -1,0 +1,422 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── GLASS OS™ Design System — CSS Custom Properties ─────────────────────── */
+
+@layer base {
+  :root {
+    /* ── Dark Mode (default) ── */
+    --background: 220 18% 10%;
+    --foreground: 220 15% 94%;
+    --card: 220 16% 14%;
+    --card-foreground: 220 15% 94%;
+    --popover: 220 16% 14%;
+    --popover-foreground: 220 15% 94%;
+    --primary: 210 75% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 12% 20%;
+    --secondary-foreground: 220 15% 94%;
+    --muted: 220 12% 14%;
+    --muted-foreground: 220 8% 48%;
+    --accent: 220 12% 20%;
+    --accent-foreground: 220 15% 94%;
+    --destructive: 0 68% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 12% 18%;
+    --input: 220 12% 18%;
+    --ring: 210 75% 42%;
+    --radius: 0.75rem;
+
+    /* ── Z-Index Layers ── */
+    --z-environment: 0;
+    --z-surface: 20;
+    --z-elevated: 30;
+    --z-floating: 40;
+    --z-overlay: 50;
+    --z-critical: 60;
+    --z-system: 70;
+    --z-dropdown: 35;
+    --z-tooltip: 65;
+    --z-toast: 68;
+    --z-sidebar: 25;
+    --z-header: 22;
+    --z-fab: 38;
+
+    /* ── Glass Surface Properties ── */
+    --glass-fill: rgba(255, 255, 255, 0.06);
+    --glass-fill-heavy: rgba(255, 255, 255, 0.10);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --glass-border-top: rgba(255, 255, 255, 0.24);
+    --glass-shine: rgba(255, 255, 255, 0.04);
+
+    /* ── Text Colors ── */
+    --text-primary: hsl(220, 15%, 94%);
+    --text-secondary: hsl(220, 10%, 68%);
+    --text-tertiary: hsl(220, 8%, 48%);
+    --text-disabled: hsl(220, 6%, 34%);
+
+    /* ── Interactive Colors ── */
+    --color-hover: rgba(255, 255, 255, 0.06);
+    --color-pressed: rgba(255, 255, 255, 0.12);
+    --color-selected: rgba(255, 255, 255, 0.10);
+    --color-focus-ring: hsl(210, 90%, 55%);
+
+    /* ── LPBE Sky Colors — Golden Hour (default) ── */
+    --lpbe-from: hsl(22, 75%, 55%);
+    --lpbe-via: hsl(30, 60%, 50%);
+    --lpbe-to: hsl(210, 45%, 20%);
+  }
+
+  /* ── Light Mode ── */
+  [data-theme="light"],
+  .light {
+    --background: 220 15% 98%;
+    --foreground: 220 20% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+    --primary: 210 75% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 20% 12%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 8% 54%;
+    --accent: 220 13% 95%;
+    --accent-foreground: 220 20% 12%;
+    --destructive: 0 68% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 12% 88%;
+    --input: 220 12% 88%;
+    --ring: 210 75% 42%;
+
+    --glass-fill: rgba(255, 255, 255, 0.60);
+    --glass-fill-heavy: rgba(255, 255, 255, 0.80);
+    --glass-border: rgba(255, 255, 255, 0.80);
+    --glass-border-top: rgba(255, 255, 255, 0.95);
+
+    --text-primary: hsl(220, 20%, 12%);
+    --text-secondary: hsl(220, 12%, 36%);
+    --text-tertiary: hsl(220, 8%, 54%);
+    --text-disabled: hsl(220, 6%, 68%);
+
+    --color-hover: rgba(0, 0, 0, 0.04);
+    --color-pressed: rgba(0, 0, 0, 0.08);
+    --color-focus-ring: hsl(210, 85%, 42%);
+
+    --lpbe-from: hsl(195, 65%, 72%);
+    --lpbe-via: hsl(205, 55%, 82%);
+    --lpbe-to: hsl(210, 70%, 45%);
+  }
+
+  /* ── Base Resets ── */
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans, 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif);
+    min-height: 100dvh;
+  }
+
+  /* Numeric figures — tabular for all number-heavy contexts */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .motion-safe-fade {
+      transition-duration: 150ms !important;
+    }
+  }
+
+  [data-motion="none"] * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── Glass Utility Classes ────────────────────────────────────────────────── */
+
+@layer components {
+  /* Whisper glass — ambient panels */
+  .glass-whisper {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(4px) saturate(120%);
+    -webkit-backdrop-filter: blur(4px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Light glass — widget cards */
+  .glass-light {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px) saturate(140%);
+    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0px 1px 0px rgba(255, 255, 255, 0.24),
+      inset 1px 0px 0px rgba(255, 255, 255, 0.08),
+      0px 2px 4px rgba(0,0,0,0.06), 0px 4px 12px rgba(0,0,0,0.08);
+  }
+
+  /* Standard glass — primary panels */
+  .glass-standard {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-top-color: rgba(255, 255, 255, 0.28);
+    box-shadow:
+      inset 0px 1px 0px rgba(255, 255, 255, 0.24),
+      inset 1px 0px 0px rgba(255, 255, 255, 0.08),
+      inset 0px -1px 0px rgba(0,0,0,0.12),
+      0px 4px 8px rgba(0,0,0,0.08),
+      0px 8px 24px rgba(0,0,0,0.12);
+  }
+
+  /* Heavy glass — ARIA panel, important cards */
+  .glass-heavy {
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(24px) saturate(180%) brightness(1.05);
+    -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top-color: rgba(255, 255, 255, 0.36);
+    box-shadow:
+      inset 0px 1px 0px rgba(255, 255, 255, 0.24),
+      inset 1px 0px 0px rgba(255, 255, 255, 0.08),
+      inset 0px -1px 0px rgba(0,0,0,0.12),
+      0px 8px 16px rgba(0,0,0,0.10),
+      0px 16px 40px rgba(0,0,0,0.14);
+  }
+
+  /* Opaque glass — modals, sheets */
+  .glass-opaque {
+    background: rgba(20, 28, 44, 0.82);
+    backdrop-filter: blur(40px) saturate(200%) brightness(0.95);
+    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(0.95);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-top-color: rgba(255, 255, 255, 0.28);
+    box-shadow:
+      0px 16px 32px rgba(0,0,0,0.14),
+      0px 32px 64px rgba(0,0,0,0.18);
+  }
+
+  /* Frosted glass — full-screen overlays */
+  .glass-frosted {
+    background: rgba(8, 14, 24, 0.80);
+    backdrop-filter: blur(60px) saturate(150%);
+    -webkit-backdrop-filter: blur(60px) saturate(150%);
+  }
+
+  /* ── Light mode glass overrides ── */
+  [data-theme="light"] .glass-standard,
+  .light .glass-standard {
+    background: rgba(255, 255, 255, 0.60);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    border-top-color: rgba(255, 255, 255, 0.95);
+    box-shadow:
+      inset 0px 1px 0px rgba(255, 255, 255, 0.80),
+      0px 2px 4px rgba(0,0,0,0.06),
+      0px 8px 24px rgba(0,0,0,0.08);
+  }
+
+  [data-theme="light"] .glass-heavy,
+  .light .glass-heavy {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.90);
+  }
+
+  [data-theme="light"] .glass-opaque,
+  .light .glass-opaque {
+    background: rgba(240, 242, 248, 0.92);
+  }
+
+  /* ── Reduced transparency fallback ── */
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-standard,
+    .glass-heavy,
+    .glass-light,
+    .glass-whisper {
+      background: hsl(var(--card));
+      backdrop-filter: none;
+      border: 1px solid hsl(var(--border));
+    }
+
+    .glass-opaque {
+      background: hsl(var(--background));
+      backdrop-filter: none;
+    }
+  }
+
+  /* ── Glass shine animation ── */
+  .glass-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.60) 50%,
+      transparent 100%
+    );
+    animation: glass-shine 4s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  @keyframes glass-shine {
+    0%   { opacity: 0; transform: translateX(-100%); }
+    20%  { opacity: 0.15; }
+    80%  { opacity: 0.15; }
+    100% { opacity: 0; transform: translateX(100%); }
+  }
+
+  /* ── Skeleton loader ── */
+  .skeleton {
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+
+  [data-theme="light"] .skeleton,
+  .light .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.04) 0%,
+      rgba(0, 0, 0, 0.08) 50%,
+      rgba(0, 0, 0, 0.04) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  @keyframes skeleton-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* ── Focus ring ── */
+  .focus-ring {
+    @apply outline-none;
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* ── Living Property Background ── */
+  .lpbe-bg {
+    background: linear-gradient(
+      to bottom,
+      var(--lpbe-from) 0%,
+      var(--lpbe-via) 40%,
+      var(--lpbe-to) 100%
+    );
+  }
+
+  /* ── Scrollbar styling ── */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 9999px;
+  }
+
+  [data-theme="light"] ::-webkit-scrollbar-thumb,
+  .light ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.16);
+  }
+}
+
+/* ─── Typography Utilities ──────────────────────────────────────────────────── */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(210, 85%, 65%) 0%, hsl(280, 68%, 65%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Safe area utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Hide scrollbar but keep scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Module color utilities */
+  .module-home     { --module-color: hsl(210, 75%, 42%); }
+  .module-property { --module-color: hsl(36, 75%, 42%); }
+  .module-twin     { --module-color: hsl(252, 72%, 47%); }
+  .module-family   { --module-color: hsl(340, 68%, 46%); }
+  .module-aria     { --module-color: hsl(280, 68%, 47%); }
+  .module-security { --module-color: hsl(0, 68%, 44%); }
+  .module-energy   { --module-color: hsl(152, 62%, 38%); }
+  .module-inventory   { --module-color: hsl(185, 62%, 38%); }
+  .module-maintenance { --module-color: hsl(22, 68%, 41%); }
+}

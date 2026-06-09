@@ -1,0 +1,260 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "view": "View",
+    "manage": "Manage",
+    "invite": "Invite",
+    "share": "Share",
+    "export": "Export",
+    "import": "Import",
+    "required": "Required",
+    "optional": "Optional",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown",
+    "none": "None",
+    "all": "All",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "justNow": "just now",
+    "ago": "{time} ago"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "fullName": "Full name",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset Password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "welcomeBack": "Welcome back",
+    "welcomeBackSubtitle": "Your property intelligence awaits",
+    "createAccount": "Create your account",
+    "createAccountSubtitle": "Start managing your property smarter",
+    "orContinueWith": "or continue with",
+    "agreeToTerms": "By creating an account, you agree to our Terms of Service and Privacy Policy",
+    "emailSent": "Check your email",
+    "emailSentDescription": "We've sent a password reset link to {email}",
+    "passwordResetSuccess": "Password updated successfully",
+    "invalidCredentials": "Invalid email or password",
+    "emailAlreadyInUse": "An account with this email already exists",
+    "weakPassword": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match",
+    "mfa": {
+      "title": "Two-Factor Authentication",
+      "description": "Enter the 6-digit code from your authenticator app",
+      "verify": "Verify",
+      "resend": "Resend code",
+      "didntReceive": "Didn't receive it?",
+      "incorrect": "Incorrect code. Please try again."
+    }
+  },
+  "onboarding": {
+    "welcome": "Welcome to PRV HOUSE",
+    "welcomeSubtitle": "Your home, intelligently managed",
+    "getStarted": "Get Started",
+    "skipForNow": "Skip for now",
+    "step": "Step {current} of {total}",
+    "steps": {
+      "addProperty": {
+        "title": "Add Your Property",
+        "subtitle": "Let's start with your home's address",
+        "searchAddress": "Start typing your address",
+        "propertyType": "Property type",
+        "uploadPhoto": "Add a photo"
+      },
+      "propertyProfile": {
+        "title": "Property Details",
+        "subtitle": "Help us understand your property better",
+        "size": "Size (m²)",
+        "rooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "heatingType": "Heating type",
+        "yearBuilt": "Year built",
+        "yearRenovated": "Last renovation"
+      },
+      "familySetup": {
+        "title": "Who lives here?",
+        "subtitle": "Add family members to your household",
+        "addMember": "Add family member",
+        "youLabel": "You (Owner)",
+        "skipMessage": "You can add people later in Settings"
+      },
+      "permissions": {
+        "title": "A few permissions",
+        "subtitle": "These help PRV HOUSE work better for you",
+        "notifications": "Notifications",
+        "notificationsDesc": "Stay updated on maintenance, alerts & ARIA insights",
+        "location": "Location",
+        "locationDesc": "Detect your property's local weather",
+        "camera": "Camera",
+        "cameraDesc": "Use M-SCAN™ to catalog your appliances",
+        "biometric": "Biometric Auth",
+        "biometricDesc": "Sign in with Face ID or fingerprint",
+        "allow": "Allow",
+        "notNow": "Not now"
+      },
+      "ariaIntro": {
+        "title": "Meet ARIA",
+        "subtitle": "Your property's AI brain",
+        "description": "ARIA learns how your home works, alerts you to things that matter, and handles the complexity so you don't have to.",
+        "cta": "Start with ARIA",
+        "skipCta": "Set up later"
+      }
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "property": "Property",
+    "aria": "ARIA",
+    "family": "Family",
+    "more": "More",
+    "security": "Security",
+    "energy": "Energy",
+    "inventory": "Inventory",
+    "maintenance": "Maintenance",
+    "finances": "Finances",
+    "documents": "Documents",
+    "marketplace": "Marketplace",
+    "settings": "Settings"
+  },
+  "property": {
+    "myProperties": "My Properties",
+    "addProperty": "Add Property",
+    "noProperties": "No properties yet",
+    "noPropertiesDesc": "Add your first property to get started",
+    "healthScore": "Health Score",
+    "healthScoreDesc": "Overall property condition",
+    "healthExcellent": "Excellent",
+    "healthGood": "Good",
+    "healthFair": "Fair",
+    "healthPoor": "Poor",
+    "healthCritical": "Critical",
+    "overview": "Overview",
+    "health": "Health",
+    "history": "History",
+    "propertyTypes": {
+      "house": "House",
+      "apartment": "Apartment",
+      "villa": "Villa",
+      "condo": "Condo",
+      "townhouse": "Townhouse",
+      "studio": "Studio",
+      "other": "Other"
+    }
+  },
+  "maintenance": {
+    "tasks": "Tasks",
+    "newTask": "New Task",
+    "overdue": "Overdue",
+    "upcoming": "Upcoming",
+    "thisWeek": "This Week",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "overdue": "Overdue"
+    },
+    "categories": {
+      "maintenance": "Maintenance",
+      "repair": "Repair",
+      "inspection": "Inspection",
+      "cleaning": "Cleaning",
+      "upgrade": "Upgrade",
+      "administrative": "Administrative",
+      "other": "Other"
+    }
+  },
+  "inventory": {
+    "items": "Items",
+    "addItem": "Add Item",
+    "scan": "Scan",
+    "mscan": "M-SCAN™",
+    "noItems": "No items yet",
+    "warranty": "Warranty",
+    "warrantyExpires": "Expires {date}",
+    "warrantyExpired": "Expired",
+    "warrantyActive": "Active",
+    "condition": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "broken": "Broken"
+    }
+  },
+  "family": {
+    "members": "Members",
+    "roles": {
+      "owner": "Owner",
+      "partner": "Partner",
+      "family_adult": "Family Member",
+      "family_teen": "Teen",
+      "family_child": "Child",
+      "family_elderly": "Elderly Parent",
+      "tenant": "Tenant",
+      "guest": "Guest",
+      "service_provider": "Service Provider"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "appearance": "Appearance",
+    "language": "Language",
+    "notifications": "Notifications",
+    "security": "Security & Login",
+    "privacy": "Privacy & Data",
+    "subscription": "Subscription",
+    "billing": "Billing",
+    "help": "Help & FAQ",
+    "feedback": "Send Feedback",
+    "about": "About PRV HOUSE",
+    "signOut": "Sign Out",
+    "theme": {
+      "dark": "Dark",
+      "light": "Light",
+      "auto": "System"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Check your connection.",
+    "notFound": "Not found",
+    "unauthorized": "You don't have permission to do this.",
+    "required": "{field} is required",
+    "invalidEmail": "Please enter a valid email address",
+    "tooShort": "{field} must be at least {min} characters",
+    "tooLong": "{field} must be at most {max} characters"
+  }
+}
