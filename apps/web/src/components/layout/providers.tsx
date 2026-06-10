@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/toaster'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +31,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange={false}
         themes={['dark', 'light', 'auto']}
       >
-        {children}
+        <ConfirmProvider>
+          {children}
+        </ConfirmProvider>
         <Toaster />
       </ThemeProvider>
       {process.env.NODE_ENV === 'development' && (

@@ -3,8 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { Providers } from '@/components/layout/providers'
 import { SidebarNav } from '@/components/layout/sidebar-nav'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
+import { QuickActionsFab } from '@/components/layout/quick-actions-fab'
 import { LpbeBackground } from '@/components/glass/lpbe-background'
-import type { Profile } from '@/lib/supabase/types'
+import type { Profile, UserRole } from '@/lib/supabase/types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/login')
   }
 
-  const [profileRes, unreadRes] = await Promise.all([
+  const [profileRes, unreadRes, memberRes] = await Promise.all([
     supabase
       .from('profiles')
       .select('onboarding_completed')
@@ -28,6 +29,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('status', 'unread'),
+    supabase
+      .from('property_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('joined_at', { ascending: true })
+      .limit(1)
+      .maybeSingle() as unknown as Promise<{ data: { role: UserRole } | null }>,
   ])
 
   if (profileRes.data && !profileRes.data.onboarding_completed) {
@@ -35,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const unreadCount = unreadRes.count ?? 0
+  const memberRole = memberRes.data?.role ?? null
 
   return (
     <Providers>
@@ -58,6 +68,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* Mobile Bottom Tab Bar */}
         <BottomTabBar unreadCount={unreadCount} />
+
+        {/* Role-aware quick actions */}
+        <QuickActionsFab role={memberRole} />
       </div>
     </Providers>
   )

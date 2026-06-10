@@ -57,9 +57,9 @@ export function PlantDetailView({
 
   async function waterNow() {
     setIsWatering(true)
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]!
     const nextDate = plant.watering_frequency_days
-      ? new Date(Date.now() + plant.watering_frequency_days * 86400000).toISOString().split('T')[0]
+      ? new Date(Date.now() + plant.watering_frequency_days * 86400000).toISOString().split('T')[0]!
       : null
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

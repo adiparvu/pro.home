@@ -89,6 +89,16 @@ export function toast(options: ToastOptions) {
   }
 }
 
+// Semantic helpers — the canonical way to fire toasts across all modules.
+toast.success = (title: string, description?: string) =>
+  toast({ title, description, variant: 'success' })
+toast.warning = (title: string, description?: string) =>
+  toast({ title, description, variant: 'warning' })
+toast.error = (title: string, description?: string) =>
+  toast({ title, description, variant: 'destructive' })
+toast.info = (title: string, description?: string) =>
+  toast({ title, description, variant: 'info' })
+
 export function useToast() {
   const [toasts, setToasts] = React.useState<ToastItem[]>(memoryState)
 
