@@ -435,6 +435,46 @@ export type FloorPlan = {
   updated_at: string
 }
 
+// ─── Migration 006 Row Types ──────────────────────────────────────────────────
+
+export type ServiceRequestStatus = 'pending' | 'quoted' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+
+export type MarketplaceContact = {
+  id: string
+  property_id: string
+  name: string
+  category: string
+  description: string | null
+  phone: string | null
+  email: string | null
+  website: string | null
+  notes: string | null
+  rating: number | null
+  is_favorite: boolean
+  tags: string[]
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ServiceRequest = {
+  id: string
+  property_id: string
+  contact_id: string | null
+  maintenance_task_id: string | null
+  title: string
+  description: string | null
+  status: ServiceRequestStatus
+  quoted_price: number | null
+  cost_currency: string
+  scheduled_date: string | null
+  completed_date: string | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ─── Database Type (Supabase client generic) ─────────────────────────────────
 
 export type Database = {
