@@ -1,146 +1,211 @@
 'use client'
 
 import * as React from 'react'
-import { Zap, TrendingDown, Sun, Wind, Droplets, Banknote } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { Zap, Flame, Droplets, Sun, Thermometer, Plus, Trash2, Circle } from 'lucide-react'
+import type { EnergyReading, MeterType } from '@/lib/supabase/types'
+import { createClient } from '@/lib/supabase/client'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface EnergyOverviewProps {
+  readings: EnergyReading[]
   ytdUtilities: number
   monthlyUtilities: number
   currency: string
-  hasRealData: boolean
+  propertyId: string
 }
 
-const ARIA_TIP = 'Your peak consumption is typically between 6–9 PM. Consider shifting heavy appliances (dishwasher, washing machine) to off-peak hours to reduce costs by up to 18%.'
+const METER_CONFIG: Record<MeterType, {
+  label: string
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  color: string
+}> = {
+  electricity:      { label: 'Electricity',   icon: Zap,         color: 'hsl(45, 75%, 50%)' },
+  gas:              { label: 'Gas',            icon: Flame,       color: 'hsl(22, 68%, 52%)' },
+  water:            { label: 'Water',          icon: Droplets,    color: 'hsl(210, 70%, 52%)' },
+  solar:            { label: 'Solar',          icon: Sun,         color: 'hsl(50, 90%, 50%)' },
+  district_heating: { label: 'District Heat', icon: Thermometer, color: 'hsl(0, 62%, 52%)' },
+  other:            { label: 'Other',          icon: Circle,      color: 'hsl(0, 0%, 52%)' },
+}
 
-export function EnergyOverview({ ytdUtilities, monthlyUtilities, currency, hasRealData }: EnergyOverviewProps) {
+export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, currency, propertyId }: EnergyOverviewProps) {
+  const [allReadings, setAllReadings] = React.useState(readings)
+  const [deleting, setDeleting] = React.useState<string | null>(null)
+
   const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency === 'GBP' ? '£' : currency
+
+  // Latest reading per meter type (readings are pre-sorted newest-first by server)
+  const latestByType = React.useMemo(() => {
+    const map = new Map<MeterType, EnergyReading>()
+    for (const r of allReadings) {
+      if (!map.has(r.meter_type)) map.set(r.meter_type, r)
+    }
+    return map
+  }, [allReadings])
+
+  const activeMeterTypes = Array.from(latestByType.keys())
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this reading?')) return
+    setDeleting(id)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('energy_readings').delete().eq('id', id)
+    setAllReadings((prev) => prev.filter((r) => r.id !== id))
+    setDeleting(null)
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
-      {/* Live usage placeholder */}
+      {/* Utility cost summary (sourced from Finances module) */}
       <div className="glass-standard rounded-2xl p-5">
-        <div className="flex items-start justify-between">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Utility Costs</p>
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Live Usage</p>
-            <div className="mt-1 flex items-end gap-1">
-              <span className="text-4xl font-bold" style={{ color: 'hsl(152, 62%, 48%)' }}>
-                —
-              </span>
-              <span className="mb-1 text-lg text-muted-foreground">kW</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Smart meter not connected</p>
+            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xl font-bold text-foreground mt-0.5">
+              {currencySymbol}{monthlyUtilities.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-muted-foreground">from Finances</p>
           </div>
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-xl"
-            style={{ background: 'hsl(152 62% 48% / 0.12)' }}
-          >
-            <Zap className="h-6 w-6" style={{ color: 'hsl(152, 62%, 48%)' }} />
+          <div>
+            <p className="text-xs text-muted-foreground">Year to date</p>
+            <p className="text-xl font-bold text-foreground mt-0.5">
+              {currencySymbol}{ytdUtilities.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-muted-foreground">{new Date().getFullYear()}</p>
           </div>
         </div>
-
-        {/* Utility costs from financial records */}
-        {hasRealData ? (
-          <div className="mt-4 pt-4 border-t border-white/8">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">This month</p>
-                <p className="text-lg font-bold text-foreground mt-0.5">
-                  {currencySymbol}{monthlyUtilities.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-muted-foreground">Utility costs logged</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">YTD utilities</p>
-                <p className="text-lg font-bold text-foreground mt-0.5">
-                  {currencySymbol}{ytdUtilities.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-muted-foreground">from Finances module</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 pt-4 border-t border-white/8">
-            <p className="text-xs text-muted-foreground">
-              Log utility expenses in{' '}
-              <a href="/finances" className="underline hover:text-foreground">Finances</a>
-              {' '}to see cost tracking here.
-            </p>
-          </div>
+        {ytdUtilities === 0 && (
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-white/10">
+            Log utility expenses in{' '}
+            <a href="/finances" className="underline hover:text-foreground">Finances</a>
+            {' '}to track costs here.
+          </p>
         )}
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card variant="default" padding="sm">
-          <Sun className="h-4 w-4 text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-muted-foreground">—</p>
-          <p className="text-[10px] text-muted-foreground">Solar</p>
-        </Card>
-        <Card variant="default" padding="sm">
-          <Wind className="h-4 w-4 text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-foreground">—</p>
-          <p className="text-[10px] text-muted-foreground">Outdoor</p>
-        </Card>
-        <Card variant="default" padding="sm">
-          <Droplets className="h-4 w-4 text-muted-foreground mb-1" />
-          <p className="text-lg font-bold text-foreground">—</p>
-          <p className="text-[10px] text-muted-foreground">Humidity</p>
-        </Card>
-      </div>
-
-      {/* ARIA tip */}
-      <Card variant="default" padding="md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <span>✨</span>
-            ARIA Energy Tip
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{ARIA_TIP}</p>
-          <Badge variant="neutral" size="xs" className="mt-2">Energy optimization</Badge>
-        </CardContent>
-      </Card>
-
-      {/* Utility spending shortcut */}
-      {hasRealData && (
-        <Card variant="default" padding="md">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[hsl(45,75%,42%)]/15">
-              <Banknote className="h-5 w-5 text-[hsl(45,75%,42%)]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">
-                {currencySymbol}{ytdUtilities.toLocaleString()} in utilities this year
-              </p>
-              <p className="text-xs text-muted-foreground">Logged across {new Date().getFullYear()} so far</p>
-            </div>
-            <a
-              href="/finances"
-              className="shrink-0 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              View all
-            </a>
+      {/* Per-meter latest reading cards */}
+      {activeMeterTypes.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Meters</p>
+          <div className="grid grid-cols-2 gap-3">
+            {activeMeterTypes.map((meterType) => {
+              const reading = latestByType.get(meterType)!
+              const { label, icon: Icon, color } = METER_CONFIG[meterType]
+              const date = new Date(reading.reading_date)
+              return (
+                <Card key={meterType} variant="default" padding="sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="flex h-7 w-7 items-center justify-center rounded-lg"
+                      style={{ background: `${color}22` }}
+                    >
+                      <Icon className="h-3.5 w-3.5" style={{ color }} />
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground truncate">{label}</span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground leading-tight">
+                    {reading.reading_value.toLocaleString()}
+                    <span className="text-sm font-normal text-muted-foreground ml-1">{reading.unit}</span>
+                  </p>
+                  {reading.cost != null && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {reading.cost_currency ?? currency} {reading.cost.toLocaleString()}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </Card>
+              )
+            })}
           </div>
-        </Card>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-3 py-10 text-center rounded-2xl border border-border/50 glass-light">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl glass-standard">
+            <Zap className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">No readings yet</p>
+          <p className="text-xs text-muted-foreground max-w-[220px]">
+            Log meter readings to track electricity, gas, water, and solar consumption
+          </p>
+          <Link href="/energy/new">
+            <Button variant="secondary" size="sm">
+              <Plus className="h-3.5 w-3.5" />
+              Log first reading
+            </Button>
+          </Link>
+        </div>
       )}
 
-      {/* Integration notice */}
-      <div className="rounded-xl border border-border/50 glass-light p-4 text-center">
-        <p className="text-sm font-medium text-foreground">Smart Home Integration</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Connect your smart meter, EV charger, or solar panels to unlock real-time data
-        </p>
-        <button
-          type="button"
-          disabled
-          className="mt-3 rounded-full glass-standard px-4 py-1.5 text-xs text-muted-foreground cursor-not-allowed"
-        >
-          Connect Device (Phase 4)
-        </button>
-      </div>
+      {/* Reading history */}
+      {allReadings.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Reading History
+          </p>
+          <div className="flex flex-col gap-2">
+            {allReadings.slice(0, 30).map((reading) => {
+              const { label, icon: Icon, color } = METER_CONFIG[reading.meter_type]
+              const date = new Date(reading.reading_date)
+              return (
+                <Card key={reading.id} variant="default" padding="md">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: `${color}18` }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-foreground">
+                          {reading.reading_value.toLocaleString()} {reading.unit}
+                        </p>
+                        <Badge variant="neutral" size="xs" className="shrink-0">
+                          {label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <p className="text-xs text-muted-foreground">
+                          {date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
+                        {reading.cost != null && (
+                          <span className="text-xs text-muted-foreground">
+                            · {reading.cost_currency ?? currency} {reading.cost.toLocaleString()}
+                          </span>
+                        )}
+                        {reading.provider && (
+                          <span className="text-xs text-muted-foreground truncate">· {reading.provider}</span>
+                        )}
+                        {reading.meter_id && (
+                          <span className="text-xs text-muted-foreground/50">#{reading.meter_id}</span>
+                        )}
+                      </div>
+                      {reading.notes && (
+                        <p className="text-xs text-muted-foreground italic mt-0.5 truncate">{reading.notes}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(reading.id)}
+                      disabled={deleting === reading.id}
+                      className="shrink-0 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                      aria-label="Delete reading"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
