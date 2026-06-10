@@ -228,6 +228,23 @@
   }
 
   /* ── Light mode glass overrides ── */
+  [data-theme="light"] .glass-whisper,
+  .light .glass-whisper {
+    background: rgba(255, 255, 255, 0.40);
+    backdrop-filter: blur(4px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.70);
+  }
+
+  [data-theme="light"] .glass-light,
+  .light .glass-light {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.80);
+    box-shadow:
+      inset 0px 1px 0px rgba(255, 255, 255, 0.90),
+      0px 1px 3px rgba(0,0,0,0.06), 0px 2px 8px rgba(0,0,0,0.06);
+  }
+
   [data-theme="light"] .glass-standard,
   .light .glass-standard {
     background: rgba(255, 255, 255, 0.60);

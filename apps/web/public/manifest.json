@@ -3,10 +3,12 @@
   "short_name": "PRV HOUSE",
   "description": "The most intelligent property management platform.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0D1420",
   "theme_color": "#0D1420",
   "orientation": "portrait-primary",
+  "lang": "en",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -21,6 +23,37 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
-  "screenshots": []
+  "shortcuts": [
+    {
+      "name": "ARIA Assistant",
+      "short_name": "ARIA",
+      "description": "Talk to your AI property brain",
+      "url": "/aria",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Maintenance",
+      "short_name": "Tasks",
+      "description": "View open maintenance tasks",
+      "url": "/maintenance",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Security",
+      "short_name": "Security",
+      "description": "Check home security status",
+      "url": "/security",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Energy",
+      "short_name": "Energy",
+      "description": "Monitor energy usage",
+      "url": "/energy",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["productivity", "utilities", "lifestyle"],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
