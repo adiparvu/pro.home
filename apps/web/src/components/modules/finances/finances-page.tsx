@@ -259,6 +259,9 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
           </Card>
         </div>
 
+        {/* Monthly trend chart */}
+        <MonthlyTrendChart records={records} />
+
         {/* Add record toggle */}
         {!showForm && (
           <Button variant="secondary" size="sm" onClick={openAdd} className="self-start">
@@ -580,6 +583,103 @@ function RecordCard({
               </a>
             )}
           </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function MonthlyTrendChart({ records }: { records: FinancialRecord[] }) {
+  const now = new Date()
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    return {
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString('en-US', { month: 'short' }),
+      expenses: 0,
+      income: 0,
+    }
+  })
+
+  for (const r of records) {
+    const slot = months.find((m) => m.key === r.date.substring(0, 7))
+    if (!slot) continue
+    if (r.type === 'expense') slot.expenses += r.amount
+    else if (r.type === 'income') slot.income += r.amount
+  }
+
+  if (!months.some((m) => m.expenses > 0 || m.income > 0)) return null
+
+  const max = Math.max(...months.flatMap((m) => [m.expenses, m.income]), 1)
+  const W = 300, H = 120
+  const PAD = { top: 10, right: 8, bottom: 24, left: 38 }
+  const chartW = W - PAD.left - PAD.right
+  const chartH = H - PAD.top - PAD.bottom
+  const slotW = chartW / 6
+  const barW = slotW * 0.28
+
+  const yTicks = [0, 1, 2, 3].map((i) => (max * i) / 3)
+
+  function yPos(val: number) {
+    return PAD.top + chartH - (val / max) * chartH
+  }
+  function fmt(n: number) {
+    return n >= 1000 ? `${(n / 1000).toFixed(0)}k` : `${Math.round(n)}`
+  }
+
+  return (
+    <Card variant="default" padding="md">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        Monthly Trend
+      </p>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="w-full"
+        style={{ height: 120 }}
+      >
+        {yTicks.map((val, i) => {
+          const y = yPos(val)
+          return (
+            <g key={i}>
+              <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="currentColor" strokeOpacity={0.06} strokeWidth={1} />
+              <text x={PAD.left - 4} y={y + 3} textAnchor="end" fontSize={7} fill="currentColor" opacity={0.4}>{fmt(val)}</text>
+            </g>
+          )
+        })}
+        {months.map((month, i) => {
+          const cx = PAD.left + slotW * i + slotW / 2
+          return (
+            <g key={month.key}>
+              {month.expenses > 0 && (
+                <rect
+                  x={cx - barW - 1} y={yPos(month.expenses)}
+                  width={barW} height={(month.expenses / max) * chartH}
+                  rx={2} fill="hsl(0,68%,52%)" opacity={0.75}
+                />
+              )}
+              {month.income > 0 && (
+                <rect
+                  x={cx + 1} y={yPos(month.income)}
+                  width={barW} height={(month.income / max) * chartH}
+                  rx={2} fill="hsl(152,62%,48%)" opacity={0.75}
+                />
+              )}
+              <text x={cx} y={H - 4} textAnchor="middle" fontSize={8} fill="currentColor" opacity={0.5}>
+                {month.label}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+      <div className="flex items-center gap-4 mt-1">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-sm bg-destructive/75" />
+          <span className="text-[10px] text-muted-foreground">Expenses</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-sm" style={{ background: 'hsl(152,62%,48%,0.75)' }} />
+          <span className="text-[10px] text-muted-foreground">Income</span>
         </div>
       </div>
     </Card>
