@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils'
 
 interface HealthHeroCardProps {
   property: Property
+  overdueTasksCount: number
+  upcomingTasksCount: number
+  recallCount: number
 }
 
 function getHealthVariant(score: number | null): {
@@ -85,9 +88,16 @@ function HealthRing({
   )
 }
 
-export function HealthHeroCard({ property }: HealthHeroCardProps) {
+export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount, recallCount }: HealthHeroCardProps) {
   const score = property.health_score
   const { label, variant, color } = getHealthVariant(score)
+
+  const maintenanceScore = Math.max(20, 95 - overdueTasksCount * 15 - Math.min(upcomingTasksCount, 5))
+  const safetyScore = Math.max(30, 95 - recallCount * 20)
+  const energyScore = score ?? 65
+  const maintenanceTrend: 'up' | 'down' | 'stable' =
+    overdueTasksCount > 0 ? 'down' : upcomingTasksCount > 5 ? 'stable' : 'up'
+  const safetyTrend: 'up' | 'down' | 'stable' = recallCount > 0 ? 'down' : 'up'
 
   return (
     <Card
@@ -147,9 +157,9 @@ export function HealthHeroCard({ property }: HealthHeroCardProps) {
       {/* Factor Preview */}
       {score !== null && (
         <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-[rgba(255,255,255,0.06)]">
-          <FactorMini label="Maintenance" score={78} trend="up" />
-          <FactorMini label="Safety" score={92} trend="stable" />
-          <FactorMini label="Energy" score={score} trend="down" />
+          <FactorMini label="Maintenance" score={maintenanceScore} trend={maintenanceTrend} />
+          <FactorMini label="Safety" score={safetyScore} trend={safetyTrend} />
+          <FactorMini label="Energy" score={energyScore} trend="stable" />
         </div>
       )}
     </Card>

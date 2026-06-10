@@ -7,25 +7,22 @@ import {
   Archive,
   Sparkles,
   ChevronRight,
-  ArrowUp,
   ArrowDown,
-  AlertTriangle,
   CheckCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { Property } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
 
 interface DashboardWidgetGridProps {
-  property: Property
   upcomingTasksCount: number
   overdueTasksCount: number
   inventoryCount: number
   recallCount: number
+  ariaInsight: string
 }
 
-export function DashboardWidgetGrid({ property, upcomingTasksCount, overdueTasksCount, inventoryCount, recallCount }: DashboardWidgetGridProps) {
+export function DashboardWidgetGrid({ upcomingTasksCount, overdueTasksCount, inventoryCount, recallCount, ariaInsight }: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Row 1: Energy + Security */}
@@ -38,7 +35,7 @@ export function DashboardWidgetGrid({ property, upcomingTasksCount, overdueTasks
       <MaintenanceWidget count={upcomingTasksCount} overdueCount={overdueTasksCount} />
 
       {/* Row 3: ARIA Insight */}
-      <ARIAInsightCard propertyName={property.name} />
+      <ARIAInsightCard insight={ariaInsight} />
 
       {/* Row 4: Inventory + Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
@@ -163,7 +160,7 @@ function MaintenanceWidget({ count, overdueCount }: { count: number; overdueCoun
   )
 }
 
-function ARIAInsightCard({ propertyName }: { propertyName: string }) {
+function ARIAInsightCard({ insight }: { insight: string }) {
   return (
     <Card
       variant="heavy"
@@ -190,7 +187,7 @@ function ARIAInsightCard({ propertyName }: { propertyName: string }) {
             </span>
           </div>
           <p className="text-sm text-foreground leading-relaxed">
-            Your HVAC filter is due for replacement in 3 days. Based on your usage, ordering now would save you 2–3 days of reduced air quality.
+            {insight}
           </p>
           <Link
             href="/aria"

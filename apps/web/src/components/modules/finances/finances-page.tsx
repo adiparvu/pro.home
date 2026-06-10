@@ -263,6 +263,11 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
           </div>
         )}
 
+        {/* Category breakdown (expenses only) */}
+        {records.filter((r) => r.type === 'expense').length > 0 && typeFilter !== 'income' && (
+          <CategoryBreakdown records={records.filter((r) => r.type === 'expense')} />
+        )}
+
         {/* Records list */}
         {filtered.length === 0 ? (
           <EmptyState hasRecords={records.length > 0} />
@@ -346,6 +351,52 @@ function RecordCard({
             </span>
           </div>
         </div>
+      </div>
+    </Card>
+  )
+}
+
+function CategoryBreakdown({ records }: { records: FinancialRecord[] }) {
+  const totals: Partial<Record<FinanceCategory, number>> = {}
+  for (const cat of EXPENSE_CATEGORIES) {
+    const sum = records.filter((r) => r.category === cat).reduce((s, r) => s + r.amount, 0)
+    if (sum > 0) totals[cat] = sum
+  }
+
+  const activeCats = (Object.keys(totals) as FinanceCategory[]).sort(
+    (a, b) => (totals[b] ?? 0) - (totals[a] ?? 0)
+  )
+  if (activeCats.length === 0) return null
+
+  const maxAmount = Math.max(...activeCats.map((c) => totals[c] ?? 0))
+
+  return (
+    <Card variant="default" padding="md">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        Expense Breakdown
+      </p>
+      <div className="flex flex-col gap-3">
+        {activeCats.map((cat) => {
+          const amount = totals[cat] ?? 0
+          const pct = maxAmount > 0 ? (amount / maxAmount) * 100 : 0
+          const color = CATEGORY_COLORS[cat]
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs capitalize text-muted-foreground">{cat}</span>
+                <span className="text-xs font-medium tabular-nums text-foreground">
+                  €{amount.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-slow"
+                  style={{ width: `${pct}%`, background: color }}
+                />
+              </div>
+            </div>
+          )
+        })}
       </div>
     </Card>
   )

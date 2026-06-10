@@ -47,6 +47,7 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
   const [uploadName, setUploadName] = React.useState('')
   const [uploadCategory, setUploadCategory] = React.useState<DocumentCategory>('other')
   const [uploadDescription, setUploadDescription] = React.useState('')
+  const [uploadExpiresAt, setUploadExpiresAt] = React.useState('')
   const [uploadFile, setUploadFile] = React.useState<File | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -88,6 +89,7 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
           file_size: uploadFile.size,
           mime_type: uploadFile.type,
           tags: [],
+          expires_at: uploadExpiresAt || null,
           is_critical: false,
           uploaded_by: userId,
         })
@@ -101,6 +103,7 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
       setUploadName('')
       setUploadDescription('')
       setUploadCategory('other')
+      setUploadExpiresAt('')
       setUploadFile(null)
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
@@ -220,14 +223,25 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</label>
-                <input
-                  value={uploadDescription}
-                  onChange={(e) => setUploadDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</label>
+                  <input
+                    value={uploadDescription}
+                    onChange={(e) => setUploadDescription(e.target.value)}
+                    placeholder="Optional"
+                    className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Expiry date</label>
+                  <input
+                    type="date"
+                    value={uploadExpiresAt}
+                    onChange={(e) => setUploadExpiresAt(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  />
+                </div>
               </div>
 
               <Button type="submit" size="sm" loading={uploading} disabled={!uploadFile || !uploadName.trim()}>
