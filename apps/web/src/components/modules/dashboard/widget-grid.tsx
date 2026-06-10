@@ -12,6 +12,9 @@ import {
   FileText,
   Flower2,
   Droplets,
+  Banknote,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +33,8 @@ interface DashboardWidgetGridProps {
   securityMode: string | null
   overdueWateringCount: number
   pendingGardenTasksCount: number
+  monthlyExpenses: number
+  monthlyIncome: number
 }
 
 const METER_TYPE_LABELS: Record<string, string> = {
@@ -64,6 +69,8 @@ export function DashboardWidgetGrid({
   securityMode,
   overdueWateringCount,
   pendingGardenTasksCount,
+  monthlyExpenses,
+  monthlyIncome,
 }: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -92,7 +99,10 @@ export function DashboardWidgetGrid({
         />
       </div>
 
-      {/* Row 5: Quick Actions */}
+      {/* Row 5: Finances (full width) */}
+      <FinancesWidget expenses={monthlyExpenses} income={monthlyIncome} />
+
+      {/* Row 6: Quick Actions */}
       <QuickActionsWidget expiringDocsCount={expiringDocsCount} />
     </div>
   )
@@ -361,6 +371,67 @@ function GardenWidget({
             </span>
           </div>
         </div>
+      </Card>
+    </Link>
+  )
+}
+
+function FinancesWidget({ expenses, income }: { expenses: number; income: number }) {
+  const net = income - expenses
+  const hasActivity = expenses > 0 || income > 0
+  const month = new Date().toLocaleString('en-US', { month: 'short' })
+
+  function fmt(n: number) {
+    if (n >= 10000) return `${(n / 1000).toFixed(0)}k`
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+    return n.toFixed(0)
+  }
+
+  return (
+    <Link href="/finances">
+      <Card variant="default" hover padding="md" className="module-finances">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(45,75%,42%)]/20">
+              <Banknote className="h-5 w-5 text-[hsl(45,75%,55%)]" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold tabular-nums text-foreground">
+                  {hasActivity ? fmt(expenses) : '—'}
+                </span>
+                {hasActivity && <span className="text-sm text-muted-foreground">spent</span>}
+              </div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Finances · {month}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {hasActivity && net !== 0 && (
+              <div className={cn('flex items-center gap-1 text-xs font-medium', net >= 0 ? 'text-emerald-500' : 'text-destructive')}>
+                {net >= 0
+                  ? <TrendingUp className="h-3.5 w-3.5" />
+                  : <TrendingDown className="h-3.5 w-3.5" />
+                }
+                {net >= 0 ? '+' : ''}{fmt(net)}
+              </div>
+            )}
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+        {hasActivity && income > 0 && (
+          <div className="mt-3 flex gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="text-xs text-muted-foreground">Income <span className="font-medium text-foreground">{fmt(income)}</span></span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-destructive/70" />
+              <span className="text-xs text-muted-foreground">Expenses <span className="font-medium text-foreground">{fmt(expenses)}</span></span>
+            </div>
+          </div>
+        )}
       </Card>
     </Link>
   )

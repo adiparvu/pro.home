@@ -49,9 +49,10 @@ export default async function DashboardPage({
   const sb = supabase as any
 
   const today = new Date().toISOString().split('T')[0]
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
   // Fetch dashboard data in parallel
-  const [r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10] = await Promise.all([
+  const [r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12] = await Promise.all([
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
       .eq('property_id', activeProperty.id).in('status', ['pending', 'in_progress']),
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
@@ -96,6 +97,18 @@ export default async function DashboardPage({
       .select('*', { count: 'exact', head: true })
       .eq('property_id', activeProperty.id)
       .in('status', ['pending', 'scheduled']),
+    // Finances: this-month expenses total
+    sb.from('financial_records')
+      .select('amount')
+      .eq('property_id', activeProperty.id)
+      .eq('type', 'expense')
+      .gte('date', monthStart),
+    // Finances: this-month income total
+    sb.from('financial_records')
+      .select('amount')
+      .eq('property_id', activeProperty.id)
+      .eq('type', 'income')
+      .gte('date', monthStart),
   ])
 
   const upcomingTasksCount = r0.count ?? 0
@@ -109,6 +122,8 @@ export default async function DashboardPage({
   const securityMode = (r8.data as { mode: string } | null)?.mode ?? null
   const overdueWateringCount = r9.count ?? 0
   const pendingGardenTasksCount = r10.count ?? 0
+  const monthlyExpenses = ((r11.data as { amount: number }[] | null) ?? []).reduce((s, x) => s + x.amount, 0)
+  const monthlyIncome = ((r12.data as { amount: number }[] | null) ?? []).reduce((s, x) => s + x.amount, 0)
 
   const ariaInsight = getAriaInsight(
     overdueTasksCount,
@@ -148,6 +163,8 @@ export default async function DashboardPage({
           securityMode={securityMode}
           overdueWateringCount={overdueWateringCount}
           pendingGardenTasksCount={pendingGardenTasksCount}
+          monthlyExpenses={monthlyExpenses}
+          monthlyIncome={monthlyIncome}
         />
       </div>
     </div>
