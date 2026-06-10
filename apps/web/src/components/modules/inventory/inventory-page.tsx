@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Archive, Plus, Search, Tag, AlertCircle, ChevronRight } from 'lucide-react'
+import { Archive, Plus, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -39,6 +39,12 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
 
   const recallCount = items.filter((i) => i.recall_active).length
 
+  // Portfolio value: current_value when available, else purchase_price as fallback
+  const itemsWithValue = items.filter((i) => i.purchase_price != null || i.current_value != null)
+  const totalOriginalCost = itemsWithValue.reduce((s, i) => s + (i.purchase_price ?? 0), 0)
+  const totalCurrentValue = itemsWithValue.reduce((s, i) => s + (i.current_value ?? i.purchase_price ?? 0), 0)
+  const portfolioGain = totalCurrentValue - totalOriginalCost
+
   return (
     <>
       <PageHeader
@@ -47,7 +53,7 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
         action={{ label: 'Add Item', href: '/inventory/new' }}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatTile label="Total items" value={String(items.length)} />
@@ -61,6 +67,16 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
             alert={recallCount > 0}
           />
         </div>
+
+        {/* Portfolio value */}
+        {itemsWithValue.length > 0 && (
+          <PortfolioCard
+            currentValue={totalCurrentValue}
+            originalCost={totalOriginalCost}
+            gain={portfolioGain}
+            itemCount={itemsWithValue.length}
+          />
+        )}
 
         {/* Recall banner */}
         {recallCount > 0 && (
@@ -128,6 +144,61 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
         )}
       </div>
     </>
+  )
+}
+
+function PortfolioCard({
+  currentValue,
+  originalCost,
+  gain,
+  itemCount,
+}: {
+  currentValue: number
+  originalCost: number
+  gain: number
+  itemCount: number
+}) {
+  const gainPct = originalCost > 0 ? (gain / originalCost) * 100 : 0
+  const isGain = gain >= 0
+  const fmt = (n: number) =>
+    `€${Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+
+  return (
+    <Card variant="default" padding="md">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Portfolio Value
+          </p>
+          <p className="text-2xl font-bold text-foreground">{fmt(currentValue)}</p>
+          {originalCost > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Original cost {fmt(originalCost)} · {itemCount} item{itemCount !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+        {originalCost > 0 && gain !== 0 && (
+          <div
+            className={`flex items-center gap-1 rounded-xl px-3 py-2 ${
+              isGain ? 'bg-[hsl(152,62%,42%)]/15' : 'bg-destructive/15'
+            }`}
+          >
+            {isGain
+              ? <TrendingUp className="h-4 w-4 text-[hsl(152,62%,48%)]" />
+              : <TrendingDown className="h-4 w-4 text-destructive" />
+            }
+            <div className="text-right">
+              <p className={`text-sm font-bold ${isGain ? 'text-[hsl(152,62%,48%)]' : 'text-destructive'}`}>
+                {isGain ? '+' : '-'}{fmt(gain)}
+              </p>
+              <p className={`text-[10px] ${isGain ? 'text-[hsl(152,62%,48%)]' : 'text-destructive'}`}>
+                {isGain ? '+' : ''}{gainPct.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }
 
