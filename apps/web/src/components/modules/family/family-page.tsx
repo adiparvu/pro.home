@@ -127,6 +127,7 @@ export function FamilyPage({ property, members: initialMembers, currentUserId, m
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         propertyId={property.id}
+        propertyName={property.name}
       />
     </>
   )
