@@ -25,7 +25,7 @@ export default async function EnergyPage() {
   const currentYear = new Date().getFullYear()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [readingsResult, utilityResult] = await Promise.all([
+  const [readingsResult, utilityResult, budgetResult] = await Promise.all([
     property
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? (supabase as any).from('energy_readings').select('*').eq('property_id', property.id).order('reading_date', { ascending: false }).limit(200) as Promise<{ data: EnergyReading[] | null }>
@@ -41,6 +41,16 @@ export default async function EnergyPage() {
           .order('date', { ascending: false })
           .limit(50)
       : Promise.resolve({ data: [] }),
+    // Utility budget records — sum to get monthly budget target
+    property
+      ? supabase
+          .from('financial_records')
+          .select('amount')
+          .eq('property_id', property.id)
+          .eq('type', 'budget')
+          .eq('category', 'utilities')
+          .limit(20)
+      : Promise.resolve({ data: [] }),
   ])
 
   const records = ((utilityResult.data ?? []) as Pick<FinancialRecord, 'amount' | 'date' | 'title'>[])
@@ -49,6 +59,8 @@ export default async function EnergyPage() {
   const monthStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
   const monthlyUtilities = records
     .filter((r) => r.date.startsWith(monthStr))
+    .reduce((s, r) => s + r.amount, 0)
+  const utilityBudget = ((budgetResult.data ?? []) as Pick<FinancialRecord, 'amount'>[])
     .reduce((s, r) => s + r.amount, 0)
 
   return (
@@ -62,6 +74,7 @@ export default async function EnergyPage() {
         readings={readingsResult.data ?? []}
         ytdUtilities={ytdUtilities}
         monthlyUtilities={monthlyUtilities}
+        utilityBudget={utilityBudget}
         currency={property?.currency ?? 'EUR'}
         propertyId={property?.id ?? ''}
       />

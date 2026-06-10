@@ -14,6 +14,7 @@ interface EnergyOverviewProps {
   readings: EnergyReading[]
   ytdUtilities: number
   monthlyUtilities: number
+  utilityBudget: number
   currency: string
   propertyId: string
 }
@@ -44,7 +45,7 @@ function consumptionDeltas(readings: EnergyReading[], meterType: MeterType) {
   }))
 }
 
-export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, currency, propertyId }: EnergyOverviewProps) {
+export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, utilityBudget, currency, propertyId }: EnergyOverviewProps) {
   const [allReadings, setAllReadings] = React.useState(readings)
   const [deleting, setDeleting] = React.useState<string | null>(null)
   const [chartMeter, setChartMeter] = React.useState<MeterType | null>(null)
@@ -100,6 +101,34 @@ export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, curre
             <p className="text-[10px] text-muted-foreground">{new Date().getFullYear()}</p>
           </div>
         </div>
+        {utilityBudget > 0 && monthlyUtilities > 0 && (() => {
+          const pct = Math.min((monthlyUtilities / utilityBudget) * 100, 110)
+          const rawPct = (monthlyUtilities / utilityBudget) * 100
+          const isOver = rawPct > 100
+          const isWarn = rawPct > 80
+          const barColor = isOver ? 'hsl(0,68%,52%)' : isWarn ? 'hsl(45,75%,52%)' : 'hsl(152,62%,42%)'
+          return (
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-muted-foreground">Monthly budget</span>
+                <span className={`text-xs font-bold tabular-nums ${isOver ? 'text-destructive' : isWarn ? 'text-[hsl(45,75%,52%)]' : 'text-[hsl(152,62%,48%)]'}`}>
+                  {Math.round(rawPct)}% · {currencySymbol}{utilityBudget.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden bg-white/10">
+                <div
+                  className="h-full rounded-full transition-all duration-slow"
+                  style={{ width: `${pct}%`, background: barColor }}
+                />
+              </div>
+              {isOver && (
+                <p className="text-[10px] text-destructive mt-1">
+                  Over budget by {currencySymbol}{(monthlyUtilities - utilityBudget).toLocaleString()}
+                </p>
+              )}
+            </div>
+          )
+        })()}
         {ytdUtilities === 0 && (
           <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-white/10">
             Log utility expenses in{' '}
