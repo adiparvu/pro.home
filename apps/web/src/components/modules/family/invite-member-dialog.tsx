@@ -38,9 +38,10 @@ interface InviteMemberDialogProps {
   onClose: () => void
   propertyId: string
   propertyName: string
+  onInvited?: (invitation: PropertyInvitation) => void
 }
 
-export function InviteMemberDialog({ open, onClose, propertyId, propertyName }: InviteMemberDialogProps) {
+export function InviteMemberDialog({ open, onClose, propertyId, propertyName, onInvited }: InviteMemberDialogProps) {
   const router = useRouter()
   const [serverError, setServerError] = React.useState<string | null>(null)
   const [inviteUrl, setInviteUrl] = React.useState<string | null>(null)
@@ -62,6 +63,20 @@ export function InviteMemberDialog({ open, onClose, propertyId, propertyName }: 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // Prevent duplicate pending invitations for the same email
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count: dupeCount } = await (supabase as any)
+      .from('property_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('property_id', propertyId)
+      .eq('email', values.email)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+    if (dupeCount && dupeCount > 0) {
+      setServerError('This person already has a pending invitation for this property.')
+      return
+    }
+
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
@@ -78,8 +93,8 @@ export function InviteMemberDialog({ open, onClose, propertyId, propertyName }: 
         expires_at: expiresAt.toISOString(),
         accepted_at: null,
       })
-      .select('token')
-      .single() as { data: Pick<PropertyInvitation, 'token'> | null; error: { message: string } | null }
+      .select('id, token')
+      .single() as { data: Pick<PropertyInvitation, 'id' | 'token'> | null; error: { message: string } | null }
 
     if (error || !invitation) {
       setServerError(error?.message ?? 'Failed to create invitation')
@@ -89,6 +104,23 @@ export function InviteMemberDialog({ open, onClose, propertyId, propertyName }: 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const url = `${siteUrl}/invite/${invitation.token}`
     setInviteUrl(url)
+
+    // Notify parent so it can update the pending list without a server refresh
+    if (onInvited) {
+      onInvited({
+        id: invitation.id ?? '',
+        property_id: propertyId,
+        invited_by: user.id,
+        email: values.email,
+        role: values.role as UserRole,
+        token: invitation.token,
+        status: 'pending',
+        message: values.message ?? null,
+        expires_at: expiresAt.toISOString(),
+        accepted_at: null,
+        created_at: new Date().toISOString(),
+      })
+    }
 
     // Fire-and-forget email via Edge Function (non-blocking)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

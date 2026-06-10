@@ -1,7 +1,7 @@
 import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Property, PropertyMember } from '@/lib/supabase/types'
+import type { Property, PropertyMember, PropertyInvitation } from '@/lib/supabase/types'
 import { FamilyPage } from '@/components/modules/family/family-page'
 import { PageHeader } from '@/components/layout/page-header'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
@@ -38,23 +38,35 @@ export default async function FamilyRoute() {
     )
   }
 
-  const { data: members } = await supabase
-    .from('property_members')
-    .select('*')
-    .eq('property_id', property.id)
-    .eq('status', 'active')
-    .order('joined_at', { ascending: true }) as {
-    data: PropertyMember[] | null
-    error: unknown
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
 
-  const myMembership = members?.find((m) => m.user_id === user.id) ?? null
+  const [membersRes, invitationsRes] = await Promise.all([
+    sb
+      .from('property_members')
+      .select('*')
+      .eq('property_id', property.id)
+      .eq('status', 'active')
+      .order('joined_at', { ascending: true }) as Promise<{ data: PropertyMember[] | null; error: unknown }>,
+    sb
+      .from('property_invitations')
+      .select('*')
+      .eq('property_id', property.id)
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false }) as Promise<{ data: PropertyInvitation[] | null; error: unknown }>,
+  ])
+
+  const members = membersRes.data ?? []
+  const pendingInvitations = invitationsRes.data ?? []
+  const myMembership = members.find((m) => m.user_id === user.id) ?? null
 
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
       <FamilyPage
         property={property}
-        members={members ?? []}
+        members={members}
+        pendingInvitations={pendingInvitations}
         currentUserId={user.id}
         myMembership={myMembership}
       />
