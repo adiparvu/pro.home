@@ -141,7 +141,7 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
           type: 'garden' as const,
           title: p.name,
           subtitle: [p.common_name, p.species, p.status].filter(Boolean).join(' · ').replace(/_/g, ' '),
-          href: '/garden',
+          href: `/garden/plants/${p.id}`,
         })),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(contacts ?? []).map((c: any) => ({
