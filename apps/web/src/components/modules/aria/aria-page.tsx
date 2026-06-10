@@ -3,9 +3,13 @@
 import * as React from 'react'
 import { Sparkles, Send, RotateCcw, Lightbulb, Wrench, Zap, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import type { AriaMessage } from '@/lib/supabase/types'
 
 interface AriaPageProps {
   userId: string
+  propertyId: string | null
+  initialMessages: AriaMessage[]
 }
 
 interface Message {
@@ -37,8 +41,15 @@ What would you like to know today?`,
   timestamp: new Date(),
 }
 
-export function AriaPage({ userId: _userId }: AriaPageProps) {
-  const [messages, setMessages] = React.useState<Message[]>([WELCOME_MESSAGE])
+function dbToMessage(m: AriaMessage): Message {
+  return { id: m.id, role: m.role, content: m.content, timestamp: new Date(m.created_at) }
+}
+
+export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps) {
+  const [messages, setMessages] = React.useState<Message[]>(() => {
+    if (initialMessages.length > 0) return initialMessages.map(dbToMessage)
+    return [WELCOME_MESSAGE]
+  })
   const [input, setInput] = React.useState('')
   const [isThinking, setIsThinking] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
@@ -47,6 +58,18 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  async function persistMessage(role: 'user' | 'assistant', content: string) {
+    if (!propertyId) return
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('aria_messages').insert({
+      user_id: userId,
+      property_id: propertyId,
+      role,
+      content,
+    })
+  }
 
   async function sendMessage(text: string) {
     if (!text.trim() || isThinking) return
@@ -62,7 +85,9 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
     setInput('')
     setIsThinking(true)
 
-    // Build message history for API (exclude welcome message)
+    // Persist user message
+    await persistMessage('user', text.trim())
+
     const history = [...messages, userMessage]
       .filter((m) => m.id !== 'welcome')
       .map((m) => ({ role: m.role, content: m.content }))
@@ -75,14 +100,18 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
       })
 
       const data = await res.json() as { content?: string; error?: string }
+      const responseContent = data.error ?? data.content ?? 'Sorry, something went wrong. Please try again.'
 
       const ariaResponse: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.error ?? data.content ?? 'Sorry, something went wrong. Please try again.',
+        content: responseContent,
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, ariaResponse])
+
+      // Persist ARIA response
+      await persistMessage('assistant', responseContent)
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -105,11 +134,24 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
     }
   }
 
-  function handleReset() {
+  async function handleReset() {
     setMessages([WELCOME_MESSAGE])
     setInput('')
     inputRef.current?.focus()
+
+    // Clear persisted messages for this user+property
+    if (propertyId) {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('aria_messages')
+        .delete()
+        .eq('user_id', userId)
+        .eq('property_id', propertyId)
+    }
   }
+
+  const showSuggestions = messages.length === 1 && messages[0]?.id === 'welcome'
 
   return (
     <div className="flex flex-1 flex-col">
@@ -145,8 +187,7 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
 
         {isThinking && <ThinkingBubble />}
 
-        {/* Suggested prompts (only show when only welcome message) */}
-        {messages.length === 1 && (
+        {showSuggestions && (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 mt-4">
             {SUGGESTED_PROMPTS.map(({ icon: Icon, text }) => (
               <button
@@ -176,9 +217,6 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
             placeholder="Ask ARIA anything about your home..."
             rows={1}
             className="flex-1 resize-none rounded-xl border border-border glass-light px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 min-h-[44px] max-h-[120px] overflow-y-auto"
-            style={{
-              height: 'auto',
-            }}
           />
           <button
             type="button"

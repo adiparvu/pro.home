@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import type { Property, InventoryItem, MaintenanceTask } from '@/lib/supabase/types'
 
-const SYSTEM_PROMPT = `You are ARIA (Adaptive Residence Intelligence Assistant), an AI property brain for PRV HOUSE — a smart home management app.
+const BASE_SYSTEM_PROMPT = `You are ARIA (Adaptive Residence Intelligence Assistant), an AI property brain for PRV HOUSE — a smart home management app.
 
 You help homeowners with:
 - Maintenance planning and scheduling (seasonal checklists, appliance care, when to service systems)
@@ -19,6 +20,49 @@ Guidelines:
 - Respond in the same language the user writes in.
 - Format responses with **bold** for key terms and use bullet points (•) for lists.`
 
+function buildContextBlock(
+  property: Property | null,
+  items: InventoryItem[],
+  tasks: MaintenanceTask[],
+): string {
+  if (!property) return ''
+
+  const lines: string[] = [
+    '\n\n--- PROPERTY CONTEXT ---',
+    `Property: ${property.name}`,
+    `Type: ${property.property_type ?? 'unknown'}`,
+    `Size: ${property.size_sqm ? `${property.size_sqm} m²` : 'unknown'}`,
+    `Year built: ${property.year_built ?? 'unknown'}`,
+    `Location: ${[property.city, property.country].filter(Boolean).join(', ') || 'unknown'}`,
+  ]
+
+  if (items.length > 0) {
+    lines.push(`\nInventory (${items.length} items):`)
+    items.slice(0, 20).forEach((item) => {
+      const parts = [item.name]
+      if (item.brand) parts.push(item.brand)
+      if (item.condition) parts.push(`(${item.condition})`)
+      if (item.warranty_expires) parts.push(`warranty until ${item.warranty_expires}`)
+      lines.push(`  • ${parts.join(' ')}`)
+    })
+    if (items.length > 20) lines.push(`  … and ${items.length - 20} more`)
+  }
+
+  const openTasks = tasks.filter((t) => t.status !== 'completed' && t.status !== 'cancelled')
+  if (openTasks.length > 0) {
+    lines.push(`\nOpen maintenance tasks (${openTasks.length}):`)
+    openTasks.slice(0, 10).forEach((task) => {
+      const parts = [task.title]
+      if (task.status === 'overdue') parts.push('[OVERDUE]')
+      if (task.due_date) parts.push(`due ${task.due_date}`)
+      lines.push(`  • ${parts.join(' ')}`)
+    })
+  }
+
+  lines.push('--- END CONTEXT ---')
+  return lines.join('\n')
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -28,7 +72,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -47,7 +90,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'messages array required' }, { status: 400 })
   }
 
-  // Last 20 messages for context (keep costs low)
+  // Fetch property context
+  const { data: property } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('owner_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single() as { data: Property | null; error: unknown }
+
+  let items: InventoryItem[] = []
+  let tasks: MaintenanceTask[] = []
+
+  if (property) {
+    const [itemsRes, tasksRes] = await Promise.all([
+      supabase.from('inventory_items').select('*').eq('property_id', property.id).limit(50),
+      supabase.from('maintenance_tasks').select('*').eq('property_id', property.id).neq('status', 'cancelled').limit(50),
+    ])
+    items = (itemsRes.data ?? []) as InventoryItem[]
+    tasks = (tasksRes.data ?? []) as MaintenanceTask[]
+  }
+
+  const systemPrompt = BASE_SYSTEM_PROMPT + buildContextBlock(property, items, tasks)
+
   const recentMessages = messages.slice(-20).map((m) => ({
     role: m.role as 'user' | 'assistant',
     content: String(m.content),
@@ -59,7 +124,7 @@ export async function POST(req: NextRequest) {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: recentMessages,
     })
 

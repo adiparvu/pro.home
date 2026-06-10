@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Circle } from 'lucide-react'
+import Link from 'next/link'
+import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Circle, ChevronRight } from 'lucide-react'
 import type { Property, MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -130,53 +131,57 @@ function TaskCard({ task }: { task: MaintenanceTask }) {
   const isCompleted = task.status === 'completed'
 
   return (
-    <Card variant="default" hover padding="md" className="group">
-      <div className="flex items-start gap-3">
-        <StatusIcon
-          className={`h-5 w-5 shrink-0 mt-0.5 ${
-            isOverdue
-              ? 'text-destructive'
-              : isCompleted
-                ? 'text-success'
-                : 'text-muted-foreground'
-          }`}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <p className={`text-sm font-medium truncate ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-              {task.title}
-            </p>
-            <Badge
-              variant={PRIORITY_VARIANTS[task.priority]}
-              size="xs"
-              className="shrink-0"
-            >
-              {task.priority}
-            </Badge>
-          </div>
-          {task.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-              {task.description}
-            </p>
-          )}
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <Badge variant="neutral" size="xs" className="capitalize">
-              {task.category}
-            </Badge>
-            {task.due_date && (
-              <span className={`text-[10px] ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {isOverdue ? 'Was due' : 'Due'} {formatRelativeTime(task.due_date)}
-              </span>
+    <Link href={`/maintenance/${task.id}`}>
+      <Card variant="default" hover padding="md" className="group">
+        <div className="flex items-start gap-3">
+          <StatusIcon
+            className={`h-5 w-5 shrink-0 mt-0.5 ${
+              isOverdue
+                ? 'text-destructive'
+                : isCompleted
+                  ? 'text-success'
+                  : 'text-muted-foreground'
+            }`}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <p className={`text-sm font-medium truncate ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                {task.title}
+              </p>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Badge
+                  variant={PRIORITY_VARIANTS[task.priority]}
+                  size="xs"
+                >
+                  {task.priority}
+                </Badge>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </div>
+            {task.description && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                {task.description}
+              </p>
             )}
-            {task.estimated_cost && (
-              <span className="text-[10px] text-muted-foreground">
-                ~€{task.estimated_cost}
-              </span>
-            )}
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <Badge variant="neutral" size="xs" className="capitalize">
+                {task.category}
+              </Badge>
+              {task.due_date && (
+                <span className={`text-[10px] ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {isOverdue ? 'Was due' : 'Due'} {formatRelativeTime(task.due_date)}
+                </span>
+              )}
+              {task.estimated_cost && (
+                <span className="text-[10px] text-muted-foreground">
+                  ~€{task.estimated_cost}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   )
 }
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Archive, Plus, Search, Tag, AlertCircle } from 'lucide-react'
+import { Archive, Plus, Search, Tag, AlertCircle, ChevronRight } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -144,6 +144,7 @@ function StatTile({ label, value, alert }: { label: string; value: string; alert
 
 function InventoryItemCard({ item }: { item: InventoryItem }) {
   return (
+    <Link href={`/inventory/${item.id}`}>
     <Card variant="default" hover padding="md" className="group">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl glass-standard">
@@ -185,8 +186,10 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
             )}
           </div>
         </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 mt-1" />
       </div>
     </Card>
+    </Link>
   )
 }
 

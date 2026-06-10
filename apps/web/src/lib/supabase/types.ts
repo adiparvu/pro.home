@@ -80,6 +80,10 @@ export type RoomType =
   | 'other'
 export type NotificationPriority = 'critical' | 'high' | 'normal' | 'low'
 export type NotificationStatus = 'unread' | 'read' | 'dismissed' | 'actioned'
+export type FinanceCategory =
+  | 'maintenance' | 'utilities' | 'insurance' | 'mortgage' | 'tax'
+  | 'renovation' | 'appliance' | 'subscription' | 'other'
+export type FinanceType = 'expense' | 'income' | 'budget'
 
 // ─── Row Types (declared before Database to avoid circular refs) ─────────────
 
@@ -276,6 +280,33 @@ export type Notification = {
   created_at: string
 }
 
+export type FinancialRecord = {
+  id: string
+  property_id: string
+  title: string
+  amount: number
+  currency: string
+  type: FinanceType
+  category: FinanceCategory
+  date: string
+  description: string | null
+  maintenance_task_id: string | null
+  receipt_url: string | null
+  tags: string[]
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AriaMessage = {
+  id: string
+  user_id: string
+  property_id: string | null
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}
+
 // ─── Database Type (Supabase client generic) ─────────────────────────────────
 
 export type Database = {
@@ -333,6 +364,18 @@ export type Database = {
         Row: Notification
         Insert: Omit<Notification, 'id' | 'created_at'>
         Update: Partial<Notification>
+        Relationships: []
+      }
+      financial_records: {
+        Row: FinancialRecord
+        Insert: Omit<FinancialRecord, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<FinancialRecord>
+        Relationships: []
+      }
+      aria_messages: {
+        Row: AriaMessage
+        Insert: Omit<AriaMessage, 'id' | 'created_at'>
+        Update: Partial<AriaMessage>
         Relationships: []
       }
     }
