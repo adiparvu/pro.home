@@ -63,6 +63,7 @@
     "@capacitor/android": "^7.4.0",
     "@capacitor/cli": "^7.4.0",
     "@capacitor/ios": "^7.4.0",
+    "@playwright/test": "^1.60.0",
     "@prv/tsconfig": "workspace:*",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.8",
