@@ -5,9 +5,9 @@ import {
   ShieldCheck, ShieldOff, Home, Moon, Plane,
   Camera, Lock, DoorOpen, Bell, Package,
   AlertTriangle, CheckCircle2, Wifi, WifiOff, Battery,
-  AlertCircle, Plus, X, ChevronDown, ChevronUp,
+  AlertCircle, Plus, X, ChevronDown, ChevronUp, Clock, Trash2, ToggleLeft, ToggleRight,
 } from 'lucide-react'
-import type { SecurityState, SecurityMode, SecurityEvent, SecurityEventType, SecuritySeverity, InventoryItem } from '@/lib/supabase/types'
+import type { SecurityState, SecurityMode, SecurityEvent, SecurityEventType, SecuritySeverity, InventoryItem, SecuritySchedule } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +21,7 @@ interface SecurityOverviewProps {
   securityState: SecurityState | null
   events: SecurityEvent[]
   securityItems: SecurityItem[]
+  schedules: SecuritySchedule[]
 }
 
 const MODE_CONFIG: Record<SecurityMode, {
@@ -60,6 +61,9 @@ const EVENT_TYPE_LABELS: Record<SecurityEventType, string> = {
   manual:           'Manual entry',
 }
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const ALL_DAYS = [1, 2, 3, 4, 5, 6, 0] // Mon-Sun (Sun=0 matches JS Date)
+
 function getEventIcon(type: SecurityEventType): React.ComponentType<{ className?: string; style?: React.CSSProperties }> {
   switch (type) {
     case 'armed': return ShieldCheck
@@ -84,13 +88,21 @@ function guessDeviceIcon(name: string): React.ComponentType<{ className?: string
   return Package
 }
 
+function formatScheduleDays(days: number[]): string {
+  const sorted = [...days].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b))
+  if (sorted.length === 7) return 'Every day'
+  if (sorted.length === 5 && !sorted.includes(0) && !sorted.includes(6)) return 'Weekdays'
+  if (sorted.length === 2 && sorted.includes(0) && sorted.includes(6)) return 'Weekends'
+  return sorted.map((d) => DAY_LABELS[d]).join(', ')
+}
+
 const LOG_EVENT_TYPES: SecurityEventType[] = [
   'motion_detected', 'door_opened', 'window_opened',
   'alarm_triggered', 'alarm_cleared', 'battery_low',
   'offline', 'online', 'test', 'manual',
 ]
 
-export function SecurityOverview({ propertyId, securityState, events: initialEvents, securityItems }: SecurityOverviewProps) {
+export function SecurityOverview({ propertyId, securityState, events: initialEvents, securityItems, schedules: initialSchedules }: SecurityOverviewProps) {
   const [currentMode, setCurrentMode] = React.useState<SecurityMode>(securityState?.mode ?? 'disarmed')
   const [events, setEvents] = React.useState<SecurityEvent[]>(initialEvents)
   const [updating, setUpdating] = React.useState(false)
@@ -100,6 +112,15 @@ export function SecurityOverview({ propertyId, securityState, events: initialEve
   const [logDesc, setLogDesc] = React.useState('')
   const [logging, setLogging] = React.useState(false)
   const [showAllEvents, setShowAllEvents] = React.useState(false)
+
+  // Schedule state
+  const [schedules, setSchedules] = React.useState<SecuritySchedule[]>(initialSchedules)
+  const [showScheduleForm, setShowScheduleForm] = React.useState(false)
+  const [schedLabel, setSchedLabel] = React.useState('')
+  const [schedMode, setSchedMode] = React.useState<SecurityMode>('disarmed')
+  const [schedDays, setSchedDays] = React.useState<number[]>([1, 2, 3, 4, 5, 6, 0])
+  const [schedTime, setSchedTime] = React.useState('22:00')
+  const [savingSched, setSavingSched] = React.useState(false)
 
   const config = MODE_CONFIG[currentMode]
   const StatusIcon = config.icon
@@ -150,11 +171,55 @@ export function SecurityOverview({ propertyId, securityState, events: initialEve
     setEvents((prev) => prev.map((e) => e.id === id ? { ...e, resolved_at: new Date().toISOString() } : e))
   }
 
+  async function saveSchedule(e: React.FormEvent) {
+    e.preventDefault()
+    if (!schedTime || schedDays.length === 0) return
+    setSavingSched(true)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any).from('security_schedules').insert({
+      property_id: propertyId,
+      label: schedLabel || null,
+      mode: schedMode,
+      days_of_week: schedDays,
+      time_hhmm: schedTime,
+      enabled: true,
+    }).select().single() as { data: SecuritySchedule | null }
+    if (data) setSchedules((prev) => [...prev, data].sort((a, b) => a.time_hhmm.localeCompare(b.time_hhmm)))
+    setSchedLabel('')
+    setSchedMode('disarmed')
+    setSchedDays([1, 2, 3, 4, 5, 6, 0])
+    setSchedTime('22:00')
+    setShowScheduleForm(false)
+    setSavingSched(false)
+  }
+
+  async function toggleSchedule(sched: SecuritySchedule) {
+    const supabase = createClient()
+    const newEnabled = !sched.enabled
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('security_schedules').update({ enabled: newEnabled }).eq('id', sched.id)
+    setSchedules((prev) => prev.map((s) => s.id === sched.id ? { ...s, enabled: newEnabled } : s))
+  }
+
+  async function deleteSchedule(id: string) {
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('security_schedules').delete().eq('id', id)
+    setSchedules((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  function toggleDay(day: number) {
+    setSchedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    )
+  }
+
   const visibleEvents = showAllEvents ? events : events.slice(0, 5)
   const unresolvedCritical = events.filter((e) => !e.resolved_at && (e.severity === 'critical' || e.severity === 'alert')).length
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
       {/* Status hero */}
       <div
         className="rounded-2xl p-5 transition-colors duration-300"
@@ -220,6 +285,161 @@ export function SecurityOverview({ propertyId, securityState, events: initialEve
           </p>
         </div>
       )}
+
+      {/* Schedules */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto Schedules</p>
+          <button
+            type="button"
+            onClick={() => setShowScheduleForm((v) => !v)}
+            className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add schedule
+          </button>
+        </div>
+
+        {/* Add schedule form */}
+        {showScheduleForm && (
+          <Card variant="default" padding="md">
+            <form onSubmit={saveSchedule} className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-foreground">New schedule</p>
+                <button type="button" onClick={() => setShowScheduleForm(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Label */}
+              <input
+                value={schedLabel}
+                onChange={(e) => setSchedLabel(e.target.value)}
+                placeholder="Label (optional, e.g. Bedtime)"
+                className="h-9 rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+              />
+
+              {/* Mode + Time */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground">Switch to</label>
+                  <select
+                    value={schedMode}
+                    onChange={(e) => setSchedMode(e.target.value as SecurityMode)}
+                    className="h-9 rounded-xl border border-border bg-glass-light px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  >
+                    {(Object.keys(MODE_CONFIG) as SecurityMode[]).map((m) => (
+                      <option key={m} value={m}>{MODE_CONFIG[m].label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground">At time</label>
+                  <input
+                    type="time"
+                    value={schedTime}
+                    onChange={(e) => setSchedTime(e.target.value)}
+                    required
+                    className="h-9 rounded-xl border border-border glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  />
+                </div>
+              </div>
+
+              {/* Days of week */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-muted-foreground">Days</label>
+                <div className="flex gap-1 flex-wrap">
+                  {ALL_DAYS.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleDay(day)}
+                      className={cn(
+                        'h-8 w-10 rounded-lg text-xs font-medium transition-colors',
+                        schedDays.includes(day)
+                          ? 'bg-primary/20 text-primary ring-1 ring-primary/50'
+                          : 'glass-light text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {DAY_LABELS[day]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                type="submit"
+                loading={savingSched}
+                disabled={schedDays.length === 0}
+                className="self-end"
+              >
+                Save schedule
+              </Button>
+            </form>
+          </Card>
+        )}
+
+        {schedules.length === 0 && !showScheduleForm ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center rounded-2xl border border-border/50 glass-light">
+            <Clock className="h-7 w-7 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">No schedules yet — add one to automate arm/disarm</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {schedules.map((sched) => {
+              const modeConf = MODE_CONFIG[sched.mode]
+              const ModeIcon = modeConf.icon
+              return (
+                <Card key={sched.id} variant="default" padding="sm" className={cn(!sched.enabled && 'opacity-50')}>
+                  <div className="flex items-center gap-3 px-1">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ background: `${modeConf.color}18` }}
+                    >
+                      <ModeIcon className="h-4 w-4" style={{ color: modeConf.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-foreground">
+                          {sched.time_hhmm}
+                        </p>
+                        <span className="text-xs text-muted-foreground">→</span>
+                        <p className="text-sm text-foreground">{modeConf.label}</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {sched.label ? `${sched.label} · ` : ''}{formatScheduleDays(sched.days_of_week)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleSchedule(sched)}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                        aria-label={sched.enabled ? 'Disable schedule' : 'Enable schedule'}
+                      >
+                        {sched.enabled
+                          ? <ToggleRight className="h-5 w-5 text-primary" />
+                          : <ToggleLeft className="h-5 w-5" />
+                        }
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteSchedule(sched.id)}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                        aria-label="Delete schedule"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Events */}
       <div className="flex flex-col gap-3">

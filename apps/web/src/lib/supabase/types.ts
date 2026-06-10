@@ -421,6 +421,17 @@ export type SecurityEvent = {
   created_at: string
 }
 
+export type SecuritySchedule = {
+  id: string
+  property_id: string
+  label: string | null
+  mode: SecurityMode
+  days_of_week: number[]
+  time_hhmm: string
+  enabled: boolean
+  created_at: string
+}
+
 export type FloorPlan = {
   id: string
   property_id: string
@@ -586,6 +597,12 @@ export type Database = {
         Row: FloorPlan
         Insert: Omit<FloorPlan, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<FloorPlan>
+        Relationships: []
+      }
+      security_schedules: {
+        Row: SecuritySchedule
+        Insert: Omit<SecuritySchedule, 'id' | 'created_at'>
+        Update: Partial<SecuritySchedule>
         Relationships: []
       }
     }

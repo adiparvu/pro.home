@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/layout/page-header'
 import { SecurityOverview } from '@/components/modules/security/security-overview'
-import type { Property, InventoryItem, SecurityState, SecurityEvent } from '@/lib/supabase/types'
+import type { Property, InventoryItem, SecurityState, SecurityEvent, SecuritySchedule } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Security' }
 
@@ -28,13 +28,13 @@ export default async function SecurityPage() {
     return (
       <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
         <PageHeader title="Security" description="Protect your home and family" />
-        <SecurityOverview propertyId="" securityState={null} events={[]} securityItems={[]} />
+        <SecurityOverview propertyId="" securityState={null} events={[]} securityItems={[]} schedules={[]} />
       </div>
     )
   }
 
-  // Parallel fetch: security state, recent events, security inventory items
-  const [stateResult, eventsResult, itemsResult] = await Promise.all([
+  // Parallel fetch: security state, recent events, security inventory items, schedules
+  const [stateResult, eventsResult, itemsResult, schedulesResult] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (supabase as any).from('security_state').select('*').eq('property_id', property.id).maybeSingle() as Promise<{ data: SecurityState | null }>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,6 +45,8 @@ export default async function SecurityPage() {
       .eq('property_id', property.id)
       .or(SECURITY_KEYWORDS.map((k) => `name.ilike.%${k}%`).join(','))
       .limit(10) as unknown as Promise<{ data: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] | null }>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('security_schedules').select('*').eq('property_id', property.id).order('time_hhmm') as Promise<{ data: SecuritySchedule[] | null }>,
   ])
 
   return (
@@ -55,6 +57,7 @@ export default async function SecurityPage() {
         securityState={stateResult.data}
         events={eventsResult.data ?? []}
         securityItems={itemsResult.data ?? []}
+        schedules={schedulesResult.data ?? []}
       />
     </div>
   )
