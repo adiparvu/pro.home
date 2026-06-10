@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Bell, Wrench, Zap, Shield, Archive, Home, Sparkles, Info, Trash2 } from 'lucide-react'
+import { Bell, Wrench, Zap, Shield, Archive, Home, Sparkles, Info, Trash2, Flower2, FolderOpen, Banknote, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification } from '@/lib/supabase/types'
@@ -23,6 +23,9 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   inventory: Archive,
   home: Home,
   aria: Sparkles,
+  garden: Flower2,
+  documents: FolderOpen,
+  finances: Banknote,
 }
 
 const PRIORITY_VARIANTS = {
@@ -146,28 +149,36 @@ function NotificationRow({
   onRead: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  const router = useRouter()
   const isUnread = notification.status === 'unread'
   const ModuleIcon = (notification.module && MODULE_ICONS[notification.module]) || Info
+
+  function handleClick() {
+    if (isUnread) onRead(notification.id)
+    if (notification.action_url) router.push(notification.action_url)
+  }
+
+  const isClickable = isUnread || !!notification.action_url
 
   return (
     <div className={cn('flex items-start gap-3 px-4 py-4 md:px-6', isUnread && 'bg-primary/5')}>
       <button
         type="button"
-        onClick={() => isUnread && onRead(notification.id)}
+        onClick={handleClick}
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-          isUnread ? 'bg-primary/15 hover:bg-primary/25' : 'glass-light'
+          isClickable ? 'bg-primary/15 hover:bg-primary/25 cursor-pointer' : 'glass-light cursor-default'
         )}
-        aria-label={isUnread ? 'Mark as read' : undefined}
-        disabled={!isUnread}
+        aria-label={isUnread ? 'Mark as read and open' : notification.action_url ? 'Open' : undefined}
+        disabled={!isClickable}
       >
-        <ModuleIcon className={cn('h-5 w-5', isUnread ? 'text-primary' : 'text-muted-foreground')} />
+        <ModuleIcon className={cn('h-5 w-5', isClickable ? 'text-primary' : 'text-muted-foreground')} />
       </button>
 
       <div
-        className="min-w-0 flex-1 cursor-default"
-        role={isUnread ? 'button' : undefined}
-        onClick={() => isUnread && onRead(notification.id)}
+        className={cn('min-w-0 flex-1', isClickable && 'cursor-pointer')}
+        role={isClickable ? 'button' : undefined}
+        onClick={isClickable ? handleClick : undefined}
       >
         <div className="flex items-start justify-between gap-2">
           <p className={cn('text-sm leading-snug', isUnread ? 'font-semibold text-foreground' : 'font-medium text-foreground/80')}>
@@ -185,9 +196,17 @@ function NotificationRow({
         {notification.body && (
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{notification.body}</p>
         )}
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          {formatRelativeTime(notification.created_at)}
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground">
+            {formatRelativeTime(notification.created_at)}
+          </span>
+          {notification.action_url && (
+            <span className="flex items-center gap-0.5 text-[10px] text-primary/60">
+              <ExternalLink className="h-2.5 w-2.5" />
+              Open
+            </span>
+          )}
+        </div>
       </div>
 
       <button
