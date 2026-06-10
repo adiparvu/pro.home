@@ -19,6 +19,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Flower2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -62,6 +63,7 @@ const MORE_NAV_ITEMS = [
   { label: 'Finances', href: '/finances', icon: Banknote, module: 'finances' },
   { label: 'Documents', href: '/documents', icon: FolderOpen, module: 'documents' },
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingCart, module: 'marketplace' },
+  { label: 'Garden', href: '/garden', icon: Flower2, module: 'garden' },
 ] as const
 
 const MODULE_COLORS: Record<string, string> = {
@@ -76,6 +78,7 @@ const MODULE_COLORS: Record<string, string> = {
   finances: 'hsl(45, 75%, 42%)',
   documents: 'hsl(220, 52%, 46%)',
   marketplace: 'hsl(88, 58%, 39%)',
+  garden: 'hsl(120, 52%, 36%)',
   search: 'hsl(210, 75%, 42%)',
 }
 

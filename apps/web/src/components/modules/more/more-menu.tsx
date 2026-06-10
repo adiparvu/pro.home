@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Search,
   ChevronRight,
+  Flower2,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
@@ -21,6 +22,7 @@ const MORE_ITEMS = [
   { label: 'Finances', description: 'Costs & budgets', href: '/finances', icon: Banknote, color: 'hsl(45, 75%, 42%)' },
   { label: 'Documents', description: 'Contracts & manuals', href: '/documents', icon: FolderOpen, color: 'hsl(220, 52%, 46%)' },
   { label: 'Marketplace', description: 'Service providers', href: '/marketplace', icon: ShoppingCart, color: 'hsl(88, 58%, 39%)' },
+  { label: 'Garden', description: 'Plants, tasks & zones', href: '/garden', icon: Flower2, color: 'hsl(120, 52%, 36%)' },
 ]
 
 export function MoreMenu() {
