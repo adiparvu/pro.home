@@ -10,6 +10,7 @@ import {
   Search,
   ChevronRight,
   Flower2,
+  LayoutPanelLeft,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
@@ -23,6 +24,7 @@ const MORE_ITEMS = [
   { label: 'Documents', description: 'Contracts & manuals', href: '/documents', icon: FolderOpen, color: 'hsl(220, 52%, 46%)' },
   { label: 'Marketplace', description: 'Service providers', href: '/marketplace', icon: ShoppingCart, color: 'hsl(88, 58%, 39%)' },
   { label: 'Garden', description: 'Plants, tasks & zones', href: '/garden', icon: Flower2, color: 'hsl(120, 52%, 36%)' },
+  { label: 'Digital Twin', description: 'Interactive floor plan', href: '/digital-twin', icon: LayoutPanelLeft, color: 'hsl(260, 62%, 52%)' },
 ]
 
 export function MoreMenu() {
