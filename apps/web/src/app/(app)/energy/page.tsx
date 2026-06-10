@@ -64,7 +64,7 @@ export default async function EnergyPage() {
     .reduce((s, r) => s + r.amount, 0)
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader
         title="Energy"
         description={property?.name ?? 'Monitor consumption'}

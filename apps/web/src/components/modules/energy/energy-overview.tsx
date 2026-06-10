@@ -90,7 +90,7 @@ export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, utili
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
       {/* Utility cost summary */}
       <div className="glass-standard rounded-2xl p-5">
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Utility Costs</p>

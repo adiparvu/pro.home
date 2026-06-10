@@ -23,7 +23,7 @@ export default async function DocumentDetailPage({ params }: Props) {
   if (!doc) notFound()
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <DocumentDetail initialDoc={doc} />
     </div>
   )

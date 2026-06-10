@@ -24,7 +24,7 @@ export default async function SearchRoute() {
   if (!property) redirect('/onboarding/property')
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <SearchPage propertyId={property.id} />
     </div>
   )

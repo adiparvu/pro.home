@@ -27,7 +27,7 @@ export default async function NewMaintenanceTaskPage() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="New Task" backHref="/maintenance" />
         <NoPropertyState />
       </div>
@@ -45,7 +45,7 @@ export default async function NewMaintenanceTaskPage() {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="New Task" description={property.name} backHref="/maintenance" />
       <div className="px-4 py-4 md:px-6 md:py-6 max-w-xl">
         <AddTaskForm

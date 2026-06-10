@@ -24,7 +24,7 @@ export default async function DigitalTwinRoute() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Digital Twin" description="Interactive floor plan" />
         <DigitalTwinPage propertyId="" rooms={[]} items={[]} tasks={[]} />
       </div>
@@ -52,7 +52,7 @@ export default async function DigitalTwinRoute() {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Digital Twin" description={property.name} />
       <DigitalTwinPage
         propertyId={property.id}

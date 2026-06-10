@@ -42,7 +42,7 @@ export default async function PlantDetailPage({
   const zoneMap = new Map((zonesResult.data ?? []).map((z) => [z.id, z.name]))
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader
         title={plantResult.data.name}
         description={plantResult.data.species ?? plantResult.data.common_name ?? 'Plant'}

@@ -41,7 +41,7 @@ export default async function EditGardenTaskPage({
   if (!taskResult.data) notFound()
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Edit Task" description={taskResult.data.title} backHref="/garden" />
       <AddGardenTaskForm
         propertyId={property.id}

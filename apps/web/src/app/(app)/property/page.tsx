@@ -36,7 +36,7 @@ export default async function PropertyPage() {
   const archivedProperties = allProperties.filter((p) => !p.is_active)
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader
         title="My Properties"
         description="Manage your properties and their settings"

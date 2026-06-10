@@ -31,7 +31,7 @@ export default async function FamilyRoute() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Family" />
         <NoPropertyState />
       </div>
@@ -62,7 +62,7 @@ export default async function FamilyRoute() {
   const myMembership = members.find((m) => m.user_id === user.id) ?? null
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <FamilyPage
         property={property}
         members={members}

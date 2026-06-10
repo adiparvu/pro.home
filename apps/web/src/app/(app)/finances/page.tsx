@@ -35,7 +35,7 @@ export default async function FinancesRoute({
     .order('date', { ascending: false }) as { data: FinancialRecord[] | null; error: unknown }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <FinancesPage
         property={property}
         userId={user.id}

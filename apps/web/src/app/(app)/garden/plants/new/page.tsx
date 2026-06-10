@@ -28,7 +28,7 @@ export default async function NewPlantPage() {
   const { data: zones } = await (supabase as any).from('garden_zones').select('*').eq('property_id', property.id).order('sort_order', { ascending: true }).limit(50) as { data: GardenZone[] | null }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Add Plant" description="Track a new plant in your garden" backHref="/garden" />
       <AddPlantForm propertyId={property.id} userId={user.id} zones={zones ?? []} />
     </div>

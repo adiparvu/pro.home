@@ -37,7 +37,7 @@ export default async function EditPropertyPage({ params }: Props) {
   if (!member || !['owner', 'partner'].includes(member.role)) redirect(`/property/${id}`)
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader
         title="Edit Property"
         description={property.name}

@@ -35,7 +35,7 @@ export default async function MarketplaceRoute() {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <MarketplacePage
         propertyId={propertyId}
         initialContacts={contactsResult.data ?? []}

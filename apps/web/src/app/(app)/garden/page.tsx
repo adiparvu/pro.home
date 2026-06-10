@@ -24,7 +24,7 @@ export default async function GardenPage() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Garden" description="Plants, tasks & zones" action={{ label: 'Add Plant', href: '/garden/plants/new' }} />
         <GardenOverview propertyId="" plants={[]} tasks={[]} zones={[]} />
       </div>
@@ -41,7 +41,7 @@ export default async function GardenPage() {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Garden" description={property ? 'Plants, tasks & zones' : 'Start your garden'} action={{ label: 'Add Plant', href: '/garden/plants/new' }} />
       <GardenOverview
         propertyId={property.id}

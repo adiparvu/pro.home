@@ -101,7 +101,7 @@ export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Recall alert */}
         {recallActive && (
           <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">

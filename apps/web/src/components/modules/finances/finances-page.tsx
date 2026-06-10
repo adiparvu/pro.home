@@ -277,7 +277,7 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
         action={records.length > 0 ? { label: 'Export CSV', href: '#', onClick: exportCSV } : undefined}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <Card variant="default" padding="sm">

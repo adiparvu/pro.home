@@ -34,7 +34,7 @@ export default async function InventoryItemPage({ params }: Props) {
   }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <InventoryItemDetail item={item} roomName={roomName} />
     </div>
   )

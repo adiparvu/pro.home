@@ -35,7 +35,7 @@ export default async function DocumentsRoute({
     .order('created_at', { ascending: false }) as { data: Document[] | null; error: unknown }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <DocumentsPage
         property={property}
         userId={user.id}

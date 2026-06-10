@@ -25,7 +25,7 @@ export default async function NewEnergyReadingPage() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Log Reading" backHref="/energy" />
         <NoPropertyState />
       </div>
@@ -33,7 +33,7 @@ export default async function NewEnergyReadingPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Log Reading" description={property.name} backHref="/energy" />
       <div className="px-4 py-4 md:px-6 md:py-6 max-w-xl">
         <AddReadingForm propertyId={property.id} userId={user.id} />

@@ -137,7 +137,7 @@ export default async function DashboardPage({
   )
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <DashboardHeader
         user={user}
         notificationCount={unreadNotifications}

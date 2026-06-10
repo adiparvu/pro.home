@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6 animate-pulse">
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6 animate-pulse">
       {/* Header skeleton */}
       <div className="h-8 w-48 rounded-xl glass-light" />
       {/* Card skeletons */}

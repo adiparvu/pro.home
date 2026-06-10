@@ -49,7 +49,7 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
         action={{ label: 'Add Item', href: '/inventory/new' }}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatTile label="Total items" value={String(items.length)} />

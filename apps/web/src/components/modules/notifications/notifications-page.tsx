@@ -109,7 +109,7 @@ export function NotificationsPage({ notifications: initial, userId }: Notificati
         }
       />
 
-      <div className="flex flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-col pb-[116px] md:pb-0">
         {readCount > 0 && (
           <div className="flex items-center justify-between border-b border-border/30 px-4 py-2 md:px-6">
             <p className="text-xs text-muted-foreground">{readCount} read</p>

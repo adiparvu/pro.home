@@ -18,7 +18,7 @@ export default async function NewPropertyPage() {
   if (!user) redirect('/login')
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader
         title="Add Property"
         description="Register a new property in your account"

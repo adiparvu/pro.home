@@ -123,7 +123,7 @@ export function DocumentDetail({ initialDoc }: { initialDoc: Document }) {
     <>
       <PageHeader title="Document" backHref="/documents" />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Hero card */}
         <Card variant="default" padding="lg">
           <div className="flex items-start gap-4">

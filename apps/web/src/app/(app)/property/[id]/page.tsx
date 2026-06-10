@@ -49,7 +49,7 @@ export default async function PropertyDetailPage({ params }: Props) {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PropertyDetail
         property={property}
         membership={membership}

@@ -32,7 +32,7 @@ export default async function NewGardenTaskPage() {
   ])
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Add Garden Task" description="Schedule a garden activity" backHref="/garden" />
       <AddGardenTaskForm
         propertyId={property.id}

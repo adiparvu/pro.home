@@ -26,7 +26,7 @@ export default async function SettingsPage() {
     .single() as { data: Profile | null; error: unknown }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Settings" />
       <SettingsShell activeTab="profile">
         <ProfileSettings profile={profile} userId={user.id} />

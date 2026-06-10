@@ -130,7 +130,7 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Status badges */}
         <div className="flex flex-wrap gap-2">
           <Badge variant={PRIORITY_VARIANTS[task.priority]} size="sm" className="capitalize">

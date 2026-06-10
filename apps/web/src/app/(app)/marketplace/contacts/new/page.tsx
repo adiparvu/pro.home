@@ -25,7 +25,7 @@ export default async function NewContactPage() {
   if (!property) redirect('/marketplace')
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Add Contact" description="Save a trusted service provider" backHref="/marketplace" />
       <AddContactForm propertyId={property.id} userId={user.id} />
     </div>

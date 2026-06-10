@@ -107,7 +107,7 @@ export function FamilyPage({
     <>
       <PageHeader title="Family" description={property.name} />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Summary */}
         <div className="glass-standard rounded-2xl p-4 flex items-center gap-4">
           <div

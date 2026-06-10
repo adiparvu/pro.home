@@ -32,7 +32,7 @@ export default async function EditInventoryItemPage({ params }: Props) {
     .order('sort_order') as { data: Pick<Room, 'id' | 'name' | 'floor'>[] | null; error: unknown }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <header className="glass-opaque sticky top-0 z-20 border-b border-border/50 px-4 py-4 md:px-6">
         <div className="flex items-center gap-3">
           <Link

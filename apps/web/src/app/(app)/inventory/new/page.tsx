@@ -33,7 +33,7 @@ export default async function NewInventoryItemPage({
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Add Item" backHref="/inventory" />
         <NoPropertyState />
       </div>
@@ -48,7 +48,7 @@ export default async function NewInventoryItemPage({
     .order('sort_order') as { data: Pick<Room, 'id' | 'name' | 'floor'>[] | null; error: unknown }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <PageHeader title="Add Item" description={property.name} backHref="/inventory" />
       <div className="px-4 py-4 md:px-6 md:py-6 max-w-xl">
         <AddInventoryItemForm

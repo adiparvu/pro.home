@@ -219,7 +219,7 @@ export function SecurityOverview({ propertyId, securityState, events: initialEve
   const unresolvedCritical = events.filter((e) => !e.resolved_at && (e.severity === 'critical' || e.severity === 'alert')).length
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
       {/* Status hero */}
       <div
         className="rounded-2xl p-5 transition-colors duration-300"

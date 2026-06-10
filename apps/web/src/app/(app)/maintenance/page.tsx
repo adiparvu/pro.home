@@ -29,7 +29,7 @@ export default async function MaintenanceRoute() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Maintenance" />
         <NoPropertyState />
       </div>
@@ -51,7 +51,7 @@ export default async function MaintenanceRoute() {
   }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <MaintenancePage property={property} tasks={tasks ?? []} />
     </div>
   )

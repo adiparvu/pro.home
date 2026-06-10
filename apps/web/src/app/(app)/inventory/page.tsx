@@ -29,7 +29,7 @@ export default async function InventoryRoute() {
 
   if (!property) {
     return (
-      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+      <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
         <PageHeader title="Inventory" />
         <NoPropertyState />
       </div>
@@ -46,7 +46,7 @@ export default async function InventoryRoute() {
   }
 
   return (
-    <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+    <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
       <InventoryPage property={property} items={items ?? []} />
     </div>
   )
