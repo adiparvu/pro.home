@@ -28,9 +28,12 @@ export default async function PropertyPage() {
     error: unknown
   }
 
-  const properties = (memberships ?? [])
+  const allProperties = (memberships ?? [])
     .map((m) => m.properties)
     .filter((p): p is Property => p !== null)
+
+  const properties = allProperties.filter((p) => p.is_active)
+  const archivedProperties = allProperties.filter((p) => !p.is_active)
 
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
@@ -40,7 +43,7 @@ export default async function PropertyPage() {
         action={{ label: 'Add Property', href: '/property/new' }}
       />
       <div className="px-4 py-4 md:px-6 md:py-6">
-        <PropertyList properties={properties} />
+        <PropertyList properties={properties} archivedProperties={archivedProperties} />
       </div>
     </div>
   )

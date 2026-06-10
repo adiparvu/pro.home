@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Camera, Building2 } from 'lucide-react'
+import { Camera, Building2, Archive, ArchiveRestore } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
-import type { Property } from '@/lib/supabase/types'
+import type { HeatingType, Property } from '@/lib/supabase/types'
 
 const schema = z.object({
   name: z.string().min(1, 'Property name is required').max(100),
@@ -24,6 +24,8 @@ const schema = z.object({
   year_built: z.coerce.number().min(1800).max(new Date().getFullYear()).optional(),
   num_rooms: z.coerce.number().int().positive().optional(),
   num_bathrooms: z.coerce.number().int().positive().optional(),
+  num_floors: z.coerce.number().int().min(1).max(50).optional(),
+  heating_type: z.enum(['gas', 'electric', 'heat_pump', 'oil', 'wood', 'district', 'solar', 'other']).optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -38,6 +40,17 @@ const PROPERTY_TYPES = [
   { value: 'other', label: 'Other' },
 ] as const
 
+const HEATING_TYPES: { value: HeatingType; label: string }[] = [
+  { value: 'gas', label: 'Gas' },
+  { value: 'electric', label: 'Electric' },
+  { value: 'heat_pump', label: 'Heat Pump' },
+  { value: 'oil', label: 'Oil' },
+  { value: 'wood', label: 'Wood / Pellet' },
+  { value: 'district', label: 'District Heating' },
+  { value: 'solar', label: 'Solar' },
+  { value: 'other', label: 'Other' },
+]
+
 interface EditPropertyFormProps {
   property: Property
 }
@@ -47,6 +60,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
   const [serverError, setServerError] = React.useState<string | null>(null)
   const [photoUrl, setPhotoUrl] = React.useState<string | null>(property.photo_url)
   const [uploadingPhoto, setUploadingPhoto] = React.useState(false)
+  const [archiving, setArchiving] = React.useState(false)
   const photoInputRef = React.useRef<HTMLInputElement>(null)
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -88,6 +102,8 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
       year_built: property.year_built ?? undefined,
       num_rooms: property.num_rooms ?? undefined,
       num_bathrooms: property.num_bathrooms ?? undefined,
+      num_floors: property.num_floors ?? undefined,
+      heating_type: property.heating_type ?? undefined,
     },
   })
 
@@ -109,6 +125,8 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
       year_built: values.year_built ?? null,
       num_rooms: values.num_rooms ?? null,
       num_bathrooms: values.num_bathrooms ?? null,
+      num_floors: values.num_floors ?? null,
+      heating_type: values.heating_type ?? null,
     }).eq('id', property.id)
 
     if (error) {
@@ -120,7 +138,23 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
     router.refresh()
   }
 
+  async function handleArchiveToggle() {
+    const newState = !property.is_active
+    const confirmMsg = newState
+      ? 'Restore this property? It will appear in your active list.'
+      : 'Archive this property? It will be hidden from your main list but all data is preserved.'
+    if (!confirm(confirmMsg)) return
+    setArchiving(true)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('properties').update({ is_active: newState }).eq('id', property.id)
+    setArchiving(false)
+    router.push('/property')
+    router.refresh()
+  }
+
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       {serverError && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3" role="alert">
@@ -227,6 +261,22 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
         <Input label="Bathrooms" type="number" placeholder="e.g. 2" inputMode="numeric" {...register('num_bathrooms')} />
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <Input label="Floors" type="number" placeholder="e.g. 2" inputMode="numeric" {...register('num_floors')} />
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-[var(--text-secondary)]">Heating</label>
+          <select
+            {...register('heating_type')}
+            className="h-11 w-full rounded-xl border border-border bg-glass-light px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+          >
+            <option value="">— select —</option>
+            {HEATING_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="flex gap-3 pt-2">
         <Button type="button" variant="ghost" size="lg" onClick={() => router.back()}>
           Cancel
@@ -236,5 +286,29 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
         </Button>
       </div>
     </form>
+
+    {/* Archive / Restore */}
+    <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+      <p className="text-sm font-medium text-destructive mb-1">
+        {property.is_active ? 'Archive Property' : 'Restore Property'}
+      </p>
+      <p className="text-xs text-muted-foreground mb-3">
+        {property.is_active
+          ? 'Hide this property from your main list. All data is preserved and it can be restored at any time.'
+          : 'Move this property back to your active list.'}
+      </p>
+      <Button
+        type="button"
+        variant={property.is_active ? 'destructive' : 'ghost'}
+        size="sm"
+        loading={archiving}
+        onClick={handleArchiveToggle}
+      >
+        {property.is_active
+          ? <><Archive className="h-3.5 w-3.5" />Archive</>
+          : <><ArchiveRestore className="h-3.5 w-3.5" />Restore</>}
+      </Button>
+    </div>
+    </>
   )
 }

@@ -35,6 +35,7 @@ export function PropertyDetail({ property, membership, members, rooms: initialRo
   const [addingRoom, setAddingRoom] = React.useState(false)
   const [newRoomName, setNewRoomName] = React.useState('')
   const [newRoomType, setNewRoomType] = React.useState<RoomType>('bedroom')
+  const [newRoomFloor, setNewRoomFloor] = React.useState(0)
   const [savingRoom, setSavingRoom] = React.useState(false)
 
   async function handleAddRoom(e: React.FormEvent) {
@@ -45,11 +46,12 @@ export function PropertyDetail({ property, membership, members, rooms: initialRo
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from('rooms')
-      .insert({ property_id: property.id, name: newRoomName.trim(), room_type: newRoomType, floor: 0, sort_order: rooms.length })
+      .insert({ property_id: property.id, name: newRoomName.trim(), room_type: newRoomType, floor: newRoomFloor, sort_order: rooms.length })
       .select('*')
       .single()
     if (data) setRooms((prev) => [...prev, data as Room])
     setNewRoomName('')
+    setNewRoomFloor(0)
     setAddingRoom(false)
     setSavingRoom(false)
   }
@@ -209,15 +211,27 @@ export function PropertyDetail({ property, membership, members, rooms: initialRo
                     value={newRoomName}
                     onChange={(e) => setNewRoomName(e.target.value)}
                   />
-                  <select
-                    value={newRoomType}
-                    onChange={(e) => setNewRoomType(e.target.value as RoomType)}
-                    className="h-9 w-full rounded-lg border border-border bg-glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
-                  >
-                    {(Object.entries(ROOM_TYPE_LABELS) as [RoomType, string][]).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={newRoomType}
+                      onChange={(e) => setNewRoomType(e.target.value as RoomType)}
+                      className="h-9 w-full rounded-lg border border-border bg-glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    >
+                      {(Object.entries(ROOM_TYPE_LABELS) as [RoomType, string][]).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min={0}
+                      max={20}
+                      value={newRoomFloor}
+                      onChange={(e) => setNewRoomFloor(Number(e.target.value))}
+                      className="h-9 w-full rounded-lg border border-border bg-glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                      placeholder="Floor"
+                      title="Floor number (0 = ground)"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setAddingRoom(false)}>
                       Cancel
