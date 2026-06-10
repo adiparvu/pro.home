@@ -16,7 +16,7 @@ import {
   Package,
   FileText,
 } from 'lucide-react'
-import type { Property, MaintenanceTask, InventoryItem, Document } from '@/lib/supabase/types'
+import type { Property, MaintenanceTask, InventoryItem, Document, PropertyHealthHistory } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +27,8 @@ type OverdueTask = Pick<MaintenanceTask, 'id' | 'title' | 'priority' | 'due_date
 type RecallItem = Pick<InventoryItem, 'id' | 'name' | 'brand' | 'model'>
 type ExpiringDoc = Pick<Document, 'id' | 'name' | 'category' | 'expires_at'>
 
+type HistoryPoint = Pick<PropertyHealthHistory, 'score' | 'recorded_at'>
+
 interface HealthReportProps {
   property: Property
   overdueCount: number
@@ -36,6 +38,7 @@ interface HealthReportProps {
   recallItems: RecallItem[]
   expiringDocs: ExpiringDoc[]
   refreshScoreAction: () => Promise<void>
+  scoreHistory: HistoryPoint[]
 }
 
 function getHealthLabel(score: number | null) {
@@ -114,6 +117,7 @@ export function HealthReport({
   recallItems,
   expiringDocs,
   refreshScoreAction,
+  scoreHistory,
 }: HealthReportProps) {
   const [refreshing, setRefreshing] = React.useState(false)
   const score = property.health_score
@@ -193,6 +197,11 @@ export function HealthReport({
             </div>
           </div>
         </Card>
+
+        {/* Score history sparkline */}
+        {scoreHistory.length >= 2 && (
+          <ScoreHistoryChart history={scoreHistory} color={color} />
+        )}
 
         {/* Factor breakdown */}
         <div>
@@ -370,6 +379,78 @@ export function HealthReport({
         </Link>
       </div>
     </>
+  )
+}
+
+function ScoreHistoryChart({ history, color }: { history: HistoryPoint[]; color: string }) {
+  const W = 300, H = 80
+  const PAD = { top: 8, right: 8, bottom: 20, left: 28 }
+  const chartW = W - PAD.left - PAD.right
+  const chartH = H - PAD.top - PAD.bottom
+
+  const scores = history.map((h) => h.score)
+  const minS = Math.max(0, Math.min(...scores) - 10)
+  const maxS = Math.min(100, Math.max(...scores) + 10)
+  const range = maxS - minS || 1
+
+  function xPos(i: number) {
+    return PAD.left + (i / (history.length - 1)) * chartW
+  }
+  function yPos(s: number) {
+    return PAD.top + chartH - ((s - minS) / range) * chartH
+  }
+
+  const points = history.map((h, i) => `${xPos(i)},${yPos(h.score)}`).join(' ')
+  const areaPoints = [
+    `${PAD.left},${PAD.top + chartH}`,
+    ...history.map((h, i) => `${xPos(i)},${yPos(h.score)}`),
+    `${xPos(history.length - 1)},${PAD.top + chartH}`,
+  ].join(' ')
+
+  // Label first, last, and middle
+  const labelIdxs = new Set([0, Math.floor((history.length - 1) / 2), history.length - 1])
+  const firstScore = history[0]!.score
+  const lastScore = history[history.length - 1]!.score
+  const scoreDelta = lastScore - firstScore
+
+  return (
+    <Card variant="default" padding="md">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Score History</p>
+        <div className="flex items-center gap-1 text-xs font-medium" style={{ color: scoreDelta >= 0 ? 'hsl(152,65%,48%)' : 'hsl(0,70%,50%)' }}>
+          {scoreDelta > 0 && <TrendingUp className="h-3.5 w-3.5" />}
+          {scoreDelta < 0 && <TrendingDown className="h-3.5 w-3.5" />}
+          {scoreDelta === 0 && <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
+          {scoreDelta !== 0 && <span>{scoreDelta > 0 ? '+' : ''}{scoreDelta} pts</span>}
+          {scoreDelta === 0 && <span className="text-muted-foreground">Stable</span>}
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className="w-full" style={{ height: 80 }}>
+        {/* Grid lines at 25, 50, 75, 100 */}
+        {[25, 50, 75, 100].filter((v) => v >= minS && v <= maxS).map((v) => (
+          <g key={v}>
+            <line x1={PAD.left} y1={yPos(v)} x2={W - PAD.right} y2={yPos(v)} stroke="currentColor" strokeOpacity={0.06} strokeWidth={1} />
+            <text x={PAD.left - 3} y={yPos(v) + 3} textAnchor="end" fontSize={6} fill="currentColor" opacity={0.4}>{v}</text>
+          </g>
+        ))}
+        {/* Area fill */}
+        <polygon points={areaPoints} fill={color} opacity={0.08} />
+        {/* Line */}
+        <polyline points={points} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
+        {/* Dots + date labels at first/middle/last */}
+        {history.map((h, i) => (
+          <g key={i}>
+            <circle cx={xPos(i)} cy={yPos(h.score)} r={labelIdxs.has(i) ? 2.5 : 1.5} fill={color} opacity={0.9} />
+            {labelIdxs.has(i) && (
+              <text x={xPos(i)} y={H - 3} textAnchor="middle" fontSize={6.5} fill="currentColor" opacity={0.45}>
+                {new Date(h.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+      <p className="text-[10px] text-muted-foreground mt-1">{history.length} snapshot{history.length !== 1 ? 's' : ''} recorded</p>
+    </Card>
   )
 }
 

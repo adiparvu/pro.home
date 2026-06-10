@@ -421,6 +421,13 @@ export type SecurityEvent = {
   created_at: string
 }
 
+export type PropertyHealthHistory = {
+  id: string
+  property_id: string
+  score: number
+  recorded_at: string
+}
+
 export type SecuritySchedule = {
   id: string
   property_id: string
@@ -603,6 +610,12 @@ export type Database = {
         Row: SecuritySchedule
         Insert: Omit<SecuritySchedule, 'id' | 'created_at'>
         Update: Partial<SecuritySchedule>
+        Relationships: []
+      }
+      property_health_history: {
+        Row: PropertyHealthHistory
+        Insert: Omit<PropertyHealthHistory, 'id'>
+        Update: Partial<PropertyHealthHistory>
         Relationships: []
       }
     }

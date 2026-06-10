@@ -2,10 +2,15 @@ import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import type { Property, MaintenanceTask, InventoryItem, Document } from '@/lib/supabase/types'
+import type { Property, MaintenanceTask, InventoryItem, Document, PropertyHealthHistory } from '@/lib/supabase/types'
 import { HealthReport } from '@/components/modules/property/health-report'
 
 export const metadata: Metadata = { title: 'Property Health' }
+
+async function recordHistory(supabase: Awaited<ReturnType<typeof createClient>>, propertyId: string, score: number) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from('property_health_history').insert({ property_id: propertyId, score })
+}
 
 async function refreshScore(propertyId: string) {
   'use server'
@@ -20,6 +25,7 @@ async function refreshScore(propertyId: string) {
       .from('properties')
       .update({ health_score: score, health_updated_at: new Date().toISOString() })
       .eq('id', propertyId)
+    await recordHistory(supabase, propertyId, score)
   }
   revalidatePath('/property/health')
 }
@@ -53,12 +59,13 @@ export default async function PropertyHealthPage() {
         .from('properties')
         .update({ health_score: score, health_updated_at: new Date().toISOString() })
         .eq('id', property.id)
+      await recordHistory(supabase, property.id, score)
       ;(property as { health_score: number | null }).health_score = score
       ;(property as { health_updated_at: string | null }).health_updated_at = new Date().toISOString()
     }
   }
 
-  const [r0, r1, r2, r3, r4, r5] = await Promise.all([
+  const [r0, r1, r2, r3, r4, r5, r6] = await Promise.all([
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
       .eq('property_id', property.id).in('status', ['pending', 'in_progress']),
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
@@ -84,6 +91,14 @@ export default async function PropertyHealthPage() {
       .gt('expires_at', new Date().toISOString())
       .order('expires_at', { ascending: true })
       .limit(5),
+    // Health score history — last 30 snapshots
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from('property_health_history')
+      .select('score, recorded_at')
+      .eq('property_id', property.id)
+      .order('recorded_at', { ascending: true })
+      .limit(30) as Promise<{ data: Pick<PropertyHealthHistory, 'score' | 'recorded_at'>[] | null }>,
   ])
 
   const upcomingCount = r0.count ?? 0
@@ -92,6 +107,7 @@ export default async function PropertyHealthPage() {
   const overdueTasks = (r3.data ?? []) as Pick<MaintenanceTask, 'id' | 'title' | 'priority' | 'due_date' | 'status' | 'category'>[]
   const recallItems = (r4.data ?? []) as Pick<InventoryItem, 'id' | 'name' | 'brand' | 'model'>[]
   const expiringDocs = (r5.data ?? []) as Pick<Document, 'id' | 'name' | 'category' | 'expires_at'>[]
+  const scoreHistory = (r6.data ?? []) as Pick<PropertyHealthHistory, 'score' | 'recorded_at'>[]
 
   const refreshScoreForProperty = refreshScore.bind(null, property.id)
 
@@ -105,6 +121,7 @@ export default async function PropertyHealthPage() {
       recallItems={recallItems}
       expiringDocs={expiringDocs}
       refreshScoreAction={refreshScoreForProperty}
+      scoreHistory={scoreHistory}
     />
   )
 }
