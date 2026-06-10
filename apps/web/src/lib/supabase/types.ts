@@ -655,6 +655,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: void
       }
+      mark_overdue_tasks: {
+        Args: { p_property_id: string }
+        Returns: number
+      }
       set_security_mode: {
         Args: { p_property_id: string; p_mode: SecurityMode }
         Returns: void

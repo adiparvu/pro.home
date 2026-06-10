@@ -36,6 +36,10 @@ export default async function MaintenanceRoute() {
     )
   }
 
+  // Mark any past-due tasks as overdue before fetching (fires the notification trigger)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('mark_overdue_tasks', { p_property_id: property.id })
+
   const { data: tasks } = await supabase
     .from('maintenance_tasks')
     .select('*')
