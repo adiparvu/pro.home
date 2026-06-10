@@ -23,6 +23,7 @@ const schema = z.object({
   purchase_price: z.coerce.number().positive().optional(),
   warranty_expires: z.string().optional(),
   serial_number: z.string().max(100).optional(),
+  barcode: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
 })
 
@@ -59,13 +60,14 @@ export function AddInventoryItemForm({ propertyId, userId }: AddInventoryItemFor
       purchase_price: values.purchase_price ?? null,
       warranty_expires: values.warranty_expires ?? null,
       serial_number: values.serial_number ?? null,
+      barcode: values.barcode ?? null,
       notes: values.notes ?? null,
       added_by: userId,
       recall_active: false,
       photo_urls: [],
       tags: [],
       metadata: {},
-    } satisfies Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'room_id' | 'purchase_currency' | 'current_value' | 'warranty_provider' | 'manual_url' | 'barcode' | 'qr_code'>)
+    } satisfies Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'room_id' | 'purchase_currency' | 'current_value' | 'warranty_provider' | 'manual_url' | 'qr_code'>)
 
     if (error) {
       setServerError((error as { message: string }).message ?? 'Failed to add item')
@@ -134,6 +136,8 @@ export function AddInventoryItemForm({ propertyId, userId }: AddInventoryItemFor
         <Input label="Warranty expires" type="date" {...register('warranty_expires')} />
         <Input label="Serial number" placeholder="Optional" {...register('serial_number')} />
       </div>
+
+      <Input label="Barcode / EAN" placeholder="Scan with M-SCAN™ or enter manually" {...register('barcode')} />
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-[var(--text-secondary)]">Notes</label>

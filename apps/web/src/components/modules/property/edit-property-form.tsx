@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { Camera, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
@@ -44,6 +45,29 @@ interface EditPropertyFormProps {
 export function EditPropertyForm({ property }: EditPropertyFormProps) {
   const router = useRouter()
   const [serverError, setServerError] = React.useState<string | null>(null)
+  const [photoUrl, setPhotoUrl] = React.useState<string | null>(property.photo_url)
+  const [uploadingPhoto, setUploadingPhoto] = React.useState(false)
+  const photoInputRef = React.useRef<HTMLInputElement>(null)
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingPhoto(true)
+    const supabase = createClient()
+    const path = `property-photos/${property.id}/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, '_')}`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: storageError } = await (supabase as any).storage.from('documents').upload(path, file, { upsert: true, contentType: file.type })
+    if (!storageError) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: urlData } = (supabase as any).storage.from('documents').getPublicUrl(path)
+      const url = (urlData as { publicUrl: string }).publicUrl
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('properties').update({ photo_url: url }).eq('id', property.id)
+      setPhotoUrl(url)
+    }
+    setUploadingPhoto(false)
+    if (photoInputRef.current) photoInputRef.current.value = ''
+  }
 
   const {
     register,
@@ -103,6 +127,43 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
           <p className="text-sm text-destructive">{serverError}</p>
         </div>
       )}
+
+      {/* Property photo */}
+      <div className="flex flex-col items-center gap-2 py-2">
+        <div className="relative">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt="Property"
+              className="h-24 w-24 rounded-2xl object-cover border border-border"
+            />
+          ) : (
+            <div className="h-24 w-24 rounded-2xl glass-standard flex items-center justify-center">
+              <Building2 className="h-10 w-10 text-muted-foreground" />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full glass-heavy border border-border flex items-center justify-center hover:glass-standard transition-all focus-ring"
+            aria-label="Upload property photo"
+          >
+            <Camera className="h-3.5 w-3.5 text-foreground" />
+          </button>
+        </div>
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+        {uploadingPhoto && (
+          <p className="text-xs text-muted-foreground animate-pulse">Uploading…</p>
+        )}
+        <p className="text-xs text-muted-foreground">Tap the camera icon to change photo</p>
+      </div>
 
       <Input
         label="Property nickname *"

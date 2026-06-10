@@ -23,6 +23,7 @@ const schema = z.object({
   purchase_price: z.coerce.number().positive().optional().or(z.literal('')),
   warranty_expires: z.string().optional(),
   serial_number: z.string().max(100).optional(),
+  barcode: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
 })
 
@@ -48,6 +49,7 @@ export function EditInventoryItemForm({ item }: { item: InventoryItem }) {
       purchase_price: item.purchase_price ?? undefined,
       warranty_expires: item.warranty_expires ?? '',
       serial_number: item.serial_number ?? '',
+      barcode: item.barcode ?? '',
       notes: item.notes ?? '',
     },
   })
@@ -67,6 +69,7 @@ export function EditInventoryItemForm({ item }: { item: InventoryItem }) {
       purchase_price: values.purchase_price || null,
       warranty_expires: values.warranty_expires || null,
       serial_number: values.serial_number || null,
+      barcode: values.barcode || null,
       notes: values.notes || null,
     }).eq('id', item.id)
 
@@ -137,6 +140,8 @@ export function EditInventoryItemForm({ item }: { item: InventoryItem }) {
         <Input label="Warranty expires" type="date" {...register('warranty_expires')} />
         <Input label="Serial number" placeholder="Optional" {...register('serial_number')} />
       </div>
+
+      <Input label="Barcode / EAN" placeholder="Scan with M-SCAN™ or enter manually" {...register('barcode')} />
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-[var(--text-secondary)]">Notes</label>

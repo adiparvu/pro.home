@@ -13,6 +13,15 @@ import type { MaintenanceTask } from '@/lib/supabase/types'
 const CATEGORIES = ['maintenance', 'repair', 'inspection', 'cleaning', 'upgrade', 'administrative', 'other'] as const
 const PRIORITIES = ['critical', 'high', 'medium', 'low'] as const
 
+const RECURRENCE_RULES = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'every_3_months', label: 'Every 3 months' },
+  { value: 'every_6_months', label: 'Every 6 months' },
+  { value: 'yearly', label: 'Yearly' },
+] as const
+
 const schema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(2000).optional(),
@@ -22,6 +31,8 @@ const schema = z.object({
   estimated_cost: z.coerce.number().positive().optional(),
   estimated_hours: z.coerce.number().positive().optional(),
   contractor_name: z.string().max(100).optional(),
+  is_recurring: z.boolean(),
+  recurrence_rule: z.string().max(50).optional(),
   notes: z.string().max(2000).optional(),
 })
 
@@ -39,11 +50,14 @@ export function AddTaskForm({ propertyId, userId }: AddTaskFormProps) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { category: 'maintenance', priority: 'medium' },
+    defaultValues: { category: 'maintenance', priority: 'medium', is_recurring: false },
   })
+
+  const isRecurring = watch('is_recurring')
 
   async function onSubmit(values: FormValues) {
     setServerError(null)
@@ -63,12 +77,13 @@ export function AddTaskForm({ propertyId, userId }: AddTaskFormProps) {
       contractor_name: values.contractor_name ?? null,
       notes: values.notes ?? null,
       created_by: userId,
-      is_recurring: false,
+      is_recurring: values.is_recurring,
+      recurrence_rule: values.is_recurring ? (values.recurrence_rule ?? 'monthly') : null,
       before_photo_urls: [],
       after_photo_urls: [],
       checklist: [],
       tags: [],
-    } satisfies Omit<MaintenanceTask, 'id' | 'created_at' | 'updated_at' | 'room_id' | 'inventory_item_id' | 'scheduled_date' | 'completed_date' | 'actual_hours' | 'actual_cost' | 'cost_currency' | 'recurrence_rule' | 'next_due_date' | 'parent_task_id' | 'assigned_to_member_id' | 'contractor_phone' | 'contractor_email'>)
+    } satisfies Omit<MaintenanceTask, 'id' | 'created_at' | 'updated_at' | 'room_id' | 'inventory_item_id' | 'scheduled_date' | 'completed_date' | 'actual_hours' | 'actual_cost' | 'cost_currency' | 'next_due_date' | 'parent_task_id' | 'assigned_to_member_id' | 'contractor_phone' | 'contractor_email'>)
 
     if (error) {
       setServerError((error as { message: string }).message ?? 'Failed to create task')
@@ -153,6 +168,32 @@ export function AddTaskForm({ propertyId, userId }: AddTaskFormProps) {
           placeholder="Optional"
           {...register('contractor_name')}
         />
+      </div>
+
+      {/* Recurring task */}
+      <div className="flex flex-col gap-3 rounded-xl border border-border glass-light px-4 py-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            {...register('is_recurring')}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
+          <span className="text-sm font-medium text-foreground">Recurring task</span>
+        </label>
+        {isRecurring && (
+          <div className="flex flex-col gap-2">
+            <label className="text-xs text-muted-foreground uppercase tracking-wider">Repeat</label>
+            <select
+              {...register('recurrence_rule')}
+              defaultValue="monthly"
+              className="h-10 w-full rounded-xl border border-border bg-glass-light px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+            >
+              {RECURRENCE_RULES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
