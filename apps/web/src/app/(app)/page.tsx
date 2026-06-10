@@ -10,8 +10,13 @@ export const metadata: Metadata = {
   title: 'Dashboard',
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>
+}) {
   const supabase = await createClient()
+  const { p: requestedId } = await searchParams
 
   const {
     data: { user },
@@ -19,7 +24,6 @@ export default async function DashboardPage() {
 
   if (!user) return null
 
-  // Fetch user's properties
   const { data: properties } = await supabase
     .from('properties')
     .select('*, property_members!inner(role, status)')
@@ -37,10 +41,15 @@ export default async function DashboardPage() {
     )
   }
 
-  const activeProperty = properties[0]!
+  // Honour the ?p= selector if valid, otherwise fall back to first property
+  const activeProperty =
+    (requestedId ? properties.find((p) => p.id === requestedId) : null) ?? properties[0]!
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any
 
   // Fetch dashboard data in parallel
-  const [r0, r1, r2, r3, r4, r5, r6] = await Promise.all([
+  const [r0, r1, r2, r3, r4, r5, r6, r7, r8] = await Promise.all([
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
       .eq('property_id', activeProperty.id).in('status', ['pending', 'in_progress']),
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
@@ -63,6 +72,17 @@ export default async function DashboardPage() {
       .not('expires_at', 'is', null)
       .lte('expires_at', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
       .gt('expires_at', new Date().toISOString()),
+    // Latest energy reading for the property
+    sb.from('energy_readings')
+      .select('reading_value, unit, meter_type, reading_date')
+      .eq('property_id', activeProperty.id)
+      .order('reading_date', { ascending: false })
+      .limit(1),
+    // Security arm/disarm state
+    sb.from('security_state')
+      .select('mode')
+      .eq('property_id', activeProperty.id)
+      .maybeSingle(),
   ])
 
   const upcomingTasksCount = r0.count ?? 0
@@ -72,6 +92,8 @@ export default async function DashboardPage() {
   const recallCount = r4.count ?? 0
   const topOverdueTitle = (r5.data as { id: string; title: string }[] | null)?.[0]?.title ?? null
   const expiringDocsCount = r6.count ?? 0
+  const latestEnergyRow = (r7.data as { reading_value: number; unit: string; meter_type: string; reading_date: string }[] | null)?.[0] ?? null
+  const securityMode = (r8.data as { mode: string } | null)?.mode ?? null
 
   const ariaInsight = getAriaInsight(
     overdueTasksCount,
@@ -91,7 +113,6 @@ export default async function DashboardPage() {
       />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
-        {/* Health Hero Card */}
         <HealthHeroCard
           property={activeProperty}
           overdueTasksCount={overdueTasksCount}
@@ -99,13 +120,17 @@ export default async function DashboardPage() {
           recallCount={recallCount}
         />
 
-        {/* Widget Grid */}
         <DashboardWidgetGrid
           upcomingTasksCount={upcomingTasksCount}
           overdueTasksCount={overdueTasksCount}
           inventoryCount={inventoryCount}
           recallCount={recallCount}
           ariaInsight={ariaInsight}
+          expiringDocsCount={expiringDocsCount}
+          latestEnergyValue={latestEnergyRow?.reading_value ?? null}
+          latestEnergyUnit={latestEnergyRow?.unit ?? null}
+          latestEnergyMeterType={latestEnergyRow?.meter_type ?? null}
+          securityMode={securityMode}
         />
       </div>
     </div>

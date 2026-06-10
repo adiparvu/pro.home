@@ -3,12 +3,13 @@ import Link from 'next/link'
 import {
   Zap,
   ShieldCheck,
+  ShieldOff,
   Wrench,
   Archive,
   Sparkles,
   ChevronRight,
-  ArrowDown,
   CheckCircle,
+  FileText,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -20,15 +21,54 @@ interface DashboardWidgetGridProps {
   inventoryCount: number
   recallCount: number
   ariaInsight: string
+  expiringDocsCount: number
+  latestEnergyValue: number | null
+  latestEnergyUnit: string | null
+  latestEnergyMeterType: string | null
+  securityMode: string | null
 }
 
-export function DashboardWidgetGrid({ upcomingTasksCount, overdueTasksCount, inventoryCount, recallCount, ariaInsight }: DashboardWidgetGridProps) {
+const METER_TYPE_LABELS: Record<string, string> = {
+  electricity: 'Electric',
+  gas: 'Gas',
+  water: 'Water',
+  solar: 'Solar',
+  district_heating: 'Heat',
+  other: 'Meter',
+}
+
+const SECURITY_MODE_LABELS: Record<string, string> = {
+  disarmed: 'Disarmed',
+  home: 'Armed Home',
+  away: 'Armed Away',
+  night: 'Armed Night',
+  vacation: 'Vacation',
+}
+
+const ARMED_MODES = new Set(['home', 'away', 'night', 'vacation'])
+
+export function DashboardWidgetGrid({
+  upcomingTasksCount,
+  overdueTasksCount,
+  inventoryCount,
+  recallCount,
+  ariaInsight,
+  expiringDocsCount,
+  latestEnergyValue,
+  latestEnergyUnit,
+  latestEnergyMeterType,
+  securityMode,
+}: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Row 1: Energy + Security */}
       <div className="grid grid-cols-2 gap-4">
-        <EnergyWidget />
-        <SecurityWidget />
+        <EnergyWidget
+          value={latestEnergyValue}
+          unit={latestEnergyUnit}
+          meterType={latestEnergyMeterType}
+        />
+        <SecurityWidget mode={securityMode} />
       </div>
 
       {/* Row 2: Maintenance (full width) */}
@@ -40,13 +80,24 @@ export function DashboardWidgetGrid({ upcomingTasksCount, overdueTasksCount, inv
       {/* Row 4: Inventory + Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
         <InventoryWidget count={inventoryCount} recallCount={recallCount} />
-        <QuickActionsWidget />
+        <QuickActionsWidget expiringDocsCount={expiringDocsCount} />
       </div>
     </div>
   )
 }
 
-function EnergyWidget() {
+function EnergyWidget({
+  value,
+  unit,
+  meterType,
+}: {
+  value: number | null
+  unit: string | null
+  meterType: string | null
+}) {
+  const hasData = value !== null
+  const meterLabel = meterType ? (METER_TYPE_LABELS[meterType] ?? 'Energy') : 'Energy'
+
   return (
     <Link href="/energy">
       <Card variant="default" hover padding="md" className="module-energy">
@@ -55,22 +106,28 @@ function EnergyWidget() {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(152,62%,38%)]/20">
               <Zap className="h-4 w-4 text-[hsl(152,62%,52%)]" />
             </div>
-            <Badge variant="success" size="xs" dot>
-              Live
+            <Badge variant={hasData ? 'success' : 'neutral'} size="xs" dot={hasData}>
+              {hasData ? meterLabel : 'No data'}
             </Badge>
           </div>
           <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold tabular-nums text-foreground">2.4</span>
-              <span className="text-sm text-muted-foreground">kW</span>
-            </div>
+            {hasData ? (
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tabular-nums text-foreground">
+                  {value!.toLocaleString()}
+                </span>
+                {unit && <span className="text-sm text-muted-foreground">{unit}</span>}
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-muted-foreground/40">—</div>
+            )}
             <p className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">
               Energy
             </p>
           </div>
-          <div className="flex items-center gap-1 text-xs text-[hsl(152,65%,48%)]">
-            <ArrowDown className="h-3 w-3" />
-            <span>12% vs yesterday</span>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Zap className="h-3 w-3" />
+            <span>{hasData ? 'Latest reading' : 'No readings yet'}</span>
           </div>
         </div>
       </Card>
@@ -78,8 +135,10 @@ function EnergyWidget() {
   )
 }
 
-function SecurityWidget() {
-  const isArmed = false
+function SecurityWidget({ mode }: { mode: string | null }) {
+  const isArmed = mode ? ARMED_MODES.has(mode) : false
+  const displayMode = mode ? (SECURITY_MODE_LABELS[mode] ?? mode) : 'Not configured'
+  const hasData = mode !== null
 
   return (
     <Link href="/security">
@@ -95,18 +154,22 @@ function SecurityWidget() {
               'flex h-8 w-8 items-center justify-center rounded-xl',
               isArmed ? 'bg-[hsl(0,68%,44%)]/20' : 'bg-[rgba(255,255,255,0.08)]'
             )}>
-              <ShieldCheck className={cn(
-                'h-4 w-4',
-                isArmed ? 'text-[hsl(0,68%,58%)]' : 'text-muted-foreground'
-              )} />
+              {isArmed
+                ? <ShieldOff className="h-4 w-4 text-[hsl(0,68%,58%)]" />
+                : <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              }
             </div>
-            <Badge variant={isArmed ? 'danger' : 'success'} size="xs" dot>
-              {isArmed ? 'Armed' : 'Safe'}
+            <Badge
+              variant={isArmed ? 'danger' : hasData ? 'success' : 'neutral'}
+              size="xs"
+              dot={hasData}
+            >
+              {isArmed ? 'Armed' : hasData ? 'Safe' : 'N/A'}
             </Badge>
           </div>
           <div>
-            <div className="text-base font-semibold text-foreground">
-              {isArmed ? 'Armed Away' : 'Disarmed'}
+            <div className="text-base font-semibold text-foreground truncate">
+              {displayMode}
             </div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">
               Security
@@ -114,7 +177,7 @@ function SecurityWidget() {
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <CheckCircle className="h-3 w-3" />
-            <span>All clear</span>
+            <span>{hasData ? (isArmed ? 'System armed' : 'All clear') : 'Tap to configure'}</span>
           </div>
         </div>
       </Card>
@@ -167,7 +230,6 @@ function ARIAInsightCard({ insight }: { insight: string }) {
       padding="md"
       className="border-l-2 border-l-[hsl(280,68%,57%)] overflow-hidden relative"
     >
-      {/* ARIA glow */}
       <div
         className="absolute inset-0 opacity-5 pointer-events-none"
         style={{
@@ -233,7 +295,7 @@ function InventoryWidget({ count, recallCount }: { count: number; recallCount: n
   )
 }
 
-function QuickActionsWidget() {
+function QuickActionsWidget({ expiringDocsCount }: { expiringDocsCount: number }) {
   return (
     <Card variant="default" padding="md">
       <div className="flex flex-col gap-2">
@@ -254,6 +316,18 @@ function QuickActionsWidget() {
           >
             <Wrench className="h-3.5 w-3.5 shrink-0" />
             Add Task
+          </Link>
+          <Link
+            href="/documents"
+            className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--color-hover)] transition-colors duration-fast focus-ring text-sm text-muted-foreground hover:text-foreground"
+          >
+            <span className="flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              Documents
+            </span>
+            {expiringDocsCount > 0 && (
+              <Badge variant="warning" size="xs">{expiringDocsCount}</Badge>
+            )}
           </Link>
           <Link
             href="/aria"
