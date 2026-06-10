@@ -20,9 +20,10 @@ import { cn } from '@/lib/utils'
 interface DashboardWidgetGridProps {
   property: Property
   upcomingTasksCount: number
+  inventoryCount: number
 }
 
-export function DashboardWidgetGrid({ property, upcomingTasksCount }: DashboardWidgetGridProps) {
+export function DashboardWidgetGrid({ property, upcomingTasksCount, inventoryCount }: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Row 1: Energy + Security */}
@@ -39,7 +40,7 @@ export function DashboardWidgetGrid({ property, upcomingTasksCount }: DashboardW
 
       {/* Row 4: Inventory + Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <InventoryWidget />
+        <InventoryWidget count={inventoryCount} />
         <QuickActionsWidget />
       </div>
     </div>
@@ -197,7 +198,7 @@ function ARIAInsightCard({ propertyName }: { propertyName: string }) {
   )
 }
 
-function InventoryWidget() {
+function InventoryWidget({ count }: { count: number }) {
   return (
     <Link href="/inventory">
       <Card variant="default" hover padding="md" className="module-inventory">
@@ -209,7 +210,7 @@ function InventoryWidget() {
           </div>
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold tabular-nums text-foreground">0</span>
+              <span className="text-2xl font-bold tabular-nums text-foreground">{count}</span>
             </div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">
               Items

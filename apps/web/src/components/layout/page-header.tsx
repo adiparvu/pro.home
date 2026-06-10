@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { ChevronLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,8 +10,8 @@ interface PageHeaderProps {
   backHref?: string
   action?: {
     label: string
-    href?: string
-    onClick?: string
+    href: string
+    onClick?: () => void
   }
 }
 
@@ -35,13 +37,20 @@ export function PageHeader({ title, description, backHref, action }: PageHeaderP
           </div>
         </div>
 
-        {action?.href && (
-          <Button asChild size="sm" variant="primary">
-            <Link href={action.href}>
+        {action && (
+          action.onClick ? (
+            <Button size="sm" variant="primary" onClick={action.onClick}>
               <Plus className="h-3.5 w-3.5" />
               {action.label}
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild size="sm" variant="primary">
+              <Link href={action.href}>
+                <Plus className="h-3.5 w-3.5" />
+                {action.label}
+              </Link>
+            </Button>
+          )
         )}
       </div>
     </header>

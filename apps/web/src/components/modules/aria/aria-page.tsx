@@ -62,26 +62,40 @@ export function AriaPage({ userId: _userId }: AriaPageProps) {
     setInput('')
     setIsThinking(true)
 
-    // Placeholder response — will connect to Claude API in Phase 4
-    setTimeout(() => {
+    // Build message history for API (exclude welcome message)
+    const history = [...messages, userMessage]
+      .filter((m) => m.id !== 'welcome')
+      .map((m) => ({ role: m.role, content: m.content }))
+
+    try {
+      const res = await fetch('/api/aria', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      })
+
+      const data = await res.json() as { content?: string; error?: string }
+
       const ariaResponse: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `I understand you're asking about: **"${text.trim()}"**
-
-ARIA's full AI capabilities will be activated in Phase 4 when connected to the Claude API. I'll be able to:
-
-• Analyze your property's specific data and history
-• Provide personalized recommendations
-• Learn your home's patterns over time
-• Generate detailed maintenance plans
-
-For now, I'm here as a preview of what's coming. Stay tuned! 🏠`,
+        content: data.error ?? data.content ?? 'Sorry, something went wrong. Please try again.',
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, ariaResponse])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Network error — please check your connection and try again.',
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
       setIsThinking(false)
-    }, 1500)
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

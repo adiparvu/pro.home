@@ -53,6 +53,12 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .eq('status', 'unread')
 
+  // Fetch inventory count
+  const { count: inventoryCount } = await supabase
+    .from('inventory_items')
+    .select('*', { count: 'exact', head: true })
+    .eq('property_id', activeProperty.id)
+
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
       <DashboardHeader
@@ -70,6 +76,7 @@ export default async function DashboardPage() {
         <DashboardWidgetGrid
           property={activeProperty}
           upcomingTasksCount={upcomingTasksCount ?? 0}
+          inventoryCount={inventoryCount ?? 0}
         />
       </div>
     </div>
