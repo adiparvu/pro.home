@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { ServiceWorkerRegistration } from '@/components/layout/service-worker-registration'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -54,7 +55,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${inter.variable} min-h-dvh`}>{children}</body>
+      <body className={`${inter.variable} min-h-dvh`}>
+        <ServiceWorkerRegistration />
+        {children}
+      </body>
     </html>
   )
 }
