@@ -2,9 +2,10 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, Plus, Mail, Crown, Shield, UserX } from 'lucide-react'
+import { Users, Plus, Crown, Shield, UserX } from 'lucide-react'
 import type { Property, PropertyMember } from '@/lib/supabase/types'
 import { ROLE_LABELS } from '@/lib/supabase/types'
+import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,10 +25,11 @@ const ROLE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   partner: Shield,
 }
 
-export function FamilyPage({ property, members, currentUserId, myMembership }: FamilyPageProps) {
+export function FamilyPage({ property, members: initialMembers, currentUserId, myMembership }: FamilyPageProps) {
+  const router = useRouter()
   const [inviteOpen, setInviteOpen] = React.useState(false)
-  const canInvite =
-    myMembership?.role === 'owner' || myMembership?.role === 'partner'
+  const [members, setMembers] = React.useState(initialMembers)
+  const canInvite = myMembership?.role === 'owner' || myMembership?.role === 'partner'
 
   const roleGroups = members.reduce<Record<string, PropertyMember[]>>((acc, m) => {
     const group = acc[m.role] ?? []
@@ -36,19 +38,32 @@ export function FamilyPage({ property, members, currentUserId, myMembership }: F
     return acc
   }, {})
 
+  async function handleRemove(memberId: string) {
+    if (!confirm('Remove this member from the property?')) return
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from('property_members')
+      .update({ status: 'inactive' })
+      .eq('id', memberId)
+    setMembers((prev) => prev.filter((m) => m.id !== memberId))
+    router.refresh()
+  }
+
   return (
     <>
       <PageHeader
         title="Family"
         description={property.name}
-        action={canInvite ? { label: 'Invite Member', href: '#' } : undefined}
       />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Summary */}
         <div className="glass-standard rounded-2xl p-4 flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl"
-            style={{ background: 'hsl(340, 68%, 56% / 0.15)' }}>
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-xl"
+            style={{ background: 'hsl(340 68% 56% / 0.15)' }}
+          >
             <Users className="h-6 w-6" style={{ color: 'hsl(340, 68%, 56%)' }} />
           </div>
           <div>
@@ -58,12 +73,7 @@ export function FamilyPage({ property, members, currentUserId, myMembership }: F
             </p>
           </div>
           {canInvite && (
-            <Button
-              variant="primary"
-              size="sm"
-              className="ml-auto"
-              onClick={() => setInviteOpen(true)}
-            >
+            <Button variant="primary" size="sm" className="ml-auto" onClick={() => setInviteOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
               Invite
             </Button>
@@ -86,6 +96,7 @@ export function FamilyPage({ property, members, currentUserId, myMembership }: F
                   member={member}
                   isCurrentUser={member.user_id === currentUserId}
                   canManage={canInvite && member.user_id !== currentUserId && member.role !== 'owner'}
+                  onRemove={handleRemove}
                 />
               ))}
             </div>
@@ -125,10 +136,12 @@ function MemberRow({
   member,
   isCurrentUser,
   canManage,
+  onRemove,
 }: {
   member: PropertyMember
   isCurrentUser: boolean
   canManage: boolean
+  onRemove: (id: string) => void
 }) {
   const RoleIcon = ROLE_ICONS[member.role]
   const initials = (member.nickname ?? 'M').charAt(0).toUpperCase()
@@ -140,18 +153,19 @@ function MemberRow({
         <div className="flex items-center gap-1.5">
           <p className="text-sm font-medium text-foreground truncate">
             {member.nickname ?? 'Member'}
-            {isCurrentUser && (
-              <span className="ml-1 text-xs text-muted-foreground">(you)</span>
-            )}
+            {isCurrentUser && <span className="ml-1 text-xs text-muted-foreground">(you)</span>}
           </p>
           {RoleIcon && <RoleIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {ROLE_LABELS[member.role]}
-        </p>
+        <p className="text-xs text-muted-foreground">{ROLE_LABELS[member.role]}</p>
       </div>
       {canManage && (
-        <Button variant="ghost" size="icon-sm" aria-label="Remove member">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Remove member"
+          onClick={() => onRemove(member.id)}
+        >
           <UserX className="h-4 w-4 text-destructive" />
         </Button>
       )}
