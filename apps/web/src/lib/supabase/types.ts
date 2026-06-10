@@ -85,6 +85,19 @@ export type FinanceCategory =
   | 'renovation' | 'appliance' | 'subscription' | 'other'
 export type FinanceType = 'expense' | 'income' | 'budget'
 
+// Migration 005 enums
+export type MeterType = 'electricity' | 'gas' | 'water' | 'solar' | 'district_heating' | 'other'
+export type EnergyUnit = 'kWh' | 'm3' | 'L' | 'GJ' | 'other'
+export type GardenZoneType = 'bed' | 'lawn' | 'pot' | 'greenhouse' | 'orchard' | 'terrace' | 'other'
+export type PlantStatus = 'healthy' | 'needs_attention' | 'dormant' | 'removed' | 'harvested'
+export type GardenTaskType = 'watering' | 'fertilizing' | 'pruning' | 'harvesting' | 'planting' | 'pest_control' | 'repotting' | 'weeding' | 'general'
+export type GardenTaskStatus = 'pending' | 'done' | 'skipped'
+export type SecurityMode = 'disarmed' | 'home' | 'away' | 'night' | 'vacation'
+export type SecurityEventType =
+  | 'armed' | 'disarmed' | 'motion_detected' | 'door_opened' | 'window_opened'
+  | 'alarm_triggered' | 'alarm_cleared' | 'battery_low' | 'offline' | 'online' | 'test' | 'manual'
+export type SecuritySeverity = 'info' | 'warning' | 'alert' | 'critical'
+
 // ─── Row Types (declared before Database to avoid circular refs) ─────────────
 
 export type Profile = {
@@ -174,6 +187,14 @@ export type Room = {
   area_sqm: number | null
   notes: string | null
   sort_order: number
+  // Digital Twin positioning (migration 005)
+  floor_plan_id: string | null
+  x_pct: number | null
+  y_pct: number | null
+  width_pct: number | null
+  height_pct: number | null
+  color: string | null
+  icon: string | null
   created_at: string
   updated_at: string
 }
@@ -307,6 +328,113 @@ export type AriaMessage = {
   created_at: string
 }
 
+// ─── Migration 005 Row Types ──────────────────────────────────────────────────
+
+export type EnergyReading = {
+  id: string
+  property_id: string
+  reading_date: string
+  meter_type: MeterType
+  reading_value: number
+  unit: EnergyUnit
+  cost: number | null
+  cost_currency: string | null
+  provider: string | null
+  meter_id: string | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export type GardenZone = {
+  id: string
+  property_id: string
+  name: string
+  zone_type: GardenZoneType
+  size_sqm: number | null
+  sun_exposure: 'full_sun' | 'partial_shade' | 'full_shade' | null
+  soil_type: string | null
+  notes: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type GardenPlant = {
+  id: string
+  property_id: string
+  zone_id: string | null
+  name: string
+  species: string | null
+  common_name: string | null
+  planted_date: string | null
+  status: PlantStatus
+  watering_frequency_days: number | null
+  last_watered: string | null
+  next_watering: string | null
+  fertilizing_frequency_days: number | null
+  last_fertilized: string | null
+  sunlight_needs: 'full_sun' | 'partial_shade' | 'full_shade' | 'shade' | null
+  notes: string | null
+  image_url: string | null
+  tags: string[]
+  created_at: string
+  updated_at: string
+}
+
+export type GardenTask = {
+  id: string
+  property_id: string
+  plant_id: string | null
+  zone_id: string | null
+  title: string
+  task_type: GardenTaskType
+  status: GardenTaskStatus
+  due_date: string | null
+  completed_date: string | null
+  notes: string | null
+  is_recurring: boolean
+  recurrence_rule: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SecurityState = {
+  id: string
+  property_id: string
+  mode: SecurityMode
+  is_armed: boolean
+  armed_at: string | null
+  armed_by: string | null
+  updated_at: string
+}
+
+export type SecurityEvent = {
+  id: string
+  property_id: string
+  event_type: SecurityEventType
+  device_id: string | null
+  severity: SecuritySeverity
+  description: string | null
+  resolved_at: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export type FloorPlan = {
+  id: string
+  property_id: string
+  name: string
+  floor_number: number
+  svg_data: string | null
+  image_url: string | null
+  width_m: number | null
+  length_m: number | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 // ─── Database Type (Supabase client generic) ─────────────────────────────────
 
 export type Database = {
@@ -378,6 +506,48 @@ export type Database = {
         Update: Partial<AriaMessage>
         Relationships: []
       }
+      energy_readings: {
+        Row: EnergyReading
+        Insert: Omit<EnergyReading, 'id' | 'created_at'>
+        Update: Partial<EnergyReading>
+        Relationships: []
+      }
+      garden_zones: {
+        Row: GardenZone
+        Insert: Omit<GardenZone, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<GardenZone>
+        Relationships: []
+      }
+      garden_plants: {
+        Row: GardenPlant
+        Insert: Omit<GardenPlant, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<GardenPlant>
+        Relationships: []
+      }
+      garden_tasks: {
+        Row: GardenTask
+        Insert: Omit<GardenTask, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<GardenTask>
+        Relationships: []
+      }
+      security_state: {
+        Row: SecurityState
+        Insert: Omit<SecurityState, 'id' | 'updated_at'>
+        Update: Partial<SecurityState>
+        Relationships: []
+      }
+      security_events: {
+        Row: SecurityEvent
+        Insert: Omit<SecurityEvent, 'id' | 'created_at'>
+        Update: Partial<SecurityEvent>
+        Relationships: []
+      }
+      floor_plans: {
+        Row: FloorPlan
+        Insert: Omit<FloorPlan, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<FloorPlan>
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -402,6 +572,14 @@ export type Database = {
       compute_health_score: {
         Args: { p_property_id: string }
         Returns: number
+      }
+      create_doc_expiry_notifications: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+      set_security_mode: {
+        Args: { p_property_id: string; p_mode: SecurityMode }
+        Returns: void
       }
     }
     Enums: {
