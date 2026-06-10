@@ -1,7 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { DollarSign, TrendingDown, TrendingUp, Plus, Trash2, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react'
+import {
+  DollarSign, TrendingDown, TrendingUp, Plus, Trash2, Pencil, Paperclip,
+  ChevronDown, ChevronUp, AlertCircle, Tag, X,
+} from 'lucide-react'
 import type { Property, FinancialRecord, FinanceCategory, FinanceType } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
@@ -32,6 +35,25 @@ const CATEGORY_COLORS: Record<FinanceCategory, string> = {
   other:        'hsl(0,0%,50%)',
 }
 
+const TYPE_CONFIG: Record<FinanceType, { label: string; color: string; bg: string }> = {
+  expense: { label: 'Expense', color: 'text-destructive',       bg: 'bg-destructive/20 border-destructive/30' },
+  income:  { label: 'Income',  color: 'text-[hsl(152,62%,48%)]', bg: 'bg-[hsl(152,62%,42%)]/20 border-[hsl(152,62%,42%)]/30' },
+  budget:  { label: 'Budget',  color: 'text-[hsl(220,62%,60%)]', bg: 'bg-[hsl(220,62%,52%)]/20 border-[hsl(220,62%,52%)]/30' },
+}
+
+function blankForm() {
+  return {
+    title: '',
+    amount: '',
+    type: 'expense' as FinanceType,
+    category: 'other' as FinanceCategory,
+    date: new Date().toISOString().split('T')[0] ?? '',
+    description: '',
+    tags: [] as string[],
+    receiptFile: null as File | null,
+  }
+}
+
 export function FinancesPage({ property, userId, initialRecords }: FinancesPageProps) {
   const [records, setRecords] = React.useState<FinancialRecord[]>(initialRecords)
   const [typeFilter, setTypeFilter] = React.useState<FinanceType | 'all'>('all')
@@ -39,13 +61,18 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
   const [submitting, setSubmitting] = React.useState(false)
   const [formError, setFormError] = React.useState<string | null>(null)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
+  const [editingId, setEditingId] = React.useState<string | null>(null)
 
+  // Form fields
   const [title, setTitle] = React.useState('')
   const [amount, setAmount] = React.useState('')
   const [type, setType] = React.useState<FinanceType>('expense')
   const [category, setCategory] = React.useState<FinanceCategory>('other')
-  const [date, setDate] = React.useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = React.useState(() => new Date().toISOString().split('T')[0] ?? '')
   const [description, setDescription] = React.useState('')
+  const [tags, setTags] = React.useState<string[]>([])
+  const [tagInput, setTagInput] = React.useState('')
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null)
 
   const filtered = typeFilter === 'all' ? records : records.filter((r) => r.type === typeFilter)
 
@@ -58,6 +85,59 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
     .filter((r) => r.type === 'expense' && new Date(r.date).getFullYear() === currentYear)
     .reduce((s, r) => s + r.amount, 0)
 
+  function openAdd() {
+    setEditingId(null)
+    const f = blankForm()
+    setTitle(f.title)
+    setAmount(f.amount)
+    setType(f.type)
+    setCategory(f.category)
+    setDate(f.date)
+    setDescription(f.description)
+    setTags(f.tags)
+    setTagInput('')
+    setReceiptFile(null)
+    setFormError(null)
+    setShowForm(true)
+  }
+
+  function startEdit(record: FinancialRecord) {
+    setEditingId(record.id)
+    setTitle(record.title)
+    setAmount(String(record.amount))
+    setType(record.type)
+    setCategory(record.category)
+    setDate(record.date)
+    setDescription(record.description ?? '')
+    setTags(record.tags ?? [])
+    setTagInput('')
+    setReceiptFile(null)
+    setFormError(null)
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setFormError(null)
+  }
+
+  function addTag(raw: string) {
+    const tag = raw.trim().toLowerCase()
+    if (!tag || tags.includes(tag)) return
+    setTags((prev) => [...prev, tag])
+    setTagInput('')
+  }
+
+  async function uploadReceipt(file: File, recordId: string): Promise<string | null> {
+    const supabase = createClient()
+    const path = `${property.id}/${recordId}/${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('financial-receipts').upload(path, file)
+    if (error) return null
+    return supabase.storage.from('financial-receipts').getPublicUrl(path).data.publicUrl
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !amount) return
@@ -65,39 +145,82 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
     setFormError(null)
 
     const supabase = createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: record, error } = await (supabase as any)
-      .from('financial_records')
-      .insert({
-        property_id: property.id,
-        title: title.trim(),
-        amount: parseFloat(amount),
-        currency: 'EUR',
-        type,
-        category,
-        date,
-        description: description.trim() || null,
-        tags: [],
-        created_by: userId,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      setFormError((error as { message: string }).message ?? 'Failed to save record')
-      setSubmitting(false)
-      return
+    const payload = {
+      title: title.trim(),
+      amount: parseFloat(amount),
+      currency: 'EUR',
+      type,
+      category,
+      date,
+      description: description.trim() || null,
+      tags,
     }
 
-    setRecords((prev) => [record as FinancialRecord, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
-    setShowForm(false)
-    setTitle('')
-    setAmount('')
-    setDescription('')
-    setType('expense')
-    setCategory('other')
-    setDate(new Date().toISOString().split('T')[0])
+    if (editingId) {
+      // Update existing record
+      let receiptUrl: string | null | undefined = undefined
+      if (receiptFile) {
+        receiptUrl = await uploadReceipt(receiptFile, editingId)
+      }
+      const updatePayload = receiptUrl !== undefined ? { ...payload, receipt_url: receiptUrl } : payload
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: updated, error } = await (supabase as any)
+        .from('financial_records')
+        .update(updatePayload)
+        .eq('id', editingId)
+        .select()
+        .single()
+
+      if (error) {
+        setFormError((error as { message: string }).message ?? 'Failed to update record')
+        setSubmitting(false)
+        return
+      }
+      setRecords((prev) =>
+        prev
+          .map((r) => (r.id === editingId ? (updated as FinancialRecord) : r))
+          .sort((a, b) => b.date.localeCompare(a.date))
+      )
+    } else {
+      // Insert new record
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: record, error } = await (supabase as any)
+        .from('financial_records')
+        .insert({ ...payload, property_id: property.id, created_by: userId })
+        .select()
+        .single()
+
+      if (error) {
+        setFormError((error as { message: string }).message ?? 'Failed to save record')
+        setSubmitting(false)
+        return
+      }
+
+      // Upload receipt after insert (need the record id)
+      if (receiptFile && record) {
+        const receiptUrl = await uploadReceipt(receiptFile, (record as FinancialRecord).id)
+        if (receiptUrl) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: withReceipt } = await (supabase as any)
+            .from('financial_records')
+            .update({ receipt_url: receiptUrl })
+            .eq('id', (record as FinancialRecord).id)
+            .select()
+            .single()
+          setRecords((prev) =>
+            [withReceipt as FinancialRecord, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+          )
+          setSubmitting(false)
+          cancelForm()
+          return
+        }
+      }
+
+      setRecords((prev) => [record as FinancialRecord, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+    }
+
     setSubmitting(false)
+    cancelForm()
   }
 
   async function handleDelete(record: FinancialRecord) {
@@ -107,6 +230,7 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('financial_records').delete().eq('id', record.id)
     setRecords((prev) => prev.filter((r) => r.id !== record.id))
+    if (editingId === record.id) cancelForm()
     setDeletingId(null)
   }
 
@@ -114,7 +238,7 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
     <>
       <PageHeader title="Finances" description={property.name} />
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
           <Card variant="default" padding="sm">
@@ -136,20 +260,30 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
         </div>
 
         {/* Add record toggle */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowForm((v) => !v)}
-          className="self-start"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {showForm ? 'Cancel' : 'Log expense / income'}
-          {showForm ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </Button>
+        {!showForm && (
+          <Button variant="secondary" size="sm" onClick={openAdd} className="self-start">
+            <Plus className="h-3.5 w-3.5" />
+            Log expense / income
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+        )}
 
-        {/* Add record form */}
+        {/* Add / Edit form */}
         {showForm && (
           <Card variant="default" padding="md">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold text-foreground">
+                {editingId ? 'Edit record' : 'New record'}
+              </p>
+              <button
+                type="button"
+                onClick={cancelForm}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {formError && (
                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
@@ -160,22 +294,21 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
 
               {/* Type toggle */}
               <div className="flex gap-2">
-                {(['expense', 'income'] as FinanceType[]).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={`flex-1 rounded-xl py-2 text-sm font-medium transition-colors capitalize ${
-                      type === t
-                        ? t === 'expense'
-                          ? 'bg-destructive/20 text-destructive border border-destructive/30'
-                          : 'bg-[hsl(152,62%,42%)]/20 text-[hsl(152,62%,48%)] border border-[hsl(152,62%,42%)]/30'
-                        : 'glass-light text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+                {(Object.keys(TYPE_CONFIG) as FinanceType[]).map((t) => {
+                  const cfg = TYPE_CONFIG[t]
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setType(t)}
+                      className={`flex-1 rounded-xl py-2 text-xs font-medium transition-colors border ${
+                        type === t ? `${cfg.bg} ${cfg.color}` : 'glass-light text-muted-foreground hover:text-foreground border-transparent'
+                      }`}
+                    >
+                      {cfg.label}
+                    </button>
+                  )
+                })}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -238,8 +371,58 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
                 />
               </div>
 
+              {/* Tags */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tags</label>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="flex items-center gap-1 rounded-full border border-border glass-light px-2.5 py-0.5 text-xs text-foreground"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) }
+                  }}
+                  placeholder="Type and press Enter"
+                  className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                />
+              </div>
+
+              {/* Receipt upload */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Receipt</label>
+                <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border glass-light px-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Paperclip className="h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {receiptFile ? receiptFile.name : 'Attach receipt (image or PDF)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="sr-only"
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              </div>
+
               <Button type="submit" size="sm" loading={submitting} disabled={!title.trim() || !amount}>
-                Save record
+                {editingId ? 'Update record' : 'Save record'}
               </Button>
             </form>
           </Card>
@@ -248,7 +431,7 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
         {/* Filter tabs */}
         {records.length > 0 && (
           <div className="flex gap-2">
-            {(['all', 'expense', 'income'] as const).map((t) => (
+            {(['all', 'expense', 'income', 'budget'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -264,7 +447,7 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
         )}
 
         {/* Category breakdown (expenses only) */}
-        {records.filter((r) => r.type === 'expense').length > 0 && typeFilter !== 'income' && (
+        {records.filter((r) => r.type === 'expense').length > 0 && typeFilter !== 'income' && typeFilter !== 'budget' && (
           <CategoryBreakdown records={records.filter((r) => r.type === 'expense')} />
         )}
 
@@ -278,7 +461,9 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
                 key={record.id}
                 record={record}
                 onDelete={handleDelete}
+                onEdit={startEdit}
                 deleting={deletingId === record.id}
+                editing={editingId === record.id}
               />
             ))}
           </div>
@@ -291,18 +476,33 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
 function RecordCard({
   record,
   onDelete,
+  onEdit,
   deleting,
+  editing,
 }: {
   record: FinancialRecord
   onDelete: (r: FinancialRecord) => void
+  onEdit: (r: FinancialRecord) => void
   deleting: boolean
+  editing: boolean
 }) {
   const isExpense = record.type === 'expense'
+  const isBudget = record.type === 'budget'
   const color = CATEGORY_COLORS[record.category]
   const date = new Date(record.date)
+  const amountColor = isExpense
+    ? 'text-destructive'
+    : isBudget
+      ? 'text-[hsl(220,62%,60%)]'
+      : 'text-[hsl(152,62%,48%)]'
+  const amountPrefix = isExpense ? '-' : isBudget ? '' : '+'
 
   return (
-    <Card variant="default" padding="md">
+    <Card
+      variant="default"
+      padding="md"
+      className={editing ? 'ring-2 ring-primary/40' : ''}
+    >
       <div className="flex items-start gap-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -310,7 +510,9 @@ function RecordCard({
         >
           {isExpense
             ? <TrendingDown className="h-5 w-5" style={{ color }} />
-            : <TrendingUp className="h-5 w-5 text-[hsl(152,62%,48%)]" />
+            : isBudget
+              ? <DollarSign className="h-5 w-5" style={{ color }} />
+              : <TrendingUp className="h-5 w-5 text-[hsl(152,62%,48%)]" />
           }
         </div>
         <div className="flex-1 min-w-0">
@@ -321,10 +523,18 @@ function RecordCard({
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{record.description}</p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className={`text-sm font-bold ${isExpense ? 'text-destructive' : 'text-[hsl(152,62%,48%)]'}`}>
-                {isExpense ? '-' : '+'}€{record.amount.toLocaleString()}
+            <div className="flex shrink-0 items-center gap-1">
+              <span className={`text-sm font-bold ${amountColor}`}>
+                {amountPrefix}€{record.amount.toLocaleString()}
               </span>
+              <button
+                type="button"
+                onClick={() => onEdit(record)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Edit record"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -337,7 +547,7 @@ function RecordCard({
               </Button>
             </div>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Badge
               variant="neutral"
               size="xs"
@@ -346,9 +556,29 @@ function RecordCard({
             >
               {record.category}
             </Badge>
+            {record.type === 'budget' && (
+              <Badge variant="neutral" size="xs" style={{ color: 'hsl(220,62%,60%)' }}>budget</Badge>
+            )}
             <span className="text-[10px] text-muted-foreground">
               {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
+            {record.tags.map((tag) => (
+              <span key={tag} className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <Tag className="h-2.5 w-2.5" />
+                {tag}
+              </span>
+            ))}
+            {record.receipt_url && (
+              <a
+                href={record.receipt_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
+              >
+                <Paperclip className="h-2.5 w-2.5" />
+                receipt
+              </a>
+            )}
           </div>
         </div>
       </div>
