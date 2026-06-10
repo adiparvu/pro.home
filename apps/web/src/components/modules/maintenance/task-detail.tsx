@@ -141,6 +141,11 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
           {task.is_recurring && (
             <Badge variant="neutral" size="sm">Recurring</Badge>
           )}
+          {task.is_recurring && task.status === 'completed' && task.next_due_date && (
+            <Badge variant="neutral" size="sm" className="text-primary border-primary/30 bg-primary/10">
+              Next: {new Date(task.next_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Badge>
+          )}
           {task.tags && task.tags.length > 0 && task.tags.map((t) => (
             <Badge key={t} variant="neutral" size="sm">
               <Tag className="h-3 w-3 mr-1" />
