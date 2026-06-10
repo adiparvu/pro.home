@@ -134,7 +134,8 @@ export function DigitalTwinPage({ propertyId, rooms: initialRooms, items, tasks 
     const current = rooms.find((r) => r.id === room.id)
     if (!current) return
     const supabase = createClient()
-    await supabase.from('rooms').update({ x_pct: current.x_pct, y_pct: current.y_pct }).eq('id', room.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('rooms').update({ x_pct: current.x_pct, y_pct: current.y_pct }).eq('id', room.id)
   }
 
   async function placeRoom(room: Room) {
@@ -142,7 +143,8 @@ export function DigitalTwinPage({ propertyId, rooms: initialRooms, items, tasks 
     const newY = 10 + Math.floor(placedRooms.length / 4) * 28
     setRooms((prev) => prev.map((r) => r.id === room.id ? { ...r, x_pct: newX, y_pct: newY, width_pct: 18, height_pct: 22 } : r))
     const supabase = createClient()
-    await supabase.from('rooms').update({ x_pct: newX, y_pct: newY, width_pct: 18, height_pct: 22 }).eq('id', room.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('rooms').update({ x_pct: newX, y_pct: newY, width_pct: 18, height_pct: 22 }).eq('id', room.id)
   }
 
   // ─── Stats ──────────────────────────────────────────────────────────────────
@@ -328,7 +330,7 @@ export function DigitalTwinPage({ propertyId, rooms: initialRooms, items, tasks 
                     'flex flex-col gap-2 rounded-xl p-3 text-left transition-all',
                     selectedRoom?.id === room.id ? 'ring-2' : 'glass-light hover:glass-standard'
                   )}
-                  style={selectedRoom?.id === room.id ? { background: `${color}14`, ringColor: color } : undefined}
+                  style={selectedRoom?.id === room.id ? { background: `${color}14`, '--tw-ring-color': color } as React.CSSProperties : undefined}
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${color}20` }}>
                     <span className="text-lg">{getRoomEmoji(room.room_type)}</span>

@@ -2,13 +2,13 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Search, Archive, Wrench, FolderOpen, Banknote, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, Archive, Wrench, FolderOpen, Banknote, Flower2, Store, ChevronRight, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
 
 interface SearchResult {
   id: string
-  type: 'inventory' | 'maintenance' | 'document' | 'finance'
+  type: 'inventory' | 'maintenance' | 'document' | 'finance' | 'garden' | 'marketplace'
   title: string
   subtitle?: string
   href: string
@@ -19,6 +19,8 @@ const TYPE_META = {
   maintenance: { label: 'Maintenance', icon: Wrench,     color: 'hsl(22,68%,41%)'  },
   document:    { label: 'Documents',   icon: FolderOpen, color: 'hsl(220,52%,46%)' },
   finance:     { label: 'Finances',    icon: Banknote,   color: 'hsl(45,75%,42%)'  },
+  garden:      { label: 'Garden',      icon: Flower2,    color: 'hsl(120,52%,36%)' },
+  marketplace: { label: 'Marketplace', icon: Store,      color: 'hsl(260,52%,52%)' },
 } as const
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -52,6 +54,8 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
         { data: tasks },
         { data: docs },
         { data: finances },
+        { data: plants },
+        { data: contacts },
       ] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase as any)
@@ -80,6 +84,20 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
           .select('id, title, category, amount, type')
           .eq('property_id', propertyId)
           .ilike('title', `%${q}%`)
+          .limit(5),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('garden_plants')
+          .select('id, name, species, common_name, status')
+          .eq('property_id', propertyId)
+          .ilike('name', `%${q}%`)
+          .limit(5),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('marketplace_contacts')
+          .select('id, name, category, description')
+          .eq('property_id', propertyId)
+          .ilike('name', `%${q}%`)
           .limit(5),
       ])
 
@@ -116,6 +134,22 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
           title: f.title,
           subtitle: `${f.type ?? ''} · ${f.category} · €${f.amount}`.replace(/^·\s*/, ''),
           href: '/finances',
+        })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(plants ?? []).map((p: any) => ({
+          id: p.id,
+          type: 'garden' as const,
+          title: p.name,
+          subtitle: [p.common_name, p.species, p.status].filter(Boolean).join(' · ').replace(/_/g, ' '),
+          href: '/garden',
+        })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(contacts ?? []).map((c: any) => ({
+          id: c.id,
+          type: 'marketplace' as const,
+          title: c.name,
+          subtitle: [c.category, c.description].filter(Boolean).join(' · '),
+          href: '/marketplace',
         })),
       ]
 

@@ -48,8 +48,10 @@ export default async function DashboardPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
+  const today = new Date().toISOString().split('T')[0]
+
   // Fetch dashboard data in parallel
-  const [r0, r1, r2, r3, r4, r5, r6, r7, r8] = await Promise.all([
+  const [r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10] = await Promise.all([
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
       .eq('property_id', activeProperty.id).in('status', ['pending', 'in_progress']),
     supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
@@ -83,6 +85,17 @@ export default async function DashboardPage({
       .select('mode')
       .eq('property_id', activeProperty.id)
       .maybeSingle(),
+    // Garden: plants needing water (overdue or due today)
+    sb.from('garden_plants')
+      .select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id)
+      .not('next_watering', 'is', null)
+      .lte('next_watering', today),
+    // Garden: pending tasks
+    sb.from('garden_tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id)
+      .in('status', ['pending', 'scheduled']),
   ])
 
   const upcomingTasksCount = r0.count ?? 0
@@ -94,6 +107,8 @@ export default async function DashboardPage({
   const expiringDocsCount = r6.count ?? 0
   const latestEnergyRow = (r7.data as { reading_value: number; unit: string; meter_type: string; reading_date: string }[] | null)?.[0] ?? null
   const securityMode = (r8.data as { mode: string } | null)?.mode ?? null
+  const overdueWateringCount = r9.count ?? 0
+  const pendingGardenTasksCount = r10.count ?? 0
 
   const ariaInsight = getAriaInsight(
     overdueTasksCount,
@@ -131,6 +146,8 @@ export default async function DashboardPage({
           latestEnergyUnit={latestEnergyRow?.unit ?? null}
           latestEnergyMeterType={latestEnergyRow?.meter_type ?? null}
           securityMode={securityMode}
+          overdueWateringCount={overdueWateringCount}
+          pendingGardenTasksCount={pendingGardenTasksCount}
         />
       </div>
     </div>

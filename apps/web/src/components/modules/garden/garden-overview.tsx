@@ -48,7 +48,7 @@ const TASK_TYPE_LABELS: Record<GardenTaskType, string> = {
   general:      'General',
 }
 
-const TASK_TYPE_ICONS: Record<GardenTaskType, React.ComponentType<{ className?: string }>> = {
+const TASK_TYPE_ICONS: Record<GardenTaskType, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   watering:     Droplets,
   fertilizing:  Sprout,
   pruning:      Leaf,
@@ -102,7 +102,7 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
       next_watering: nextDate,
     }).eq('id', plantId)
     setPlants((prev) => prev.map((p) => p.id === plantId
-      ? { ...p, last_watered: today, next_watering: nextDate }
+      ? { ...p, last_watered: today ?? null, next_watering: nextDate ?? null }
       : p
     ))
     setWateringPlantId(null)
@@ -113,7 +113,7 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('garden_tasks').update({ status: 'done', completed_date: today }).eq('id', id)
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: 'done' as const, completed_date: today } : t))
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: 'done' as const, completed_date: today ?? null } : t))
   }
 
   async function skipTask(id: string) {

@@ -10,6 +10,8 @@ import {
   ChevronRight,
   CheckCircle,
   FileText,
+  Flower2,
+  Droplets,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +28,8 @@ interface DashboardWidgetGridProps {
   latestEnergyUnit: string | null
   latestEnergyMeterType: string | null
   securityMode: string | null
+  overdueWateringCount: number
+  pendingGardenTasksCount: number
 }
 
 const METER_TYPE_LABELS: Record<string, string> = {
@@ -58,6 +62,8 @@ export function DashboardWidgetGrid({
   latestEnergyUnit,
   latestEnergyMeterType,
   securityMode,
+  overdueWateringCount,
+  pendingGardenTasksCount,
 }: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -77,11 +83,17 @@ export function DashboardWidgetGrid({
       {/* Row 3: ARIA Insight */}
       <ARIAInsightCard insight={ariaInsight} />
 
-      {/* Row 4: Inventory + Quick Actions */}
+      {/* Row 4: Inventory + Garden */}
       <div className="grid grid-cols-2 gap-4">
         <InventoryWidget count={inventoryCount} recallCount={recallCount} />
-        <QuickActionsWidget expiringDocsCount={expiringDocsCount} />
+        <GardenWidget
+          overdueWateringCount={overdueWateringCount}
+          pendingTasksCount={pendingGardenTasksCount}
+        />
       </div>
+
+      {/* Row 5: Quick Actions */}
+      <QuickActionsWidget expiringDocsCount={expiringDocsCount} />
     </div>
   )
 }
@@ -295,6 +307,65 @@ function InventoryWidget({ count, recallCount }: { count: number; recallCount: n
   )
 }
 
+function GardenWidget({
+  overdueWateringCount,
+  pendingTasksCount,
+}: {
+  overdueWateringCount: number
+  pendingTasksCount: number
+}) {
+  const needsAttention = overdueWateringCount > 0
+
+  return (
+    <Link href="/garden">
+      <Card variant="default" hover padding="md" className="module-garden">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{ background: 'hsl(120,52%,36%,0.2)' }}
+            >
+              <Flower2 className="h-4 w-4" style={{ color: 'hsl(120,52%,52%)' }} />
+            </div>
+            {needsAttention && (
+              <Badge variant="warning" size="xs" dot>
+                {overdueWateringCount} due
+              </Badge>
+            )}
+          </div>
+          <div>
+            <div className="flex items-baseline gap-1">
+              {needsAttention ? (
+                <>
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {overdueWateringCount}
+                  </span>
+                  <span className="text-sm text-muted-foreground">watering</span>
+                </>
+              ) : (
+                <div className="text-2xl font-bold text-muted-foreground/40">—</div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">
+              Garden
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Droplets className="h-3 w-3" />
+            <span>
+              {pendingTasksCount > 0
+                ? `${pendingTasksCount} task${pendingTasksCount !== 1 ? 's' : ''} pending`
+                : needsAttention
+                  ? 'Plants need water'
+                  : 'All good'}
+            </span>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  )
+}
+
 function QuickActionsWidget({ expiringDocsCount }: { expiringDocsCount: number }) {
   return (
     <Card variant="default" padding="md">
@@ -302,7 +373,7 @@ function QuickActionsWidget({ expiringDocsCount }: { expiringDocsCount: number }
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Quick Actions
         </p>
-        <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
           <Link
             href="/inventory/scan"
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--color-hover)] transition-colors duration-fast focus-ring text-sm text-muted-foreground hover:text-foreground"
@@ -319,9 +390,9 @@ function QuickActionsWidget({ expiringDocsCount }: { expiringDocsCount: number }
           </Link>
           <Link
             href="/documents"
-            className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--color-hover)] transition-colors duration-fast focus-ring text-sm text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--color-hover)] transition-colors duration-fast focus-ring text-sm text-muted-foreground hover:text-foreground"
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 min-w-0">
               <FileText className="h-3.5 w-3.5 shrink-0" />
               Documents
             </span>
