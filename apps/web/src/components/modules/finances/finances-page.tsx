@@ -78,6 +78,7 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
   const [tags, setTags] = React.useState<string[]>([])
   const [tagInput, setTagInput] = React.useState('')
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null)
+  const [repeat, setRepeat] = React.useState<'' | 'monthly' | 'yearly'>('')
 
   const filtered = typeFilter === 'all' ? records : records.filter((r) => r.type === typeFilter)
 
@@ -102,6 +103,7 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
     setTags(f.tags)
     setTagInput('')
     setReceiptFile(null)
+    setRepeat('')
     setFormError(null)
     setShowForm(true)
   }
@@ -117,6 +119,7 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
     setTags(record.tags ?? [])
     setTagInput('')
     setReceiptFile(null)
+    setRepeat(record.is_recurring ? (record.recurrence_interval ?? 'monthly') : '')
     setFormError(null)
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -174,6 +177,11 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
     setFormError(null)
 
     const supabase = createClient()
+    const nextOccurrence = repeat
+      ? new Date(new Date(date).setMonth(new Date(date).getMonth() + (repeat === 'monthly' ? 1 : 12)))
+          .toISOString()
+          .split('T')[0]
+      : null
     const payload = {
       title: title.trim(),
       amount: parseFloat(amount),
@@ -183,6 +191,9 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
       date,
       description: description.trim() || null,
       tags,
+      is_recurring: repeat !== '',
+      recurrence_interval: repeat || null,
+      next_occurrence: nextOccurrence,
     }
 
     if (editingId) {
@@ -388,6 +399,19 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
                     className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Repeat</label>
+                <select
+                  value={repeat}
+                  onChange={(e) => setRepeat(e.target.value as '' | 'monthly' | 'yearly')}
+                  className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                >
+                  <option value="">Does not repeat</option>
+                  <option value="monthly">Monthly — rent, subscriptions</option>
+                  <option value="yearly">Yearly — insurance, tax</option>
+                </select>
               </div>
 
               <div className="flex flex-col gap-2">

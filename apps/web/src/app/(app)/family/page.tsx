@@ -1,7 +1,8 @@
 import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Property, PropertyMember, PropertyInvitation } from '@/lib/supabase/types'
+import { getActiveProperty } from '@/lib/active-property'
+import type { PropertyMember, PropertyInvitation } from '@/lib/supabase/types'
 import { FamilyPage } from '@/components/modules/family/family-page'
 import { PageHeader } from '@/components/layout/page-header'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
@@ -16,18 +17,7 @@ export default async function FamilyRoute() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get active property memberships
-  const { data: myMemberships } = await supabase
-    .from('property_members')
-    .select('*, properties(*)')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .limit(1) as {
-    data: (PropertyMember & { properties: Property | null })[] | null
-    error: unknown
-  }
-
-  const property = myMemberships?.[0]?.properties ?? null
+  const property = await getActiveProperty(supabase, user.id)
 
   if (!property) {
     return (

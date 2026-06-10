@@ -6,7 +6,11 @@ import { useRouter } from 'next/navigation'
 import {
   Wrench, AlertTriangle, Clock, CheckCircle2, Circle, ChevronRight,
   LayoutList, CalendarDays, RepeatIcon, SlidersHorizontal, ExternalLink, Pencil,
+  Sparkles, Plus,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { SEASONAL_TEMPLATES } from '@/lib/maintenance-templates'
+import { toast } from '@/hooks/use-toast'
 import type { Property, MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -78,10 +82,41 @@ function sortMonthKeys(keys: string[]): string[] {
 }
 
 export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = React.useState<TaskStatus | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = React.useState<TaskPriority | 'all'>('all')
   const [view, setView] = React.useState<'list' | 'timeline'>('list')
   const [filtersOpen, setFiltersOpen] = React.useState(false)
+  const [templatesOpen, setTemplatesOpen] = React.useState(false)
+  const [applyingTemplate, setApplyingTemplate] = React.useState<string | null>(null)
+
+  async function applyTemplate(templateId: string) {
+    const template = SEASONAL_TEMPLATES.find((t) => t.id === templateId)
+    if (!template) return
+    setApplyingTemplate(templateId)
+    const supabase = createClient()
+    const rows = template.tasks.map((t) => ({
+      property_id: property.id,
+      title: t.title,
+      description: t.description,
+      category: t.category,
+      priority: t.priority,
+      status: 'pending',
+      due_date: new Date(Date.now() + t.dueInDays * 86400000).toISOString().split('T')[0],
+      is_recurring: t.recurring ?? false,
+      recurrence_rule: t.recurring ? 'FREQ=YEARLY' : null,
+    }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('maintenance_tasks').insert(rows)
+    setApplyingTemplate(null)
+    if (error) {
+      toast.error('Could not apply template')
+      return
+    }
+    setTemplatesOpen(false)
+    toast.success(`${template.label} added`, `${template.tasks.length} tasks created`)
+    router.refresh()
+  }
 
   const filtered = tasks
     .filter((t) => activeTab === 'all' || t.status === activeTab)
@@ -133,23 +168,71 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
               { value: 'timeline', label: 'Timeline', icon: CalendarDays },
             ]}
           />
-          <button
-            type="button"
-            onClick={() => setFiltersOpen(true)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors focus-ring',
-              priorityFilter !== 'all'
-                ? 'bg-primary/15 text-primary'
-                : 'glass-light text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filters
-            {priorityFilter !== 'all' && (
-              <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-semibold">1</span>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTemplatesOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl glass-light px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-ring"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Templates
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors focus-ring',
+                priorityFilter !== 'all'
+                  ? 'bg-primary/15 text-primary'
+                  : 'glass-light text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
+              {priorityFilter !== 'all' && (
+                <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-semibold">1</span>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Seasonal templates bottom sheet */}
+        <BottomSheet
+          open={templatesOpen}
+          onClose={() => setTemplatesOpen(false)}
+          title="Seasonal templates"
+          height="medium"
+        >
+          <div className="flex flex-col gap-2 px-4 py-3">
+            <p className="text-xs text-muted-foreground">
+              One tap creates the full checklist. Yearly items are added as recurring tasks.
+            </p>
+            {SEASONAL_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                disabled={applyingTemplate !== null}
+                onClick={() => applyTemplate(template.id)}
+                className="flex items-center gap-3 rounded-xl glass-light px-3 py-3 text-left transition-colors hover:glass-standard focus-ring disabled:opacity-60"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl glass-standard text-xl">
+                  {template.emoji}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-foreground">{template.label}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {template.description} · {template.tasks.length} tasks
+                  </span>
+                </span>
+                {applyingTemplate === template.id ? (
+                  <Clock className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+                ) : (
+                  <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
+              </button>
+            ))}
+          </div>
+        </BottomSheet>
 
         {/* Filters bottom sheet */}
         <BottomSheet

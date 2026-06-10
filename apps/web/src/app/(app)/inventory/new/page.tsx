@@ -1,7 +1,8 @@
 import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Property, PropertyMember, Room } from '@/lib/supabase/types'
+import { getActiveProperty } from '@/lib/active-property'
+import type { Room } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { AddInventoryItemForm } from '@/components/modules/inventory/add-inventory-item-form'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
@@ -19,17 +20,7 @@ export default async function NewInventoryItemPage({
 
   const { barcode } = await searchParams
 
-  const { data: myMemberships } = await supabase
-    .from('property_members')
-    .select('*, properties(*)')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .limit(1) as {
-    data: (PropertyMember & { properties: Property | null })[] | null
-    error: unknown
-  }
-
-  const property = myMemberships?.[0]?.properties ?? null
+  const property = await getActiveProperty(supabase, user.id)
 
   if (!property) {
     return (

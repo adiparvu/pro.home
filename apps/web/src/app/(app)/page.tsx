@@ -1,6 +1,6 @@
 import { type Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import type { Property } from '@/lib/supabase/types'
+import { getActiveProperty, getMemberProperties } from '@/lib/active-property'
 import { DashboardHeader } from '@/components/modules/dashboard/dashboard-header'
 import { HealthHeroCard } from '@/components/modules/dashboard/health-hero-card'
 import { DashboardWidgetGrid } from '@/components/modules/dashboard/widget-grid'
@@ -10,13 +10,8 @@ export const metadata: Metadata = {
   title: 'Dashboard',
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ p?: string }>
-}) {
+export default async function DashboardPage() {
   const supabase = await createClient()
-  const { p: requestedId } = await searchParams
 
   const {
     data: { user },
@@ -24,15 +19,9 @@ export default async function DashboardPage({
 
   if (!user) return null
 
-  const { data: properties } = await supabase
-    .from('properties')
-    .select('*, property_members!inner(role, status)')
-    .eq('property_members.user_id', user.id)
-    .eq('property_members.status', 'active')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false }) as { data: Property[] | null; error: unknown }
+  const properties = await getMemberProperties(supabase, user.id)
 
-  if (!properties || properties.length === 0) {
+  if (properties.length === 0) {
     return (
       <div className="flex flex-1 flex-col">
         <DashboardHeader user={user} />
@@ -41,9 +30,7 @@ export default async function DashboardPage({
     )
   }
 
-  // Honour the ?p= selector if valid, otherwise fall back to first property
-  const activeProperty =
-    (requestedId ? properties.find((p) => p.id === requestedId) : null) ?? properties[0]!
+  const activeProperty = (await getActiveProperty(supabase, user.id)) ?? properties[0]!
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any

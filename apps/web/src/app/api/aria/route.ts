@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import { getActiveProperty } from '@/lib/active-property'
 import { checkRateLimit } from '@/lib/rate-limit'
 import type { Property, InventoryItem, MaintenanceTask, EnergyReading, SecurityEvent, FinancialRecord, GardenPlant, GardenTask, Document } from '@/lib/supabase/types'
 
@@ -213,15 +214,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data: property } = await supabase
-    .from('properties')
-    .select('*, property_members!inner(status)')
-    .eq('property_members.user_id', user.id)
-    .eq('property_members.status', 'active')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single() as { data: Property | null; error: unknown }
+  const property = await getActiveProperty(supabase, user.id)
 
   let items: InventoryItem[] = []
   let tasks: MaintenanceTask[] = []

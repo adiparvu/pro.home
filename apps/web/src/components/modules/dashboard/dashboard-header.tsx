@@ -71,7 +71,15 @@ export function DashboardHeader({
                   {properties.map((p) => (
                     <DropdownMenuItem
                       key={p.id}
-                      onClick={() => router.push(p.id === activeProperty.id ? '/' : `/?p=${p.id}`)}
+                      onClick={async () => {
+                        if (p.id === activeProperty.id) return
+                        await fetch('/api/active-property', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ propertyId: p.id }),
+                        })
+                        router.refresh()
+                      }}
                     >
                       <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="flex flex-1 flex-col min-w-0">

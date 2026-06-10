@@ -1,7 +1,8 @@
 import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Property, Document } from '@/lib/supabase/types'
+import { getActiveProperty } from '@/lib/active-property'
+import type { Document } from '@/lib/supabase/types'
 import { DocumentsPage } from '@/components/modules/documents/documents-page'
 
 export const metadata: Metadata = { title: 'Documents' }
@@ -16,15 +17,7 @@ export default async function DocumentsRoute({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: property } = await supabase
-    .from('properties')
-    .select('*, property_members!inner(role, status)')
-    .eq('property_members.user_id', user.id)
-    .eq('property_members.status', 'active')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single() as { data: Property | null; error: unknown }
+  const property = await getActiveProperty(supabase, user.id)
 
   if (!property) redirect('/onboarding/property')
 

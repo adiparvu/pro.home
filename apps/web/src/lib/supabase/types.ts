@@ -315,6 +315,9 @@ export type FinancialRecord = {
   receipt_url: string | null
   tags: string[]
   created_by: string | null
+  is_recurring: boolean
+  recurrence_interval: 'monthly' | 'yearly' | null
+  next_occurrence: string | null
   created_at: string
   updated_at: string
 }
@@ -662,6 +665,22 @@ export type Database = {
       create_garden_watering_notifications: {
         Args: { p_user_id: string }
         Returns: void
+      }
+      create_warranty_expiry_notifications: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+      create_weekly_digest_notification: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+      run_notification_sweep: {
+        Args: Record<string, never>
+        Returns: number
+      }
+      spawn_recurring_financial_records: {
+        Args: Record<string, never>
+        Returns: number
       }
       set_security_mode: {
         Args: { p_property_id: string; p_mode: SecurityMode }

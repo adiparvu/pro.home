@@ -1,8 +1,9 @@
 import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getActiveProperty } from '@/lib/active-property'
 import { MarketplacePage } from '@/components/modules/marketplace/marketplace-page'
-import type { Property, MarketplaceContact, ServiceRequest } from '@/lib/supabase/types'
+import type { MarketplaceContact, ServiceRequest } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Marketplace' }
 
@@ -11,15 +12,7 @@ export default async function MarketplaceRoute() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: property } = await supabase
-    .from('properties')
-    .select('id, property_members!inner(status)')
-    .eq('property_members.user_id', user.id)
-    .eq('property_members.status', 'active')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single() as { data: Pick<Property, 'id'> | null; error: unknown }
+  const property = await getActiveProperty(supabase, user.id)
 
   const propertyId = property?.id ?? null
 

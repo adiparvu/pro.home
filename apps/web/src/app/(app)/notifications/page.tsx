@@ -18,6 +18,7 @@ export default async function NotificationsRoute() {
     (supabase as any).rpc('create_recall_notifications', { p_user_id: user.id }),
     (supabase as any).rpc('create_overdue_task_notifications', { p_user_id: user.id }),
     (supabase as any).rpc('create_garden_watering_notifications', { p_user_id: user.id }),
+    (supabase as any).rpc('create_warranty_expiry_notifications', { p_user_id: user.id }),
   ])
 
   const { data: notifications } = await supabase
