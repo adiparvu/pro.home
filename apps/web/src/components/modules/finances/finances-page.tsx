@@ -477,6 +477,14 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
           </div>
         )}
 
+        {/* Budget vs Actual (shown when budget records exist) */}
+        {records.filter((r) => r.type === 'budget').length > 0 && typeFilter !== 'income' && (
+          <BudgetVsActual
+            budgetRecords={records.filter((r) => r.type === 'budget')}
+            expenseRecords={records.filter((r) => r.type === 'expense')}
+          />
+        )}
+
         {/* Category breakdown (expenses only) */}
         {records.filter((r) => r.type === 'expense').length > 0 && typeFilter !== 'income' && typeFilter !== 'budget' && (
           <CategoryBreakdown records={records.filter((r) => r.type === 'expense')} />
@@ -756,6 +764,97 @@ function CategoryBreakdown({ records }: { records: FinancialRecord[] }) {
           )
         })}
       </div>
+    </Card>
+  )
+}
+
+function BudgetVsActual({
+  budgetRecords,
+  expenseRecords,
+}: {
+  budgetRecords: FinancialRecord[]
+  expenseRecords: FinancialRecord[]
+}) {
+  // Sum budgets per category
+  const budgets: Partial<Record<FinanceCategory, number>> = {}
+  for (const r of budgetRecords) {
+    budgets[r.category] = (budgets[r.category] ?? 0) + r.amount
+  }
+
+  // Sum YTD expenses per category
+  const currentYear = new Date().getFullYear().toString()
+  const actuals: Partial<Record<FinanceCategory, number>> = {}
+  for (const r of expenseRecords.filter((r) => r.date.startsWith(currentYear))) {
+    actuals[r.category] = (actuals[r.category] ?? 0) + r.amount
+  }
+
+  const cats = (Object.keys(budgets) as FinanceCategory[]).sort(
+    (a, b) => (budgets[b] ?? 0) - (budgets[a] ?? 0)
+  )
+  if (cats.length === 0) return null
+
+  const totalBudget = cats.reduce((s, c) => s + (budgets[c] ?? 0), 0)
+  const totalActual = cats.reduce((s, c) => s + (actuals[c] ?? 0), 0)
+  const totalPct = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0
+
+  return (
+    <Card variant="default" padding="md">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Budget vs Actual
+        </p>
+        <span
+          className={`text-xs font-bold tabular-nums ${
+            totalPct > 100 ? 'text-destructive' : totalPct > 80 ? 'text-[hsl(45,75%,52%)]' : 'text-[hsl(152,62%,48%)]'
+          }`}
+        >
+          {totalPct}% of €{totalBudget.toLocaleString()} used
+        </span>
+      </div>
+      <div className="flex flex-col gap-3">
+        {cats.map((cat) => {
+          const budget = budgets[cat] ?? 0
+          const actual = actuals[cat] ?? 0
+          const pct = budget > 0 ? Math.min((actual / budget) * 100, 110) : 0
+          const rawPct = budget > 0 ? (actual / budget) * 100 : 0
+          const isOver = rawPct > 100
+          const isWarn = rawPct > 80
+          const barColor = isOver
+            ? 'hsl(0,68%,52%)'
+            : isWarn
+              ? 'hsl(45,75%,52%)'
+              : CATEGORY_COLORS[cat]
+          const color = CATEGORY_COLORS[cat]
+
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs capitalize text-muted-foreground">{cat}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className={`text-xs font-medium tabular-nums ${isOver ? 'text-destructive' : 'text-foreground'}`}>
+                    €{actual.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">/ €{budget.toLocaleString()}</span>
+                  {isOver && (
+                    <span className="text-[10px] font-bold text-destructive">
+                      +{Math.round(rawPct - 100)}%
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: `${color}14` }}>
+                <div
+                  className="h-full rounded-full transition-all duration-slow"
+                  style={{ width: `${pct}%`, background: barColor }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Comparing YTD {currentYear} expenses against logged budget records
+      </p>
     </Card>
   )
 }
