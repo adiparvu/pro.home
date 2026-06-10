@@ -1,7 +1,7 @@
 import { type Metadata } from 'next'
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { InventoryItem } from '@/lib/supabase/types'
+import type { InventoryItem, Room } from '@/lib/supabase/types'
 import { EditInventoryItemForm } from '@/components/modules/inventory/edit-inventory-item-form'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -24,6 +24,13 @@ export default async function EditInventoryItemPage({ params }: Props) {
 
   if (!item) notFound()
 
+  const { data: rooms } = await supabase
+    .from('rooms')
+    .select('id, name, floor')
+    .eq('property_id', item.property_id)
+    .order('floor')
+    .order('sort_order') as { data: Pick<Room, 'id' | 'name' | 'floor'>[] | null; error: unknown }
+
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
       <header className="glass-opaque sticky top-0 z-20 border-b border-border/50 px-4 py-4 md:px-6">
@@ -38,7 +45,7 @@ export default async function EditInventoryItemPage({ params }: Props) {
         </div>
       </header>
       <div className="px-4 py-4 md:px-6 md:py-6">
-        <EditInventoryItemForm item={item} />
+        <EditInventoryItemForm item={item} rooms={rooms ?? []} />
       </div>
     </div>
   )

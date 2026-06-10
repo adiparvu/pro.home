@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Archive, Tag, Calendar, DollarSign, ShieldCheck,
   Hash, FileText, AlertCircle, Pencil, Trash2, ChevronLeft,
+  MapPin, Barcode, AlertTriangle, CheckCircle, TrendingDown,
 } from 'lucide-react'
 import type { InventoryItem, ItemCondition } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -13,7 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 
-interface InventoryItemDetailProps { item: InventoryItem }
+interface InventoryItemDetailProps {
+  item: InventoryItem
+  roomName?: string | null
+}
 
 const CONDITION_COLORS: Record<ItemCondition, string> = {
   excellent: 'hsl(152,62%,38%)',
@@ -23,9 +27,11 @@ const CONDITION_COLORS: Record<ItemCondition, string> = {
   broken:    'hsl(0,68%,44%)',
 }
 
-export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
+export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps) {
   const router = useRouter()
   const [deleting, setDeleting] = React.useState(false)
+  const [recallActive, setRecallActive] = React.useState(item.recall_active)
+  const [togglingRecall, setTogglingRecall] = React.useState(false)
 
   const warrantyExpires = item.warranty_expires ? new Date(item.warranty_expires) : null
   const warrantyValid = warrantyExpires ? warrantyExpires > new Date() : false
@@ -39,6 +45,16 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
     await (supabase as any).from('inventory_items').delete().eq('id', item.id)
     router.push('/inventory')
     router.refresh()
+  }
+
+  async function handleRecallToggle() {
+    setTogglingRecall(true)
+    const supabase = createClient()
+    const newValue = !recallActive
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('inventory_items').update({ recall_active: newValue }).eq('id', item.id)
+    if (!error) setRecallActive(newValue)
+    setTogglingRecall(false)
   }
 
   return (
@@ -75,12 +91,29 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Recall alert */}
-        {item.recall_active && (
+        {recallActive && (
           <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
             <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-            <p className="text-sm text-destructive font-medium">Active recall notice on this item</p>
+            <p className="text-sm text-destructive font-medium flex-1">Active recall notice on this item</p>
+            <Button variant="ghost" size="sm" loading={togglingRecall} onClick={handleRecallToggle} className="text-destructive hover:text-destructive shrink-0">
+              Clear
+            </Button>
+          </div>
+        )}
+
+        {/* Photo gallery */}
+        {item.photo_urls && item.photo_urls.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {item.photo_urls.map((url, i) => (
+              <img
+                key={url}
+                src={url}
+                alt={`${item.name} photo ${i + 1}`}
+                className="h-32 w-32 shrink-0 rounded-xl object-cover border border-border"
+              />
+            ))}
           </div>
         )}
 
@@ -97,6 +130,12 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
             </Badge>
           )}
           {item.category && <Badge variant="neutral" size="sm">{item.category}</Badge>}
+          {roomName && (
+            <Badge variant="neutral" size="sm">
+              <MapPin className="h-3 w-3 mr-1" />
+              {roomName}
+            </Badge>
+          )}
           {warrantyExpires && (
             <Badge variant={warrantyValid ? 'success' : 'danger'} size="sm">
               {warrantyValid ? 'Warranty valid' : 'Warranty expired'}
@@ -110,6 +149,9 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
             {item.serial_number && (
               <DetailRow icon={Hash} label="Serial number" value={item.serial_number} />
             )}
+            {item.barcode && (
+              <DetailRow icon={Barcode} label="Barcode" value={item.barcode} />
+            )}
             {purchaseDate && (
               <DetailRow
                 icon={Calendar}
@@ -122,6 +164,13 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
                 icon={DollarSign}
                 label="Purchase price"
                 value={`${item.purchase_currency ?? 'EUR'} ${item.purchase_price.toLocaleString()}`}
+              />
+            )}
+            {item.current_value != null && (
+              <DetailRow
+                icon={TrendingDown}
+                label="Current value"
+                value={`${item.purchase_currency ?? 'EUR'} ${item.current_value.toLocaleString()}`}
               />
             )}
             {warrantyExpires && (
@@ -147,9 +196,9 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
                 </a>
               </DetailRow>
             )}
-            {item.tags.length > 0 && (
+            {item.tags && item.tags.length > 0 && (
               <DetailRow icon={Tag} label="Tags">
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 justify-end">
                   {item.tags.map((t) => (
                     <span key={t} className="rounded-full glass-light px-2 py-0.5 text-xs text-muted-foreground">{t}</span>
                   ))}
@@ -167,8 +216,25 @@ export function InventoryItemDetail({ item }: InventoryItemDetailProps) {
           </Card>
         )}
 
+        {/* Recall toggle */}
+        {!recallActive && (
+          <div className="rounded-2xl border border-border/30 bg-transparent p-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Safety</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-foreground">Recall notice</p>
+                <p className="text-xs text-muted-foreground">Mark if this item has an active safety recall</p>
+              </div>
+              <Button variant="ghost" size="sm" loading={togglingRecall} onClick={handleRecallToggle} className="text-warning hover:text-warning shrink-0">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Flag recall
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Empty state */}
-        {!item.serial_number && !item.purchase_price && !item.warranty_expires && !item.notes && (
+        {!item.serial_number && !item.purchase_price && !item.warranty_expires && !item.notes && !item.barcode && !item.current_value && (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <Archive className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No additional details — tap edit to add more</p>

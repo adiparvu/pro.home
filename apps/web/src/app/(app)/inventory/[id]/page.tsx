@@ -22,9 +22,20 @@ export default async function InventoryItemPage({ params }: Props) {
 
   if (!item) notFound()
 
+  // Fetch room name if item is assigned to a room
+  let roomName: string | null = null
+  if (item.room_id) {
+    const { data: room } = await supabase
+      .from('rooms')
+      .select('name')
+      .eq('id', item.room_id)
+      .single() as { data: { name: string } | null; error: unknown }
+    roomName = room?.name ?? null
+  }
+
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
-      <InventoryItemDetail item={item} />
+      <InventoryItemDetail item={item} roomName={roomName} />
     </div>
   )
 }

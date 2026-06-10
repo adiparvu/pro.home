@@ -170,7 +170,7 @@ export function ScanPage({ propertyId }: ScanPageProps) {
                       No items match &ldquo;{lastCode}&rdquo;
                     </p>
                   </div>
-                  <Link href="/inventory/new">
+                  <Link href={`/inventory/new${lastCode ? `?barcode=${encodeURIComponent(lastCode)}` : ''}`}>
                     <Button variant="secondary" size="sm">
                       <Plus className="h-3.5 w-3.5" />
                       Add to Inventory
