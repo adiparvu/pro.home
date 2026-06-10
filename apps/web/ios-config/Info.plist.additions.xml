@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Merge these keys into ios/App/App/Info.plist after running `cap add ios`.
+  Xcode → Project Navigator → App/Info.plist → Open As → Source Code → paste inside <dict>
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- Camera — required for M-SCAN barcode scanner and document uploads -->
+  <key>NSCameraUsageDescription</key>
+  <string>PRV HOUSE uses your camera to scan barcodes for inventory items and to capture document photos.</string>
+
+  <!-- Photo Library — reading photos for document uploads -->
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>PRV HOUSE accesses your photos to attach images to inventory items and documents.</string>
+
+  <!-- Push Notifications -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>remote-notification</string>
+  </array>
+
+  <!-- Landscape + Portrait support -->
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+
+</dict>
+</plist>

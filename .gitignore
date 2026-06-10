@@ -41,6 +41,16 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# Capacitor — generated native project files (large binaries)
+apps/web/ios/App/Pods
+apps/web/ios/App/App.xcworkspace/xcuserdata
+apps/web/android/.gradle
+apps/web/android/app/build
+apps/web/android/build
+apps/web/android/local.properties
+*.jks
+*.keystore
+
 # IDE
 .idea
 .vscode/settings.json
