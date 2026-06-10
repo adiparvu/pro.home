@@ -5,14 +5,15 @@ import Link from 'next/link'
 import {
   Star, Phone, Globe, Mail, Search, Wrench, Zap, Droplets, Wind,
   Paintbrush, ShieldCheck, Scissors, Hammer, Plus, Heart, Trash2,
-  ChevronDown, ChevronUp, BookUser,
+  ChevronDown, ChevronUp, BookUser, ClipboardList, AlertCircle,
+  CheckCircle2, XCircle, CalendarDays, ChevronRight,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import type { MarketplaceContact } from '@/lib/supabase/types'
+import type { MarketplaceContact, ServiceRequest, ServiceRequestStatus } from '@/lib/supabase/types'
 
 // ─── Static directory data ────────────────────────────────────────────────────
 
@@ -134,20 +135,49 @@ const CATEGORY_TABS: { id: ServiceCategory | 'all'; label: string }[] = [
   { id: 'general', label: 'Handyman' },
 ]
 
+const STATUS_CONFIG: Record<ServiceRequestStatus, { label: string; color: string; bg: string }> = {
+  pending:     { label: 'Pending',     color: 'text-muted-foreground',       bg: 'glass-light' },
+  quoted:      { label: 'Quoted',      color: 'text-[hsl(220,62%,60%)]',     bg: 'bg-[hsl(220,62%,52%)]/10' },
+  scheduled:   { label: 'Scheduled',  color: 'text-[hsl(45,75%,52%)]',      bg: 'bg-[hsl(45,75%,42%)]/10' },
+  in_progress: { label: 'In progress', color: 'text-[hsl(152,62%,48%)]',    bg: 'bg-[hsl(152,62%,42%)]/10' },
+  completed:   { label: 'Completed',  color: 'text-[hsl(152,62%,48%)]',     bg: 'bg-[hsl(152,62%,42%)]/10' },
+  cancelled:   { label: 'Cancelled',  color: 'text-muted-foreground',        bg: 'glass-light' },
+}
+
+const STATUS_NEXT: Partial<Record<ServiceRequestStatus, ServiceRequestStatus>> = {
+  pending:     'quoted',
+  quoted:      'scheduled',
+  scheduled:   'in_progress',
+  in_progress: 'completed',
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface MarketplacePageProps {
   propertyId: string | null
   initialContacts: MarketplaceContact[]
+  initialRequests: ServiceRequest[]
+  userId: string
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function MarketplacePage({ propertyId, initialContacts }: MarketplacePageProps) {
-  const [activeTab, setActiveTab] = React.useState<'directory' | 'contacts'>('directory')
+export function MarketplacePage({ propertyId, initialContacts, initialRequests, userId }: MarketplacePageProps) {
+  const [activeTab, setActiveTab] = React.useState<'directory' | 'contacts' | 'requests'>('directory')
   const [search, setSearch] = React.useState('')
   const [activeCategory, setActiveCategory] = React.useState<ServiceCategory | 'all'>('all')
   const [contacts, setContacts] = React.useState<MarketplaceContact[]>(initialContacts)
+  const [requests, setRequests] = React.useState<ServiceRequest[]>(initialRequests)
+
+  // Request form state
+  const [showRequestForm, setShowRequestForm] = React.useState(false)
+  const [reqContactId, setReqContactId] = React.useState('')
+  const [reqTitle, setReqTitle] = React.useState('')
+  const [reqDescription, setReqDescription] = React.useState('')
+  const [reqScheduledDate, setReqScheduledDate] = React.useState('')
+  const [reqNotes, setReqNotes] = React.useState('')
+  const [reqSaving, setReqSaving] = React.useState(false)
+  const [reqError, setReqError] = React.useState<string | null>(null)
 
   const filteredProviders = PROVIDERS.filter((p) => {
     const matchesCategory = activeCategory === 'all' || p.category === activeCategory
@@ -181,6 +211,65 @@ export function MarketplacePage({ propertyId, initialContacts }: MarketplacePage
     await (supabase as any).from('marketplace_contacts').delete().eq('id', id)
   }
 
+  function openRequestForm(contactId?: string) {
+    setReqContactId(contactId ?? '')
+    setReqTitle(''); setReqDescription(''); setReqScheduledDate(''); setReqNotes('')
+    setReqError(null); setShowRequestForm(true)
+    setActiveTab('requests')
+  }
+
+  async function submitRequest(e: React.FormEvent) {
+    e.preventDefault()
+    if (!reqTitle.trim() || !propertyId) return
+    setReqSaving(true); setReqError(null)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).from('service_requests').insert({
+      property_id: propertyId,
+      contact_id: reqContactId || null,
+      title: reqTitle.trim(),
+      description: reqDescription.trim() || null,
+      status: 'pending',
+      scheduled_date: reqScheduledDate || null,
+      notes: reqNotes.trim() || null,
+      cost_currency: 'EUR',
+      created_by: userId,
+    }).select().single()
+    if (error) {
+      setReqError((error as { message: string }).message ?? 'Failed to save request')
+    } else {
+      setRequests((prev) => [data as ServiceRequest, ...prev])
+      setShowRequestForm(false)
+    }
+    setReqSaving(false)
+  }
+
+  async function advanceStatus(req: ServiceRequest) {
+    const next = STATUS_NEXT[req.status]
+    if (!next) return
+    const update: Partial<ServiceRequest> = { status: next }
+    if (next === 'completed') update.completed_date = new Date().toISOString().split('T')[0] ?? null
+    setRequests((prev) => prev.map((r) => r.id === req.id ? { ...r, ...update } : r))
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('service_requests').update(update).eq('id', req.id)
+  }
+
+  async function cancelRequest(id: string) {
+    if (!confirm('Cancel this service request?')) return
+    setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status: 'cancelled' as const } : r))
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('service_requests').update({ status: 'cancelled' }).eq('id', id)
+  }
+
+  async function updateQuotedPrice(id: string, price: number) {
+    setRequests((prev) => prev.map((r) => r.id === id ? { ...r, quoted_price: price } : r))
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('service_requests').update({ quoted_price: price }).eq('id', id)
+  }
+
   return (
     <>
       <PageHeader
@@ -210,10 +299,25 @@ export function MarketplacePage({ propertyId, initialContacts }: MarketplacePage
               activeTab === 'contacts' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            My Contacts
+            Contacts
             {contacts.length > 0 && (
               <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'contacts' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
                 {contacts.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('requests')}
+            className={cn(
+              'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+              activeTab === 'requests' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Requests
+            {requests.filter((r) => r.status !== 'completed' && r.status !== 'cancelled').length > 0 && (
+              <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'requests' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
+                {requests.filter((r) => r.status !== 'completed' && r.status !== 'cancelled').length}
               </span>
             )}
           </button>
@@ -280,11 +384,124 @@ export function MarketplacePage({ propertyId, initialContacts }: MarketplacePage
                     contact={c}
                     onToggleFavorite={toggleFavorite}
                     onDelete={deleteContact}
+                    onRequestService={propertyId ? openRequestForm : undefined}
                   />
                 ))}
               </div>
             )}
           </>
+        )}
+
+        {activeTab === 'requests' && (
+          <div className="flex flex-col gap-3">
+            {/* New request form */}
+            {showRequestForm && (
+              <Card variant="default" padding="md">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-foreground">New service request</p>
+                  <button type="button" onClick={() => setShowRequestForm(false)} className="text-muted-foreground hover:text-foreground">
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                </div>
+                <form onSubmit={submitRequest} className="flex flex-col gap-3">
+                  {reqError && (
+                    <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {reqError}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Contact</label>
+                    <select
+                      value={reqContactId}
+                      onChange={(e) => setReqContactId(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    >
+                      <option value="">No specific contact</option>
+                      {contacts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">What do you need? *</label>
+                    <input
+                      value={reqTitle}
+                      onChange={(e) => setReqTitle(e.target.value)}
+                      placeholder='e.g. "Fix leaking kitchen tap"'
+                      required
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Description</label>
+                    <input
+                      value={reqDescription}
+                      onChange={(e) => setReqDescription(e.target.value)}
+                      placeholder="More details (optional)"
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Preferred date</label>
+                    <input
+                      type="date"
+                      value={reqScheduledDate}
+                      onChange={(e) => setReqScheduledDate(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={reqSaving || !reqTitle.trim()}
+                    className="h-10 w-full rounded-xl bg-primary text-sm font-medium text-white disabled:opacity-60 transition-opacity"
+                  >
+                    {reqSaving ? 'Saving…' : 'Create request'}
+                  </button>
+                </form>
+              </Card>
+            )}
+
+            {/* Request list */}
+            {requests.length === 0 && !showRequestForm ? (
+              <EmptyState
+                icon={<ClipboardList className="h-7 w-7 text-muted-foreground" />}
+                title="No service requests yet"
+                subtitle="Track quotes, scheduling, and work progress here."
+                action={propertyId ? (
+                  <button
+                    type="button"
+                    onClick={() => openRequestForm()}
+                    className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs text-white font-medium"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New request
+                  </button>
+                ) : undefined}
+              />
+            ) : (
+              <>
+                {requests.map((req) => (
+                  <RequestCard
+                    key={req.id}
+                    request={req}
+                    contactName={req.contact_id ? (contacts.find((c) => c.id === req.contact_id)?.name ?? null) : null}
+                    onAdvance={() => advanceStatus(req)}
+                    onCancel={() => cancelRequest(req.id)}
+                    onSetPrice={(p) => updateQuotedPrice(req.id, p)}
+                  />
+                ))}
+                {!showRequestForm && (
+                  <button
+                    type="button"
+                    onClick={() => openRequestForm()}
+                    className="flex items-center justify-center gap-2 rounded-xl glass-light py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New request
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
     </>
@@ -359,10 +576,12 @@ function ContactCard({
   contact,
   onToggleFavorite,
   onDelete,
+  onRequestService,
 }: {
   contact: MarketplaceContact
   onToggleFavorite: (id: string, current: boolean) => void
   onDelete: (id: string) => void
+  onRequestService?: (contactId: string) => void
 }) {
   const [expanded, setExpanded] = React.useState(false)
   const color = categoryColor(contact.category)
@@ -453,17 +672,143 @@ function ContactCard({
               {contact.notes && (
                 <p className="text-xs text-muted-foreground">{contact.notes}</p>
               )}
-              <button
-                type="button"
-                onClick={() => onDelete(contact.id)}
-                className="flex items-center gap-1 self-start text-xs text-destructive hover:text-destructive/80 transition-colors"
-              >
-                <Trash2 className="h-3 w-3" />Remove contact
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {onRequestService && (
+                  <button
+                    type="button"
+                    onClick={() => onRequestService(contact.id)}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <ClipboardList className="h-3 w-3" />
+                    Request service
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onDelete(contact.id)}
+                  className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 transition-colors"
+                >
+                  <Trash2 className="h-3 w-3" />Remove
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+    </Card>
+  )
+}
+
+// ─── Request card ─────────────────────────────────────────────────────────────
+
+function RequestCard({
+  request, contactName, onAdvance, onCancel, onSetPrice,
+}: {
+  request: ServiceRequest
+  contactName: string | null
+  onAdvance: () => void
+  onCancel: () => void
+  onSetPrice: (p: number) => void
+}) {
+  const [editingPrice, setEditingPrice] = React.useState(false)
+  const [priceInput, setPriceInput] = React.useState(String(request.quoted_price ?? ''))
+  const cfg = STATUS_CONFIG[request.status]
+  const nextStatus = STATUS_NEXT[request.status]
+  const isTerminal = request.status === 'completed' || request.status === 'cancelled'
+
+  return (
+    <Card variant="default" padding="md">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-foreground">{request.title}</p>
+            <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', cfg.bg, cfg.color)}>
+              {cfg.label}
+            </span>
+          </div>
+          {contactName && (
+            <p className="text-xs text-muted-foreground mt-0.5">{contactName}</p>
+          )}
+          {request.description && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{request.description}</p>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+            {request.scheduled_date && (
+              <span className="flex items-center gap-0.5">
+                <CalendarDays className="h-3 w-3" />
+                {new Date(request.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            )}
+            {request.quoted_price != null && !editingPrice && (
+              <button
+                type="button"
+                onClick={() => setEditingPrice(true)}
+                className="flex items-center gap-0.5 text-[hsl(152,62%,48%)] hover:underline"
+              >
+                €{request.quoted_price.toLocaleString()}
+              </button>
+            )}
+          </div>
+          {/* Quoted price inline edit */}
+          {editingPrice && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const p = parseFloat(priceInput)
+                if (!isNaN(p)) { onSetPrice(p); setEditingPrice(false) }
+              }}
+              className="mt-2 flex items-center gap-2"
+            >
+              <input
+                autoFocus
+                type="number"
+                value={priceInput}
+                onChange={(e) => setPriceInput(e.target.value)}
+                placeholder="Quoted price €"
+                min="0"
+                step="0.01"
+                className="h-8 w-32 rounded-lg border border-border glass-light px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/60"
+              />
+              <button type="submit" className="text-xs text-primary font-medium">Save</button>
+              <button type="button" onClick={() => setEditingPrice(false)} className="text-xs text-muted-foreground">Cancel</button>
+            </form>
+          )}
+          {request.status === 'quoted' && !editingPrice && request.quoted_price == null && (
+            <button type="button" onClick={() => setEditingPrice(true)} className="mt-1.5 text-[10px] text-primary hover:underline">
+              + Add quoted price
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!isTerminal && (
+        <div className="mt-3 flex gap-2">
+          {nextStatus && (
+            <button
+              type="button"
+              onClick={onAdvance}
+              className="flex items-center gap-1 rounded-lg bg-[hsl(152,62%,42%)] px-3 py-1.5 text-xs text-white font-medium hover:opacity-90 transition-opacity"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+              Mark as {STATUS_CONFIG[nextStatus].label}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex items-center gap-1 rounded-lg glass-light px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            Cancel
+          </button>
+        </div>
+      )}
+      {request.status === 'completed' && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-[hsl(152,62%,48%)]">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Completed{request.completed_date ? ` ${new Date(request.completed_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+        </div>
+      )}
     </Card>
   )
 }

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import type { GardenZone, GardenPlant, GardenTaskType } from '@/lib/supabase/types'
+import type { GardenZone, GardenPlant, GardenTask, GardenTaskType } from '@/lib/supabase/types'
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -38,16 +38,29 @@ interface AddGardenTaskFormProps {
   propertyId: string
   zones: GardenZone[]
   plants: GardenPlant[]
+  task?: GardenTask
 }
 
-export function AddGardenTaskForm({ propertyId, zones, plants }: AddGardenTaskFormProps) {
+export function AddGardenTaskForm({ propertyId, zones, plants, task }: AddGardenTaskFormProps) {
   const router = useRouter()
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const isEdit = !!task
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { task_type: 'general', is_recurring: false },
+    defaultValues: task
+      ? {
+          title: task.title,
+          task_type: task.task_type,
+          plant_id: task.plant_id ?? '',
+          zone_id: task.zone_id ?? '',
+          due_date: task.due_date ?? '',
+          is_recurring: task.is_recurring,
+          recurrence_rule: task.recurrence_rule ?? '',
+          notes: task.notes ?? '',
+        }
+      : { task_type: 'general', is_recurring: false },
   })
 
   const isRecurring = watch('is_recurring')
@@ -56,20 +69,25 @@ export function AddGardenTaskForm({ propertyId, zones, plants }: AddGardenTaskFo
     setSaving(true); setError(null)
     try {
       const supabase = createClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: e } = await (supabase as any).from('garden_tasks').insert({
-        property_id: propertyId,
+      const payload = {
         plant_id: data.plant_id || null,
         zone_id: data.zone_id || null,
         title: data.title,
         task_type: data.task_type,
-        status: 'pending',
         due_date: data.due_date || null,
         is_recurring: data.is_recurring,
         recurrence_rule: data.is_recurring ? (data.recurrence_rule || null) : null,
         notes: data.notes || null,
-      })
-      if (e) throw e
+      }
+      if (isEdit && task) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: e } = await (supabase as any).from('garden_tasks').update(payload).eq('id', task.id)
+        if (e) throw e
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: e } = await (supabase as any).from('garden_tasks').insert({ ...payload, property_id: propertyId, status: 'pending' })
+        if (e) throw e
+      }
       router.push('/garden'); router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save task')
@@ -146,7 +164,9 @@ export function AddGardenTaskForm({ propertyId, zones, plants }: AddGardenTaskFo
         <textarea {...register('notes')} rows={3} placeholder="Additional notes…" className="w-full rounded-xl border border-border glass-light px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/60" />
       </div>
 
-      <Button type="submit" variant="primary" loading={saving} className="mt-2">Save task</Button>
+      <Button type="submit" variant="primary" loading={saving} className="mt-2">
+        {isEdit ? 'Update task' : 'Save task'}
+      </Button>
     </form>
   )
 }

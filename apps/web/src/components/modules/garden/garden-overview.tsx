@@ -689,7 +689,16 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">{task.title}</p>
+              <div className="flex items-start justify-between gap-1">
+                <p className="text-sm font-medium text-foreground">{task.title}</p>
+                <Link
+                  href={`/garden/tasks/${task.id}/edit`}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Edit task"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Link>
+              </div>
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
                 <Badge variant="neutral" size="xs">{TASK_TYPE_LABELS[task.task_type]}</Badge>
                 {plantName && <span className="text-[10px] text-muted-foreground">{plantName}</span>}
