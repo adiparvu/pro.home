@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Notification } from '@/lib/supabase/types'
 import { NotificationsPage } from '@/components/modules/notifications/notifications-page'
+import { PushBanner } from '@/components/modules/notifications/push-banner'
 
 export const metadata: Metadata = { title: 'Notifications' }
 
@@ -30,6 +31,7 @@ export default async function NotificationsRoute() {
 
   return (
     <div className="flex flex-1 flex-col">
+      <PushBanner />
       <NotificationsPage notifications={notifications ?? []} userId={user.id} />
     </div>
   )

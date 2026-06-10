@@ -81,3 +81,40 @@ async function cacheFirst(request) {
   }
   return response
 }
+
+// ─── Web Push ────────────────────────────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  let payload = { title: 'PRV HOUSE', body: '', url: '/notifications' }
+  try {
+    payload = { ...payload, ...event.data.json() }
+  } catch {
+    payload.body = event.data.text()
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: payload.url },
+      tag: payload.url, // collapse multiple pushes for the same target
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = (event.notification.data && event.notification.data.url) || '/notifications'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus()
+          if ('navigate' in client) client.navigate(url)
+          return
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
+})
