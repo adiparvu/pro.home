@@ -1,15 +1,17 @@
 'use client'
 
 import * as React from 'react'
-import { Sparkles, Send, RotateCcw, Lightbulb, Wrench, Zap, Shield } from 'lucide-react'
+import { Sparkles, Send, RotateCcw, Copy, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { AriaMessage } from '@/lib/supabase/types'
+import type { AriaContextHints } from '@/app/(app)/aria/page'
 
 interface AriaPageProps {
   userId: string
   propertyId: string | null
   initialMessages: AriaMessage[]
+  contextHints?: AriaContextHints
 }
 
 interface Message {
@@ -19,12 +21,55 @@ interface Message {
   timestamp: Date
 }
 
-const SUGGESTED_PROMPTS = [
-  { icon: Lightbulb, text: 'What should I check this month?' },
-  { icon: Wrench, text: 'How do I winterize my heating system?' },
-  { icon: Zap, text: 'Why is my energy bill so high?' },
-  { icon: Shield, text: 'How can I improve my home security?' },
-]
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December']
+
+function buildSuggestedPrompts(hints?: AriaContextHints): string[] {
+  const prompts: string[] = []
+  const month = hints?.currentMonth ?? new Date().getMonth() + 1
+
+  if ((hints?.overdueTaskCount ?? 0) > 0) {
+    const n = hints!.overdueTaskCount
+    prompts.push(`I have ${n} overdue task${n > 1 ? 's' : ''} — where should I start?`)
+  }
+  if (hints?.hasExpiringWarranties) {
+    prompts.push('Which of my warranties are expiring soon?')
+  }
+  if (hints?.hasEnergyData) {
+    prompts.push('Help me reduce my energy consumption')
+  }
+
+  // Seasonal / month-based fallbacks
+  const seasonal: Record<number, string> = {
+    1: 'What winter maintenance should I do now?',
+    2: 'How do I prepare my home for spring?',
+    3: 'What spring home maintenance should I do?',
+    4: 'What should I service before summer?',
+    5: 'How do I check my AC before summer?',
+    6: 'What summer home maintenance is important?',
+    7: 'How do I protect my home in the heat?',
+    8: 'How do I prepare my home for autumn?',
+    9: 'What autumn maintenance should I prioritize?',
+    10: 'How do I winterize my heating system?',
+    11: 'How do I prepare my pipes for freezing?',
+    12: 'What should I check before the new year?',
+  }
+
+  const defaults = [
+    `What should I check in ${MONTH_NAMES[(month - 1) % 12]}?`,
+    seasonal[month] ?? 'What maintenance should I do this month?',
+    'How can I improve my home security?',
+    'Why is my energy bill so high?',
+    'Give me a seasonal home maintenance checklist',
+  ]
+
+  for (const p of defaults) {
+    if (prompts.length >= 4) break
+    if (!prompts.includes(p)) prompts.push(p)
+  }
+
+  return prompts.slice(0, 4)
+}
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
@@ -45,7 +90,7 @@ function dbToMessage(m: AriaMessage): Message {
   return { id: m.id, role: m.role, content: m.content, timestamp: new Date(m.created_at) }
 }
 
-export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps) {
+export function AriaPage({ userId, propertyId, initialMessages, contextHints }: AriaPageProps) {
   const [messages, setMessages] = React.useState<Message[]>(() => {
     if (initialMessages.length > 0) return initialMessages.map(dbToMessage)
     return [WELCOME_MESSAGE]
@@ -54,6 +99,8 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
   const [isThinking, setIsThinking] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
+
+  const suggestedPrompts = React.useMemo(() => buildSuggestedPrompts(contextHints), [contextHints])
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -85,7 +132,6 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
     setInput('')
     setIsThinking(true)
 
-    // Persist user message
     await persistMessage('user', text.trim())
 
     const history = [...messages, userMessage]
@@ -99,29 +145,51 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
         body: JSON.stringify({ messages: history }),
       })
 
-      const data = await res.json() as { content?: string; error?: string }
-      const responseContent = data.error ?? data.content ?? 'Sorry, something went wrong. Please try again.'
-
-      const ariaResponse: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: responseContent,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, ariaResponse])
-
-      // Persist ARIA response
-      await persistMessage('assistant', responseContent)
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        setMessages((prev) => [...prev, {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Network error — please check your connection and try again.',
+          content: data.error ?? 'Something went wrong. Please try again.',
           timestamp: new Date(),
-        },
-      ])
+        }])
+        return
+      }
+
+      // Start streaming — add empty assistant message immediately
+      const ariaId = crypto.randomUUID()
+      setMessages((prev) => [...prev, {
+        id: ariaId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      }])
+      setIsThinking(false)
+
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        fullContent += chunk
+        setMessages((prev) =>
+          prev.map((m) => m.id === ariaId ? { ...m, content: fullContent } : m)
+        )
+      }
+
+      if (fullContent) {
+        await persistMessage('assistant', fullContent)
+      }
+    } catch {
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: 'Network error — please check your connection and try again.',
+        timestamp: new Date(),
+      }])
     } finally {
       setIsThinking(false)
     }
@@ -138,8 +206,6 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
     setMessages([WELCOME_MESSAGE])
     setInput('')
     inputRef.current?.focus()
-
-    // Clear persisted messages for this user+property
     if (propertyId) {
       const supabase = createClient()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,8 +225,10 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
       <header className="glass-opaque sticky top-0 z-20 border-b border-border/50 px-4 py-4 md:px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ background: 'hsl(280, 68%, 47% / 0.20)' }}>
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
+              style={{ background: 'hsl(280 68% 47% / 0.20)' }}
+            >
               <Sparkles className="h-5 w-5" style={{ color: 'hsl(280, 68%, 57%)' }} />
             </div>
             <div>
@@ -189,14 +257,14 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
 
         {showSuggestions && (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 mt-4">
-            {SUGGESTED_PROMPTS.map(({ icon: Icon, text }) => (
+            {suggestedPrompts.map((text) => (
               <button
                 key={text}
                 type="button"
                 onClick={() => sendMessage(text)}
-                className="flex items-center gap-2 rounded-xl glass-light px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors text-left focus-ring"
+                className="flex items-start gap-2 rounded-xl glass-light px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors text-left focus-ring"
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: 'hsl(280, 68%, 57%)' }} />
                 {text}
               </button>
             ))}
@@ -214,7 +282,7 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask ARIA anything about your home..."
+            placeholder="Ask ARIA anything about your home…"
             rows={1}
             className="flex-1 resize-none rounded-xl border border-border glass-light px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 min-h-[44px] max-h-[120px] overflow-y-auto"
           />
@@ -228,9 +296,7 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
                 ? 'text-white shadow-glow-aria'
                 : 'glass-light text-muted-foreground cursor-not-allowed opacity-50'
             )}
-            style={input.trim() && !isThinking ? {
-              background: 'hsl(280, 68%, 47%)',
-            } : undefined}
+            style={input.trim() && !isThinking ? { background: 'hsl(280, 68%, 47%)' } : undefined}
             aria-label="Send message"
           >
             <Send className="h-4 w-4" />
@@ -243,30 +309,55 @@ export function AriaPage({ userId, propertyId, initialMessages }: AriaPageProps)
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user'
+  const [copied, setCopied] = React.useState(false)
+
+  function handleCopy() {
+    const plain = message.content.replace(/\*\*(.*?)\*\*/g, '$1')
+    navigator.clipboard.writeText(plain)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
-    <div className={cn('flex gap-3', isUser && 'flex-row-reverse')}>
+    <div className={cn('flex gap-3 group', isUser && 'flex-row-reverse')}>
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-          style={{ background: 'hsl(280, 68%, 47% / 0.20)' }}>
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+          style={{ background: 'hsl(280 68% 47% / 0.20)' }}
+        >
           <Sparkles className="h-4 w-4" style={{ color: 'hsl(280, 68%, 57%)' }} />
         </div>
       )}
-      <div
-        className={cn(
-          'max-w-[85%] rounded-2xl px-4 py-3 text-sm',
-          isUser
-            ? 'glass-standard text-foreground rounded-tr-sm'
-            : 'glass-light text-foreground rounded-tl-sm'
+      <div className="flex flex-col gap-1 max-w-[85%]">
+        <div
+          className={cn(
+            'rounded-2xl px-4 py-3 text-sm',
+            isUser
+              ? 'glass-standard text-foreground rounded-tr-sm'
+              : 'glass-light text-foreground rounded-tl-sm'
+          )}
+        >
+          <FormattedContent content={message.content} />
+        </div>
+        {!isUser && message.content && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 self-start text-[11px] text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 px-1"
+          >
+            {copied
+              ? <><Check className="h-3 w-3" /> Copied</>
+              : <><Copy className="h-3 w-3" /> Copy</>
+            }
+          </button>
         )}
-      >
-        <FormattedContent content={message.content} />
       </div>
     </div>
   )
 }
 
 function FormattedContent({ content }: { content: string }) {
+  if (!content) return <span className="inline-block h-4 w-1 bg-current opacity-70 animate-pulse" />
   const parts = content.split(/(\*\*.*?\*\*)/g)
   return (
     <p className="whitespace-pre-wrap">
@@ -284,8 +375,10 @@ function FormattedContent({ content }: { content: string }) {
 function ThinkingBubble() {
   return (
     <div className="flex gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-        style={{ background: 'hsl(280, 68%, 47% / 0.20)' }}>
+      <div
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+        style={{ background: 'hsl(280 68% 47% / 0.20)' }}
+      >
         <Sparkles className="h-4 w-4" style={{ color: 'hsl(280, 68%, 57%)' }} />
       </div>
       <div className="glass-light rounded-2xl rounded-tl-sm px-4 py-3">
@@ -294,10 +387,7 @@ function ThinkingBubble() {
             <div
               key={i}
               className="h-1.5 w-1.5 rounded-full animate-pulse-soft"
-              style={{
-                background: 'hsl(280, 68%, 57%)',
-                animationDelay: `${i * 200}ms`,
-              }}
+              style={{ background: 'hsl(280, 68%, 57%)', animationDelay: `${i * 200}ms` }}
             />
           ))}
         </div>
