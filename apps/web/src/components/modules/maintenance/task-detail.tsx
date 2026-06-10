@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Wrench, Calendar, DollarSign, Clock, User, CheckSquare,
   Square, ChevronLeft, Pencil, Trash2, CheckCircle2, AlertTriangle,
+  Phone, Mail, MapPin, Package, Tag, XCircle, Image,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
@@ -14,7 +15,12 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatRelativeTime } from '@/lib/utils'
 
-interface TaskDetailProps { task: MaintenanceTask }
+interface TaskDetailProps {
+  task: MaintenanceTask
+  assigneeName?: string | null
+  roomName?: string | null
+  inventoryItemName?: string | null
+}
 
 const PRIORITY_VARIANTS: Record<TaskPriority, 'critical' | 'danger' | 'warning' | 'neutral'> = {
   critical: 'critical', high: 'danger', medium: 'warning', low: 'neutral',
@@ -29,7 +35,7 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
 
 type ChecklistItem = { text: string; done: boolean }
 
-export function TaskDetail({ task: initial }: TaskDetailProps) {
+export function TaskDetail({ task: initial, assigneeName, roomName, inventoryItemName }: TaskDetailProps) {
   const router = useRouter()
   const [task, setTask] = React.useState(initial)
   const [checklist, setChecklist] = React.useState<ChecklistItem[]>(() => {
@@ -73,6 +79,7 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
   }
 
   const isCompleted = task.status === 'completed'
+  const isCancelled = task.status === 'cancelled'
   const isOverdue = task.status === 'overdue'
   const dueDate = task.due_date ? new Date(task.due_date) : null
   const completedDate = task.completed_date ? new Date(task.completed_date) : null
@@ -91,7 +98,7 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
               <ChevronLeft className="h-4 w-4" />
             </Link>
             <div className="min-w-0">
-              <h1 className={`truncate text-lg font-bold ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+              <h1 className={`truncate text-lg font-bold ${isCompleted || isCancelled ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                 {task.title}
               </h1>
               <p className="text-xs capitalize" style={{ color: STATUS_COLORS[task.status] }}>
@@ -112,23 +119,38 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Status badges */}
         <div className="flex flex-wrap gap-2">
           <Badge variant={PRIORITY_VARIANTS[task.priority]} size="sm" className="capitalize">
             {task.priority} priority
           </Badge>
           <Badge variant="neutral" size="sm" className="capitalize">{task.category}</Badge>
+          {roomName && (
+            <Badge variant="neutral" size="sm">
+              <MapPin className="h-3 w-3 mr-1" />
+              {roomName}
+            </Badge>
+          )}
           {isOverdue && dueDate && (
             <Badge variant="critical" size="sm" className="flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" />
               Overdue {formatRelativeTime(task.due_date!)}
             </Badge>
           )}
+          {task.is_recurring && (
+            <Badge variant="neutral" size="sm">Recurring</Badge>
+          )}
+          {task.tags && task.tags.length > 0 && task.tags.map((t) => (
+            <Badge key={t} variant="neutral" size="sm">
+              <Tag className="h-3 w-3 mr-1" />
+              {t}
+            </Badge>
+          ))}
         </div>
 
         {/* Quick status actions */}
-        {!isCompleted && (
+        {!isCompleted && !isCancelled && (
           <div className="flex gap-2">
             {task.status === 'pending' && (
               <Button
@@ -151,6 +173,16 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
               <CheckCircle2 className="h-3.5 w-3.5" />
               Mark complete
             </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => updateStatus('cancelled')}
+              loading={updatingStatus}
+              className="text-muted-foreground"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Cancel
+            </Button>
           </div>
         )}
 
@@ -163,7 +195,23 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
           </div>
         )}
 
-        {/* Details */}
+        {isCancelled && (
+          <div className="flex items-center gap-2 rounded-xl bg-muted/30 border border-border px-4 py-3">
+            <XCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+            <p className="text-sm text-muted-foreground">This task was cancelled</p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => updateStatus('pending')}
+              loading={updatingStatus}
+              className="ml-auto text-xs"
+            >
+              Reopen
+            </Button>
+          </div>
+        )}
+
+        {/* Description */}
         {task.description && (
           <Card variant="default" padding="md">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Description</p>
@@ -171,8 +219,14 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
           </Card>
         )}
 
+        {/* Details */}
         <Card variant="default" padding="md">
           <div className="flex flex-col divide-y divide-border/40">
+            {assigneeName && (
+              <DetailRow icon={User} label="Assigned to">
+                <span className="text-sm font-medium text-foreground">{assigneeName}</span>
+              </DetailRow>
+            )}
             {dueDate && (
               <DetailRow icon={Calendar} label="Due date">
                 <span className={`text-sm font-medium ${isOverdue ? 'text-destructive' : 'text-foreground'}`}>
@@ -196,9 +250,12 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
             )}
             {task.estimated_hours != null && (
               <DetailRow icon={Clock} label="Estimated time">
-                <span className="text-sm font-medium text-foreground">
-                  {task.estimated_hours}h
-                </span>
+                <span className="text-sm font-medium text-foreground">{task.estimated_hours}h</span>
+              </DetailRow>
+            )}
+            {task.actual_hours != null && (
+              <DetailRow icon={Clock} label="Actual time">
+                <span className="text-sm font-medium text-foreground">{task.actual_hours}h</span>
               </DetailRow>
             )}
             {task.contractor_name && (
@@ -206,8 +263,59 @@ export function TaskDetail({ task: initial }: TaskDetailProps) {
                 <span className="text-sm font-medium text-foreground">{task.contractor_name}</span>
               </DetailRow>
             )}
+            {task.contractor_phone && (
+              <DetailRow icon={Phone} label="Contractor phone">
+                <a href={`tel:${task.contractor_phone}`} className="text-sm font-medium text-primary hover:underline">
+                  {task.contractor_phone}
+                </a>
+              </DetailRow>
+            )}
+            {task.contractor_email && (
+              <DetailRow icon={Mail} label="Contractor email">
+                <a href={`mailto:${task.contractor_email}`} className="text-sm font-medium text-primary hover:underline truncate max-w-[200px]">
+                  {task.contractor_email}
+                </a>
+              </DetailRow>
+            )}
+            {inventoryItemName && (
+              <DetailRow icon={Package} label="Inventory item">
+                <Link href={`/inventory/${task.inventory_item_id}`} className="text-sm font-medium text-primary hover:underline truncate max-w-[200px]">
+                  {inventoryItemName}
+                </Link>
+              </DetailRow>
+            )}
           </div>
         </Card>
+
+        {/* Before photos */}
+        {task.before_photo_urls && task.before_photo_urls.length > 0 && (
+          <Card variant="default" padding="md">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Before</p>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {task.before_photo_urls.map((url, i) => (
+                <img key={url} src={url} alt={`Before ${i + 1}`} className="h-28 w-28 shrink-0 rounded-xl object-cover border border-border" />
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* After photos */}
+        {task.after_photo_urls && task.after_photo_urls.length > 0 && (
+          <Card variant="default" padding="md">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">After</p>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {task.after_photo_urls.map((url, i) => (
+                <img key={url} src={url} alt={`After ${i + 1}`} className="h-28 w-28 shrink-0 rounded-xl object-cover border border-border" />
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Checklist */}
         {checklist.length > 0 && (

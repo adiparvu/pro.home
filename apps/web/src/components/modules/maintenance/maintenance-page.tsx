@@ -7,7 +7,6 @@ import type { Property, MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/utils'
 
 interface MaintenancePageProps {
@@ -36,12 +35,24 @@ const STATUS_TABS: { id: TaskStatus | 'all'; label: string }[] = [
   { id: 'in_progress', label: 'Active' },
   { id: 'overdue', label: 'Overdue' },
   { id: 'completed', label: 'Done' },
+  { id: 'cancelled', label: 'Cancelled' },
+]
+
+const PRIORITY_FILTERS: { id: TaskPriority | 'all'; label: string }[] = [
+  { id: 'all', label: 'All priorities' },
+  { id: 'critical', label: 'Critical' },
+  { id: 'high', label: 'High' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'low', label: 'Low' },
 ]
 
 export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
   const [activeTab, setActiveTab] = React.useState<TaskStatus | 'all'>('all')
+  const [priorityFilter, setPriorityFilter] = React.useState<TaskPriority | 'all'>('all')
 
-  const filtered = activeTab === 'all' ? tasks : tasks.filter((t) => t.status === activeTab)
+  const filtered = tasks
+    .filter((t) => activeTab === 'all' || t.status === activeTab)
+    .filter((t) => priorityFilter === 'all' || t.priority === priorityFilter)
 
   const overdueCount = tasks.filter((t) => t.status === 'overdue').length
   const pendingCount = tasks.filter((t) => t.status === 'pending').length
@@ -58,17 +69,12 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <StatCard
-            label="Overdue"
-            value={overdueCount}
-            color="hsl(0, 68%, 52%)"
-            alert={overdueCount > 0}
-          />
+          <StatCard label="Overdue" value={overdueCount} color="hsl(0, 68%, 52%)" alert={overdueCount > 0} />
           <StatCard label="Pending" value={pendingCount} color="hsl(45, 75%, 52%)" />
           <StatCard label="Done (30d)" value={completedCount} color="hsl(152, 62%, 48%)" />
         </div>
 
-        {/* Tab filter */}
+        {/* Status tab filter */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {STATUS_TABS.map(({ id, label }) => (
             <button
@@ -78,6 +84,24 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 activeTab === id
                   ? 'bg-primary text-white'
+                  : 'glass-light text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Priority filter */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {PRIORITY_FILTERS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPriorityFilter(id)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                priorityFilter === id
+                  ? 'bg-foreground/10 text-foreground ring-1 ring-foreground/20'
                   : 'glass-light text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -114,10 +138,7 @@ function StatCard({
 }) {
   return (
     <Card variant="default" padding="sm">
-      <p
-        className="text-xl font-bold"
-        style={{ color: alert && value > 0 ? 'hsl(0, 68%, 52%)' : color }}
-      >
+      <p className="text-xl font-bold" style={{ color: alert && value > 0 ? 'hsl(0, 68%, 52%)' : color }}>
         {value}
       </p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
@@ -129,6 +150,7 @@ function TaskCard({ task }: { task: MaintenanceTask }) {
   const StatusIcon = STATUS_CONFIG[task.status].icon
   const isOverdue = task.status === 'overdue'
   const isCompleted = task.status === 'completed'
+  const isCancelled = task.status === 'cancelled'
 
   return (
     <Link href={`/maintenance/${task.id}`}>
@@ -140,28 +162,25 @@ function TaskCard({ task }: { task: MaintenanceTask }) {
                 ? 'text-destructive'
                 : isCompleted
                   ? 'text-success'
-                  : 'text-muted-foreground'
+                  : isCancelled
+                    ? 'text-muted-foreground/50'
+                    : 'text-muted-foreground'
             }`}
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <p className={`text-sm font-medium truncate ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+              <p className={`text-sm font-medium truncate ${isCompleted || isCancelled ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                 {task.title}
               </p>
               <div className="flex shrink-0 items-center gap-1.5">
-                <Badge
-                  variant={PRIORITY_VARIANTS[task.priority]}
-                  size="xs"
-                >
+                <Badge variant={PRIORITY_VARIANTS[task.priority]} size="xs">
                   {task.priority}
                 </Badge>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                {task.description}
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <Badge variant="neutral" size="xs" className="capitalize">
@@ -175,6 +194,12 @@ function TaskCard({ task }: { task: MaintenanceTask }) {
               {task.estimated_cost && (
                 <span className="text-[10px] text-muted-foreground">
                   ~€{task.estimated_cost}
+                </span>
+              )}
+              {task.assigned_to_member_id && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
+                  Assigned
                 </span>
               )}
             </div>

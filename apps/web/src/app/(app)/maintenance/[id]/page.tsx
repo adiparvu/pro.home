@@ -22,9 +22,35 @@ export default async function MaintenanceTaskPage({ params }: Props) {
 
   if (!task) notFound()
 
+  // Fetch related names in parallel
+  const [assigneeResult, roomResult, inventoryResult] = await Promise.all([
+    task.assigned_to_member_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (supabase as any).from('property_members').select('display_name, nickname').eq('id', task.assigned_to_member_id).single() as Promise<{ data: { display_name: string | null; nickname: string | null } | null }>
+      : Promise.resolve({ data: null }),
+    task.room_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (supabase as any).from('rooms').select('name').eq('id', task.room_id).single() as Promise<{ data: { name: string } | null }>
+      : Promise.resolve({ data: null }),
+    task.inventory_item_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (supabase as any).from('inventory_items').select('name').eq('id', task.inventory_item_id).single() as Promise<{ data: { name: string } | null }>
+      : Promise.resolve({ data: null }),
+  ])
+
+  const assignee = assigneeResult.data
+  const assigneeName = assignee
+    ? (assignee.nickname ?? assignee.display_name ?? null)
+    : null
+
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
-      <TaskDetail task={task} />
+      <TaskDetail
+        task={task}
+        assigneeName={assigneeName}
+        roomName={roomResult.data?.name ?? null}
+        inventoryItemName={inventoryResult.data?.name ?? null}
+      />
     </div>
   )
 }
