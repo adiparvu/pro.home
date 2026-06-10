@@ -6,6 +6,7 @@ import {
   Plus, Wrench, Archive, Banknote, FolderOpen, Leaf, CalendarDays, Zap, ChevronRight,
 } from 'lucide-react'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
+import { useScrollDirection } from '@/hooks/use-scroll-direction'
 import { getCapabilities } from '@/lib/permissions'
 import type { UserRole } from '@/lib/supabase/types'
 import { cn } from '@/lib/utils'
@@ -85,6 +86,7 @@ export function QuickActionsFab({ role }: { role: UserRole | null }) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const { hidden } = useScrollDirection()
 
   const caps = getCapabilities(role)
   const actions = QUICK_ACTIONS.filter((a) => a.enabled(caps))
@@ -99,10 +101,14 @@ export function QuickActionsFab({ role }: { role: UserRole | null }) {
         onClick={() => setOpen(true)}
         aria-label="Quick actions"
         className={cn(
-          'fixed z-50 flex h-14 w-14 items-center justify-center rounded-full',
+          'fixed right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full',
           'bg-primary text-white shadow-glow-home',
-          'transition-transform duration-fast active:scale-90 hover:scale-105 focus-ring',
-          'bottom-[96px] right-4 md:bottom-6 md:right-6'
+          '[box-shadow:inset_0_1px_0_rgba(255,255,255,0.25),0px_8px_32px_rgba(46,143,236,0.20)]',
+          'transition-all duration-normal ease-spring-out active:scale-90 hover:scale-105 focus-ring',
+          'motion-reduce:transition-opacity',
+          'bottom-[calc(env(safe-area-inset-bottom,0px)+92px)]',
+          'md:bottom-6 md:right-6 md:translate-y-0 md:opacity-100',
+          hidden && 'translate-y-[200%] opacity-0 motion-reduce:translate-y-0'
         )}
       >
         <Plus className="h-6 w-6" />

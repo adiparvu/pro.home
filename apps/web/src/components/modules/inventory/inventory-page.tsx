@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StatusChip } from '@/components/ui/chip'
 import { ContextMenu } from '@/components/ui/context-menu'
+import { PeekCard } from '@/components/ui/peek-card'
 import { Input } from '@/components/ui/input'
 
 interface InventoryPageProps {
@@ -212,6 +213,22 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
   const router = useRouter()
   return (
     <ContextMenu
+      preview={
+        <PeekCard
+          icon={Archive}
+          iconColor="hsl(185,62%,42%)"
+          title={item.name}
+          subtitle={[item.brand, item.model].filter(Boolean).join(' · ') || null}
+          status={item.recall_active ? 'urgent' : (item.condition ?? undefined)}
+          meta={[
+            ...(item.category ? [{ icon: Tag, label: item.category }] : []),
+            ...(item.purchase_price != null ? [{ label: `Purchased for €${item.purchase_price}` }] : []),
+            ...(item.warranty_expires
+              ? [{ label: `Warranty until ${new Date(item.warranty_expires).getFullYear()}` }]
+              : []),
+          ]}
+        />
+      }
       items={[
         { label: 'Open', icon: ExternalLink, onSelect: () => router.push(`/inventory/${item.id}`) },
         { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/inventory/${item.id}/edit`) },

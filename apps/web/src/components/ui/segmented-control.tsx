@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useSlidingThumb } from '@/hooks/use-sliding-thumb'
 import { cn } from '@/lib/utils'
 
 export interface SegmentedOption<T extends string> {
@@ -34,27 +35,7 @@ export function SegmentedControl<T extends string>({
   className,
   'aria-label': ariaLabel,
 }: SegmentedControlProps<T>) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const buttonRefs = React.useRef(new Map<T, HTMLButtonElement>())
-  const [thumb, setThumb] = React.useState<{ left: number; width: number } | null>(null)
-
-  const measure = React.useCallback(() => {
-    const btn = buttonRefs.current.get(value)
-    const container = containerRef.current
-    if (!btn || !container) return
-    const cRect = container.getBoundingClientRect()
-    const bRect = btn.getBoundingClientRect()
-    setThumb({ left: bRect.left - cRect.left, width: bRect.width })
-  }, [value])
-
-  React.useLayoutEffect(() => {
-    measure()
-  }, [measure, options.length])
-
-  React.useEffect(() => {
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [measure])
+  const { containerRef, setItemRef, thumb } = useSlidingThumb(value, [options.length])
 
   return (
     <div
@@ -82,10 +63,7 @@ export function SegmentedControl<T extends string>({
         return (
           <button
             key={option.value}
-            ref={(el) => {
-              if (el) buttonRefs.current.set(option.value, el)
-              else buttonRefs.current.delete(option.value)
-            }}
+            ref={setItemRef(option.value)}
             type="button"
             role="tab"
             aria-selected={isActive}

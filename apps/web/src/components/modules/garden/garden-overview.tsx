@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { ContextMenu } from '@/components/ui/context-menu'
+import { PeekCard } from '@/components/ui/peek-card'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import type { GardenPlant, GardenTask, GardenZone, GardenTaskType, GardenZoneType, PlantStatus } from '@/lib/supabase/types'
@@ -528,6 +529,22 @@ function PlantCard({
 
   return (
     <ContextMenu
+      preview={
+        <PeekCard
+          icon={Leaf}
+          iconColor="hsl(120,52%,40%)"
+          title={plant.name}
+          subtitle={plant.species}
+          status={plant.status}
+          meta={[
+            ...(plant.next_watering
+              ? [{ icon: Droplets, label: watering === 'overdue' ? 'Watering overdue' : watering === 'today' ? 'Water today' : `Next watering ${new Date(plant.next_watering).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` }]
+              : []),
+            ...(zoneName ? [{ icon: MapPin, label: zoneName }] : []),
+            ...(plant.sunlight_needs ? [{ icon: Sun, label: sunLabel(plant.sunlight_needs) }] : []),
+          ]}
+        />
+      }
       items={[
         { label: 'Open', onSelect: () => router.push(`/garden/plants/${plant.id}`) },
         { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/garden/plants/${plant.id}/edit`) },

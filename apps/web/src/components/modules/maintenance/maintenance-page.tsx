@@ -15,6 +15,7 @@ import { StatusChip } from '@/components/ui/chip'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { ContextMenu } from '@/components/ui/context-menu'
+import { PeekCard } from '@/components/ui/peek-card'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -266,6 +267,22 @@ function TaskCard({ task, compact }: { task: MaintenanceTask; compact?: boolean 
 
   return (
     <ContextMenu
+      preview={
+        <PeekCard
+          icon={Wrench}
+          iconColor="hsl(22,68%,48%)"
+          title={task.title}
+          subtitle={task.description}
+          status={task.status}
+          meta={[
+            ...(task.due_date
+              ? [{ icon: CalendarDays, label: `${isOverdue ? 'Was due' : 'Due'} ${formatRelativeTime(task.due_date)}` }]
+              : []),
+            ...(task.estimated_cost ? [{ label: `Estimated ~€${task.estimated_cost}` }] : []),
+            { label: `${task.category} · ${task.priority} priority` },
+          ]}
+        />
+      }
       items={[
         { label: 'Open', icon: ExternalLink, onSelect: () => router.push(`/maintenance/${task.id}`) },
         { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/maintenance/${task.id}/edit`) },

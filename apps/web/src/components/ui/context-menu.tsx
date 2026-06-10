@@ -19,6 +19,12 @@ interface ContextMenuProps {
   /** Disable the menu entirely (e.g. for read-only roles) */
   disabled?: boolean
   className?: string
+  /**
+   * Peek & Pop: optional preview card rendered above the actions. When set,
+   * the menu presents centered (iOS peek style) instead of anchored to the
+   * press point.
+   */
+  preview?: React.ReactNode
 }
 
 const LONG_PRESS_MS = 450
@@ -32,7 +38,7 @@ const MENU_WIDTH = 220
  *     <TaskCard ... />
  *   </ContextMenu>
  */
-export function ContextMenu({ items, children, disabled, className }: ContextMenuProps) {
+export function ContextMenu({ items, children, disabled, className, preview }: ContextMenuProps) {
   const [menu, setMenu] = React.useState<{ x: number; y: number } | null>(null)
   const [closing, setClosing] = React.useState(false)
   const pressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -113,43 +119,74 @@ export function ContextMenu({ items, children, disabled, className }: ContextMen
               aria-hidden="true"
             />
 
-            {/* Menu */}
-            <div
-              className={cn(
-                'absolute overflow-hidden rounded-2xl glass-opaque shadow-4',
-                closing ? 'scale-95 opacity-0 transition-all duration-150' : 'animate-scale-in'
-              )}
-              style={{ left: menu.x, top: menu.y, width: MENU_WIDTH, transformOrigin: 'top center' }}
-            >
-              {items.map((item, i) => {
-                const Icon = item.icon
-                return (
-                  <React.Fragment key={item.label}>
-                    {item.divider && i > 0 && <div className="h-1.5 bg-black/20" />}
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        close()
-                        // Let the close animation start before the action runs
-                        setTimeout(item.onSelect, 80)
-                      }}
-                      className={cn(
-                        'flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-white/5',
-                        i > 0 && !item.divider && 'border-t border-border/30',
-                        item.destructive ? 'text-destructive' : 'text-foreground'
-                      )}
-                    >
-                      {item.label}
-                      {Icon && <Icon className={cn('h-4 w-4', item.destructive ? 'text-destructive' : 'text-muted-foreground')} />}
-                    </button>
-                  </React.Fragment>
-                )
-              })}
-            </div>
+            {preview ? (
+              /* Peek & Pop: centered preview card + actions */
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 pointer-events-none">
+                <div
+                  className={cn(
+                    'pointer-events-auto w-full max-w-[340px]',
+                    closing ? 'scale-95 opacity-0 transition-all duration-150' : 'animate-scale-in'
+                  )}
+                >
+                  {preview}
+                </div>
+                <div
+                  className={cn(
+                    'pointer-events-auto overflow-hidden rounded-2xl glass-opaque shadow-4',
+                    closing ? 'scale-95 opacity-0 transition-all duration-150' : 'animate-scale-in'
+                  )}
+                  style={{ width: MENU_WIDTH }}
+                >
+                  <MenuItems items={items} close={close} />
+                </div>
+              </div>
+            ) : (
+              /* Anchored menu */
+              <div
+                className={cn(
+                  'absolute overflow-hidden rounded-2xl glass-opaque shadow-4',
+                  closing ? 'scale-95 opacity-0 transition-all duration-150' : 'animate-scale-in'
+                )}
+                style={{ left: menu.x, top: menu.y, width: MENU_WIDTH, transformOrigin: 'top center' }}
+              >
+                <MenuItems items={items} close={close} />
+              </div>
+            )}
           </div>,
           document.body
         )}
+    </>
+  )
+}
+
+function MenuItems({ items, close }: { items: ContextMenuItem[]; close: () => void }) {
+  return (
+    <>
+      {items.map((item, i) => {
+        const Icon = item.icon
+        return (
+          <React.Fragment key={item.label}>
+            {item.divider && i > 0 && <div className="h-1.5 bg-black/20" />}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                close()
+                // Let the close animation start before the action runs
+                setTimeout(item.onSelect, 80)
+              }}
+              className={cn(
+                'flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-white/5',
+                i > 0 && !item.divider && 'border-t border-border/30',
+                item.destructive ? 'text-destructive' : 'text-foreground'
+              )}
+            >
+              {item.label}
+              {Icon && <Icon className={cn('h-4 w-4', item.destructive ? 'text-destructive' : 'text-muted-foreground')} />}
+            </button>
+          </React.Fragment>
+        )
+      })}
     </>
   )
 }

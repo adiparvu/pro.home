@@ -4,6 +4,8 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Building2, Sparkles, Users, LayoutGrid } from 'lucide-react'
+import { useScrollDirection } from '@/hooks/use-scroll-direction'
+import { useSlidingThumb } from '@/hooks/use-sliding-thumb'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
@@ -27,87 +29,93 @@ interface BottomTabBarProps {
   unreadCount?: number
 }
 
+/**
+ * Floating glass capsule navigation (mobile only). Sliding glass pill marks
+ * the active tab; the whole capsule hides on scroll-down and springs back on
+ * scroll-up, mirrored by the quick-actions FAB.
+ */
 export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
   const pathname = usePathname()
+  const { hidden } = useScrollDirection()
+
+  const activeHref =
+    TAB_ITEMS.find((item) =>
+      item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+    )?.href ?? ''
+
+  const { containerRef, setItemRef, thumb } = useSlidingThumb(activeHref, [pathname])
 
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-[22] md:hidden',
-        'glass-opaque',
-        'border-t border-[rgba(255,255,255,0.10)]',
-        'pb-safe'
+        'fixed left-4 right-4 z-30 mx-auto max-w-[420px] md:hidden',
+        'rounded-full glass-heavy',
+        'transition-all duration-normal ease-spring-out motion-reduce:transition-opacity',
+        'bottom-[calc(env(safe-area-inset-bottom,0px)+12px)]',
+        hidden
+          ? 'translate-y-[150%] opacity-0 motion-reduce:translate-y-0'
+          : 'translate-y-0 opacity-100'
       )}
       aria-label="Mobile navigation"
     >
-      <div className="flex items-end justify-around px-2 pt-2 pb-2">
+      <div ref={containerRef} className="relative flex items-center justify-around px-2 py-2">
+        {/* Sliding active pill */}
+        {thumb && activeHref && (
+          <div
+            className="absolute top-1.5 bottom-1.5 rounded-full glass-standard transition-all duration-normal ease-spring-out"
+            style={{ left: thumb.left, width: thumb.width }}
+            aria-hidden="true"
+          />
+        )}
+
         {TAB_ITEMS.map((item) => {
-          const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href)
+          const isActive = item.href === activeHref
           const color = MODULE_COLORS[item.module]
-
-          if ('isCenter' in item && item.isCenter) {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'relative flex -mt-5 h-14 w-14 flex-col items-center justify-center rounded-full',
-                  'shadow-glow-aria',
-                  'focus-ring',
-                  'active:scale-[0.92] transition-transform duration-fast',
-                  isActive
-                    ? 'bg-[hsl(280,68%,47%)]'
-                    : 'bg-[hsl(280,68%,38%)]'
-                )}
-                aria-current={isActive ? 'page' : undefined}
-                aria-label={item.label}
-              >
-                <item.icon className="h-6 w-6 text-white" />
-              </Link>
-            )
-          }
-
+          const isCenter = 'isCenter' in item && item.isCenter
           const isMore = item.module === 'more'
           const showBadge = isMore && unreadCount > 0
 
           return (
             <Link
               key={item.href}
+              ref={setItemRef(item.href)}
               href={item.href}
               className={cn(
-                'relative flex min-w-[44px] flex-col items-center justify-center gap-1 py-1 px-2',
-                'rounded-xl focus-ring',
-                'active:scale-[0.90] transition-transform duration-fast'
+                'relative z-10 flex h-12 min-w-[52px] flex-col items-center justify-center gap-0.5 rounded-full px-3',
+                'focus-ring active:scale-[0.90] transition-transform duration-fast'
               )}
               aria-current={isActive ? 'page' : undefined}
               aria-label={item.label}
             >
-              <item.icon
-                className={cn(
-                  'h-6 w-6 transition-colors duration-fast',
-                  isActive ? 'opacity-100' : 'opacity-50'
-                )}
-                style={isActive ? { color } : undefined}
-              />
-              {showBadge && (
-                <Badge
-                  variant="danger"
-                  size="xs"
-                  className="absolute -right-0.5 top-0"
+              {isCenter ? (
+                <span
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-full shadow-glow-aria transition-colors duration-fast',
+                    isActive ? 'bg-[hsl(280,68%,47%)]' : 'bg-[hsl(280,68%,38%)]'
+                  )}
                 >
+                  <item.icon className="h-5 w-5 text-white" />
+                </span>
+              ) : (
+                <>
+                  <item.icon
+                    className={cn(
+                      'h-6 w-6 transition-all duration-fast',
+                      isActive ? 'opacity-100' : 'opacity-50'
+                    )}
+                    style={isActive ? { color } : undefined}
+                  />
+                  {isActive && (
+                    <span className="text-[10px] font-semibold leading-none" style={{ color }}>
+                      {item.label}
+                    </span>
+                  )}
+                </>
+              )}
+              {showBadge && (
+                <Badge variant="danger" size="xs" className="absolute right-1 top-0.5">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </Badge>
-              )}
-              {isActive && (
-                <span className="text-[10px] font-semibold" style={{ color }}>
-                  {item.label}
-                </span>
-              )}
-              {!isActive && (
-                <span className="h-[10px]" aria-hidden="true" />
               )}
             </Link>
           )

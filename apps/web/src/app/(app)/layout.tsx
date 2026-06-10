@@ -4,6 +4,7 @@ import { Providers } from '@/components/layout/providers'
 import { SidebarNav } from '@/components/layout/sidebar-nav'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
 import { QuickActionsFab } from '@/components/layout/quick-actions-fab'
+import { GestureManager } from '@/components/layout/gesture-manager'
 import { LpbeBackground } from '@/components/glass/lpbe-background'
 import type { Profile, UserRole } from '@/lib/supabase/types'
 
@@ -71,6 +72,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* Role-aware quick actions */}
         <QuickActionsFab role={memberRole} />
+
+        {/* Mobile gestures: edge-swipe back, pull-to-refresh */}
+        <GestureManager />
       </div>
     </Providers>
   )
