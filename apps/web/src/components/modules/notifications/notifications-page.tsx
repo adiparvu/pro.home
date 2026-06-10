@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
-import { Badge } from '@/components/ui/badge'
+import { StatusChip } from '@/components/ui/chip'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -28,15 +30,9 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   finances: Banknote,
 }
 
-const PRIORITY_VARIANTS = {
-  critical: 'critical',
-  high: 'danger',
-  normal: 'neutral',
-  low: 'neutral',
-} as const
-
 export function NotificationsPage({ notifications: initial, userId }: NotificationsPageProps) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [notifications, setNotifications] = React.useState(initial)
   const [isMarkingAll, setIsMarkingAll] = React.useState(false)
   const [isClearingRead, setIsClearingRead] = React.useState(false)
@@ -57,10 +53,18 @@ export function NotificationsPage({ notifications: initial, userId }: Notificati
       .eq('user_id', userId)
       .eq('status', 'unread')
     setIsMarkingAll(false)
+    toast.success('All notifications marked as read')
     router.refresh()
   }
 
   async function clearReadNotifications() {
+    const ok = await confirmDialog({
+      title: 'Clear read notifications?',
+      description: 'They will be permanently removed.',
+      confirmLabel: 'Clear',
+      destructive: true,
+    })
+    if (!ok) return
     setIsClearingRead(true)
     setNotifications((prev) => prev.filter((n) => n.status !== 'read'))
     const supabase = createClient()
@@ -71,6 +75,7 @@ export function NotificationsPage({ notifications: initial, userId }: Notificati
       .eq('user_id', userId)
       .eq('status', 'read')
     setIsClearingRead(false)
+    toast.success('Read notifications cleared')
     router.refresh()
   }
 
@@ -186,9 +191,7 @@ function NotificationRow({
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {notification.priority !== 'normal' && (
-              <Badge variant={PRIORITY_VARIANTS[notification.priority]} size="xs">
-                {notification.priority}
-              </Badge>
+              <StatusChip status={notification.priority} size="xs" />
             )}
             {isUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
           </div>

@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 
 const CATEGORIES: DocumentCategory[] = ['legal', 'insurance', 'warranty', 'manual', 'invoice', 'permit', 'tax', 'utility', 'other']
 
@@ -33,6 +35,7 @@ function formatBytes(bytes: number | null) {
 
 export function DocumentDetail({ initialDoc }: { initialDoc: Document }) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [doc, setDoc] = React.useState(initialDoc)
   const [editing, setEditing] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
@@ -95,7 +98,13 @@ export function DocumentDetail({ initialDoc }: { initialDoc: Document }) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete "${doc.name}"? This cannot be undone.`)) return
+    const ok = await confirmDialog({
+      title: `Delete "${doc.name}"?`,
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeleting(true)
     const supabase = createClient()
     const storagePath = doc.file_url.split('/documents/').pop()
@@ -105,6 +114,7 @@ export function DocumentDetail({ initialDoc }: { initialDoc: Document }) {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('documents').delete().eq('id', doc.id)
+    toast.success('Document deleted')
     router.push('/documents')
     router.refresh()
   }

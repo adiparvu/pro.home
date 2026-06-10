@@ -11,6 +11,8 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 
 interface FinancesPageProps {
   property: Property
@@ -55,6 +57,7 @@ function blankForm() {
 }
 
 export function FinancesPage({ property, userId, initialRecords }: FinancesPageProps) {
+  const confirmDialog = useConfirm()
   const [records, setRecords] = React.useState<FinancialRecord[]>(initialRecords)
   const [typeFilter, setTypeFilter] = React.useState<FinanceType | 'all'>('all')
   const [showForm, setShowForm] = React.useState(false)
@@ -248,11 +251,17 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
   }
 
   async function handleDelete(record: FinancialRecord) {
-    if (!confirm(`Delete "${record.title}"?`)) return
+    const ok = await confirmDialog({
+      title: `Delete "${record.title}"?`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeletingId(record.id)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('financial_records').delete().eq('id', record.id)
+    toast.success('Record deleted')
     setRecords((prev) => prev.filter((r) => r.id !== record.id))
     if (editingId === record.id) cancelForm()
     setDeletingId(null)

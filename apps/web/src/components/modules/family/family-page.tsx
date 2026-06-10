@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { InviteMemberDialog } from './invite-member-dialog'
 
 interface FamilyPageProps {
@@ -39,6 +41,7 @@ export function FamilyPage({
   myMembership,
 }: FamilyPageProps) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const [members, setMembers] = React.useState(initialMembers)
   const [invitations, setInvitations] = React.useState(initialInvitations)
@@ -52,10 +55,17 @@ export function FamilyPage({
   }, {})
 
   async function handleRemove(memberId: string) {
-    if (!confirm('Remove this member from the property?')) return
+    const ok = await confirmDialog({
+      title: 'Remove this member?',
+      description: 'They will lose access to this property.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    if (!ok) return
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('property_members').update({ status: 'inactive' }).eq('id', memberId)
+    toast.success('Member removed')
     setMembers((prev) => prev.filter((m) => m.id !== memberId))
     router.refresh()
   }
@@ -80,10 +90,16 @@ export function FamilyPage({
   }
 
   async function handleRevoke(invitationId: string) {
-    if (!confirm('Revoke this invitation?')) return
+    const ok = await confirmDialog({
+      title: 'Revoke this invitation?',
+      confirmLabel: 'Revoke',
+      destructive: true,
+    })
+    if (!ok) return
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('property_invitations').update({ status: 'revoked' }).eq('id', invitationId)
+    toast.success('Invitation revoked')
     setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId))
   }
 

@@ -1,12 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, ChevronDown, Building2, Check } from 'lucide-react'
+import { ChevronDown, Building2, Check } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { NotificationsSheet } from '@/components/layout/notifications-sheet'
+import { ProfileSheet } from '@/components/layout/profile-sheet'
 import type { Property } from '@/lib/supabase/types'
-import { getInitials } from '@/lib/utils'
 
 interface DashboardHeaderProps {
   user: SupabaseUser
@@ -39,12 +37,6 @@ export function DashboardHeader({
     day: 'numeric',
   })
 
-  const displayName =
-    user.user_metadata?.full_name ??
-    user.email?.split('@')[0] ??
-    'User'
-
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined
   const multipleProperties = properties.length > 1
 
   return (
@@ -109,35 +101,8 @@ export function DashboardHeader({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[var(--color-hover)] transition-colors duration-fast focus-ring"
-            aria-label={
-              notificationCount > 0
-                ? `${notificationCount} unread notifications`
-                : 'Notifications'
-            }
-          >
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            {notificationCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5">
-                <Badge variant="danger" size="xs">
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </Badge>
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/settings/profile"
-            className="focus-ring rounded-full"
-            aria-label="Profile settings"
-          >
-            <Avatar size="sm" status="online">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-              <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-            </Avatar>
-          </Link>
+          <NotificationsSheet count={notificationCount} />
+          <ProfileSheet user={user} />
         </div>
       </div>
     </header>

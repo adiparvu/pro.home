@@ -7,7 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Camera, Building2, Archive, ArchiveRestore } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
+import { toast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import type { HeatingType, Property } from '@/lib/supabase/types'
 
@@ -57,6 +59,7 @@ interface EditPropertyFormProps {
 
 export function EditPropertyForm({ property }: EditPropertyFormProps) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [serverError, setServerError] = React.useState<string | null>(null)
   const [photoUrl, setPhotoUrl] = React.useState<string | null>(property.photo_url)
   const [uploadingPhoto, setUploadingPhoto] = React.useState(false)
@@ -140,14 +143,20 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
 
   async function handleArchiveToggle() {
     const newState = !property.is_active
-    const confirmMsg = newState
-      ? 'Restore this property? It will appear in your active list.'
-      : 'Archive this property? It will be hidden from your main list but all data is preserved.'
-    if (!confirm(confirmMsg)) return
+    const ok = await confirmDialog({
+      title: newState ? 'Restore this property?' : 'Archive this property?',
+      description: newState
+        ? 'It will appear in your active list.'
+        : 'It will be hidden from your main list but all data is preserved.',
+      confirmLabel: newState ? 'Restore' : 'Archive',
+      destructive: true,
+    })
+    if (!ok) return
     setArchiving(true)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('properties').update({ is_active: newState }).eq('id', property.id)
+    toast.success(newState ? 'Property restored' : 'Property archived')
     setArchiving(false)
     router.push('/property')
     router.refresh()

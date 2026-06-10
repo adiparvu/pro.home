@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 
 interface DocumentsPageProps {
   property: Property
@@ -38,6 +40,7 @@ function formatBytes(bytes: number | null) {
 }
 
 export function DocumentsPage({ property, userId, initialDocuments }: DocumentsPageProps) {
+  const confirmDialog = useConfirm()
   const [documents, setDocuments] = React.useState<Document[]>(initialDocuments)
   const [categoryFilter, setCategoryFilter] = React.useState<DocumentCategory | null>(null)
   const [showUpload, setShowUpload] = React.useState(false)
@@ -114,7 +117,13 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
   }
 
   async function handleDelete(doc: Document) {
-    if (!confirm(`Delete "${doc.name}"? This cannot be undone.`)) return
+    const ok = await confirmDialog({
+      title: `Delete "${doc.name}"?`,
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeletingId(doc.id)
     const supabase = createClient()
 
@@ -126,6 +135,7 @@ export function DocumentsPage({ property, userId, initialDocuments }: DocumentsP
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('documents').delete().eq('id', doc.id)
+    toast.success('Document deleted')
     setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
     setDeletingId(null)
   }

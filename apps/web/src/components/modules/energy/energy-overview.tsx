@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface EnergyOverviewProps {
@@ -46,6 +48,7 @@ function consumptionDeltas(readings: EnergyReading[], meterType: MeterType) {
 }
 
 export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, utilityBudget, currency, propertyId }: EnergyOverviewProps) {
+  const confirmDialog = useConfirm()
   const [allReadings, setAllReadings] = React.useState(readings)
   const [deleting, setDeleting] = React.useState<string | null>(null)
   const [chartMeter, setChartMeter] = React.useState<MeterType | null>(null)
@@ -71,11 +74,17 @@ export function EnergyOverview({ readings, ytdUtilities, monthlyUtilities, utili
   }, [activeMeterTypes.length])
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this reading?')) return
+    const ok = await confirmDialog({
+      title: 'Delete this reading?',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeleting(id)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('energy_readings').delete().eq('id', id)
+    toast.success('Reading deleted')
     setAllReadings((prev) => prev.filter((r) => r.id !== id))
     setDeleting(null)
   }

@@ -13,6 +13,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { formatRelativeTime } from '@/lib/utils'
 
 interface TaskDetailProps {
@@ -37,6 +39,7 @@ type ChecklistItem = { text: string; done: boolean }
 
 export function TaskDetail({ task: initial, assigneeName, roomName, inventoryItemName }: TaskDetailProps) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [task, setTask] = React.useState(initial)
   const [checklist, setChecklist] = React.useState<ChecklistItem[]>(() => {
     try {
@@ -57,6 +60,7 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
     const { data } = await (supabase as any).from('maintenance_tasks').update(patch).eq('id', task.id).select().single() as { data: MaintenanceTask | null }
     if (data) setTask(data)
     setUpdatingStatus(false)
+    if (status === 'completed') toast.success('Task completed')
     router.refresh()
   }
 
@@ -69,11 +73,18 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
   }
 
   async function handleDelete() {
-    if (!confirm('Delete this task? This cannot be undone.')) return
+    const ok = await confirmDialog({
+      title: 'Delete task?',
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeleting(true)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('maintenance_tasks').delete().eq('id', task.id)
+    toast.success('Task deleted')
     router.push('/maintenance')
     router.refresh()
   }

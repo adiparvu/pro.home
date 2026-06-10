@@ -8,7 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
+import { toast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Password change ──────────────────────────────────────────────────────────
@@ -36,6 +38,7 @@ type MfaState =
 
 export function SecuritySettings({ userId: _userId }: { userId: string }) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [isSigningOut, setIsSigningOut] = React.useState(false)
   const [pwSuccess, setPwSuccess] = React.useState(false)
   const [pwError, setPwError] = React.useState<string | null>(null)
@@ -106,9 +109,16 @@ export function SecuritySettings({ userId: _userId }: { userId: string }) {
 
   async function handleUnenrollMfa() {
     if (mfa.status !== 'enrolled') return
-    if (!confirm('Disable two-factor authentication? Your account will be less secure.')) return
+    const ok = await confirmDialog({
+      title: 'Disable two-factor authentication?',
+      description: 'Your account will be less secure.',
+      confirmLabel: 'Disable',
+      destructive: true,
+    })
+    if (!ok) return
     const supabase = createClient()
     await supabase.auth.mfa.unenroll({ factorId: mfa.factorId })
+    toast.success('Two-factor disabled')
     setMfa({ status: 'idle' })
   }
 

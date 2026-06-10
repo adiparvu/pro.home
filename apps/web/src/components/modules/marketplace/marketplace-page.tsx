@@ -11,6 +11,8 @@ import {
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { MarketplaceContact, ServiceRequest, ServiceRequestStatus } from '@/lib/supabase/types'
@@ -163,6 +165,7 @@ interface MarketplacePageProps {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function MarketplacePage({ propertyId, initialContacts, initialRequests, userId }: MarketplacePageProps) {
+  const confirmDialog = useConfirm()
   const [activeTab, setActiveTab] = React.useState<'directory' | 'contacts' | 'requests'>('directory')
   const [search, setSearch] = React.useState('')
   const [activeCategory, setActiveCategory] = React.useState<ServiceCategory | 'all'>('all')
@@ -256,11 +259,17 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
   }
 
   async function cancelRequest(id: string) {
-    if (!confirm('Cancel this service request?')) return
+    const ok = await confirmDialog({
+      title: 'Cancel this service request?',
+      confirmLabel: 'Cancel request',
+      destructive: true,
+    })
+    if (!ok) return
     setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status: 'cancelled' as const } : r))
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('service_requests').update({ status: 'cancelled' }).eq('id', id)
+    toast.success('Request cancelled')
   }
 
   async function updateQuotedPrice(id: string, price: number) {

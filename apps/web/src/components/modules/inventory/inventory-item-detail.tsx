@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
 interface InventoryItemDetailProps {
@@ -29,6 +31,7 @@ const CONDITION_COLORS: Record<ItemCondition, string> = {
 
 export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps) {
   const router = useRouter()
+  const confirmDialog = useConfirm()
   const [deleting, setDeleting] = React.useState(false)
   const [recallActive, setRecallActive] = React.useState(item.recall_active)
   const [togglingRecall, setTogglingRecall] = React.useState(false)
@@ -38,11 +41,18 @@ export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps
   const purchaseDate = item.purchase_date ? new Date(item.purchase_date) : null
 
   async function handleDelete() {
-    if (!confirm('Delete this item? This cannot be undone.')) return
+    const ok = await confirmDialog({
+      title: 'Delete this item?',
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeleting(true)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('inventory_items').delete().eq('id', item.id)
+    toast.success('Item deleted')
     router.push('/inventory')
     router.refresh()
   }

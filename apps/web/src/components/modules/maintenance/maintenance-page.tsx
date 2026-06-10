@@ -2,14 +2,19 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
-  Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Circle, ChevronRight,
-  LayoutList, CalendarDays, RepeatIcon,
+  Wrench, AlertTriangle, Clock, CheckCircle2, Circle, ChevronRight,
+  LayoutList, CalendarDays, RepeatIcon, SlidersHorizontal, ExternalLink, Pencil,
 } from 'lucide-react'
 import type { Property, MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusChip } from '@/components/ui/chip'
+import { SegmentedControl } from '@/components/ui/segmented-control'
+import { BottomSheet } from '@/components/ui/bottom-sheet'
+import { ContextMenu } from '@/components/ui/context-menu'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -24,13 +29,6 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; icon: React.ComponentTy
   completed:   { label: 'Completed',   icon: CheckCircle2 },
   cancelled:   { label: 'Cancelled',   icon: Circle },
   overdue:     { label: 'Overdue',     icon: AlertTriangle },
-}
-
-const PRIORITY_VARIANTS: Record<TaskPriority, 'critical' | 'danger' | 'warning' | 'neutral'> = {
-  critical: 'critical',
-  high: 'danger',
-  medium: 'warning',
-  low: 'neutral',
 }
 
 const STATUS_TABS: { id: TaskStatus | 'all'; label: string }[] = [
@@ -82,6 +80,7 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
   const [activeTab, setActiveTab] = React.useState<TaskStatus | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = React.useState<TaskPriority | 'all'>('all')
   const [view, setView] = React.useState<'list' | 'timeline'>('list')
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
 
   const filtered = tasks
     .filter((t) => activeTab === 'all' || t.status === activeTab)
@@ -122,58 +121,53 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
 
         {/* View toggle + filters row */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1 glass-light rounded-xl p-1">
-            <button
-              type="button"
-              onClick={() => setView('list')}
-              className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                view === 'list' ? 'glass-standard text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <LayoutList className="h-3.5 w-3.5" />
-              List
-            </button>
-            <button
-              type="button"
-              onClick={() => setView('timeline')}
-              className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                view === 'timeline' ? 'glass-standard text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <CalendarDays className="h-3.5 w-3.5" />
-              Timeline
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="View"
+            fullWidth={false}
+            size="sm"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'list', label: 'List', icon: LayoutList },
+              { value: 'timeline', label: 'Timeline', icon: CalendarDays },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors focus-ring',
+              priorityFilter !== 'all'
+                ? 'bg-primary/15 text-primary'
+                : 'glass-light text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            {priorityFilter !== 'all' && (
+              <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-semibold">1</span>
+            )}
+          </button>
         </div>
 
-        {view === 'list' && (
-          <>
-            {/* Status tab filter */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {STATUS_TABS.map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setActiveTab(id)}
-                  className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-                    activeTab === id ? 'bg-primary text-white' : 'glass-light text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Priority filter */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        {/* Filters bottom sheet */}
+        <BottomSheet
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          title="Filters"
+          height="small"
+        >
+          <div className="flex flex-col gap-3 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</p>
+            <div className="flex flex-wrap gap-2">
               {PRIORITY_FILTERS.map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setPriorityFilter(id)}
-                  className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                  onClick={() => { setPriorityFilter(id); setFiltersOpen(false) }}
+                  className={cn('rounded-full px-3.5 py-2 text-xs font-medium transition-colors focus-ring',
                     priorityFilter === id
-                      ? 'bg-foreground/10 text-foreground ring-1 ring-foreground/20'
+                      ? 'bg-primary text-white'
                       : 'glass-light text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -181,6 +175,19 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
                 </button>
               ))}
             </div>
+          </div>
+        </BottomSheet>
+
+        {view === 'list' && (
+          <>
+            {/* Status tab filter */}
+            <SegmentedControl
+              aria-label="Status"
+              size="sm"
+              value={activeTab}
+              onChange={setActiveTab}
+              options={STATUS_TABS.map(({ id, label }) => ({ value: id, label }))}
+            />
 
             {/* Task list */}
             {filtered.length === 0 ? (
@@ -251,47 +258,55 @@ function StatCard({ label, value, color, alert }: { label: string; value: number
 }
 
 function TaskCard({ task, compact }: { task: MaintenanceTask; compact?: boolean }) {
+  const router = useRouter()
   const StatusIcon = STATUS_CONFIG[task.status].icon
   const isOverdue = task.status === 'overdue'
   const isCompleted = task.status === 'completed'
   const isCancelled = task.status === 'cancelled'
 
   return (
-    <Link href={`/maintenance/${task.id}`}>
-      <Card variant="default" hover padding={compact ? 'sm' : 'md'} className="group">
-        <div className="flex items-start gap-3">
-          <StatusIcon className={cn('h-4 w-4 shrink-0 mt-0.5',
-            isOverdue ? 'text-destructive' : isCompleted ? 'text-success' : isCancelled ? 'text-muted-foreground/50' : 'text-muted-foreground'
-          )} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <p className={cn('text-sm font-medium truncate', isCompleted || isCancelled ? 'line-through text-muted-foreground' : 'text-foreground')}>
-                {task.title}
-              </p>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {task.is_recurring && <RepeatIcon className="h-3 w-3 text-primary/60 shrink-0" />}
-                <Badge variant={PRIORITY_VARIANTS[task.priority]} size="xs">{task.priority}</Badge>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+    <ContextMenu
+      items={[
+        { label: 'Open', icon: ExternalLink, onSelect: () => router.push(`/maintenance/${task.id}`) },
+        { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/maintenance/${task.id}/edit`) },
+      ]}
+    >
+      <Link href={`/maintenance/${task.id}`}>
+        <Card variant="default" hover padding={compact ? 'sm' : 'md'} className="group">
+          <div className="flex items-start gap-3">
+            <StatusIcon className={cn('h-4 w-4 shrink-0 mt-0.5',
+              isOverdue ? 'text-destructive' : isCompleted ? 'text-success' : isCancelled ? 'text-muted-foreground/50' : 'text-muted-foreground'
+            )} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className={cn('text-sm font-medium truncate', isCompleted || isCancelled ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                  {task.title}
+                </p>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {task.is_recurring && <RepeatIcon className="h-3 w-3 text-primary/60 shrink-0" />}
+                  <StatusChip status={task.priority} size="xs" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </div>
+              {!compact && task.description && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Badge variant="neutral" size="xs" className="capitalize">{task.category}</Badge>
+                {task.due_date && (
+                  <span className={cn('text-[10px]', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
+                    {isOverdue ? 'Was due' : 'Due'} {formatRelativeTime(task.due_date)}
+                  </span>
+                )}
+                {task.estimated_cost && (
+                  <span className="text-[10px] text-muted-foreground">~€{task.estimated_cost}</span>
+                )}
               </div>
             </div>
-            {!compact && task.description && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
-            )}
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge variant="neutral" size="xs" className="capitalize">{task.category}</Badge>
-              {task.due_date && (
-                <span className={cn('text-[10px]', isOverdue ? 'text-destructive' : 'text-muted-foreground')}>
-                  {isOverdue ? 'Was due' : 'Due'} {formatRelativeTime(task.due_date)}
-                </span>
-              )}
-              {task.estimated_cost && (
-                <span className="text-[10px] text-muted-foreground">~€{task.estimated_cost}</span>
-              )}
-            </div>
           </div>
-        </div>
-      </Card>
-    </Link>
+        </Card>
+      </Link>
+    </ContextMenu>
   )
 }
 

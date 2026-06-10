@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { toast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { ROLE_LABELS } from '@/lib/supabase/types'
 
@@ -31,6 +33,7 @@ const ROOM_TYPE_LABELS: Record<RoomType, string> = {
 
 export function PropertyDetail({ property, membership, members, rooms: initialRooms }: PropertyDetailProps) {
   const canEdit = membership.role === 'owner' || membership.role === 'partner'
+  const confirmDialog = useConfirm()
   const [rooms, setRooms] = React.useState(initialRooms)
   const [addingRoom, setAddingRoom] = React.useState(false)
   const [newRoomName, setNewRoomName] = React.useState('')
@@ -57,10 +60,16 @@ export function PropertyDetail({ property, membership, members, rooms: initialRo
   }
 
   async function handleDeleteRoom(roomId: string) {
-    if (!confirm('Remove this room?')) return
+    const ok = await confirmDialog({
+      title: 'Remove this room?',
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    if (!ok) return
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('rooms').delete().eq('id', roomId)
+    toast.success('Room removed')
     setRooms((prev) => prev.filter((r) => r.id !== roomId))
   }
 

@@ -2,25 +2,20 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Archive, Plus, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Archive, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusChip } from '@/components/ui/chip'
+import { ContextMenu } from '@/components/ui/context-menu'
 import { Input } from '@/components/ui/input'
 
 interface InventoryPageProps {
   property: Property
   items: InventoryItem[]
 }
-
-const CONDITION_VARIANTS = {
-  excellent: 'excellent',
-  good: 'good',
-  fair: 'fair',
-  poor: 'poor',
-  broken: 'critical',
-} as const
 
 export function InventoryPage({ property, items }: InventoryPageProps) {
   const [search, setSearch] = React.useState('')
@@ -214,7 +209,14 @@ function StatTile({ label, value, alert }: { label: string; value: string; alert
 }
 
 function InventoryItemCard({ item }: { item: InventoryItem }) {
+  const router = useRouter()
   return (
+    <ContextMenu
+      items={[
+        { label: 'Open', icon: ExternalLink, onSelect: () => router.push(`/inventory/${item.id}`) },
+        { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/inventory/${item.id}/edit`) },
+      ]}
+    >
     <Link href={`/inventory/${item.id}`}>
     <Card variant="default" hover padding="md" className="group">
       <div className="flex items-start gap-3">
@@ -229,12 +231,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
                 <Badge variant="critical" size="xs">Recall</Badge>
               )}
               {item.condition && (
-                <Badge
-                  variant={CONDITION_VARIANTS[item.condition] ?? 'neutral'}
-                  size="xs"
-                >
-                  {item.condition}
-                </Badge>
+                <StatusChip status={item.condition} size="xs" />
               )}
             </div>
           </div>
@@ -261,6 +258,7 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
       </div>
     </Card>
     </Link>
+    </ContextMenu>
   )
 }
 

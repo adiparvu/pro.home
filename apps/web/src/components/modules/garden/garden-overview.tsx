@@ -7,9 +7,14 @@ import {
   SkipForward, Plus, CalendarDays, ChevronDown, ChevronUp,
   AlertTriangle, Clock, FlowerIcon, MapPin, Pencil, Trash2, SunMedium,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SegmentedControl } from '@/components/ui/segmented-control'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { ContextMenu } from '@/components/ui/context-menu'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import type { GardenPlant, GardenTask, GardenZone, GardenTaskType, GardenZoneType, PlantStatus } from '@/lib/supabase/types'
 
@@ -86,6 +91,7 @@ const ZONE_TYPE_EMOJIS: Record<GardenZoneType, string> = {
 }
 
 export function GardenOverview({ propertyId, plants: initialPlants, tasks: initialTasks, zones: initialZones }: GardenOverviewProps) {
+  const confirmDialog = useConfirm()
   const [activeTab, setActiveTab] = React.useState<'plants' | 'tasks' | 'zones'>('plants')
   const [plants, setPlants] = React.useState<GardenPlant[]>(initialPlants)
   const [tasks, setTasks] = React.useState<GardenTask[]>(initialTasks)
@@ -148,13 +154,20 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
   }
 
   async function deleteZone(zoneId: string) {
-    if (!confirm('Delete this zone? Plants in this zone will become unassigned.')) return
+    const ok = await confirmDialog({
+      title: 'Delete zone?',
+      description: 'Plants in this zone will become unassigned.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    })
+    if (!ok) return
     setDeletingZoneId(zoneId)
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('garden_zones').delete().eq('id', zoneId)
     setZonesState((prev) => prev.filter((z) => z.id !== zoneId))
     setDeletingZoneId(null)
+    toast.success('Zone deleted')
   }
 
   const overduePlants = plants.filter((p) => wateringStatus(p) === 'overdue' && p.status !== 'removed')
@@ -180,6 +193,7 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
       : p
     ))
     setWateringPlantId(null)
+    toast.success('Plant watered')
   }
 
   async function completeTask(id: string) {
@@ -188,6 +202,7 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('garden_tasks').update({ status: 'done', completed_date: today }).eq('id', id)
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: 'done' as const, completed_date: today ?? null } : t))
+    toast.success('Task completed')
   }
 
   async function skipTask(id: string) {
@@ -222,56 +237,16 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
       </div>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 rounded-xl glass-light p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('plants')}
-          className={cn(
-            'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
-            activeTab === 'plants' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Leaf className="h-3.5 w-3.5" />
-          Plants
-          {activePlants.length > 0 && (
-            <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'plants' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
-              {activePlants.length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('tasks')}
-          className={cn(
-            'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
-            activeTab === 'tasks' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5" />
-          Tasks
-          {pendingTasks.length > 0 && (
-            <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'tasks' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
-              {pendingTasks.length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('zones')}
-          className={cn(
-            'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
-            activeTab === 'zones' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          Zones
-          {zonesState.length > 0 && (
-            <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'zones' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
-              {zonesState.length}
-            </span>
-          )}
-        </button>
-      </div>
+      <SegmentedControl
+        aria-label="Garden sections"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: 'plants', label: 'Plants', icon: Leaf, count: activePlants.length },
+          { value: 'tasks', label: 'Tasks', icon: CalendarDays, count: pendingTasks.length },
+          { value: 'zones', label: 'Zones', icon: MapPin, count: zonesState.length },
+        ]}
+      />
 
       {activeTab === 'plants' && (
         <>
@@ -546,11 +521,19 @@ function PlantCard({
   isWatering: boolean
   onWater: () => void
 }) {
+  const router = useRouter()
   const [expanded, setExpanded] = React.useState(false)
   const statusColor = STATUS_COLORS[plant.status]
   const waterColor = watering === 'overdue' ? 'hsl(0,68%,52%)' : watering === 'today' ? 'hsl(45,75%,42%)' : 'hsl(152,62%,42%)'
 
   return (
+    <ContextMenu
+      items={[
+        { label: 'Open', onSelect: () => router.push(`/garden/plants/${plant.id}`) },
+        { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/garden/plants/${plant.id}/edit`) },
+        { label: 'Water now', icon: Droplets, onSelect: onWater },
+      ]}
+    >
     <Card variant="default" padding="md">
       <div className="flex items-start gap-3">
         {/* Icon */}
@@ -659,6 +642,7 @@ function PlantCard({
         </div>
       </div>
     </Card>
+    </ContextMenu>
   )
 }
 
@@ -673,11 +657,19 @@ function TaskCard({
   onComplete: (id: string) => void
   onSkip: (id: string) => void
 }) {
+  const router = useRouter()
   const Icon = TASK_TYPE_ICONS[task.task_type] ?? CalendarDays
   const isOverdue = task.due_date && new Date(task.due_date) < new Date()
   const color = isOverdue ? 'hsl(0,68%,52%)' : 'hsl(152,62%,42%)'
 
   return (
+    <ContextMenu
+      items={[
+        { label: 'Mark done', icon: CheckCircle2, onSelect: () => onComplete(task.id) },
+        { label: 'Edit', icon: Pencil, onSelect: () => router.push(`/garden/tasks/${task.id}/edit`) },
+        { label: 'Skip', icon: SkipForward, onSelect: () => onSkip(task.id), divider: true },
+      ]}
+    >
     <Card variant="default" padding="md">
       <div className="flex items-start gap-3">
         <div
@@ -734,6 +726,7 @@ function TaskCard({
         </div>
       </div>
     </Card>
+    </ContextMenu>
   )
 }
 
