@@ -1,18 +1,32 @@
 'use client'
 
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 const LOCALES = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ro', label: 'Română', flag: '🇷🇴' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'pl', label: 'Polski', flag: '🇵🇱' },
+  { code: 'en', label: 'English', flag: '🇬🇧', available: true },
+  { code: 'ro', label: 'Română', flag: '🇷🇴', available: true },
+  { code: 'fr', label: 'Français', flag: '🇫🇷', available: false },
+  { code: 'nl', label: 'Nederlands', flag: '🇳🇱', available: false },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹', available: false },
+  { code: 'pl', label: 'Polski', flag: '🇵🇱', available: false },
 ]
 
 export function LanguageSettings() {
+  const router = useRouter()
+  const activeLocale = useLocale()
+
+  function selectLocale(code: string) {
+    if (code === activeLocale) return
+    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
+    toast.success(code === 'ro' ? 'Limba a fost schimbată' : 'Language updated')
+    router.refresh()
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-lg">
       <Card variant="default" padding="lg">
@@ -21,28 +35,31 @@ export function LanguageSettings() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            {LOCALES.map(({ code, label, flag }) => (
+            {LOCALES.map(({ code, label, flag, available }) => (
               <button
                 key={code}
                 type="button"
-                disabled
+                disabled={!available}
+                onClick={() => selectLocale(code)}
                 className={cn(
-                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors',
-                  code === 'en'
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors focus-ring',
+                  code === activeLocale
                     ? 'glass-standard text-foreground font-medium ring-2 ring-primary/60'
-                    : 'glass-light text-muted-foreground opacity-60 cursor-not-allowed'
+                    : available
+                      ? 'glass-light text-muted-foreground hover:text-foreground'
+                      : 'glass-light text-muted-foreground opacity-60 cursor-not-allowed'
                 )}
               >
                 <span className="text-lg">{flag}</span>
                 <span>{label}</span>
-                {code !== 'en' && (
+                {!available && (
                   <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
                 )}
               </button>
             ))}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Additional languages are coming soon. Currently English is the only fully supported language.
+            English and Romanian are fully supported. More languages are on the way.
           </p>
         </CardContent>
       </Card>

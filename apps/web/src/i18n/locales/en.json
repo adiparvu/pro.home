@@ -137,7 +137,11 @@
     "finances": "Finances",
     "documents": "Documents",
     "marketplace": "Marketplace",
-    "settings": "Settings"
+    "settings": "Settings",
+    "search": "Search",
+    "garden": "Garden",
+    "digitalTwin": "Digital Twin",
+    "notifications": "Notifications"
   },
   "property": {
     "myProperties": "My Properties",

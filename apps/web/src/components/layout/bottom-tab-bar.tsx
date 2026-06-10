@@ -4,17 +4,18 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Building2, Sparkles, Users, LayoutGrid } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useScrollDirection } from '@/hooks/use-scroll-direction'
 import { useSlidingThumb } from '@/hooks/use-sliding-thumb'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
 const TAB_ITEMS = [
-  { label: 'Home', href: '/', icon: Home, module: 'home' },
-  { label: 'Property', href: '/property', icon: Building2, module: 'property' },
-  { label: 'ARIA', href: '/aria', icon: Sparkles, module: 'aria', isCenter: true },
-  { label: 'Family', href: '/family', icon: Users, module: 'family' },
-  { label: 'More', href: '/more', icon: LayoutGrid, module: 'more' },
+  { key: 'home', href: '/', icon: Home, module: 'home' },
+  { key: 'property', href: '/property', icon: Building2, module: 'property' },
+  { key: 'aria', href: '/aria', icon: Sparkles, module: 'aria', isCenter: true },
+  { key: 'family', href: '/family', icon: Users, module: 'family' },
+  { key: 'more', href: '/more', icon: LayoutGrid, module: 'more' },
 ] as const
 
 const MODULE_COLORS: Record<string, string> = {
@@ -36,6 +37,7 @@ interface BottomTabBarProps {
  */
 export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
   const pathname = usePathname()
+  const t = useTranslations('navigation')
   const { hidden } = useScrollDirection()
 
   const activeHref =
@@ -85,7 +87,7 @@ export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
                 'focus-ring active:scale-[0.90] transition-transform duration-fast'
               )}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={item.label}
+              aria-label={t(item.key)}
             >
               {isCenter ? (
                 <span
@@ -107,7 +109,7 @@ export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
                   />
                   {isActive && (
                     <span className="text-[10px] font-semibold leading-none" style={{ color }}>
-                      {item.label}
+                      {t(item.key)}
                     </span>
                   )}
                 </>

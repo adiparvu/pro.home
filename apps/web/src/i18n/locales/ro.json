@@ -83,7 +83,11 @@
     "finances": "Finanțe",
     "documents": "Documente",
     "marketplace": "Magazin",
-    "settings": "Setări"
+    "settings": "Setări",
+    "search": "Căutare",
+    "garden": "Grădină",
+    "digitalTwin": "Geamăn Digital",
+    "notifications": "Notificări"
   },
   "property": {
     "myProperties": "Proprietățile mele",

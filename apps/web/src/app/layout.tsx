@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import './globals.css'
 import { ServiceWorkerRegistration } from '@/components/layout/service-worker-registration'
 
@@ -51,13 +53,17 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [locale, messages] = await Promise.all([getLocale(), getMessages()])
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head />
       <body className={`${inter.variable} min-h-dvh`}>
-        <ServiceWorkerRegistration />
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ServiceWorkerRegistration />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   )

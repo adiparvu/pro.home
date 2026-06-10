@@ -23,6 +23,7 @@ import {
   LayoutPanelLeft,
   Bell,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,43 +31,23 @@ import { Separator } from '@/components/ui/separator'
 import { useSidebarStore } from '@/stores/sidebar'
 
 const NAV_ITEMS = [
-  {
-    label: 'Home',
-    href: '/',
-    icon: Home,
-    module: 'home',
-  },
-  {
-    label: 'Property',
-    href: '/property',
-    icon: Building2,
-    module: 'property',
-  },
-  {
-    label: 'ARIA',
-    href: '/aria',
-    icon: Sparkles,
-    module: 'aria',
-  },
-  {
-    label: 'Family',
-    href: '/family',
-    icon: Users,
-    module: 'family',
-  },
+  { i18nKey: 'home', href: '/', icon: Home, module: 'home' },
+  { i18nKey: 'property', href: '/property', icon: Building2, module: 'property' },
+  { i18nKey: 'aria', href: '/aria', icon: Sparkles, module: 'aria' },
+  { i18nKey: 'family', href: '/family', icon: Users, module: 'family' },
 ] as const
 
 const MORE_NAV_ITEMS = [
-  { label: 'Search', href: '/search', icon: Search, module: 'search' },
-  { label: 'Security', href: '/security', icon: ShieldCheck, module: 'security' },
-  { label: 'Energy', href: '/energy', icon: Zap, module: 'energy' },
-  { label: 'Inventory', href: '/inventory', icon: Archive, module: 'inventory' },
-  { label: 'Maintenance', href: '/maintenance', icon: Wrench, module: 'maintenance' },
-  { label: 'Finances', href: '/finances', icon: Banknote, module: 'finances' },
-  { label: 'Documents', href: '/documents', icon: FolderOpen, module: 'documents' },
-  { label: 'Marketplace', href: '/marketplace', icon: ShoppingCart, module: 'marketplace' },
-  { label: 'Garden', href: '/garden', icon: Flower2, module: 'garden' },
-  { label: 'Digital Twin', href: '/digital-twin', icon: LayoutPanelLeft, module: 'digital-twin' },
+  { i18nKey: 'search', href: '/search', icon: Search, module: 'search' },
+  { i18nKey: 'security', href: '/security', icon: ShieldCheck, module: 'security' },
+  { i18nKey: 'energy', href: '/energy', icon: Zap, module: 'energy' },
+  { i18nKey: 'inventory', href: '/inventory', icon: Archive, module: 'inventory' },
+  { i18nKey: 'maintenance', href: '/maintenance', icon: Wrench, module: 'maintenance' },
+  { i18nKey: 'finances', href: '/finances', icon: Banknote, module: 'finances' },
+  { i18nKey: 'documents', href: '/documents', icon: FolderOpen, module: 'documents' },
+  { i18nKey: 'marketplace', href: '/marketplace', icon: ShoppingCart, module: 'marketplace' },
+  { i18nKey: 'garden', href: '/garden', icon: Flower2, module: 'garden' },
+  { i18nKey: 'digitalTwin', href: '/digital-twin', icon: LayoutPanelLeft, module: 'digital-twin' },
 ] as const
 
 const MODULE_COLORS: Record<string, string> = {
@@ -93,6 +74,7 @@ interface SidebarNavProps {
 
 export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
   const pathname = usePathname()
+  const t = useTranslations('navigation')
   const { isExpanded, toggle } = useSidebarStore()
 
   return (
@@ -130,7 +112,10 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
         {NAV_ITEMS.map((item) => (
           <NavItem
             key={item.href}
-            {...item}
+            href={item.href}
+            icon={item.icon}
+            module={item.module}
+            label={t(item.i18nKey)}
             isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
             isExpanded={isExpanded}
           />
@@ -141,7 +126,10 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
         {MORE_NAV_ITEMS.map((item) => (
           <NavItem
             key={item.href}
-            {...item}
+            href={item.href}
+            icon={item.icon}
+            module={item.module}
+            label={t(item.i18nKey)}
             isActive={pathname.startsWith(item.href)}
             isExpanded={isExpanded}
           />
@@ -154,7 +142,7 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
       <div className="flex flex-col gap-1 p-2">
         <NavItem
           href="/notifications"
-          label="Notifications"
+          label={t('notifications')}
           icon={Bell}
           module="notifications"
           isActive={pathname.startsWith('/notifications')}
@@ -163,7 +151,7 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
         />
         <NavItem
           href="/settings"
-          label="Settings"
+          label={t('settings')}
           icon={Settings}
           module="settings"
           isActive={pathname.startsWith('/settings')}
