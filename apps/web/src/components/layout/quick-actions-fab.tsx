@@ -71,7 +71,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     label: 'Add Energy Reading',
     description: 'Log a meter reading',
-    href: '/energy?add=1',
+    href: '/energy/new',
     icon: Zap,
     color: 'hsl(152,62%,42%)',
     enabled: (c) => c.createEnergyReading,

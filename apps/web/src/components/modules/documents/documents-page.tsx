@@ -16,6 +16,7 @@ interface DocumentsPageProps {
   property: Property
   userId: string
   initialDocuments: Document[]
+  initialShowUpload?: boolean
 }
 
 const CATEGORIES: DocumentCategory[] = ['legal', 'insurance', 'warranty', 'manual', 'invoice', 'permit', 'tax', 'utility', 'other']
@@ -39,11 +40,11 @@ function formatBytes(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function DocumentsPage({ property, userId, initialDocuments }: DocumentsPageProps) {
+export function DocumentsPage({ property, userId, initialDocuments, initialShowUpload = false }: DocumentsPageProps) {
   const confirmDialog = useConfirm()
   const [documents, setDocuments] = React.useState<Document[]>(initialDocuments)
   const [categoryFilter, setCategoryFilter] = React.useState<DocumentCategory | null>(null)
-  const [showUpload, setShowUpload] = React.useState(false)
+  const [showUpload, setShowUpload] = React.useState(initialShowUpload)
   const [uploading, setUploading] = React.useState(false)
   const [uploadError, setUploadError] = React.useState<string | null>(null)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)

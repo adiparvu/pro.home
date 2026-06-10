@@ -6,7 +6,12 @@ import { FinancesPage } from '@/components/modules/finances/finances-page'
 
 export const metadata: Metadata = { title: 'Finances' }
 
-export default async function FinancesRoute() {
+export default async function FinancesRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ add?: string }>
+}) {
+  const { add } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -35,6 +40,7 @@ export default async function FinancesRoute() {
         property={property}
         userId={user.id}
         initialRecords={records ?? []}
+        initialShowForm={add === '1'}
       />
     </div>
   )

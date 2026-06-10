@@ -6,7 +6,12 @@ import { DocumentsPage } from '@/components/modules/documents/documents-page'
 
 export const metadata: Metadata = { title: 'Documents' }
 
-export default async function DocumentsRoute() {
+export default async function DocumentsRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ upload?: string }>
+}) {
+  const { upload } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -35,6 +40,7 @@ export default async function DocumentsRoute() {
         property={property}
         userId={user.id}
         initialDocuments={documents ?? []}
+        initialShowUpload={upload === '1'}
       />
     </div>
   )

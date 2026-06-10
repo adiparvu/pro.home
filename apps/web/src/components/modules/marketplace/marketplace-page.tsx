@@ -11,7 +11,9 @@ import {
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusChip } from '@/components/ui/chip'
 import { useConfirm } from '@/components/ui/confirm-dialog'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { toast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -136,15 +138,6 @@ const CATEGORY_TABS: { id: ServiceCategory | 'all'; label: string }[] = [
   { id: 'landscaping', label: 'Landscaping' },
   { id: 'general', label: 'Handyman' },
 ]
-
-const STATUS_CONFIG: Record<ServiceRequestStatus, { label: string; color: string; bg: string }> = {
-  pending:     { label: 'Pending',     color: 'text-muted-foreground',       bg: 'glass-light' },
-  quoted:      { label: 'Quoted',      color: 'text-[hsl(220,62%,60%)]',     bg: 'bg-[hsl(220,62%,52%)]/10' },
-  scheduled:   { label: 'Scheduled',  color: 'text-[hsl(45,75%,52%)]',      bg: 'bg-[hsl(45,75%,42%)]/10' },
-  in_progress: { label: 'In progress', color: 'text-[hsl(152,62%,48%)]',    bg: 'bg-[hsl(152,62%,42%)]/10' },
-  completed:   { label: 'Completed',  color: 'text-[hsl(152,62%,48%)]',     bg: 'bg-[hsl(152,62%,42%)]/10' },
-  cancelled:   { label: 'Cancelled',  color: 'text-muted-foreground',        bg: 'glass-light' },
-}
 
 const STATUS_NEXT: Partial<Record<ServiceRequestStatus, ServiceRequestStatus>> = {
   pending:     'quoted',
@@ -289,48 +282,20 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Tab switcher */}
-        <div className="flex gap-1 rounded-xl glass-light p-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab('directory')}
-            className={cn(
-              'flex-1 rounded-lg py-2 text-xs font-medium transition-colors',
-              activeTab === 'directory' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Directory
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('contacts')}
-            className={cn(
-              'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
-              activeTab === 'contacts' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Contacts
-            {contacts.length > 0 && (
-              <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'contacts' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
-                {contacts.length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('requests')}
-            className={cn(
-              'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
-              activeTab === 'requests' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Requests
-            {requests.filter((r) => r.status !== 'completed' && r.status !== 'cancelled').length > 0 && (
-              <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'requests' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
-                {requests.filter((r) => r.status !== 'completed' && r.status !== 'cancelled').length}
-              </span>
-            )}
-          </button>
-        </div>
+        <SegmentedControl
+          aria-label="Marketplace sections"
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: 'directory', label: 'Directory' },
+            { value: 'contacts', label: 'Contacts', count: contacts.length },
+            {
+              value: 'requests',
+              label: 'Requests',
+              count: requests.filter((r) => r.status !== 'completed' && r.status !== 'cancelled').length,
+            },
+          ]}
+        />
 
         {/* Search */}
         <div className="relative">
@@ -721,7 +686,6 @@ function RequestCard({
 }) {
   const [editingPrice, setEditingPrice] = React.useState(false)
   const [priceInput, setPriceInput] = React.useState(String(request.quoted_price ?? ''))
-  const cfg = STATUS_CONFIG[request.status]
   const nextStatus = STATUS_NEXT[request.status]
   const isTerminal = request.status === 'completed' || request.status === 'cancelled'
 
@@ -731,9 +695,7 @@ function RequestCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-foreground">{request.title}</p>
-            <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', cfg.bg, cfg.color)}>
-              {cfg.label}
-            </span>
+            <StatusChip status={request.status} size="xs" />
           </div>
           {contactName && (
             <p className="text-xs text-muted-foreground mt-0.5">{contactName}</p>
@@ -799,7 +761,7 @@ function RequestCard({
               className="flex items-center gap-1 rounded-lg bg-[hsl(152,62%,42%)] px-3 py-1.5 text-xs text-white font-medium hover:opacity-90 transition-opacity"
             >
               <ChevronRight className="h-3.5 w-3.5" />
-              Mark as {STATUS_CONFIG[nextStatus].label}
+              Mark as {nextStatus.replace(/_/g, ' ')}
             </button>
           )}
           <button

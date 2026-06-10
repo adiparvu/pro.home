@@ -12,12 +12,14 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/components/ui/confirm-dialog'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { toast } from '@/hooks/use-toast'
 
 interface FinancesPageProps {
   property: Property
   userId: string
   initialRecords: FinancialRecord[]
+  initialShowForm?: boolean
 }
 
 const EXPENSE_CATEGORIES: FinanceCategory[] = [
@@ -56,11 +58,11 @@ function blankForm() {
   }
 }
 
-export function FinancesPage({ property, userId, initialRecords }: FinancesPageProps) {
+export function FinancesPage({ property, userId, initialRecords, initialShowForm = false }: FinancesPageProps) {
   const confirmDialog = useConfirm()
   const [records, setRecords] = React.useState<FinancialRecord[]>(initialRecords)
   const [typeFilter, setTypeFilter] = React.useState<FinanceType | 'all'>('all')
-  const [showForm, setShowForm] = React.useState(false)
+  const [showForm, setShowForm] = React.useState(initialShowForm)
   const [submitting, setSubmitting] = React.useState(false)
   const [formError, setFormError] = React.useState<string | null>(null)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
@@ -470,20 +472,18 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
 
         {/* Filter tabs */}
         {records.length > 0 && (
-          <div className="flex gap-2">
-            {(['all', 'expense', 'income', 'budget'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTypeFilter(t)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                  typeFilter === t ? 'bg-primary text-white' : 'glass-light text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            aria-label="Record type"
+            size="sm"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'expense', label: 'Expenses' },
+              { value: 'income', label: 'Income' },
+              { value: 'budget', label: 'Budget' },
+            ]}
+          />
         )}
 
         {/* Budget vs Actual (shown when budget records exist) */}

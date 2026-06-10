@@ -23,6 +23,8 @@ const STATUS_TONES: Record<string, ChipTone> = {
   skipped: 'neutral',
   draft: 'neutral',
   sent: 'info',
+  quoted: 'info',
+  scheduled: 'warning',
   // Priority
   critical: 'danger',
   high: 'danger',
