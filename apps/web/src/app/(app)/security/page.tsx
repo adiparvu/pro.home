@@ -3,18 +3,43 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/layout/page-header'
 import { SecurityOverview } from '@/components/modules/security/security-overview'
+import type { Property, InventoryItem } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Security' }
+
+const SECURITY_KEYWORDS = ['camera', 'lock', 'alarm', 'sensor', 'doorbell', 'motion', 'detector', 'security']
 
 export default async function SecurityPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: property } = await supabase
+    .from('properties')
+    .select('*, property_members!inner(role, status)')
+    .eq('property_members.user_id', user.id)
+    .eq('property_members.status', 'active')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single() as { data: Property | null; error: unknown }
+
+  // Pull inventory items that look like security devices
+  let securityItems: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] = []
+  if (property) {
+    const { data: items } = await supabase
+      .from('inventory_items')
+      .select('id, name, brand, category, condition')
+      .eq('property_id', property.id)
+      .or(SECURITY_KEYWORDS.map((k) => `name.ilike.%${k}%`).join(','))
+      .limit(10) as { data: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] | null; error: unknown }
+    securityItems = items ?? []
+  }
+
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
       <PageHeader title="Security" description="Protect your home and family" />
-      <SecurityOverview />
+      <SecurityOverview securityItems={securityItems} />
     </div>
   )
 }
