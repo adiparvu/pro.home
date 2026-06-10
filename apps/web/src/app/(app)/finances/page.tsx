@@ -13,8 +13,10 @@ export default async function FinancesRoute() {
 
   const { data: property } = await supabase
     .from('properties')
-    .select('*')
-    .eq('owner_id', user.id)
+    .select('*, property_members!inner(role, status)')
+    .eq('property_members.user_id', user.id)
+    .eq('property_members.status', 'active')
+    .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(1)
     .single() as { data: Property | null; error: unknown }

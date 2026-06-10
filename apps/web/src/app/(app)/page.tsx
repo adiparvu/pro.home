@@ -39,25 +39,25 @@ export default async function DashboardPage() {
 
   const activeProperty = properties[0]!
 
-  // Fetch upcoming tasks count
-  const { count: upcomingTasksCount } = await supabase
-    .from('maintenance_tasks')
-    .select('*', { count: 'exact', head: true })
-    .eq('property_id', activeProperty.id)
-    .in('status', ['pending', 'in_progress'])
-
-  // Fetch unread notifications count
-  const { count: unreadNotifications } = await supabase
-    .from('notifications')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('status', 'unread')
-
-  // Fetch inventory count
-  const { count: inventoryCount } = await supabase
-    .from('inventory_items')
-    .select('*', { count: 'exact', head: true })
-    .eq('property_id', activeProperty.id)
+  // Fetch task counts in parallel with other queries
+  const [
+    { count: upcomingTasksCount },
+    { count: overdueTasksCount },
+    { count: unreadNotifications },
+    { count: inventoryCount },
+    { count: recallCount },
+  ] = await Promise.all([
+    supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id).in('status', ['pending', 'in_progress']),
+    supabase.from('maintenance_tasks').select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id).eq('status', 'overdue'),
+    supabase.from('notifications').select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id).eq('status', 'unread'),
+    supabase.from('inventory_items').select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id),
+    supabase.from('inventory_items').select('*', { count: 'exact', head: true })
+      .eq('property_id', activeProperty.id).eq('recall_active', true),
+  ])
 
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
@@ -76,7 +76,9 @@ export default async function DashboardPage() {
         <DashboardWidgetGrid
           property={activeProperty}
           upcomingTasksCount={upcomingTasksCount ?? 0}
+          overdueTasksCount={overdueTasksCount ?? 0}
           inventoryCount={inventoryCount ?? 0}
+          recallCount={recallCount ?? 0}
         />
       </div>
     </div>

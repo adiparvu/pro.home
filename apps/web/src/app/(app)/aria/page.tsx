@@ -13,8 +13,10 @@ export default async function AriaRoute() {
 
   const { data: property } = await supabase
     .from('properties')
-    .select('id')
-    .eq('owner_id', user.id)
+    .select('id, property_members!inner(status)')
+    .eq('property_members.user_id', user.id)
+    .eq('property_members.status', 'active')
+    .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(1)
     .single() as { data: Pick<Property, 'id'> | null; error: unknown }

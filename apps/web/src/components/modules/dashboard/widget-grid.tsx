@@ -20,10 +20,12 @@ import { cn } from '@/lib/utils'
 interface DashboardWidgetGridProps {
   property: Property
   upcomingTasksCount: number
+  overdueTasksCount: number
   inventoryCount: number
+  recallCount: number
 }
 
-export function DashboardWidgetGrid({ property, upcomingTasksCount, inventoryCount }: DashboardWidgetGridProps) {
+export function DashboardWidgetGrid({ property, upcomingTasksCount, overdueTasksCount, inventoryCount, recallCount }: DashboardWidgetGridProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Row 1: Energy + Security */}
@@ -33,14 +35,14 @@ export function DashboardWidgetGrid({ property, upcomingTasksCount, inventoryCou
       </div>
 
       {/* Row 2: Maintenance (full width) */}
-      <MaintenanceWidget count={upcomingTasksCount} />
+      <MaintenanceWidget count={upcomingTasksCount} overdueCount={overdueTasksCount} />
 
       {/* Row 3: ARIA Insight */}
       <ARIAInsightCard propertyName={property.name} />
 
       {/* Row 4: Inventory + Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <InventoryWidget count={inventoryCount} />
+        <InventoryWidget count={inventoryCount} recallCount={recallCount} />
         <QuickActionsWidget />
       </div>
     </div>
@@ -123,7 +125,7 @@ function SecurityWidget() {
   )
 }
 
-function MaintenanceWidget({ count }: { count: number }) {
+function MaintenanceWidget({ count, overdueCount }: { count: number; overdueCount: number }) {
   return (
     <Link href="/maintenance">
       <Card variant="default" hover padding="md" className="module-maintenance">
@@ -143,7 +145,12 @@ function MaintenanceWidget({ count }: { count: number }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {count > 0 && (
+            {overdueCount > 0 && (
+              <Badge variant="critical" size="sm">
+                {overdueCount} overdue
+              </Badge>
+            )}
+            {overdueCount === 0 && count > 0 && (
               <Badge variant="warning" size="sm">
                 {count} task{count !== 1 ? 's' : ''}
               </Badge>
@@ -198,7 +205,7 @@ function ARIAInsightCard({ propertyName }: { propertyName: string }) {
   )
 }
 
-function InventoryWidget({ count }: { count: number }) {
+function InventoryWidget({ count, recallCount }: { count: number; recallCount: number }) {
   return (
     <Link href="/inventory">
       <Card variant="default" hover padding="md" className="module-inventory">
@@ -207,6 +214,9 @@ function InventoryWidget({ count }: { count: number }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(185,62%,38%)]/20">
               <Archive className="h-4 w-4 text-[hsl(185,62%,52%)]" />
             </div>
+            {recallCount > 0 && (
+              <Badge variant="critical" size="xs">{recallCount} recall</Badge>
+            )}
           </div>
           <div>
             <div className="flex items-baseline gap-1">
