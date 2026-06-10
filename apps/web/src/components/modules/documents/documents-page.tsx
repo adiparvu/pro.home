@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { FileText, Upload, Tag, AlertCircle, Trash2, ExternalLink, ChevronDown, ChevronUp, X } from 'lucide-react'
+import Link from 'next/link'
+import { FileText, Upload, AlertCircle, Trash2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Property, Document, DocumentCategory } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
@@ -325,7 +326,7 @@ function DocumentCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+              <Link href={`/documents/${doc.id}`} className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors">{doc.name}</Link>
               {doc.description && (
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{doc.description}</p>
               )}

@@ -15,6 +15,7 @@ import {
   Banknote,
   FolderOpen,
   ShoppingCart,
+  Search,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -53,6 +54,7 @@ const NAV_ITEMS = [
 ] as const
 
 const MORE_NAV_ITEMS = [
+  { label: 'Search', href: '/search', icon: Search, module: 'search' },
   { label: 'Security', href: '/security', icon: ShieldCheck, module: 'security' },
   { label: 'Energy', href: '/energy', icon: Zap, module: 'energy' },
   { label: 'Inventory', href: '/inventory', icon: Archive, module: 'inventory' },
@@ -74,6 +76,7 @@ const MODULE_COLORS: Record<string, string> = {
   finances: 'hsl(45, 75%, 42%)',
   documents: 'hsl(220, 52%, 46%)',
   marketplace: 'hsl(88, 58%, 39%)',
+  search: 'hsl(210, 75%, 42%)',
 }
 
 export function SidebarNav() {
