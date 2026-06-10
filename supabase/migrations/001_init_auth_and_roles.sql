@@ -155,10 +155,11 @@ comment on table public.property_invitations is 'Pending invitations to join a p
 
 -- ─── Audit Log ──────────────────────────────────────────────────────────────
 
+-- Partitioned table: PK must include the partition key (created_at)
 create table public.audit_logs (
-  id            uuid primary key default gen_random_uuid(),
-  property_id   uuid references public.properties(id) on delete set null,
-  user_id       uuid references public.profiles(id) on delete set null,
+  id            uuid not null default gen_random_uuid(),
+  property_id   uuid,
+  user_id       uuid,
   action        text not null,
   resource_type text not null,
   resource_id   uuid,
@@ -166,15 +167,20 @@ create table public.audit_logs (
   new_data      jsonb,
   ip_address    inet,
   user_agent    text,
-  created_at    timestamptz not null default now()
+  created_at    timestamptz not null default now(),
+  primary key (id, created_at)
 ) partition by range (created_at);
 
--- Create initial partition for current year
 create table public.audit_logs_2026 partition of public.audit_logs
   for values from ('2026-01-01') to ('2027-01-01');
-
 create table public.audit_logs_2027 partition of public.audit_logs
   for values from ('2027-01-01') to ('2028-01-01');
+
+-- FK as separate statements (partitioned tables don't support inline FK)
+alter table public.audit_logs add constraint audit_logs_property_fk
+  foreign key (property_id) references public.properties(id) on delete set null;
+alter table public.audit_logs add constraint audit_logs_user_fk
+  foreign key (user_id) references public.profiles(id) on delete set null;
 
 comment on table public.audit_logs is 'Immutable audit trail for all significant actions.';
 
