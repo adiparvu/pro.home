@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import type { GardenZone, PlantStatus } from '@/lib/supabase/types'
+import type { GardenPlant, GardenZone, PlantStatus } from '@/lib/supabase/types'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(120),
@@ -36,18 +36,33 @@ interface AddPlantFormProps {
   propertyId: string
   userId: string
   zones: GardenZone[]
+  plant?: GardenPlant
 }
 
-export function AddPlantForm({ propertyId, userId, zones }: AddPlantFormProps) {
+export function AddPlantForm({ propertyId, userId, zones, plant }: AddPlantFormProps) {
   const router = useRouter()
   const [tagInput, setTagInput] = React.useState('')
-  const [tags, setTags] = React.useState<string[]>([])
+  const [tags, setTags] = React.useState<string[]>(plant?.tags ?? [])
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const isEdit = !!plant
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'healthy', watering_frequency_days: null, fertilizing_frequency_days: null },
+    defaultValues: plant
+      ? {
+          name: plant.name,
+          species: plant.species ?? '',
+          common_name: plant.common_name ?? '',
+          zone_id: plant.zone_id ?? '',
+          status: plant.status as Exclude<PlantStatus, 'removed'>,
+          planted_date: plant.planted_date ?? '',
+          watering_frequency_days: plant.watering_frequency_days,
+          fertilizing_frequency_days: plant.fertilizing_frequency_days,
+          sunlight_needs: (plant.sunlight_needs as FormValues['sunlight_needs']) ?? '',
+          notes: plant.notes ?? '',
+        }
+      : { status: 'healthy', watering_frequency_days: null, fertilizing_frequency_days: null },
   })
 
   function addTag(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -62,29 +77,53 @@ export function AddPlantForm({ propertyId, userId, zones }: AddPlantFormProps) {
   async function onSubmit(data: FormValues) {
     setSaving(true); setError(null)
     try {
-      const today = new Date().toISOString().split('T')[0]
-      const nextWatering = data.watering_frequency_days
-        ? new Date(Date.now() + data.watering_frequency_days * 86400000).toISOString().split('T')[0]
-        : null
       const supabase = createClient()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: e } = await (supabase as any).from('garden_plants').insert({
-        property_id: propertyId,
-        zone_id: data.zone_id || null,
-        name: data.name,
-        species: data.species || null,
-        common_name: data.common_name || null,
-        status: data.status,
-        planted_date: data.planted_date || null,
-        watering_frequency_days: data.watering_frequency_days,
-        next_watering: data.watering_frequency_days ? nextWatering : null,
-        last_watered: data.watering_frequency_days ? today : null,
-        fertilizing_frequency_days: data.fertilizing_frequency_days,
-        sunlight_needs: data.sunlight_needs || null,
-        notes: data.notes || null,
-        tags,
-      })
-      if (e) throw e
+      if (isEdit && plant) {
+        const payload = {
+          zone_id: data.zone_id || null,
+          name: data.name,
+          species: data.species || null,
+          common_name: data.common_name || null,
+          status: data.status,
+          planted_date: data.planted_date || null,
+          watering_frequency_days: data.watering_frequency_days,
+          fertilizing_frequency_days: data.fertilizing_frequency_days,
+          sunlight_needs: data.sunlight_needs || null,
+          notes: data.notes || null,
+          tags,
+        }
+        // If watering frequency changed, recalculate next_watering
+        if (data.watering_frequency_days && data.watering_frequency_days !== plant.watering_frequency_days) {
+          const nextWatering = new Date(Date.now() + data.watering_frequency_days * 86400000).toISOString().split('T')[0] ?? null
+          Object.assign(payload, { next_watering: nextWatering })
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: e } = await (supabase as any).from('garden_plants').update(payload).eq('id', plant.id)
+        if (e) throw e
+      } else {
+        const today = new Date().toISOString().split('T')[0]
+        const nextWatering = data.watering_frequency_days
+          ? new Date(Date.now() + data.watering_frequency_days * 86400000).toISOString().split('T')[0]
+          : null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: e } = await (supabase as any).from('garden_plants').insert({
+          property_id: propertyId,
+          zone_id: data.zone_id || null,
+          name: data.name,
+          species: data.species || null,
+          common_name: data.common_name || null,
+          status: data.status,
+          planted_date: data.planted_date || null,
+          watering_frequency_days: data.watering_frequency_days,
+          next_watering: data.watering_frequency_days ? nextWatering : null,
+          last_watered: data.watering_frequency_days ? today : null,
+          fertilizing_frequency_days: data.fertilizing_frequency_days,
+          sunlight_needs: data.sunlight_needs || null,
+          notes: data.notes || null,
+          tags,
+        })
+        if (e) throw e
+      }
       router.push('/garden'); router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save plant')
@@ -192,7 +231,9 @@ export function AddPlantForm({ propertyId, userId, zones }: AddPlantFormProps) {
         <textarea {...register('notes')} rows={3} placeholder="Care notes, soil mix, special requirements…" className="w-full rounded-xl border border-border glass-light px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/60" />
       </div>
 
-      <Button type="submit" variant="primary" loading={saving} className="mt-2">Save plant</Button>
+      <Button type="submit" variant="primary" loading={saving} className="mt-2">
+        {isEdit ? 'Update plant' : 'Save plant'}
+      </Button>
     </form>
   )
 }

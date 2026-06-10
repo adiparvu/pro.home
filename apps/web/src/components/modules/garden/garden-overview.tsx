@@ -5,13 +5,13 @@ import Link from 'next/link'
 import {
   Droplets, Leaf, Sun, Cloud, Sprout, CheckCircle2,
   SkipForward, Plus, CalendarDays, ChevronDown, ChevronUp,
-  AlertTriangle, Clock, FlowerIcon,
+  AlertTriangle, Clock, FlowerIcon, MapPin, Pencil, Trash2, SunMedium,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { GardenPlant, GardenTask, GardenZone, GardenTaskType, PlantStatus } from '@/lib/supabase/types'
+import type { GardenPlant, GardenTask, GardenZone, GardenTaskType, GardenZoneType, PlantStatus } from '@/lib/supabase/types'
 
 interface GardenOverviewProps {
   propertyId: string
@@ -75,13 +75,87 @@ function wateringStatus(plant: GardenPlant): 'overdue' | 'today' | 'upcoming' | 
   return 'upcoming'
 }
 
-export function GardenOverview({ propertyId, plants: initialPlants, tasks: initialTasks, zones }: GardenOverviewProps) {
-  const [activeTab, setActiveTab] = React.useState<'plants' | 'tasks'>('plants')
+const ZONE_TYPE_LABELS: Record<GardenZoneType, string> = {
+  bed: 'Bed', lawn: 'Lawn', pot: 'Pot', greenhouse: 'Greenhouse',
+  orchard: 'Orchard', terrace: 'Terrace', other: 'Other',
+}
+
+const ZONE_TYPE_EMOJIS: Record<GardenZoneType, string> = {
+  bed: '🌱', lawn: '🌿', pot: '🪴', greenhouse: '🏡',
+  orchard: '🍎', terrace: '🪨', other: '🏷️',
+}
+
+export function GardenOverview({ propertyId, plants: initialPlants, tasks: initialTasks, zones: initialZones }: GardenOverviewProps) {
+  const [activeTab, setActiveTab] = React.useState<'plants' | 'tasks' | 'zones'>('plants')
   const [plants, setPlants] = React.useState<GardenPlant[]>(initialPlants)
   const [tasks, setTasks] = React.useState<GardenTask[]>(initialTasks)
+  const [zonesState, setZonesState] = React.useState<GardenZone[]>(initialZones)
   const [wateringPlantId, setWateringPlantId] = React.useState<string | null>(null)
 
-  const zoneMap = React.useMemo(() => new Map(zones.map((z) => [z.id, z])), [zones])
+  // Zone form state
+  const [showZoneForm, setShowZoneForm] = React.useState(false)
+  const [editingZoneId, setEditingZoneId] = React.useState<string | null>(null)
+  const [deletingZoneId, setDeletingZoneId] = React.useState<string | null>(null)
+  const [zoneSaving, setZoneSaving] = React.useState(false)
+  const [zoneName, setZoneName] = React.useState('')
+  const [zoneType, setZoneType] = React.useState<GardenZoneType>('bed')
+  const [zoneSizeSqm, setZoneSizeSqm] = React.useState('')
+  const [zoneSunExposure, setZoneSunExposure] = React.useState<'full_sun' | 'partial_shade' | 'full_shade' | ''>('')
+  const [zoneSoilType, setZoneSoilType] = React.useState('')
+  const [zoneNotes, setZoneNotes] = React.useState('')
+
+  const zoneMap = React.useMemo(() => new Map(zonesState.map((z) => [z.id, z])), [zonesState])
+
+  function openZoneAdd() {
+    setEditingZoneId(null)
+    setZoneName(''); setZoneType('bed'); setZoneSizeSqm('')
+    setZoneSunExposure(''); setZoneSoilType(''); setZoneNotes('')
+    setShowZoneForm(true)
+  }
+
+  function openZoneEdit(zone: GardenZone) {
+    setEditingZoneId(zone.id)
+    setZoneName(zone.name); setZoneType(zone.zone_type)
+    setZoneSizeSqm(zone.size_sqm != null ? String(zone.size_sqm) : '')
+    setZoneSunExposure(zone.sun_exposure ?? '')
+    setZoneSoilType(zone.soil_type ?? ''); setZoneNotes(zone.notes ?? '')
+    setShowZoneForm(true)
+  }
+
+  async function saveZone(e: React.FormEvent) {
+    e.preventDefault()
+    if (!zoneName.trim()) return
+    setZoneSaving(true)
+    const supabase = createClient()
+    const payload = {
+      name: zoneName.trim(),
+      zone_type: zoneType,
+      size_sqm: zoneSizeSqm ? parseFloat(zoneSizeSqm) : null,
+      sun_exposure: zoneSunExposure || null,
+      soil_type: zoneSoilType.trim() || null,
+      notes: zoneNotes.trim() || null,
+    }
+    if (editingZoneId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any).from('garden_zones').update(payload).eq('id', editingZoneId).select().single()
+      if (data) setZonesState((prev) => prev.map((z) => z.id === editingZoneId ? data as GardenZone : z))
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any).from('garden_zones').insert({ ...payload, property_id: propertyId, sort_order: zonesState.length }).select().single()
+      if (data) setZonesState((prev) => [...prev, data as GardenZone])
+    }
+    setShowZoneForm(false); setEditingZoneId(null); setZoneSaving(false)
+  }
+
+  async function deleteZone(zoneId: string) {
+    if (!confirm('Delete this zone? Plants in this zone will become unassigned.')) return
+    setDeletingZoneId(zoneId)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('garden_zones').delete().eq('id', zoneId)
+    setZonesState((prev) => prev.filter((z) => z.id !== zoneId))
+    setDeletingZoneId(null)
+  }
 
   const overduePlants = plants.filter((p) => wateringStatus(p) === 'overdue' && p.status !== 'removed')
   const todayPlants = plants.filter((p) => wateringStatus(p) === 'today' && p.status !== 'removed')
@@ -124,7 +198,7 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
       {/* Summary chips */}
       <div className="flex gap-2 flex-wrap">
         {overduePlants.length > 0 && (
@@ -181,9 +255,25 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
             </span>
           )}
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('zones')}
+          className={cn(
+            'flex-1 rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+            activeTab === 'zones' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          Zones
+          {zonesState.length > 0 && (
+            <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-semibold', activeTab === 'zones' ? 'bg-white/20' : 'bg-primary/20 text-primary')}>
+              {zonesState.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {activeTab === 'plants' ? (
+      {activeTab === 'plants' && (
         <>
           {activePlants.length === 0 ? (
             <GardenEmptyState
@@ -214,7 +304,9 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {activeTab === 'tasks' && (
         <>
           {pendingTasks.length === 0 && doneTasks.length === 0 ? (
             <GardenEmptyState
@@ -250,6 +342,194 @@ export function GardenOverview({ propertyId, plants: initialPlants, tasks: initi
             </div>
           )}
         </>
+      )}
+
+      {activeTab === 'zones' && (
+        <div className="flex flex-col gap-3">
+          {/* Zone add/edit form */}
+          {showZoneForm && (
+            <Card variant="default" padding="md">
+              <p className="text-sm font-semibold text-foreground mb-3">
+                {editingZoneId ? 'Edit zone' : 'New zone'}
+              </p>
+              <form onSubmit={saveZone} className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Name *</label>
+                    <input
+                      value={zoneName}
+                      onChange={(e) => setZoneName(e.target.value)}
+                      placeholder="e.g. Front bed"
+                      required
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Type</label>
+                    <select
+                      value={zoneType}
+                      onChange={(e) => setZoneType(e.target.value as GardenZoneType)}
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    >
+                      {(Object.keys(ZONE_TYPE_LABELS) as GardenZoneType[]).map((t) => (
+                        <option key={t} value={t}>{ZONE_TYPE_LABELS[t]}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Size (m²)</label>
+                    <input
+                      type="number"
+                      value={zoneSizeSqm}
+                      onChange={(e) => setZoneSizeSqm(e.target.value)}
+                      placeholder="Optional"
+                      min="0"
+                      step="0.1"
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-muted-foreground">Sun exposure</label>
+                    <select
+                      value={zoneSunExposure}
+                      onChange={(e) => setZoneSunExposure(e.target.value as typeof zoneSunExposure)}
+                      className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    >
+                      <option value="">Not specified</option>
+                      <option value="full_sun">Full sun</option>
+                      <option value="partial_shade">Partial shade</option>
+                      <option value="full_shade">Full shade</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-muted-foreground">Soil type</label>
+                  <input
+                    value={zoneSoilType}
+                    onChange={(e) => setZoneSoilType(e.target.value)}
+                    placeholder="e.g. Loam, Sandy, Clay"
+                    className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-muted-foreground">Notes</label>
+                  <input
+                    value={zoneNotes}
+                    onChange={(e) => setZoneNotes(e.target.value)}
+                    placeholder="Optional"
+                    className="h-10 w-full rounded-xl border border-border glass-light px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={zoneSaving || !zoneName.trim()}
+                    className="flex-1 rounded-xl bg-primary py-2 text-sm font-medium text-white disabled:opacity-60 transition-opacity"
+                  >
+                    {zoneSaving ? 'Saving…' : editingZoneId ? 'Update zone' : 'Save zone'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowZoneForm(false); setEditingZoneId(null) }}
+                    className="rounded-xl glass-light px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </Card>
+          )}
+
+          {/* Zone list */}
+          {zonesState.length === 0 && !showZoneForm ? (
+            <GardenEmptyState
+              icon={<MapPin className="h-7 w-7 text-muted-foreground" />}
+              title="No zones yet"
+              subtitle="Create zones like beds, pots, or greenhouse areas."
+              action={
+                <button
+                  type="button"
+                  onClick={openZoneAdd}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs text-white font-medium"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add zone
+                </button>
+              }
+            />
+          ) : (
+            <>
+              {zonesState.map((zone) => {
+                const plantCount = plants.filter((p) => p.zone_id === zone.id && p.status !== 'removed').length
+                return (
+                  <Card key={zone.id} variant="default" padding="md">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl glass-light text-xl">
+                        {ZONE_TYPE_EMOJIS[zone.zone_type]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{zone.name}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <Badge variant="neutral" size="xs">{ZONE_TYPE_LABELS[zone.zone_type]}</Badge>
+                              {plantCount > 0 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {plantCount} plant{plantCount !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {zone.size_sqm != null && (
+                                <span className="text-[10px] text-muted-foreground">{zone.size_sqm} m²</span>
+                              )}
+                              {zone.sun_exposure && (
+                                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                                  <SunMedium className="h-3 w-3" />
+                                  {zone.sun_exposure.replace('_', ' ')}
+                                </span>
+                              )}
+                            </div>
+                            {zone.notes && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{zone.notes}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openZoneEdit(zone)}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteZone(zone.id)}
+                              disabled={deletingZoneId === zone.id}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })}
+              {!showZoneForm && (
+                <button
+                  type="button"
+                  onClick={openZoneAdd}
+                  className="flex items-center justify-center gap-2 rounded-xl glass-light py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add zone
+                </button>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   )
@@ -298,13 +578,22 @@ function PlantCard({
               {plant.species && <p className="text-xs text-muted-foreground italic mt-0.5">{plant.species}</p>}
               {zoneName && <p className="text-xs text-muted-foreground">{zoneName}</p>}
             </div>
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
-              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Link
+                href={`/garden/plants/${plant.id}/edit`}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Edit plant"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+            </div>
           </div>
 
           {/* Watering row */}
