@@ -47,6 +47,10 @@ export default async function PropertyHealthPage() {
 
   if (!property) redirect('/')
 
+  // Mark any past-due tasks as overdue before health score computation
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('mark_overdue_tasks', { p_property_id: property.id })
+
   // Auto-compute if score has never been set
   if (property.health_score === null) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

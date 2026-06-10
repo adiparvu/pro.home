@@ -48,6 +48,9 @@ export default async function DashboardPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
+  // Mark any past-due tasks as overdue before reading counts (fires notification trigger)
+  await sb.rpc('mark_overdue_tasks', { p_property_id: activeProperty.id })
+
   const today = new Date().toISOString().split('T')[0]
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
