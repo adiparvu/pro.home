@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/layout/page-header'
 import { SecurityOverview } from '@/components/modules/security/security-overview'
-import type { Property, InventoryItem } from '@/lib/supabase/types'
+import type { Property, InventoryItem, SecurityState, SecurityEvent } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Security' }
 
@@ -24,22 +24,38 @@ export default async function SecurityPage() {
     .limit(1)
     .single() as { data: Property | null; error: unknown }
 
-  // Pull inventory items that look like security devices
-  let securityItems: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] = []
-  if (property) {
-    const { data: items } = await supabase
+  if (!property) {
+    return (
+      <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
+        <PageHeader title="Security" description="Protect your home and family" />
+        <SecurityOverview propertyId="" securityState={null} events={[]} securityItems={[]} />
+      </div>
+    )
+  }
+
+  // Parallel fetch: security state, recent events, security inventory items
+  const [stateResult, eventsResult, itemsResult] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('security_state').select('*').eq('property_id', property.id).maybeSingle() as Promise<{ data: SecurityState | null }>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any).from('security_events').select('*').eq('property_id', property.id).order('created_at', { ascending: false }).limit(50) as Promise<{ data: SecurityEvent[] | null }>,
+    supabase
       .from('inventory_items')
       .select('id, name, brand, category, condition')
       .eq('property_id', property.id)
       .or(SECURITY_KEYWORDS.map((k) => `name.ilike.%${k}%`).join(','))
-      .limit(10) as { data: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] | null; error: unknown }
-    securityItems = items ?? []
-  }
+      .limit(10) as unknown as Promise<{ data: Pick<InventoryItem, 'id' | 'name' | 'brand' | 'category' | 'condition'>[] | null }>,
+  ])
 
   return (
     <div className="flex flex-1 flex-col pb-[88px] md:pb-0">
-      <PageHeader title="Security" description="Protect your home and family" />
-      <SecurityOverview securityItems={securityItems} />
+      <PageHeader title="Security" description={property.name} />
+      <SecurityOverview
+        propertyId={property.id}
+        securityState={stateResult.data}
+        events={eventsResult.data ?? []}
+        securityItems={itemsResult.data ?? []}
+      />
     </div>
   )
 }
