@@ -3,7 +3,7 @@
 import * as React from 'react'
 import {
   DollarSign, TrendingDown, TrendingUp, Plus, Trash2, Pencil, Paperclip,
-  ChevronDown, ChevronUp, AlertCircle, Tag, X,
+  ChevronDown, ChevronUp, AlertCircle, Tag, X, Download,
 } from 'lucide-react'
 import type { Property, FinancialRecord, FinanceCategory, FinanceType } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -123,6 +123,30 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
     setFormError(null)
   }
 
+  function exportCSV() {
+    const rows = [
+      ['Date', 'Title', 'Type', 'Category', 'Amount (EUR)', 'Description', 'Tags', 'Receipt'],
+      ...records.map((r) => [
+        r.date,
+        `"${r.title.replace(/"/g, '""')}"`,
+        r.type,
+        r.category,
+        r.amount.toFixed(2),
+        `"${(r.description ?? '').replace(/"/g, '""')}"`,
+        `"${r.tags.join('; ')}"`,
+        r.receipt_url ?? '',
+      ]),
+    ]
+    const csv = rows.map((r) => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `finances-${property.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   function addTag(raw: string) {
     const tag = raw.trim().toLowerCase()
     if (!tag || tags.includes(tag)) return
@@ -236,7 +260,11 @@ export function FinancesPage({ property, userId, initialRecords }: FinancesPageP
 
   return (
     <>
-      <PageHeader title="Finances" description={property.name} />
+      <PageHeader
+        title="Finances"
+        description={property.name}
+        action={records.length > 0 ? { label: 'Export CSV', href: '#', onClick: exportCSV } : undefined}
+      />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[88px] md:pb-6">
         {/* Summary cards */}

@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
-import type { Property, InventoryItem, MaintenanceTask, EnergyReading, SecurityEvent } from '@/lib/supabase/types'
+import type { Property, InventoryItem, MaintenanceTask, EnergyReading, SecurityEvent, FinancialRecord, GardenPlant, GardenTask, Document } from '@/lib/supabase/types'
 
 const BASE_SYSTEM_PROMPT = `You are ARIA (Adaptive Residence Intelligence Assistant), an AI property brain for PRV HOUSE — a smart home management app.
 
@@ -32,6 +32,10 @@ function buildContextBlock(
   energyReadings: EnergyReading[],
   securityState: SlimSecurity,
   unresolvedEvents: Pick<SecurityEvent, 'event_type' | 'severity' | 'description'>[],
+  financialRecords: Pick<FinancialRecord, 'amount' | 'type' | 'category' | 'date'>[],
+  gardenPlants: Pick<GardenPlant, 'name' | 'status' | 'next_watering'>[],
+  gardenTasks: Pick<GardenTask, 'title' | 'status' | 'due_date'>[],
+  expiringDocs: Pick<Document, 'name' | 'category' | 'expires_at'>[],
 ): string {
   if (!property) return ''
 
@@ -42,6 +46,7 @@ function buildContextBlock(
     `Size: ${property.size_sqm ? `${property.size_sqm} m²` : 'unknown'}`,
     `Year built: ${property.year_built ?? 'unknown'}`,
     `Location: ${[property.city, property.country].filter(Boolean).join(', ') || 'unknown'}`,
+    `Health score: ${property.health_score ?? 'not computed'}`,
   ]
 
   if (items.length > 0) {
@@ -51,6 +56,7 @@ function buildContextBlock(
       if (item.brand) parts.push(item.brand)
       if (item.condition) parts.push(`(${item.condition})`)
       if (item.warranty_expires) parts.push(`warranty until ${item.warranty_expires}`)
+      if (item.recall_active) parts.push('[RECALL ACTIVE]')
       lines.push(`  • ${parts.join(' ')}`)
     })
     if (items.length > 20) lines.push(`  … and ${items.length - 20} more`)
@@ -63,6 +69,7 @@ function buildContextBlock(
       const parts = [task.title]
       if (task.status === 'overdue') parts.push('[OVERDUE]')
       if (task.due_date) parts.push(`due ${task.due_date}`)
+      if (task.is_recurring) parts.push('[recurring]')
       lines.push(`  • ${parts.join(' ')}`)
     })
   }
@@ -77,6 +84,51 @@ function buildContextBlock(
       const costStr = r.cost != null ? ` · ${r.cost_currency ?? 'EUR'} ${r.cost}` : ''
       lines.push(`  • ${r.meter_type}: ${r.reading_value} ${r.unit}${costStr} (${r.reading_date})`)
     }
+  }
+
+  if (financialRecords.length > 0) {
+    const thisYear = new Date().getFullYear().toString()
+    const ytdExpenses = financialRecords
+      .filter((r) => r.type === 'expense' && r.date.startsWith(thisYear))
+      .reduce((s, r) => s + r.amount, 0)
+    const ytdIncome = financialRecords
+      .filter((r) => r.type === 'income' && r.date.startsWith(thisYear))
+      .reduce((s, r) => s + r.amount, 0)
+    // Category breakdown
+    const catTotals: Record<string, number> = {}
+    for (const r of financialRecords.filter((r) => r.type === 'expense')) {
+      catTotals[r.category] = (catTotals[r.category] ?? 0) + r.amount
+    }
+    const topCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).slice(0, 3)
+    lines.push(`\nFinances (YTD): expenses €${ytdExpenses.toFixed(0)}, income €${ytdIncome.toFixed(0)}, net €${(ytdIncome - ytdExpenses).toFixed(0)}`)
+    if (topCats.length > 0) {
+      lines.push(`Top expense categories: ${topCats.map(([c, a]) => `${c} €${a.toFixed(0)}`).join(', ')}`)
+    }
+  }
+
+  if (gardenPlants.length > 0) {
+    const today = new Date().toISOString().split('T')[0]!
+    const needsWater = gardenPlants.filter((p) => p.next_watering && p.next_watering <= today)
+    lines.push(`\nGarden: ${gardenPlants.length} plants`)
+    if (needsWater.length > 0) lines.push(`  • ${needsWater.length} plant${needsWater.length !== 1 ? 's' : ''} need watering`)
+    gardenPlants.filter((p) => p.status === 'needs_attention').slice(0, 3).forEach((p) => lines.push(`  • ${p.name} [needs attention]`))
+  }
+
+  if (gardenTasks.filter((t) => t.status !== 'done').length > 0) {
+    const openGarden = gardenTasks.filter((t) => t.status !== 'done')
+    lines.push(`Garden tasks pending: ${openGarden.length}`)
+    openGarden.slice(0, 5).forEach((t) => {
+      const due = t.due_date ? ` (due ${t.due_date})` : ''
+      lines.push(`  • ${t.title}${due}`)
+    })
+  }
+
+  if (expiringDocs.length > 0) {
+    lines.push(`\nDocuments expiring within 30 days:`)
+    expiringDocs.forEach((d) => {
+      const exp = d.expires_at ? new Date(d.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
+      lines.push(`  • ${d.name} [${d.category}] expires ${exp}`)
+    })
   }
 
   if (securityState) {
@@ -176,26 +228,39 @@ export async function POST(req: NextRequest) {
   let energyReadings: EnergyReading[] = []
   let securityState: SlimSecurity = null
   let unresolvedEvents: Pick<SecurityEvent, 'event_type' | 'severity' | 'description'>[] = []
+  let financialRecords: Pick<FinancialRecord, 'amount' | 'type' | 'category' | 'date'>[] = []
+  let gardenPlants: Pick<GardenPlant, 'name' | 'status' | 'next_watering'>[] = []
+  let gardenTasks: Pick<GardenTask, 'title' | 'status' | 'due_date'>[] = []
+  let expiringDocs: Pick<Document, 'name' | 'category' | 'expires_at'>[] = []
 
   if (property) {
-    const [itemsRes, tasksRes, energyRes, secStateRes, secEventsRes] = await Promise.all([
+    const sb = supabase as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    const [itemsRes, tasksRes, energyRes, secStateRes, secEventsRes, finRes, plantsRes, gTasksRes, docsRes] = await Promise.all([
       supabase.from('inventory_items').select('*').eq('property_id', property.id).limit(50),
       supabase.from('maintenance_tasks').select('*').eq('property_id', property.id).neq('status', 'cancelled').limit(50),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from('energy_readings').select('*').eq('property_id', property.id).order('reading_date', { ascending: false }).limit(12) as Promise<{ data: EnergyReading[] | null }>,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from('security_state').select('mode').eq('property_id', property.id).maybeSingle() as Promise<{ data: { mode: string } | null }>,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from('security_events').select('event_type, severity, description').eq('property_id', property.id).is('resolved_at', null).order('created_at', { ascending: false }).limit(5) as Promise<{ data: Pick<SecurityEvent, 'event_type' | 'severity' | 'description'>[] | null }>,
+      sb.from('energy_readings').select('*').eq('property_id', property.id).order('reading_date', { ascending: false }).limit(12) as Promise<{ data: EnergyReading[] | null }>,
+      sb.from('security_state').select('mode').eq('property_id', property.id).maybeSingle() as Promise<{ data: { mode: string } | null }>,
+      sb.from('security_events').select('event_type, severity, description').eq('property_id', property.id).is('resolved_at', null).order('created_at', { ascending: false }).limit(5) as Promise<{ data: Pick<SecurityEvent, 'event_type' | 'severity' | 'description'>[] | null }>,
+      sb.from('financial_records').select('amount, type, category, date').eq('property_id', property.id).order('date', { ascending: false }).limit(100) as Promise<{ data: Pick<FinancialRecord, 'amount' | 'type' | 'category' | 'date'>[] | null }>,
+      sb.from('garden_plants').select('name, status, next_watering').eq('property_id', property.id).limit(30) as Promise<{ data: Pick<GardenPlant, 'name' | 'status' | 'next_watering'>[] | null }>,
+      sb.from('garden_tasks').select('title, status, due_date').eq('property_id', property.id).neq('status', 'completed').limit(20) as Promise<{ data: Pick<GardenTask, 'title' | 'status' | 'due_date'>[] | null }>,
+      supabase.from('documents').select('name, category, expires_at').eq('property_id', property.id).not('expires_at', 'is', null).lte('expires_at', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()).gt('expires_at', new Date().toISOString()).limit(5) as unknown as Promise<{ data: Pick<Document, 'name' | 'category' | 'expires_at'>[] | null }>,
     ])
     items = (itemsRes.data ?? []) as InventoryItem[]
     tasks = (tasksRes.data ?? []) as MaintenanceTask[]
     energyReadings = energyRes.data ?? []
     securityState = secStateRes.data
     unresolvedEvents = secEventsRes.data ?? []
+    financialRecords = finRes.data ?? []
+    gardenPlants = plantsRes.data ?? []
+    gardenTasks = gTasksRes.data ?? []
+    expiringDocs = docsRes.data ?? []
   }
 
-  const systemPrompt = BASE_SYSTEM_PROMPT + buildContextBlock(property, items, tasks, energyReadings, securityState, unresolvedEvents)
+  const systemPrompt = BASE_SYSTEM_PROMPT + buildContextBlock(
+    property, items, tasks, energyReadings, securityState, unresolvedEvents,
+    financialRecords, gardenPlants, gardenTasks, expiringDocs,
+  )
 
   const recentMessages = messages.slice(-MAX_MESSAGES_PER_REQUEST).map((m) => ({
     role: m.role as 'user' | 'assistant',
