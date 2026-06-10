@@ -647,6 +647,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: void
       }
+      create_recall_notifications: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
+      create_overdue_task_notifications: {
+        Args: { p_user_id: string }
+        Returns: void
+      }
       set_security_mode: {
         Args: { p_property_id: string; p_mode: SecurityMode }
         Returns: void

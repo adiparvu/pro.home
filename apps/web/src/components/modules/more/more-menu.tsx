@@ -11,10 +11,12 @@ import {
   ChevronRight,
   Flower2,
   LayoutPanelLeft,
+  Bell,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
 const MORE_ITEMS = [
+  { label: 'Notifications', description: 'Alerts, recalls & reminders', href: '/notifications', icon: Bell, color: 'hsl(280, 68%, 47%)' },
   { label: 'Search', description: 'Find anything in your home', href: '/search', icon: Search, color: 'hsl(210, 75%, 42%)' },
   { label: 'Security', description: 'Cameras, locks & alarms', href: '/security', icon: ShieldCheck, color: 'hsl(0, 68%, 44%)' },
   { label: 'Energy', description: 'Usage & optimization', href: '/energy', icon: Zap, color: 'hsl(152, 62%, 38%)' },

@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Flower2,
   LayoutPanelLeft,
+  Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -83,9 +84,14 @@ const MODULE_COLORS: Record<string, string> = {
   garden: 'hsl(120, 52%, 36%)',
   'digital-twin': 'hsl(260, 62%, 52%)',
   search: 'hsl(210, 75%, 42%)',
+  notifications: 'hsl(280, 68%, 47%)',
 }
 
-export function SidebarNav() {
+interface SidebarNavProps {
+  unreadCount?: number
+}
+
+export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
   const pathname = usePathname()
   const { isExpanded, toggle } = useSidebarStore()
 
@@ -144,8 +150,17 @@ export function SidebarNav() {
 
       <Separator className="opacity-30" />
 
-      {/* Settings + Collapse */}
+      {/* Settings + Notifications + Collapse */}
       <div className="flex flex-col gap-1 p-2">
+        <NavItem
+          href="/notifications"
+          label="Notifications"
+          icon={Bell}
+          module="notifications"
+          isActive={pathname.startsWith('/notifications')}
+          isExpanded={isExpanded}
+          badge={unreadCount}
+        />
         <NavItem
           href="/settings"
           label="Settings"

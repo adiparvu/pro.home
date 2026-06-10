@@ -17,16 +17,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/login')
   }
 
-  // Check if onboarding is complete
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('onboarding_completed')
-    .eq('id', user.id)
-    .single() as { data: Pick<Profile, 'onboarding_completed'> | null; error: unknown }
+  const [profileRes, unreadRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .single() as unknown as Promise<{ data: Pick<Profile, 'onboarding_completed'> | null }>,
+    supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'unread'),
+  ])
 
-  if (profile && !profile.onboarding_completed) {
+  if (profileRes.data && !profileRes.data.onboarding_completed) {
     redirect('/onboarding')
   }
+
+  const unreadCount = unreadRes.count ?? 0
 
   return (
     <Providers>
@@ -37,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* App Shell */}
         <div className="relative z-10 flex min-h-dvh">
           {/* Sidebar (tablet/desktop) */}
-          <SidebarNav />
+          <SidebarNav unreadCount={unreadCount} />
 
           {/* Main Content */}
           <main
@@ -49,7 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Mobile Bottom Tab Bar */}
-        <BottomTabBar />
+        <BottomTabBar unreadCount={unreadCount} />
       </div>
     </Providers>
   )

@@ -23,7 +23,11 @@ const MODULE_COLORS: Record<string, string> = {
   more: 'hsl(220, 12%, 60%)',
 }
 
-export function BottomTabBar() {
+interface BottomTabBarProps {
+  unreadCount?: number
+}
+
+export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
   const pathname = usePathname()
 
   return (
@@ -66,6 +70,9 @@ export function BottomTabBar() {
             )
           }
 
+          const isMore = item.module === 'more'
+          const showBadge = isMore && unreadCount > 0
+
           return (
             <Link
               key={item.href}
@@ -85,13 +92,22 @@ export function BottomTabBar() {
                 )}
                 style={isActive ? { color } : undefined}
               />
+              {showBadge && (
+                <Badge
+                  variant="danger"
+                  size="xs"
+                  className="absolute -right-0.5 top-0"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
               {isActive && (
                 <span className="text-[10px] font-semibold" style={{ color }}>
                   {item.label}
                 </span>
               )}
               {!isActive && (
-                <span className="h-[10px]" aria-hidden="true" /> // height placeholder
+                <span className="h-[10px]" aria-hidden="true" />
               )}
             </Link>
           )

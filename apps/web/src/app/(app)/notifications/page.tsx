@@ -11,9 +11,13 @@ export default async function NotificationsRoute() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Surface expiring documents as notifications on each page load (24h dedup in DB)
+  // Surface all on-demand notifications on each page load (24h dedup in DB)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any).rpc('create_doc_expiry_notifications', { p_user_id: user.id })
+  await Promise.all([
+    (supabase as any).rpc('create_doc_expiry_notifications', { p_user_id: user.id }),
+    (supabase as any).rpc('create_recall_notifications', { p_user_id: user.id }),
+    (supabase as any).rpc('create_overdue_task_notifications', { p_user_id: user.id }),
+  ])
 
   const { data: notifications } = await supabase
     .from('notifications')
