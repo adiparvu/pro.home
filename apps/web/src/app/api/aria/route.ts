@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 import type { Property, InventoryItem, MaintenanceTask } from '@/lib/supabase/types'
 
 const BASE_SYSTEM_PROMPT = `You are ARIA (Adaptive Residence Intelligence Assistant), an AI property brain for PRV HOUSE — a smart home management app.
@@ -63,31 +65,80 @@ function buildContextBlock(
   return lines.join('\n')
 }
 
+// Constants
+const RATE_LIMIT_PER_MINUTE = 20
+const MAX_MESSAGES = 50
+const MAX_MESSAGE_LENGTH = 4000
+const MAX_MESSAGES_PER_REQUEST = 20
+
 export async function POST(req: NextRequest) {
+  // Enforce JSON content type
+  const contentType = req.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 })
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json(
       { error: 'ARIA is not yet configured. Add ANTHROPIC_API_KEY to your environment.' },
-      { status: 503 }
+      { status: 503 },
     )
   }
 
+  // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Per-user rate limiting: 20 requests/minute
+  const rl = checkRateLimit(`aria:${user.id}`, RATE_LIMIT_PER_MINUTE, 60)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Too many requests. Please wait ${rl.retryAfter}s before trying again.` },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(rl.retryAfter),
+          'X-RateLimit-Limit': String(RATE_LIMIT_PER_MINUTE),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    )
+  }
+
+  // Parse body
   let body: { messages: { role: string; content: string }[] }
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
   const { messages } = body
+
+  // Validate messages array
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ error: 'messages array required' }, { status: 400 })
+    return NextResponse.json({ error: 'messages array is required and must not be empty' }, { status: 400 })
+  }
+  if (messages.length > MAX_MESSAGES) {
+    return NextResponse.json({ error: `messages array must not exceed ${MAX_MESSAGES} items` }, { status: 400 })
+  }
+  for (const msg of messages) {
+    if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') {
+      return NextResponse.json({ error: 'Each message must have role (string) and content (string)' }, { status: 400 })
+    }
+    if (!['user', 'assistant'].includes(msg.role)) {
+      return NextResponse.json({ error: 'Message role must be "user" or "assistant"' }, { status: 400 })
+    }
+    if (msg.content.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: `Message content must not exceed ${MAX_MESSAGE_LENGTH} characters` },
+        { status: 400 },
+      )
+    }
   }
 
   // Fetch property context
@@ -115,9 +166,9 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = BASE_SYSTEM_PROMPT + buildContextBlock(property, items, tasks)
 
-  const recentMessages = messages.slice(-20).map((m) => ({
+  const recentMessages = messages.slice(-MAX_MESSAGES_PER_REQUEST).map((m) => ({
     role: m.role as 'user' | 'assistant',
-    content: String(m.content),
+    content: m.content,
   }))
 
   const client = new Anthropic({ apiKey })
@@ -131,8 +182,17 @@ export async function POST(req: NextRequest) {
     })
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
-    return NextResponse.json({ content: text })
+    return NextResponse.json(
+      { content: text },
+      {
+        headers: {
+          'X-RateLimit-Limit': String(RATE_LIMIT_PER_MINUTE),
+          'X-RateLimit-Remaining': String(rl.remaining),
+        },
+      },
+    )
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: '/api/aria' } })
     console.error('ARIA API error:', err)
     return NextResponse.json({ error: 'ARIA encountered an error. Please try again.' }, { status: 500 })
   }

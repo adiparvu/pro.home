@@ -23,8 +23,6 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     backgroundColor: '#0D1420',
     scheme: 'PRV HOUSE',
-    // Minimum iOS 16 (covers ~98% of active devices)
-    minimumDeploymentTarget: '16.0',
   },
   android: {
     backgroundColor: '#0D1420',
