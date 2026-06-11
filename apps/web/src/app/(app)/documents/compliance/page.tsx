@@ -2,13 +2,13 @@ import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveProperty } from '@/lib/active-property'
-import { TenantPortalPage } from '@/components/modules/tenant/tenant-portal-page'
+import { CompliancePage } from '@/components/modules/documents/compliance-page'
 import { PageHeader } from '@/components/layout/page-header'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
 
-export const metadata: Metadata = { title: 'Tenant Portal' }
+export const metadata: Metadata = { title: 'Compliance Certificates' }
 
-export default async function TenantPortalRoute() {
+export default async function ComplianceRoute() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -18,29 +18,26 @@ export default async function TenantPortalRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Tenant Portal" />
+        <PageHeader title="Compliance" />
         <NoPropertyState />
       </div>
     )
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
-
-  const [{ data: portals }, { data: requests }] = await Promise.all([
-    sb.from('tenant_portals').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
-    sb.from('tenant_requests').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
-  ])
+  const { data: certs } = await (supabase as any)
+    .from('compliance_certificates')
+    .select('*')
+    .eq('property_id', property.id)
+    .order('expiry_date', { ascending: true, nullsFirst: false })
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <TenantPortalPage
+      <CompliancePage
         property={property}
         userId={user.id}
-        initialPortals={portals ?? []}
-        initialRequests={requests ?? []}
+        initialCerts={certs ?? []}
       />
     </div>
   )
 }
-

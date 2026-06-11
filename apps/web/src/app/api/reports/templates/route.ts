@@ -147,11 +147,12 @@ export async function GET(request: NextRequest) {
 
     // Fetch property
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prop } = await (supabase as any)
+    const propRes = await (supabase as any)
       .from('properties')
       .select('id, name, address_line1, city, country')
       .eq('id', lease.property_id)
-      .single() as { data: { name: string; address_line1: string; city: string } | null }
+      .single()
+    const prop = propRes.data as { name: string; address_line1: string; city: string } | null
 
     // Get period label
     const period = monthParam ?? new Date().toISOString().slice(0, 7)
@@ -220,11 +221,12 @@ export async function GET(request: NextRequest) {
       .single()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prop } = await (supabase as any)
+    const propRes2 = await (supabase as any)
       .from('properties')
       .select('id, name, address_line1, city, country')
       .eq('id', lease?.property_id ?? '')
-      .single() as { data: { address_line1: string; city: string; country: string } | null }
+      .single()
+    const prop = propRes2.data as { name: string; address_line1: string; city: string; country: string } | null
 
     const inspectionDate = dateParam ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     const inspectionDateLabel = new Date(inspectionDate + 'T00:00:00').toLocaleDateString('en-GB', {
@@ -286,11 +288,12 @@ export async function GET(request: NextRequest) {
         .single()
       if (lease) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: prop } = await (supabase as any)
+        const propRes3 = await (supabase as any)
           .from('properties')
           .select('address_line1, city')
           .eq('id', lease.property_id)
-          .single() as { data: { address_line1: string; city: string } | null }
+          .single()
+        const prop = propRes3.data as { address_line1: string; city: string } | null
         if (prop) propertyAddress = `${prop.address_line1}, ${prop.city}`
       }
     }

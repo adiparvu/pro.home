@@ -165,7 +165,11 @@
     "seasonal": "Seasonal Planner",
     "mortgage": "Mortgage",
     "insurance": "Insurance",
-    "forecast": "Forecast"
+    "forecast": "Forecast",
+    "tenantPortal": "Tenant Portal",
+    "deposit": "Deposit",
+    "vacancy": "Vacancies",
+    "compliance": "Compliance"
   },
   "property": {
     "myProperties": "My Properties",

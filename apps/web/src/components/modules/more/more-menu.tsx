@@ -41,6 +41,9 @@ import {
   CalendarCheck,
   Percent,
   FilePlus,
+  MessageSquare,
+  Vault,
+  DoorOpen,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
@@ -77,12 +80,16 @@ const MORE_ITEMS: MoreItem[] = [
   { label: 'Tax Report', description: 'Download annual tax summary', href: '/api/reports/tax?year=2025', icon: FileText, color: 'hsl(45, 75%, 42%)', external: true },
   { label: 'Documents', description: 'Contracts & manuals', href: '/documents', icon: FolderOpen, color: 'hsl(220, 52%, 46%)' },
   { label: 'Expiry Radar', description: 'Documents & warranties expiring', href: '/documents/expiry', icon: ScanSearch, color: 'hsl(22, 68%, 41%)' },
+  { label: 'Compliance', description: 'Certificates & regulatory checks', href: '/documents/compliance', icon: ShieldCheck, color: 'hsl(152, 62%, 38%)' },
   { label: 'Marketplace', description: 'Service providers & contacts', href: '/marketplace', icon: ShoppingCart, color: 'hsl(88, 58%, 39%)' },
   { label: 'Smart Home Log', description: 'Device events & readings', href: '/smart-home', icon: Cpu, color: 'hsl(185, 68%, 38%)' },
   { label: 'Garden', description: 'Plants, tasks & zones', href: '/garden', icon: Flower2, color: 'hsl(120, 52%, 36%)' },
   { label: 'Digital Twin', description: 'Interactive floor plan', href: '/digital-twin', icon: LayoutPanelLeft, color: 'hsl(260, 62%, 52%)' },
   { label: 'Tenant Portal', description: 'Tenant & guest view', href: '/tenant', icon: Home, color: 'hsl(210, 75%, 42%)' },
   { label: 'Leases', description: 'Lease agreements & tenants', href: '/tenant/leases', icon: FileSignature, color: 'hsl(210, 75%, 42%)' },
+  { label: 'Tenant Portal', description: 'Tenant request portal links', href: '/tenant/portal', icon: MessageSquare, color: 'hsl(210, 75%, 42%)' },
+  { label: 'Deposit', description: 'Deposit deductions & lifecycle', href: '/tenant/deposit', icon: Vault, color: 'hsl(45, 75%, 42%)' },
+  { label: 'Vacancies', description: 'Vacancy periods & rent loss', href: '/tenant/vacancy', icon: DoorOpen, color: 'hsl(220, 52%, 46%)' },
   { label: 'Access Codes', description: 'Temporary access QR codes', href: '/access', icon: KeyRound, color: 'hsl(280, 62%, 47%)' },
   { label: 'Household', description: 'Shared grocery & to-do lists', href: '/household', icon: ShoppingCart, color: 'hsl(152, 62%, 38%)' },
   { label: 'Packages', description: 'Package delivery tracking', href: '/household/packages', icon: Package, color: 'hsl(220, 62%, 52%)' },

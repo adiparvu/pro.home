@@ -2,13 +2,13 @@ import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveProperty } from '@/lib/active-property'
-import { TenantPortalPage } from '@/components/modules/tenant/tenant-portal-page'
+import { DepositPage } from '@/components/modules/tenant/deposit-page'
 import { PageHeader } from '@/components/layout/page-header'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
 
-export const metadata: Metadata = { title: 'Tenant Portal' }
+export const metadata: Metadata = { title: 'Deposit Lifecycle' }
 
-export default async function TenantPortalRoute() {
+export default async function DepositRoute() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -18,7 +18,7 @@ export default async function TenantPortalRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Tenant Portal" />
+        <PageHeader title="Deposit" />
         <NoPropertyState />
       </div>
     )
@@ -27,20 +27,19 @@ export default async function TenantPortalRoute() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any
 
-  const [{ data: portals }, { data: requests }] = await Promise.all([
-    sb.from('tenant_portals').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
-    sb.from('tenant_requests').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
+  const [{ data: leases }, { data: deductions }] = await Promise.all([
+    sb.from('leases').select('id, tenant_name, deposit_amount, deposit_paid, currency, status').eq('property_id', property.id).not('deposit_amount', 'is', null).order('created_at', { ascending: false }),
+    sb.from('deposit_deductions').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
   ])
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <TenantPortalPage
+      <DepositPage
         property={property}
         userId={user.id}
-        initialPortals={portals ?? []}
-        initialRequests={requests ?? []}
+        initialLeases={leases ?? []}
+        initialDeductions={deductions ?? []}
       />
     </div>
   )
 }
-
