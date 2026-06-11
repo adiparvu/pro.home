@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getActiveProperty, getMemberProperties } from '@/lib/active-property'
 import { DashboardHeader } from '@/components/modules/dashboard/dashboard-header'
 import { HealthHeroCard } from '@/components/modules/dashboard/health-hero-card'
+import { HealthScoreCard } from '@/components/modules/dashboard/health-score-card'
 import { DashboardWidgetGrid } from '@/components/modules/dashboard/widget-grid'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
 
@@ -139,6 +140,8 @@ export default async function DashboardPage() {
           upcomingTasksCount={upcomingTasksCount}
           recallCount={recallCount}
         />
+
+        <HealthScoreCard />
 
         <DashboardWidgetGrid
           upcomingTasksCount={upcomingTasksCount}

@@ -1,11 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { Sparkles, Send, RotateCcw, Copy, Check } from 'lucide-react'
+import { Sparkles, Send, RotateCcw, Copy, Check, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { AriaMessage } from '@/lib/supabase/types'
 import type { AriaContextHints } from '@/app/(app)/aria/page'
+import { toast } from '@/hooks/use-toast'
 
 interface AriaPageProps {
   userId: string
@@ -97,6 +98,7 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
   })
   const [input, setInput] = React.useState('')
   const [isThinking, setIsThinking] = React.useState(false)
+  const [taskCreating, setTaskCreating] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
 
@@ -195,6 +197,31 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
     }
   }
 
+  async function handleCreateTask() {
+    const text = input.trim()
+    if (!text || taskCreating) return
+    setTaskCreating(true)
+    try {
+      const res = await fetch('/api/ai/create-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      const json = await res.json() as { title?: string; task_id?: string; error?: string }
+      if (!res.ok || json.error) {
+        toast({ title: 'Could not create task', description: json.error ?? 'Unknown error', variant: 'destructive' })
+        return
+      }
+      toast({ title: 'Task created', description: json.title ?? 'New maintenance task added' })
+      setInput('')
+      inputRef.current?.focus()
+    } catch (err) {
+      toast({ title: 'Error', description: String(err), variant: 'destructive' })
+    } finally {
+      setTaskCreating(false)
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -276,7 +303,30 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
 
       {/* Input */}
       <div className="fixed bottom-[88px] left-0 right-0 z-20 md:bottom-0 md:left-[72px] lg:left-[260px] glass-opaque border-t border-border/50 px-4 py-3 md:px-6">
-        <div className="flex items-end gap-2 max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Quick task chip */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!input.trim()) {
+                  setInput('Create task: ')
+                  inputRef.current?.focus()
+                } else {
+                  handleCreateTask()
+                }
+              }}
+              disabled={taskCreating}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full border border-border/50 glass-light px-3 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus-ring',
+                taskCreating && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <Zap className="h-3 w-3 shrink-0" style={{ color: 'hsl(45,80%,52%)' }} />
+              {taskCreating ? 'Creating…' : input.trim() ? '⚡ Create task from input' : '⚡ Create task'}
+            </button>
+          </div>
+        <div className="flex items-end gap-2">
           <textarea
             ref={inputRef}
             value={input}
@@ -301,6 +351,7 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
           >
             <Send className="h-4 w-4" />
           </button>
+        </div>
         </div>
       </div>
     </div>

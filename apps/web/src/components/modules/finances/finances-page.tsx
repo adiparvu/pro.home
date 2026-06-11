@@ -4,6 +4,7 @@ import * as React from 'react'
 import {
   DollarSign, TrendingDown, TrendingUp, Plus, Trash2, Pencil, Paperclip,
   ChevronDown, ChevronUp, AlertCircle, Tag, X, Download, ScanLine, Loader2,
+  Upload,
 } from 'lucide-react'
 import type { Property, FinancialRecord, FinanceCategory, FinanceType } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { toast } from '@/hooks/use-toast'
+import type { ParsedTransaction } from '@/app/api/finance/import-statement/route'
 
 interface FinancesPageProps {
   property: Property
@@ -80,6 +82,14 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null)
   const [repeat, setRepeat] = React.useState<'' | 'monthly' | 'yearly'>('')
   const [ocrLoading, setOcrLoading] = React.useState(false)
+
+  // Bank statement import state
+  const [showImport, setShowImport] = React.useState(false)
+  const [importParsing, setImportParsing] = React.useState(false)
+  const [importInserting, setImportInserting] = React.useState(false)
+  const [importPreview, setImportPreview] = React.useState<ParsedTransaction[] | null>(null)
+  const [importFile, setImportFile] = React.useState<File | null>(null)
+  const importInputRef = React.useRef<HTMLInputElement>(null)
 
   const filtered = typeFilter === 'all' ? records : records.filter((r) => r.type === typeFilter)
 
@@ -284,6 +294,57 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
     setDeletingId(null)
   }
 
+  async function handleImportFile(file: File) {
+    setImportFile(file)
+    setImportParsing(true)
+    setImportPreview(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/finance/import-statement', { method: 'POST', body: fd })
+      const json = await res.json() as { records?: ParsedTransaction[]; error?: string }
+      if (!res.ok || json.error) {
+        toast({ title: 'Parse failed', description: json.error ?? 'Unknown error', variant: 'destructive' })
+        return
+      }
+      setImportPreview(json.records ?? [])
+    } catch (err) {
+      toast({ title: 'Error', description: String(err), variant: 'destructive' })
+    } finally {
+      setImportParsing(false)
+    }
+  }
+
+  async function handleImportAll() {
+    if (!importFile || !importPreview) return
+    setImportInserting(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', importFile)
+      fd.append('insert', 'true')
+      const res = await fetch('/api/finance/import-statement', { method: 'POST', body: fd })
+      const json = await res.json() as { imported?: number; skipped?: number; records?: ParsedTransaction[]; error?: string }
+      if (!res.ok || json.error) {
+        toast({ title: 'Import failed', description: json.error ?? 'Unknown error', variant: 'destructive' })
+        return
+      }
+      toast({ title: `${json.imported ?? 0} transactions imported`, description: json.skipped ? `${json.skipped} credits/rows skipped` : undefined })
+      // Reload page to reflect new records
+      window.location.reload()
+    } catch (err) {
+      toast({ title: 'Error', description: String(err), variant: 'destructive' })
+    } finally {
+      setImportInserting(false)
+    }
+  }
+
+  function closeImport() {
+    setShowImport(false)
+    setImportFile(null)
+    setImportPreview(null)
+    if (importInputRef.current) importInputRef.current.value = ''
+  }
+
   return (
     <>
       <PageHeader
@@ -318,11 +379,17 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
 
         {/* Add record toggle */}
         {!showForm && (
-          <Button variant="secondary" size="sm" onClick={openAdd} className="self-start">
-            <Plus className="h-3.5 w-3.5" />
-            Log expense / income
-            <ChevronDown className="h-3.5 w-3.5" />
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="secondary" size="sm" onClick={openAdd}>
+              <Plus className="h-3.5 w-3.5" />
+              Log expense / income
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setShowImport(true)}>
+              <Upload className="h-3.5 w-3.5" />
+              Import statement
+            </Button>
+          </div>
         )}
 
         {/* Add / Edit form */}
@@ -559,6 +626,92 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
           </div>
         )}
       </div>
+
+      {/* Import statement modal */}
+      {showImport && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center p-4 bg-black/40 backdrop-blur-sm">
+          <Card className="w-full max-w-lg p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-semibold text-sm">Import Bank Statement</h2>
+              </div>
+              <button onClick={closeImport}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {!importPreview ? (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Upload a CSV, TSV, or text export from your bank. ARIA will parse transactions and import debits as expenses.</p>
+                <label className="flex h-20 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border/50 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {importParsing ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Parsing…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5" />
+                      <span>{importFile ? importFile.name : 'Choose file (.csv, .txt, .tsv)'}</span>
+                    </>
+                  )}
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".csv,.txt,.tsv"
+                    className="sr-only"
+                    disabled={importParsing}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) handleImportFile(f)
+                    }}
+                  />
+                </label>
+                <div className="flex justify-end">
+                  <Button variant="ghost" size="sm" onClick={closeImport}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Found <span className="font-semibold text-foreground">{importPreview.length}</span> transactions.
+                  Debit entries ({importPreview.filter((t) => t.amount < 0).length}) will be imported as expenses.
+                </p>
+
+                {/* Transaction preview list */}
+                <div className="max-h-64 overflow-y-auto space-y-1.5 rounded-xl border border-border/40 p-2">
+                  {importPreview.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2 text-xs py-1 border-b border-border/20 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-foreground">{t.description}</p>
+                        <p className="text-muted-foreground">{t.date} · <span className="capitalize">{t.category}</span></p>
+                      </div>
+                      <span className={t.amount < 0 ? 'text-destructive font-medium tabular-nums shrink-0' : 'text-[hsl(152,62%,48%)] font-medium tabular-nums shrink-0'}>
+                        {t.amount < 0 ? '-' : '+'}€{Math.abs(t.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={closeImport}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    disabled={importInserting}
+                    onClick={handleImportAll}
+                  >
+                    {importInserting
+                      ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />Importing…</>
+                      : `Import ${importPreview.filter((t) => t.amount < 0).length} transactions`
+                    }
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </>
   )
 }

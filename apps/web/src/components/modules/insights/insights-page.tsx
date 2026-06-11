@@ -270,6 +270,16 @@ export function InsightsPage({ data, propertyName }: InsightsPageProps) {
         Subscribe to maintenance calendar (.ics)
       </a>
 
+      {/* Full calendar export */}
+      <a
+        href="/api/calendar/export"
+        download
+        className="flex items-center gap-2 rounded-xl glass-light px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Calendar className="h-4 w-4" />
+        Export to calendar (all events) →
+      </a>
+
       {/* Energy link */}
       <a
         href="/energy"

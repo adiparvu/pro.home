@@ -61,6 +61,31 @@ function formatDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// Benchmarking reference values
+interface BenchmarkRange {
+  excellent: number
+  good: number
+  average: number
+  unit: string
+  label: string
+  meterType: MeterType
+}
+
+const BENCHMARKS: BenchmarkRange[] = [
+  { meterType: 'electricity', label: 'Electricity', unit: 'kWh/m²/year', excellent: 50, good: 100, average: 150 },
+  { meterType: 'gas', label: 'Gas', unit: 'm³/year', excellent: 500, good: 1000, average: 1500 },
+  { meterType: 'water', label: 'Water', unit: 'm³/year', excellent: 80, good: 120, average: 180 },
+]
+
+function getBenchmarkLabel(value: number, b: BenchmarkRange): { grade: string; color: string; pct: number } {
+  const mid = b.good
+  const pct = Math.round(((value - mid) / mid) * 100)
+  if (value < b.excellent) return { grade: 'Excellent', color: 'hsl(152,62%,38%)', pct }
+  if (value < b.good) return { grade: 'Good', color: 'hsl(88,58%,39%)', pct }
+  if (value < b.average) return { grade: 'Average', color: 'hsl(45,75%,42%)', pct }
+  return { grade: 'Poor', color: 'hsl(0,68%,44%)', pct }
+}
+
 export function MeterReadingsPage({ property, userId, initialReadings }: MeterReadingsPageProps) {
   const confirmDialog = useConfirm()
   const [readings, setReadings] = React.useState<MeterReading[]>(initialReadings)
@@ -270,6 +295,81 @@ export function MeterReadingsPage({ property, userId, initialReadings }: MeterRe
             </div>
           </Card>
         )}
+        {/* Benchmarks card */}
+        {readings.length > 0 && (() => {
+          const now = new Date()
+          const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1)
+          const areaSqm = property.size_sqm
+
+          const benchmarkCards = BENCHMARKS.map((b) => {
+            const relevant = readings.filter((r) =>
+              r.meter_type === b.meterType &&
+              new Date(r.reading_date + 'T00:00:00') >= twelveMonthsAgo
+            )
+            if (relevant.length < 2) return null
+
+            // Sum differences between consecutive readings (ordered ascending)
+            const sorted = [...relevant].sort((a, c) => a.reading_date.localeCompare(c.reading_date))
+            let total = 0
+            for (let i = 1; i < sorted.length; i++) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const diff = sorted[i]!.reading - sorted[i - 1]!.reading
+              if (diff > 0) total += diff
+            }
+
+            let displayValue = total
+            let displayUnit = b.unit
+            if (b.meterType === 'electricity' && areaSqm && areaSqm > 0) {
+              displayValue = Math.round(total / areaSqm)
+            }
+
+            const { grade, color, pct } = getBenchmarkLabel(displayValue, b)
+            const cfg = METER_CONFIG[b.meterType]
+            const TypeIcon = cfg.icon
+
+            return (
+              <div key={b.meterType} className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: cfg.color + '20', color: cfg.color }}>
+                  <TypeIcon className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium">{b.label}</span>
+                    <Badge variant="neutral" style={{ borderColor: color + '60', color }}>
+                      {grade}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {displayValue.toLocaleString()} {displayUnit}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {pct > 0 ? `${pct}% above` : `${Math.abs(pct)}% below`} average ({b.good} {displayUnit})
+                  </p>
+                </div>
+              </div>
+            )
+          }).filter(Boolean)
+
+          if (benchmarkCards.length === 0) return null
+
+          return (
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground mb-1 font-medium">Energy Benchmarks</p>
+              {areaSqm && (
+                <p className="text-xs text-muted-foreground/60 mb-3">Area used for calculation: {areaSqm} m²</p>
+              )}
+              <div className="flex flex-col gap-3">
+                {benchmarkCards}
+              </div>
+              <div className="mt-3 pt-3 border-t border-border/20 grid grid-cols-4 gap-1 text-[10px] text-center text-muted-foreground">
+                <span className="text-green-600 font-medium">Excellent</span>
+                <span className="text-[hsl(88,58%,39%)] font-medium">Good</span>
+                <span className="text-[hsl(45,75%,42%)] font-medium">Average</span>
+                <span className="text-destructive font-medium">Poor</span>
+              </div>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* Log reading modal */}

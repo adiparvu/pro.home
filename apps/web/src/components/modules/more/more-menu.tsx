@@ -25,10 +25,26 @@ import {
   ClipboardList,
   PieChart,
   Split,
+  Clock,
+  Calculator,
+  Leaf,
+  ScanSearch,
+  KeyRound,
+  GitCompare,
+  CalendarDays,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
-const MORE_ITEMS = [
+interface MoreItem {
+  label: string
+  description: string
+  href: string
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  color: string
+  external?: boolean
+}
+
+const MORE_ITEMS: MoreItem[] = [
   { label: 'Notifications', description: 'Alerts, recalls & reminders', href: '/notifications', icon: Bell, color: 'hsl(280, 68%, 47%)' },
   { label: 'Search', description: 'Find anything in your home', href: '/search', icon: Search, color: 'hsl(210, 75%, 42%)' },
   { label: 'Projects', description: 'Renovation & home projects', href: '/projects', icon: FolderKanban, color: 'hsl(258, 62%, 52%)' },
@@ -36,6 +52,7 @@ const MORE_ITEMS = [
   { label: 'Security', description: 'Cameras, locks & alarms', href: '/security', icon: ShieldCheck, color: 'hsl(0, 68%, 44%)' },
   { label: 'Energy', description: 'Usage & optimization', href: '/energy', icon: Zap, color: 'hsl(152, 62%, 38%)' },
   { label: 'Meter Readings', description: 'Electricity, gas & water meters', href: '/energy/meters', icon: Gauge, color: 'hsl(45, 75%, 42%)' },
+  { label: 'Carbon Footprint', description: 'CO₂ emissions tracker', href: '/energy/carbon', icon: Leaf, color: 'hsl(120, 52%, 36%)' },
   { label: 'Inventory', description: 'Appliances & assets', href: '/inventory', icon: Archive, color: 'hsl(185, 62%, 38%)' },
   { label: 'Maintenance', description: 'Tasks & repairs', href: '/maintenance', icon: Wrench, color: 'hsl(22, 68%, 41%)' },
   { label: 'Move Checklist', description: 'Moving in & out checklist', href: '/maintenance/checklist', icon: ClipboardList, color: 'hsl(22, 68%, 41%)' },
@@ -44,17 +61,25 @@ const MORE_ITEMS = [
   { label: 'Budget', description: 'Budget planning & tracking', href: '/finances/budget', icon: PieChart, color: 'hsl(45, 75%, 42%)' },
   { label: 'Cost Split', description: 'Split costs with housemates', href: '/finances/split', icon: Split, color: 'hsl(88, 58%, 39%)' },
   { label: 'Documents', description: 'Contracts & manuals', href: '/documents', icon: FolderOpen, color: 'hsl(220, 52%, 46%)' },
+  { label: 'Expiry Radar', description: 'Documents & warranties expiring', href: '/documents/expiry', icon: ScanSearch, color: 'hsl(22, 68%, 41%)' },
   { label: 'Marketplace', description: 'Service providers & contacts', href: '/marketplace', icon: ShoppingCart, color: 'hsl(88, 58%, 39%)' },
   { label: 'Smart Home Log', description: 'Device events & readings', href: '/smart-home', icon: Cpu, color: 'hsl(185, 68%, 38%)' },
   { label: 'Garden', description: 'Plants, tasks & zones', href: '/garden', icon: Flower2, color: 'hsl(120, 52%, 36%)' },
   { label: 'Digital Twin', description: 'Interactive floor plan', href: '/digital-twin', icon: LayoutPanelLeft, color: 'hsl(260, 62%, 52%)' },
   { label: 'Tenant Portal', description: 'Tenant & guest view', href: '/tenant', icon: Home, color: 'hsl(210, 75%, 42%)' },
   { label: 'Leases', description: 'Lease agreements & tenants', href: '/tenant/leases', icon: FileSignature, color: 'hsl(210, 75%, 42%)' },
+  { label: 'Access Codes', description: 'Temporary access QR codes', href: '/access', icon: KeyRound, color: 'hsl(280, 62%, 47%)' },
   { label: 'Household', description: 'Shared grocery & to-do lists', href: '/household', icon: ShoppingCart, color: 'hsl(152, 62%, 38%)' },
   { label: 'Packages', description: 'Package delivery tracking', href: '/household/packages', icon: Package, color: 'hsl(220, 62%, 52%)' },
   { label: 'Contractors', description: 'Service providers & directory', href: '/contractors', icon: HardHat, color: 'hsl(185, 62%, 38%)' },
+  { label: 'Compare Properties', description: 'Side-by-side property metrics', href: '/property/compare', icon: GitCompare, color: 'hsl(258, 62%, 52%)' },
   { label: 'Integrations', description: 'Webhooks & automation', href: '/settings/integrations', icon: Webhook, color: 'hsl(220, 52%, 46%)' },
+  { label: 'Timeline', description: 'Property activity log', href: '/timeline', icon: Clock, color: 'hsl(220, 62%, 52%)' },
+  { label: 'ROI Calculator', description: 'Return on investment analysis', href: '/property/roi', icon: Calculator, color: 'hsl(152, 62%, 38%)' },
+  { label: 'Calendar Export', description: 'Download all events as .ics', href: '/api/calendar/export', icon: CalendarDays, color: 'hsl(210, 75%, 42%)', external: true },
 ]
+
+import * as React from 'react'
 
 export function MoreMenu() {
   return (
@@ -62,25 +87,47 @@ export function MoreMenu() {
       <PageHeader title="More" />
       <div className="px-4 py-4 md:px-6 md:py-6">
         <div className="flex flex-col gap-2">
-          {MORE_ITEMS.map(({ label, description, href, icon: Icon, color }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-4 rounded-2xl glass-light p-4 transition-colors hover:glass-standard focus-ring group"
-            >
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                style={{ background: `${color}22` }}
+          {MORE_ITEMS.map(({ label, description, href, icon: Icon, color, external }) => {
+            const inner = (
+              <>
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: `${color}22` }}
+                >
+                  <Icon className="h-5 w-5" style={{ color }} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </>
+            )
+
+            if (external) {
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 rounded-2xl glass-light p-4 transition-colors hover:glass-standard focus-ring group"
+                >
+                  {inner}
+                </a>
+              )
+            }
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-4 rounded-2xl glass-light p-4 transition-colors hover:glass-standard focus-ring group"
               >
-                <Icon className="h-5 w-5" style={{ color }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">{label}</p>
-                <p className="text-xs text-muted-foreground">{description}</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          ))}
+                {inner}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </>

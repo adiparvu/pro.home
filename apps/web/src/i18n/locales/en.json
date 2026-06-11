@@ -153,7 +153,11 @@
     "packages": "Packages",
     "checklist": "Move Checklist",
     "budget": "Budget",
-    "split": "Cost Split"
+    "split": "Cost Split",
+    "timeline": "Timeline",
+    "roi": "ROI Calculator",
+    "carbon": "Carbon Footprint",
+    "expiry": "Expiry Radar"
   },
   "property": {
     "myProperties": "My Properties",

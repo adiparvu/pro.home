@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Archive, Search, Tag, AlertCircle, AlertTriangle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil, QrCode, FileText, Printer, ShieldCheck } from 'lucide-react'
+import { Archive, Search, Tag, AlertCircle, AlertTriangle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil, QrCode, FileText, Printer, ShieldCheck, Loader2, PiggyBank } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -19,9 +19,37 @@ interface InventoryPageProps {
   warrantyExpiring: InventoryItem[]
 }
 
+interface BudgetItem {
+  id: string
+  name: string
+  category: string | null
+  age_years: number
+  remaining_years: number
+  monthly_budget: number
+  replacement_cost: number
+  lifespan: number
+}
+
+interface BudgetData {
+  items: BudgetItem[]
+  total_monthly_budget: number
+}
+
 export function InventoryPage({ property, items, warrantyExpiring }: InventoryPageProps) {
   const [search, setSearch] = React.useState('')
   const [categoryFilter, setCategoryFilter] = React.useState<string | null>(null)
+
+  const [budgetData, setBudgetData] = React.useState<BudgetData | null>(null)
+  const [budgetLoading, setBudgetLoading] = React.useState(false)
+
+  React.useEffect(() => {
+    setBudgetLoading(true)
+    fetch('/api/inventory/replacement-budget')
+      .then((r) => r.json())
+      .then((d) => setBudgetData(d))
+      .catch(() => {})
+      .finally(() => setBudgetLoading(false))
+  }, [])
 
   const categories = Array.from(new Set(items.map((i) => i.category).filter(Boolean)))
 
@@ -79,6 +107,55 @@ export function InventoryPage({ property, items, warrantyExpiring }: InventoryPa
           <ShieldCheck className="h-3.5 w-3.5" />
           Insurance Export
         </a>
+      </div>
+
+      {/* Replacement Budget Card */}
+      <div className="px-4 pt-2 md:px-6">
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <PiggyBank className="h-4 w-4 text-[hsl(185,62%,38%)]" />
+              <p className="text-sm font-semibold">Replacement Budget</p>
+            </div>
+            {budgetLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </div>
+          {budgetData ? (
+            <>
+              <p className="text-lg font-bold mb-3">
+                Set aside <span className="text-[hsl(152,62%,38%)]">€{budgetData.total_monthly_budget.toFixed(2)}/month</span>
+              </p>
+              {budgetData.items
+                .filter((i) => i.remaining_years < 3)
+                .sort((a, b) => a.remaining_years - b.remaining_years)
+                .slice(0, 5)
+                .map((item) => {
+                  const pct = item.lifespan > 0 ? Math.min(100, ((item.lifespan - item.remaining_years) / item.lifespan) * 100) : 100
+                  return (
+                    <div key={item.id} className="mb-2">
+                      <div className="flex justify-between text-xs mb-0.5">
+                        <span className="text-foreground truncate max-w-[60%]">{item.name}</span>
+                        <span className="text-muted-foreground">{item.remaining_years.toFixed(1)}y left</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background: item.remaining_years < 1 ? 'hsl(0,68%,44%)' : item.remaining_years < 2 ? 'hsl(45,75%,42%)' : 'hsl(152,62%,42%)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              {budgetData.items.filter((i) => i.remaining_years < 3).length === 0 && (
+                <p className="text-xs text-muted-foreground">All items have over 3 years remaining</p>
+              )}
+            </>
+          ) : !budgetLoading ? (
+            <p className="text-xs text-muted-foreground">No items with purchase dates found</p>
+          ) : null}
+        </Card>
       </div>
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">

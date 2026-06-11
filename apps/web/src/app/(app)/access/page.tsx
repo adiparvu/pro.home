@@ -2,13 +2,13 @@ import { type Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveProperty } from '@/lib/active-property'
-import { LeasePage } from '@/components/modules/tenant/lease-page'
+import { AccessPage } from '@/components/modules/access/access-page'
 import { PageHeader } from '@/components/layout/page-header'
 import { NoPropertyState } from '@/components/modules/dashboard/no-property-state'
 
-export const metadata: Metadata = { title: 'Leases' }
+export const metadata: Metadata = { title: 'Access Codes' }
 
-export default async function LeasesRoute() {
+export default async function AccessRoute() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -18,27 +18,25 @@ export default async function LeasesRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Leases" />
+        <PageHeader title="Access Codes" />
         <NoPropertyState />
       </div>
     )
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any
-
-  const [{ data: leases }, { data: payments }] = await Promise.all([
-    sb.from('leases').select('*').eq('property_id', property.id).order('created_at', { ascending: false }),
-    sb.from('rent_payments').select('*').eq('property_id', property.id).order('month', { ascending: false }),
-  ])
+  const { data: codes } = await (supabase as any)
+    .from('temp_access_codes')
+    .select('*')
+    .eq('property_id', property.id)
+    .order('created_at', { ascending: false })
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <LeasePage
+      <AccessPage
         property={property}
         userId={user.id}
-        initialLeases={leases ?? []}
-        initialPayments={payments ?? []}
+        initialCodes={codes ?? []}
       />
     </div>
   )
