@@ -169,7 +169,11 @@
     "tenantPortal": "Tenant Portal",
     "deposit": "Deposit",
     "vacancy": "Vacancies",
-    "compliance": "Compliance"
+    "compliance": "Compliance",
+    "shares": "Share Register",
+    "occupancy": "Occupancy",
+    "yield": "Rent Yield",
+    "health": "Health Score"
   },
   "property": {
     "myProperties": "My Properties",
@@ -285,7 +289,8 @@
   "analytics": {
     "occupancy": "Occupancy",
     "yield": "Rent Yield",
-    "forecast": "5-Year Forecast"
+    "forecast": "5-Year Forecast",
+    "neighbourhood": "Neighbourhood"
   },
   "templates": "Templates",
   "errors": {
