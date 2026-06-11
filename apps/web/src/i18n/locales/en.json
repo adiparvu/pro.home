@@ -157,7 +157,10 @@
     "timeline": "Timeline",
     "roi": "ROI Calculator",
     "carbon": "Carbon Footprint",
-    "expiry": "Expiry Radar"
+    "expiry": "Expiry Radar",
+    "access": "Access Codes",
+    "compare": "Compare Properties",
+    "calendarExport": "Calendar Export"
   },
   "property": {
     "myProperties": "My Properties",

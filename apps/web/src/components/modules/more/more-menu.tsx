@@ -1,3 +1,4 @@
+import * as React from 'react'
 import Link from 'next/link'
 import {
   ShieldCheck,
@@ -78,8 +79,6 @@ const MORE_ITEMS: MoreItem[] = [
   { label: 'ROI Calculator', description: 'Return on investment analysis', href: '/property/roi', icon: Calculator, color: 'hsl(152, 62%, 38%)' },
   { label: 'Calendar Export', description: 'Download all events as .ics', href: '/api/calendar/export', icon: CalendarDays, color: 'hsl(210, 75%, 42%)', external: true },
 ]
-
-import * as React from 'react'
 
 export function MoreMenu() {
   return (
