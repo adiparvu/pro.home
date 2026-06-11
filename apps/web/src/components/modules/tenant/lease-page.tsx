@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { toast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 import type { Property } from '@/lib/supabase/types'
 
 interface LeaseAnalysis {
@@ -466,9 +465,6 @@ export function LeasePage({ property, userId, initialLeases, initialPayments }: 
   }
 
   const selectCls = 'w-full rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
-
-  // Suppress unused import warning - cn is used via className
-  void cn
 
   return (
     <>
