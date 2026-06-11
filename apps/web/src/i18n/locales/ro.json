@@ -70,6 +70,60 @@
       "incorrect": "Cod incorect. Încearcă din nou."
     }
   },
+  "onboarding": {
+    "welcome": "Bine ai venit la PRV HOUSE",
+    "welcomeSubtitle": "Casa ta, gestionată inteligent",
+    "getStarted": "Începe",
+    "skipForNow": "Sari peste deocamdată",
+    "step": "Pasul {current} din {total}",
+    "steps": {
+      "addProperty": {
+        "title": "Adaugă proprietatea ta",
+        "subtitle": "Să începem cu adresa casei tale",
+        "searchAddress": "Începe să tastezi adresa",
+        "propertyType": "Tipul proprietății",
+        "uploadPhoto": "Adaugă o fotografie"
+      },
+      "propertyProfile": {
+        "title": "Detalii proprietate",
+        "subtitle": "Ajută-ne să înțelegem mai bine proprietatea ta",
+        "size": "Suprafață (m²)",
+        "rooms": "Dormitoare",
+        "bathrooms": "Băi",
+        "heatingType": "Tip încălzire",
+        "yearBuilt": "Anul construcției",
+        "yearRenovated": "Ultima renovare"
+      },
+      "familySetup": {
+        "title": "Cine locuiește aici?",
+        "subtitle": "Adaugă membrii familiei la gospodăria ta",
+        "addMember": "Adaugă un membru al familiei",
+        "youLabel": "Tu (Proprietar)",
+        "skipMessage": "Poți adăuga persoane mai târziu în Setări"
+      },
+      "permissions": {
+        "title": "Câteva permisiuni",
+        "subtitle": "Acestea ajută PRV HOUSE să funcționeze mai bine",
+        "notifications": "Notificări",
+        "notificationsDesc": "Rămâi informat despre mentenanță, alerte și informații ARIA",
+        "location": "Locație",
+        "locationDesc": "Detectează vremea locală a proprietății tale",
+        "camera": "Cameră",
+        "cameraDesc": "Folosește M-SCAN™ pentru a cataloga aparatele",
+        "biometric": "Autentificare biometrică",
+        "biometricDesc": "Conectează-te cu Face ID sau amprentă",
+        "allow": "Permite",
+        "notNow": "Nu acum"
+      },
+      "ariaIntro": {
+        "title": "Cunoaște ARIA",
+        "subtitle": "Creierul AI al proprietății tale",
+        "description": "ARIA învață cum funcționează casa ta, te alertează la lucrurile importante și gestionează complexitatea în locul tău.",
+        "cta": "Începe cu ARIA",
+        "skipCta": "Configurează mai târziu"
+      }
+    }
+  },
   "navigation": {
     "home": "Acasă",
     "property": "Proprietate",
@@ -85,10 +139,41 @@
     "marketplace": "Magazin",
     "settings": "Setări",
     "search": "Căutare",
+    "insights": "Statistici",
+    "projects": "Proiecte",
+    "smartHome": "Casă inteligentă",
     "garden": "Grădină",
     "digitalTwin": "Geamăn Digital",
     "notifications": "Notificări",
-    "insights": "Statistici"
+    "recurring": "Sarcini recurente",
+    "contractors": "Contractori",
+    "meters": "Citiri contoare",
+    "leases": "Contracte chirie",
+    "household": "Gospodărie",
+    "packages": "Colete",
+    "checklist": "Listă mutare",
+    "budget": "Buget",
+    "split": "Împărțire costuri",
+    "timeline": "Cronologie",
+    "roi": "Calculator ROI",
+    "carbon": "Amprentă carbon",
+    "expiry": "Radar expirări",
+    "access": "Coduri de acces",
+    "compare": "Comparație proprietăți",
+    "calendarExport": "Export calendar",
+    "defects": "Jurnal defecte",
+    "seasonal": "Planificare sezonieră",
+    "mortgage": "Credit ipotecar",
+    "insurance": "Asigurări",
+    "forecast": "Prognoză",
+    "tenantPortal": "Portal chiriași",
+    "deposit": "Depozit garanție",
+    "vacancy": "Perioadă vacantă",
+    "compliance": "Conformitate",
+    "shares": "Registru coproprietate",
+    "occupancy": "Grad ocupare",
+    "yield": "Randament chirie",
+    "health": "Scor sănătate"
   },
   "property": {
     "myProperties": "Proprietățile mele",
@@ -115,6 +200,69 @@
       "other": "Altul"
     }
   },
+  "maintenance": {
+    "tasks": "Sarcini",
+    "newTask": "Sarcină nouă",
+    "overdue": "Întârziate",
+    "upcoming": "Viitoare",
+    "thisWeek": "Această săptămână",
+    "scheduled": "Programate",
+    "completed": "Finalizate",
+    "priority": {
+      "critical": "Critic",
+      "high": "Ridicat",
+      "medium": "Mediu",
+      "low": "Scăzut"
+    },
+    "status": {
+      "pending": "În așteptare",
+      "in_progress": "În progres",
+      "completed": "Finalizat",
+      "cancelled": "Anulat",
+      "overdue": "Întârziat"
+    },
+    "categories": {
+      "maintenance": "Mentenanță",
+      "repair": "Reparație",
+      "inspection": "Inspecție",
+      "cleaning": "Curățenie",
+      "upgrade": "Îmbunătățire",
+      "administrative": "Administrativ",
+      "other": "Altele"
+    }
+  },
+  "inventory": {
+    "items": "Articole",
+    "addItem": "Adaugă articol",
+    "scan": "Scanează",
+    "mscan": "M-SCAN™",
+    "noItems": "Niciun articol încă",
+    "warranty": "Garanție",
+    "warrantyExpires": "Expiră {date}",
+    "warrantyExpired": "Expirată",
+    "warrantyActive": "Activă",
+    "condition": {
+      "excellent": "Excelent",
+      "good": "Bun",
+      "fair": "Acceptabil",
+      "poor": "Slab",
+      "broken": "Defect"
+    }
+  },
+  "family": {
+    "members": "Membri",
+    "roles": {
+      "owner": "Proprietar",
+      "partner": "Partener",
+      "family_adult": "Membru de familie",
+      "family_teen": "Adolescent",
+      "family_child": "Copil",
+      "family_elderly": "Părinte în vârstă",
+      "tenant": "Chiriaș",
+      "guest": "Oaspete",
+      "service_provider": "Furnizor de servicii"
+    }
+  },
   "settings": {
     "title": "Setări",
     "profile": "Profil",
@@ -135,6 +283,16 @@
       "auto": "Sistem"
     }
   },
+  "actions": {
+    "scanInvoice": "Scanează factură"
+  },
+  "analytics": {
+    "occupancy": "Grad ocupare",
+    "yield": "Randament chirie",
+    "forecast": "Prognoză 5 ani",
+    "neighbourhood": "Cartier"
+  },
+  "templates": "Șabloane documente",
   "errors": {
     "generic": "Ceva nu a funcționat. Te rugăm să încerci din nou.",
     "network": "Eroare de rețea. Verifică conexiunea.",
