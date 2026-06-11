@@ -208,7 +208,7 @@ export function HealthReport({
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Factor Breakdown
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <FactorCard
               label="Maintenance"
               score={maintenanceScore}

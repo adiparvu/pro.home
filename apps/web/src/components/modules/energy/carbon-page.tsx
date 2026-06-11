@@ -219,7 +219,7 @@ export function CarbonPage({ property, initialReadings, initialSettings }: Carbo
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <Card className="p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">This month</p>
                 <p className="mt-1 text-lg font-bold text-foreground">{thisMonthCO2.toFixed(1)}</p>

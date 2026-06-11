@@ -173,7 +173,7 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <StatTile label="Total" value={String(documents.length)} />
           <StatTile label="Critical" value={String(criticalCount)} alert={criticalCount > 0} />
           <StatTile

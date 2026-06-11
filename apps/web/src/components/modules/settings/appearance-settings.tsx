@@ -22,7 +22,7 @@ export function AppearanceSettings() {
           <CardTitle>Theme</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {THEMES.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}

@@ -114,7 +114,7 @@ export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount
         aria-hidden="true"
       />
 
-      <div className="relative flex items-center gap-6">
+      <div className="relative flex items-center gap-4 sm:gap-6">
         {/* Health Ring */}
         <div className="shrink-0">
           {score !== null ? (
@@ -156,7 +156,7 @@ export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount
 
       {/* Factor Preview */}
       {score !== null && (
-        <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-[rgba(255,255,255,0.06)]">
           <FactorMini label="Maintenance" score={maintenanceScore} trend={maintenanceTrend} />
           <FactorMini label="Safety" score={safetyScore} trend={safetyTrend} />
           <FactorMini label="Energy" score={energyScore} trend="stable" />

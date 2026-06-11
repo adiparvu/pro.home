@@ -8,7 +8,7 @@ export default function Loading() {
         <div className="h-10 rounded-xl glass-light" />
       </div>
       <div className="h-10 rounded-xl glass-light" />
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div className="h-10 rounded-xl glass-light" />
         <div className="h-10 rounded-xl glass-light" />
         <div className="h-10 rounded-xl glass-light" />

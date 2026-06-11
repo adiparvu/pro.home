@@ -74,8 +74,8 @@ function CreateTokenModal({ onClose, onSave, saving }: CreateTokenModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-md p-6 flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <Card className="w-full max-w-md p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <p className="text-base font-semibold">Create Webhook Token</p>
           <Button variant="ghost" size="icon" onClick={onClose}>

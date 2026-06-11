@@ -155,7 +155,7 @@ export function DigitalTwinPage({ propertyId, rooms: initialRooms, items, tasks 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <StatChip icon={<Home className="h-3.5 w-3.5" />} label="Rooms" value={rooms.length} color="hsl(220,62%,52%)" />
         <StatChip icon={<Archive className="h-3.5 w-3.5" />} label="Items" value={totalItems} color="hsl(185,62%,38%)" />
         <StatChip icon={<Wrench className="h-3.5 w-3.5" />} label="Open tasks" value={openTasks} color={openTasks > 0 ? 'hsl(22,68%,52%)' : 'hsl(152,62%,42%)'} />

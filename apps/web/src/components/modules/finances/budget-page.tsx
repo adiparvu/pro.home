@@ -381,10 +381,10 @@ export function BudgetPage({ property, userId, initialBudgets, spendingRecords }
       {/* Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 md:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
         >
-          <Card variant="default" padding="md" className="w-full max-w-sm">
+          <Card variant="default" padding="md" className="w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold text-foreground">
                 {editingBudget ? 'Edit budget' : 'Set budget'}
@@ -444,7 +444,7 @@ export function BudgetPage({ property, userId, initialBudgets, spendingRecords }
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="flex flex-col gap-2 col-span-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Amount *

@@ -426,6 +426,15 @@
     display: none;
   }
 
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Module color utilities */
   .module-home     { --module-color: hsl(210, 75%, 42%); }
   .module-property { --module-color: hsl(36, 75%, 42%); }

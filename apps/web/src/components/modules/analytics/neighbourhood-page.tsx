@@ -400,10 +400,10 @@ export function NeighbourhoodPage({
       {/* Delete confirm */}
       {deleteId && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           onClick={(e) => e.target === e.currentTarget && setDeleteId(null)}
         >
-          <Card className="w-full max-w-sm mx-4 p-5">
+          <Card className="w-full max-w-sm p-5 max-h-[90vh] overflow-y-auto">
             <p className="text-base font-semibold mb-2">Delete benchmark?</p>
             <p className="text-sm text-muted-foreground mb-4">This action cannot be undone.</p>
             <div className="flex gap-2">

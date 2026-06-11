@@ -286,7 +286,7 @@ export function MortgagePage({ property, userId, initialMortgages }: MortgagePag
                       </div>
 
                       {/* Amounts */}
-                      <div className="grid grid-cols-3 gap-2 my-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 my-2">
                         <div>
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Loan amount</p>
                           <p className="text-sm font-semibold tabular-nums">{m.currency} {m.loan_amount.toLocaleString()}</p>
@@ -352,7 +352,7 @@ export function MortgagePage({ property, userId, initialMortgages }: MortgagePag
       {/* Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 md:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
         >
           <Card variant="default" padding="md" className="w-full max-w-sm max-h-[90vh] overflow-y-auto">

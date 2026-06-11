@@ -93,8 +93,11 @@ export function PropertyComparePage({ properties }: PropertyComparePageProps) {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      {/* Scrollable comparison table */}
+      <div className="overflow-x-auto -mx-4 px-4 md:-mx-6 md:px-6">
+        <div className="min-w-[480px]">
       {/* Property header row */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: `200px repeat(${properties.length}, 1fr)` }}>
+      <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: `160px repeat(${properties.length}, 1fr)` }}>
         <div />
         {properties.map((p) => (
           <Card key={p.id} className="p-3 text-center">
@@ -108,6 +111,7 @@ export function PropertyComparePage({ properties }: PropertyComparePageProps) {
       </div>
 
       {/* Metric rows */}
+      <div className="flex flex-col gap-3">
       {METRIC_CONFIG.map(({ key, label, icon: Icon, color }) => {
         const values = properties.map((p) => {
           const m = metrics[p.id]
@@ -120,7 +124,7 @@ export function PropertyComparePage({ properties }: PropertyComparePageProps) {
           <div
             key={key}
             className="grid gap-3 items-center"
-            style={{ gridTemplateColumns: `200px repeat(${properties.length}, 1fr)` }}
+            style={{ gridTemplateColumns: `160px repeat(${properties.length}, 1fr)` }}
           >
             <div className="flex items-center gap-2">
               <div
@@ -165,6 +169,9 @@ export function PropertyComparePage({ properties }: PropertyComparePageProps) {
           </div>
         )
       })}
+      </div>
+        </div>
+      </div>
     </div>
   )
 }

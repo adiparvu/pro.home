@@ -9,7 +9,7 @@ export default function Loading() {
           <div className="h-4 w-32 rounded-full glass-light" />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="h-24 rounded-2xl glass-light" />
         ))}

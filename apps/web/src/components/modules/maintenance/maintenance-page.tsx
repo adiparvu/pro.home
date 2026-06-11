@@ -207,7 +207,7 @@ export function MaintenancePage({ property, tasks: initialTasks }: MaintenancePa
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <StatCard label="Overdue" value={overdueCount} color="hsl(0, 68%, 52%)" alert={overdueCount > 0} />
           <StatCard label="Pending" value={pendingCount} color="hsl(45, 75%, 52%)" />
           <StatCard label="Done (30d)" value={completedCount} color="hsl(152, 62%, 48%)" />

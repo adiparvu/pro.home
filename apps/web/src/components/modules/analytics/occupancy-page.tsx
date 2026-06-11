@@ -272,7 +272,7 @@ export function OccupancyPage({
         {/* Occupancy ring + stats */}
         <Card className="p-4 flex flex-col gap-4">
           <OccupancyRing pct={selected.occupancyPct} />
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="text-center">
               <p className="text-lg font-bold text-green-500">{selected.occupiedDays}</p>
               <p className="text-xs text-muted-foreground">Occupied days</p>
