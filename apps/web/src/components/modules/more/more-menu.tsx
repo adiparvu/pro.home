@@ -38,6 +38,9 @@ import {
   FileText,
   Building2,
   BarChart2,
+  CalendarCheck,
+  Percent,
+  FilePlus,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
@@ -88,6 +91,10 @@ const MORE_ITEMS: MoreItem[] = [
   { label: 'Integrations', description: 'Webhooks & automation', href: '/settings/integrations', icon: Webhook, color: 'hsl(220, 52%, 46%)' },
   { label: 'Timeline', description: 'Property activity log', href: '/timeline', icon: Clock, color: 'hsl(220, 62%, 52%)' },
   { label: 'ROI Calculator', description: 'Return on investment analysis', href: '/property/roi', icon: Calculator, color: 'hsl(152, 62%, 38%)' },
+  { label: 'Occupancy', description: 'Vacancy & occupancy rate dashboard', href: '/analytics/occupancy', icon: CalendarCheck, color: 'hsl(152, 62%, 38%)' },
+  { label: 'Rent Yield', description: 'Gross & net rental yield calculator', href: '/analytics/yield', icon: Percent, color: 'hsl(45, 75%, 42%)' },
+  { label: '5-Year Forecast', description: 'Property value & income projections', href: '/analytics/forecast', icon: TrendingUp, color: 'hsl(258, 62%, 52%)' },
+  { label: 'Templates', description: 'Generate tenant documents & notices', href: '/documents/templates', icon: FilePlus, color: 'hsl(220, 52%, 46%)' },
   { label: 'Calendar Export', description: 'Download all events as .ics', href: '/api/calendar/export', icon: CalendarDays, color: 'hsl(210, 75%, 42%)', external: true },
 ]
 

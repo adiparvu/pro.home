@@ -278,6 +278,12 @@
   "actions": {
     "scanInvoice": "Scan invoice"
   },
+  "analytics": {
+    "occupancy": "Occupancy",
+    "yield": "Rent Yield",
+    "forecast": "5-Year Forecast"
+  },
+  "templates": "Templates",
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "network": "Network error. Check your connection.",
