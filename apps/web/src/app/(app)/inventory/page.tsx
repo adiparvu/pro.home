@@ -36,9 +36,26 @@ export default async function InventoryRoute() {
     error: unknown
   }
 
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const future30Date = new Date(now)
+  future30Date.setDate(future30Date.getDate() + 30)
+  const future30 = future30Date.toISOString().split('T')[0]
+
+  const { data: warrantyExpiringItems } = await supabase
+    .from('inventory_items')
+    .select('*')
+    .eq('property_id', property.id)
+    .gte('warranty_expires', today)
+    .lte('warranty_expires', future30)
+    .order('warranty_expires', { ascending: true }) as {
+    data: InventoryItem[] | null
+    error: unknown
+  }
+
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <InventoryPage property={property} items={items ?? []} />
+      <InventoryPage property={property} items={items ?? []} warrantyExpiring={warrantyExpiringItems ?? []} />
     </div>
   )
 }

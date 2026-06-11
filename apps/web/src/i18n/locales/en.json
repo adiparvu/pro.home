@@ -144,7 +144,16 @@
     "smartHome": "Smart Home",
     "garden": "Garden",
     "digitalTwin": "Digital Twin",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "recurring": "Recurring Tasks",
+    "contractors": "Contractors",
+    "meters": "Meter Readings",
+    "leases": "Leases",
+    "household": "Household",
+    "packages": "Packages",
+    "checklist": "Move Checklist",
+    "budget": "Budget",
+    "split": "Cost Split"
   },
   "property": {
     "myProperties": "My Properties",

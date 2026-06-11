@@ -6,8 +6,9 @@ import {
   Archive, Tag, Calendar, DollarSign, ShieldCheck,
   Hash, FileText, AlertCircle, Pencil, Trash2, ChevronLeft,
   MapPin, Barcode, AlertTriangle, CheckCircle, TrendingDown, QrCode, ExternalLink,
+  ArrowRightLeft, X, Loader2,
 } from 'lucide-react'
-import type { InventoryItem, ItemCondition } from '@/lib/supabase/types'
+import type { InventoryItem, ItemCondition, Property } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,13 @@ import Link from 'next/link'
 interface InventoryItemDetailProps {
   item: InventoryItem
   roomName?: string | null
+  property?: Property | null
+  userId?: string
+}
+
+interface OtherProperty {
+  property_id: string
+  properties: { id: string; name: string } | null
 }
 
 const CONDITION_COLORS: Record<ItemCondition, string> = {
@@ -29,12 +37,64 @@ const CONDITION_COLORS: Record<ItemCondition, string> = {
   broken:    'hsl(0,68%,44%)',
 }
 
-export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps) {
+export function InventoryItemDetail({ item, roomName, property, userId }: InventoryItemDetailProps) {
   const router = useRouter()
   const confirmDialog = useConfirm()
   const [deleting, setDeleting] = React.useState(false)
   const [recallActive, setRecallActive] = React.useState(item.recall_active)
   const [togglingRecall, setTogglingRecall] = React.useState(false)
+
+  // Transfer state
+  const [showTransfer, setShowTransfer] = React.useState(false)
+  const [otherProperties, setOtherProperties] = React.useState<OtherProperty[]>([])
+  const [loadingProperties, setLoadingProperties] = React.useState(false)
+  const [selectedTarget, setSelectedTarget] = React.useState('')
+  const [transferring, setTransferring] = React.useState(false)
+
+  async function openTransferModal() {
+    setShowTransfer(true)
+    setSelectedTarget('')
+    setLoadingProperties(true)
+    try {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('property_members')
+        .select('property_id, properties(id, name)')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+      const filtered = (data ?? []).filter(
+        (m: OtherProperty) => m.property_id !== item.property_id
+      )
+      setOtherProperties(filtered)
+    } finally {
+      setLoadingProperties(false)
+    }
+  }
+
+  async function handleTransfer() {
+    if (!selectedTarget) return
+    setTransferring(true)
+    try {
+      const res = await fetch('/api/inventory/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: item.id, target_property_id: selectedTarget }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error ?? 'Transfer failed')
+      }
+      toast({ title: 'Item transferred' })
+      setShowTransfer(false)
+      router.push('/inventory')
+      router.refresh()
+    } catch (err) {
+      toast({ title: 'Error', description: String(err), variant: 'destructive' })
+    } finally {
+      setTransferring(false)
+    }
+  }
 
   const warrantyExpires = item.warranty_expires ? new Date(item.warranty_expires) : null
   const warrantyValid = warrantyExpires ? warrantyExpires > new Date() : false
@@ -89,6 +149,11 @@ export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {userId && (
+              <Button variant="ghost" size="icon" onClick={openTransferModal} aria-label="Transfer item">
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            )}
             <Button asChild variant="ghost" size="icon">
               <Link href={`/inventory/${item.id}/edit`} aria-label="Edit item">
                 <Pencil className="h-4 w-4" />

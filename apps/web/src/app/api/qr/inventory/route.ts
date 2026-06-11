@@ -21,11 +21,21 @@ export async function GET(req: NextRequest) {
   const property = await getActiveProperty(supabase, user.id)
   if (!property) return NextResponse.json({ error: 'No active property' }, { status: 400 })
 
-  const { data: items } = await supabase
+  const { searchParams } = new URL(req.url)
+  const roomId = searchParams.get('room_id')
+  const roomName = searchParams.get('room_name')
+
+  let query = supabase
     .from('inventory_items')
     .select('id, name, brand, model, category, serial_number, barcode, condition, purchase_date, warranty_expires, created_at')
     .eq('property_id', property.id)
-    .order('name') as {
+    .order('name')
+
+  if (roomId) {
+    query = query.eq('room_id', roomId)
+  }
+
+  const { data: items } = await query as {
       data: Array<{
         id: string; name: string; brand: string | null; model: string | null
         category: string | null; serial_number: string | null; barcode: string | null
@@ -71,7 +81,7 @@ export async function GET(req: NextRequest) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>QR Labels — ${esc(property.name)}</title>
+<title>QR Labels — ${roomName ? esc(roomName) + ' · ' : ''}${esc(property.name)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #fff; padding: 16px; }
@@ -97,7 +107,7 @@ export async function GET(req: NextRequest) {
 </head>
 <body>
 <div class="no-print" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-  <span style="font-size:13px;font-weight:600">${esc(property.name)} — ${itemList.length} QR Labels</span>
+  <span style="font-size:13px;font-weight:600">${roomName ? esc(roomName) + ' · ' : ''}${esc(property.name)} — ${itemList.length} QR Labels</span>
   <button onclick="window.print()" style="background:#0D1420;color:#fff;border:none;padding:7px 18px;border-radius:8px;cursor:pointer;font-size:12px">Print labels</button>
 </div>
 <div class="grid">

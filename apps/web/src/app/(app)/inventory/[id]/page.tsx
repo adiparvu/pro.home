@@ -1,6 +1,7 @@
 import { type Metadata } from 'next'
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getActiveProperty } from '@/lib/active-property'
 import type { InventoryItem } from '@/lib/supabase/types'
 import { InventoryItemDetail } from '@/components/modules/inventory/inventory-item-detail'
 
@@ -33,9 +34,11 @@ export default async function InventoryItemPage({ params }: Props) {
     roomName = room?.name ?? null
   }
 
+  const property = await getActiveProperty(supabase, user.id)
+
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <InventoryItemDetail item={item} roomName={roomName} />
+      <InventoryItemDetail item={item} roomName={roomName} property={property} userId={user.id} />
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Archive, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil, QrCode, FileText, Printer } from 'lucide-react'
+import { Archive, Search, Tag, AlertCircle, AlertTriangle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil, QrCode, FileText, Printer, ShieldCheck } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -16,9 +16,10 @@ import { Input } from '@/components/ui/input'
 interface InventoryPageProps {
   property: Property
   items: InventoryItem[]
+  warrantyExpiring: InventoryItem[]
 }
 
-export function InventoryPage({ property, items }: InventoryPageProps) {
+export function InventoryPage({ property, items, warrantyExpiring }: InventoryPageProps) {
   const [search, setSearch] = React.useState('')
   const [categoryFilter, setCategoryFilter] = React.useState<string | null>(null)
 
@@ -69,6 +70,15 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
           <Printer className="h-3.5 w-3.5" />
           Print Report
         </a>
+        <a
+          href="/api/reports/insurance"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg glass-light px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Insurance Export
+        </a>
       </div>
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
@@ -85,6 +95,30 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
             alert={recallCount > 0}
           />
         </div>
+
+        {/* Warranty expiring banner */}
+        {warrantyExpiring.length > 0 && (
+          <div className="rounded-xl border border-[hsl(45,75%,42%)]/30 bg-[hsl(45,75%,42%)]/10 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-[hsl(45,75%,42%)] shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[hsl(45,75%,42%)]">
+                  {warrantyExpiring.length} item{warrantyExpiring.length > 1 ? 's' : ''} with warranty expiring within 30 days
+                </p>
+                <ul className="mt-1.5 flex flex-col gap-0.5">
+                  {warrantyExpiring.map((item) => (
+                    <li key={item.id} className="text-xs text-muted-foreground">
+                      {item.name}
+                      {item.warranty_expires && (
+                        <span className="text-[hsl(45,75%,42%)]/80"> — expires {item.warranty_expires}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Portfolio value */}
         {itemsWithValue.length > 0 && (
