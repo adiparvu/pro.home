@@ -411,7 +411,7 @@ export function CostSplitPage({ property, userId, initialSplits, initialShares }
 
       {/* New split modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <Card variant="default" padding="md" className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm font-semibold text-foreground">New cost split</p>

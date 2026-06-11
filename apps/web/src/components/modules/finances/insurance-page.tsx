@@ -369,7 +369,7 @@ export function InsurancePage({ property, userId, initialPolicies }: InsurancePa
       {/* Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 md:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
         >
           <Card variant="default" padding="md" className="w-full max-w-sm max-h-[90vh] overflow-y-auto">
