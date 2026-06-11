@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Bug, Plus, Pencil, Trash2, X, Loader2, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bug, Plus, Pencil, Trash2, X, Loader2, CheckCircle, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { toast } from '@/hooks/use-toast'
+import { PhotoGallery } from '@/components/ui/photo-gallery'
 import type { Property } from '@/lib/supabase/types'
 
 export interface DefectLog {
@@ -320,6 +321,8 @@ export function DefectLogPage({ property, userId, initialDefects, rooms }: Defec
                       onEdit={() => openEdit(d)}
                       onDelete={() => handleDelete(d)}
                       onMarkResolved={() => handleMarkResolved(d)}
+                      onPhotosChange={(photos) => setDefects((prev) => prev.map((x) => x.id === d.id ? { ...x, photo_urls: photos } : x))}
+                      property={property}
                       deleting={deletingId === d.id}
                       resolving={resolvingId === d.id}
                     />
@@ -471,13 +474,35 @@ interface DefectCardProps {
   onEdit: () => void
   onDelete: () => void
   onMarkResolved: () => void
+  onPhotosChange: (photos: string[]) => void
+  property: Property
   deleting: boolean
   resolving: boolean
 }
 
-function DefectCard({ defect: d, roomName, expanded, onToggleExpand, onEdit, onDelete, onMarkResolved, deleting, resolving }: DefectCardProps) {
+function DefectCard({ defect: d, roomName, expanded, onToggleExpand, onEdit, onDelete, onMarkResolved, onPhotosChange, property, deleting, resolving }: DefectCardProps) {
   const sevColor = SEVERITY_COLORS[d.severity] ?? 'hsl(0,0%,50%)'
   const statusColor = STATUS_COLORS[d.status] ?? 'hsl(0,0%,50%)'
+
+  async function updatePhotos(photos: string[]) {
+    onPhotosChange(photos)
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from('defect_logs')
+      .update({ photo_urls: photos })
+      .eq('id', d.id)
+  }
+
+  function handlePhotoAdd(path: string) {
+    const updated = [...(d.photo_urls ?? []), path]
+    void updatePhotos(updated)
+  }
+
+  function handlePhotoRemove(path: string) {
+    const updated = (d.photo_urls ?? []).filter((p) => p !== path)
+    void updatePhotos(updated)
+  }
 
   return (
     <Card className="p-4 flex flex-col gap-3">
@@ -549,28 +574,27 @@ function DefectCard({ defect: d, roomName, expanded, onToggleExpand, onEdit, onD
       </div>
 
       {expanded && (
-        <div className="space-y-2 pt-1 border-t border-border/30">
+        <div className="space-y-3 pt-1 border-t border-border/30">
           {d.description && (
             <p className="text-xs text-muted-foreground">{d.description}</p>
           )}
           {d.notes && (
             <p className="text-xs text-muted-foreground italic">{d.notes}</p>
           )}
-          {d.photo_urls && d.photo_urls.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {d.photo_urls.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Photo {i + 1}
-                </a>
-              ))}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground">Photos</p>
             </div>
-          )}
+            <PhotoGallery
+              photos={d.photo_urls ?? []}
+              onAdd={handlePhotoAdd}
+              onRemove={handlePhotoRemove}
+              propertyId={property.id}
+              itemType="defect"
+              itemId={d.id}
+            />
+          </div>
         </div>
       )}
     </Card>
