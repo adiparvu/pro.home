@@ -100,8 +100,10 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
         'flex items-center p-4 gap-3',
         !isExpanded && 'justify-center'
       )}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-glow-home">
-          <Home className="h-5 w-5 text-white" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-glow-home overflow-hidden">
+          <svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fillRule="evenodd" fill="white" d="M18 10 h28 v80 h-28 Z M46 10 L68 10 Q90 10 90 33 Q90 56 68 56 L46 56 Z M46 26 L65 26 Q74 26 74 33 Q74 40 65 40 L46 40 Z"/>
+          </svg>
         </div>
         {isExpanded && (
           <div className="min-w-0 flex-1">

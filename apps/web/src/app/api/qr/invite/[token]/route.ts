@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import QRCode from 'qrcode'
 import { createClient } from '@/lib/supabase/server'
+import { qrWithLogo } from '@/lib/qr-with-logo'
 
 interface Props { params: Promise<{ token: string }> }
 
@@ -34,11 +34,11 @@ export async function GET(req: NextRequest, { params }: Props) {
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.prvhouse.com'}/invite/${token}`
 
-  const svg = await QRCode.toString(inviteUrl, {
-    type: 'svg',
+  const svg = await qrWithLogo(inviteUrl, {
     width: 200,
     margin: 2,
-    color: { dark: '#1a1a2e', light: '#ffffff' },
+    dark: '#1a1a2e',
+    light: '#ffffff',
   })
 
   return new NextResponse(svg, {

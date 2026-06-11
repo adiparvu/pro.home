@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Archive, Tag, Calendar, DollarSign, ShieldCheck,
   Hash, FileText, AlertCircle, Pencil, Trash2, ChevronLeft,
-  MapPin, Barcode, AlertTriangle, CheckCircle, TrendingDown,
+  MapPin, Barcode, AlertTriangle, CheckCircle, TrendingDown, QrCode, ExternalLink,
 } from 'lucide-react'
 import type { InventoryItem, ItemCondition } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -215,6 +215,37 @@ export function InventoryItemDetail({ item, roomName }: InventoryItemDetailProps
                 </div>
               </DetailRow>
             )}
+          </div>
+        </Card>
+
+        {/* QR Code */}
+        <Card variant="default" padding="md">
+          <div className="flex items-center gap-2 mb-3">
+            <QrCode className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-semibold">Item QR Code</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <img
+              src={`/api/qr/item/${item.id}`}
+              alt="Item QR code"
+              width={100}
+              height={100}
+              className="rounded-xl border border-border"
+            />
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Scan to view item details. Print and attach to the object — no login required.
+              </p>
+              <a
+                href={`/i/${item.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View public page
+              </a>
+            </div>
           </div>
         </Card>
 
