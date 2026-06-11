@@ -4,7 +4,7 @@ import * as React from 'react'
 import {
   DollarSign, TrendingDown, TrendingUp, Plus, Trash2, Pencil, Paperclip,
   ChevronDown, ChevronUp, AlertCircle, Tag, X, Download, ScanLine, Loader2,
-  Upload,
+  Upload, Camera, CheckCircle2,
 } from 'lucide-react'
 import type { Property, FinancialRecord, FinanceCategory, FinanceType } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -83,6 +83,11 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
   const [repeat, setRepeat] = React.useState<'' | 'monthly' | 'yearly'>('')
   const [ocrLoading, setOcrLoading] = React.useState(false)
 
+  // Invoice OCR state
+  const [invoiceOcrLoading, setInvoiceOcrLoading] = React.useState(false)
+  const [invoiceScanned, setInvoiceScanned] = React.useState(false)
+  const [showInvoiceScan, setShowInvoiceScan] = React.useState(false)
+
   // Bank statement import state
   const [showImport, setShowImport] = React.useState(false)
   const [importParsing, setImportParsing] = React.useState(false)
@@ -140,6 +145,8 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
     setShowForm(false)
     setEditingId(null)
     setFormError(null)
+    setInvoiceScanned(false)
+    setShowInvoiceScan(false)
   }
 
   function exportCSV() {
@@ -166,6 +173,73 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
       toast.success('Receipt scanned — check the fields below')
     } finally {
       setOcrLoading(false)
+    }
+  }
+
+  async function handleInvoiceOcr(file: File) {
+    setInvoiceOcrLoading(true)
+    setInvoiceScanned(false)
+    try {
+      const reader = new FileReader()
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string
+          // strip data URL prefix e.g. "data:image/jpeg;base64,"
+          resolve(result.split(',')[1] ?? '')
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const mimeType = file.type || 'image/jpeg'
+      const res = await fetch('/api/ocr/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: base64, mime_type: mimeType }),
+      })
+      const json = await res.json() as {
+        result?: {
+          vendor?: string | null
+          invoice_number?: string | null
+          amount?: number | null
+          currency?: string | null
+          date?: string | null
+          description?: string | null
+          category?: string | null
+        }
+        error?: string
+        warning?: string
+      }
+      if (json.error) { toast({ title: json.error, variant: 'destructive' }); return }
+      const r = json.result ?? {}
+      if (r.vendor && !title) setTitle(r.vendor)
+      if (r.amount) setAmount(String(r.amount))
+      if (r.date) setDate(r.date)
+      if (r.category) {
+        // Map invoice categories to finance categories where possible
+        const catMap: Record<string, string> = {
+          plumbing: 'maintenance',
+          electrical: 'maintenance',
+          hvac: 'maintenance',
+          painting: 'renovation',
+          flooring: 'renovation',
+          roofing: 'renovation',
+          landscaping: 'maintenance',
+          cleaning: 'maintenance',
+          pest_control: 'maintenance',
+          general_maintenance: 'maintenance',
+          other: 'other',
+        }
+        const mapped = catMap[r.category] ?? 'maintenance'
+        setCategory(mapped as typeof category)
+      }
+      if (r.description && !description) setDescription(r.description)
+      setInvoiceScanned(true)
+      setShowInvoiceScan(false)
+      toast({ title: 'Invoice scanned — check the fields below' })
+    } catch (err) {
+      toast({ title: 'Error scanning invoice', description: String(err), variant: 'destructive' })
+    } finally {
+      setInvoiceOcrLoading(false)
     }
   }
 
@@ -413,6 +487,50 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
                   <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                   <p className="text-xs text-destructive">{formError}</p>
+                </div>
+              )}
+
+              {/* Scan invoice button */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceScan((v) => !v)}
+                  className="flex items-center gap-1.5 rounded-lg border border-border/50 glass-light px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  Scan invoice
+                </button>
+                {invoiceScanned && (
+                  <span className="flex items-center gap-1 text-xs text-[hsl(152,62%,48%)]">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Invoice scanned
+                  </span>
+                )}
+              </div>
+
+              {showInvoiceScan && (
+                <div className="rounded-xl border border-border/50 bg-muted/20 p-3 flex flex-col gap-2">
+                  <p className="text-xs text-muted-foreground">Upload an invoice image to auto-fill fields below</p>
+                  <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border glass-light px-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    {invoiceOcrLoading ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4 shrink-0" />
+                    )}
+                    <span className="truncate">
+                      {invoiceOcrLoading ? 'Scanning invoice…' : 'Choose invoice image'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="sr-only"
+                      disabled={invoiceOcrLoading}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) void handleInvoiceOcr(f)
+                      }}
+                    />
+                  </label>
                 </div>
               )}
 

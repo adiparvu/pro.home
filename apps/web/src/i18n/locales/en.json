@@ -160,7 +160,12 @@
     "expiry": "Expiry Radar",
     "access": "Access Codes",
     "compare": "Compare Properties",
-    "calendarExport": "Calendar Export"
+    "calendarExport": "Calendar Export",
+    "defects": "Defect Log",
+    "seasonal": "Seasonal Planner",
+    "mortgage": "Mortgage",
+    "insurance": "Insurance",
+    "forecast": "Forecast"
   },
   "property": {
     "myProperties": "My Properties",
@@ -269,6 +274,9 @@
       "light": "Light",
       "auto": "System"
     }
+  },
+  "actions": {
+    "scanInvoice": "Scan invoice"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

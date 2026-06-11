@@ -33,6 +33,11 @@ import {
   KeyRound,
   GitCompare,
   CalendarDays,
+  Bug,
+  Sun,
+  FileText,
+  Building2,
+  BarChart2,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 
@@ -58,9 +63,15 @@ const MORE_ITEMS: MoreItem[] = [
   { label: 'Maintenance', description: 'Tasks & repairs', href: '/maintenance', icon: Wrench, color: 'hsl(22, 68%, 41%)' },
   { label: 'Move Checklist', description: 'Moving in & out checklist', href: '/maintenance/checklist', icon: ClipboardList, color: 'hsl(22, 68%, 41%)' },
   { label: 'Recurring Tasks', description: 'Scheduled maintenance templates', href: '/maintenance/recurring', icon: RotateCcw, color: 'hsl(22, 68%, 41%)' },
+  { label: 'Defect Log', description: 'Track and manage property defects', href: '/maintenance/defects', icon: Bug, color: 'hsl(0, 68%, 44%)' },
+  { label: 'Seasonal Planner', description: 'Seasonal maintenance templates', href: '/maintenance/seasonal', icon: Sun, color: 'hsl(45, 75%, 42%)' },
   { label: 'Finances', description: 'Costs & budgets', href: '/finances', icon: Banknote, color: 'hsl(45, 75%, 42%)' },
   { label: 'Budget', description: 'Budget planning & tracking', href: '/finances/budget', icon: PieChart, color: 'hsl(45, 75%, 42%)' },
   { label: 'Cost Split', description: 'Split costs with housemates', href: '/finances/split', icon: Split, color: 'hsl(88, 58%, 39%)' },
+  { label: 'Mortgage', description: 'Mortgage tracker & repayment progress', href: '/finances/mortgage', icon: Building2, color: 'hsl(270, 62%, 52%)' },
+  { label: 'Insurance', description: 'Insurance policies & renewal dates', href: '/finances/insurance', icon: ShieldCheck, color: 'hsl(152, 62%, 42%)' },
+  { label: 'Forecast', description: 'Expense forecasting by category', href: '/finances/forecast', icon: BarChart2, color: 'hsl(220, 62%, 52%)' },
+  { label: 'Tax Report', description: 'Download annual tax summary', href: '/api/reports/tax?year=2025', icon: FileText, color: 'hsl(45, 75%, 42%)', external: true },
   { label: 'Documents', description: 'Contracts & manuals', href: '/documents', icon: FolderOpen, color: 'hsl(220, 52%, 46%)' },
   { label: 'Expiry Radar', description: 'Documents & warranties expiring', href: '/documents/expiry', icon: ScanSearch, color: 'hsl(22, 68%, 41%)' },
   { label: 'Marketplace', description: 'Service providers & contacts', href: '/marketplace', icon: ShoppingCart, color: 'hsl(88, 58%, 39%)' },
