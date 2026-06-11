@@ -3,7 +3,7 @@
 import * as React from 'react'
 import {
   DollarSign, TrendingDown, TrendingUp, Plus, Trash2, Pencil, Paperclip,
-  ChevronDown, ChevronUp, AlertCircle, Tag, X, Download,
+  ChevronDown, ChevronUp, AlertCircle, Tag, X, Download, ScanLine, Loader2,
 } from 'lucide-react'
 import type { Property, FinancialRecord, FinanceCategory, FinanceType } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -79,6 +79,7 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
   const [tagInput, setTagInput] = React.useState('')
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null)
   const [repeat, setRepeat] = React.useState<'' | 'monthly' | 'yearly'>('')
+  const [ocrLoading, setOcrLoading] = React.useState(false)
 
   const filtered = typeFilter === 'all' ? records : records.filter((r) => r.type === typeFilter)
 
@@ -132,27 +133,30 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
   }
 
   function exportCSV() {
-    const rows = [
-      ['Date', 'Title', 'Type', 'Category', 'Amount (EUR)', 'Description', 'Tags', 'Receipt'],
-      ...records.map((r) => [
-        r.date,
-        `"${r.title.replace(/"/g, '""')}"`,
-        r.type,
-        r.category,
-        r.amount.toFixed(2),
-        `"${(r.description ?? '').replace(/"/g, '""')}"`,
-        `"${r.tags.join('; ')}"`,
-        r.receipt_url ?? '',
-      ]),
-    ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = `finances-${property.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`
+    a.href = '/api/export/finances'
     a.click()
-    URL.revokeObjectURL(url)
+  }
+
+  async function handleOcr(file: File) {
+    setOcrLoading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/ocr', { method: 'POST', body: fd })
+      const json = await res.json() as { result?: { title?: string; amount?: number; date?: string; category?: string; description?: string }; error?: string }
+      if (json.error) { toast.error(json.error); return }
+      const r = json.result ?? {}
+      if (r.title) setTitle(r.title)
+      if (r.amount) setAmount(String(r.amount))
+      if (r.date) setDate(r.date)
+      if (r.category) setCategory(r.category as FinanceCategory)
+      if (r.description) setDescription(r.description)
+      setReceiptFile(file)
+      toast.success('Receipt scanned — check the fields below')
+    } finally {
+      setOcrLoading(false)
+    }
   }
 
   function addTag(raw: string) {
@@ -470,19 +474,33 @@ export function FinancesPage({ property, userId, initialRecords, initialShowForm
                 />
               </div>
 
-              {/* Receipt upload */}
+              {/* Receipt upload + OCR */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Receipt</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Receipt</label>
+                  <span className="text-[10px] text-muted-foreground">Snap image to auto-fill</span>
+                </div>
                 <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border glass-light px-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Paperclip className="h-4 w-4 shrink-0" />
+                  {ocrLoading ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  ) : receiptFile ? (
+                    <Paperclip className="h-4 w-4 shrink-0 text-primary" />
+                  ) : (
+                    <ScanLine className="h-4 w-4 shrink-0" />
+                  )}
                   <span className="truncate">
-                    {receiptFile ? receiptFile.name : 'Attach receipt (image or PDF)'}
+                    {ocrLoading ? 'Scanning receipt…' : receiptFile ? receiptFile.name : 'Attach or scan receipt (auto-fills form)'}
                   </span>
                   <input
                     type="file"
-                    accept="image/*,.pdf"
+                    accept="image/*"
+                    capture="environment"
                     className="sr-only"
-                    onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+                    disabled={ocrLoading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) handleOcr(f)
+                    }}
                   />
                 </label>
               </div>

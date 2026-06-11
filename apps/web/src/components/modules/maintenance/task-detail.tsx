@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Wrench, Calendar, DollarSign, Clock, User, CheckSquare,
   Square, ChevronLeft, Pencil, Trash2, CheckCircle2, AlertTriangle,
-  Phone, Mail, MapPin, Package, Tag, XCircle, Image,
+  Phone, Mail, MapPin, Package, Tag, XCircle, Image, Camera, Loader2, Plus,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
@@ -50,6 +50,28 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
   })
   const [deleting, setDeleting] = React.useState(false)
   const [updatingStatus, setUpdatingStatus] = React.useState(false)
+  const [uploadingSlot, setUploadingSlot] = React.useState<'before' | 'after' | null>(null)
+
+  async function handlePhotoUpload(file: File, slot: 'before' | 'after') {
+    setUploadingSlot(slot)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('taskId', task.id)
+      fd.append('slot', slot)
+      const res = await fetch('/api/storage/task-photos', { method: 'POST', body: fd })
+      const json = await res.json() as { url?: string; error?: string }
+      if (json.error) { toast.error(json.error); return }
+      if (json.url) {
+        const field = slot === 'after' ? 'after_photo_urls' : 'before_photo_urls'
+        setTask((prev) => ({ ...prev, [field]: [...(prev[field] ?? []), json.url!] }))
+        toast.success('Photo added')
+        router.refresh()
+      }
+    } finally {
+      setUploadingSlot(null)
+    }
+  }
 
   async function updateStatus(status: TaskStatus) {
     setUpdatingStatus(true)
@@ -303,35 +325,50 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
           </div>
         </Card>
 
-        {/* Before photos */}
-        {task.before_photo_urls && task.before_photo_urls.length > 0 && (
-          <Card variant="default" padding="md">
-            <div className="flex items-center gap-2 mb-3">
-              <Image className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Before</p>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {task.before_photo_urls.map((url, i) => (
-                <img key={url} src={url} alt={`Before ${i + 1}`} className="h-28 w-28 shrink-0 rounded-xl object-cover border border-border" />
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* After photos */}
-        {task.after_photo_urls && task.after_photo_urls.length > 0 && (
-          <Card variant="default" padding="md">
-            <div className="flex items-center gap-2 mb-3">
-              <Image className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">After</p>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {task.after_photo_urls.map((url, i) => (
-                <img key={url} src={url} alt={`After ${i + 1}`} className="h-28 w-28 shrink-0 rounded-xl object-cover border border-border" />
-              ))}
-            </div>
-          </Card>
-        )}
+        {/* Before / After photos */}
+        {(['before', 'after'] as const).map((slot) => {
+          const urls: string[] = (slot === 'before' ? task.before_photo_urls : task.after_photo_urls) ?? []
+          const isUploading = uploadingSlot === slot
+          return (
+            <Card key={slot} variant="default" padding="md">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Image className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground capitalize">{slot}</p>
+                  {urls.length > 0 && <span className="text-[10px] text-muted-foreground">({urls.length})</span>}
+                </div>
+                <label className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-colors cursor-pointer focus-ring ${isUploading ? 'text-muted-foreground' : 'glass-light text-muted-foreground hover:text-foreground'}`}>
+                  {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                  {isUploading ? 'Uploading…' : 'Add photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    disabled={isUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) handlePhotoUpload(f, slot)
+                    }}
+                  />
+                </label>
+              </div>
+              {urls.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {urls.map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                      <img src={url} alt={`${slot} ${i + 1}`} className="h-28 w-28 shrink-0 rounded-xl object-cover border border-border hover:opacity-80 transition-opacity" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-16 items-center justify-center rounded-xl border border-dashed border-border">
+                  <p className="text-xs text-muted-foreground">No {slot} photos yet</p>
+                </div>
+              )}
+            </Card>
+          )
+        })}
 
         {/* Checklist */}
         {checklist.length > 0 && (

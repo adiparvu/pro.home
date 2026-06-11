@@ -2,7 +2,7 @@ import { getRequestConfig } from 'next-intl/server'
 import type { AbstractIntlMessages } from 'next-intl'
 import { cookies } from 'next/headers'
 
-export const SUPPORTED_LOCALES = ['en', 'ro'] as const
+export const SUPPORTED_LOCALES = ['en', 'ro', 'fr', 'es', 'de'] as const
 export const LOCALE_COOKIE = 'NEXT_LOCALE'
 
 /**

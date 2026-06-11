@@ -10,7 +10,9 @@ import { cn } from '@/lib/utils'
 const LOCALES = [
   { code: 'en', label: 'English', flag: '🇬🇧', available: true },
   { code: 'ro', label: 'Română', flag: '🇷🇴', available: true },
-  { code: 'fr', label: 'Français', flag: '🇫🇷', available: false },
+  { code: 'fr', label: 'Français', flag: '🇫🇷', available: true },
+  { code: 'es', label: 'Español', flag: '🇪🇸', available: true },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪', available: true },
   { code: 'nl', label: 'Nederlands', flag: '🇳🇱', available: false },
   { code: 'it', label: 'Italiano', flag: '🇮🇹', available: false },
   { code: 'pl', label: 'Polski', flag: '🇵🇱', available: false },
@@ -23,7 +25,13 @@ export function LanguageSettings() {
   function selectLocale(code: string) {
     if (code === activeLocale) return
     document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
-    toast.success(code === 'ro' ? 'Limba a fost schimbată' : 'Language updated')
+    const msgs: Record<string, string> = {
+      ro: 'Limba a fost schimbată',
+      fr: 'Langue mise à jour',
+      es: 'Idioma actualizado',
+      de: 'Sprache aktualisiert',
+    }
+    toast.success(msgs[code] ?? 'Language updated')
     router.refresh()
   }
 
@@ -59,7 +67,7 @@ export function LanguageSettings() {
             ))}
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            English and Romanian are fully supported. More languages are on the way.
+            5 languages supported. Dutch, Italian, and Polish coming soon.
           </p>
         </CardContent>
       </Card>

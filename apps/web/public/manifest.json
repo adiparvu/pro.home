@@ -39,18 +39,27 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Security",
-      "short_name": "Security",
-      "description": "Check home security status",
-      "url": "/security",
+      "name": "Insights",
+      "short_name": "Insights",
+      "description": "AI-powered property intelligence",
+      "url": "/insights",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Energy",
-      "short_name": "Energy",
-      "description": "Monitor energy usage",
-      "url": "/energy",
+      "name": "Finances",
+      "short_name": "Finances",
+      "description": "Track expenses and income",
+      "url": "/finances",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "PRV HOUSE dashboard"
     }
   ],
   "categories": ["productivity", "utilities", "lifestyle"],

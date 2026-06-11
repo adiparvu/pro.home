@@ -7,6 +7,7 @@ import { QuickActionsFab } from '@/components/layout/quick-actions-fab'
 import { GestureManager } from '@/components/layout/gesture-manager'
 import { RealtimeNotifications } from '@/components/layout/realtime-notifications'
 import { LpbeBackground } from '@/components/glass/lpbe-background'
+import { PwaInstallPrompt } from '@/components/layout/pwa-install-prompt'
 import type { Profile, UserRole } from '@/lib/supabase/types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -79,6 +80,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* Live notification toasts + badge refresh */}
         <RealtimeNotifications userId={user.id} />
+
+        {/* PWA install prompt */}
+        <PwaInstallPrompt />
       </div>
     </Providers>
   )

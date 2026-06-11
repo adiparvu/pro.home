@@ -36,6 +36,7 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
   const [query, setQuery] = React.useState('')
   const [results, setResults] = React.useState<SearchResult[]>([])
   const [loading, setLoading] = React.useState(false)
+  const [typeFilter, setTypeFilter] = React.useState<SearchResult['type'] | 'all'>('all')
   const debouncedQuery = useDebounce(query, 300)
 
   React.useEffect(() => {
@@ -160,14 +161,16 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
     doSearch()
   }, [debouncedQuery, propertyId])
 
-  const grouped = results.reduce<Partial<Record<SearchResult['type'], SearchResult[]>>>((acc, r) => {
+  const filteredResults = typeFilter === 'all' ? results : results.filter((r) => r.type === typeFilter)
+
+  const grouped = filteredResults.reduce<Partial<Record<SearchResult['type'], SearchResult[]>>>((acc, r) => {
     if (!acc[r.type]) acc[r.type] = []
     acc[r.type]!.push(r)
     return acc
   }, {})
 
-  const hasResults = results.length > 0
-  const showEmpty = debouncedQuery.trim().length >= 2 && !loading && !hasResults
+  const hasResults = filteredResults.length > 0
+  const showEmpty = debouncedQuery.trim().length >= 2 && !loading && filteredResults.length === 0
   const showHint = query.trim().length < 2 && !loading
 
   return (
@@ -190,6 +193,36 @@ export function SearchPage({ propertyId }: { propertyId: string }) {
             className="h-12 w-full rounded-2xl border border-border glass-standard pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
           />
         </div>
+
+        {/* Type filters */}
+        {results.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <button
+              type="button"
+              onClick={() => setTypeFilter('all')}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${typeFilter === 'all' ? 'bg-primary text-white' : 'glass-light text-muted-foreground hover:text-foreground'}`}
+            >
+              All ({results.length})
+            </button>
+            {(Object.keys(TYPE_META) as SearchResult['type'][]).filter((t) => results.some((r) => r.type === t)).map((t) => {
+              const meta = TYPE_META[t]
+              const Icon = meta.icon
+              const count = results.filter((r) => r.type === t).length
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTypeFilter(t)}
+                  className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${typeFilter === t ? 'text-white' : 'glass-light text-muted-foreground hover:text-foreground'}`}
+                  style={typeFilter === t ? { background: meta.color } : undefined}
+                >
+                  <Icon className="h-3 w-3" />
+                  {meta.label} ({count})
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {showHint && (
           <p className="py-8 text-center text-sm text-muted-foreground">

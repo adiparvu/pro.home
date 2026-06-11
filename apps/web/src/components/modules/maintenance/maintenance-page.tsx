@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Wrench, AlertTriangle, Clock, CheckCircle2, Circle, ChevronRight,
   LayoutList, CalendarDays, RepeatIcon, SlidersHorizontal, ExternalLink, Pencil,
-  Sparkles, Plus,
+  Sparkles, Plus, CheckSquare, Square, Trash2, X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SEASONAL_TEMPLATES } from '@/lib/maintenance-templates'
@@ -81,14 +81,72 @@ function sortMonthKeys(keys: string[]): string[] {
   })
 }
 
-export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
+export function MaintenancePage({ property, tasks: initialTasks }: MaintenancePageProps) {
   const router = useRouter()
+  const [tasks, setTasks] = React.useState(initialTasks)
   const [activeTab, setActiveTab] = React.useState<TaskStatus | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = React.useState<TaskPriority | 'all'>('all')
   const [view, setView] = React.useState<'list' | 'timeline'>('list')
   const [filtersOpen, setFiltersOpen] = React.useState(false)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [applyingTemplate, setApplyingTemplate] = React.useState<string | null>(null)
+  const [selectMode, setSelectMode] = React.useState(false)
+  const [selected, setSelected] = React.useState<Set<string>>(new Set())
+  const [bulkWorking, setBulkWorking] = React.useState(false)
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map((t) => t.id)))
+    }
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelected(new Set())
+  }
+
+  async function bulkMarkDone() {
+    if (!selected.size) return
+    setBulkWorking(true)
+    const supabase = createClient()
+    const ids = [...selected]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from('maintenance_tasks')
+      .update({ status: 'completed', completed_date: new Date().toISOString().split('T')[0] })
+      .in('id', ids)
+    const today = new Date().toISOString().split('T')[0] ?? null
+    setTasks((prev) => prev.map((t) => selected.has(t.id) ? { ...t, status: 'completed' as TaskStatus, completed_date: today } : t))
+    toast.success(`${ids.length} task${ids.length !== 1 ? 's' : ''} marked done`)
+    exitSelectMode()
+    setBulkWorking(false)
+    router.refresh()
+  }
+
+  async function bulkDelete() {
+    if (!selected.size) return
+    setBulkWorking(true)
+    const supabase = createClient()
+    const ids = [...selected]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('maintenance_tasks').delete().in('id', ids)
+    setTasks((prev) => prev.filter((t) => !selected.has(t.id)))
+    toast.success(`${ids.length} task${ids.length !== 1 ? 's' : ''} deleted`)
+    exitSelectMode()
+    setBulkWorking(false)
+    router.refresh()
+  }
 
   async function applyTemplate(templateId: string) {
     const template = SEASONAL_TEMPLATES.find((t) => t.id === templateId)
@@ -155,6 +213,45 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
           <StatCard label="Done (30d)" value={completedCount} color="hsl(152, 62%, 48%)" />
         </div>
 
+        {/* Bulk action bar */}
+        {selectMode && (
+          <div className="flex items-center justify-between gap-2 rounded-2xl glass-heavy px-4 py-3">
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={toggleSelectAll} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                {selected.size === filtered.length ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                {selected.size > 0 ? `${selected.size} selected` : 'Select all'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {selected.size > 0 && (
+                <>
+                  <button
+                    type="button"
+                    disabled={bulkWorking}
+                    onClick={bulkMarkDone}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[hsl(152,62%,48%)] glass-light hover:bg-[hsl(152,62%,42%)]/20 transition-colors focus-ring disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Done
+                  </button>
+                  <button
+                    type="button"
+                    disabled={bulkWorking}
+                    onClick={bulkDelete}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-destructive glass-light hover:bg-destructive/20 transition-colors focus-ring disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                </>
+              )}
+              <button type="button" onClick={exitSelectMode} className="flex h-7 w-7 items-center justify-center rounded-lg glass-light text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* View toggle + filters row */}
         <div className="flex items-center justify-between gap-2">
           <SegmentedControl
@@ -169,6 +266,16 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
             ]}
           />
           <div className="flex items-center gap-2">
+            {!selectMode && (
+              <button
+                type="button"
+                onClick={() => setSelectMode(true)}
+                className="flex items-center gap-1.5 rounded-xl glass-light px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-ring"
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Select
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setTemplatesOpen(true)}
@@ -278,7 +385,24 @@ export function MaintenancePage({ property, tasks }: MaintenancePageProps) {
               <EmptyState status={activeTab} />
             ) : (
               <div className="flex flex-col gap-2">
-                {filtered.map((task) => <TaskCard key={task.id} task={task} />)}
+                {filtered.map((task) => (
+                  <div key={task.id} className="flex items-start gap-2">
+                    {selectMode && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSelect(task.id)}
+                        className="mt-3.5 shrink-0 flex h-5 w-5 items-center justify-center focus-ring rounded"
+                      >
+                        {selected.has(task.id)
+                          ? <CheckSquare className="h-5 w-5 text-primary" />
+                          : <Square className="h-5 w-5 text-muted-foreground" />}
+                      </button>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <TaskCard task={task} />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </>
