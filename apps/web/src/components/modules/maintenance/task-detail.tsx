@@ -6,6 +6,7 @@ import {
   Wrench, Calendar, DollarSign, Clock, User, CheckSquare,
   Square, ChevronLeft, Pencil, Trash2, CheckCircle2, AlertTriangle,
   Phone, Mail, MapPin, Package, Tag, XCircle, Image, Camera, Loader2, Plus,
+  MessageSquare, Send,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { MaintenanceTask, TaskStatus, TaskPriority } from '@/lib/supabase/types'
@@ -17,11 +18,21 @@ import { useConfirm } from '@/components/ui/confirm-dialog'
 import { toast } from '@/hooks/use-toast'
 import { formatRelativeTime } from '@/lib/utils'
 
+interface ContractorMessage {
+  id: string
+  task_id: string
+  sender_id: string
+  content: string
+  is_read: boolean
+  created_at: string
+}
+
 interface TaskDetailProps {
   task: MaintenanceTask
   assigneeName?: string | null
   roomName?: string | null
   inventoryItemName?: string | null
+  userId?: string | null
 }
 
 const PRIORITY_VARIANTS: Record<TaskPriority, 'critical' | 'danger' | 'warning' | 'neutral'> = {
@@ -37,7 +48,7 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
 
 type ChecklistItem = { text: string; done: boolean }
 
-export function TaskDetail({ task: initial, assigneeName, roomName, inventoryItemName }: TaskDetailProps) {
+export function TaskDetail({ task: initial, assigneeName, roomName, inventoryItemName, userId }: TaskDetailProps) {
   const router = useRouter()
   const confirmDialog = useConfirm()
   const [task, setTask] = React.useState(initial)
@@ -51,6 +62,52 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
   const [deleting, setDeleting] = React.useState(false)
   const [updatingStatus, setUpdatingStatus] = React.useState(false)
   const [uploadingSlot, setUploadingSlot] = React.useState<'before' | 'after' | null>(null)
+  const [messages, setMessages] = React.useState<ContractorMessage[]>([])
+  const [msgText, setMsgText] = React.useState('')
+  const [sendingMsg, setSendingMsg] = React.useState(false)
+  const [loadingMsgs, setLoadingMsgs] = React.useState(false)
+  const chatEndRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    async function loadMessages() {
+      setLoadingMsgs(true)
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('contractor_messages')
+        .select('*')
+        .eq('task_id', initial.id)
+        .order('created_at', { ascending: true })
+        .limit(100)
+      if (data) setMessages(data as ContractorMessage[])
+      setLoadingMsgs(false)
+    }
+    void loadMessages()
+  }, [initial.id])
+
+  React.useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault()
+    if (!msgText.trim() || !userId) return
+    setSendingMsg(true)
+    try {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('contractor_messages')
+        .insert({ task_id: task.id, sender_id: userId, content: msgText.trim() })
+        .select()
+        .single()
+      if (error) { toast.error('Failed to send'); return }
+      setMessages((prev) => [...prev, data as ContractorMessage])
+      setMsgText('')
+    } finally {
+      setSendingMsg(false)
+    }
+  }
 
   async function handlePhotoUpload(file: File, slot: 'before' | 'after') {
     setUploadingSlot(slot)
@@ -405,6 +462,54 @@ export function TaskDetail({ task: initial, assigneeName, roomName, inventoryIte
             <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{task.notes}</p>
           </Card>
         )}
+
+        {/* Contractor Chat */}
+        <Card variant="default" padding="none">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contractor Chat</p>
+            {messages.length > 0 && <span className="text-xs text-muted-foreground ml-auto">{messages.length} messages</span>}
+          </div>
+          <div className="flex flex-col gap-2 max-h-72 overflow-y-auto p-4">
+            {loadingMsgs ? (
+              <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+            ) : messages.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground py-4">No messages yet. Start the conversation.</p>
+            ) : (
+              messages.map((msg) => {
+                const isMine = msg.sender_id === userId
+                return (
+                  <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${isMine ? 'bg-primary text-white rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'}`}>
+                      <p>{msg.content}</p>
+                      <p className={`text-[10px] mt-0.5 ${isMine ? 'text-white/60' : 'text-muted-foreground'}`}>
+                        {new Date(msg.created_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          {userId && (
+            <form onSubmit={sendMessage} className="flex items-center gap-2 px-4 py-3 border-t border-border/30">
+              <input
+                value={msgText}
+                onChange={(e) => setMsgText(e.target.value)}
+                placeholder="Type a message…"
+                className="flex-1 rounded-xl border border-border/50 bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <button
+                type="submit"
+                disabled={sendingMsg || !msgText.trim()}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white disabled:opacity-50 transition-opacity"
+              >
+                {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </form>
+          )}
+        </Card>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { FileText, Upload, AlertCircle, Trash2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
+import { FileText, Upload, AlertCircle, Trash2, ExternalLink, ChevronDown, ChevronUp, ScanLine, Loader2 } from 'lucide-react'
 import type { Property, Document, DocumentCategory } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
 import { PageHeader } from '@/components/layout/page-header'
@@ -55,6 +55,8 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
   const [uploadExpiresAt, setUploadExpiresAt] = React.useState('')
   const [uploadFile, setUploadFile] = React.useState<File | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const scanInputRef = React.useRef<HTMLInputElement>(null)
+  const [scanning, setScanning] = React.useState(false)
 
   const filtered = categoryFilter ? documents.filter((d) => d.category === categoryFilter) : documents
   const criticalCount = documents.filter((d) => d.is_critical).length
@@ -141,6 +143,27 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
     setDeletingId(null)
   }
 
+  async function handleScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setScanning(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/ocr', { method: 'POST', body: fd })
+      const json = await res.json() as { result?: { title?: string; description?: string }; error?: string }
+      if (json.result?.title) {
+        setUploadName(json.result.title)
+        if (json.result.description) setUploadDescription(json.result.description)
+        setUploadFile(file)
+        setShowUpload(true)
+      }
+    } catch { /* ignore */ } finally {
+      setScanning(false)
+      if (scanInputRef.current) scanInputRef.current.value = ''
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -165,17 +188,31 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
           />
         </div>
 
-        {/* Upload toggle */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowUpload((v) => !v)}
-          className="self-start"
-        >
-          <Upload className="h-3.5 w-3.5" />
-          {showUpload ? 'Cancel upload' : 'Upload document'}
-          {showUpload ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </Button>
+        {/* Actions row */}
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowUpload((v) => !v)}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            {showUpload ? 'Cancel upload' : 'Upload document'}
+            {showUpload ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </Button>
+          <label className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm cursor-pointer font-medium transition-colors ${scanning ? 'opacity-60' : 'glass-light text-muted-foreground hover:text-foreground'}`}>
+            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanLine className="h-3.5 w-3.5" />}
+            {scanning ? 'Scanning…' : 'Scan document'}
+            <input
+              ref={scanInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              disabled={scanning}
+              onChange={handleScan}
+            />
+          </label>
+        </div>
 
         {/* Upload form */}
         {showUpload && (
@@ -264,7 +301,7 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
           </Card>
         )}
 
-        {/* Category filter */}
+        {/* Category filter with quick tabs for insurance + permits */}
         {documents.length > 0 && (
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             <button
@@ -276,7 +313,23 @@ export function DocumentsPage({ property, userId, initialDocuments, initialShowU
             >
               All
             </button>
-            {CATEGORIES.filter((c) => documents.some((d) => d.category === c)).map((cat) => (
+            {/* Priority quick tabs */}
+            {['insurance', 'permit'].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategoryFilter(categoryFilter === cat as DocumentCategory ? null : cat as DocumentCategory)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors border ${
+                  categoryFilter === cat
+                    ? 'bg-primary text-white border-primary'
+                    : 'border-primary/30 text-primary hover:bg-primary/10'
+                }`}
+              >
+                {cat === 'insurance' ? '🛡 Insurance' : '📋 Permits'}
+                {' '}({documents.filter((d) => d.category === cat).length})
+              </button>
+            ))}
+            {CATEGORIES.filter((c) => c !== 'insurance' && c !== 'permit' && documents.some((d) => d.category === c)).map((cat) => (
               <button
                 key={cat}
                 type="button"

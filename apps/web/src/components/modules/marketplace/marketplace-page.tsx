@@ -6,7 +6,7 @@ import {
   Star, Phone, Globe, Mail, Search, Wrench, Zap, Droplets, Wind,
   Paintbrush, ShieldCheck, Scissors, Hammer, Plus, Heart, Trash2,
   ChevronDown, ChevronUp, BookUser, ClipboardList, AlertCircle,
-  CheckCircle2, XCircle, CalendarDays, ChevronRight,
+  CheckCircle2, XCircle, CalendarDays, ChevronRight, Siren,
 } from 'lucide-react'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -159,7 +159,7 @@ interface MarketplacePageProps {
 
 export function MarketplacePage({ propertyId, initialContacts, initialRequests, userId }: MarketplacePageProps) {
   const confirmDialog = useConfirm()
-  const [activeTab, setActiveTab] = React.useState<'directory' | 'contacts' | 'requests'>('directory')
+  const [activeTab, setActiveTab] = React.useState<'directory' | 'contacts' | 'requests' | 'emergency'>('directory')
   const [search, setSearch] = React.useState('')
   const [activeCategory, setActiveCategory] = React.useState<ServiceCategory | 'all'>('all')
   const [contacts, setContacts] = React.useState<MarketplaceContact[]>(initialContacts)
@@ -198,6 +198,13 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
     const supabase = createClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from('marketplace_contacts').update({ is_favorite: !current }).eq('id', id)
+  }
+
+  async function toggleEmergency(id: string, current: boolean) {
+    setContacts((prev) => prev.map((c) => c.id === id ? { ...c, is_emergency: !current } : c))
+    const supabase = createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('marketplace_contacts').update({ is_emergency: !current }).eq('id', id)
   }
 
   async function deleteContact(id: string) {
@@ -289,6 +296,7 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
           options={[
             { value: 'directory', label: 'Directory' },
             { value: 'contacts', label: 'Contacts', count: contacts.length },
+            { value: 'emergency', label: 'Emergency', count: contacts.filter((c) => (c as unknown as { is_emergency?: boolean }).is_emergency).length },
             {
               value: 'requests',
               label: 'Requests',
@@ -339,6 +347,34 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
               Directory is illustrative. Verify credentials before hiring.
             </p>
           </>
+        ) : activeTab === 'emergency' ? (
+          <>
+            <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <Siren className="h-4 w-4 shrink-0" />
+              <span>Emergency contacts for urgent situations — call directly with one tap</span>
+            </div>
+            {contacts.filter((c) => (c as unknown as { is_emergency?: boolean }).is_emergency).length === 0 ? (
+              <EmptyState
+                icon={<Siren className="h-7 w-7 text-muted-foreground" />}
+                title="No emergency contacts"
+                subtitle='Go to Contacts and star contacts as "Emergency" to show them here'
+              />
+            ) : (
+              <div className="flex flex-col gap-3">
+                {contacts.filter((c) => (c as unknown as { is_emergency?: boolean }).is_emergency).map((c) => (
+                  <ContactCard
+                    key={c.id}
+                    contact={c}
+                    onToggleFavorite={toggleFavorite}
+                    onToggleEmergency={toggleEmergency}
+                    onDelete={deleteContact}
+                    onRequestService={propertyId ? openRequestForm : undefined}
+                    emergencyMode
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <>
             {filteredContacts.length === 0 && contacts.length === 0 ? (
@@ -357,6 +393,7 @@ export function MarketplacePage({ propertyId, initialContacts, initialRequests, 
                     key={c.id}
                     contact={c}
                     onToggleFavorite={toggleFavorite}
+                    onToggleEmergency={toggleEmergency}
                     onDelete={deleteContact}
                     onRequestService={propertyId ? openRequestForm : undefined}
                   />
@@ -549,14 +586,19 @@ function ProviderCard({ provider }: { provider: ServiceProvider }) {
 function ContactCard({
   contact,
   onToggleFavorite,
+  onToggleEmergency,
   onDelete,
   onRequestService,
+  emergencyMode,
 }: {
   contact: MarketplaceContact
   onToggleFavorite: (id: string, current: boolean) => void
+  onToggleEmergency?: (id: string, current: boolean) => void
   onDelete: (id: string) => void
   onRequestService?: (contactId: string) => void
+  emergencyMode?: boolean
 }) {
+  const isEmergency = (contact as unknown as { is_emergency?: boolean }).is_emergency ?? false
   const [expanded, setExpanded] = React.useState(false)
   const color = categoryColor(contact.category)
   const Icon = categoryIcon(contact.category)
@@ -578,6 +620,7 @@ function ContactCard({
                 <p className="text-sm font-semibold text-foreground truncate">{contact.name}</p>
                 <Badge variant="neutral" size="xs">{contact.category}</Badge>
                 {contact.is_favorite && <Heart className="h-3 w-3 fill-destructive text-destructive shrink-0" />}
+                {isEmergency && <Siren className="h-3 w-3 text-destructive shrink-0" />}
               </div>
               {contact.description && (
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{contact.description}</p>
@@ -588,9 +631,20 @@ function ContactCard({
                 type="button"
                 onClick={() => onToggleFavorite(contact.id, contact.is_favorite)}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                title="Favourite"
               >
                 <Heart className={cn('h-3.5 w-3.5', contact.is_favorite && 'fill-destructive text-destructive')} />
               </button>
+              {onToggleEmergency && (
+                <button
+                  type="button"
+                  onClick={() => onToggleEmergency(contact.id, isEmergency)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive transition-colors"
+                  title={isEmergency ? 'Remove from emergency' : 'Mark as emergency'}
+                >
+                  <Siren className={cn('h-3.5 w-3.5', isEmergency && 'text-destructive')} />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}

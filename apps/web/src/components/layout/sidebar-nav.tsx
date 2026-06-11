@@ -23,6 +23,8 @@ import {
   LayoutPanelLeft,
   Bell,
   TrendingUp,
+  FolderKanban,
+  Cpu,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -41,6 +43,7 @@ const NAV_ITEMS = [
 const MORE_NAV_ITEMS = [
   { i18nKey: 'search', href: '/search', icon: Search, module: 'search' },
   { i18nKey: 'insights', href: '/insights', icon: TrendingUp, module: 'insights' },
+  { i18nKey: 'projects', href: '/projects', icon: FolderKanban, module: 'projects' },
   { i18nKey: 'security', href: '/security', icon: ShieldCheck, module: 'security' },
   { i18nKey: 'energy', href: '/energy', icon: Zap, module: 'energy' },
   { i18nKey: 'inventory', href: '/inventory', icon: Archive, module: 'inventory' },
@@ -68,6 +71,8 @@ const MODULE_COLORS: Record<string, string> = {
   'digital-twin': 'hsl(260, 62%, 52%)',
   search: 'hsl(210, 75%, 42%)',
   insights: 'hsl(152, 62%, 38%)',
+  projects: 'hsl(258, 62%, 52%)',
+  'smart-home': 'hsl(185, 68%, 38%)',
   notifications: 'hsl(280, 68%, 47%)',
 }
 

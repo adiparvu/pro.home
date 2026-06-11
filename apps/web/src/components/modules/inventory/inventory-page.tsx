@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Archive, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil } from 'lucide-react'
+import { Archive, Search, Tag, AlertCircle, ChevronRight, TrendingUp, TrendingDown, ExternalLink, Pencil, QrCode, FileText, Printer } from 'lucide-react'
 import type { Property, InventoryItem } from '@/lib/supabase/types'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -48,6 +48,28 @@ export function InventoryPage({ property, items }: InventoryPageProps) {
         description={property.name}
         action={{ label: 'Add Item', href: '/inventory/new' }}
       />
+
+      {/* Quick export actions */}
+      <div className="flex gap-2 px-4 pt-3 md:px-6">
+        <a
+          href="/api/qr/inventory"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg glass-light px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <QrCode className="h-3.5 w-3.5" />
+          Print QR Labels
+        </a>
+        <a
+          href="/api/reports/inventory"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg glass-light px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Print Report
+        </a>
+      </div>
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
         {/* Stats */}
@@ -268,6 +290,18 @@ function InventoryItemCard({ item }: { item: InventoryItem }) {
               <span className="text-[10px] text-muted-foreground">
                 Warranty until {new Date(item.warranty_expires).getFullYear()}
               </span>
+            )}
+            {(item as unknown as { manual_url?: string | null }).manual_url && (
+              <a
+                href={(item as unknown as { manual_url: string }).manual_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+              >
+                <FileText className="h-2.5 w-2.5" />
+                Manual
+              </a>
             )}
           </div>
         </div>

@@ -50,6 +50,7 @@ export default async function MaintenanceTaskPage({ params }: Props) {
         assigneeName={assigneeName}
         roomName={roomResult.data?.name ?? null}
         inventoryItemName={inventoryResult.data?.name ?? null}
+        userId={user.id}
       />
     </div>
   )

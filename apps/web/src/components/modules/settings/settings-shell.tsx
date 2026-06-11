@@ -3,14 +3,15 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, Palette, Globe, Shield } from 'lucide-react'
+import { User, Palette, Globe, Shield, Webhook } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { id: 'profile', label: 'Profile', href: '/settings', icon: User },
-  { id: 'appearance', label: 'Appearance', href: '/settings/appearance', icon: Palette },
-  { id: 'language', label: 'Language', href: '/settings/language', icon: Globe },
-  { id: 'security', label: 'Security', href: '/settings/security', icon: Shield },
+  { id: 'profile',      label: 'Profile',      href: '/settings',              icon: User },
+  { id: 'appearance',   label: 'Appearance',   href: '/settings/appearance',   icon: Palette },
+  { id: 'language',     label: 'Language',     href: '/settings/language',     icon: Globe },
+  { id: 'security',     label: 'Security',     href: '/settings/security',     icon: Shield },
+  { id: 'integrations', label: 'Integrations', href: '/settings/integrations', icon: Webhook },
 ]
 
 interface SettingsShellProps {

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, Plus, Crown, Shield, UserX, Mail, Clock, Ban, Pencil, Check, X } from 'lucide-react'
+import { Users, Plus, Crown, Shield, UserX, Mail, Clock, Ban, Pencil, Check, X, QrCode, Copy } from 'lucide-react'
 import type { Property, PropertyMember, PropertyInvitation, UserRole } from '@/lib/supabase/types'
 import { ROLE_LABELS } from '@/lib/supabase/types'
 import { createClient } from '@/lib/supabase/client'
@@ -335,32 +335,62 @@ function InvitationRow({
 }) {
   const expiresDate = new Date(invitation.expires_at)
   const daysLeft = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const [showQr, setShowQr] = React.useState(false)
+
+  const inviteUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${invitation.token}`
+
+  function copyLink() {
+    void navigator.clipboard.writeText(inviteUrl)
+    toast({ title: 'Invite link copied!' })
+  }
 
   return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl glass-standard">
-        <Mail className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{invitation.email}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <Badge variant="neutral" size="xs">{ROLE_LABELS[invitation.role]}</Badge>
-          <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {daysLeft}d left
-          </span>
+    <>
+      <div className="flex items-center gap-3 py-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl glass-standard">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{invitation.email}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <Badge variant="neutral" size="xs">{ROLE_LABELS[invitation.role]}</Badge>
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {daysLeft}d left
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon-sm" aria-label="Copy invite link" onClick={copyLink}>
+            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Show QR code" onClick={() => setShowQr((v) => !v)}>
+            <QrCode className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          {canManage && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Revoke invitation"
+              onClick={() => onRevoke(invitation.id)}
+            >
+              <Ban className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       </div>
-      {canManage && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Revoke invitation"
-          onClick={() => onRevoke(invitation.id)}
-        >
-          <Ban className="h-4 w-4 text-destructive" />
-        </Button>
+
+      {showQr && (
+        <div className="pb-3 flex flex-col items-center gap-2">
+          <img
+            src={`/api/qr/invite/${invitation.token}`}
+            alt="Invitation QR code"
+            className="h-40 w-40 rounded-xl border border-border"
+          />
+          <p className="text-xs text-muted-foreground text-center">Scan to accept the invitation</p>
+          <p className="text-xs text-muted-foreground font-mono break-all text-center max-w-[280px]">{inviteUrl}</p>
+        </div>
       )}
-    </div>
+    </>
   )
 }

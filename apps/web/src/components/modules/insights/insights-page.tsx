@@ -3,7 +3,8 @@
 import * as React from 'react'
 import {
   TrendingUp, TrendingDown, Wrench, Zap, AlertTriangle, Sparkles,
-  RefreshCw, ChevronDown, ChevronUp, DollarSign, Calendar,
+  RefreshCw, ChevronDown, ChevronUp, DollarSign, Calendar, FileText,
+  BarChart3, Activity,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -277,6 +278,54 @@ export function InsightsPage({ data, propertyName }: InsightsPageProps) {
         <Zap className="h-4 w-4" />
         View detailed energy readings →
       </a>
+
+      {/* Property value tracker link */}
+      <a
+        href="/property/value"
+        className="flex items-center gap-2 rounded-xl glass-light px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <TrendingUp className="h-4 w-4" />
+        Track property value over time →
+      </a>
+
+      {/* PDF Report */}
+      <a
+        href="/api/reports/property"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 rounded-xl glass-light px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <FileText className="h-4 w-4" />
+        Download full property report →
+      </a>
+
+      {/* Predictive maintenance hint */}
+      {data.stats.overdueTasks > 0 && (
+        <Card variant="default" padding="md">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="h-4 w-4 text-[hsl(22,68%,45%)]" />
+            <p className="text-sm font-semibold">Maintenance Health</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Task completion rate</span>
+                <span>{data.stats.openTasks > 0 ? Math.round((1 - data.stats.overdueTasks / (data.stats.openTasks + data.stats.overdueTasks)) * 100) : 100}%</span>
+              </div>
+              <ProgressBar
+                value={data.stats.openTasks}
+                max={data.stats.openTasks + data.stats.overdueTasks}
+                color="hsl(152,62%,42%)"
+              />
+            </div>
+          </div>
+          {data.stats.overdueTasks > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              ⚠ {data.stats.overdueTasks} overdue task{data.stats.overdueTasks > 1 ? 's' : ''} — address these to improve your property health score
+            </p>
+          )}
+        </Card>
+      )}
     </div>
   )
 }
