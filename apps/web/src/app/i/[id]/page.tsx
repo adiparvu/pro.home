@@ -40,13 +40,29 @@ export default async function PublicItemPage({ params }: Props) {
 
   if (!item) notFound()
 
-  // Fetch room name if available
-  let roomName: string | null = null
-  if (item.room_id) {
+  // Fetch room, property, and owner in parallel
+  const [roomResult, propertyResult, ownerResult] = await Promise.all([
+    item.room_id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (supabase as any).from('rooms').select('name').eq('id', item.room_id).maybeSingle()
+      : Promise.resolve({ data: null }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: room } = await (supabase as any).from('rooms').select('name').eq('id', item.room_id).maybeSingle()
-    roomName = room?.name ?? null
-  }
+    (supabase as any).from('properties').select('name, address').eq('id', item.property_id).maybeSingle(),
+    // Owner = active member with role 'owner' or 'partner', joined with their profile
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from('property_members')
+      .select('role, profiles(full_name, display_name)')
+      .eq('property_id', item.property_id)
+      .eq('role', 'owner')
+      .eq('status', 'active')
+      .maybeSingle(),
+  ])
+
+  const roomName: string | null = roomResult.data?.name ?? null
+  const propertyAddress: string | null = propertyResult.data?.address ?? null
+  const propertyDisplayName: string | null = propertyResult.data?.name ?? null
+  const ownerName: string | null = ownerResult.data?.profiles?.display_name ?? ownerResult.data?.profiles?.full_name ?? null
 
   const registeredOn = fmt(item.created_at)
   const purchaseDate = fmt(item.purchase_date)
@@ -109,17 +125,50 @@ export default async function PublicItemPage({ params }: Props) {
                 {[item.brand, item.model].filter(Boolean).join(' · ')}
               </p>
             )}
-            {item.category && (
-              <span style={{
-                display: 'inline-block', marginTop: '6px',
-                background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)',
-                fontSize: '10px', padding: '2px 8px', borderRadius: '99px', textTransform: 'capitalize',
-              }}>
-                {item.category}
-              </span>
-            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+              {item.category && (
+                <span style={{
+                  background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)',
+                  fontSize: '10px', padding: '2px 8px', borderRadius: '99px', textTransform: 'capitalize',
+                }}>
+                  {item.category}
+                </span>
+              )}
+              {propertyDisplayName && (
+                <span style={{
+                  background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)',
+                  fontSize: '10px', padding: '2px 8px', borderRadius: '99px',
+                }}>
+                  {propertyDisplayName}
+                </span>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Property & owner info */}
+        {(propertyDisplayName || ownerName || propertyAddress) && (
+          <div style={{
+            background: '#f9fafb', borderBottom: '1px solid #e5e7eb',
+            padding: '10px 20px', display: 'flex', flexDirection: 'column', gap: '4px',
+          }}>
+            {propertyDisplayName && (
+              <p style={{ margin: 0, fontSize: '12px', color: '#374151' }}>
+                <span style={{ color: '#6b7280' }}>Property: </span>
+                <span style={{ fontWeight: 600 }}>{propertyDisplayName}</span>
+              </p>
+            )}
+            {ownerName && (
+              <p style={{ margin: 0, fontSize: '12px', color: '#374151' }}>
+                <span style={{ color: '#6b7280' }}>Owner: </span>
+                <span style={{ fontWeight: 600 }}>{ownerName}</span>
+              </p>
+            )}
+            {propertyAddress && (
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>{propertyAddress}</p>
+            )}
+          </div>
+        )}
 
         {/* Details */}
         <div style={{ padding: '4px 20px 16px' }}>
