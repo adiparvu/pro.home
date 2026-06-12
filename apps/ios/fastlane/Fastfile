@@ -58,9 +58,10 @@ platform :ios do
       p.delete!
     end
 
+    # No force: true here — we already revoked all existing certs above.
+    # force: true in cert can accidentally revoke the cert it just created.
     cert(
       api_key: api_key,
-      force: true,
       keychain_path: keychain_db,
       keychain_password: "buildpass",
       output_path: "/tmp"
