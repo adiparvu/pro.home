@@ -1,4 +1,5 @@
 require "base64"
+require "fileutils"
 
 default_platform(:ios)
 
@@ -97,7 +98,6 @@ platform :ios do
     profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH]
 
     # Install the profile in both locations: pre-Xcode-16 and Xcode 16+ paths
-    require "fileutils"
     [
       "#{Dir.home}/Library/MobileDevice/Provisioning Profiles",
       "#{Dir.home}/Library/Developer/Xcode/UserData/Provisioning Profiles"
@@ -120,6 +120,34 @@ platform :ios do
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon " \
       "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
     )
+
+    # xcodebuild does not compile the asset catalog (XcodeGen project issue).
+    # Run actool manually on the archived .app to inject icons before export.
+    archive_app = Dir.glob("/tmp/PRVHouse.xcarchive/Products/Applications/*.app").first
+    raise "No .app found in /tmp/PRVHouse.xcarchive" unless archive_app
+    UI.message("Running actool on archived app: #{archive_app}")
+
+    actool_plist = "/tmp/actool_partial_info.plist"
+    FileUtils.rm_f(actool_plist)
+
+    sh(
+      "xcrun actool '#{project_dir}/Resources/Assets.xcassets' " \
+      "--compile '#{archive_app}' " \
+      "--output-format human-readable-text " \
+      "--notices --warnings --errors " \
+      "--target-device iphone " \
+      "--target-device ipad " \
+      "--minimum-deployment-target 17.0 " \
+      "--platform iphoneos " \
+      "--app-icon AppIcon " \
+      "--output-partial-info-plist '#{actool_plist}' 2>&1"
+    )
+
+    # Merge actool-generated keys (CFBundleIconName etc.) into the bundle Info.plist
+    if File.exist?(actool_plist)
+      sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1 || true")
+      UI.success("Merged actool partial plist into bundle Info.plist")
+    end
 
     export_options_path = "/tmp/ExportOptions.plist"
     File.write(export_options_path, <<~PLIST)
