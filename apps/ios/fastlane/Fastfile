@@ -94,28 +94,12 @@ platform :ios do
       )
     end
 
-    # Download/create App Store provisioning profile
-    sigh(
-      api_key: api_key,
-      app_identifier: "com.prvhouse.app",
-      force: false,
-      output_path: "/tmp"
-    )
-
-    profile_uuid = lane_context[SharedValues::SIGH_UUID]
-    profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH]
-
-    # Install the profile in both locations: pre-Xcode-16 and Xcode 16+ paths
-    [
-      "#{Dir.home}/Library/MobileDevice/Provisioning Profiles",
-      "#{Dir.home}/Library/Developer/Xcode/UserData/Provisioning Profiles"
-    ].each do |dir|
-      FileUtils.mkdir_p(dir)
-      FileUtils.cp(profile_path, File.join(dir, "#{profile_uuid}.mobileprovision"))
-    end
-
     project_dir = File.expand_path("..")
 
+    # Xcode 26: use Automatic signing + -allowProvisioningUpdates so that
+    # Swift package targets (swift-crypto etc.) are not assigned a provisioning
+    # profile (they don't support it). Xcode fetches/creates the App Store
+    # profile via the API key and installs it automatically.
     sh(
       "set -o pipefail && xcodebuild archive " \
       "-project #{project_dir}/PRVHouse.xcodeproj " \
@@ -124,10 +108,12 @@ platform :ios do
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-hideShellScriptEnvironment " \
+      "-allowProvisioningUpdates " \
+      "-authenticationKeyPath #{key_path} " \
+      "-authenticationKeyID #{key_id} " \
+      "-authenticationKeyIssuerID #{issuer_id} " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
-      "CODE_SIGN_STYLE=Manual " \
-      "CODE_SIGN_IDENTITY='Apple Distribution' " \
-      "PROVISIONING_PROFILE='#{profile_uuid}' " \
+      "CODE_SIGN_STYLE=Automatic " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon " \
       "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
     )
@@ -171,12 +157,7 @@ platform :ios do
         <key>teamID</key>
         <string>SU92TVZT8W</string>
         <key>signingStyle</key>
-        <string>manual</string>
-        <key>provisioningProfiles</key>
-        <dict>
-          <key>com.prvhouse.app</key>
-          <string>#{profile_uuid}</string>
-        </dict>
+        <string>automatic</string>
       </dict>
       </plist>
     PLIST
@@ -185,7 +166,11 @@ platform :ios do
       "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-exportPath /tmp/PRVHouse_ipa " \
-      "-exportOptionsPlist #{export_options_path} 2>&1"
+      "-exportOptionsPlist #{export_options_path} " \
+      "-allowProvisioningUpdates " \
+      "-authenticationKeyPath #{key_path} " \
+      "-authenticationKeyID #{key_id} " \
+      "-authenticationKeyIssuerID #{issuer_id} 2>&1"
     )
 
     pilot(
