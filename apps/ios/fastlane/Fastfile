@@ -33,7 +33,22 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Create a fresh Distribution certificate, revoking any existing ones
+    # Revoke existing Distribution certificates so we never hit Apple's limit.
+    # The runner is ephemeral: private keys from previous runs are gone, so
+    # old certs are unusable anyway.
+    require "spaceship"
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      filepath: key_path
+    )
+    Spaceship::ConnectAPI::Certificate.all.each do |c|
+      if ["DISTRIBUTION", "IOS_DISTRIBUTION"].include?(c.certificate_type)
+        UI.message("Revoking old #{c.certificate_type} certificate #{c.id}")
+        Spaceship::ConnectAPI.delete_certificate(certificate_id: c.id)
+      end
+    end
+
     cert(
       api_key: api_key,
       force: true,
