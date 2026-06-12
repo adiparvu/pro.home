@@ -155,7 +155,7 @@ final class InventoryService: ObservableObject {
         struct Payload: Encodable {
             let item_uuid, item_name, owner_name, owner_phone, owner_address, property_name, user_id: String
         }
-        guard let uid = try? await supabase.auth.session.user.id else { return }
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
         let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
                         owner_address: profile.ownerAddress, property_name: profile.propertyName,

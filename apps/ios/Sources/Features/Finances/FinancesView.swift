@@ -170,6 +170,14 @@ struct FinancesView: View {
             VStack(spacing: 8) {
                 ForEach(filteredRecords) { record in
                     FinancialRecordRow(record: record, symbol: financialService.currencySymbol)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                HapticFeedback.warning()
+                                Task { await financialService.delete(record) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
             }
         }

@@ -67,4 +67,17 @@ final class FinancialService: ObservableObject {
             self.error = error.localizedDescription
         }
     }
+
+    func delete(_ record: FinancialRecord) async {
+        do {
+            try await supabase
+                .from("financial_records")
+                .delete()
+                .eq("id", value: record.id.uuidString)
+                .execute()
+            records.removeAll { $0.id == record.id }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 }
