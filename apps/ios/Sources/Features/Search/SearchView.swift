@@ -111,7 +111,7 @@ struct SearchView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.15))
-            Text("No results for "\(query)"")
+            Text("No results for \"\(query)\"")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.35))
             Spacer()

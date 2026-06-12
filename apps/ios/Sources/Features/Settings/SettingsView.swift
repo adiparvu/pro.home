@@ -40,23 +40,16 @@ struct SettingsView: View {
     // MARK: - Profile card
 
     private var profileCard: some View {
-        NavigationLink(destination: ProfileView().environmentObject(profileService)) {
+        NavigationLink(destination:
+            ProfileView()
+                .environmentObject(profileService)
+                .environmentObject(notificationScheduler)
+                .environmentObject(taskService)
+                .environmentObject(documentService)
+        ) {
             GlassCard {
                 HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.blue, .purple],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 52, height: 52)
-                        Text(initial)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
+                    profileAvatar
                     VStack(alignment: .leading, spacing: 3) {
                         Text(displayName)
                             .font(.system(size: 16, weight: .semibold))
@@ -73,6 +66,35 @@ struct SettingsView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var profileAvatar: some View {
+        if let urlStr = profileService.profile?.avatarUrl, let url = URL(string: urlStr) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFill()
+                default:
+                    avatarGradient
+                }
+            }
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+        } else {
+            avatarGradient
+                .frame(width: 52, height: 52)
+        }
+    }
+
+    private var avatarGradient: some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Text(initial)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.white)
+        }
     }
 
     // MARK: - Sections
