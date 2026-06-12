@@ -32,11 +32,10 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.2.app
-
       - name: Install iOS platform
-        run: sudo xcodebuild -runFirstLaunch
+        run: |
+          xcodebuild -version
+          sudo xcodebuild -downloadPlatform iOS
 
       - name: Cache Gems
         uses: actions/cache@v4
