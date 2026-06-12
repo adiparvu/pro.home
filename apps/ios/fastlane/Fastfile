@@ -12,21 +12,7 @@ platform :ios do
       is_key_content_base64: false
     )
 
-    # Create app in App Store Connect if it doesn't exist
-    begin
-      produce(
-        app_identifier: "com.prvhouse.app",
-        app_name: "PRV House",
-        language: "English",
-        app_version: "1.0",
-        skip_devcenter: false,
-        skip_itc: false
-      )
-    rescue => e
-      UI.message("App may already exist: #{e.message}")
-    end
-
-    # Sync certificates and provisioning profiles
+    # Sync certificates and provisioning profiles (creates fresh on empty certs branch)
     match(
       type: "appstore",
       app_identifier: "com.prvhouse.app",
@@ -36,7 +22,7 @@ platform :ios do
       api_key: api_key,
       team_id: "SU92TVZT8W",
       readonly: false,
-      force_for_new_devices: false
+      force: true
     )
 
     # Generate Xcode project
