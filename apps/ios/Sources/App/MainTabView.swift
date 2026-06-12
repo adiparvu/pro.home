@@ -1,14 +1,14 @@
 import SwiftUI
 
 enum AppTab: String, CaseIterable {
-    case home, tasks, analytics, aria, settings
+    case home, tasks, analytics, assistant, settings
 
     var icon: String {
         switch self {
         case .home:      return "house.fill"
         case .tasks:     return "checklist"
         case .analytics: return "chart.bar.xaxis"
-        case .aria:      return "sparkles"
+        case .assistant: return "cpu.fill"
         case .settings:  return "gearshape.fill"
         }
     }
@@ -18,7 +18,7 @@ enum AppTab: String, CaseIterable {
         case .home:      return "Home"
         case .tasks:     return "Tasks"
         case .analytics: return "Analytics"
-        case .aria:      return "ARIA"
+        case .assistant: return "Assistant"
         case .settings:  return "Settings"
         }
     }
@@ -86,8 +86,8 @@ struct MainTabView: View {
             NavigationStack { TasksView() }
         case .analytics:
             NavigationStack { AnalyticsView() }
-        case .aria:
-            NavigationStack { ARIAView() }
+        case .assistant:
+            NavigationStack { LocalAssistantView() }
         case .settings:
             NavigationStack { SettingsView() }
         }

@@ -93,6 +93,23 @@ struct SettingsView: View {
                     .environmentObject(propertyService)
                     .environmentObject(budgetService)
             }
+            NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
+                InventoryView()
+            }
+            NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
+                UtilityView()
+            }
+            NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
+                ContractorsView()
+                    .environmentObject(auth)
+            }
+            NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
+                PropertyReportView()
+                    .environmentObject(taskService)
+                    .environmentObject(financialService)
+                    .environmentObject(documentService)
+                    .environmentObject(propertyService)
+            }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
             }
@@ -129,6 +146,9 @@ struct SettingsView: View {
 
     private var supportSection: some View {
         SettingsGroup(title: "Support") {
+            NavSettingsRow(icon: "phone.fill", color: .red, label: "Emergency Contacts") {
+                EmergencyContactsView()
+            }
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
                 SettingsPlaceholder(icon: "questionmark.circle.fill", title: "Help & FAQ", description: "Browse common questions and contact our support team.")
             }
