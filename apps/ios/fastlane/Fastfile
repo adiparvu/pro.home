@@ -35,9 +35,18 @@ platform :ios do
             : line
         }.join("\n")
         File.write(pbxproj_path, fixed)
+        pbxproj = fixed
         UI.success("Patched Assets.xcassets to lastKnownFileType = folder.assetcatalog")
       elsif !has_xcassets
         UI.error("Assets.xcassets NOT found in generated project – icons will be missing!")
+      end
+
+      # Xcode 26: clear any PROVISIONING_PROFILE_SPECIFIER XcodeGen may have embedded.
+      # With Automatic signing + -allowProvisioningUpdates the specifier must be empty.
+      if pbxproj.include?("PROVISIONING_PROFILE_SPECIFIER")
+        cleared = pbxproj.gsub(/PROVISIONING_PROFILE_SPECIFIER = "[^"]*";/, 'PROVISIONING_PROFILE_SPECIFIER = "";')
+        File.write(pbxproj_path, cleared)
+        UI.success("Cleared PROVISIONING_PROFILE_SPECIFIER in xcodeproj")
       end
     end
 
