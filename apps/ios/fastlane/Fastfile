@@ -41,13 +41,24 @@ platform :ios do
         UI.error("Assets.xcassets NOT found in generated project – icons will be missing!")
       end
 
-      # Xcode 26: clear any PROVISIONING_PROFILE_SPECIFIER XcodeGen may have embedded.
-      # With Automatic signing + -allowProvisioningUpdates the specifier must be empty.
-      if pbxproj.include?("PROVISIONING_PROFILE_SPECIFIER")
-        cleared = pbxproj.gsub(/PROVISIONING_PROFILE_SPECIFIER = "[^"]*";/, 'PROVISIONING_PROFILE_SPECIFIER = "";')
-        File.write(pbxproj_path, cleared)
+      # Xcode 26: with Automatic signing, both of these must be empty or absent.
+      # XcodeGen may still embed them even when project.yml doesn't set them.
+      pbxproj2 = File.read(pbxproj_path)
+      changed = false
+
+      if pbxproj2.include?("PROVISIONING_PROFILE_SPECIFIER")
+        pbxproj2 = pbxproj2.gsub(/PROVISIONING_PROFILE_SPECIFIER = "[^"]*";/, 'PROVISIONING_PROFILE_SPECIFIER = "";')
+        changed = true
         UI.success("Cleared PROVISIONING_PROFILE_SPECIFIER in xcodeproj")
       end
+
+      if pbxproj2.match?(/CODE_SIGN_IDENTITY = "Apple Distribution"/)
+        pbxproj2 = pbxproj2.gsub(/CODE_SIGN_IDENTITY = "Apple Distribution";/, 'CODE_SIGN_IDENTITY = "";')
+        changed = true
+        UI.success("Cleared CODE_SIGN_IDENTITY Apple Distribution in xcodeproj")
+      end
+
+      File.write(pbxproj_path, pbxproj2) if changed
     end
 
     keychain_db = "#{Dir.home}/Library/Keychains/build.keychain-db"
