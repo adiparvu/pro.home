@@ -12,8 +12,8 @@ platform :ios do
     key_path    = "/tmp/AuthKey_#{key_id}.p8"
     File.write(key_path, key_content)
 
-    # Generate Xcode project from project.yml
-    Dir.chdir("..") { sh("xcodegen generate") }
+    # Generate Xcode project from project.yml (runs in apps/ios where project.yml lives)
+    sh("xcodegen generate")
 
     # Create a fresh keychain for signing
     create_keychain(
