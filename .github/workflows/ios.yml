@@ -35,7 +35,11 @@ jobs:
       - name: Install iOS platform
         run: |
           xcodebuild -version
-          sudo xcodebuild -downloadPlatform iOS
+          for i in 1 2 3; do
+            sudo xcodebuild -downloadPlatform iOS && break
+            echo "downloadPlatform attempt $i failed, retrying..."
+            sleep 10
+          done || echo "downloadPlatform failed; continuing — platform is usually preinstalled"
 
       - name: Cache Gems
         uses: actions/cache@v4
