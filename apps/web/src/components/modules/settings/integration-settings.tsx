@@ -119,7 +119,7 @@ export function IntegrationSettings({ property, userId, memberRole, initialWebho
 
   return (
     <>
-      <PageHeader title="Integrations" description="Webhooks & automation" />
+      <PageHeader title="Integrations" description="Webhooks & automation" backHref="/more" />
 
       <div className="flex flex-col gap-6 px-4 py-4 md:px-6 md:py-6">
         {/* Webhook section */}

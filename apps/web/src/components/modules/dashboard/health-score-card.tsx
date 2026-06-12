@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 
 interface HealthScoreBreakdown {
   maintenance: number
@@ -20,24 +19,6 @@ interface HealthScoreData {
   trend: 'up' | 'stable' | 'down'
 }
 
-function gradeColor(grade: string): string {
-  switch (grade) {
-    case 'A': return 'hsl(152,70%,42%)'
-    case 'B': return 'hsl(96,65%,42%)'
-    case 'C': return 'hsl(45,80%,48%)'
-    case 'D': return 'hsl(22,75%,48%)'
-    default:  return 'hsl(0,70%,50%)'
-  }
-}
-
-function scoreToColor(score: number): string {
-  if (score >= 85) return 'hsl(152,70%,42%)'
-  if (score >= 70) return 'hsl(96,65%,42%)'
-  if (score >= 50) return 'hsl(45,80%,48%)'
-  if (score >= 25) return 'hsl(22,75%,48%)'
-  return 'hsl(0,70%,50%)'
-}
-
 const BREAKDOWN_CONFIG: { key: keyof HealthScoreBreakdown; label: string; max: number }[] = [
   { key: 'maintenance', label: 'Maintenance', max: 30 },
   { key: 'finances',    label: 'Finances',    max: 25 },
@@ -46,7 +27,7 @@ const BREAKDOWN_CONFIG: { key: keyof HealthScoreBreakdown; label: string; max: n
   { key: 'warranties',  label: 'Warranties',  max: 10 },
 ]
 
-function ScoreRing({ score, color }: { score: number; color: string }) {
+function ScoreRing({ score }: { score: number }) {
   const size = 80
   const strokeWidth = 7
   const r = (size - strokeWidth) / 2
@@ -56,11 +37,12 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`Health score ${score}`}>
-      <circle cx={center} cy={center} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+      <circle cx={center} cy={center} r={r} fill="none" stroke="currentColor" strokeOpacity="0.10" strokeWidth={strokeWidth} />
       <circle
         cx={center} cy={center} r={r}
         fill="none"
-        stroke={color}
+        stroke="currentColor"
+        strokeOpacity="0.80"
         strokeWidth={strokeWidth}
         strokeDasharray={circumference}
         strokeDashoffset={offset}
@@ -71,7 +53,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
       <text
         x={center} y={center + 6}
         textAnchor="middle"
-        fill={color}
+        fill="currentColor"
         fontSize={18}
         fontWeight="700"
         fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
@@ -111,25 +93,19 @@ export function HealthScoreCard() {
 
   if (!data) return null
 
-  const color = scoreToColor(data.score)
-  const gradeCol = gradeColor(data.grade)
-
   return (
     <Card variant="default" padding="md">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 text-foreground">
         <div className="shrink-0">
-          <ScoreRing score={data.score} color={color} />
+          <ScoreRing score={data.score} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <p className="text-sm font-semibold text-foreground">Health Score</p>
-            <span
-              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-bold"
-              style={{ color: gradeCol, background: gradeCol + '22' }}
-            >
+            <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-bold bg-foreground/10 text-foreground">
               {data.grade}
             </span>
-            {data.trend === 'up' && <TrendingUp className="h-3.5 w-3.5 text-[hsl(152,65%,48%)]" />}
+            {data.trend === 'up' && <TrendingUp className="h-3.5 w-3.5 text-foreground/70" />}
             {data.trend === 'down' && <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
             {data.trend === 'stable' && <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
           </div>
@@ -139,17 +115,16 @@ export function HealthScoreCard() {
             {BREAKDOWN_CONFIG.map(({ key, label, max }) => {
               const val = data.breakdown[key]
               const pct = max > 0 ? (val / max) * 100 : 0
-              const barColor = scoreToColor(pct)
               return (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[10px] text-muted-foreground">{label}</span>
                     <span className="text-[10px] tabular-nums text-muted-foreground">{val}/{max}</span>
                   </div>
-                  <div className="h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                  <div className="h-1 rounded-full bg-foreground/[0.08] overflow-hidden">
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: barColor, transition: 'width 0.6s ease-out' }}
+                      className="h-full rounded-full bg-foreground/60"
+                      style={{ width: `${pct}%`, transition: 'width 0.6s ease-out' }}
                     />
                   </div>
                 </div>

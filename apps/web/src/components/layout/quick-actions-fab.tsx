@@ -15,8 +15,7 @@ interface QuickAction {
   label: string
   description: string
   href: string
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
-  color: string
+  icon: React.ComponentType<{ className?: string }>
   enabled: (caps: ReturnType<typeof getCapabilities>) => boolean
 }
 
@@ -26,7 +25,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Maintenance, repair or inspection',
     href: '/maintenance/new',
     icon: Wrench,
-    color: 'hsl(22,68%,48%)',
     enabled: (c) => c.createTask,
   },
   {
@@ -34,7 +32,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Track an appliance or belonging',
     href: '/inventory/new',
     icon: Archive,
-    color: 'hsl(185,62%,42%)',
     enabled: (c) => c.createInventory,
   },
   {
@@ -42,7 +39,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Log a cost, income or budget',
     href: '/finances?add=1',
     icon: Banknote,
-    color: 'hsl(45,75%,46%)',
     enabled: (c) => c.createFinance,
   },
   {
@@ -50,7 +46,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Warranty, insurance or manual',
     href: '/documents?upload=1',
     icon: FolderOpen,
-    color: 'hsl(220,52%,52%)',
     enabled: (c) => c.createDocument,
   },
   {
@@ -58,7 +53,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Add to your garden',
     href: '/garden/plants/new',
     icon: Leaf,
-    color: 'hsl(120,52%,40%)',
     enabled: (c) => c.createGarden,
   },
   {
@@ -66,7 +60,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Watering, pruning, fertilizing',
     href: '/garden/tasks/new',
     icon: CalendarDays,
-    color: 'hsl(88,52%,42%)',
     enabled: (c) => c.createGarden,
   },
   {
@@ -74,7 +67,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: 'Log a meter reading',
     href: '/energy/new',
     icon: Zap,
-    color: 'hsl(152,62%,42%)',
     enabled: (c) => c.createEnergyReading,
   },
 ]
@@ -102,8 +94,8 @@ export function QuickActionsFab({ role }: { role: UserRole | null }) {
         aria-label="Quick actions"
         className={cn(
           'fixed right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full',
-          'bg-primary text-white shadow-glow-home',
-          '[box-shadow:inset_0_1px_0_rgba(255,255,255,0.25),0px_8px_32px_rgba(46,143,236,0.20)]',
+          'bg-foreground text-background',
+          'shadow-[0px_8px_32px_rgba(0,0,0,0.20)]',
           'transition-all duration-normal ease-spring-out active:scale-90 hover:scale-105 focus-ring',
           'motion-reduce:transition-opacity',
           'bottom-[calc(env(safe-area-inset-bottom,0px)+92px)]',
@@ -128,11 +120,8 @@ export function QuickActionsFab({ role }: { role: UserRole | null }) {
                 }}
                 className="flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:glass-light focus-ring"
               >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: `color-mix(in srgb, ${action.color} 15%, transparent)` }}
-                >
-                  <Icon className="h-5 w-5" style={{ color: action.color }} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/10">
+                  <Icon className="h-5 w-5 text-foreground/70" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">{action.label}</p>

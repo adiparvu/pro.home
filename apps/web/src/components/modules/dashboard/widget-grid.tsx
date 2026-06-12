@@ -125,8 +125,8 @@ function EnergyWidget({
       <Card variant="default" hover padding="md" className="module-energy">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(152,62%,38%)]/20">
-              <Zap className="h-4 w-4 text-[hsl(152,62%,52%)]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/10">
+              <Zap className="h-4 w-4 text-foreground/70" />
             </div>
             <Badge variant={hasData ? 'success' : 'neutral'} size="xs" dot={hasData}>
               {hasData ? meterLabel : 'No data'}
@@ -168,16 +168,13 @@ function SecurityWidget({ mode }: { mode: string | null }) {
         variant="default"
         hover
         padding="md"
-        className={cn('module-security', isArmed && 'border-t-2 border-t-[hsl(0,68%,44%)]')}
+        className={cn('module-security', isArmed && 'border-t-2 border-t-foreground/40')}
       >
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-xl',
-              isArmed ? 'bg-[hsl(0,68%,44%)]/20' : 'bg-[rgba(255,255,255,0.08)]'
-            )}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/10">
               {isArmed
-                ? <ShieldOff className="h-4 w-4 text-[hsl(0,68%,58%)]" />
+                ? <ShieldOff className="h-4 w-4 text-foreground/70" />
                 : <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               }
             </div>
@@ -213,8 +210,8 @@ function MaintenanceWidget({ count, overdueCount }: { count: number; overdueCoun
       <Card variant="default" hover padding="md" className="module-maintenance">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(22,68%,41%)]/20">
-              <Wrench className="h-5 w-5 text-[hsl(22,68%,55%)]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground/10">
+              <Wrench className="h-5 w-5 text-foreground/70" />
             </div>
             <div>
               <div className="flex items-baseline gap-1.5">
@@ -250,23 +247,15 @@ function ARIAInsightCard({ insight }: { insight: string }) {
     <Card
       variant="heavy"
       padding="md"
-      className="border-l-2 border-l-[hsl(280,68%,57%)] overflow-hidden relative"
+      className="border-l-2 border-l-foreground/30 overflow-hidden relative"
     >
-      <div
-        className="absolute inset-0 opacity-5 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 0% 50%, hsl(280, 68%, 57%), transparent 70%)',
-        }}
-        aria-hidden="true"
-      />
-
       <div className="relative flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[hsl(280,68%,47%)]/20">
-          <Sparkles className="h-4 w-4 text-[hsl(280,68%,67%)]" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/10">
+          <Sparkles className="h-4 w-4 text-foreground/70" />
         </div>
         <div className="flex flex-1 flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[hsl(280,68%,67%)]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               ARIA Insight
             </span>
           </div>
@@ -275,7 +264,7 @@ function ARIAInsightCard({ insight }: { insight: string }) {
           </p>
           <Link
             href="/aria"
-            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[hsl(280,68%,67%)] hover:text-[hsl(280,68%,77%)] transition-colors duration-fast focus-ring rounded"
+            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground/60 hover:text-foreground transition-colors duration-fast focus-ring rounded"
           >
             Ask ARIA about this
             <ChevronRight className="h-3 w-3" />
@@ -292,8 +281,8 @@ function InventoryWidget({ count, recallCount }: { count: number; recallCount: n
       <Card variant="default" hover padding="md" className="module-inventory">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[hsl(185,62%,38%)]/20">
-              <Archive className="h-4 w-4 text-[hsl(185,62%,52%)]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/10">
+              <Archive className="h-4 w-4 text-foreground/70" />
             </div>
             {recallCount > 0 && (
               <Badge variant="critical" size="xs">{recallCount} recall</Badge>
@@ -332,10 +321,9 @@ function GardenWidget({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{ background: 'hsl(120,52%,36%,0.2)' }}
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/10"
             >
-              <Flower2 className="h-4 w-4" style={{ color: 'hsl(120,52%,52%)' }} />
+              <Flower2 className="h-4 w-4 text-foreground/70" />
             </div>
             {needsAttention && (
               <Badge variant="warning" size="xs" dot>
@@ -392,8 +380,8 @@ function FinancesWidget({ expenses, income }: { expenses: number; income: number
       <Card variant="default" hover padding="md" className="module-finances">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(45,75%,42%)]/20">
-              <Banknote className="h-5 w-5 text-[hsl(45,75%,55%)]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground/10">
+              <Banknote className="h-5 w-5 text-foreground/70" />
             </div>
             <div>
               <div className="flex items-baseline gap-1.5">
@@ -409,7 +397,7 @@ function FinancesWidget({ expenses, income }: { expenses: number; income: number
           </div>
           <div className="flex items-center gap-2">
             {hasActivity && net !== 0 && (
-              <div className={cn('flex items-center gap-1 text-xs font-medium', net >= 0 ? 'text-emerald-500' : 'text-destructive')}>
+              <div className={cn('flex items-center gap-1 text-xs font-medium', net >= 0 ? 'text-foreground/70' : 'text-destructive')}>
                 {net >= 0
                   ? <TrendingUp className="h-3.5 w-3.5" />
                   : <TrendingDown className="h-3.5 w-3.5" />
@@ -423,7 +411,7 @@ function FinancesWidget({ expenses, income }: { expenses: number; income: number
         {hasActivity && income > 0 && (
           <div className="mt-3 flex gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-foreground/60" />
               <span className="text-xs text-muted-foreground">Income <span className="font-medium text-foreground">{fmt(income)}</span></span>
             </div>
             <div className="flex items-center gap-1.5">

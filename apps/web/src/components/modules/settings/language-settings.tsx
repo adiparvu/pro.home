@@ -42,7 +42,7 @@ export function LanguageSettings() {
           <CardTitle>Interface Language</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
             {LOCALES.map(({ code, label, flag, available }) => (
               <button
                 key={code}
@@ -52,7 +52,7 @@ export function LanguageSettings() {
                 className={cn(
                   'flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors focus-ring',
                   code === activeLocale
-                    ? 'glass-standard text-foreground font-medium ring-2 ring-primary/60'
+                    ? 'glass-standard text-foreground font-medium ring-2 ring-foreground/40'
                     : available
                       ? 'glass-light text-muted-foreground hover:text-foreground'
                       : 'glass-light text-muted-foreground opacity-60 cursor-not-allowed'
@@ -62,6 +62,9 @@ export function LanguageSettings() {
                 <span>{label}</span>
                 {!available && (
                   <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
+                )}
+                {code === activeLocale && (
+                  <span className="ml-auto text-[10px] font-semibold text-foreground/60">Active</span>
                 )}
               </button>
             ))}

@@ -55,26 +55,6 @@ const MORE_NAV_ITEMS = [
   { i18nKey: 'digitalTwin', href: '/digital-twin', icon: LayoutPanelLeft, module: 'digital-twin' },
 ] as const
 
-const MODULE_COLORS: Record<string, string> = {
-  home: 'hsl(210, 75%, 42%)',
-  property: 'hsl(36, 75%, 42%)',
-  aria: 'hsl(280, 68%, 47%)',
-  family: 'hsl(340, 68%, 46%)',
-  security: 'hsl(0, 68%, 44%)',
-  energy: 'hsl(152, 62%, 38%)',
-  inventory: 'hsl(185, 62%, 38%)',
-  maintenance: 'hsl(22, 68%, 41%)',
-  finances: 'hsl(45, 75%, 42%)',
-  documents: 'hsl(220, 52%, 46%)',
-  marketplace: 'hsl(88, 58%, 39%)',
-  garden: 'hsl(120, 52%, 36%)',
-  'digital-twin': 'hsl(260, 62%, 52%)',
-  search: 'hsl(210, 75%, 42%)',
-  insights: 'hsl(152, 62%, 38%)',
-  projects: 'hsl(258, 62%, 52%)',
-  'smart-home': 'hsl(185, 68%, 38%)',
-  notifications: 'hsl(280, 68%, 47%)',
-}
 
 interface SidebarNavProps {
   unreadCount?: number
@@ -191,16 +171,14 @@ export function SidebarNav({ unreadCount = 0 }: SidebarNavProps) {
 interface NavItemProps {
   href: string
   label: string
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  icon: React.ComponentType<{ className?: string }>
   module: string
   isActive: boolean
   isExpanded: boolean
   badge?: number
 }
 
-function NavItem({ href, label, icon: Icon, module, isActive, isExpanded, badge }: NavItemProps) {
-  const color = MODULE_COLORS[module]
-
+function NavItem({ href, label, icon: Icon, module: _module, isActive, isExpanded, badge }: NavItemProps) {
   return (
     <Link
       href={href}
@@ -210,15 +188,14 @@ function NavItem({ href, label, icon: Icon, module, isActive, isExpanded, badge 
         'focus-ring',
         isExpanded ? 'px-3' : 'justify-center px-3',
         isActive
-          ? 'bg-[var(--color-selected)]'
-          : 'hover:bg-[var(--color-hover)]'
+          ? 'bg-foreground/10'
+          : 'hover:bg-foreground/[0.06]'
       )}
       aria-current={isActive ? 'page' : undefined}
     >
       {isActive && (
         <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-full"
-          style={{ backgroundColor: color }}
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-full bg-foreground/70"
           aria-hidden="true"
         />
       )}
@@ -227,7 +204,6 @@ function NavItem({ href, label, icon: Icon, module, isActive, isExpanded, badge 
           'h-5 w-5 shrink-0 transition-colors duration-fast',
           isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
         )}
-        style={isActive ? { color } : undefined}
       />
       {isExpanded && (
         <span

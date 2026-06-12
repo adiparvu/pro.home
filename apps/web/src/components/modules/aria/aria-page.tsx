@@ -258,11 +258,8 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
       <header className="glass-opaque sticky top-0 z-20 border-b border-border/50 px-4 py-4 md:px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ background: 'hsl(280 68% 47% / 0.20)' }}
-            >
-              <Sparkles className="h-5 w-5" style={{ color: 'hsl(280, 68%, 57%)' }} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground/10">
+              <Sparkles className="h-5 w-5 text-foreground/80" />
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">ARIA</p>
@@ -297,7 +294,7 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
                 onClick={() => sendMessage(text)}
                 className="flex items-start gap-2 rounded-xl glass-light px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors text-left focus-ring"
               >
-                <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: 'hsl(280, 68%, 57%)' }} />
+                <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-foreground/60" />
                 {text}
               </button>
             ))}
@@ -328,7 +325,7 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
                 taskCreating && 'opacity-50 cursor-not-allowed'
               )}
             >
-              <Zap className="h-3 w-3 shrink-0" style={{ color: 'hsl(45,80%,52%)' }} />
+              <Zap className="h-3 w-3 shrink-0 text-foreground/60" />
               {taskCreating ? 'Creating…' : input.trim() ? '⚡ Create task from input' : '⚡ Create task'}
             </button>
           </div>
@@ -349,10 +346,9 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
             className={cn(
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-fast focus-ring',
               input.trim() && !isThinking
-                ? 'text-white shadow-glow-aria'
+                ? 'bg-foreground text-background'
                 : 'glass-light text-muted-foreground cursor-not-allowed opacity-50'
             )}
-            style={input.trim() && !isThinking ? { background: 'hsl(280, 68%, 47%)' } : undefined}
             aria-label="Send message"
           >
             <Send className="h-4 w-4" />
@@ -379,10 +375,9 @@ function MessageBubble({ message }: { message: Message }) {
     <div className={cn('flex gap-3 group', isUser && 'flex-row-reverse')}>
       {!isUser && (
         <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-          style={{ background: 'hsl(280 68% 47% / 0.20)' }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/10"
         >
-          <Sparkles className="h-4 w-4" style={{ color: 'hsl(280, 68%, 57%)' }} />
+          <Sparkles className="h-4 w-4 text-foreground/70" />
         </div>
       )}
       <div className="flex flex-col gap-1 max-w-[85%]">
@@ -443,8 +438,8 @@ function ThinkingBubble() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-1.5 w-1.5 rounded-full animate-pulse-soft"
-              style={{ background: 'hsl(280, 68%, 57%)', animationDelay: `${i * 200}ms` }}
+              className="h-1.5 w-1.5 rounded-full animate-pulse-soft bg-foreground/50"
+              style={{ animationDelay: `${i * 200}ms` }}
             />
           ))}
         </div>

@@ -29,19 +29,19 @@ export function AppearanceSettings() {
                 type="button"
                 onClick={() => setTheme(id)}
                 className={cn(
-                  'flex flex-col items-center gap-2 rounded-xl p-4 transition-all duration-fast focus-ring',
+                  'flex flex-col items-center gap-2 rounded-xl p-4 transition-all duration-fast focus-ring border',
                   theme === id
-                    ? 'glass-standard ring-2 ring-primary/60'
-                    : 'glass-light hover:glass-standard'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'glass-light border-transparent hover:glass-standard'
                 )}
               >
                 <Icon className={cn(
                   'h-5 w-5 transition-colors',
-                  theme === id ? 'text-primary' : 'text-muted-foreground'
+                  theme === id ? 'text-background' : 'text-muted-foreground'
                 )} />
                 <span className={cn(
                   'text-xs font-medium',
-                  theme === id ? 'text-foreground' : 'text-muted-foreground'
+                  theme === id ? 'text-background' : 'text-muted-foreground'
                 )}>
                   {label}
                 </span>

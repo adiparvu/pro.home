@@ -16,7 +16,7 @@ export default async function AppearancePage() {
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings" backHref="/more" />
       <SettingsShell activeTab="appearance">
         <AppearanceSettings />
       </SettingsShell>

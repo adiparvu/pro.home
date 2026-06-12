@@ -4,7 +4,6 @@ import { ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Property } from '@/lib/supabase/types'
-import { cn } from '@/lib/utils'
 
 interface HealthHeroCardProps {
   property: Property
@@ -16,26 +15,17 @@ interface HealthHeroCardProps {
 function getHealthVariant(score: number | null): {
   label: string
   variant: 'excellent' | 'good' | 'fair' | 'poor' | 'critical'
-  color: string
 } {
-  if (!score) return { label: 'Unknown', variant: 'fair', color: 'hsl(220, 8%, 48%)' }
-  if (score >= 85) return { label: 'Excellent', variant: 'excellent', color: 'hsl(152, 70%, 42%)' }
-  if (score >= 70) return { label: 'Good', variant: 'good', color: 'hsl(96, 65%, 42%)' }
-  if (score >= 50) return { label: 'Fair', variant: 'fair', color: 'hsl(45, 80%, 48%)' }
-  if (score >= 25) return { label: 'Poor', variant: 'poor', color: 'hsl(22, 75%, 48%)' }
-  return { label: 'Critical', variant: 'critical', color: 'hsl(0, 70%, 50%)' }
+  if (!score) return { label: 'Unknown', variant: 'fair' }
+  if (score >= 85) return { label: 'Excellent', variant: 'excellent' }
+  if (score >= 70) return { label: 'Good', variant: 'good' }
+  if (score >= 50) return { label: 'Fair', variant: 'fair' }
+  if (score >= 25) return { label: 'Poor', variant: 'poor' }
+  return { label: 'Critical', variant: 'critical' }
 }
 
-function HealthRing({
-  score,
-  size = 96,
-  color,
-}: {
-  score: number
-  size?: number
-  color: string
-}) {
-  const strokeWidth = size * 0.083 // ~8px for 96px ring
+function HealthRing({ score, size = 96 }: { score: number; size?: number }) {
+  const strokeWidth = size * 0.083
   const r = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * r
   const offset = circumference * (1 - score / 100)
@@ -49,22 +39,18 @@ function HealthRing({
       aria-label={`Property health score: ${score} out of 100`}
       role="img"
     >
-      {/* Background track */}
       <circle
-        cx={center}
-        cy={center}
-        r={r}
+        cx={center} cy={center} r={r}
         fill="none"
-        stroke="rgba(255,255,255,0.06)"
+        stroke="currentColor"
+        strokeOpacity="0.10"
         strokeWidth={strokeWidth}
       />
-      {/* Score arc */}
       <circle
-        cx={center}
-        cy={center}
-        r={r}
+        cx={center} cy={center} r={r}
         fill="none"
-        stroke={color}
+        stroke="currentColor"
+        strokeOpacity="0.75"
         strokeWidth={strokeWidth}
         strokeDasharray={circumference}
         strokeDashoffset={offset}
@@ -72,12 +58,10 @@ function HealthRing({
         transform={`rotate(-90 ${center} ${center})`}
         className="transition-all duration-slower ease-out"
       />
-      {/* Center score */}
       <text
-        x={center}
-        y={center + 8}
+        x={center} y={center + 8}
         textAnchor="middle"
-        fill={color}
+        fill="currentColor"
         fontSize={size * 0.229}
         fontWeight="700"
         fontFamily="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif"
@@ -90,7 +74,7 @@ function HealthRing({
 
 export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount, recallCount }: HealthHeroCardProps) {
   const score = property.health_score
-  const { label, variant, color } = getHealthVariant(score)
+  const { label, variant } = getHealthVariant(score)
 
   const maintenanceScore = Math.max(20, 95 - overdueTasksCount * 15 - Math.min(upcomingTasksCount, 5))
   const safetyScore = Math.max(30, 95 - recallCount * 20)
@@ -100,25 +84,12 @@ export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount
   const safetyTrend: 'up' | 'down' | 'stable' = recallCount > 0 ? 'down' : 'up'
 
   return (
-    <Card
-      variant="heavy"
-      padding="lg"
-      className="relative overflow-hidden"
-    >
-      {/* Background glow */}
-      <div
-        className="absolute inset-0 opacity-5 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse at center, ${color}, transparent 70%)`,
-        }}
-        aria-hidden="true"
-      />
-
+    <Card variant="heavy" padding="lg" className="relative overflow-hidden text-foreground">
       <div className="relative flex items-center gap-4 sm:gap-6">
         {/* Health Ring */}
         <div className="shrink-0">
           {score !== null ? (
-            <HealthRing score={score} size={96} color={color} />
+            <HealthRing score={score} size={96} />
           ) : (
             <div className="h-24 w-24 rounded-full bg-muted/20 flex items-center justify-center">
               <span className="text-sm text-muted-foreground">—</span>
@@ -156,7 +127,7 @@ export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount
 
       {/* Factor Preview */}
       {score !== null && (
-        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-foreground/[0.08]">
           <FactorMini label="Maintenance" score={maintenanceScore} trend={maintenanceTrend} />
           <FactorMini label="Safety" score={safetyScore} trend={safetyTrend} />
           <FactorMini label="Energy" score={energyScore} trend="stable" />
@@ -166,31 +137,20 @@ export function HealthHeroCard({ property, overdueTasksCount, upcomingTasksCount
   )
 }
 
-function FactorMini({
-  label,
-  score,
-  trend,
-}: {
-  label: string
-  score: number
-  trend: 'up' | 'down' | 'stable'
-}) {
+function FactorMini({ label, score, trend }: { label: string; score: number; trend: 'up' | 'down' | 'stable' }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{label}</span>
-        {trend === 'up' && <TrendingUp className="h-3 w-3 text-[hsl(152,65%,48%)]" />}
+        {trend === 'up' && <TrendingUp className="h-3 w-3 text-foreground/60" />}
         {trend === 'down' && <TrendingDown className="h-3 w-3 text-destructive" />}
         {trend === 'stable' && <Minus className="h-3 w-3 text-muted-foreground" />}
       </div>
       <div className="flex items-center gap-2">
-        <div className="h-1.5 flex-1 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden">
+        <div className="h-1.5 flex-1 rounded-full bg-foreground/[0.08] overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-slow"
-            style={{
-              width: `${score}%`,
-              background: score >= 70 ? 'hsl(152,65%,48%)' : score >= 50 ? 'hsl(45,80%,48%)' : 'hsl(0,70%,50%)',
-            }}
+            className="h-full rounded-full bg-foreground/60 transition-all duration-slow"
+            style={{ width: `${score}%` }}
           />
         </div>
         <span className="text-xs font-medium tabular-nums text-foreground w-7 text-right">

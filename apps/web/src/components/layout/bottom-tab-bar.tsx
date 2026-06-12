@@ -18,23 +18,10 @@ const TAB_ITEMS = [
   { key: 'more', href: '/more', icon: LayoutGrid, module: 'more' },
 ] as const
 
-const MODULE_COLORS: Record<string, string> = {
-  home: 'hsl(210, 75%, 52%)',
-  property: 'hsl(36, 78%, 52%)',
-  aria: 'hsl(280, 68%, 57%)',
-  family: 'hsl(340, 68%, 56%)',
-  more: 'hsl(220, 12%, 60%)',
-}
-
 interface BottomTabBarProps {
   unreadCount?: number
 }
 
-/**
- * Floating glass capsule navigation (mobile only). Sliding glass pill marks
- * the active tab; the whole capsule hides on scroll-down and springs back on
- * scroll-up, mirrored by the quick-actions FAB.
- */
 export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
   const pathname = usePathname()
   const t = useTranslations('navigation')
@@ -72,7 +59,6 @@ export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
 
         {TAB_ITEMS.map((item) => {
           const isActive = item.href === activeHref
-          const color = MODULE_COLORS[item.module]
           const isCenter = 'isCenter' in item && item.isCenter
           const isMore = item.module === 'more'
           const showBadge = isMore && unreadCount > 0
@@ -92,23 +78,22 @@ export function BottomTabBar({ unreadCount = 0 }: BottomTabBarProps) {
               {isCenter ? (
                 <span
                   className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-full shadow-glow-aria transition-colors duration-fast',
-                    isActive ? 'bg-[hsl(280,68%,47%)]' : 'bg-[hsl(280,68%,38%)]'
+                    'flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-fast',
+                    isActive ? 'bg-foreground' : 'bg-foreground/20'
                   )}
                 >
-                  <item.icon className="h-5 w-5 text-white" />
+                  <item.icon className={cn('h-5 w-5', isActive ? 'text-background' : 'text-foreground/80')} />
                 </span>
               ) : (
                 <>
                   <item.icon
                     className={cn(
-                      'h-6 w-6 transition-all duration-fast',
-                      isActive ? 'opacity-100' : 'opacity-50'
+                      'h-6 w-6 transition-all duration-fast text-foreground',
+                      isActive ? 'opacity-100' : 'opacity-40'
                     )}
-                    style={isActive ? { color } : undefined}
                   />
                   {isActive && (
-                    <span className="text-[10px] font-semibold leading-none" style={{ color }}>
+                    <span className="text-[10px] font-semibold leading-none text-foreground">
                       {t(item.key)}
                     </span>
                   )}

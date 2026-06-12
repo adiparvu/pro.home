@@ -27,7 +27,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings" backHref="/more" />
       <SettingsShell activeTab="profile">
         <ProfileSettings profile={profile} userId={user.id} />
       </SettingsShell>
