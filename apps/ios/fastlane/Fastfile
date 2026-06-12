@@ -52,7 +52,8 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Import the Distribution certificate from GitHub Secret (never revokes anything)
+    # Prefer importing cert from GitHub Secret (zero revocations, no Apple emails).
+    # If the secret is not set, fall back to revoking the oldest cert and creating a new one.
     cert_p12 = ENV["DIST_CERTIFICATE_P12"]
     cert_pass = ENV["DIST_CERTIFICATE_PASSWORD"] || ""
 
@@ -67,20 +68,31 @@ platform :ios do
       )
       UI.success("Distribution certificate imported from secret")
     else
-      UI.user_error!(<<~MSG)
-        ❌  DIST_CERTIFICATE_P12 GitHub Secret is not set.
+      # Revoke the oldest existing Distribution cert so we stay under Apple's limit of 2,
+      # then create a fresh one. Apple sends one email per revocation.
+      require "spaceship"
+      token = Spaceship::ConnectAPI::Token.create(
+        key_id:    key_id,
+        issuer_id: issuer_id,
+        key:       key_content
+      )
+      Spaceship::ConnectAPI.token = token
+      existing = Spaceship::ConnectAPI::Certificate.all(
+        filter: { certificateType: "DISTRIBUTION" }
+      )
+      if existing.length >= 2
+        oldest = existing.min_by { |c| c.expirationDate }
+        UI.message("Revoking oldest Distribution cert (#{oldest.id}) to stay under Apple's limit")
+        oldest.delete!
+      end
 
-        Apple has reached the 2-cert limit so a new cert cannot be created.
-        To fix this (one-time, takes ~2 minutes):
-
-          1. Open Keychain Access → My Certificates
-          2. Find "Apple Distribution: ..." → right-click → Export as dist_cert.p12
-          3. Run: base64 -i dist_cert.p12 | pbcopy
-          4. Add GitHub Secret  DIST_CERTIFICATE_P12  (paste the base64 value)
-          5. Add GitHub Secret  DIST_CERTIFICATE_PASSWORD  (the .p12 password)
-
-        After that, CI will import the cert directly and this error will never appear again.
-      MSG
+      cert(
+        api_key:           api_key,
+        keychain_path:     keychain_db,
+        keychain_password: "buildpass",
+        output_path:       "/tmp",
+        force:             true
+      )
     end
 
     # Download/create App Store provisioning profile
