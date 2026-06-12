@@ -67,16 +67,20 @@ platform :ios do
       )
       UI.success("Distribution certificate imported from secret")
     else
-      # Fallback: force-create a new cert (revokes oldest if limit reached).
-      # To avoid this, add DIST_CERTIFICATE_P12 + DIST_CERTIFICATE_PASSWORD
-      # GitHub Secrets (base64-encoded .p12 exported from your Mac Keychain).
-      cert(
-        api_key: api_key,
-        keychain_path: keychain_db,
-        keychain_password: "buildpass",
-        output_path: "/tmp",
-        force: true
-      )
+      UI.user_error!(<<~MSG)
+        ❌  DIST_CERTIFICATE_P12 GitHub Secret is not set.
+
+        Apple has reached the 2-cert limit so a new cert cannot be created.
+        To fix this (one-time, takes ~2 minutes):
+
+          1. Open Keychain Access → My Certificates
+          2. Find "Apple Distribution: ..." → right-click → Export as dist_cert.p12
+          3. Run: base64 -i dist_cert.p12 | pbcopy
+          4. Add GitHub Secret  DIST_CERTIFICATE_P12  (paste the base64 value)
+          5. Add GitHub Secret  DIST_CERTIFICATE_PASSWORD  (the .p12 password)
+
+        After that, CI will import the cert directly and this error will never appear again.
+      MSG
     end
 
     # Download/create App Store provisioning profile
