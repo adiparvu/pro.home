@@ -99,6 +99,7 @@ platform :ios do
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-hideShellScriptEnvironment " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
+      "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon " \
       "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
     )
 
