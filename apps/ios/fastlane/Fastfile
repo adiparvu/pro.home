@@ -5,19 +5,16 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
-    # Write API key to temp file for xcodebuild
     key_id      = ENV["ASC_KEY_ID"]
     issuer_id   = ENV["ASC_ISSUER_ID"]
     key_content = ENV["ASC_KEY_CONTENT"]
     key_path    = "/tmp/AuthKey_#{key_id}.p8"
     File.write(key_path, key_content)
 
-    # Generate Xcode project (fastlane runs from fastlane/ subdir, so go up to apps/ios)
     Dir.chdir("..") do
       sh("xcodegen generate")
     end
 
-    # Create a fresh keychain for signing
     create_keychain(
       name: "build.keychain",
       password: "buildpass",
@@ -28,9 +25,9 @@ platform :ios do
 
     project_dir = File.expand_path("..")
 
-    # Build archive — Xcode fetches certs/profiles automatically via API key
+    # Build archive — raw output so errors are visible
     sh(
-      "xcodebuild archive " \
+      "set -o pipefail && xcodebuild archive " \
       "-project #{project_dir}/PRVHouse.xcodeproj " \
       "-scheme PRVHouse " \
       "-destination 'generic/platform=iOS' " \
@@ -39,12 +36,11 @@ platform :ios do
       "-authenticationKeyID #{key_id} " \
       "-authenticationKeyIssuerID #{issuer_id} " \
       "-allowProvisioningUpdates " \
+      "-hideShellScriptEnvironment " \
       "CODE_SIGN_STYLE=Automatic " \
-      "DEVELOPMENT_TEAM=SU92TVZT8W " \
-      "| xcpretty --no-color || true"
+      "DEVELOPMENT_TEAM=SU92TVZT8W 2>&1"
     )
 
-    # Export IPA
     export_options_path = "/tmp/ExportOptions.plist"
     File.write(export_options_path, <<~PLIST)
       <?xml version="1.0" encoding="UTF-8"?>
@@ -62,18 +58,16 @@ platform :ios do
     PLIST
 
     sh(
-      "xcodebuild -exportArchive " \
+      "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-exportPath /tmp/PRVHouse_ipa " \
       "-exportOptionsPlist #{export_options_path} " \
       "-authenticationKeyPath #{key_path} " \
       "-authenticationKeyID #{key_id} " \
       "-authenticationKeyIssuerID #{issuer_id} " \
-      "-allowProvisioningUpdates " \
-      "| xcpretty --no-color || true"
+      "-allowProvisioningUpdates 2>&1"
     )
 
-    # Upload to TestFlight
     api_key = app_store_connect_api_key(
       key_id: key_id,
       issuer_id: issuer_id,
