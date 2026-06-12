@@ -281,6 +281,7 @@ export function SharesPage({ property, userId, initialShares }: SharesPageProps)
       <PageHeader
         title="Share Register"
         description={property.name}
+        backHref="/property"
         action={{ label: 'Add Share', href: '#', onClick: openAdd }}
       />
 

@@ -18,7 +18,7 @@ export default async function RecurringTasksRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Recurring Tasks" />
+        <PageHeader title="Recurring Tasks" backHref="/maintenance" />
         <NoPropertyState />
       </div>
     )

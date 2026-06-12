@@ -18,7 +18,7 @@ export default async function VacancyRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Vacancies" />
+        <PageHeader title="Vacancies" backHref="/tenant" />
         <NoPropertyState />
       </div>
     )

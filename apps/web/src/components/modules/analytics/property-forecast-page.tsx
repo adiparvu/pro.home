@@ -205,7 +205,7 @@ export function PropertyForecastPage({
 
   return (
     <>
-      <PageHeader title="5-Year Forecast" description={property.name} />
+      <PageHeader title="5-Year Forecast" description={property.name} backHref="/more" />
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Assumptions */}
         <Card className="p-4 flex flex-col gap-3">

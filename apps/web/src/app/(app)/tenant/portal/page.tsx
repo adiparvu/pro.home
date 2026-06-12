@@ -18,7 +18,7 @@ export default async function TenantPortalRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Tenant Portal" />
+        <PageHeader title="Tenant Portal" backHref="/tenant" />
         <NoPropertyState />
       </div>
     )

@@ -18,7 +18,7 @@ export default async function ComplianceRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Compliance" />
+        <PageHeader title="Compliance" backHref="/documents" />
         <NoPropertyState />
       </div>
     )

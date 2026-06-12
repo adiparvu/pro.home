@@ -99,13 +99,19 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
   const [input, setInput] = React.useState('')
   const [isThinking, setIsThinking] = React.useState(false)
   const [taskCreating, setTaskCreating] = React.useState(false)
+  const messagesContainerRef = React.useRef<HTMLDivElement>(null)
   const bottomRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
 
   const suggestedPrompts = React.useMemo(() => buildSuggestedPrompts(contextHints), [contextHints])
 
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Scroll within the messages container — do NOT use scrollIntoView which
+    // falls back to window scroll and pushes the sticky header off screen.
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [messages])
 
   async function persistMessage(role: 'user' | 'assistant', content: string) {
@@ -247,7 +253,7 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
   const showSuggestions = messages.length === 1 && messages[0]?.id === 'welcome'
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col min-h-0">
       {/* Header */}
       <header className="glass-opaque sticky top-0 z-20 border-b border-border/50 px-4 py-4 md:px-6">
         <div className="flex items-center justify-between">
@@ -274,8 +280,8 @@ export function AriaPage({ userId, propertyId, initialMessages, contextHints }: 
         </div>
       </header>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 space-y-4 pb-[180px] md:pb-32">
+      {/* Messages — min-h-0 allows flex child to shrink and scroll internally */}
+      <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 md:px-6 space-y-4 pb-[180px] md:pb-32">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}

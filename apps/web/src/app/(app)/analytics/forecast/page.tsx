@@ -18,7 +18,7 @@ export default async function ForecastRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="5-Year Forecast" />
+        <PageHeader title="5-Year Forecast" backHref="/more" />
         <NoPropertyState />
       </div>
     )

@@ -18,7 +18,7 @@ export default async function SeasonalPlannerRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Seasonal Planner" />
+        <PageHeader title="Seasonal Planner" backHref="/maintenance" />
         <NoPropertyState />
       </div>
     )

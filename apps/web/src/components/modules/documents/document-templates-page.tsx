@@ -216,7 +216,7 @@ export function DocumentTemplatesPage({
 
   return (
     <>
-      <PageHeader title="Templates" description={property.name} />
+      <PageHeader title="Templates" description={property.name} backHref="/documents" />
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {!hasLeases && (
           <Card className="p-4">

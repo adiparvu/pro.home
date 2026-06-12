@@ -95,7 +95,7 @@ export function YieldPage({
 
   return (
     <>
-      <PageHeader title="Rent Yield" description={property.name} />
+      <PageHeader title="Rent Yield" description={property.name} backHref="/more" />
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {activeLeases.length === 0 && (
           <Card className="flex items-start gap-3 p-4">

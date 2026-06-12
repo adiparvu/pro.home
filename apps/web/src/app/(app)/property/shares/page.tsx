@@ -18,7 +18,7 @@ export default async function SharesRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Share Register" />
+        <PageHeader title="Share Register" backHref="/property" />
         <NoPropertyState />
       </div>
     )

@@ -18,7 +18,7 @@ export default async function MeterReadingsRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Meter Readings" />
+        <PageHeader title="Meter Readings" backHref="/energy" />
         <NoPropertyState />
       </div>
     )

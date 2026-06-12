@@ -18,7 +18,7 @@ export default async function DefectLogRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Defect Log" />
+        <PageHeader title="Defect Log" backHref="/maintenance" />
         <NoPropertyState />
       </div>
     )

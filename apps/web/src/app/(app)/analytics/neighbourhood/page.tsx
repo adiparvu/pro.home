@@ -20,7 +20,7 @@ export default async function NeighbourhoodRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Neighbourhood Benchmarks" />
+        <PageHeader title="Neighbourhood Benchmarks" backHref="/more" />
         <NoPropertyState />
       </div>
     )

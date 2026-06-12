@@ -91,7 +91,7 @@ export function ForecastPage({ property }: ForecastPageProps) {
 
   return (
     <>
-      <PageHeader title="Forecast" description={property.name} />
+      <PageHeader title="Forecast" description={property.name} backHref="/finances" />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">
 

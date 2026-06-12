@@ -62,7 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
           {/* Main Content */}
           <main
-            className="flex flex-1 flex-col transition-all duration-slow md:ml-[72px] lg:ml-[260px]"
+            className="flex flex-1 flex-col min-h-0 transition-all duration-slow md:ml-[72px] lg:ml-[260px]"
             id="main-content"
           >
             {children}

@@ -276,6 +276,7 @@ export function SeasonalPlannerPage({ property, userId }: SeasonalPlannerPagePro
       <PageHeader
         title="Seasonal Planner"
         description={property.name}
+        backHref="/maintenance"
         action={{ label: 'Add Template', href: '#', onClick: openNew }}
       />
 

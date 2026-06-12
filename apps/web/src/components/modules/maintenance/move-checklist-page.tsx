@@ -251,6 +251,7 @@ export function MoveChecklistPage({ property, userId, initialChecklists, initial
       <PageHeader
         title="Move Checklists"
         description={property.name}
+        backHref="/maintenance"
         action={{ label: 'New Checklist', href: '#', onClick: openNewForm }}
       />
 

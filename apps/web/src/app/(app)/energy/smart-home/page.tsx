@@ -18,7 +18,7 @@ export default async function SmartHomeRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Smart Home" />
+        <PageHeader title="Smart Home" backHref="/energy" />
         <NoPropertyState />
       </div>
     )

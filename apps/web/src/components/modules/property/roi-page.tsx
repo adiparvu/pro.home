@@ -126,7 +126,7 @@ export function RoiPage({ property, initialValuations, initialExpenses }: RoiPag
 
   return (
     <>
-      <PageHeader title="ROI Calculator" description={property.name} />
+      <PageHeader title="ROI Calculator" description={property.name} backHref="/property" />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Summary cards */}

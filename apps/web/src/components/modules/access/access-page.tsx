@@ -194,6 +194,7 @@ export function AccessPage({ property, userId, initialCodes }: AccessPageProps) 
       <PageHeader
         title="Access Codes"
         description={property.name}
+        backHref="/more"
         action={{ label: 'New access code', href: '#', onClick: openNew }}
       />
 

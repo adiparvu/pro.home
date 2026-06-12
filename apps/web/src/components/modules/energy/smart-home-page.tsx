@@ -303,6 +303,7 @@ export function SmartHomePage({ property, userId: _userId, initialTokens }: Smar
       <PageHeader
         title="Smart Home"
         description={property.name}
+        backHref="/energy"
         action={{ label: 'New Token', href: '#', onClick: () => setModalOpen(true) }}
       />
 

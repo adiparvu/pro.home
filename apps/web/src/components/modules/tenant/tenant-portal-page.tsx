@@ -216,6 +216,7 @@ export function TenantPortalPage({ property, userId, initialPortals, initialRequ
       <PageHeader
         title="Tenant Portal"
         description={property.name}
+        backHref="/tenant"
         action={{ label: 'Create Portal', href: '#', onClick: () => setShowCreateModal(true) }}
       />
 

@@ -127,6 +127,7 @@ export function SmartHomePage({ property, userId, initialEvents }: SmartHomePage
       <PageHeader
         title="Smart Home Log"
         description={property.name}
+        backHref="/more"
         action={{ label: 'Log Event', href: '#', onClick: () => setShowForm(true) }}
       />
 

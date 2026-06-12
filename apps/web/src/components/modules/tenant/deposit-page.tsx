@@ -389,7 +389,7 @@ export function DepositPage({ property, userId, initialLeases, initialDeductions
 
   return (
     <>
-      <PageHeader title="Deposit" description={property.name} />
+      <PageHeader title="Deposit" description={property.name} backHref="/tenant" />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {initialLeases.length === 0 ? (

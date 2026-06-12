@@ -253,6 +253,7 @@ export function DefectLogPage({ property, userId, initialDefects, rooms }: Defec
       <PageHeader
         title="Defect Log"
         description={property.name}
+        backHref="/maintenance"
         action={{ label: 'Log Defect', href: '#', onClick: openNew }}
       />
 

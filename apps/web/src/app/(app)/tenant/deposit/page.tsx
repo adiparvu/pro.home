@@ -18,7 +18,7 @@ export default async function DepositRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Deposit" />
+        <PageHeader title="Deposit" backHref="/tenant" />
         <NoPropertyState />
       </div>
     )

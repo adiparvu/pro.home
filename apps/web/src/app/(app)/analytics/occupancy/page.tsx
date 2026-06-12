@@ -18,7 +18,7 @@ export default async function OccupancyRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Occupancy" />
+        <PageHeader title="Occupancy" backHref="/more" />
         <NoPropertyState />
       </div>
     )

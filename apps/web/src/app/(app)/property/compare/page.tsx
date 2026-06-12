@@ -28,7 +28,7 @@ export default async function PropertyCompareRoute() {
 
   return (
     <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-      <PageHeader title="Compare Properties" description="Side-by-side property metrics" />
+      <PageHeader title="Compare Properties" description="Side-by-side property metrics" backHref="/property" />
       <PropertyComparePage properties={properties} />
     </div>
   )

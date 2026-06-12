@@ -128,6 +128,9 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans, 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif);
     min-height: 100dvh;
+    /* Push content below the iOS status bar when viewport-fit: cover is active */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* Numeric figures — tabular for all number-heavy contexts */

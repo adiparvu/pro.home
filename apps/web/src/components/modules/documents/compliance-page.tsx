@@ -193,6 +193,7 @@ export function CompliancePage({ property, userId, initialCerts }: CompliancePag
       <PageHeader
         title="Compliance"
         description={property.name}
+        backHref="/documents"
         action={{ label: 'Add Certificate', href: '#', onClick: openNew }}
       />
 

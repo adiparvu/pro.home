@@ -18,7 +18,7 @@ export default async function RoiRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="ROI Calculator" />
+        <PageHeader title="ROI Calculator" backHref="/property" />
         <NoPropertyState />
       </div>
     )

@@ -248,7 +248,7 @@ export function OccupancyPage({
 
   return (
     <>
-      <PageHeader title="Occupancy" description={property.name} />
+      <PageHeader title="Occupancy" description={property.name} backHref="/more" />
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
         {/* Year selector */}
         <div className="flex gap-2 overflow-x-auto pb-1">

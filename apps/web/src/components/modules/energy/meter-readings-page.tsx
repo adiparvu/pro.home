@@ -182,6 +182,7 @@ export function MeterReadingsPage({ property, userId, initialReadings }: MeterRe
       <PageHeader
         title="Meter Readings"
         description={property.name}
+        backHref="/energy"
         action={{ label: 'Log Reading', href: '#', onClick: () => setShowForm(true) }}
       />
 

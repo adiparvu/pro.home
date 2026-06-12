@@ -219,6 +219,7 @@ export function VacancyPage({ property, userId, initialVacancies }: VacancyPageP
       <PageHeader
         title="Vacancies"
         description={property.name}
+        backHref="/tenant"
         action={{ label: 'Add Vacancy', href: '#', onClick: openNew }}
       />
 

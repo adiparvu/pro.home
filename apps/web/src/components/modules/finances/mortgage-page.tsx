@@ -210,6 +210,7 @@ export function MortgagePage({ property, userId, initialMortgages }: MortgagePag
       <PageHeader
         title="Mortgage"
         description={property.name}
+        backHref="/finances"
         action={{ label: 'Add mortgage', href: '#', onClick: openAdd }}
       />
 

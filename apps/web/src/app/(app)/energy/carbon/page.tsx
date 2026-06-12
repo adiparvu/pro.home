@@ -18,7 +18,7 @@ export default async function CarbonRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Carbon Footprint" />
+        <PageHeader title="Carbon Footprint" backHref="/energy" />
         <NoPropertyState />
       </div>
     )

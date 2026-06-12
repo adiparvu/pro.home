@@ -18,7 +18,7 @@ export default async function PropertyValueRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Property Value" />
+        <PageHeader title="Property Value" backHref="/property" />
         <NoPropertyState />
       </div>
     )

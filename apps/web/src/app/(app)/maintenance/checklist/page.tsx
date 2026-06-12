@@ -18,7 +18,7 @@ export default async function ChecklistRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Move Checklists" />
+        <PageHeader title="Move Checklists" backHref="/maintenance" />
         <NoPropertyState />
       </div>
     )

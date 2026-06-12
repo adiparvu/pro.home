@@ -204,6 +204,7 @@ export function CarbonPage({ property, initialReadings, initialSettings }: Carbo
       <PageHeader
         title="Carbon Footprint"
         description={property.name}
+        backHref="/energy"
         action={{ label: 'Settings', href: '#', onClick: () => setShowSettings(true) }}
       />
 

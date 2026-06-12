@@ -242,6 +242,7 @@ export function RecurringTasksPage({ property, userId, initialTemplates }: Recur
       <PageHeader
         title="Recurring Tasks"
         description={property.name}
+        backHref="/maintenance"
         action={{ label: 'Add Template', href: '#', onClick: openNew }}
       />
 

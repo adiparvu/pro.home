@@ -223,6 +223,7 @@ export function InsurancePage({ property, userId, initialPolicies }: InsurancePa
       <PageHeader
         title="Insurance"
         description={property.name}
+        backHref="/finances"
         action={{ label: 'Add policy', href: '#', onClick: openAdd }}
       />
 

@@ -18,7 +18,7 @@ export default async function PackagesRoute() {
   if (!property) {
     return (
       <div className="flex flex-1 flex-col pb-[116px] md:pb-0">
-        <PageHeader title="Packages" />
+        <PageHeader title="Packages" backHref="/household" />
         <NoPropertyState />
       </div>
     )

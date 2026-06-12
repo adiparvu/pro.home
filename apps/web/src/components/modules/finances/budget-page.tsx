@@ -196,6 +196,7 @@ export function BudgetPage({ property, userId, initialBudgets, spendingRecords }
       <PageHeader
         title="Budget"
         description={property.name}
+        backHref="/finances"
         action={{ label: 'Set budget', href: '#', onClick: openAdd }}
       />
 

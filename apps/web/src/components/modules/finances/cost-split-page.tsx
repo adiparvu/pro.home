@@ -258,6 +258,7 @@ export function CostSplitPage({ property, userId, initialSplits, initialShares }
       <PageHeader
         title="Cost Split"
         description={property.name}
+        backHref="/finances"
       />
 
       <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6 pb-[116px] md:pb-6">

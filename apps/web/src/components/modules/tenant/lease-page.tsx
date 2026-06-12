@@ -471,6 +471,7 @@ export function LeasePage({ property, userId, initialLeases, initialPayments }: 
       <PageHeader
         title="Leases"
         description={property.name}
+        backHref="/tenant"
         action={{ label: 'Add Lease', href: '#', onClick: openNew }}
       />
 

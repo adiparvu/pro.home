@@ -96,6 +96,7 @@ export function PropertyValuePage({ property, userId, initialValuations }: Prope
       <PageHeader
         title="Property Value"
         description={property.name}
+        backHref="/property"
         action={{ label: 'Add Valuation', href: '#', onClick: () => setShowForm(true) }}
       />
 

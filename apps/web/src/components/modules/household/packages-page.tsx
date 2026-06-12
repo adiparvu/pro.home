@@ -187,6 +187,7 @@ export function PackagesPage({ property, userId, initialPackages }: PackagesPage
       <PageHeader
         title="Packages"
         description={property.name}
+        backHref="/household"
         action={{ label: 'Add Package', href: '#', onClick: () => setShowForm(true) }}
       />
 
