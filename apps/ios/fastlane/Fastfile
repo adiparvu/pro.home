@@ -12,8 +12,10 @@ platform :ios do
     key_path    = "/tmp/AuthKey_#{key_id}.p8"
     File.write(key_path, key_content)
 
-    # Generate Xcode project from project.yml (runs in apps/ios where project.yml lives)
-    sh("xcodegen generate")
+    # Generate Xcode project (fastlane runs from fastlane/ subdir, so go up to apps/ios)
+    Dir.chdir("..") do
+      sh("xcodegen generate")
+    end
 
     # Create a fresh keychain for signing
     create_keychain(
@@ -24,10 +26,12 @@ platform :ios do
       timeout: 3600
     )
 
+    project_dir = File.expand_path("..")
+
     # Build archive — Xcode fetches certs/profiles automatically via API key
     sh(
       "xcodebuild archive " \
-      "-project PRVHouse.xcodeproj " \
+      "-project #{project_dir}/PRVHouse.xcodeproj " \
       "-scheme PRVHouse " \
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
