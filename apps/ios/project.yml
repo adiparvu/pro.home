@@ -22,13 +22,7 @@ targets:
       - path: Resources
     dependencies:
       - package: Supabase
-        product: Auth
-      - package: Supabase
-        product: PostgREST
-      - package: Supabase
-        product: Realtime
-      - package: Supabase
-        product: Storage
+        product: Supabase
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvhouse.app
