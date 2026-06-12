@@ -46,5 +46,9 @@
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to attach photos to property records and tasks.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Used for voice search to find tasks, documents, and finances hands-free.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Used to convert your voice into search queries across your property data.</string>
 </dict>
 </plist>

@@ -8,6 +8,7 @@ struct SearchView: View {
 
     @State private var query = ""
     @FocusState private var focused: Bool
+    @StateObject private var speech = SpeechRecognizer()
 
     private var results: SearchResults {
         guard query.count >= 2 else { return .empty }
@@ -58,6 +59,10 @@ struct SearchView: View {
                 }
             }
             .onAppear { focused = true }
+            .onDisappear { speech.stop() }
+            .onChange(of: speech.transcript) { _, newValue in
+                if !newValue.isEmpty { query = newValue }
+            }
         }
     }
 
@@ -67,23 +72,51 @@ struct SearchView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(speech.isListening ? .red : .white.opacity(0.4))
+
             TextField("Tasks, documents, finances…", text: $query)
                 .font(.system(size: 16))
                 .foregroundStyle(.white)
                 .tint(.blue)
                 .focused($focused)
                 .submitLabel(.search)
-            if !query.isEmpty {
+
+            if speech.isListening {
+                Button { speech.stop() } label: {
+                    Image(systemName: "waveform.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.red)
+                        .symbolEffect(.pulse)
+                }
+            } else if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+            } else {
+                Button {
+                    focused = false
+                    Task { await speech.startListening() }
+                } label: {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 22))
                         .foregroundStyle(.white.opacity(0.35))
                 }
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            speech.isListening
+                ? .red.opacity(0.08)
+                : .white.opacity(0.07),
+            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(speech.isListening ? .red.opacity(0.3) : .clear, lineWidth: 1)
+        )
+        .animation(.easeInOut(duration: 0.2), value: speech.isListening)
     }
 
     // MARK: - Hints
@@ -94,11 +127,21 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.12))
-            Text("Search across tasks, documents, and finances")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.3))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            VStack(spacing: 8) {
+                Text("Search across tasks, documents, and finances")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.3))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                HStack(spacing: 6) {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.2))
+                    Text("Tap the microphone to search by voice")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.2))
+                }
+            }
             Spacer()
         }
     }
