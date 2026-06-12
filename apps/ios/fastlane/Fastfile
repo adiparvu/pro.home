@@ -1,0 +1,69 @@
+require "base64"
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: false
+    )
+
+    # Create app in App Store Connect if it doesn't exist
+    begin
+      produce(
+        api_key: api_key,
+        app_identifier: "com.prvhouse.app",
+        app_name: "PRV House",
+        language: "English",
+        app_version: "1.0",
+        skip_devcenter: false,
+        skip_itc: false
+      )
+    rescue => e
+      UI.message("App may already exist: #{e.message}")
+    end
+
+    # Sync certificates and provisioning profiles
+    match(
+      type: "appstore",
+      app_identifier: "com.prvhouse.app",
+      git_url: "https://github.com/adiparvu/pro.home",
+      git_branch: "certs",
+      git_basic_authorization: Base64.strict_encode64("x-access-token:#{ENV['GITHUB_TOKEN']}"),
+      api_key: api_key,
+      team_id: "SU92TVZT8W",
+      readonly: false,
+      force_for_new_devices: false
+    )
+
+    # Generate Xcode project
+    Dir.chdir("..") do
+      sh("xcodegen generate")
+    end
+
+    # Build
+    gym(
+      project: "PRVHouse.xcodeproj",
+      scheme: "PRVHouse",
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "./build",
+      output_name: "PRVHouse"
+    )
+
+    # Upload to TestFlight
+    pilot(
+      api_key: api_key,
+      ipa: "./build/PRVHouse.ipa",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+  end
+end
