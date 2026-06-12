@@ -36,7 +36,7 @@ final class DocumentService: ObservableObject {
         expiresAt: String?,
         isCritical: Bool
     ) async throws {
-        guard let userId = try? await supabase.auth.session.user.id else {
+        guard let userId = supabase.auth.currentSession?.user.id else {
             throw DocumentError.notAuthenticated
         }
 
