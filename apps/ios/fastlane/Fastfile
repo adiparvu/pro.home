@@ -52,45 +52,35 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Revoke existing Distribution certificates so we never hit Apple's limit.
-    # The runner is ephemeral: private keys from previous runs are gone, so
-    # old certs are unusable anyway.
-    require "spaceship"
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
-      key_id: key_id,
-      issuer_id: issuer_id,
-      filepath: key_path
-    )
-    Spaceship::ConnectAPI::Certificate.all.each do |c|
-      if ["DISTRIBUTION", "IOS_DISTRIBUTION"].include?(c.certificate_type)
-        UI.message("Revoking old #{c.certificate_type} certificate #{c.id}")
-        Spaceship::ConnectAPI.delete_certificate(certificate_id: c.id)
-      end
+    # Import the Distribution certificate from GitHub Secret (never revokes anything)
+    cert_p12 = ENV["DIST_CERTIFICATE_P12"]
+    cert_pass = ENV["DIST_CERTIFICATE_PASSWORD"] || ""
+
+    if cert_p12 && !cert_p12.empty?
+      cert_path = "/tmp/dist_cert.p12"
+      File.binwrite(cert_path, Base64.decode64(cert_p12))
+      import_certificate(
+        certificate_path: cert_path,
+        certificate_password: cert_pass,
+        keychain_name: "build.keychain",
+        keychain_password: "buildpass"
+      )
+      UI.success("Distribution certificate imported from secret")
+    else
+      # Fallback: create a new cert (only runs if secret is not set)
+      cert(
+        api_key: api_key,
+        keychain_path: keychain_db,
+        keychain_password: "buildpass",
+        output_path: "/tmp"
+      )
     end
 
-    # Delete stale profiles too — they are invalid once their cert is revoked,
-    # and they squat the base profile name, forcing sigh to create
-    # "...AppStore <timestamp>" which won't match the project's
-    # PROVISIONING_PROFILE_SPECIFIER.
-    Spaceship::ConnectAPI::Profile.all.each do |p|
-      UI.message("Deleting old provisioning profile '#{p.name}'")
-      p.delete!
-    end
-
-    # No force: true here — we already revoked all existing certs above.
-    # force: true in cert can accidentally revoke the cert it just created.
-    cert(
-      api_key: api_key,
-      keychain_path: keychain_db,
-      keychain_password: "buildpass",
-      output_path: "/tmp"
-    )
-
-    # Create App Store provisioning profile
+    # Download/create App Store provisioning profile
     sigh(
       api_key: api_key,
       app_identifier: "com.prvhouse.app",
-      force: true,
+      force: false,
       output_path: "/tmp"
     )
 
