@@ -5,6 +5,16 @@ import UserNotifications
 
 // MARK: - Models
 
+private let itemFoundBaseURL = "https://kwcanenheihuylaymwsl.supabase.co/functions/v1/item-found"
+
+struct PublicProfile: Codable {
+    var ownerName: String = ""
+    var ownerPhone: String = ""
+    var ownerAddress: String = ""
+    var propertyName: String = ""
+    var isEnabled: Bool = true
+}
+
 struct LoanRecord: Identifiable, Codable {
     var id: UUID = UUID()
     var borrowerName: String
@@ -29,9 +39,10 @@ struct InventoryItem: Identifiable, Codable {
     var notes: String = ""
     var currentLoan: LoanRecord?
     var loanHistory: [LoanRecord] = []
+    var publicProfile: PublicProfile?
 
     var isLoaned: Bool { currentLoan != nil }
-    var qrContent: String { "prvhouse://inventory/\(id.uuidString)" }
+    var qrContent: String { "\(itemFoundBaseURL)?id=\(id.uuidString)" }
 
     var warrantyStatus: WarrantyStatus {
         guard let exp = warrantyExpiresAt else { return .none }
@@ -121,11 +132,39 @@ final class InventoryService: ObservableObject {
     }
 
     func itemByQR(_ qrString: String) -> InventoryItem? {
+        // Web URL format: ...?id={uuid}
+        if let url = URL(string: qrString),
+           let comps = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let idStr = comps.queryItems?.first(where: { $0.name == "id" })?.value,
+           let uuid = UUID(uuidString: idStr) {
+            return items.first { $0.id == uuid }
+        }
+        // Legacy app URL: prvhouse://inventory/{uuid}
         let prefix = "prvhouse://inventory/"
-        guard qrString.hasPrefix(prefix) else { return nil }
-        let uuidStr = String(qrString.dropFirst(prefix.count))
-        guard let uuid = UUID(uuidString: uuidStr) else { return nil }
-        return items.first { $0.id == uuid }
+        if qrString.hasPrefix(prefix),
+           let uuid = UUID(uuidString: String(qrString.dropFirst(prefix.count))) {
+            return items.first { $0.id == uuid }
+        }
+        return nil
+    }
+
+    func syncPublicProfile(for item: InventoryItem) async {
+        guard let profile = item.publicProfile, profile.isEnabled else {
+            await removePublicProfile(for: item); return
+        }
+        struct Payload: Encodable {
+            let item_uuid, item_name, owner_name, owner_phone, owner_address, property_name, user_id: String
+        }
+        guard let uid = try? await supabase.auth.session.user.id else { return }
+        let p = Payload(item_uuid: item.id.uuidString, item_name: item.name,
+                        owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
+                        owner_address: profile.ownerAddress, property_name: profile.propertyName,
+                        user_id: uid.uuidString)
+        try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
+    }
+
+    func removePublicProfile(for item: InventoryItem) async {
+        try? await supabase.from("public_items").delete().eq("item_uuid", item.id.uuidString).execute()
     }
 
     var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }
@@ -369,6 +408,7 @@ struct ItemDetailView: View {
     @State private var showLoan = false
     @State private var showReturnConfirm = false
     @State private var showHistory = false
+    @State private var showPublicContact = false
 
     private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
 
@@ -382,6 +422,7 @@ struct ItemDetailView: View {
                         detailsCard
                         loanCard
                         qrCard
+                        publicContactCard
                         if !live.notes.isEmpty { notesCard }
                         Spacer(minLength: 40)
                     }
@@ -391,6 +432,12 @@ struct ItemDetailView: View {
             .navigationTitle("Item Detail").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.foregroundStyle(.white) }
+            }
+        }
+        .sheet(isPresented: $showPublicContact) {
+            PublicContactSheet(item: live) { updated in
+                service.update(updated)
+                Task { await service.syncPublicProfile(for: updated) }
             }
         }
         .sheet(isPresented: $showLoan) {
@@ -586,6 +633,54 @@ struct ItemDetailView: View {
         }
     }
 
+    private var publicContactCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                HStack {
+                    Label("Lost & Found Card", systemImage: "mappin.and.ellipse")
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    if live.publicProfile != nil {
+                        Text("ON").font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
+                    } else {
+                        Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.3))
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(.white.opacity(0.07), in: Capsule())
+                    }
+                }
+                Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")
+                    .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4)).lineSpacing(2)
+
+                if let p = live.publicProfile {
+                    VStack(spacing: 4) {
+                        if !p.ownerName.isEmpty    { publicRow("person.fill",     p.ownerName) }
+                        if !p.ownerPhone.isEmpty   { publicRow("phone.fill",      p.ownerPhone) }
+                        if !p.ownerAddress.isEmpty { publicRow("house.fill",      p.ownerAddress) }
+                    }
+                    .padding(10).background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                }
+
+                Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
+                    Label(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info",
+                          systemImage: live.publicProfile == nil ? "plus.circle.fill" : "pencil")
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func publicRow(_ icon: String, _ text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(.white.opacity(0.35)).frame(width: 16)
+            Text(text).font(.system(size: 12)).foregroundStyle(.white.opacity(0.65))
+            Spacer()
+        }
+    }
+
     private var notesCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
@@ -594,6 +689,94 @@ struct ItemDetailView: View {
             }
         }
     }
+}
+
+// MARK: - Public Contact Sheet
+
+private struct PublicContactSheet: View {
+    let item: InventoryItem
+    let onSave: (InventoryItem) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var ownerName: String
+    @State private var ownerPhone: String
+    @State private var ownerAddress: String
+    @State private var propertyName: String
+    @State private var isEnabled: Bool
+
+    init(item: InventoryItem, onSave: @escaping (InventoryItem) -> Void) {
+        self.item = item; self.onSave = onSave
+        _ownerName    = State(initialValue: item.publicProfile?.ownerName ?? "")
+        _ownerPhone   = State(initialValue: item.publicProfile?.ownerPhone ?? "")
+        _ownerAddress = State(initialValue: item.publicProfile?.ownerAddress ?? "")
+        _propertyName = State(initialValue: item.publicProfile?.propertyName ?? "")
+        _isEnabled    = State(initialValue: item.publicProfile?.isEnabled ?? true)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        GlassCard {
+                            HStack(spacing: 12) {
+                                Image(systemName: "qrcode.viewfinder").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                                Text("Show on public QR page").font(.system(size: 15)).foregroundStyle(.white)
+                                Spacer()
+                                Toggle("", isOn: $isEnabled).tint(.blue).labelsHidden()
+                            }.padding(.horizontal, 16).padding(.vertical, 12)
+                        }
+
+                        if isEnabled {
+                            VStack(spacing: 0) {
+                                pField("person.fill", "Your name", $ownerName)
+                                div
+                                pField("phone.fill", "Phone number", $ownerPhone, keyboard: .phonePad)
+                                div
+                                pField("house.fill", "Home address", $ownerAddress)
+                                div
+                                pField("building.fill", "Property name", $propertyName)
+                            }
+                            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+
+                            Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
+                                .font(.system(size: 12)).foregroundStyle(.white.opacity(0.35))
+                                .multilineTextAlignment(.center).padding(.horizontal, 8)
+                        }
+                        Spacer(minLength: 60)
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Lost & Found Card").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        if isEnabled {
+                            updated.publicProfile = PublicProfile(ownerName: ownerName, ownerPhone: ownerPhone,
+                                                                  ownerAddress: ownerAddress, propertyName: propertyName, isEnabled: true)
+                        } else {
+                            updated.publicProfile = nil
+                        }
+                        onSave(updated); HapticFeedback.success(); dismiss()
+                    }
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                }
+            }
+        }
+    }
+
+    private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.white).tint(.blue).keyboardType(keyboard)
+        }.padding(.horizontal, 16).padding(.vertical, 13)
+    }
+    private var div: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
 
 // MARK: - Loan Sheet
