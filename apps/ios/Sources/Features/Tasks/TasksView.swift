@@ -1,175 +1,241 @@
 import SwiftUI
 
 struct TasksView: View {
-    @State private var filter: Filter = .all
+    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var propertyService: PropertyService
+    @State private var filter: TaskFilter = .all
     @State private var showAdd = false
 
-    enum Filter: String, CaseIterable {
+    enum TaskFilter: String, CaseIterable {
         case all = "All"
         case open = "Open"
         case overdue = "Overdue"
         case done = "Done"
     }
 
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                PageHeader(
-                    title: "Tasks",
-                    trailing: AnyView(
-                        Button {
-                            showAdd = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .frame(width: 36, height: 36)
-                                .background(.ultraThinMaterial, in: Circle())
-                                .overlay(Circle().strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
-                        }
-                    )
-                )
-                .padding(.bottom, 16)
-
-                // Filter pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Filter.allCases, id: \.self) { f in
-                            Button {
-                                withAnimation(.spring(response: 0.3)) { filter = f }
-                            } label: {
-                                Text(f.rawValue)
-                                    .font(.subheadline.weight(filter == f ? .semibold : .regular))
-                                    .foregroundStyle(filter == f ? .black : .white.opacity(0.6))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(filter == f ? .white : .white.opacity(0.08), in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                }
-                .padding(.bottom, 16)
-
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(allTasks) { task in
-                            FullTaskRow(task: task)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 100)
-                }
-            }
+    private var filtered: [MaintenanceTask] {
+        switch filter {
+        case .all:
+            return taskService.tasks
+        case .open:
+            return taskService.tasks.filter { !$0.isCompleted && $0.status != "cancelled" }
+        case .overdue:
+            return taskService.tasks.filter { $0.isOverdue || $0.status == "overdue" }
+        case .done:
+            return taskService.tasks.filter { $0.isCompleted }
         }
     }
 
-    var allTasks: [FullTask] {
-        FullTask.samples.filter {
-            switch filter {
-            case .all: return true
-            case .open: return !$0.isDone && !$0.isOverdue
-            case .overdue: return $0.isOverdue
-            case .done: return $0.isDone
+    var body: some View {
+        VStack(spacing: 0) {
+            filterBar
+
+            if taskService.isLoading {
+                Spacer()
+                ProgressView().tint(.white).scaleEffect(1.2)
+                Spacer()
+            } else if filtered.isEmpty {
+                emptyState
+            } else {
+                taskList
             }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Tasks")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .sheet(isPresented: $showAdd) {
+            AddTaskView()
+                .environmentObject(taskService)
+                .environmentObject(propertyService)
+        }
+        .refreshable { await taskService.load() }
+    }
+
+    // MARK: - Filter bar
+
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(TaskFilter.allCases, id: \.self) { f in
+                    FilterChip(
+                        label: f.rawValue,
+                        count: countFor(f),
+                        isSelected: filter == f
+                    ) {
+                        withAnimation(.spring(response: 0.25)) { filter = f }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+        }
+    }
+
+    private func countFor(_ f: TaskFilter) -> Int {
+        switch f {
+        case .all:     return taskService.tasks.count
+        case .open:    return taskService.openCount
+        case .overdue: return taskService.overdueCount
+        case .done:    return taskService.tasks.filter { $0.isCompleted }.count
+        }
+    }
+
+    // MARK: - Task list
+
+    private var taskList: some View {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: 10) {
+                ForEach(filtered) { task in
+                    TaskRowView(task: task)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await taskService.delete(task) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                Task { await taskService.toggleComplete(task) }
+                            } label: {
+                                Label(task.isCompleted ? "Reopen" : "Done",
+                                      systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
+                            }
+                            .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                        }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 110)
+        }
+    }
+
+    // MARK: - Empty state
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "checklist")
+                .font(.system(size: 52))
+                .foregroundStyle(.white.opacity(0.18))
+            Text(filter == .all ? "No tasks yet" : "No \(filter.rawValue.lowercased()) tasks")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+            if filter == .all {
+                Button("Add your first task") { showAdd = true }
+                    .font(.system(size: 15))
+                    .foregroundStyle(.blue)
+            }
+            Spacer()
         }
     }
 }
 
-private struct FullTaskRow: View {
-    let task: FullTask
-    @State private var isDone: Bool
+// MARK: - Filter Chip
 
-    init(task: FullTask) {
-        self.task = task
-        _isDone = State(initialValue: task.isDone)
+struct FilterChip: View {
+    let label: String
+    let count: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Text(label)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(isSelected ? .black.opacity(0.6) : .white.opacity(0.4))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(isSelected ? .black.opacity(0.12) : .white.opacity(0.1), in: Capsule())
+                }
+            }
+            .foregroundStyle(isSelected ? .black : .white.opacity(0.7))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? .white : .white.opacity(0.07), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
+}
+
+// MARK: - Task Row
+
+struct TaskRowView: View {
+    @EnvironmentObject private var taskService: TaskService
+    let task: MaintenanceTask
 
     var body: some View {
         HStack(spacing: 14) {
             Button {
-                withAnimation(.spring(response: 0.3)) { isDone.toggle() }
+                Task { await taskService.toggleComplete(task) }
             } label: {
-                Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(isDone ? .white.opacity(0.6) : .white.opacity(0.3))
+                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 24))
+                    .foregroundStyle(
+                        task.isCompleted
+                            ? Color(red: 0.25, green: 0.85, blue: 0.52)
+                            : .white.opacity(0.28)
+                    )
             }
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.subheadline.weight(.medium))
-                    .strikethrough(isDone)
-                    .foregroundStyle(isDone ? .secondary : .primary)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(task.isCompleted ? .white.opacity(0.38) : .white)
+                    .strikethrough(task.isCompleted, color: .white.opacity(0.3))
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    Label(task.due, systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundStyle(task.isOverdue ? .red.opacity(0.7) : .secondary)
-
-                    if let category = task.category {
+                HStack(spacing: 6) {
+                    Text(task.category.capitalized)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.38))
+                    if task.dueDate != nil {
                         Text("·")
-                            .foregroundStyle(.secondary)
-                        Text(category)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.22))
+                        Text(task.dueDateDisplay)
+                            .font(.system(size: 11))
+                            .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : .white.opacity(0.38))
                     }
                 }
             }
 
             Spacer()
 
-            PriorityDot(priority: task.priority)
+            VStack(alignment: .trailing, spacing: 4) {
+                Circle()
+                    .fill(task.priorityColor)
+                    .frame(width: 7, height: 7)
+                if task.isOverdue {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red.opacity(0.7))
+                }
+            }
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(task.isOverdue ? .red.opacity(0.2) : .white.opacity(0.06), lineWidth: 0.5)
+                .strokeBorder(
+                    task.isOverdue ? .red.opacity(0.22) : .white.opacity(0.06),
+                    lineWidth: 0.5
+                )
         )
     }
-}
-
-private struct PriorityDot: View {
-    let priority: String
-
-    var color: Color {
-        switch priority {
-        case "High": return .red.opacity(0.7)
-        case "Medium": return .white.opacity(0.5)
-        default: return .white.opacity(0.25)
-        }
-    }
-
-    var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 8, height: 8)
-    }
-}
-
-// MARK: - Model
-
-struct FullTask: Identifiable {
-    let id = UUID()
-    let title: String
-    let due: String
-    let priority: String
-    let category: String?
-    var isOverdue: Bool = false
-    var isDone: Bool = false
-
-    static let samples: [FullTask] = [
-        FullTask(title: "Replace kitchen faucet", due: "Today", priority: "High", category: "Plumbing", isOverdue: true),
-        FullTask(title: "Annual boiler service", due: "Jun 13", priority: "High", category: "Heating"),
-        FullTask(title: "Clean gutters", due: "Jun 20", priority: "Medium", category: "Exterior"),
-        FullTask(title: "Repaint hallway", due: "Jun 28", priority: "Low", category: "Interior"),
-        FullTask(title: "Check smoke detectors", due: "Jun 15", priority: "High", category: "Safety"),
-        FullTask(title: "Service AC unit", due: "Jul 1", priority: "Medium", category: "HVAC"),
-        FullTask(title: "Fix garden gate", due: "May 30", priority: "Low", category: "Exterior", isDone: true),
-    ]
 }

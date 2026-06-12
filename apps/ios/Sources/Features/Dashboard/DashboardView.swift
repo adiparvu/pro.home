@@ -2,241 +2,281 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var propertyService: PropertyService
+
+    private var healthScore: Int {
+        if let score = propertyService.primary?.healthScore { return Int(score) }
+        guard !taskService.tasks.isEmpty else { return 100 }
+        let over = taskService.overdueCount
+        let open = taskService.openCount
+        return max(min(100 - over * 12 - open * 2, 100), 0)
+    }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                header
+                HealthScoreCard(score: healthScore, isLoading: taskService.isLoading)
+                statsRow
+                if !taskService.tasks.isEmpty { recentSection }
+                FinancesSnapshotCard()
+                Spacer(minLength: 110)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarHidden(true)
+        .refreshable { await taskService.load() }
+    }
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Good morning")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            Text("PRV House")
-                                .font(.title2.weight(.bold))
-                        }
-                        Spacer()
-                        Button {
-                        } label: {
-                            Image(systemName: "bell")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .frame(width: 40, height: 40)
-                                .background(.ultraThinMaterial, in: Circle())
-                                .overlay(Circle().strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+    // MARK: - Header
 
-                    // Health Score Card
-                    HealthScoreCard()
-                        .padding(.horizontal, 20)
+    private var header: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Good \(greeting())")
+                    .font(.callout)
+                    .foregroundStyle(.white.opacity(0.5))
+                Text(displayName)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.07))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white.opacity(0.75))
+            }
+        }
+        .padding(.top, 8)
+    }
 
-                    // Quick Stats
-                    HStack(spacing: 12) {
-                        QuickStatCard(icon: "checkmark.circle", label: "Open Tasks", value: "7", trend: "-2")
-                        QuickStatCard(icon: "exclamationmark.triangle", label: "Overdue", value: "2", trend: "+1", trendNegative: true)
-                        QuickStatCard(icon: "calendar", label: "This Week", value: "5", trend: nil)
-                    }
-                    .padding(.horizontal, 20)
+    // MARK: - Stats
 
-                    // Recent Tasks
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Recent Tasks")
-                                .font(.headline)
-                            Spacer()
-                            Button("See all") {}
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+    private var statsRow: some View {
+        HStack(spacing: 12) {
+            DashStatCard(
+                value: "\(taskService.openCount)",
+                label: "Open",
+                color: .blue
+            )
+            DashStatCard(
+                value: "\(taskService.overdueCount)",
+                label: "Overdue",
+                color: taskService.overdueCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5)
+            )
+            DashStatCard(
+                value: "\(taskService.completedThisWeek)",
+                label: "Done / week",
+                color: Color(red: 0.3, green: 0.88, blue: 0.55)
+            )
+        }
+    }
 
-                        ForEach(TaskItem.samples) { task in
-                            TaskRowView(task: task)
-                        }
-                    }
-                    .padding(.horizontal, 20)
+    // MARK: - Recent tasks
 
-                    // Finances snapshot
-                    FinancesCard()
-                        .padding(.horizontal, 20)
-
-                    Spacer(minLength: 100)
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Recent Tasks")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+            VStack(spacing: 8) {
+                ForEach(taskService.tasks.prefix(3)) { task in
+                    DashTaskRow(task: task)
                 }
             }
         }
     }
+
+    // MARK: - Helpers
+
+    private var displayName: String {
+        auth.session?.user.email?
+            .components(separatedBy: "@").first?
+            .capitalized ?? "there"
+    }
+
+    private func greeting() -> String {
+        let h = Calendar.current.component(.hour, from: Date())
+        if h < 12 { return "morning" }
+        if h < 18 { return "afternoon" }
+        return "evening"
+    }
 }
 
-private struct HealthScoreCard: View {
-    let score = 78
+// MARK: - Health Score Card
+
+struct HealthScoreCard: View {
+    let score: Int
+    let isLoading: Bool
+
+    private var color: Color {
+        score >= 80 ? Color(red: 0.25, green: 0.88, blue: 0.55)
+            : score >= 55 ? .orange
+            : .red
+    }
+    private var label: String {
+        score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention"
+    }
 
     var body: some View {
         GlassCard {
             HStack(spacing: 20) {
-                // Ring
                 ZStack {
                     Circle()
-                        .stroke(.white.opacity(0.1), lineWidth: 8)
+                        .stroke(.white.opacity(0.08), lineWidth: 9)
                     Circle()
-                        .trim(from: 0, to: CGFloat(score) / 100)
-                        .stroke(.white.opacity(0.8), style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .trim(from: 0, to: isLoading ? 0 : CGFloat(score) / 100)
+                        .stroke(color, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                        .animation(.spring(duration: 1.2), value: score)
-                    Text("\(score)")
-                        .font(.title2.weight(.bold))
+                        .animation(.spring(response: 1.1, dampingFraction: 0.8), value: score)
+                    VStack(spacing: 1) {
+                        Text(isLoading ? "–" : "\(score)")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("/ 100")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
                 }
-                .frame(width: 80, height: 80)
+                .frame(width: 88, height: 88)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Good", systemImage: "checkmark.seal.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.white.opacity(0.08), in: Capsule())
-
                     Text("Property Health")
-                        .font(.headline)
-
-                    Text("Updated 2h ago")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(isLoading ? "Loading…" : label)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(color)
+                    Text(isLoading ? " " : score >= 80
+                         ? "Everything looks on track."
+                         : "Some tasks need attention.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .lineLimit(2)
                 }
-
                 Spacer()
-
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.secondary)
             }
         }
     }
 }
 
-private struct QuickStatCard: View {
-    let icon: String
-    let label: String
+// MARK: - Stat Card
+
+struct DashStatCard: View {
     let value: String
-    let trend: String?
-    var trendNegative: Bool = false
+    let label: String
+    let color: Color
 
     var body: some View {
         GlassCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                IconBadge(icon: icon, size: 32)
-
+            VStack(spacing: 4) {
                 Text(value)
-                    .font(.title2.weight(.bold))
-
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(color)
                 Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
-
-                if let trend {
-                    Text(trend)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(trendNegative ? .red.opacity(0.7) : .white.opacity(0.5))
-                }
+                    .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
         }
     }
 }
 
-private struct TaskRowView: View {
-    let task: TaskItem
+// MARK: - Dash Task Row
+
+struct DashTaskRow: View {
+    let task: MaintenanceTask
 
     var body: some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(task.isOverdue ? .red.opacity(0.3) : .white.opacity(0.08))
-                .frame(width: 10, height: 10)
+                .fill(task.priorityColor)
+                .frame(width: 7, height: 7)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
-                    .font(.subheadline.weight(.medium))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(task.isCompleted ? .white.opacity(0.38) : .white)
+                    .strikethrough(task.isCompleted, color: .white.opacity(0.35))
                     .lineLimit(1)
-                Text(task.due)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(task.dueDateDisplay)
+                    .font(.system(size: 11))
+                    .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : .white.opacity(0.38))
             }
 
             Spacer()
 
-            Text(task.priority)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+            Text(task.statusDisplay)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(.white.opacity(0.06), in: Capsule())
+                .background(.white.opacity(0.07), in: Capsule())
         }
-        .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-private struct FinancesCard: View {
+// MARK: - Finances Snapshot
+
+struct FinancesSnapshotCard: View {
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("Finances")
-                        .font(.headline)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
                     Spacer()
                     Text("This month")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.4))
                 }
-
                 HStack(spacing: 0) {
-                    FinanceStat(label: "Income", value: "€3,200", positive: true)
-                    Divider().frame(height: 40).overlay(.white.opacity(0.1))
-                    FinanceStat(label: "Expenses", value: "€890")
-                    Divider().frame(height: 40).overlay(.white.opacity(0.1))
-                    FinanceStat(label: "Net", value: "€2,310", positive: true)
+                    FinStat(label: "Income", value: "€3,200", color: Color(red: 0.25, green: 0.88, blue: 0.55))
+                    Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
+                    FinStat(label: "Expenses", value: "€890", color: .orange)
+                    Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
+                    FinStat(label: "Net", value: "€2,310", color: .white)
                 }
             }
         }
     }
 }
 
-private struct FinanceStat: View {
+private struct FinStat: View {
     let label: String
     let value: String
-    var positive: Bool = false
+    let color: Color
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(positive ? .white : .white.opacity(0.6))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(color)
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.45))
         }
         .frame(maxWidth: .infinity)
     }
 }
 
-// MARK: - Models
+// MARK: - Shared bg
 
-struct TaskItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let due: String
-    let priority: String
-    var isOverdue: Bool = false
-
-    static let samples = [
-        TaskItem(title: "Replace kitchen faucet", due: "Today", priority: "High", isOverdue: true),
-        TaskItem(title: "Annual boiler service", due: "Tomorrow", priority: "High"),
-        TaskItem(title: "Clean gutters", due: "Jun 20", priority: "Medium"),
-    ]
-}
+var appBackground: Color { Color(red: 0.06, green: 0.06, blue: 0.08) }

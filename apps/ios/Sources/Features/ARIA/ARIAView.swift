@@ -8,7 +8,7 @@ struct ARIAView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header

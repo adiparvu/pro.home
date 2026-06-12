@@ -1,100 +1,140 @@
 import SwiftUI
 
-struct MainTabView: View {
-    @State private var selected: Tab = .home
+enum AppTab: String, CaseIterable {
+    case home, tasks, analytics, aria, settings
 
-    enum Tab: String, CaseIterable {
-        case home, tasks, analytics, aria, settings
-
-        var icon: String {
-            switch self {
-            case .home: return "house.fill"
-            case .tasks: return "checkmark.circle.fill"
-            case .analytics: return "chart.xyaxis.line"
-            case .aria: return "sparkles"
-            case .settings: return "gearshape.fill"
-            }
-        }
-
-        var label: String {
-            switch self {
-            case .home: return "Home"
-            case .tasks: return "Tasks"
-            case .analytics: return "Analytics"
-            case .aria: return "ARIA"
-            case .settings: return "Settings"
-            }
+    var icon: String {
+        switch self {
+        case .home:      return "house.fill"
+        case .tasks:     return "checklist"
+        case .analytics: return "chart.bar.xaxis"
+        case .aria:      return "sparkles"
+        case .settings:  return "gearshape.fill"
         }
     }
 
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selected) {
-                DashboardView()
-                    .tag(Tab.home)
-
-                TasksView()
-                    .tag(Tab.tasks)
-
-                AnalyticsView()
-                    .tag(Tab.analytics)
-
-                ARIAView()
-                    .tag(Tab.aria)
-
-                SettingsView()
-                    .tag(Tab.settings)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-
-            // Custom tab bar
-            CustomTabBar(selected: $selected)
+    var label: String {
+        switch self {
+        case .home:      return "Home"
+        case .tasks:     return "Tasks"
+        case .analytics: return "Analytics"
+        case .aria:      return "ARIA"
+        case .settings:  return "Settings"
         }
-        .ignoresSafeArea(edges: .bottom)
-        .preferredColorScheme(.dark)
     }
 }
 
-private struct CustomTabBar: View {
-    @Binding var selected: MainTabView.Tab
+struct MainTabView: View {
+    @EnvironmentObject private var auth: AuthService
+    @StateObject private var taskService = TaskService()
+    @StateObject private var propertyService = PropertyService()
+    @State private var selectedTab: AppTab = .home
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            tabContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            FloatingTabBar(selected: $selectedTab)
+                .padding(.horizontal, 20)
+                .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
+        }
+        .ignoresSafeArea(edges: .bottom)
+        .preferredColorScheme(.dark)
+        .environmentObject(taskService)
+        .environmentObject(propertyService)
+        .task {
+            await propertyService.load()
+            await taskService.load()
+        }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .home:
+            NavigationStack { DashboardView() }
+        case .tasks:
+            NavigationStack { TasksView() }
+        case .analytics:
+            NavigationStack { AnalyticsView() }
+        case .aria:
+            NavigationStack { ARIAView() }
+        case .settings:
+            NavigationStack { SettingsView() }
+        }
+    }
+
+    private var safeAreaBottom: CGFloat {
+        (UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom) ?? 0
+    }
+}
+
+// MARK: - Floating Tab Bar
+
+struct FloatingTabBar: View {
+    @Binding var selected: AppTab
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                FloatingTabItem(tab: tab, isSelected: selected == tab) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                         selected = tab
                     }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: tab == .aria ? 22 : 20, weight: .semibold))
-                            .frame(width: 44, height: 32)
-                            .background(
-                                selected == tab
-                                ? .white.opacity(0.12)
-                                : .clear,
-                                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            )
-                            .scaleEffect(selected == tab ? 1.05 : 1.0)
-
-                        Text(tab.label)
-                            .font(.system(size: 10, weight: selected == tab ? .semibold : .regular))
-                    }
-                    .foregroundStyle(selected == tab ? .white : .white.opacity(0.4))
-                    .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
             }
         }
+        .padding(.vertical, 10)
         .padding(.horizontal, 8)
-        .padding(.top, 12)
-        .padding(.bottom, 28)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 0.5)
+        .background {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.22), .white.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.8
+                        )
+                )
         }
+        .shadow(color: .black.opacity(0.45), radius: 32, y: 12)
+    }
+}
+
+struct FloatingTabItem: View {
+    let tab: AppTab
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.white.opacity(isSelected ? 0.16 : 0))
+                        .frame(height: 36)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
+
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
+                        .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
+                        .symbolEffect(.bounce, value: isSelected)
+                }
+                .frame(height: 36)
+
+                Text(tab.label)
+                    .font(.system(size: 9.5, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 }

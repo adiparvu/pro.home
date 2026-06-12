@@ -2,173 +2,341 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthService
-    @State private var showSignOutConfirm = false
-
-    var userEmail: String {
-        auth.session?.user.email ?? "—"
-    }
+    @EnvironmentObject private var propertyService: PropertyService
+    @State private var showSignOut = false
+    @State private var notifPush = true
+    @State private var notifEmail = true
+    @State private var notifOverdue = true
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-
-            ScrollView {
-                VStack(spacing: 20) {
-                    PageHeader(title: "Settings")
-                        .padding(.bottom, 4)
-
-                    // Profile card
-                    GlassCard {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                Circle()
-                                    .fill(.white.opacity(0.1))
-                                    .frame(width: 52, height: 52)
-                                Text(userEmail.prefix(1).uppercased())
-                                    .font(.title3.weight(.bold))
-                            }
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Property Owner")
-                                    .font(.subheadline.weight(.semibold))
-                                Text(userEmail)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
-                    // Sections
-                    SettingsSection(title: "Property") {
-                        SettingsRow(icon: "house", label: "My Property")
-                        SettingsRow(icon: "doc.text", label: "Documents")
-                        SettingsRow(icon: "person.2", label: "Tenants")
-                    }
-
-                    SettingsSection(title: "Notifications") {
-                        SettingsToggleRow(icon: "bell", label: "Push Notifications", isOn: .constant(true))
-                        SettingsToggleRow(icon: "envelope", label: "Email Alerts", isOn: .constant(true))
-                        SettingsToggleRow(icon: "exclamationmark.circle", label: "Overdue Reminders", isOn: .constant(true))
-                    }
-
-                    SettingsSection(title: "App") {
-                        SettingsRow(icon: "paintbrush", label: "Appearance")
-                        SettingsRow(icon: "lock.shield", label: "Security")
-                        SettingsRow(icon: "link", label: "Integrations")
-                    }
-
-                    SettingsSection(title: "Support") {
-                        SettingsRow(icon: "questionmark.circle", label: "Help & FAQ")
-                        SettingsRow(icon: "star", label: "Rate App")
-                        SettingsRow(icon: "info.circle", label: "About · v1.0.0")
-                    }
-
-                    // Sign out
-                    Button {
-                        showSignOutConfirm = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Sign Out")
-                        }
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(.red.opacity(0.8))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(.red.opacity(0.15), lineWidth: 0.5)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
-
-                    Spacer(minLength: 100)
-                }
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                profileCard
+                propertySection
+                notificationsSection
+                appSection
+                supportSection
+                signOutButton
+                Spacer(minLength: 110)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
-        .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+        .confirmationDialog("Sign out of PRVHouse?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }
             }
-        } message: {
-            Text("You'll need to sign back in to access your property.")
+            Button("Cancel", role: .cancel) {}
         }
     }
+
+    // MARK: - Profile card
+
+    private var profileCard: some View {
+        NavigationLink(destination: ProfileView()) {
+            GlassCard {
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 52, height: 52)
+                        Text(initial)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(displayName)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text(auth.session?.user.email ?? "")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.3))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Sections
+
+    private var propertySection: some View {
+        SettingsGroup(title: "Property") {
+            NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
+                PropertySettingsView()
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
+                SettingsPlaceholder(icon: "doc.text.fill", title: "Documents", description: "Manage your property documents, warranties, and certificates.")
+            }
+            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
+                SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
+            }
+        }
+    }
+
+    private var notificationsSection: some View {
+        SettingsGroup(title: "Notifications") {
+            ToggleSettingsRow(icon: "bell.fill", color: .red, label: "Push Notifications", value: $notifPush)
+            ToggleSettingsRow(icon: "envelope.fill", color: .blue, label: "Email Alerts", value: $notifEmail)
+            ToggleSettingsRow(icon: "exclamationmark.circle.fill", color: .orange, label: "Overdue Reminders", value: $notifOverdue)
+        }
+    }
+
+    private var appSection: some View {
+        SettingsGroup(title: "App") {
+            NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
+                SettingsPlaceholder(icon: "paintbrush.fill", title: "Appearance", description: "Customize themes, fonts, and display preferences.")
+            }
+            NavSettingsRow(icon: "lock.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Security & Privacy") {
+                SettingsPlaceholder(icon: "lock.fill", title: "Security & Privacy", description: "Manage Face ID, two-factor authentication, and data sharing.")
+            }
+            NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
+                SettingsPlaceholder(icon: "puzzlepiece.fill", title: "Integrations", description: "Connect smart home devices, calendars, and third-party services.")
+            }
+        }
+    }
+
+    private var supportSection: some View {
+        SettingsGroup(title: "Support") {
+            NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
+                SettingsPlaceholder(icon: "questionmark.circle.fill", title: "Help & FAQ", description: "Browse common questions and contact our support team.")
+            }
+            TapSettingsRow(icon: "star.fill", color: .yellow, label: "Rate App") {}
+            InfoSettingsRow(icon: "info.circle.fill", color: .gray, label: "Version", value: "1.0.0")
+        }
+    }
+
+    // MARK: - Sign out
+
+    private var signOutButton: some View {
+        Button { showSignOut = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                Text("Sign Out")
+            }
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(.red)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 15)
+            .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.red.opacity(0.22), lineWidth: 0.5)
+            )
+        }
+    }
+
+    // MARK: - Helpers
+
+    private var displayName: String {
+        auth.session?.user.email?
+            .components(separatedBy: "@").first?
+            .capitalized ?? "User"
+    }
+    private var initial: String { String(displayName.prefix(1)) }
 }
 
-private struct SettingsSection<Content: View>: View {
+// MARK: - Settings Group
+
+struct SettingsGroup<Content: View>: View {
     let title: String
-    @ViewBuilder let content: () -> Content
+    @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .tracking(1)
-                .padding(.horizontal, 24)
+            Text(title.uppercased())
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.35))
+                .padding(.leading, 4)
 
             VStack(spacing: 0) {
-                content()
+                content
             }
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
             )
-            .padding(.horizontal, 20)
         }
     }
 }
 
-private struct SettingsRow: View {
+// MARK: - Row Variants
+
+struct NavSettingsRow<D: View>: View {
     let icon: String
+    let color: Color
     let label: String
+    @ViewBuilder let destination: () -> D
 
     var body: some View {
-        Button {} label: {
-            HStack(spacing: 12) {
-                IconBadge(icon: icon, size: 32)
-                Text(label)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                Spacer()
+        NavigationLink(destination: destination()) {
+            rowInner(chevron: true)
+        }
+        .buttonStyle(.plain)
+        rowDivider
+    }
+
+    private func rowInner(chevron: Bool) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color)
+            Text(label)
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
+            Spacer()
+            if chevron {
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.28))
             }
-            .padding(.horizontal, 16)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private var rowDivider: some View {
+        Rectangle()
+            .fill(.white.opacity(0.05))
+            .frame(height: 0.5)
+            .padding(.leading, 52)
+    }
+}
+
+struct TapSettingsRow: View {
+    let icon: String
+    let color: Color
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: icon, color: color)
+                Text(label)
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
-        Divider().overlay(.white.opacity(0.06)).padding(.leading, 60)
+        Rectangle()
+            .fill(.white.opacity(0.05))
+            .frame(height: 0.5)
+            .padding(.leading, 52)
     }
 }
 
-private struct SettingsToggleRow: View {
+struct ToggleSettingsRow: View {
     let icon: String
+    let color: Color
     let label: String
-    @Binding var isOn: Bool
+    @Binding var value: Bool
 
     var body: some View {
         HStack(spacing: 12) {
-            IconBadge(icon: icon, size: 32)
+            ColoredIconBadge(icon: icon, color: color)
             Text(label)
-                .font(.body)
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
             Spacer()
-            Toggle("", isOn: $isOn)
+            Toggle("", isOn: $value)
                 .labelsHidden()
-                .tint(.white.opacity(0.8))
+                .tint(.blue)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        Divider().overlay(.white.opacity(0.06)).padding(.leading, 60)
+        Rectangle()
+            .fill(.white.opacity(0.05))
+            .frame(height: 0.5)
+            .padding(.leading, 52)
+    }
+}
+
+struct InfoSettingsRow: View {
+    let icon: String
+    let color: Color
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color)
+            Text(label)
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
+            Spacer()
+            Text(value)
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.38))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Colored Icon Badge
+
+struct ColoredIconBadge: View {
+    let icon: String
+    let color: Color
+    var size: CGFloat = 32
+
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: size * 0.42, weight: .semibold))
+            .foregroundStyle(color)
+            .frame(width: size, height: size)
+            .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
+    }
+}
+
+// MARK: - Settings Placeholder
+
+struct SettingsPlaceholder: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: icon)
+                .font(.system(size: 52))
+                .foregroundStyle(.white.opacity(0.2))
+            Text(title)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+            Text(description)
+                .font(.system(size: 15))
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Text("Coming soon")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.35))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.white.opacity(0.07), in: Capsule())
+            Spacer()
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
