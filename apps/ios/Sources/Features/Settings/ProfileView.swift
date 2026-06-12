@@ -2,12 +2,17 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var profileService: ProfileService
+    @State private var showEdit = false
+    @State private var showPasswordAlert = false
+    @State private var passwordAlertMsg = ""
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                avatar
-                profileInfo
+                avatarSection
+                infoCard
                 accountSection
                 Spacer(minLength: 80)
             }
@@ -17,11 +22,39 @@ struct ProfileView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Edit") { showEdit = true }
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .sheet(isPresented: $showEdit) {
+            EditProfileView()
+                .environmentObject(profileService)
+        }
+        .alert("Password Reset", isPresented: $showPasswordAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(passwordAlertMsg)
+        }
+        .confirmationDialog("Delete Account", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Permanently", role: .destructive) {
+                Task { try? await auth.signOut() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This action cannot be undone. All your data will be deleted.")
+        }
+        .task {
+            if profileService.profile == nil, let uid = auth.session?.user.id {
+                await profileService.load(userId: uid)
+            }
+        }
     }
 
     // MARK: - Avatar
 
-    private var avatar: some View {
+    private var avatarSection: some View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
@@ -33,13 +66,13 @@ struct ProfileView: View {
                         )
                     )
                     .frame(width: 90, height: 90)
-                Text(initial)
+                Text(preferredInitial)
                     .font(.system(size: 38, weight: .bold))
                     .foregroundStyle(.white)
             }
             .shadow(color: .blue.opacity(0.4), radius: 16, y: 6)
 
-            Text(displayName)
+            Text(preferredName)
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(.white)
             Text(auth.session?.user.email ?? "")
@@ -48,52 +81,78 @@ struct ProfileView: View {
         }
     }
 
-    // MARK: - Profile info
+    // MARK: - Info card
 
-    private var profileInfo: some View {
+    private var infoCard: some View {
         GlassCard {
             VStack(spacing: 0) {
-                ProfileInfoRow(label: "Email", value: auth.session?.user.email ?? "—")
-                Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
-                ProfileInfoRow(label: "Account ID", value: shortId)
-                Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
-                ProfileInfoRow(label: "Member since", value: memberSince)
+                InfoRow(label: "Email", value: auth.session?.user.email ?? "—")
+                rowDivider
+                InfoRow(label: "Display Name", value: profileService.profile?.preferredName ?? "—")
+                rowDivider
+                InfoRow(label: "Account ID", value: shortId)
+                rowDivider
+                InfoRow(label: "Member since", value: memberSince)
+                if let phone = profileService.profile?.phone, !phone.isEmpty {
+                    rowDivider
+                    InfoRow(label: "Phone", value: phone)
+                }
             }
         }
     }
 
-    // MARK: - Account section
+    // MARK: - Account actions
 
     private var accountSection: some View {
         SettingsGroup(title: "Account") {
-            TapSettingsRow(icon: "key.fill", color: .orange, label: "Change Password") {}
+            TapSettingsRow(icon: "key.fill", color: .orange, label: "Change Password") {
+                sendPasswordReset()
+            }
             TapSettingsRow(icon: "bell.fill", color: .red, label: "Notification Preferences") {}
             TapSettingsRow(icon: "arrow.down.circle.fill", color: .blue, label: "Export My Data") {}
-            TapSettingsRow(icon: "trash.fill", color: .red, label: "Delete Account") {}
+            TapSettingsRow(icon: "trash.fill", color: .red, label: "Delete Account") {
+                showDeleteConfirm = true
+            }
         }
     }
 
     // MARK: - Helpers
 
-    private var displayName: String {
-        auth.session?.user.email?
-            .components(separatedBy: "@").first?
-            .capitalized ?? "User"
+    private func sendPasswordReset() {
+        Task {
+            do {
+                try await profileService.sendPasswordReset()
+                passwordAlertMsg = "A password reset link was sent to \(auth.session?.user.email ?? "your email")."
+            } catch {
+                passwordAlertMsg = error.localizedDescription
+            }
+            showPasswordAlert = true
+        }
     }
-    private var initial: String { String(displayName.prefix(1)) }
+
+    private var preferredName: String {
+        profileService.profile?.preferredName ?? fallbackName
+    }
+    private var preferredInitial: String {
+        profileService.profile?.initial ?? String(fallbackName.prefix(1)).uppercased()
+    }
+    private var fallbackName: String {
+        auth.session?.user.email?.components(separatedBy: "@").first?.capitalized ?? "User"
+    }
     private var shortId: String {
-        auth.session?.user.id.uuidString
-            .components(separatedBy: "-").first ?? "—"
+        auth.session?.user.id.uuidString.components(separatedBy: "-").first ?? "—"
     }
     private var memberSince: String {
         guard let user = auth.session?.user else { return "—" }
-        let out = DateFormatter()
-        out.dateFormat = "MMMM yyyy"
-        return out.string(from: user.createdAt)
+        let f = DateFormatter(); f.dateFormat = "MMMM yyyy"
+        return f.string(from: user.createdAt)
+    }
+    private var rowDivider: some View {
+        Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
     }
 }
 
-private struct ProfileInfoRow: View {
+private struct InfoRow: View {
     let label: String
     let value: String
 

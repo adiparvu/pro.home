@@ -28,6 +28,8 @@ struct MainTabView: View {
     @EnvironmentObject private var auth: AuthService
     @StateObject private var taskService = TaskService()
     @StateObject private var propertyService = PropertyService()
+    @StateObject private var profileService = ProfileService()
+    @StateObject private var financialService = FinancialService()
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -43,9 +45,15 @@ struct MainTabView: View {
         .preferredColorScheme(.dark)
         .environmentObject(taskService)
         .environmentObject(propertyService)
+        .environmentObject(profileService)
+        .environmentObject(financialService)
         .task {
             await propertyService.load()
             await taskService.load()
+            await financialService.load()
+            if let uid = auth.session?.user.id {
+                await profileService.load(userId: uid)
+            }
         }
     }
 

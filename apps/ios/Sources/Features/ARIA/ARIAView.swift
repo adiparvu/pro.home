@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct ARIAView: View {
-    @State private var messages: [ARIAMessage] = ARIAMessage.welcome
+    @EnvironmentObject private var propertyService: PropertyService
+    @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false
+    @State private var isLoadingHistory = true
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -11,86 +13,134 @@ struct ARIAView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("ARIA")
-                            .font(.title2.weight(.bold))
-                        Text("AI Property Assistant")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        withAnimation { messages = ARIAMessage.welcome }
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 36, height: 36)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+                ariaHeader
+                messageList
+                inputBar
+            }
+        }
+        .task { await loadHistory() }
+    }
 
-                // Messages
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(messages) { message in
-                                MessageBubble(message: message)
-                                    .id(message.id)
-                            }
-                            if isThinking {
-                                ThinkingBubble()
-                                    .id("thinking")
-                            }
+    // MARK: - Header
+
+    private var ariaHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("ARIA")
+                        .font(.title2.weight(.bold))
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.yellow.opacity(0.85))
+                }
+                Text("AI Property Assistant")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                withAnimation { messages = ARIAMessage.welcome }
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
+    }
+
+    // MARK: - Messages
+
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                if isLoadingHistory {
+                    VStack { Spacer(minLength: 40); ProgressView().tint(.white); Spacer() }
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(messages) { msg in
+                            MessageBubble(message: msg)
+                                .id(msg.id)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .padding(.bottom, 20)
+                        if isThinking {
+                            ThinkingBubble().id("thinking")
+                        }
                     }
-                    .onChange(of: messages.count) {
-                        withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
-                    }
-                    .onChange(of: isThinking) {
-                        if isThinking { withAnimation { proxy.scrollTo("thinking", anchor: .bottom) } }
-                    }
-                }
-
-                // Input
-                HStack(spacing: 10) {
-                    TextField("Ask about your property...", text: $input, axis: .vertical)
-                        .font(.body)
-                        .lineLimit(1...4)
-                        .focused($focused)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
-                        )
-
-                    Button(action: send) {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.black)
-                            .frame(width: 40, height: 40)
-                            .background(.white, in: Circle())
-                    }
-                    .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isThinking)
-                    .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(.ultraThinMaterial)
-                .overlay(alignment: .top) {
-                    Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .padding(.bottom, 20)
                 }
             }
+            .onChange(of: messages.count) {
+                withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
+            }
+            .onChange(of: isThinking) {
+                if isThinking { withAnimation { proxy.scrollTo("thinking", anchor: .bottom) } }
+            }
+        }
+    }
+
+    // MARK: - Input bar
+
+    private var inputBar: some View {
+        HStack(spacing: 10) {
+            TextField("Ask about your property...", text: $input, axis: .vertical)
+                .font(.body)
+                .lineLimit(1...4)
+                .focused($focused)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                )
+
+            Button(action: send) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.black)
+                    .frame(width: 40, height: 40)
+                    .background(.white, in: Circle())
+            }
+            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isThinking)
+            .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5)
+        }
+    }
+
+    // MARK: - Logic
+
+    private func loadHistory() async {
+        isLoadingHistory = true
+        defer { isLoadingHistory = false }
+        do {
+            let history: [ARIADBMessage] = try await supabase
+                .from("aria_messages")
+                .select("id, role, content, created_at")
+                .order("created_at", ascending: true)
+                .limit(40)
+                .execute()
+                .value
+            if history.isEmpty {
+                messages = ARIAMessage.welcome
+            } else {
+                messages = history.map { ARIAMessage(
+                    role: $0.role == "user" ? .user : .aria,
+                    content: $0.content
+                )}
+            }
+        } catch {
+            messages = ARIAMessage.welcome
         }
     }
 
@@ -101,32 +151,37 @@ struct ARIAView: View {
         messages.append(ARIAMessage(role: .user, content: text))
         isThinking = true
 
-        // Simulate AI response
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isThinking = false
-            messages.append(ARIAMessage(role: .aria, content: ariaResponse(for: text)))
-        }
-    }
+        Task {
+            do {
+                let propId = propertyService.primary?.id.uuidString
+                struct ARIAChatPayload: Encodable {
+                    let message: String
+                    let property_id: String?
+                }
+                let payload = ARIAChatPayload(message: text, property_id: propId)
+                let responseData = try await supabase.functions
+                    .invoke("aria-chat", options: .init(body: payload))
 
-    private func ariaResponse(for query: String) -> String {
-        let q = query.lowercased()
-        if q.contains("health") || q.contains("score") {
-            return "Your property health score is **78/100** — rated Good. The main factors dragging it down are 2 overdue maintenance tasks and 1 safety recall. Completing those would push you to ~87."
-        } else if q.contains("task") {
-            return "You have **7 open tasks**: 2 are overdue (replace kitchen faucet, check gutters). I'd prioritize the kitchen faucet — it's been overdue the longest and could cause water damage."
-        } else if q.contains("yield") || q.contains("income") {
-            return "Your gross rental yield is **6.8%** and net yield is **4.2%**. That's above the national average of 5.1% gross. Your net income this month is €2,310 after expenses."
-        } else if q.contains("forecast") {
-            return "Based on current trends, I forecast **€39,600** in rental income over the next 12 months — that's +8.3% vs last year. Key risks: lease renewal in July and insurance renewal in August."
-        } else {
-            return "I can help you with your property health, maintenance tasks, finances, occupancy, and forecasts. What would you like to know?"
+                struct ARIAResponse: Decodable { let reply: String?; let error: String? }
+                let decoded = try JSONDecoder().decode(ARIAResponse.self, from: responseData)
+
+                isThinking = false
+                messages.append(ARIAMessage(
+                    role: .aria,
+                    content: decoded.reply ?? decoded.error ?? "Something went wrong. Try again."
+                ))
+            } catch {
+                isThinking = false
+                messages.append(ARIAMessage(role: .aria, content: "I'm having trouble connecting. Please try again."))
+            }
         }
     }
 }
 
+// MARK: - Message Bubble
+
 private struct MessageBubble: View {
     let message: ARIAMessage
-
     var isUser: Bool { message.role == .user }
 
     var body: some View {
@@ -135,9 +190,7 @@ private struct MessageBubble: View {
 
             if !isUser {
                 ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .frame(width: 28, height: 28)
+                    Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                     Image(systemName: "sparkles")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.7))
@@ -163,20 +216,19 @@ private struct MessageBubble: View {
     }
 }
 
+// MARK: - Thinking Bubble
+
 private struct ThinkingBubble: View {
     @State private var phase = 0
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             ZStack {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 28, height: 28)
+                Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                 Image(systemName: "sparkles")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.7))
             }
-
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
@@ -186,17 +238,15 @@ private struct ThinkingBubble: View {
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16).padding(.vertical, 14)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-
             Spacer(minLength: 48)
         }
         .onAppear { phase = 1 }
     }
 }
 
-// MARK: - Model
+// MARK: - Models
 
 struct ARIAMessage: Identifiable {
     let id = UUID()
@@ -205,6 +255,16 @@ struct ARIAMessage: Identifiable {
     let content: String
 
     static let welcome = [
-        ARIAMessage(role: .aria, content: "Hi! I'm ARIA, your AI property assistant. I can help you with health scores, maintenance tasks, finances, and forecasts. What would you like to know?")
+        ARIAMessage(role: .aria, content: "Hi! I'm ARIA, your AI property assistant powered by Claude. I can see your tasks, finances, and property data. Ask me anything!")
     ]
+}
+
+private struct ARIADBMessage: Decodable {
+    let id: UUID
+    let role: String
+    let content: String
+    let createdAt: String
+    enum CodingKeys: String, CodingKey {
+        case id, role, content; case createdAt = "created_at"
+    }
 }

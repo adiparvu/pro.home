@@ -4,6 +4,8 @@ struct DashboardView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var financialService: FinancialService
+    @EnvironmentObject private var profileService: ProfileService
 
     private var healthScore: Int {
         if let score = propertyService.primary?.healthScore { return Int(score) }
@@ -20,7 +22,13 @@ struct DashboardView: View {
                 HealthScoreCard(score: healthScore, isLoading: taskService.isLoading)
                 statsRow
                 if !taskService.tasks.isEmpty { recentSection }
-                FinancesSnapshotCard()
+                FinancesSnapshotCard(
+                    income: financialService.currentMonthIncome,
+                    expenses: financialService.currentMonthExpenses,
+                    net: financialService.currentMonthNet,
+                    symbol: financialService.currencySymbol,
+                    isLoading: financialService.isLoading
+                )
                 Spacer(minLength: 110)
             }
             .padding(.horizontal, 20)
@@ -29,7 +37,10 @@ struct DashboardView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarHidden(true)
-        .refreshable { await taskService.load() }
+        .refreshable {
+            await taskService.load()
+            await financialService.load()
+        }
     }
 
     // MARK: - Header
@@ -100,9 +111,9 @@ struct DashboardView: View {
     // MARK: - Helpers
 
     private var displayName: String {
-        auth.session?.user.email?
-            .components(separatedBy: "@").first?
-            .capitalized ?? "there"
+        profileService.profile?.preferredName
+            ?? auth.session?.user.email?.components(separatedBy: "@").first?.capitalized
+            ?? "there"
     }
 
     private func greeting() -> String {
@@ -235,6 +246,12 @@ struct DashTaskRow: View {
 // MARK: - Finances Snapshot
 
 struct FinancesSnapshotCard: View {
+    let income: Double
+    let expenses: Double
+    let net: Double
+    let symbol: String
+    var isLoading: Bool = false
+
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
@@ -247,15 +264,23 @@ struct FinancesSnapshotCard: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.4))
                 }
-                HStack(spacing: 0) {
-                    FinStat(label: "Income", value: "€3,200", color: Color(red: 0.25, green: 0.88, blue: 0.55))
-                    Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
-                    FinStat(label: "Expenses", value: "€890", color: .orange)
-                    Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
-                    FinStat(label: "Net", value: "€2,310", color: .white)
+                if isLoading {
+                    HStack { Spacer(); ProgressView().tint(.white).scaleEffect(0.8); Spacer() }
+                } else {
+                    HStack(spacing: 0) {
+                        FinStat(label: "Income", value: formatted(income), color: Color(red: 0.25, green: 0.88, blue: 0.55))
+                        Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
+                        FinStat(label: "Expenses", value: formatted(expenses), color: .orange)
+                        Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5, height: 34)
+                        FinStat(label: "Net", value: formatted(net), color: net >= 0 ? .white : .red)
+                    }
                 }
             }
         }
+    }
+
+    private func formatted(_ value: Double) -> String {
+        String(format: "\(symbol)%.0f", value)
     }
 }
 

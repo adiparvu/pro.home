@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var profileService: ProfileService
     @State private var showSignOut = false
     @State private var notifPush = true
     @State private var notifEmail = true
@@ -36,7 +37,7 @@ struct SettingsView: View {
     // MARK: - Profile card
 
     private var profileCard: some View {
-        NavigationLink(destination: ProfileView()) {
+        NavigationLink(destination: ProfileView().environmentObject(profileService)) {
             GlassCard {
                 HStack(spacing: 14) {
                     ZStack {
@@ -143,11 +144,11 @@ struct SettingsView: View {
     // MARK: - Helpers
 
     private var displayName: String {
-        auth.session?.user.email?
-            .components(separatedBy: "@").first?
-            .capitalized ?? "User"
+        profileService.profile?.preferredName
+            ?? auth.session?.user.email?.components(separatedBy: "@").first?.capitalized
+            ?? "User"
     }
-    private var initial: String { String(displayName.prefix(1)) }
+    private var initial: String { String(displayName.prefix(1)).uppercased() }
 }
 
 // MARK: - Settings Group
