@@ -1,47 +1,84 @@
 import SwiftUI
+import VisionKit
+import CoreImage.CIFilterBuiltins
+import UserNotifications
+
+// MARK: - Models
+
+struct LoanRecord: Identifiable, Codable {
+    var id: UUID = UUID()
+    var borrowerName: String
+    var loanedAt: Date = Date()
+    var expectedReturnDate: Date?
+    var returnedAt: Date?
+    var isReturned: Bool { returnedAt != nil }
+    var daysOut: Int { Calendar.current.dateComponents([.day], from: loanedAt, to: returnedAt ?? Date()).day ?? 0 }
+}
 
 struct InventoryItem: Identifiable, Codable {
-    var id = UUID()
+    var id: UUID = UUID()
     var name: String
-    var category: String
-    var brand: String
-    var model: String
-    var serialNumber: String
-    var purchaseDate: String
-    var warrantyUntil: String
-    var value: Double
-    var notes: String
+    var category: String = "tools"
+    var location: String = "garage"
+    var brand: String = ""
+    var serialNumber: String = ""
+    var purchaseDate: Date?
+    var purchasePrice: Double = 0
+    var warrantyExpiresAt: Date?
+    var condition: String = "good"
+    var notes: String = ""
+    var currentLoan: LoanRecord?
+    var loanHistory: [LoanRecord] = []
 
-    var categoryIcon: String {
-        switch category.lowercased() {
-        case "appliances": return "washer.fill"
-        case "hvac": return "thermometer.medium"
-        case "electronics": return "tv.fill"
-        case "furniture": return "sofa.fill"
-        case "tools": return "wrench.and.screwdriver.fill"
-        case "security": return "lock.shield.fill"
-        default: return "cube.fill"
-        }
-    }
+    var isLoaned: Bool { currentLoan != nil }
+    var qrContent: String { "prvhouse://inventory/\(id.uuidString)" }
 
     var warrantyStatus: WarrantyStatus {
-        guard !warrantyUntil.isEmpty else { return .none }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: warrantyUntil) else { return .none }
-        let now = Date()
-        if d < now { return .expired }
-        let days = Calendar.current.dateComponents([.day], from: now, to: d).day ?? 0
+        guard let exp = warrantyExpiresAt else { return .none }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: exp).day ?? 0
+        if days < 0 { return .expired }
         if days <= 30 { return .expiringSoon }
         return .valid
     }
-
     enum WarrantyStatus { case none, valid, expiringSoon, expired }
+
+    var categoryIcon: String {
+        switch category {
+        case "tools":       return "wrench.and.screwdriver.fill"
+        case "garden":      return "leaf.fill"
+        case "outdoor":     return "sun.max.fill"
+        case "appliances":  return "washer.fill"
+        case "electronics": return "tv.fill"
+        case "furniture":   return "sofa.fill"
+        case "vehicles":    return "car.fill"
+        case "sports":      return "figure.run"
+        case "security":    return "lock.shield.fill"
+        default:            return "cube.fill"
+        }
+    }
+
+    var categoryColor: Color {
+        switch category {
+        case "tools":       return .orange
+        case "garden":      return Color(red: 0.2, green: 0.8, blue: 0.3)
+        case "outdoor":     return .yellow
+        case "appliances":  return .blue
+        case "electronics": return .purple
+        case "furniture":   return Color(red: 0.7, green: 0.5, blue: 0.3)
+        case "vehicles":    return .red
+        case "sports":      return .cyan
+        case "security":    return Color(red: 0.3, green: 0.85, blue: 0.5)
+        default:            return .gray
+        }
+    }
 }
+
+// MARK: - Service
 
 @MainActor
 final class InventoryService: ObservableObject {
     @Published var items: [InventoryItem] = []
-    private let key = "prvhouse.inventory"
+    private let key = "prvhouse.inventory.v2"
 
     init() { load() }
 
@@ -52,61 +89,140 @@ final class InventoryService: ObservableObject {
         }
     }
 
-    func add(_ item: InventoryItem) { items.append(item); save() }
-    func delete(_ item: InventoryItem) { items.removeAll { $0.id == item.id }; save() }
+    func add(_ item: InventoryItem) { items.insert(item, at: 0); save() }
+
+    func delete(_ item: InventoryItem) {
+        cancelLoanNotifications(for: item)
+        items.removeAll { $0.id == item.id }
+        save()
+    }
+
     func update(_ item: InventoryItem) {
         if let i = items.firstIndex(where: { $0.id == item.id }) { items[i] = item; save() }
     }
 
-    var totalValue: Double { items.reduce(0) { $0 + $1.value } }
-    var warrantyExpiringItems: [InventoryItem] { items.filter { $0.warrantyStatus == .expiringSoon } }
+    func loanOut(_ item: InventoryItem, to borrower: String, expectedReturn: Date?) {
+        var updated = item
+        let record = LoanRecord(borrowerName: borrower, loanedAt: Date(), expectedReturnDate: expectedReturn)
+        updated.currentLoan = record
+        update(updated)
+        scheduleLoanReminders(for: updated, loan: record)
+    }
+
+    func markReturned(_ item: InventoryItem) {
+        var updated = item
+        if var loan = updated.currentLoan {
+            loan.returnedAt = Date()
+            updated.loanHistory.append(loan)
+            updated.currentLoan = nil
+        }
+        cancelLoanNotifications(for: item)
+        update(updated)
+    }
+
+    func itemByQR(_ qrString: String) -> InventoryItem? {
+        let prefix = "prvhouse://inventory/"
+        guard qrString.hasPrefix(prefix) else { return nil }
+        let uuidStr = String(qrString.dropFirst(prefix.count))
+        guard let uuid = UUID(uuidString: uuidStr) else { return nil }
+        return items.first { $0.id == uuid }
+    }
+
+    var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }
+    var loanedCount: Int { items.filter { $0.isLoaned }.count }
+    var expiringWarrantyCount: Int { items.filter { $0.warrantyStatus == .expiringSoon }.count }
 
     private func save() {
         if let d = try? JSONEncoder().encode(items) { UserDefaults.standard.set(d, forKey: key) }
     }
+
+    private func scheduleLoanReminders(for item: InventoryItem, loan: LoanRecord) {
+        let center = UNUserNotificationCenter.current()
+        let intervals: [(Int, String)] = [
+            (1,  "Reminder: \(loan.borrowerName) still has your \"\(item.name)\"."),
+            (3,  "3 days — \"\(item.name)\" not yet returned by \(loan.borrowerName)."),
+            (7,  "1 week since \"\(item.name)\" was loaned to \(loan.borrowerName)."),
+            (14, "2 weeks — \"\(item.name)\" still with \(loan.borrowerName)."),
+            (30, "1 month! Ask \(loan.borrowerName) about \"\(item.name)\"."),
+            (90, "3 months! \"\(item.name)\" loaned to \(loan.borrowerName) — still waiting?")
+        ]
+        for (days, body) in intervals {
+            let content = UNMutableNotificationContent()
+            content.title = "Item Not Returned"
+            content.body = body
+            content.sound = .default
+            let request = UNNotificationRequest(
+                identifier: "inventory.loan.\(item.id.uuidString).\(days)",
+                content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: Double(days) * 86400, repeats: false)
+            )
+            center.add(request)
+        }
+    }
+
+    private func cancelLoanNotifications(for item: InventoryItem) {
+        let ids = [1, 3, 7, 14, 30, 90].map { "inventory.loan.\(item.id.uuidString).\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
 }
+
+// MARK: - Main View
 
 struct InventoryView: View {
     @StateObject private var service = InventoryService()
+    @State private var filter: InvFilter = .all
     @State private var showAdd = false
-    @State private var selectedCategory: String? = nil
+    @State private var showScanner = false
+    @State private var selectedItem: InventoryItem?
+    @State private var scannedUnknown = false
 
-    private let categories = ["All", "Appliances", "HVAC", "Electronics", "Furniture", "Tools", "Security"]
+    enum InvFilter: String, CaseIterable {
+        case all = "All", loaned = "Loaned", tools = "Tools"
+        case garden = "Garden", outdoor = "Outdoor", electronics = "Electronics", other = "Other"
+    }
 
-    var filtered: [InventoryItem] {
-        guard let cat = selectedCategory, cat != "All" else { return service.items }
-        return service.items.filter { $0.category.lowercased() == cat.lowercased() }
+    private var filtered: [InventoryItem] {
+        switch filter {
+        case .all:         return service.items
+        case .loaned:      return service.items.filter { $0.isLoaned }
+        case .tools:       return service.items.filter { $0.category == "tools" }
+        case .garden:      return service.items.filter { $0.category == "garden" }
+        case .outdoor:     return service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }
+        case .electronics: return service.items.filter { $0.category == "electronics" }
+        case .other:       return service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }
+        }
     }
 
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(title: "Inventory",
-                           trailing: AnyView(
-                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.white)
-                            }
-                           ))
-                    .padding(.bottom, 12)
-
                 if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, 20).padding(.bottom, 12)
-                    categoryFilter.padding(.bottom, 12)
+                    summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
                 }
+                filterBar.padding(.bottom, 6)
 
                 if service.items.isEmpty {
                     emptyState
+                } else if filtered.isEmpty {
+                    VStack { Spacer(); Text("No items in this category").font(.system(size: 16)).foregroundStyle(.white.opacity(0.4)); Spacer() }
                 } else {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 10) {
+                        LazyVStack(spacing: 10) {
                             ForEach(filtered) { item in
                                 InventoryRow(item: item)
+                                    .onTapGesture { selectedItem = item }
                                     .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
-                                            HapticFeedback.warning()
-                                            service.delete(item)
-                                        } label: { Label("Delete", systemImage: "trash") }
+                                        Button(role: .destructive) { HapticFeedback.warning(); service.delete(item) } label: { Label("Delete", systemImage: "trash") }
+                                    }
+                                    .swipeActions(edge: .leading) {
+                                        if item.isLoaned {
+                                            Button { HapticFeedback.success(); service.markReturned(item) } label: { Label("Returned", systemImage: "checkmark.circle") }
+                                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                                        } else {
+                                            Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
+                                                .tint(.blue)
+                                        }
                                     }
                             }
                         }
@@ -115,46 +231,74 @@ struct InventoryView: View {
                 }
             }
         }
-        .navigationTitle("Inventory").navigationBarTitleDisplayMode(.large)
-        .sheet(isPresented: $showAdd) { AddInventorySheet { item in service.add(item) } }
-    }
-
-    private var summaryBar: some View {
-        HStack(spacing: 12) {
-            GlassCard(padding: 12) {
-                VStack(spacing: 4) {
-                    Text("€\(Int(service.totalValue))").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                    Text("Total Value").font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
-                }.frame(maxWidth: .infinity)
+        .navigationTitle("Inventory")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    showScanner = true
+                } label: {
+                    Image(systemName: "qrcode.viewfinder").font(.system(size: 18)).foregroundStyle(.white.opacity(0.85))
+                }
             }
-            GlassCard(padding: 12) {
-                VStack(spacing: 4) {
-                    Text("\(service.items.count)").font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                    Text("Items").font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
-                }.frame(maxWidth: .infinity)
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.white)
+                }
             }
-            GlassCard(padding: 12) {
-                VStack(spacing: 4) {
-                    Text("\(service.warrantyExpiringItems.count)").font(.system(size: 16, weight: .bold)).foregroundStyle(service.warrantyExpiringItems.isEmpty ? .white : .orange)
-                    Text("Expiring").font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
-                }.frame(maxWidth: .infinity)
+        }
+        .sheet(isPresented: $showAdd) { AddInventorySheet { service.add($0) } }
+        .sheet(isPresented: $showScanner) {
+            QRScannerSheet { qrValue in
+                showScanner = false
+                if let found = service.itemByQR(qrValue) {
+                    HapticFeedback.success()
+                    selectedItem = found
+                } else {
+                    HapticFeedback.error()
+                    scannedUnknown = true
+                }
             }
+        }
+        .sheet(item: $selectedItem) { item in
+            ItemDetailView(item: item, service: service)
+        }
+        .alert("Item not found", isPresented: $scannedUnknown) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This QR code doesn't match any item in your inventory.")
         }
     }
 
-    private var categoryFilter: some View {
+    private var summaryBar: some View {
+        HStack(spacing: 8) {
+            infoTile("€\(Int(service.totalValue))", "Value")
+            infoTile("\(service.items.count)", "Items")
+            infoTile("\(service.loanedCount)", "Loaned", highlight: service.loanedCount > 0)
+            infoTile("\(service.expiringWarrantyCount)", "Warranty !", highlight: service.expiringWarrantyCount > 0)
+        }
+    }
+
+    private func infoTile(_ value: String, _ label: String, highlight: Bool = false) -> some View {
+        GlassCard(padding: 10) {
+            VStack(spacing: 3) {
+                Text(value).font(.system(size: 14, weight: .bold)).foregroundStyle(highlight ? .orange : .white).lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(.system(size: 9)).foregroundStyle(.white.opacity(0.4))
+            }.frame(maxWidth: .infinity)
+        }
+    }
+
+    private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(categories, id: \.self) { cat in
-                    let isAll = cat == "All"
-                    let isSelected = isAll ? selectedCategory == nil : selectedCategory == cat
-                    Button {
-                        withAnimation(.spring(response: 0.25)) { selectedCategory = isAll ? nil : cat }
-                    } label: {
-                        Text(cat).font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .black : .white.opacity(0.6))
+                ForEach(InvFilter.allCases, id: \.self) { f in
+                    Button { withAnimation(.spring(response: 0.25)) { filter = f } } label: {
+                        Text(f.rawValue)
+                            .font(.system(size: 13, weight: filter == f ? .semibold : .regular))
+                            .foregroundStyle(filter == f ? .black : .white.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(isSelected ? .white : .white.opacity(0.08), in: Capsule())
+                            .background(filter == f ? .white : .white.opacity(0.08), in: Capsule())
                     }.buttonStyle(.plain)
                 }
             }.padding(.horizontal, 20)
@@ -172,55 +316,61 @@ struct InventoryView: View {
     }
 }
 
+// MARK: - Row
+
 private struct InventoryRow: View {
     let item: InventoryItem
-    var warrantyColor: Color {
-        switch item.warrantyStatus {
-        case .valid: return Color(red: 0.3, green: 0.85, blue: 0.5)
-        case .expiringSoon: return .orange
-        case .expired: return .red
-        case .none: return .white.opacity(0.3)
-        }
-    }
+
     var body: some View {
         GlassCard {
-            HStack(spacing: 14) {
-                ColoredIconBadge(icon: item.categoryIcon, color: .blue, size: 44)
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         if !item.brand.isEmpty {
                             Text(item.brand).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
                             Text("·").foregroundStyle(.white.opacity(0.2))
                         }
-                        Text(item.category.capitalized).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+                        Text(item.location.capitalized).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
                     }
-                    if item.warrantyStatus != .none {
-                        Label(item.warrantyStatus == .valid ? "Warranty valid" : item.warrantyStatus == .expiringSoon ? "Warranty expiring" : "Warranty expired",
-                              systemImage: item.warrantyStatus == .valid ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(warrantyColor)
+                    if item.isLoaned, let loan = item.currentLoan {
+                        Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")
+                            .font(.system(size: 10, weight: .medium)).foregroundStyle(.orange)
                     }
                 }
                 Spacer()
-                if item.value > 0 {
-                    Text("€\(Int(item.value))").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.6))
+                VStack(alignment: .trailing, spacing: 4) {
+                    if item.purchasePrice > 0 {
+                        Text("€\(Int(item.purchasePrice))").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.5))
+                    }
+                    switch item.warrantyStatus {
+                    case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
+                    case .expired:     Image(systemName: "xmark.shield.fill").font(.system(size: 11)).foregroundStyle(.red.opacity(0.7))
+                    default: EmptyView()
+                    }
                 }
+            }
+        }
+        .overlay {
+            if item.isLoaned {
+                RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
             }
         }
     }
 }
 
-private struct AddInventorySheet: View {
-    let onSave: (InventoryItem) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""; @State private var category = "Appliances"
-    @State private var brand = ""; @State private var model = ""
-    @State private var serial = ""; @State private var purchaseDate = Date()
-    @State private var warrantyDate = Date(); @State private var hasWarranty = false
-    @State private var value = ""; @State private var notes = ""
+// MARK: - Item Detail
 
-    private let categories = ["Appliances", "HVAC", "Electronics", "Furniture", "Tools", "Security", "Other"]
+struct ItemDetailView: View {
+    let item: InventoryItem
+    @ObservedObject var service: InventoryService
+    @Environment(\.dismiss) private var dismiss
+    @State private var showLoan = false
+    @State private var showReturnConfirm = false
+    @State private var showHistory = false
+
+    private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
 
     var body: some View {
         NavigationStack {
@@ -228,45 +378,461 @@ private struct AddInventorySheet: View {
                 appBackground.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        sectionCard {
-                            fieldRow("tag.fill", "Item name", $name)
-                            divider
+                        headerSection
+                        detailsCard
+                        loanCard
+                        qrCard
+                        if !live.notes.isEmpty { notesCard }
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Item Detail").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.foregroundStyle(.white) }
+            }
+        }
+        .sheet(isPresented: $showLoan) {
+            LoanItemSheet { borrower, returnDate in service.loanOut(live, to: borrower, expectedReturn: returnDate) }
+        }
+        .confirmationDialog("Mark as Returned?", isPresented: $showReturnConfirm, titleVisibility: .visible) {
+            Button("Yes, mark returned") { HapticFeedback.success(); service.markReturned(live) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let loan = live.currentLoan {
+                Text("\"\(live.name)\" loaned to \(loan.borrowerName) will be marked as returned.")
+            }
+        }
+    }
+
+    private var headerSection: some View {
+        VStack(spacing: 10) {
+            ColoredIconBadge(icon: live.categoryIcon, color: live.categoryColor, size: 72)
+            Text(live.name).font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+            HStack(spacing: 8) {
+                conditionBadge
+                Text(live.location.capitalized)
+                    .font(.system(size: 12)).foregroundStyle(.white.opacity(0.5))
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(.white.opacity(0.08), in: Capsule())
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private var conditionBadge: some View {
+        let map: [String: Color] = ["excellent": Color(red: 0.2, green: 0.8, blue: 0.3), "good": .blue, "fair": .orange, "poor": .red]
+        let color = map[live.condition] ?? .gray
+        return Text(live.condition.capitalized)
+            .font(.system(size: 12, weight: .medium)).foregroundStyle(color)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(color.opacity(0.15), in: Capsule())
+    }
+
+    private var detailsCard: some View {
+        GlassCard {
+            VStack(spacing: 0) {
+                if !live.brand.isEmpty       { dRow("building.2.fill", "Brand",      live.brand);       rowDiv }
+                if !live.serialNumber.isEmpty { dRow("number", "Serial",              live.serialNumber); rowDiv }
+                if live.purchasePrice > 0    { dRow("eurosign.circle.fill", "Value",  "€\(Int(live.purchasePrice))"); rowDiv }
+                if let pd = live.purchaseDate {
+                    dRow("calendar", "Purchased", pd.formatted(date: .abbreviated, time: .omitted))
+                    rowDiv
+                }
+                dRow(warrantyIcon, "Warranty", warrantyText, color: warrantyColor)
+                if !live.loanHistory.isEmpty {
+                    rowDiv
+                    Button { withAnimation { showHistory.toggle() } } label: {
+                        dRow("clock.arrow.trianglehead.counterclockwise.rotate.90", "Loan History", "\(live.loanHistory.count)")
+                    }.buttonStyle(.plain)
+                    if showHistory {
+                        ForEach(live.loanHistory) { loan in
+                            rowDiv
                             HStack(spacing: 12) {
-                                Image(systemName: "folder.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-                                Text("Category").font(.system(size: 15)).foregroundStyle(.white)
-                                Spacer()
-                                Picker("", selection: $category) {
-                                    ForEach(categories, id: \.self) { Text($0).tag($0) }
-                                }.tint(.white.opacity(0.5))
-                            }.padding(.horizontal, 16).padding(.vertical, 10)
-                            divider
-                            fieldRow("building.2.fill", "Brand", $brand)
-                            divider
-                            fieldRow("number", "Model / Serial", $serial)
-                            divider
-                            fieldRow("eurosign.circle.fill", "Value (€)", $value, keyboard: .decimalPad)
-                        }
-                        sectionCard {
-                            HStack(spacing: 12) {
-                                Image(systemName: "calendar").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-                                DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
-                                    .font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
-                            }.padding(.horizontal, 16).padding(.vertical, 8)
-                            divider
-                            HStack(spacing: 12) {
-                                Image(systemName: "checkmark.shield.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-                                Text("Has Warranty").font(.system(size: 15)).foregroundStyle(.white)
-                                Spacer()
-                                Toggle("", isOn: $hasWarranty).tint(.blue).labelsHidden()
-                            }.padding(.horizontal, 16).padding(.vertical, 10)
-                            if hasWarranty {
-                                divider
-                                HStack(spacing: 12) {
-                                    Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(.orange).frame(width: 28)
-                                    DatePicker("Warranty Until", selection: $warrantyDate, displayedComponents: .date)
-                                        .font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
-                                }.padding(.horizontal, 16).padding(.vertical, 8)
+                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(.white.opacity(0.35)).frame(width: 28)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(loan.borrowerName).font(.system(size: 13)).foregroundStyle(.white)
+                                    Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
+                                        .font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+                                }
                             }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func dRow(_ icon: String, _ label: String, _ value: String, color: Color = .white.opacity(0.55)) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(.white.opacity(0.4)).frame(width: 28)
+            Text(label).font(.system(size: 14)).foregroundStyle(.white)
+            Spacer()
+            Text(value).font(.system(size: 13)).foregroundStyle(color)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+    }
+
+    private var rowDiv: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+
+    private var warrantyIcon: String {
+        switch live.warrantyStatus {
+        case .valid: return "checkmark.shield.fill"
+        case .expiringSoon: return "exclamationmark.shield.fill"
+        case .expired: return "xmark.shield.fill"
+        case .none: return "shield.slash.fill"
+        }
+    }
+    private var warrantyText: String {
+        guard let exp = live.warrantyExpiresAt else { return "None" }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: exp).day ?? 0
+        if days < 0 { return "Expired" }
+        return "Until \(exp.formatted(date: .abbreviated, time: .omitted))"
+    }
+    private var warrantyColor: Color {
+        switch live.warrantyStatus {
+        case .valid: return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case .expiringSoon: return .orange
+        case .expired: return .red
+        case .none: return .white.opacity(0.35)
+        }
+    }
+
+    private var loanCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                HStack {
+                    Label("Loan Status", systemImage: "arrow.uturn.right.circle.fill")
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    if live.isLoaned {
+                        Text("OUT").font(.system(size: 11, weight: .bold)).foregroundStyle(.orange)
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
+                    } else {
+                        Text("IN").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
+                    }
+                }
+
+                if let loan = live.currentLoan {
+                    VStack(spacing: 6) {
+                        loanRow("Borrower", loan.borrowerName)
+                        loanRow("Loaned", loan.loanedAt.formatted(date: .abbreviated, time: .omitted))
+                        loanRow("Days out", "\(loan.daysOut) day\(loan.daysOut == 1 ? "" : "s")", highlight: loan.daysOut > 7)
+                        if let ret = loan.expectedReturnDate {
+                            loanRow("Expected return", ret.formatted(date: .abbreviated, time: .omitted))
+                        }
+                    }
+                    .padding(12).background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+
+                    Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
+                        Label("Mark as Returned", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                    }.buttonStyle(.plain)
+                } else {
+                    Button { HapticFeedback.impact(.medium); showLoan = true } label: {
+                        Label("Loan Out to Someone", systemImage: "arrow.uturn.right.circle.fill")
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.blue)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                    }.buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func loanRow(_ label: String, _ value: String, highlight: Bool = false) -> some View {
+        HStack {
+            Text(label).font(.system(size: 12)).foregroundStyle(.white.opacity(0.45))
+            Spacer()
+            Text(value).font(.system(size: 13, weight: highlight ? .semibold : .regular))
+                .foregroundStyle(highlight ? .orange : .white.opacity(0.7))
+        }
+    }
+
+    private var qrCard: some View {
+        GlassCard {
+            VStack(spacing: 14) {
+                HStack {
+                    Label("QR Code", systemImage: "qrcode").font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(.white.opacity(0.35))
+                }
+                QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
+                Button { shareQR() } label: {
+                    Label("Share / Print", systemImage: "square.and.arrow.up")
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func shareQR() {
+        let renderer = ImageRenderer(content: QRCodeImage(content: live.qrContent, size: 300))
+        renderer.scale = 3.0
+        guard let img = renderer.uiImage else { return }
+        let vc = UIActivityViewController(activityItems: [img], applicationActivities: nil)
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let root = scene.windows.first?.rootViewController {
+            root.present(vc, animated: true)
+        }
+    }
+
+    private var notesCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Notes", systemImage: "note.text").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.5))
+                Text(live.notes).font(.system(size: 14)).foregroundStyle(.white.opacity(0.8))
+            }
+        }
+    }
+}
+
+// MARK: - Loan Sheet
+
+private struct LoanItemSheet: View {
+    let onSave: (String, Date?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var borrower = ""
+    @State private var hasReturnDate = false
+    @State private var returnDate = Calendar.current.date(byAdding: .weekOfYear, value: 2, to: Date()) ?? Date()
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                VStack(spacing: 16) {
+                    VStack(spacing: 0) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                            TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
+                        }.padding(.horizontal, 16).padding(.vertical, 14)
+                        Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        HStack(spacing: 12) {
+                            Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                            Text("Expected return").font(.system(size: 15)).foregroundStyle(.white)
+                            Spacer()
+                            Toggle("", isOn: $hasReturnDate).tint(.blue).labelsHidden()
+                        }.padding(.horizontal, 16).padding(.vertical, 12)
+                        if hasReturnDate {
+                            Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                            HStack(spacing: 12) {
+                                Color.clear.frame(width: 28)
+                                DatePicker("Return by", selection: $returnDate, in: Date()..., displayedComponents: .date)
+                                    .tint(.blue)
+                            }.padding(.horizontal, 16).padding(.vertical, 8)
+                        }
+                    }
+                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+
+                    Text("You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.")
+                        .font(.system(size: 12)).foregroundStyle(.white.opacity(0.38))
+                        .multilineTextAlignment(.center).padding(.horizontal, 8)
+                    Spacer()
+                }
+                .padding(.horizontal, 20).padding(.top, 20)
+            }
+            .navigationTitle("Loan Out Item").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Confirm") {
+                        onSave(borrower.trimmingCharacters(in: .whitespaces), hasReturnDate ? returnDate : nil)
+                        HapticFeedback.success(); dismiss()
+                    }
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    .disabled(borrower.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - QR Code Image
+
+struct QRCodeImage: View {
+    let content: String
+    var size: CGFloat = 200
+
+    private var image: UIImage? {
+        guard let data = content.data(using: .utf8) else { return nil }
+        let filter = CIFilter.qrCodeGenerator()
+        filter.setValue(data, forKey: "inputMessage")
+        filter.setValue("H", forKey: "inputCorrectionLevel")
+        guard let ciImage = filter.outputImage else { return nil }
+        let scaled = ciImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+        let ctx = CIContext()
+        guard let cg = ctx.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+
+    var body: some View {
+        if let img = image {
+            Image(uiImage: img)
+                .interpolation(.none).resizable().scaledToFit()
+                .frame(width: size, height: size)
+                .padding(14).background(.white, in: RoundedRectangle(cornerRadius: 14))
+        } else {
+            RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.08)).frame(width: size, height: size)
+        }
+    }
+}
+
+// MARK: - QR Scanner
+
+private struct QRScannerSheet: View {
+    let onScan: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            if DataScannerViewController.isSupported {
+                DataScannerRepresentable(onScan: onScan).ignoresSafeArea()
+            } else {
+                appBackground.ignoresSafeArea()
+                VStack(spacing: 16) {
+                    Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(.white.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(.white.opacity(0.5)).multilineTextAlignment(.center)
+                }
+            }
+            VStack {
+                HStack {
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 30))
+                            .foregroundStyle(.white.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
+                    }.padding(20)
+                }
+                Spacer()
+                Text("Point at an item's QR code")
+                    .font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .background(Color.black.opacity(0.5), in: Capsule())
+                    .padding(.bottom, 60)
+            }
+        }
+    }
+}
+
+private struct DataScannerRepresentable: UIViewControllerRepresentable {
+    let onScan: (String) -> Void
+
+    func makeUIViewController(context: Context) -> DataScannerViewController {
+        let vc = DataScannerViewController(
+            recognizedDataTypes: [.barcode(symbologies: [.qr])],
+            qualityLevel: .accurate,
+            recognizesMultipleItems: false,
+            isHighFrameRateTrackingEnabled: false,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
+            isHighlightingEnabled: true
+        )
+        vc.delegate = context.coordinator
+        try? vc.startScanning()
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(onScan: onScan) }
+
+    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let onScan: (String) -> Void
+        private var fired = false
+        init(onScan: @escaping (String) -> Void) { self.onScan = onScan }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
+            guard !fired else { return }
+            for item in addedItems {
+                if case .barcode(let b) = item, let value = b.payloadStringValue {
+                    fired = true
+                    dataScanner.stopScanning()
+                    DispatchQueue.main.async { self.onScan(value) }
+                    return
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Add Item Sheet
+
+private struct AddInventorySheet: View {
+    let onSave: (InventoryItem) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name = ""
+    @State private var category = "tools"
+    @State private var location = "garage"
+    @State private var brand = ""
+    @State private var serial = ""
+    @State private var condition = "good"
+    @State private var hasPurchaseDate = false
+    @State private var purchaseDate = Date()
+    @State private var price = ""
+    @State private var hasWarranty = false
+    @State private var warrantyDate = Calendar.current.date(byAdding: .year, value: 2, to: Date()) ?? Date()
+    @State private var notes = ""
+
+    private let categories = ["tools","garden","outdoor","appliances","electronics","furniture","vehicles","sports","security","other"]
+    private let locations = ["garage","garden","basement","attic","shed","balcony","kitchen","living room","bedroom","storage"]
+    private let conditions = ["excellent","good","fair","poor"]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        card {
+                            field("tag.fill", "Item name *", $name)
+                            div
+                            picker("folder.fill", "Category", $category, categories)
+                            div
+                            picker("mappin.circle.fill", "Location", $location, locations)
+                            div
+                            picker("sparkles", "Condition", $condition, conditions)
+                        }
+                        card {
+                            field("building.2.fill", "Brand", $brand)
+                            div
+                            field("number", "Serial Number", $serial)
+                            div
+                            field("eurosign.circle.fill", "Value (€)", $price, keyboard: .decimalPad)
+                        }
+                        card {
+                            toggle("calendar", "Purchase Date", $hasPurchaseDate)
+                            if hasPurchaseDate {
+                                div
+                                HStack(spacing: 12) {
+                                    Color.clear.frame(width: 28)
+                                    DatePicker("", selection: $purchaseDate, in: ...Date(), displayedComponents: .date).tint(.blue)
+                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                            }
+                            div
+                            toggle("checkmark.shield.fill", "Has Warranty", $hasWarranty)
+                            if hasWarranty {
+                                div
+                                HStack(spacing: 12) {
+                                    Color.clear.frame(width: 28)
+                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.blue).font(.system(size: 15)).foregroundStyle(.white)
+                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                            }
+                        }
+                        card {
+                            HStack(spacing: 12) {
+                                Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                                TextField("Notes (optional)", text: $notes, axis: .vertical)
+                                    .font(.system(size: 15)).foregroundStyle(.white).tint(.blue).lineLimit(3...5)
+                            }.padding(.horizontal, 16).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
                     }
@@ -278,34 +844,48 @@ private struct AddInventorySheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-                        let item = InventoryItem(
-                            name: name, category: category, brand: brand, model: model,
-                            serialNumber: serial,
-                            purchaseDate: iso.string(from: purchaseDate),
-                            warrantyUntil: hasWarranty ? iso.string(from: warrantyDate) : "",
-                            value: Double(value.replacingOccurrences(of: ",", with: ".")) ?? 0,
-                            notes: notes
-                        )
-                        onSave(item)
-                        HapticFeedback.success()
-                        dismiss()
-                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue).disabled(name.isEmpty)
+                        var item = InventoryItem(name: name)
+                        item.category = category; item.location = location; item.brand = brand
+                        item.serialNumber = serial; item.condition = condition
+                        item.purchaseDate = hasPurchaseDate ? purchaseDate : nil
+                        item.purchasePrice = Double(price.replacingOccurrences(of: ",", with: ".")) ?? 0
+                        item.warrantyExpiresAt = hasWarranty ? warrantyDate : nil
+                        item.notes = notes
+                        onSave(item); HapticFeedback.success(); dismiss()
+                    }
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
     }
 
-    private func sectionCard<C: View>(@ViewBuilder content: () -> C) -> some View {
+    private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 0) { content() }
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
     }
-    private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+    private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.white).tint(.blue).keyboardType(keyboard)
+            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.white).tint(.blue).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private var divider: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private func picker(_ icon: String, _ label: String, _ b: Binding<String>, _ opts: [String]) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Text(label).font(.system(size: 15)).foregroundStyle(.white)
+            Spacer()
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text($0.capitalized).tag($0) } }.tint(.white.opacity(0.5))
+        }.padding(.horizontal, 16).padding(.vertical, 10)
+    }
+    private func toggle(_ icon: String, _ label: String, _ b: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Text(label).font(.system(size: 15)).foregroundStyle(.white)
+            Spacer()
+            Toggle("", isOn: b).tint(.blue).labelsHidden()
+        }.padding(.horizontal, 16).padding(.vertical, 12)
+    }
+    private var div: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
