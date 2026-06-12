@@ -67,12 +67,15 @@ platform :ios do
       )
       UI.success("Distribution certificate imported from secret")
     else
-      # Fallback: create a new cert (only runs if secret is not set)
+      # Fallback: force-create a new cert (revokes oldest if limit reached).
+      # To avoid this, add DIST_CERTIFICATE_P12 + DIST_CERTIFICATE_PASSWORD
+      # GitHub Secrets (base64-encoded .p12 exported from your Mac Keychain).
       cert(
         api_key: api_key,
         keychain_path: keychain_db,
         keychain_password: "buildpass",
-        output_path: "/tmp"
+        output_path: "/tmp",
+        force: true
       )
     end
 
