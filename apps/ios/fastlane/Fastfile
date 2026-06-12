@@ -20,6 +20,24 @@ platform :ios do
 
     Dir.chdir("..") do
       sh("xcodegen generate")
+
+      pbxproj_path = "PRVHouse.xcodeproj/project.pbxproj"
+      pbxproj = File.read(pbxproj_path)
+      has_xcassets     = pbxproj.include?("Assets.xcassets")
+      has_correct_type = pbxproj.include?("folder.assetcatalog")
+      UI.message("xcassets in project: #{has_xcassets}, correct file type: #{has_correct_type}")
+
+      if has_xcassets && !has_correct_type
+        fixed = pbxproj.split("\n").map { |line|
+          line.include?("Assets.xcassets") \
+            ? line.gsub("lastKnownFileType = folder;", "lastKnownFileType = folder.assetcatalog;") \
+            : line
+        }.join("\n")
+        File.write(pbxproj_path, fixed)
+        UI.success("Patched Assets.xcassets to lastKnownFileType = folder.assetcatalog")
+      elsif !has_xcassets
+        UI.error("Assets.xcassets NOT found in generated project – icons will be missing!")
+      end
     end
 
     keychain_db = "#{Dir.home}/Library/Keychains/build.keychain-db"
