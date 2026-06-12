@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PropertySettingsView: View {
     @EnvironmentObject private var propertyService: PropertyService
+    @State private var showEdit = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -20,6 +21,30 @@ struct PropertySettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if propertyService.primary != nil {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Edit") { showEdit = true }
+                        .font(.system(size: 15))
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+        .sheet(isPresented: $showEdit) {
+            if let property = propertyService.primary {
+                EditPropertySheet(property: property) { updated in
+                    await propertyService.update(updated)
+                }
+            }
+        }
+        .alert("Error", isPresented: Binding(
+            get: { propertyService.error != nil },
+            set: { if !$0 { propertyService.error = nil } }
+        )) {
+            Button("OK") { propertyService.error = nil }
+        } message: {
+            Text(propertyService.error ?? "")
+        }
         .task { await propertyService.load() }
     }
 
@@ -79,6 +104,7 @@ struct PropertySettingsView: View {
             PropDetailRow(label: "Address", value: p.addressLine1)
             PropDetailRow(label: "City", value: p.city)
             PropDetailRow(label: "Country", value: p.country)
+            PropDetailRow(label: "Type", value: p.propertyType.capitalized)
             if let sqm = p.sizeSqm {
                 PropDetailRow(label: "Area", value: String(format: "%.0f m²", sqm))
             }
@@ -107,6 +133,162 @@ struct PropertySettingsView: View {
         }
     }
 }
+
+// MARK: - Edit sheet
+
+private struct EditPropertySheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let property: PropertyModel
+    let onSave: (PropertyModel) async -> Void
+
+    @State private var name: String
+    @State private var addressLine1: String
+    @State private var city: String
+    @State private var country: String
+    @State private var propertyType: String
+    @State private var sizeSqmText: String
+    @State private var numRoomsText: String
+    @State private var isSaving = false
+
+    private let propertyTypes = ["apartment", "house", "villa", "studio", "commercial", "other"]
+
+    init(property: PropertyModel, onSave: @escaping (PropertyModel) async -> Void) {
+        self.property = property
+        self.onSave = onSave
+        _name = State(initialValue: property.name)
+        _addressLine1 = State(initialValue: property.addressLine1)
+        _city = State(initialValue: property.city)
+        _country = State(initialValue: property.country)
+        _propertyType = State(initialValue: property.propertyType)
+        _sizeSqmText = State(initialValue: property.sizeSqm.map { String(format: "%.0f", $0) } ?? "")
+        _numRoomsText = State(initialValue: property.numRooms.map { "\($0)" } ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        fieldGroup {
+                            fieldRow("house.fill", "Property name", $name)
+                            divider
+                            fieldRow("mappin.fill", "Address", $addressLine1)
+                            divider
+                            fieldRow("building.2.fill", "City", $city)
+                            divider
+                            fieldRow("globe.europe.africa.fill", "Country", $country)
+                        }
+
+                        Text("TYPE")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.35))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 4)
+                            .padding(.top, 20)
+                            .padding(.bottom, 8)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(propertyTypes, id: \.self) { type in
+                                    Button {
+                                        propertyType = type
+                                    } label: {
+                                        Text(type.capitalized)
+                                            .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
+                                            .foregroundStyle(propertyType == type ? .black : .white.opacity(0.7))
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(propertyType == type ? .white : .white.opacity(0.08), in: Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        fieldGroup {
+                            fieldRow("ruler.fill", "Area (m²)", $sizeSqmText, keyboard: .decimalPad)
+                            divider
+                            fieldRow("door.left.hand.open", "Rooms", $numRoomsText, keyboard: .numberPad)
+                        }
+                        .padding(.top, 16)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 40)
+                }
+            }
+            .navigationTitle("Edit Property")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().tint(.blue)
+                        } else {
+                            Text("Save")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? .white.opacity(0.3) : .blue)
+                        }
+                    }
+                    .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
+                }
+            }
+        }
+    }
+
+    private func fieldGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) {
+            content()
+        }
+        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+    }
+
+    private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(.blue)
+                .frame(width: 28)
+            TextField(placeholder, text: binding)
+                .font(.system(size: 15))
+                .foregroundStyle(.white)
+                .tint(.blue)
+                .keyboardType(keyboard)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        var updated = property
+        updated.name = name
+        updated.addressLine1 = addressLine1
+        updated.city = city
+        updated.country = country
+        updated.propertyType = propertyType
+        updated.sizeSqm = Double(sizeSqmText)
+        updated.numRooms = Int(numRoomsText)
+        await onSave(updated)
+        HapticFeedback.success()
+        dismiss()
+    }
+}
+
+// MARK: - Row
 
 private struct PropDetailRow: View {
     let label: String

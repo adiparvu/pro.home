@@ -62,6 +62,14 @@ struct FinancesView: View {
         .sheet(isPresented: $showAddSheet) {
             AddFinancialView { await financialService.load() }
         }
+        .alert("Error", isPresented: Binding(
+            get: { financialService.error != nil },
+            set: { if !$0 { financialService.error = nil } }
+        )) {
+            Button("OK") { financialService.error = nil }
+        } message: {
+            Text(financialService.error ?? "")
+        }
         .task { await financialService.load() }
     }
 

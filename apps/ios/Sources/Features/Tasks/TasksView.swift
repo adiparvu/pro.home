@@ -69,6 +69,14 @@ struct TasksView: View {
                 .environmentObject(taskService)
                 .environmentObject(propertyService)
         }
+        .alert("Error", isPresented: Binding(
+            get: { taskService.error != nil },
+            set: { if !$0 { taskService.error = nil } }
+        )) {
+            Button("OK") { taskService.error = nil }
+        } message: {
+            Text(taskService.error ?? "")
+        }
         .refreshable { await taskService.load() }
     }
 

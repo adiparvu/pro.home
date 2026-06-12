@@ -30,6 +30,7 @@ struct ContractorModel: Identifiable, Codable {
 final class ContractorService: ObservableObject {
     @Published var contractors: [ContractorModel] = []
     @Published var isLoading = false
+    @Published var error: String?
 
     func load() async {
         isLoading = true
@@ -41,7 +42,9 @@ final class ContractorService: ObservableObject {
                 .order("name")
                 .execute()
                 .value
-        } catch { print("[ContractorService] load error: \(error)") }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     func add(_ c: NewContractor) async throws {
@@ -55,7 +58,9 @@ final class ContractorService: ObservableObject {
         do {
             try await supabase.from("contractors").delete().eq("id", value: c.id.uuidString).execute()
             contractors.removeAll { $0.id == c.id }
-        } catch { print("[ContractorService] delete error: \(error)") }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }
 
@@ -142,6 +147,14 @@ struct ContractorsView: View {
         }
         .task { await service.load() }
         .sheet(isPresented: $showAdd) { AddContractorSheet(service: service, userId: auth.session?.user.id) }
+        .alert("Error", isPresented: Binding(
+            get: { service.error != nil },
+            set: { if !$0 { service.error = nil } }
+        )) {
+            Button("OK") { service.error = nil }
+        } message: {
+            Text(service.error ?? "")
+        }
         .navigationTitle("Contractors")
         .navigationBarTitleDisplayMode(.large)
     }
