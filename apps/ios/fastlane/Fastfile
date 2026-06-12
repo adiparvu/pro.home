@@ -5,46 +5,81 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
-    api_key = app_store_connect_api_key(
-      key_id: ENV["ASC_KEY_ID"],
-      issuer_id: ENV["ASC_ISSUER_ID"],
-      key_content: ENV["ASC_KEY_CONTENT"],
-      is_key_content_base64: false
+    # Write API key to temp file for xcodebuild
+    key_id      = ENV["ASC_KEY_ID"]
+    issuer_id   = ENV["ASC_ISSUER_ID"]
+    key_content = ENV["ASC_KEY_CONTENT"]
+    key_path    = "/tmp/AuthKey_#{key_id}.p8"
+    File.write(key_path, key_content)
+
+    # Generate Xcode project from project.yml
+    Dir.chdir("..") { sh("xcodegen generate") }
+
+    # Create a fresh keychain for signing
+    create_keychain(
+      name: "build.keychain",
+      password: "buildpass",
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600
     )
 
-    # Sync certificates and provisioning profiles (creates fresh on empty certs branch)
-    match(
-      type: "appstore",
-      app_identifier: "com.prvhouse.app",
-      git_url: "https://github.com/adiparvu/pro.home",
-      git_branch: "certs",
-      git_basic_authorization: Base64.strict_encode64("x-access-token:#{ENV['GH_PAT']}"),
-      api_key: api_key,
-      team_id: "SU92TVZT8W",
-      readonly: false,
-      force: true
+    # Build archive — Xcode fetches certs/profiles automatically via API key
+    sh(
+      "xcodebuild archive " \
+      "-project PRVHouse.xcodeproj " \
+      "-scheme PRVHouse " \
+      "-destination 'generic/platform=iOS' " \
+      "-archivePath /tmp/PRVHouse.xcarchive " \
+      "-authenticationKeyPath #{key_path} " \
+      "-authenticationKeyID #{key_id} " \
+      "-authenticationKeyIssuerID #{issuer_id} " \
+      "-allowProvisioningUpdates " \
+      "CODE_SIGN_STYLE=Automatic " \
+      "DEVELOPMENT_TEAM=SU92TVZT8W " \
+      "| xcpretty --no-color || true"
     )
 
-    # Generate Xcode project
-    Dir.chdir("..") do
-      sh("xcodegen generate")
-    end
+    # Export IPA
+    export_options_path = "/tmp/ExportOptions.plist"
+    File.write(export_options_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key>
+        <string>app-store</string>
+        <key>teamID</key>
+        <string>SU92TVZT8W</string>
+        <key>signingStyle</key>
+        <string>automatic</string>
+      </dict>
+      </plist>
+    PLIST
 
-    # Build
-    gym(
-      project: "PRVHouse.xcodeproj",
-      scheme: "PRVHouse",
-      configuration: "Release",
-      export_method: "app-store",
-      clean: true,
-      output_directory: "./build",
-      output_name: "PRVHouse"
+    sh(
+      "xcodebuild -exportArchive " \
+      "-archivePath /tmp/PRVHouse.xcarchive " \
+      "-exportPath /tmp/PRVHouse_ipa " \
+      "-exportOptionsPlist #{export_options_path} " \
+      "-authenticationKeyPath #{key_path} " \
+      "-authenticationKeyID #{key_id} " \
+      "-authenticationKeyIssuerID #{issuer_id} " \
+      "-allowProvisioningUpdates " \
+      "| xcpretty --no-color || true"
     )
 
     # Upload to TestFlight
+    api_key = app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content,
+      is_key_content_base64: false
+    )
+
     pilot(
       api_key: api_key,
-      ipa: "./build/PRVHouse.ipa",
+      ipa: "/tmp/PRVHouse_ipa/PRVHouse.ipa",
       skip_waiting_for_build_processing: true,
       skip_submission: true,
       distribute_external: false,

@@ -44,11 +44,12 @@ jobs:
       - name: Install Gems
         run: bundle install --path vendor/bundle
 
+      - name: Install xcpretty
+        run: gem install xcpretty
+
       - name: Run Fastlane beta
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: bundle exec fastlane beta
