@@ -128,9 +128,9 @@ platform :ios do
       "CODE_SIGN_STYLE=Manual " \
       "CODE_SIGN_IDENTITY='Apple Distribution' " \
       "PROVISIONING_PROFILE='#{profile_uuid}' " \
-      "PROVISIONING_PROFILE_SPECIFIER='com.prvhouse.app AppStore' " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon " \
-      "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
+      "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' " \
+      "-skipPackageSigningValidation 2>&1"
     )
 
     # xcodebuild does not compile the asset catalog (XcodeGen project issue).
