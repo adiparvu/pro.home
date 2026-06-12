@@ -67,11 +67,11 @@ final class ProfileService: ObservableObject {
     }
 
     func updateEmail(_ newEmail: String) async throws {
-        try await supabase.auth.updateUser(user: UserAttributes(email: newEmail))
+        try await supabase.auth.update(user: UserAttributes(email: newEmail))
     }
 
     func updatePassword(_ newPassword: String) async throws {
-        try await supabase.auth.updateUser(user: UserAttributes(password: newPassword))
+        try await supabase.auth.update(user: UserAttributes(password: newPassword))
     }
 
     func sendPasswordReset() async throws {

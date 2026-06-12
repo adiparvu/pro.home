@@ -207,8 +207,8 @@ struct AddFinancialView: View {
 
     private func save() async {
         guard let amountDouble = Double(amount.replacingOccurrences(of: ",", with: ".")),
-              let propertyId = propertyService.property?.id else {
-            errorMessage = propertyService.property == nil ? "No property found." : "Invalid amount."
+              let propertyId = propertyService.primary?.id else {
+            errorMessage = propertyService.primary == nil ? "No property found." : "Invalid amount."
             showError = true
             return
         }

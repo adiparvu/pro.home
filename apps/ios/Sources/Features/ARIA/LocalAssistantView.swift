@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import FoundationModels
 
 // MARK: - Message model (keep same as before for history)
 struct ChatMessage: Identifiable {

@@ -159,11 +159,9 @@ struct ARIAView: View {
                     let property_id: String?
                 }
                 let payload = ARIAChatPayload(message: text, property_id: propId)
-                let responseData = try await supabase.functions
-                    .invoke("aria-chat", options: .init(body: payload))
-
                 struct ARIAResponse: Decodable { let reply: String?; let error: String? }
-                let decoded = try JSONDecoder().decode(ARIAResponse.self, from: responseData)
+                let decoded: ARIAResponse = try await supabase.functions
+                    .invoke("aria-chat", options: .init(body: payload))
 
                 isThinking = false
                 messages.append(ARIAMessage(

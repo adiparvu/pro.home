@@ -164,7 +164,7 @@ final class InventoryService: ObservableObject {
     }
 
     func removePublicProfile(for item: InventoryItem) async {
-        try? await supabase.from("public_items").delete().eq("item_uuid", item.id.uuidString).execute()
+        try? await supabase.from("public_items").delete().eq("item_uuid", value: item.id.uuidString).execute()
     }
 
     var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }
