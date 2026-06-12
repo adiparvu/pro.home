@@ -96,8 +96,6 @@ platform :ios do
       api_key: api_key,
       app_identifier: "com.prvhouse.app",
       output_path: "/tmp",
-      adhoc: false,
-      development: false,
       skip_install: false
     )
     profile_uuid = Actions.lane_context[SharedValues::SIGH_UUID]
