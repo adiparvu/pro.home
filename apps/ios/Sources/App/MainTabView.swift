@@ -34,6 +34,8 @@ struct MainTabView: View {
     @StateObject private var documentService = DocumentService()
     @StateObject private var notificationScheduler = NotificationScheduler()
     @StateObject private var budgetService = BudgetService()
+    @StateObject private var familyService = FamilyService()
+    @StateObject private var messageService = MessageService()
     @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
@@ -54,6 +56,8 @@ struct MainTabView: View {
         .environmentObject(documentService)
         .environmentObject(notificationScheduler)
         .environmentObject(budgetService)
+        .environmentObject(familyService)
+        .environmentObject(messageService)
         .fullScreenCover(isPresented: .constant(!onboardingDone)) {
             OnboardingView()
                 .environmentObject(propertyService)
@@ -64,6 +68,7 @@ struct MainTabView: View {
             await taskService.load()
             await financialService.load()
             await documentService.load()
+            await familyService.load()
             if let uid = auth.session?.user.id {
                 await profileService.load(userId: uid)
                 if let profile = profileService.profile {
@@ -74,6 +79,9 @@ struct MainTabView: View {
                 tasks: taskService.tasks,
                 documents: documentService.documents
             )
+            if let propId = propertyService.primary?.id {
+                await messageService.load(propertyId: propId)
+            }
         }
     }
 

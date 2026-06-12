@@ -10,6 +10,8 @@ struct SettingsView: View {
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var notificationScheduler: NotificationScheduler
     @EnvironmentObject private var budgetService: BudgetService
+    @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var messageService: MessageService
     @State private var showSignOut = false
 
     var body: some View {
@@ -17,6 +19,7 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 profileCard
                 propertySection
+                familySection
                 notificationsSection
                 appSection
                 supportSection
@@ -135,6 +138,27 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
+            }
+        }
+    }
+
+    private var familySection: some View {
+        SettingsGroup(title: "Family & Chat") {
+            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Family Members") {
+                FamilyView()
+                    .environmentObject(familyService)
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Family Chat") {
+                Group {
+                    if let propId = propertyService.primary?.id {
+                        ChatView(propertyId: propId)
+                            .environmentObject(familyService)
+                            .environmentObject(messageService)
+                    } else {
+                        SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Family Chat", description: "Add a property first to start chatting.")
+                    }
+                }
             }
         }
     }

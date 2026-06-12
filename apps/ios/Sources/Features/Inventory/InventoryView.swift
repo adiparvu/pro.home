@@ -2,6 +2,8 @@ import SwiftUI
 import VisionKit
 import CoreImage.CIFilterBuiltins
 import UserNotifications
+import MapKit
+import CoreLocation
 
 // MARK: - Models
 
@@ -40,6 +42,12 @@ struct InventoryItem: Identifiable, Codable {
     var currentLoan: LoanRecord?
     var loanHistory: [LoanRecord] = []
     var publicProfile: PublicProfile?
+    var latitude: Double?
+    var longitude: Double?
+    var trackerType: String = ""   // "airtag" | "tile" | "gps" | ""
+    var trackerIdentifier: String = ""  // name or serial for reference
+
+    var hasLocation: Bool { latitude != nil && longitude != nil }
 
     var isLoaned: Bool { currentLoan != nil }
     var qrContent: String { "\(itemFoundBaseURL)?id=\(id.uuidString)" }
@@ -409,6 +417,7 @@ struct ItemDetailView: View {
     @State private var showReturnConfirm = false
     @State private var showHistory = false
     @State private var showPublicContact = false
+    @State private var showLocationPicker = false
 
     private var live: InventoryItem { service.items.first { $0.id == item.id } ?? item }
 
@@ -422,6 +431,7 @@ struct ItemDetailView: View {
                         detailsCard
                         loanCard
                         qrCard
+                        locationTrackerCard
                         publicContactCard
                         if !live.notes.isEmpty { notesCard }
                         Spacer(minLength: 40)
@@ -433,6 +443,9 @@ struct ItemDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.foregroundStyle(.white) }
             }
+        }
+        .sheet(isPresented: $showLocationPicker) {
+            ItemLocationSheet(item: live) { updated in service.update(updated) }
         }
         .sheet(isPresented: $showPublicContact) {
             PublicContactSheet(item: live) { updated in
@@ -630,6 +643,69 @@ struct ItemDetailView: View {
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let root = scene.windows.first?.rootViewController {
             root.present(vc, animated: true)
+        }
+    }
+
+    private var locationTrackerCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                HStack {
+                    Label("Location & Tracker", systemImage: "location.fill")
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    if live.hasLocation {
+                        Text("📍").font(.system(size: 14))
+                    }
+                    if !live.trackerType.isEmpty {
+                        Text(live.trackerType == "airtag" ? "🏷 AirTag" : live.trackerType.capitalized)
+                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(.orange)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(.orange.opacity(0.15), in: Capsule())
+                    }
+                }
+
+                if live.hasLocation, let lat = live.latitude, let lon = live.longitude {
+                    Map(coordinateRegion: .constant(MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                    )), annotationItems: [InventoryMapPin(lat: lat, lon: lon)]) { pin in
+                        MapMarker(coordinate: pin.coordinate, tint: live.categoryColor)
+                    }
+                    .frame(maxWidth: .infinity).frame(height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    Button {
+                        let q = "\(lat),\(lon)"
+                        if let url = URL(string: "maps://?q=\(live.name)&ll=\(q)") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Open in Maps", systemImage: "map.fill")
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                            .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                    }.buttonStyle(.plain)
+                }
+
+                if !live.trackerIdentifier.isEmpty {
+                    HStack {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.4))
+                        Text("Tracker: \(live.trackerIdentifier)")
+                            .font(.system(size: 13)).foregroundStyle(.white.opacity(0.65))
+                        Spacer()
+                    }
+                    .padding(10).background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                }
+
+                Button { showLocationPicker = true } label: {
+                    Label(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker",
+                          systemImage: live.hasLocation ? "pencil" : "plus.circle.fill")
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                }.buttonStyle(.plain)
+            }
         }
     }
 
@@ -1071,4 +1147,147 @@ private struct AddInventorySheet: View {
         }.padding(.horizontal, 16).padding(.vertical, 12)
     }
     private var div: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+}
+
+
+// MARK: - Map pin model
+
+struct InventoryMapPin: Identifiable {
+    let id = UUID()
+    let lat: Double
+    let lon: Double
+    var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
+}
+
+// MARK: - Location + Tracker sheet
+
+private struct ItemLocationSheet: View {
+    let item: InventoryItem
+    let onSave: (InventoryItem) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var locMgr = LocationManager()
+
+    @State private var latText: String
+    @State private var lonText: String
+    @State private var trackerType: String
+    @State private var trackerIdentifier: String
+
+    private let trackerTypes = ["", "airtag", "tile", "gps", "other"]
+
+    init(item: InventoryItem, onSave: @escaping (InventoryItem) -> Void) {
+        self.item = item; self.onSave = onSave
+        _latText           = State(initialValue: item.latitude.map { String(format: "%.6f", $0) } ?? "")
+        _lonText           = State(initialValue: item.longitude.map { String(format: "%.6f", $0) } ?? "")
+        _trackerType       = State(initialValue: item.trackerType)
+        _trackerIdentifier = State(initialValue: item.trackerIdentifier)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        if let lat = Double(latText), let lon = Double(lonText) {
+                            Map(coordinateRegion: .constant(MKCoordinateRegion(
+                                center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                            )), annotationItems: [InventoryMapPin(lat: lat, lon: lon)]) { pin in
+                                MapMarker(coordinate: pin.coordinate, tint: .blue)
+                            }
+                            .frame(maxWidth: .infinity).frame(height: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+
+                        Button { locMgr.requestLocation() } label: {
+                            Label("Use Current Location", systemImage: "location.fill")
+                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.blue)
+                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                        }.buttonStyle(.plain)
+
+                        VStack(spacing: 0) {
+                            coordRow("Latitude", $latText)
+                            Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                            coordRow("Longitude", $lonText)
+                        }
+                        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("TRACKER TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.35)).padding(.leading, 4)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(trackerTypes, id: \.self) { t in
+                                        Button { trackerType = t } label: {
+                                            Text(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : t.capitalized))
+                                                .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
+                                                .foregroundStyle(trackerType == t ? .black : .white.opacity(0.7))
+                                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                                .background(trackerType == t ? .white : .white.opacity(0.08), in: Capsule())
+                                        }.buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+
+                        if !trackerType.isEmpty {
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                                    TextField("Tracker name / serial (optional)", text: $trackerIdentifier)
+                                        .font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
+                                }.padding(.horizontal, 16).padding(.vertical, 13)
+                            }
+                            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+
+                            if trackerType == "airtag" {
+                                GlassCard(padding: 14) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "info.circle.fill").foregroundStyle(.blue)
+                                        Text("Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking.")
+                                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Location & Tracker").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        updated.latitude = Double(latText)
+                        updated.longitude = Double(lonText)
+                        updated.trackerType = trackerType
+                        updated.trackerIdentifier = trackerIdentifier
+                        onSave(updated)
+                        HapticFeedback.success()
+                        dismiss()
+                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                }
+            }
+            .onChange(of: locMgr.location) { _, loc in
+                guard let loc else { return }
+                latText = String(format: "%.6f", loc.coordinate.latitude)
+                lonText = String(format: "%.6f", loc.coordinate.longitude)
+            }
+        }
+    }
+
+    private func coordRow(_ label: String, _ binding: Binding<String>) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Text(label).font(.system(size: 15)).foregroundStyle(.white)
+            Spacer()
+            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(.white.opacity(0.7)).tint(.blue)
+                .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 110)
+        }.padding(.horizontal, 16).padding(.vertical, 13)
+    }
 }

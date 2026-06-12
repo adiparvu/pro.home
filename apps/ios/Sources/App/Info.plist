@@ -50,5 +50,7 @@
 	<string>Used for voice search to find tasks, documents, and finances hands-free.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Used to convert your voice into search queries across your property data.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Used to share your location in Family Chat and tag item locations in Inventory.</string>
 </dict>
 </plist>

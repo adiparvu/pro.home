@@ -16,14 +16,19 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     let createdAt: String
     var updatedAt: String
 
+    var assigneeIds: [String]
+    var assigneeNames: [String]
+
     enum CodingKeys: String, CodingKey {
         case id, title, description, category, priority, status, notes, tags
-        case propertyId = "property_id"
-        case dueDate = "due_date"
+        case propertyId    = "property_id"
+        case dueDate       = "due_date"
         case estimatedCost = "estimated_cost"
-        case costCurrency = "cost_currency"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case costCurrency  = "cost_currency"
+        case createdAt     = "created_at"
+        case updatedAt     = "updated_at"
+        case assigneeIds   = "assignee_ids"
+        case assigneeNames = "assignee_names"
     }
 
     var isCompleted: Bool { status == "completed" }
@@ -71,12 +76,16 @@ struct NewTaskPayload: Encodable {
     let priority: String
     let category: String
     let status: String = "pending"
+    let assigneeIds: [String]
+    let assigneeNames: [String]
 
     enum CodingKeys: String, CodingKey {
-        case propertyId = "property_id"
+        case propertyId    = "property_id"
         case title, description
-        case dueDate = "due_date"
+        case dueDate       = "due_date"
         case priority, category, status
+        case assigneeIds   = "assignee_ids"
+        case assigneeNames = "assignee_names"
     }
 }
 
