@@ -66,6 +66,18 @@ platform :ios do
     )
 
     profile_uuid = lane_context[SharedValues::SIGH_UUID]
+    profile_path = lane_context[SharedValues::SIGH_PROFILE_PATH]
+
+    # Install the profile in both locations: pre-Xcode-16 and Xcode 16+ paths
+    require "fileutils"
+    [
+      "#{Dir.home}/Library/MobileDevice/Provisioning Profiles",
+      "#{Dir.home}/Library/Developer/Xcode/UserData/Provisioning Profiles"
+    ].each do |dir|
+      FileUtils.mkdir_p(dir)
+      FileUtils.cp(profile_path, File.join(dir, "#{profile_uuid}.mobileprovision"))
+    end
+
     project_dir = File.expand_path("..")
 
     sh(
