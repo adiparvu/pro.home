@@ -40,6 +40,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
