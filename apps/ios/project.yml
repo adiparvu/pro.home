@@ -19,7 +19,7 @@ targets:
     sources:
       - path: Sources
     resources:
-      - path: Resources
+      - path: Resources/Assets.xcassets
     dependencies:
       - package: Supabase
         product: Supabase
