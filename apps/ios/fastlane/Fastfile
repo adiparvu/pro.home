@@ -53,9 +53,8 @@ platform :ios do
     )
 
     # Prefer importing cert from GitHub Secret (zero revocations, no Apple emails).
-    # If the secret is not set, fall back to revoking the oldest cert and creating a new one.
-    cert_p12 = ENV["DIST_CERTIFICATE_P12"]
-    cert_pass = ENV["DIST_CERTIFICATE_PASSWORD"] || ""
+    cert_p12 = ENV["IOS_DIST_CERTIFICATE_BASE64"]
+    cert_pass = ENV["IOS_DIST_CERTIFICATE_PASSWORD"] || ""
 
     if cert_p12 && !cert_p12.empty?
       cert_path = "/tmp/dist_cert.p12"
