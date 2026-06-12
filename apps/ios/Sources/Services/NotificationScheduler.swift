@@ -1,0 +1,223 @@
+import Foundation
+import UserNotifications
+
+@MainActor
+final class NotificationScheduler: ObservableObject {
+
+    // Persisted preferences
+    @Published var taskReminders: Bool  { didSet { UserDefaults.standard.set(taskReminders,  forKey: Keys.taskReminders) } }
+    @Published var documentExpiry: Bool { didSet { UserDefaults.standard.set(documentExpiry, forKey: Keys.documentExpiry) } }
+    @Published var financialAlerts: Bool { didSet { UserDefaults.standard.set(financialAlerts, forKey: Keys.financialAlerts) } }
+    @Published var weeklyDigest: Bool   { didSet { UserDefaults.standard.set(weeklyDigest,   forKey: Keys.weeklyDigest) } }
+
+    private enum Keys {
+        static let taskReminders   = "prvhouse.notif.tasks"
+        static let documentExpiry  = "prvhouse.notif.docExpiry"
+        static let financialAlerts = "prvhouse.notif.financial"
+        static let weeklyDigest    = "prvhouse.notif.weekly"
+    }
+
+    init() {
+        let d = UserDefaults.standard
+        self.taskReminders   = d.object(forKey: Keys.taskReminders)   as? Bool ?? true
+        self.documentExpiry  = d.object(forKey: Keys.documentExpiry)  as? Bool ?? true
+        self.financialAlerts = d.object(forKey: Keys.financialAlerts) as? Bool ?? true
+        self.weeklyDigest    = d.object(forKey: Keys.weeklyDigest)    as? Bool ?? false
+    }
+
+    // MARK: - Main entry point
+
+    func reschedule(tasks: [MaintenanceTask], documents: [DocumentModel]) async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional else { return }
+
+        // Remove existing app-scheduled notifications
+        center.removePendingNotificationRequests(withIdentifiers: pendingIdentifiers(tasks: tasks, documents: documents))
+
+        var requests: [UNNotificationRequest] = []
+
+        if taskReminders {
+            requests += taskNotifications(tasks)
+        }
+        if documentExpiry {
+            requests += documentNotifications(documents)
+        }
+        if weeklyDigest {
+            requests += [weeklyDigestNotification()]
+        }
+
+        for request in requests {
+            try? await center.add(request)
+        }
+    }
+
+    // MARK: - Task notifications
+
+    private func taskNotifications(_ tasks: [MaintenanceTask]) -> [UNNotificationRequest] {
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+        var requests: [UNNotificationRequest] = []
+
+        for task in tasks where !task.isCompleted {
+            guard let ds = task.dueDate, let dueDate = iso.date(from: ds) else { continue }
+
+            let now = Date()
+            let cal = Calendar.current
+
+            // Overdue — fire once, 1 minute from now if already overdue
+            if dueDate < cal.startOfDay(for: now) {
+                let content = UNMutableNotificationContent()
+                content.title = "Overdue Task"
+                content.body  = "\(task.title) was due \(task.dueDateDisplay)"
+                content.sound = .default
+                content.badge = 1
+                content.categoryIdentifier = "TASK"
+                content.userInfo = ["taskId": task.id.uuidString]
+
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 60, repeats: false)
+                requests.append(UNNotificationRequest(
+                    identifier: "task.overdue.\(task.id.uuidString)",
+                    content: content,
+                    trigger: trigger
+                ))
+
+            } else {
+                // Fire at 9am on the due date
+                var components = cal.dateComponents([.year, .month, .day], from: dueDate)
+                components.hour = 9
+                components.minute = 0
+
+                let content = UNMutableNotificationContent()
+                content.title = "Task Due Today"
+                content.body  = task.title
+                content.sound = .default
+                content.categoryIdentifier = "TASK"
+                content.userInfo = ["taskId": task.id.uuidString]
+
+                if let fireDate = cal.date(from: components), fireDate > now {
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                    requests.append(UNNotificationRequest(
+                        identifier: "task.due.\(task.id.uuidString)",
+                        content: content,
+                        trigger: trigger
+                    ))
+                }
+
+                // Also fire a 3-day-ahead reminder
+                if let threeDaysBefore = cal.date(byAdding: .day, value: -3, to: dueDate),
+                   threeDaysBefore > now {
+                    var reminderComponents = cal.dateComponents([.year, .month, .day], from: threeDaysBefore)
+                    reminderComponents.hour = 9
+                    reminderComponents.minute = 0
+
+                    let reminderContent = UNMutableNotificationContent()
+                    reminderContent.title = "Task Due in 3 Days"
+                    reminderContent.body  = task.title
+                    reminderContent.sound = .default
+                    reminderContent.categoryIdentifier = "TASK"
+
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: reminderComponents, repeats: false)
+                    requests.append(UNNotificationRequest(
+                        identifier: "task.reminder3d.\(task.id.uuidString)",
+                        content: reminderContent,
+                        trigger: trigger
+                    ))
+                }
+            }
+        }
+
+        return requests
+    }
+
+    // MARK: - Document expiry notifications
+
+    private func documentNotifications(_ documents: [DocumentModel]) -> [UNNotificationRequest] {
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+        var requests: [UNNotificationRequest] = []
+        let now = Date()
+        let cal = Calendar.current
+
+        for doc in documents {
+            guard let ds = doc.expiresAt, let expiry = iso.date(from: ds) else { continue }
+
+            // 30-day alert
+            if let fireDate30 = cal.date(byAdding: .day, value: -30, to: expiry),
+               fireDate30 > now {
+                var components = cal.dateComponents([.year, .month, .day], from: fireDate30)
+                components.hour = 9; components.minute = 0
+
+                let content = UNMutableNotificationContent()
+                content.title = "Document Expiring Soon"
+                content.body  = "\(doc.name) expires in 30 days"
+                content.sound = .default
+                content.categoryIdentifier = "DOCUMENT"
+                content.userInfo = ["docId": doc.id.uuidString]
+
+                requests.append(UNNotificationRequest(
+                    identifier: "doc.30d.\(doc.id.uuidString)",
+                    content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                ))
+            }
+
+            // 7-day alert
+            if let fireDate7 = cal.date(byAdding: .day, value: -7, to: expiry),
+               fireDate7 > now {
+                var components = cal.dateComponents([.year, .month, .day], from: fireDate7)
+                components.hour = 9; components.minute = 0
+
+                let content = UNMutableNotificationContent()
+                content.title = "Document Expiring in 7 Days"
+                content.body  = "\(doc.name) – renew before \(doc.expiresDisplay ?? ds)"
+                content.sound = .default
+                content.categoryIdentifier = "DOCUMENT"
+
+                requests.append(UNNotificationRequest(
+                    identifier: "doc.7d.\(doc.id.uuidString)",
+                    content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                ))
+            }
+        }
+
+        return requests
+    }
+
+    // MARK: - Weekly digest (every Monday 9am)
+
+    private func weeklyDigestNotification() -> UNNotificationRequest {
+        let content = UNMutableNotificationContent()
+        content.title = "PRVHouse Weekly Digest"
+        content.body  = "Review your property tasks, finances, and documents for the week."
+        content.sound = .default
+
+        var components = DateComponents()
+        components.weekday = 2  // Monday
+        components.hour    = 9
+        components.minute  = 0
+
+        return UNNotificationRequest(
+            identifier: "weekly.digest",
+            content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        )
+    }
+
+    // MARK: - Helpers
+
+    private func pendingIdentifiers(tasks: [MaintenanceTask], documents: [DocumentModel]) -> [String] {
+        var ids: [String] = ["weekly.digest"]
+        for t in tasks {
+            ids += [
+                "task.overdue.\(t.id.uuidString)",
+                "task.due.\(t.id.uuidString)",
+                "task.reminder3d.\(t.id.uuidString)"
+            ]
+        }
+        for d in documents {
+            ids += ["doc.30d.\(d.id.uuidString)", "doc.7d.\(d.id.uuidString)"]
+        }
+        return ids
+    }
+}

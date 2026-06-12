@@ -2,11 +2,11 @@ import SwiftUI
 import UserNotifications
 
 struct NotificationsSettingsView: View {
+    @EnvironmentObject private var scheduler: NotificationScheduler
+    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var documentService: DocumentService
+
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
-    @State private var taskReminders = true
-    @State private var documentExpiry = true
-    @State private var financialAlerts = true
-    @State private var weeklyDigest = false
     @State private var showOpenSettings = false
 
     var body: some View {
@@ -103,16 +103,22 @@ struct NotificationsSettingsView: View {
                     icon: "checklist",
                     color: .blue,
                     title: "Task Reminders",
-                    subtitle: "Overdue & upcoming tasks",
-                    value: $taskReminders
+                    subtitle: "Due today & 3 days ahead, overdue alerts",
+                    value: Binding(
+                        get: { scheduler.taskReminders },
+                        set: { scheduler.taskReminders = $0; reschedule() }
+                    )
                 )
                 divider
                 NotifToggleRow(
                     icon: "doc.badge.clock.fill",
                     color: .orange,
                     title: "Document Expiry",
-                    subtitle: "30 days before expiration",
-                    value: $documentExpiry
+                    subtitle: "Alerts at 30 days and 7 days before expiry",
+                    value: Binding(
+                        get: { scheduler.documentExpiry },
+                        set: { scheduler.documentExpiry = $0; reschedule() }
+                    )
                 )
                 divider
                 NotifToggleRow(
@@ -120,15 +126,21 @@ struct NotificationsSettingsView: View {
                     color: Color(red: 0.3, green: 0.85, blue: 0.5),
                     title: "Financial Alerts",
                     subtitle: "Rent due & large transactions",
-                    value: $financialAlerts
+                    value: Binding(
+                        get: { scheduler.financialAlerts },
+                        set: { scheduler.financialAlerts = $0 }
+                    )
                 )
                 divider
                 NotifToggleRow(
                     icon: "newspaper.fill",
                     color: .purple,
                     title: "Weekly Digest",
-                    subtitle: "Summary every Monday",
-                    value: $weeklyDigest
+                    subtitle: "Every Monday at 9:00 AM",
+                    value: Binding(
+                        get: { scheduler.weeklyDigest },
+                        set: { scheduler.weeklyDigest = $0; reschedule() }
+                    )
                 )
             }
             .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -136,6 +148,11 @@ struct NotificationsSettingsView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
             )
+
+            Text("Notifications are scheduled locally on your device and fire even when the app is closed.")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.3))
+                .padding(.leading, 4)
         }
     }
 
@@ -174,7 +191,7 @@ struct NotificationsSettingsView: View {
 
     private var statusSubtitle: String {
         switch authStatus {
-        case .authorized, .provisional: return "You'll receive alerts from PRVHouse"
+        case .authorized, .provisional: return "Alerts are scheduled on your device"
         case .denied: return "Enable in iOS Settings to receive alerts"
         default: return "Tap below to enable alerts"
         }
@@ -192,8 +209,18 @@ struct NotificationsSettingsView: View {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .badge, .sound])
             authStatus = granted ? .authorized : .denied
+            if granted { reschedule() }
         } catch {
             print("[Notifications] permission error: \(error)")
+        }
+    }
+
+    private func reschedule() {
+        Task {
+            await scheduler.reschedule(
+                tasks: taskService.tasks,
+                documents: documentService.documents
+            )
         }
     }
 }

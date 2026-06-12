@@ -32,6 +32,7 @@ struct MainTabView: View {
     @StateObject private var profileService = ProfileService()
     @StateObject private var financialService = FinancialService()
     @StateObject private var documentService = DocumentService()
+    @StateObject private var notificationScheduler = NotificationScheduler()
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -49,6 +50,7 @@ struct MainTabView: View {
         .environmentObject(profileService)
         .environmentObject(financialService)
         .environmentObject(documentService)
+        .environmentObject(notificationScheduler)
         .task {
             await propertyService.load()
             await taskService.load()
@@ -60,6 +62,10 @@ struct MainTabView: View {
                     appSettings.loadFromProfile(profile)
                 }
             }
+            await notificationScheduler.reschedule(
+                tasks: taskService.tasks,
+                documents: documentService.documents
+            )
         }
     }
 

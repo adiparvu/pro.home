@@ -2,11 +2,13 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var notificationScheduler: NotificationScheduler
     @State private var showSignOut = false
 
     var body: some View {
@@ -99,6 +101,9 @@ struct SettingsView: View {
         SettingsGroup(title: "Notifications") {
             NavSettingsRow(icon: "bell.fill", color: .red, label: "Notification Preferences") {
                 NotificationsSettingsView()
+                    .environmentObject(notificationScheduler)
+                    .environmentObject(taskService)
+                    .environmentObject(documentService)
             }
         }
     }
