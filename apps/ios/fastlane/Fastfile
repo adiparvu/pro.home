@@ -49,6 +49,15 @@ platform :ios do
       end
     end
 
+    # Delete stale profiles too — they are invalid once their cert is revoked,
+    # and they squat the base profile name, forcing sigh to create
+    # "...AppStore <timestamp>" which won't match the project's
+    # PROVISIONING_PROFILE_SPECIFIER.
+    Spaceship::ConnectAPI::Profile.all.each do |p|
+      UI.message("Deleting old provisioning profile '#{p.name}'")
+      p.delete!
+    end
+
     cert(
       api_key: api_key,
       force: true,
