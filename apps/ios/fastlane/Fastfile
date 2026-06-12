@@ -11,34 +11,60 @@ platform :ios do
     key_path    = "/tmp/AuthKey_#{key_id}.p8"
     File.write(key_path, key_content)
 
+    api_key = app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content,
+      is_key_content_base64: false
+    )
+
     Dir.chdir("..") do
       sh("xcodegen generate")
     end
+
+    keychain_db = "#{Dir.home}/Library/Keychains/build.keychain-db"
 
     create_keychain(
       name: "build.keychain",
       password: "buildpass",
       default_keychain: true,
       unlock: true,
-      timeout: 3600
+      timeout: 3600,
+      lock_when_sleeps: false
     )
 
+    # Create a fresh Distribution certificate, revoking any existing ones
+    cert(
+      api_key: api_key,
+      force: true,
+      keychain_path: keychain_db,
+      keychain_password: "buildpass",
+      output_path: "/tmp"
+    )
+
+    # Create App Store provisioning profile
+    sigh(
+      api_key: api_key,
+      app_identifier: "com.prvhouse.app",
+      force: true,
+      output_path: "/tmp"
+    )
+
+    profile_uuid = lane_context[SharedValues::SIGH_UUID]
     project_dir = File.expand_path("..")
 
-    # Build archive — raw output so errors are visible
     sh(
       "set -o pipefail && xcodebuild archive " \
       "-project #{project_dir}/PRVHouse.xcodeproj " \
       "-scheme PRVHouse " \
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
-      "-authenticationKeyPath #{key_path} " \
-      "-authenticationKeyID #{key_id} " \
-      "-authenticationKeyIssuerID #{issuer_id} " \
-      "-allowProvisioningUpdates " \
       "-hideShellScriptEnvironment " \
-      "CODE_SIGN_STYLE=Automatic " \
-      "DEVELOPMENT_TEAM=SU92TVZT8W 2>&1"
+      "CODE_SIGN_STYLE=Manual " \
+      "CODE_SIGN_IDENTITY='Apple Distribution' " \
+      "PROVISIONING_PROFILE='#{profile_uuid}' " \
+      "DEVELOPMENT_TEAM=SU92TVZT8W " \
+      "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
     )
 
     export_options_path = "/tmp/ExportOptions.plist"
@@ -52,7 +78,12 @@ platform :ios do
         <key>teamID</key>
         <string>SU92TVZT8W</string>
         <key>signingStyle</key>
-        <string>automatic</string>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          <key>com.prvhouse.app</key>
+          <string>#{profile_uuid}</string>
+        </dict>
       </dict>
       </plist>
     PLIST
@@ -61,18 +92,7 @@ platform :ios do
       "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-exportPath /tmp/PRVHouse_ipa " \
-      "-exportOptionsPlist #{export_options_path} " \
-      "-authenticationKeyPath #{key_path} " \
-      "-authenticationKeyID #{key_id} " \
-      "-authenticationKeyIssuerID #{issuer_id} " \
-      "-allowProvisioningUpdates 2>&1"
-    )
-
-    api_key = app_store_connect_api_key(
-      key_id: key_id,
-      issuer_id: issuer_id,
-      key_content: key_content,
-      is_key_content_base64: false
+      "-exportOptionsPlist #{export_options_path} 2>&1"
     )
 
     pilot(
