@@ -9,6 +9,7 @@ struct SettingsView: View {
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var notificationScheduler: NotificationScheduler
+    @EnvironmentObject private var budgetService: BudgetService
     @State private var showSignOut = false
 
     var body: some View {
@@ -90,6 +91,7 @@ struct SettingsView: View {
                 FinancesView()
                     .environmentObject(financialService)
                     .environmentObject(propertyService)
+                    .environmentObject(budgetService)
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")

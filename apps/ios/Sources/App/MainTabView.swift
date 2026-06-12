@@ -33,6 +33,8 @@ struct MainTabView: View {
     @StateObject private var financialService = FinancialService()
     @StateObject private var documentService = DocumentService()
     @StateObject private var notificationScheduler = NotificationScheduler()
+    @StateObject private var budgetService = BudgetService()
+    @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -51,6 +53,12 @@ struct MainTabView: View {
         .environmentObject(financialService)
         .environmentObject(documentService)
         .environmentObject(notificationScheduler)
+        .environmentObject(budgetService)
+        .fullScreenCover(isPresented: .constant(!onboardingDone)) {
+            OnboardingView()
+                .environmentObject(propertyService)
+                .environmentObject(auth)
+        }
         .task {
             await propertyService.load()
             await taskService.load()
@@ -106,6 +114,7 @@ struct FloatingTabBar: View {
                     isSelected: selected == tab,
                     badge: tab == .tasks ? overdueCount : 0
                 ) {
+                    HapticFeedback.selection()
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                         selected = tab
                     }

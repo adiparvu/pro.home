@@ -6,6 +6,8 @@ struct DashboardView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var profileService: ProfileService
+    @EnvironmentObject private var documentService: DocumentService
+    @State private var showSearch = false
 
     private var healthScore: Int {
         if let score = propertyService.primary?.healthScore { return Int(score) }
@@ -40,6 +42,13 @@ struct DashboardView: View {
         .refreshable {
             await taskService.load()
             await financialService.load()
+            await documentService.load()
+        }
+        .sheet(isPresented: $showSearch) {
+            SearchView()
+                .environmentObject(taskService)
+                .environmentObject(documentService)
+                .environmentObject(financialService)
         }
     }
 
@@ -56,14 +65,20 @@ struct DashboardView: View {
                     .foregroundStyle(.white)
             }
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(.white.opacity(0.07))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "bell.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.75))
+            Button {
+                HapticFeedback.impact(.light)
+                showSearch = true
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.07))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.75))
+                }
             }
+            .buttonStyle(.plain)
         }
         .padding(.top, 8)
     }

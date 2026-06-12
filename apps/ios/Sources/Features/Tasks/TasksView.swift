@@ -3,6 +3,7 @@ import SwiftUI
 struct TasksView: View {
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var documentService: DocumentService
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
 
@@ -44,8 +45,19 @@ struct TasksView: View {
         .navigationTitle("Tasks")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink {
+                    CalendarView()
+                        .environmentObject(taskService)
+                        .environmentObject(documentService)
+                } label: {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAdd = true } label: {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 22))
                         .foregroundStyle(.white)
@@ -98,6 +110,7 @@ struct TasksView: View {
                     TaskRowView(task: task)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
+                                HapticFeedback.warning()
                                 Task { await taskService.delete(task) }
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -105,6 +118,7 @@ struct TasksView: View {
                         }
                         .swipeActions(edge: .leading) {
                             Button {
+                                HapticFeedback.success()
                                 Task { await taskService.toggleComplete(task) }
                             } label: {
                                 Label(task.isCompleted ? "Reopen" : "Done",
@@ -181,6 +195,7 @@ struct TaskRowView: View {
     var body: some View {
         HStack(spacing: 14) {
             Button {
+                HapticFeedback.success()
                 Task { await taskService.toggleComplete(task) }
             } label: {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")

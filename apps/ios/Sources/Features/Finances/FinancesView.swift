@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FinancesView: View {
     @EnvironmentObject private var financialService: FinancialService
+    @EnvironmentObject private var budgetService: BudgetService
     @State private var showAddSheet = false
     @State private var selectedType: String? = nil
 
@@ -26,6 +27,7 @@ struct FinancesView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 16) {
                             summaryCards
+                            quickLinks
                             filterPicker
                             recordsList
                         }
@@ -41,7 +43,7 @@ struct FinancesView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    Button { showAddSheet = true } label: {
+                    Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(.white)
@@ -85,6 +87,28 @@ struct FinancesView: View {
                 icon: "chart.line.uptrend.xyaxis",
                 color: financialService.currentMonthNet >= 0 ? .blue : .orange
             )
+        }
+    }
+
+    // MARK: - Quick links
+
+    private var quickLinks: some View {
+        HStack(spacing: 12) {
+            NavigationLink {
+                BudgetView()
+                    .environmentObject(budgetService)
+                    .environmentObject(financialService)
+            } label: {
+                QuickLinkCard(icon: "chart.pie.fill", label: "Budget", color: .blue)
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                MortgageView()
+            } label: {
+                QuickLinkCard(icon: "house.and.flag.fill", label: "Mortgage", color: .purple)
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -211,6 +235,29 @@ struct FinancialRecordRow: View {
                 Text("\(record.isIncome ? "+" : "-")\(symbol)\(String(format: "%.0f", record.amount))")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+            }
+        }
+    }
+}
+
+// MARK: - Quick Link Card
+
+private struct QuickLinkCard: View {
+    let icon: String
+    let label: String
+    let color: Color
+
+    var body: some View {
+        GlassCard(padding: 14) {
+            HStack(spacing: 10) {
+                ColoredIconBadge(icon: icon, color: color, size: 36)
+                Text(label)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.25))
             }
         }
     }
