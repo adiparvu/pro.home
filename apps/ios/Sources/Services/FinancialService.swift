@@ -4,6 +4,7 @@ import Foundation
 final class FinancialService: ObservableObject {
     @Published var records: [FinancialRecord] = []
     @Published var isLoading = false
+    @Published var error: String?
 
     // MARK: - Computed stats
 
@@ -63,7 +64,7 @@ final class FinancialService: ObservableObject {
                 .execute()
                 .value
         } catch {
-            print("[FinancialService] load error: \(error)")
+            self.error = error.localizedDescription
         }
     }
 }

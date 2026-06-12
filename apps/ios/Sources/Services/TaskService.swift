@@ -4,6 +4,7 @@ import Foundation
 final class TaskService: ObservableObject {
     @Published var tasks: [MaintenanceTask] = []
     @Published var isLoading = false
+    @Published var error: String?
 
     var openCount: Int {
         tasks.filter { $0.status == "pending" || $0.status == "in_progress" }.count
@@ -32,7 +33,7 @@ final class TaskService: ObservableObject {
                 .execute()
                 .value
         } catch {
-            print("[TaskService] load error: \(error)")
+            self.error = error.localizedDescription
         }
     }
 
@@ -64,7 +65,7 @@ final class TaskService: ObservableObject {
                 tasks[idx].updatedAt = update.updatedAt
             }
         } catch {
-            print("[TaskService] toggleComplete error: \(error)")
+            self.error = error.localizedDescription
         }
     }
 
@@ -77,7 +78,7 @@ final class TaskService: ObservableObject {
                 .execute()
             tasks.removeAll { $0.id == task.id }
         } catch {
-            print("[TaskService] delete error: \(error)")
+            self.error = error.localizedDescription
         }
     }
 }
