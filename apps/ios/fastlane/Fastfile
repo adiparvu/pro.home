@@ -33,7 +33,7 @@ platform :ios do
       app_identifier: "com.prvhouse.app",
       git_url: "https://github.com/adiparvu/pro.home",
       git_branch: "certs",
-      git_basic_authorization: Base64.strict_encode64("x-access-token:#{ENV['GITHUB_TOKEN']}"),
+      git_basic_authorization: Base64.strict_encode64("x-access-token:#{ENV['GH_PAT']}"),
       api_key: api_key,
       team_id: "SU92TVZT8W",
       readonly: false,
