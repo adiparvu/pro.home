@@ -108,6 +108,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
                 DocumentsView()
                     .environmentObject(documentService)
+                    .environmentObject(propertyService)
             }
             NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
                 FinancesView()

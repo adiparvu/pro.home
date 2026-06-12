@@ -9,6 +9,9 @@ struct SecurityView: View {
     @State private var showPasswordAlert = false
     @State private var alertMessage = ""
     @State private var showDeleteConfirm = false
+    @State private var exportItem: ExportItem?
+    @State private var isExporting = false
+    @State private var isDeletingAccount = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -34,11 +37,14 @@ struct SecurityView: View {
             titleVisibility: .visible
         ) {
             Button("Delete My Account", role: .destructive) {
-                Task { try? await auth.signOut() }
+                Task { await deleteAccount() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This is permanent and cannot be undone. All your data will be lost.")
+        }
+        .sheet(item: $exportItem) { item in
+            ShareSheet(activityItems: [item.url])
         }
     }
 
@@ -268,7 +274,78 @@ struct SecurityView: View {
     }
 
     private func exportData() {
-        alertMessage = "Your data export has been requested. You will receive an email with your data within 24 hours."
-        showPasswordAlert = true
+        guard !isExporting else { return }
+        isExporting = true
+        Task {
+            do {
+                let userId = try await supabase.auth.session.user.id
+                async let tasks: [[String: Any]] = (try? supabase
+                    .from("maintenance_tasks").select().execute().value) ?? []
+                async let records: [[String: Any]] = (try? supabase
+                    .from("financial_records").select().execute().value) ?? []
+                async let docs: [[String: Any]] = (try? supabase
+                    .from("documents").select().execute().value) ?? []
+                async let contractors: [[String: Any]] = (try? supabase
+                    .from("contractors").select().execute().value) ?? []
+
+                let export: [String: Any] = [
+                    "exported_at": ISO8601DateFormatter().string(from: Date()),
+                    "user_id": userId.uuidString,
+                    "tasks": await tasks,
+                    "financial_records": await records,
+                    "documents": await docs,
+                    "contractors": await contractors
+                ]
+
+                let data = try JSONSerialization.data(withJSONObject: export, options: .prettyPrinted)
+                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("prvhouse_export.json")
+                try data.write(to: tmp)
+                await MainActor.run {
+                    isExporting = false
+                    exportItem = ExportItem(url: tmp)
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                    alertMessage = "Export failed: \(error.localizedDescription)"
+                    showPasswordAlert = true
+                }
+            }
+        }
     }
+
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        do {
+            let userId = try await supabase.auth.session.user.id
+            // Delete all user data (cascade via FK or explicit)
+            let tables = ["maintenance_tasks", "financial_records", "documents",
+                          "contractors", "profiles"]
+            for table in tables {
+                try? await supabase.from(table)
+                    .delete()
+                    .eq("user_id", value: userId.uuidString)
+                    .execute()
+            }
+            try? await supabase.auth.signOut()
+        } catch {
+            try? await supabase.auth.signOut()
+        }
+        isDeletingAccount = false
+    }
+}
+
+// MARK: - Helpers
+
+struct ExportItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
