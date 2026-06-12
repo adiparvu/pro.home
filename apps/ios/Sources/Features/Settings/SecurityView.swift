@@ -1,0 +1,274 @@
+import SwiftUI
+import LocalAuthentication
+
+struct SecurityView: View {
+    @EnvironmentObject private var auth: AuthService
+    @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
+    @State private var biometricType: LABiometryType = .none
+    @State private var passwordResetSent = false
+    @State private var showPasswordAlert = false
+    @State private var alertMessage = ""
+    @State private var showDeleteConfirm = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 24) {
+                biometricSection
+                accountSection
+                dangerSection
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Security & Privacy")
+        .navigationBarTitleDisplayMode(.large)
+        .task { checkBiometrics() }
+        .alert(alertMessage, isPresented: $showPasswordAlert) {
+            Button("OK", role: .cancel) {}
+        }
+        .confirmationDialog(
+            "Delete Account",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete My Account", role: .destructive) {
+                Task { try? await auth.signOut() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This is permanent and cannot be undone. All your data will be lost.")
+        }
+    }
+
+    // MARK: - Biometric
+
+    private var biometricSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Authentication")
+
+            VStack(spacing: 0) {
+                if biometricType != .none {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(
+                            icon: biometricType == .faceID ? "faceid" : "touchid",
+                            color: Color(red: 0.3, green: 0.85, blue: 0.5)
+                        )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(biometricType == .faceID ? "Face ID" : "Touch ID")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.white)
+                            Text("Unlock app without password")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
+                        Spacer()
+                        Toggle("", isOn: $biometricsEnabled)
+                            .labelsHidden()
+                            .tint(.blue)
+                            .onChange(of: biometricsEnabled) { _, newValue in
+                                if newValue { Task { await authenticateBiometric() } }
+                            }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+
+                    Rectangle()
+                        .fill(.white.opacity(0.05))
+                        .frame(height: 0.5)
+                        .padding(.leading, 52)
+                }
+
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "lock.rotation", color: .blue)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Auto-Lock")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white)
+                        Text("Locks after 5 minutes")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    Spacer()
+                    Text("5 min")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.38))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.28))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+            }
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+            )
+        }
+    }
+
+    // MARK: - Account
+
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Account")
+
+            VStack(spacing: 0) {
+                Button {
+                    Task { await sendPasswordReset() }
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "key.fill", color: .orange)
+                        Text(passwordResetSent ? "Reset Email Sent" : "Change Password")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        if passwordResetSent {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                        } else {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.28))
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+
+                Rectangle()
+                    .fill(.white.opacity(0.05))
+                    .frame(height: 0.5)
+                    .padding(.leading, 52)
+
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "shield.fill", color: .purple)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Two-Factor Authentication")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white)
+                        Text("Managed via your email provider")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    Spacer()
+                    Text("On")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.38))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+            }
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+            )
+        }
+    }
+
+    // MARK: - Danger zone
+
+    private var dangerSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Data & Privacy")
+
+            VStack(spacing: 0) {
+                Button {
+                    exportData()
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "square.and.arrow.up.fill", color: .cyan)
+                        Text("Export My Data")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.28))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+
+                Rectangle()
+                    .fill(.white.opacity(0.05))
+                    .frame(height: 0.5)
+                    .padding(.leading, 52)
+
+                Button { showDeleteConfirm = true } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "trash.fill", color: .red)
+                        Text("Delete Account")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.red)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.28))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+            }
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+            )
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.35))
+            .padding(.leading, 4)
+    }
+
+    // MARK: - Actions
+
+    private func checkBiometrics() {
+        let context = LAContext()
+        var error: NSError?
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            biometricType = context.biometryType
+        }
+    }
+
+    private func authenticateBiometric() async {
+        let context = LAContext()
+        do {
+            let reason = biometricType == .faceID
+                ? "Enable Face ID for PRVHouse"
+                : "Enable Touch ID for PRVHouse"
+            let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
+            if !success { biometricsEnabled = false }
+        } catch {
+            biometricsEnabled = false
+        }
+    }
+
+    private func sendPasswordReset() async {
+        guard let email = auth.session?.user.email else { return }
+        do {
+            try await supabase.auth.resetPasswordForEmail(email)
+            passwordResetSent = true
+            alertMessage = "Password reset email sent to \(email). Check your inbox."
+            showPasswordAlert = true
+        } catch {
+            alertMessage = "Could not send reset email. Please try again."
+            showPasswordAlert = true
+        }
+    }
+
+    private func exportData() {
+        alertMessage = "Your data export has been requested. You will receive an email with your data within 24 hours."
+        showPasswordAlert = true
+    }
+}

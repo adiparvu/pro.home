@@ -7,14 +7,16 @@ struct ProfileData: Codable, Equatable {
     var displayName: String?
     var avatarUrl: String?
     var phone: String?
+    var locale: String?
+    var theme: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, email, phone
-        case fullName = "full_name"
+        case id, email, phone, locale, theme
+        case fullName    = "full_name"
         case displayName = "display_name"
-        case avatarUrl = "avatar_url"
-        case createdAt = "created_at"
+        case avatarUrl   = "avatar_url"
+        case createdAt   = "created_at"
     }
 
     var preferredName: String {
@@ -38,3 +40,4 @@ struct ProfileUpdate: Encodable {
         case updatedAt = "updated_at"
     }
 }
+

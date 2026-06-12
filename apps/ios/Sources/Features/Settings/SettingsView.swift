@@ -4,10 +4,10 @@ struct SettingsView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var profileService: ProfileService
+    @EnvironmentObject private var financialService: FinancialService
+    @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var appSettings: AppSettings
     @State private var showSignOut = false
-    @State private var notifPush = true
-    @State private var notifEmail = true
-    @State private var notifOverdue = true
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -81,7 +81,13 @@ struct SettingsView: View {
                     .environmentObject(propertyService)
             }
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
-                SettingsPlaceholder(icon: "doc.text.fill", title: "Documents", description: "Manage your property documents, warranties, and certificates.")
+                DocumentsView()
+                    .environmentObject(documentService)
+            }
+            NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
+                FinancesView()
+                    .environmentObject(financialService)
+                    .environmentObject(propertyService)
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
@@ -91,19 +97,22 @@ struct SettingsView: View {
 
     private var notificationsSection: some View {
         SettingsGroup(title: "Notifications") {
-            ToggleSettingsRow(icon: "bell.fill", color: .red, label: "Push Notifications", value: $notifPush)
-            ToggleSettingsRow(icon: "envelope.fill", color: .blue, label: "Email Alerts", value: $notifEmail)
-            ToggleSettingsRow(icon: "exclamationmark.circle.fill", color: .orange, label: "Overdue Reminders", value: $notifOverdue)
+            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notification Preferences") {
+                NotificationsSettingsView()
+            }
         }
     }
 
     private var appSection: some View {
         SettingsGroup(title: "App") {
             NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
-                SettingsPlaceholder(icon: "paintbrush.fill", title: "Appearance", description: "Customize themes, fonts, and display preferences.")
+                AppearanceView()
+                    .environmentObject(appSettings)
+                    .environmentObject(auth)
             }
             NavSettingsRow(icon: "lock.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Security & Privacy") {
-                SettingsPlaceholder(icon: "lock.fill", title: "Security & Privacy", description: "Manage Face ID, two-factor authentication, and data sharing.")
+                SecurityView()
+                    .environmentObject(auth)
             }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 SettingsPlaceholder(icon: "puzzlepiece.fill", title: "Integrations", description: "Connect smart home devices, calendars, and third-party services.")
@@ -116,9 +125,19 @@ struct SettingsView: View {
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
                 SettingsPlaceholder(icon: "questionmark.circle.fill", title: "Help & FAQ", description: "Browse common questions and contact our support team.")
             }
-            TapSettingsRow(icon: "star.fill", color: .yellow, label: "Rate App") {}
-            InfoSettingsRow(icon: "info.circle.fill", color: .gray, label: "Version", value: "1.0.0")
+            TapSettingsRow(icon: "star.fill", color: .yellow, label: "Rate App") {
+                if let url = URL(string: "itms-apps://itunes.apple.com/app/id0") {
+                    UIApplication.shared.open(url)
+                }
+            }
+            InfoSettingsRow(icon: "info.circle.fill", color: .gray, label: "Version", value: appVersion)
         }
+    }
+
+    private var appVersion: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(v) (\(b))"
     }
 
     // MARK: - Sign out

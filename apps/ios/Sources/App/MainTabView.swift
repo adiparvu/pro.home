@@ -26,10 +26,12 @@ enum AppTab: String, CaseIterable {
 
 struct MainTabView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var appSettings: AppSettings
     @StateObject private var taskService = TaskService()
     @StateObject private var propertyService = PropertyService()
     @StateObject private var profileService = ProfileService()
     @StateObject private var financialService = FinancialService()
+    @StateObject private var documentService = DocumentService()
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -37,22 +39,26 @@ struct MainTabView: View {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            FloatingTabBar(selected: $selectedTab)
+            FloatingTabBar(selected: $selectedTab, overdueCount: taskService.overdueCount)
                 .padding(.horizontal, 20)
                 .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
         }
         .ignoresSafeArea(edges: .bottom)
-        .preferredColorScheme(.dark)
         .environmentObject(taskService)
         .environmentObject(propertyService)
         .environmentObject(profileService)
         .environmentObject(financialService)
+        .environmentObject(documentService)
         .task {
             await propertyService.load()
             await taskService.load()
             await financialService.load()
+            await documentService.load()
             if let uid = auth.session?.user.id {
                 await profileService.load(userId: uid)
+                if let profile = profileService.profile {
+                    appSettings.loadFromProfile(profile)
+                }
             }
         }
     }
@@ -84,11 +90,16 @@ struct MainTabView: View {
 
 struct FloatingTabBar: View {
     @Binding var selected: AppTab
+    var overdueCount: Int = 0
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(AppTab.allCases, id: \.self) { tab in
-                FloatingTabItem(tab: tab, isSelected: selected == tab) {
+                FloatingTabItem(
+                    tab: tab,
+                    isSelected: selected == tab,
+                    badge: tab == .tasks ? overdueCount : 0
+                ) {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                         selected = tab
                     }
@@ -119,12 +130,13 @@ struct FloatingTabBar: View {
 struct FloatingTabItem: View {
     let tab: AppTab
     let isSelected: Bool
+    var badge: Int = 0
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                ZStack {
+                ZStack(alignment: .topTrailing) {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(.white.opacity(isSelected ? 0.16 : 0))
                         .frame(height: 36)
@@ -134,6 +146,16 @@ struct FloatingTabItem: View {
                         .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
                         .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
                         .symbolEffect(.bounce, value: isSelected)
+                        .frame(height: 36)
+
+                    if badge > 0 {
+                        Text("\(min(badge, 9))")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 16, minHeight: 16)
+                            .background(.red, in: Circle())
+                            .offset(x: 4, y: -4)
+                    }
                 }
                 .frame(height: 36)
 

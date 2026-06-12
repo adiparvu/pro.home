@@ -2,11 +2,13 @@ import SwiftUI
 import Charts
 
 struct AnalyticsView: View {
-    @State private var selectedTab: AnalyticsTab = .occupancy
+    @EnvironmentObject private var financialService: FinancialService
+    @EnvironmentObject private var taskService: TaskService
+    @State private var selectedTab: AnalyticsTab = .finances
 
     enum AnalyticsTab: String, CaseIterable {
-        case occupancy = "Occupancy"
-        case yield = "Yield"
+        case finances = "Finances"
+        case tasks    = "Tasks"
         case forecast = "Forecast"
     }
 
@@ -18,7 +20,6 @@ struct AnalyticsView: View {
                 PageHeader(title: "Analytics")
                     .padding(.bottom, 16)
 
-                // Tab picker
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(AnalyticsTab.allCases, id: \.self) { tab in
@@ -41,144 +42,239 @@ struct AnalyticsView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         switch selectedTab {
-                        case .occupancy: OccupancySection()
-                        case .yield: YieldSection()
-                        case .forecast: ForecastSection()
+                        case .finances: FinancesSection(service: financialService)
+                        case .tasks:    TasksSection(service: taskService)
+                        case .forecast: ForecastSection(financialService: financialService)
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .padding(.bottom, 100)
                 }
-            }
-        }
-    }
-}
-
-// MARK: - Occupancy
-
-private struct OccupancySection: View {
-    let data: [(month: String, rate: Double)] = [
-        ("Jan", 72), ("Feb", 85), ("Mar", 91), ("Apr", 88),
-        ("May", 94), ("Jun", 78)
-    ]
-
-    var body: some View {
-        VStack(spacing: 16) {
-            // KPI row
-            HStack(spacing: 12) {
-                KPICard(label: "Avg Rate", value: "84.7%", icon: "percent")
-                KPICard(label: "Peak Month", value: "May", icon: "calendar")
-                KPICard(label: "Trend", value: "+3.2%", icon: "arrow.up.right", positive: true)
-            }
-
-            GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Occupancy Rate")
-                        .font(.headline)
-
-                    Chart(data, id: \.month) { item in
-                        BarMark(
-                            x: .value("Month", item.month),
-                            y: .value("Rate", item.rate)
-                        )
-                        .foregroundStyle(.white.opacity(0.6))
-                        .cornerRadius(6)
-                    }
-                    .chartYScale(domain: 0...100)
-                    .chartYAxis {
-                        AxisMarks(values: [0, 25, 50, 75, 100]) { val in
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                .foregroundStyle(.white.opacity(0.06))
-                            AxisValueLabel()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .chartXAxis {
-                        AxisMarks { _ in
-                            AxisValueLabel()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(height: 180)
+                .refreshable {
+                    await financialService.load()
+                    await taskService.load()
                 }
             }
         }
     }
 }
 
-// MARK: - Yield
+// MARK: - Finances Section
 
-private struct YieldSection: View {
+private struct FinancesSection: View {
+    @ObservedObject var service: FinancialService
+
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 12) {
-                KPICard(label: "Gross Yield", value: "6.8%", icon: "percent")
-                KPICard(label: "Net Yield", value: "4.2%", icon: "banknote")
-                KPICard(label: "Annual ROI", value: "€8.4k", icon: "chart.line.uptrend.xyaxis", positive: true)
+                KPICard(label: "Income", value: "\(service.currencySymbol)\(Int(service.currentMonthIncome))", icon: "arrow.down.circle.fill")
+                KPICard(label: "Expenses", value: "\(service.currencySymbol)\(Int(service.currentMonthExpenses))", icon: "arrow.up.circle.fill")
+                let net = service.currentMonthNet
+                KPICard(label: "Net", value: "\(net >= 0 ? "+" : "")\(service.currencySymbol)\(Int(net))", icon: "chart.line.uptrend.xyaxis", positive: net >= 0)
             }
 
             GlassCard {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Monthly Income vs Expenses")
+                    Text("Income vs Expenses")
                         .font(.headline)
 
-                    Chart {
-                        ForEach(incomeData, id: \.month) { item in
-                            LineMark(
-                                x: .value("Month", item.month),
-                                y: .value("Amount", item.income)
-                            )
-                            .foregroundStyle(.white.opacity(0.8))
-                            .symbol(Circle().strokeBorder(lineWidth: 2))
+                    if service.monthlyData.isEmpty {
+                        Text("No data yet")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(height: 180)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Chart {
+                            ForEach(service.monthlyData, id: \.month) { item in
+                                LineMark(
+                                    x: .value("Month", item.month),
+                                    y: .value("Income", item.income)
+                                )
+                                .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.9))
+                                .symbol(Circle().strokeBorder(lineWidth: 2))
+
+                                AreaMark(
+                                    x: .value("Month", item.month),
+                                    y: .value("Income", item.income)
+                                )
+                                .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.08))
+
+                                LineMark(
+                                    x: .value("Month", item.month),
+                                    y: .value("Expenses", item.expenses)
+                                )
+                                .foregroundStyle(.red.opacity(0.7))
+                                .lineStyle(StrokeStyle(dash: [4, 4]))
+                            }
                         }
-                        ForEach(incomeData, id: \.month) { item in
-                            LineMark(
-                                x: .value("Month", item.month),
-                                y: .value("Amount", item.expenses)
-                            )
-                            .foregroundStyle(.white.opacity(0.3))
-                            .lineStyle(StrokeStyle(dash: [4, 4]))
+                        .chartYAxis {
+                            AxisMarks { val in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                    .foregroundStyle(.white.opacity(0.06))
+                                AxisValueLabel()
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                        .chartXAxis {
+                            AxisMarks { _ in
+                                AxisValueLabel().foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(height: 180)
                     }
-                    .chartYAxis {
-                        AxisMarks { val in
-                            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                .foregroundStyle(.white.opacity(0.06))
-                            AxisValueLabel()
-                                .foregroundStyle(.secondary)
-                        }
+
+                    HStack(spacing: 16) {
+                        legendDot(color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Income")
+                        legendDot(color: .red.opacity(0.7), label: "Expenses", dashed: true)
                     }
-                    .chartXAxis {
-                        AxisMarks { _ in
-                            AxisValueLabel()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(height: 180)
                 }
             }
         }
     }
 
-    let incomeData: [(month: String, income: Double, expenses: Double)] = [
-        ("Jan", 2800, 620), ("Feb", 3100, 890), ("Mar", 3200, 720),
-        ("Apr", 2950, 810), ("May", 3400, 680), ("Jun", 3200, 890)
-    ]
+    private func legendDot(color: Color, label: String, dashed: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            if dashed {
+                HStack(spacing: 2) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(color)
+                            .frame(width: 4, height: 2)
+                    }
+                }
+            } else {
+                Circle().fill(color).frame(width: 8, height: 8)
+            }
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
 }
 
-// MARK: - Forecast
+// MARK: - Tasks Section
+
+private struct TasksSection: View {
+    @ObservedObject var service: TaskService
+
+    var tasksByPriority: [(priority: String, count: Int)] {
+        let priorities = ["urgent", "high", "medium", "low"]
+        return priorities.compactMap { p in
+            let count = service.tasks.filter { $0.priority == p }.count
+            return count > 0 ? (p, count) : nil
+        }
+    }
+
+    var completionRate: Double {
+        guard !service.tasks.isEmpty else { return 0 }
+        let done = service.tasks.filter { $0.isCompleted }.count
+        return Double(done) / Double(service.tasks.count) * 100
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                KPICard(label: "Open", value: "\(service.openCount)", icon: "circle")
+                KPICard(label: "Overdue", value: "\(service.overdueCount)", icon: "exclamationmark.circle", positive: service.overdueCount == 0)
+                KPICard(label: "Done/7d", value: "\(service.completedThisWeek)", icon: "checkmark.circle.fill", positive: true)
+            }
+
+            GlassCard {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("Completion Rate")
+                            .font(.headline)
+                        Spacer()
+                        Text(String(format: "%.0f%%", completionRate))
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                    }
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(.white.opacity(0.08)).frame(height: 10)
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
+                                    startPoint: .leading, endPoint: .trailing
+                                ))
+                                .frame(width: geo.size.width * (completionRate / 100), height: 10)
+                        }
+                    }
+                    .frame(height: 10)
+                }
+            }
+
+            if !tasksByPriority.isEmpty {
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("By Priority")
+                            .font(.headline)
+
+                        Chart(tasksByPriority, id: \.priority) { item in
+                            BarMark(
+                                x: .value("Count", item.count),
+                                y: .value("Priority", item.priority.capitalized)
+                            )
+                            .foregroundStyle(priorityColor(item.priority).opacity(0.7))
+                            .cornerRadius(6)
+                        }
+                        .chartXAxis {
+                            AxisMarks(values: .automatic(desiredCount: 4)) { val in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                    .foregroundStyle(.white.opacity(0.06))
+                                AxisValueLabel().foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(height: 130)
+                    }
+                }
+            }
+        }
+    }
+
+    private func priorityColor(_ p: String) -> Color {
+        switch p {
+        case "urgent": return .red
+        case "high":   return .orange
+        case "medium": return .yellow
+        default:       return .blue
+        }
+    }
+}
+
+// MARK: - Forecast Section
 
 private struct ForecastSection: View {
+    @ObservedObject var financialService: FinancialService
+
+    var projectedIncome: Double {
+        let months = financialService.monthlyData
+        guard !months.isEmpty else { return 0 }
+        let avg = months.map(\.income).reduce(0, +) / Double(months.count)
+        return avg * 12
+    }
+
+    var projectedExpenses: Double {
+        let months = financialService.monthlyData
+        guard !months.isEmpty else { return 0 }
+        let avg = months.map(\.expenses).reduce(0, +) / Double(months.count)
+        return avg * 12
+    }
+
+    var symbol: String { financialService.currencySymbol }
+
     var body: some View {
         VStack(spacing: 16) {
             GlassCard {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("12-Month Forecast")
+                            Text("12-Month Projection")
                                 .font(.headline)
-                            Text("Based on current trends")
+                            Text("Based on last 6 months")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -192,43 +288,45 @@ private struct ForecastSection: View {
                     }
 
                     VStack(spacing: 12) {
-                        ForecastRow(label: "Projected Income", value: "€39,600", trend: "+8.3%", positive: true)
-                        ForecastRow(label: "Projected Expenses", value: "€9,200", trend: "+2.1%")
-                        ForecastRow(label: "Net Profit", value: "€30,400", trend: "+10.5%", positive: true)
-                        ForecastRow(label: "Avg Occupancy", value: "86%", trend: "+1.9%", positive: true)
+                        ForecastRow(
+                            label: "Projected Income",
+                            value: "\(symbol)\(Int(projectedIncome))",
+                            trend: projectedIncome > 0 ? "annualized" : "—",
+                            positive: true
+                        )
+                        ForecastRow(
+                            label: "Projected Expenses",
+                            value: "\(symbol)\(Int(projectedExpenses))",
+                            trend: projectedExpenses > 0 ? "annualized" : "—"
+                        )
+                        Divider().background(.white.opacity(0.1))
+                        ForecastRow(
+                            label: "Net Profit",
+                            value: "\(symbol)\(Int(projectedIncome - projectedExpenses))",
+                            trend: "estimate",
+                            positive: projectedIncome > projectedExpenses
+                        )
                     }
                 }
             }
 
-            GlassCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Upcoming Events")
-                        .font(.headline)
-                    ForEach(upcomingEvents, id: \.title) { event in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(event.title)
-                                    .font(.subheadline)
-                                Text(event.date)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(event.impact)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
+            if financialService.records.isEmpty {
+                GlassCard {
+                    VStack(spacing: 10) {
+                        Image(systemName: "chart.bar.doc.horizontal")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.white.opacity(0.2))
+                        Text("Add financial records to see your forecast")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
                 }
             }
         }
     }
-
-    let upcomingEvents = [
-        (title: "Boiler service due", date: "Jun 15", impact: "−€280"),
-        (title: "Lease renewal", date: "Jul 1", impact: "+€150/mo"),
-        (title: "Insurance renewal", date: "Aug 30", impact: "−€620"),
-    ]
 }
 
 private struct ForecastRow: View {
@@ -239,22 +337,15 @@ private struct ForecastRow: View {
 
     var body: some View {
         HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Text(label).font(.subheadline).foregroundStyle(.secondary)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text(value)
-                    .font(.subheadline.weight(.semibold))
-                Text(trend)
-                    .font(.caption)
-                    .foregroundStyle(positive ? .white.opacity(0.5) : .secondary)
+                Text(value).font(.subheadline.weight(.semibold))
+                Text(trend).font(.caption).foregroundStyle(positive ? .white.opacity(0.5) : .secondary)
             }
         }
     }
 }
-
-// MARK: - Shared
 
 private struct KPICard: View {
     let label: String
@@ -268,6 +359,8 @@ private struct KPICard: View {
                 IconBadge(icon: icon, size: 30)
                 Text(value)
                     .font(.title3.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)

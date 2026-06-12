@@ -2,7 +2,8 @@ import SwiftUI
 
 @main
 struct PRVHouseApp: App {
-    @StateObject private var auth = AuthService.shared
+    @StateObject private var auth        = AuthService.shared
+    @StateObject private var appSettings = AppSettings()
 
     var body: some Scene {
         WindowGroup {
@@ -11,11 +12,13 @@ struct PRVHouseApp: App {
                     SplashView()
                 } else if auth.session != nil {
                     MainTabView()
+                        .environmentObject(appSettings)
                 } else {
                     LoginView()
                 }
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(appSettings.resolvedColorScheme)
+            .environment(\.locale, Locale(identifier: appSettings.locale))
             .environmentObject(auth)
         }
     }
