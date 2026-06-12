@@ -64,6 +64,20 @@ platform :ios do
         keychain_password: "buildpass"
       )
       UI.success("Distribution certificate imported from secret")
+
+      # import_certificate (unlike `cert`) does NOT install the Apple WWDR
+      # intermediate. Without it, `security find-identity -v -p codesigning`
+      # reports the leaf cert as an INVALID identity, so sigh fails with
+      # "Could not find a matching code signing identity for type 'AppStore'".
+      # Install the WWDR intermediates so the chain is complete and the
+      # identity is considered valid.
+      %w[G3 G6].each do |gen|
+        wwdr = "/tmp/AppleWWDRCA#{gen}.cer"
+        sh("curl -fsSL https://www.apple.com/certificateauthority/AppleWWDRCA#{gen}.cer -o #{wwdr} 2>&1 || true")
+        sh("security import #{wwdr} -k #{keychain_db} -T /usr/bin/codesign 2>&1 || true")
+      end
+      UI.success("Installed Apple WWDR intermediate certificates")
+      sh("security find-identity -v -p codesigning #{keychain_db} 2>&1 || true")
     else
       # Fallback: revoke oldest cert and create a fresh one.
       require "spaceship"
