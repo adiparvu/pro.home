@@ -152,7 +152,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Family Chat") {
                 Group {
                     if let propId = propertyService.primary?.id {
-                        ChatView(propertyId: propId)
+                        ChatView()
                             .environmentObject(familyService)
                             .environmentObject(messageService)
                     } else {

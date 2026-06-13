@@ -279,22 +279,27 @@ struct SecurityView: View {
         Task {
             do {
                 let userId = try await supabase.auth.session.user.id
-                async let tasks: [[String: Any]] = (try? supabase
-                    .from("maintenance_tasks").select().execute().value) ?? []
-                async let records: [[String: Any]] = (try? supabase
-                    .from("financial_records").select().execute().value) ?? []
-                async let docs: [[String: Any]] = (try? supabase
-                    .from("documents").select().execute().value) ?? []
-                async let contractors: [[String: Any]] = (try? supabase
-                    .from("contractors").select().execute().value) ?? []
+                let tasksData = (try? await supabase
+                    .from("maintenance_tasks").select().execute().data) ?? Data()
+                let recordsData = (try? await supabase
+                    .from("financial_records").select().execute().data) ?? Data()
+                let docsData = (try? await supabase
+                    .from("documents").select().execute().data) ?? Data()
+                let contractorsData = (try? await supabase
+                    .from("contractors").select().execute().data) ?? Data()
+
+                let tasks = (try? JSONSerialization.jsonObject(with: tasksData)) as? [[String: Any]] ?? []
+                let records = (try? JSONSerialization.jsonObject(with: recordsData)) as? [[String: Any]] ?? []
+                let docs = (try? JSONSerialization.jsonObject(with: docsData)) as? [[String: Any]] ?? []
+                let contractors = (try? JSONSerialization.jsonObject(with: contractorsData)) as? [[String: Any]] ?? []
 
                 let export: [String: Any] = [
                     "exported_at": ISO8601DateFormatter().string(from: Date()),
                     "user_id": userId.uuidString,
-                    "tasks": await tasks,
-                    "financial_records": await records,
-                    "documents": await docs,
-                    "contractors": await contractors
+                    "tasks": tasks,
+                    "financial_records": records,
+                    "documents": docs,
+                    "contractors": contractors
                 ]
 
                 let data = try JSONSerialization.data(withJSONObject: export, options: .prettyPrinted)

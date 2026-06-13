@@ -142,7 +142,7 @@ struct LocalAssistantView: View {
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 12) {
                     ForEach(messages) { msg in
-                        MessageBubble(message: msg)
+                        LocalMessageBubble(message: msg)
                             .id(msg.id)
                     }
                     if isThinking {
@@ -246,7 +246,7 @@ struct LocalAssistantView: View {
 }
 
 // MARK: - Bubbles
-private struct MessageBubble: View {
+private struct LocalMessageBubble: View {
     let message: ChatMessage
     var isUser: Bool { message.role == .user }
 
