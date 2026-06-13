@@ -88,6 +88,7 @@ struct MemberAvatarStack: View {
 // MARK: - Ring color helper
 
 func avatarRingColor(for name: String) -> Color {
+    if name.hasPrefix("#") { return Color(hex: name) ?? .blue }
     switch name {
     case "purple": return .purple
     case "green":  return Color(red: 0.25, green: 0.82, blue: 0.45)

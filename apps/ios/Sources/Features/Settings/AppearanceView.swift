@@ -17,10 +17,21 @@ struct AppearanceView: View {
     ]
 
     private var currentLabel: String {
-        accentOptions.first(where: { $0.name == appSettings.accentColor })?.label ?? "Albastru"
+        if appSettings.accentColor.hasPrefix("#") { return "Personalizat" }
+        return accentOptions.first(where: { $0.name == appSettings.accentColor })?.label ?? "Albastru"
     }
     private var currentColor: Color {
         avatarRingColor(for: appSettings.accentColor)
+    }
+    private var customColorBinding: Binding<Color> {
+        Binding(
+            get: { Color(hex: appSettings.accentColor) ?? .blue },
+            set: { newColor in
+                appSettings.accentColor = newColor.hexString()
+                HapticFeedback.selection()
+                if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
+            }
+        )
     }
 
     var body: some View {
@@ -176,7 +187,7 @@ struct AppearanceView: View {
 
                 Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
 
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
                         Button {
                             withAnimation(.spring(response: 0.28)) {
@@ -198,6 +209,25 @@ struct AppearanceView: View {
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity)
                     }
+
+                    // Custom color picker (rainbow circle)
+                    ZStack {
+                        Circle()
+                            .fill(AngularGradient(
+                                gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
+                                center: .center
+                            ))
+                            .frame(width: 26, height: 26)
+                        if appSettings.accentColor.hasPrefix("#") {
+                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
+                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32)
+                        }
+                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
+                            .labelsHidden()
+                            .opacity(0.011)
+                            .frame(width: 26, height: 26)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 14)
             }

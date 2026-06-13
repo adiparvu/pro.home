@@ -145,7 +145,7 @@ struct ProfileView: View {
     }
 
     private var ringColorPicker: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             ForEach(["blue", "purple", "green", "orange", "pink", "gold", "red", "teal"], id: \.self) { name in
                 let c = avatarRingColor(for: name)
                 Button { withAnimation(.spring(response: 0.3)) { avatarRingColorName = name } } label: {
@@ -158,6 +158,31 @@ struct ProfileView: View {
                     }
                 }
                 .buttonStyle(.plain)
+            }
+
+            // Custom ring color picker
+            ZStack {
+                Circle()
+                    .fill(AngularGradient(
+                        gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
+                        center: .center
+                    ))
+                    .frame(width: 22, height: 22)
+                if avatarRingColorName.hasPrefix("#") {
+                    Circle().strokeBorder(.white, lineWidth: 2).frame(width: 22, height: 22)
+                    Circle().strokeBorder(ringColor, lineWidth: 1).frame(width: 26, height: 26)
+                }
+                ColorPicker("", selection: Binding(
+                    get: { Color(hex: avatarRingColorName) ?? .blue },
+                    set: { newColor in
+                        withAnimation(.spring(response: 0.3)) {
+                            avatarRingColorName = newColor.hexString()
+                        }
+                    }
+                ), supportsOpacity: false)
+                .labelsHidden()
+                .opacity(0.011)
+                .frame(width: 22, height: 22)
             }
         }
         .padding(.top, 2)

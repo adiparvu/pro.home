@@ -1,7 +1,7 @@
 import SwiftUI
 import MapKit
 
-// MARK: - Dashboard (Map Home)
+// MARK: - Dashboard (Scrollable Home)
 
 struct DashboardView: View {
     @EnvironmentObject private var auth: AuthService
@@ -22,30 +22,56 @@ struct DashboardView: View {
     )
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
-    @State private var showQuickActions = false
+    @State private var fabExpanded = false
     @State private var showNotifications = false
+    @State private var showChat = false
+    @State private var showAddTask = false
+    @State private var showInventory = false
 
-    // Property sections for map points and carousel
     private let sections = PropertySection.all
 
     var body: some View {
-        ZStack(alignment: .top) {
-            mapLayer.ignoresSafeArea()
-            topOverlay
-                .padding(.top, topSafeArea + 8)
+        ZStack(alignment: .bottomTrailing) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    greetingHeader
+                    mapCard
+                    widgetGrid
+                    Spacer(minLength: 100)
+                }
                 .padding(.horizontal, 16)
-            VStack(spacing: 0) {
-                Spacer()
-                widgetPanel
+                .padding(.top, topSafeArea + 8)
+                .padding(.bottom, 20)
             }
+            .background(appBackground.ignoresSafeArea())
+
+            if fabExpanded {
+                Color.black.opacity(0.35)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
+                            fabExpanded = false
+                        }
+                    }
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+
+            speedDialFAB
+                .padding(.trailing, 20)
+                .padding(.bottom, bottomSafeArea + 80)
+                .zIndex(2)
         }
         .navigationBarHidden(true)
         .onAppear { startPulse() }
-        .sheet(isPresented: $showQuickActions) {
-            QuickActionsSheet(selectedTab: $selectedTab, isPresented: $showQuickActions)
-                .presentationDetents([.height(430)])
-                .presentationDragIndicator(.hidden)
-                .presentationCornerRadius(28)
+        .task {
+            if let lat = propertyService.primary?.latitude,
+               let lon = propertyService.primary?.longitude {
+                mapPosition = .region(MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                    span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
+                ))
+            }
         }
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
@@ -54,48 +80,28 @@ struct DashboardView: View {
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
-    }
-
-    // MARK: - Map
-
-    private var mapLayer: some View {
-        Map(position: $mapPosition) {
-            // Property Core marker
-            Annotation("Property", coordinate: propertyCoordinate) {
-                PropertyCoreMarker(pulsing: $pulsing) {
-                    selectedSection = nil
-                    HapticFeedback.impact(.medium)
-                }
-            }
-            // Interactive property points
-            ForEach(sections) { section in
-                Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
-                    PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            selectedSection = section
-                        }
-                        HapticFeedback.impact(.light)
-                    }
-                }
-            }
+        .sheet(isPresented: $showChat) {
+            NavigationStack { ChatView() }
         }
-        .mapStyle(.hybrid(elevation: .realistic))
-        .mapControls { }
+        .sheet(isPresented: $showAddTask) {
+            NavigationStack { AddTaskView() }
+        }
+        .sheet(isPresented: $showInventory) {
+            NavigationStack { InventoryView() }
+        }
     }
 
-    // MARK: - Top overlay
+    // MARK: - Greeting Header
 
-    private var topOverlay: some View {
-        HStack(alignment: .center, spacing: 0) {
-            // User greeting pill
+    private var greetingHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
             HStack(spacing: 10) {
-                // Avatar
                 ZStack {
                     Circle()
                         .fill(LinearGradient(
-                            colors: [Color(red: 0.3, green: 0.85, blue: 0.5), Color(red: 0.2, green: 0.65, blue: 0.9)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            colors: [Color(red: 0.3, green: 0.85, blue: 0.5),
+                                     Color(red: 0.2, green: 0.65, blue: 0.9)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
                         ))
                     Text(avatarInitial)
                         .font(.system(size: 15, weight: .bold))
@@ -104,169 +110,267 @@ struct DashboardView: View {
                 .frame(width: 36, height: 36)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Hello 👋")
+                    Text("Bună ziua 👋")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.5))
                     Text(displayName)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.primary)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.8))
-            .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
 
             Spacer()
 
-            // Notification button
+            if let score = propertyService.primary?.healthScore {
+                let col: Color = score >= 80
+                    ? Color(red: 0.25, green: 0.88, blue: 0.55)
+                    : score >= 55 ? Color.orange : Color.red
+                HStack(spacing: 4) {
+                    Image(systemName: "heart.fill").font(.system(size: 10))
+                    Text("\(score)").font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(col)
+                .padding(.horizontal, 9).padding(.vertical, 5)
+                .background(col.opacity(0.12), in: Capsule())
+            }
+
             Button {
                 HapticFeedback.impact(.light)
                 showNotifications.toggle()
             } label: {
                 ZStack {
                     Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.8))
-                        .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
+                        .fill(Color.primary.opacity(0.07))
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
                     Image(systemName: "bell.fill")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: 38, height: 38)
             }
             .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Widget panel
+    // MARK: - Map Card
 
-    private var widgetPanel: some View {
-        VStack(spacing: 0) {
-            // Drag indicator
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color.primary.opacity(0.18))
-                .frame(width: 36, height: 4)
-                .padding(.top, 10)
-                .padding(.bottom, 14)
+    private var mapCard: some View {
+        ZStack(alignment: .bottom) {
+            Map(position: $mapPosition) {
+                Annotation("Property", coordinate: propertyCoordinate) {
+                    PropertyCoreMarker(pulsing: $pulsing) {
+                        selectedSection = nil
+                        HapticFeedback.impact(.medium)
+                    }
+                }
+                ForEach(sections) { section in
+                    Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
+                        PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                selectedSection = section
+                            }
+                            HapticFeedback.impact(.light)
+                        }
+                    }
+                }
+            }
+            .mapStyle(.hybrid(elevation: .realistic))
+            .mapControls { }
+            .frame(height: 260)
 
-            // Property header
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(propertyService.primary?.name ?? "Proprietatea mea")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
                     if let addr = propertyService.primary?.addressLine1 {
                         Text(addr)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary.opacity(0.6))
                             .lineLimit(1)
                     }
                 }
                 Spacer()
-                HStack(spacing: 10) {
-                    if let score = propertyService.primary?.healthScore {
-                        let col: Color = score >= 80
-                            ? Color(red: 0.25, green: 0.88, blue: 0.55)
-                            : score >= 55 ? Color.orange : Color.red
-                        HStack(spacing: 4) {
-                            Image(systemName: "heart.fill").font(.system(size: 11))
-                            Text("\(score)").font(.system(size: 13, weight: .bold))
-                        }
-                        .foregroundStyle(col)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(col.opacity(0.15), in: Capsule())
+                if let section = selectedSection {
+                    HStack(spacing: 6) {
+                        Image(systemName: section.icon)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(section.color)
+                        Text(section.name)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
-                    // Quick actions FAB
-                    Button {
-                        HapticFeedback.impact(.medium)
-                        showQuickActions = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(red: 0.4, green: 0.6, blue: 1.0),
-                                             Color(red: 0.6, green: 0.35, blue: 0.95)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                in: Circle()
-                            )
-                            .shadow(color: Color(red: 0.5, green: 0.45, blue: 0.95).opacity(0.5), radius: 8)
-                    }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(section.color.opacity(0.18), in: Capsule())
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
-
-            // 2×2 widget grid
-            LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                spacing: 12
-            ) {
-                HomeWidget(
-                    icon: "checklist",
-                    iconColor: taskService.overdueCount > 0 ? Color.red : Color(red: 0.35, green: 0.65, blue: 1.0),
-                    title: "Sarcini",
-                    value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
-                    subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
-                    badge: taskService.overdueCount
-                ) { selectedTab = .tasks }
-
-                HomeWidget(
-                    icon: "creditcard.fill",
-                    iconColor: financialService.currentMonthNet >= 0
-                        ? Color(red: 0.3, green: 0.85, blue: 0.45) : Color.orange,
-                    title: "Finanțe",
-                    value: netFormatted,
-                    subtitle: "luna aceasta"
-                ) { selectedTab = .analytics }
-
-                HomeWidget(
-                    icon: "doc.fill",
-                    iconColor: documentService.expiringDocs.isEmpty
-                        ? Color(red: 0.55, green: 0.55, blue: 0.95) : Color.orange,
-                    title: "Documente",
-                    value: documentService.expiringDocs.isEmpty
-                        ? "\(documentService.documents.count)"
-                        : "\(documentService.expiringDocs.count)",
-                    subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiră curând",
-                    badge: documentService.expiringDocs.count
-                ) { selectedTab = .settings }
-
-                HomeWidget(
-                    icon: "person.2.fill",
-                    iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
-                    title: "Familie",
-                    value: "\(familyService.members.count)",
-                    subtitle: familyService.members.count == 1 ? "membru" : "membri"
-                ) { selectedTab = .settings }
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, bottomSafeArea > 0 ? bottomSafeArea + 64 : 80)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
         }
-        .background(.ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.8)
         )
-        .shadow(color: .black.opacity(0.25), radius: 24, y: -6)
-        .ignoresSafeArea(edges: .bottom)
+        .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
     }
+
+    // MARK: - Widget Grid
+
+    private var widgetGrid: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+            spacing: 12
+        ) {
+            HomeWidget(
+                icon: "checklist",
+                iconColor: taskService.overdueCount > 0 ? Color.red : Color(red: 0.35, green: 0.65, blue: 1.0),
+                title: "Sarcini",
+                value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
+                subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
+                badge: taskService.overdueCount
+            ) { selectedTab = .tasks }
+
+            HomeWidget(
+                icon: "creditcard.fill",
+                iconColor: financialService.currentMonthNet >= 0
+                    ? Color(red: 0.3, green: 0.85, blue: 0.45) : Color.orange,
+                title: "Finanțe",
+                value: netFormatted,
+                subtitle: "luna aceasta"
+            ) { selectedTab = .analytics }
+
+            HomeWidget(
+                icon: "doc.fill",
+                iconColor: documentService.expiringDocs.isEmpty
+                    ? Color(red: 0.55, green: 0.55, blue: 0.95) : Color.orange,
+                title: "Documente",
+                value: documentService.expiringDocs.isEmpty
+                    ? "\(documentService.documents.count)"
+                    : "\(documentService.expiringDocs.count)",
+                subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiră curând",
+                badge: documentService.expiringDocs.count
+            ) { selectedTab = .settings }
+
+            HomeWidget(
+                icon: "person.2.fill",
+                iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
+                title: "Familie",
+                value: "\(familyService.members.count)",
+                subtitle: familyService.members.count == 1 ? "membru" : "membri"
+            ) { selectedTab = .settings }
+        }
+    }
+
+    // MARK: - Speed Dial FAB
+
+    private var speedDialFAB: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            if fabExpanded {
+                fabAction(icon: "sparkles",
+                          color: Color(red: 0.6, green: 0.35, blue: 0.95),
+                          title: "ARIA") {
+                    withAnimation(.spring()) { fabExpanded = false }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .assistant }
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
+
+                fabAction(icon: "plus.circle.fill",
+                          color: Color(red: 0.3, green: 0.85, blue: 0.45),
+                          title: "Sarcină nouă") {
+                    withAnimation(.spring()) { fabExpanded = false }
+                    showAddTask = true
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
+
+                fabAction(icon: "message.fill",
+                          color: Color(red: 0.35, green: 0.65, blue: 1.0),
+                          title: "Chat familie") {
+                    withAnimation(.spring()) { fabExpanded = false }
+                    showChat = true
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
+
+                fabAction(icon: "barcode.viewfinder",
+                          color: Color(red: 1.0, green: 0.65, blue: 0.15),
+                          title: "Scanare") {
+                    withAnimation(.spring()) { fabExpanded = false }
+                    showInventory = true
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            }
+
+            Button {
+                HapticFeedback.impact(.medium)
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
+                    fabExpanded.toggle()
+                }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            colors: [Color(red: 0.4, green: 0.6, blue: 1.0),
+                                     Color(red: 0.6, green: 0.35, blue: 0.95)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                        .shadow(color: Color(red: 0.5, green: 0.45, blue: 0.95).opacity(0.55), radius: 14, y: 4)
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.white)
+                        .rotationEffect(.degrees(fabExpanded ? 45 : 0))
+                        .animation(.spring(response: 0.38, dampingFraction: 0.72), value: fabExpanded)
+                }
+                .frame(width: 58, height: 58)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func fabAction(icon: String, color: Color, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(.regularMaterial, in: Capsule())
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+
+                ZStack {
+                    Circle().fill(color)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 44, height: 44)
+                .shadow(color: color.opacity(0.5), radius: 8, y: 2)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
 
     private var netFormatted: String {
         let sym = financialService.currencySymbol
         let abs = Int(Swift.abs(financialService.currentMonthNet))
         return financialService.currentMonthNet >= 0 ? "+\(abs)\(sym)" : "-\(abs)\(sym)"
     }
-
-    // MARK: - Helpers
 
     private var propertyCoordinate: CLLocationCoordinate2D {
         if let lat = propertyService.primary?.latitude,
@@ -302,142 +406,6 @@ struct DashboardView: View {
         withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
             pulsing = true
         }
-    }
-}
-
-// MARK: - Quick Actions Sheet
-
-struct QuickActionsSheet: View {
-    @Binding var selectedTab: AppTab
-    @Binding var isPresented: Bool
-
-    @State private var showChat = false
-    @State private var showAddTask = false
-    @State private var showInventory = false
-
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Acțiuni rapide")
-                        .font(.system(size: 17, weight: .semibold))
-                    Spacer()
-                    Button { isPresented = false } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 26))
-                            .foregroundStyle(Color.primary.opacity(0.3))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 22)
-                .padding(.bottom, 20)
-
-                LazyVGrid(columns: columns, spacing: 12) {
-                    // Chat
-                    NavigationLink {
-                        ChatView()
-                    } label: {
-                        QuickActionTile(icon: "message.fill",
-                                        color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                                        title: "Chat",
-                                        subtitle: "Familie & colegi")
-                    }
-                    .buttonStyle(.plain)
-
-                    // ARIA — dismiss + switch tab
-                    Button {
-                        isPresented = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            selectedTab = .assistant
-                        }
-                    } label: {
-                        QuickActionTile(icon: "sparkles",
-                                        color: Color(red: 0.6, green: 0.35, blue: 0.95),
-                                        title: "ARIA",
-                                        subtitle: "Asistent AI")
-                    }
-                    .buttonStyle(.plain)
-
-                    // Sarcină nouă
-                    NavigationLink {
-                        AddTaskView()
-                    } label: {
-                        QuickActionTile(icon: "plus.circle.fill",
-                                        color: Color(red: 0.3, green: 0.85, blue: 0.45),
-                                        title: "Sarcină nouă",
-                                        subtitle: "Adaugă rapid")
-                    }
-                    .buttonStyle(.plain)
-
-                    // Scan scule
-                    NavigationLink {
-                        InventoryView()
-                    } label: {
-                        QuickActionTile(icon: "barcode.viewfinder",
-                                        color: Color(red: 1.0, green: 0.65, blue: 0.15),
-                                        title: "Scan scule",
-                                        subtitle: "Inventar rapid")
-                    }
-                    .buttonStyle(.plain)
-
-                    // Împrumut
-                    NavigationLink {
-                        InventoryView()
-                    } label: {
-                        QuickActionTile(icon: "arrow.left.arrow.right.circle.fill",
-                                        color: Color(red: 0.95, green: 0.45, blue: 0.35),
-                                        title: "Împrumut",
-                                        subtitle: "Unelte & obiecte")
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-
-                Spacer()
-            }
-        }
-    }
-}
-
-// MARK: - Quick Action Tile
-
-struct QuickActionTile: View {
-    let icon: String
-    let color: Color
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(color.opacity(0.15))
-                    .frame(width: 46, height: 46)
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(color)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.5))
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.8)
-        )
     }
 }
 
@@ -510,7 +478,6 @@ struct PropertyCoreMarker: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Outer pulse rings
                 Circle()
                     .fill(Color(red: 0.2, green: 0.85, blue: 0.45).opacity(pulsing ? 0.08 : 0.22))
                     .frame(width: 80, height: 80)
@@ -523,18 +490,15 @@ struct PropertyCoreMarker: View {
                     .scaleEffect(pulsing ? 1.08 : 0.95)
                     .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(0.2), value: pulsing)
 
-                // Core circle
                 Circle()
                     .fill(LinearGradient(
                         colors: [Color(red: 0.25, green: 0.92, blue: 0.5), Color(red: 0.1, green: 0.75, blue: 0.35)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint: .topLeading, endPoint: .bottomTrailing
                     ))
                     .frame(width: 42, height: 42)
                     .shadow(color: Color(red: 0.2, green: 0.9, blue: 0.45).opacity(0.8), radius: 16)
                     .shadow(color: Color(red: 0.2, green: 0.9, blue: 0.45).opacity(0.4), radius: 30)
 
-                // Icon
                 Image(systemName: "house.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
@@ -646,22 +610,6 @@ struct PropertySection: Identifiable {
         PropertySection(name: "Documente", icon: "doc.fill",         color: Color(red: 0.55, green: 0.55, blue: 0.95), latOffset:  1.5, lonOffset:  0.6),
         PropertySection(name: "Inventar",  icon: "shippingbox.fill", color: Color(red: 0.8,  green: 0.5,  blue: 0.3),  latOffset: -0.3, lonOffset: -1.8),
     ]
-}
-
-// MARK: - Action bar items
-
-enum ActionBarItem: CaseIterable {
-    case share, favorite, info, filters, search
-
-    var icon: String {
-        switch self {
-        case .share:    return "square.and.arrow.up"
-        case .favorite: return "heart"
-        case .info:     return "info.circle"
-        case .filters:  return "slider.horizontal.3"
-        case .search:   return "magnifyingglass"
-        }
-    }
 }
 
 // MARK: - Health Score Card
@@ -842,12 +790,12 @@ private struct FinStat: View {
     }
 }
 
-// MARK: - Shared bg
+// MARK: - Shared background
 
 var appBackground: Color {
     Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.04, green: 0.04, blue: 0.08, alpha: 1)   // deep navy-black
-            : UIColor(red: 0.96, green: 0.96, blue: 0.985, alpha: 1)  // cool frost white
+            ? UIColor(red: 0.04, green: 0.04, blue: 0.08, alpha: 1)
+            : UIColor(red: 0.96, green: 0.96, blue: 0.985, alpha: 1)
     })
 }
