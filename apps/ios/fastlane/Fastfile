@@ -1,6 +1,5 @@
 require "base64"
 require "fileutils"
-require "spaceship"
 
 default_platform(:ios)
 
@@ -43,16 +42,60 @@ platform :ios do
       end
     end
 
-    # Revoke all existing iOS Distribution certs so cert() can create a fresh one.
-    # CI runners have no private key for previously-created certs, so we must
-    # clear the 2-cert limit before each build.
-    UI.message("Revoking existing iOS Distribution certificates via ASC API...")
-    Spaceship::ConnectAPI.auth(key_id: key_id, issuer_id: issuer_id, filepath: key_path)
-    Spaceship::ConnectAPI::Certificate.all.each do |c|
-      next unless c.certificate_type == "IOS_DISTRIBUTION"
-      c.delete!
-      UI.success("Revoked certificate #{c.id}")
-    end
+    # Revoke all existing Distribution certs via direct ASC REST API.
+    # Covers both IOS_DISTRIBUTION (old "iPhone Distribution") and
+    # DISTRIBUTION ("Apple Distribution") types to avoid the 2-cert limit
+    # on ephemeral CI runners that have no local private key.
+    File.write("/tmp/revoke_dist_certs.rb", <<~'RUBY')
+      require 'openssl'
+      require 'base64'
+      require 'json'
+      require 'net/http'
+
+      key_path, key_id, issuer_id = ARGV
+
+      key = OpenSSL::PKey::EC.new(File.read(key_path))
+      now = Time.now.to_i
+
+      header  = { "alg" => "ES256", "kid" => key_id, "typ" => "JWT" }
+      payload = { "iss" => issuer_id, "iat" => now, "exp" => now + 1200, "aud" => "appstoreconnect-v1" }
+
+      eh  = Base64.urlsafe_encode64(JSON.generate(header),  padding: false)
+      ep  = Base64.urlsafe_encode64(JSON.generate(payload), padding: false)
+      si  = "#{eh}.#{ep}"
+
+      der  = key.sign(OpenSSL::Digest::SHA256.new, si)
+      asn1 = OpenSSL::ASN1.decode(der)
+      r_hex = asn1.value[0].value.to_s(16).rjust(64, '0')
+      s_hex = asn1.value[1].value.to_s(16).rjust(64, '0')
+      sig  = Base64.urlsafe_encode64([r_hex + s_hex].pack('H*'), padding: false)
+      jwt  = "#{si}.#{sig}"
+
+      %w[IOS_DISTRIBUTION DISTRIBUTION].each do |cert_type|
+        uri = URI("https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=#{cert_type}&limit=50")
+        req = Net::HTTP::Get.new(uri)
+        req["Authorization"] = "Bearer #{jwt}"
+        resp = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+
+        unless resp.code == "200"
+          warn "GET certificates?type=#{cert_type} → #{resp.code}: #{resp.body}"
+          next
+        end
+
+        certs = JSON.parse(resp.body).fetch("data", [])
+        puts "#{cert_type}: #{certs.size} cert(s) found"
+
+        certs.each do |c|
+          cid = c["id"]
+          del = Net::HTTP::Delete.new(URI("https://api.appstoreconnect.apple.com/v1/certificates/#{cid}"))
+          del["Authorization"] = "Bearer #{jwt}"
+          r2 = Net::HTTP.start("api.appstoreconnect.apple.com", 443, use_ssl: true) { |h| h.request(del) }
+          puts "  Revoked #{cid} → HTTP #{r2.code}"
+        end
+      end
+    RUBY
+
+    sh("ruby /tmp/revoke_dist_certs.rb '#{key_path}' '#{key_id}' '#{issuer_id}'")
 
     # Create a new Distribution cert and install it into the runner's keychain.
     cert(
@@ -61,7 +104,7 @@ platform :ios do
       output_path: "/tmp"
     )
 
-    # Fetch (or create) the App Store Distribution provisioning profile.
+    # Fetch or create the App Store Distribution provisioning profile.
     sigh(
       api_key:        api_key,
       app_identifier: "com.prvhouse.app",
@@ -74,7 +117,7 @@ platform :ios do
     profile_uuid = ENV["SIGH_UUID"]
     UI.message("Provisioning profile UUID: #{profile_uuid}")
 
-    # Switch to manual signing so xcodebuild uses the cert+profile we just fetched.
+    # Manual signing — use the cert+profile we just fetched.
     update_code_signing_settings(
       use_automatic_signing: false,
       path:                  "#{project_dir}/PRVHouse.xcodeproj",
