@@ -134,13 +134,43 @@ platform :ios do
     sh("security find-identity -v -p codesigning '#{keychain_path}' || true")
     sh("security find-identity -v -p codesigning || true")
 
-    # Ensure the App ID and App Store Connect record exist for the new bundle ID.
-    # produce is idempotent — safe to run even if the app already exists.
-    produce(
-      app_identifier: "com.prvio.app",
-      app_name:       "PRVIO",
-      skip_itc:       false
-    )
+    # Ensure the Bundle ID exists on the Apple Developer Portal via ASC REST API.
+    # produce is not used because it requires `username` (Apple ID) which we do
+    # not store as a CI secret. The ASC API key is sufficient for this operation.
+    File.write("/tmp/ensure_bundle_id.rb", <<~'RUBY')
+      require 'openssl'; require 'base64'; require 'json'; require 'net/http'
+      key_path, key_id, issuer_id, bundle_id, app_name, team_id = ARGV
+      key = OpenSSL::PKey::EC.new(File.read(key_path))
+      now = Time.now.to_i
+      hdr = { "alg"=>"ES256","kid"=>key_id,"typ"=>"JWT" }
+      pay = { "iss"=>issuer_id,"iat"=>now,"exp"=>now+1200,"aud"=>"appstoreconnect-v1" }
+      eh  = Base64.urlsafe_encode64(JSON.generate(hdr), padding:false)
+      ep  = Base64.urlsafe_encode64(JSON.generate(pay), padding:false)
+      si  = "#{eh}.#{ep}"
+      der = key.sign(OpenSSL::Digest::SHA256.new, si)
+      asn = OpenSSL::ASN1.decode(der)
+      r   = asn.value[0].value.to_s(16).rjust(64,'0')
+      s   = asn.value[1].value.to_s(16).rjust(64,'0')
+      jwt = "#{si}.#{Base64.urlsafe_encode64([r+s].pack('H*'),padding:false)}"
+      def req(uri, jwt, method: :get, body: nil)
+        k = {get: Net::HTTP::Get, post: Net::HTTP::Post}[method]
+        r = k.new(uri); r["Authorization"]="Bearer #{jwt}"; r["Content-Type"]="application/json" if body; r.body=body.to_json if body
+        Net::HTTP.start(uri.host, uri.port, use_ssl:true){|h|h.request(r)}
+      end
+      resp = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds?filter[identifier]=#{bundle_id}&filter[platform]=IOS"), jwt)
+      if JSON.parse(resp.body).fetch("data",[]).empty?
+        puts "Creating Bundle ID #{bundle_id}..."
+        r2 = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds"), jwt, method: :post,
+          body: {data:{type:"bundleIds",attributes:{identifier:bundle_id,name:app_name,platform:"IOS",seedId:team_id}}})
+        puts "  HTTP #{r2.code}: #{r2.body[0..200]}"
+        exit 1 unless r2.code == "201"
+        puts "  Bundle ID created."
+      else
+        puts "Bundle ID #{bundle_id} already exists."
+      end
+    RUBY
+
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
 
     # Fetch or create the App Store Distribution provisioning profile.
     # Default sigh (no adhoc/development flag) = App Store profile.
