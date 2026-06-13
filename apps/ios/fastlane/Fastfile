@@ -105,11 +105,11 @@ platform :ios do
     )
 
     # Fetch or create the App Store Distribution provisioning profile.
+    # Default sigh (no adhoc/development flag) = App Store profile.
     sigh(
       api_key:        api_key,
       app_identifier: "com.prvhouse.app",
       platform:       "ios",
-      app_store:      true,
       output_path:    "/tmp",
       filename:       "PRVHouse_AppStore.mobileprovision"
     )
