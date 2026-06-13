@@ -26,7 +26,7 @@ platform :ios do
     Dir.chdir("..") do
       sh("xcodegen generate")
 
-      pbxproj_path = "PRVHouse.xcodeproj/project.pbxproj"
+      pbxproj_path = "PRVIO.xcodeproj/project.pbxproj"
       pbxproj = File.read(pbxproj_path)
       has_xcassets     = pbxproj.include?("Assets.xcassets")
       has_correct_type = pbxproj.include?("folder.assetcatalog")
@@ -101,7 +101,7 @@ platform :ios do
     # a keychain whose partition list we control lets codesign use the private
     # key non-interactively. Without this, codesign blocks forever on a GUI
     # authorization prompt that never appears on a headless runner.
-    keychain_name     = "prvhouse_ci.keychain"
+    keychain_name     = "prvio_ci.keychain"
     keychain_password = "ci_temp_pw"
     keychain_path     = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
 
@@ -138,10 +138,10 @@ platform :ios do
     # Default sigh (no adhoc/development flag) = App Store profile.
     sigh(
       api_key:        api_key,
-      app_identifier: "com.prvhouse.app",
+      app_identifier: "com.prvio.app",
       platform:       "ios",
       output_path:    "/tmp",
-      filename:       "PRVHouse_AppStore.mobileprovision"
+      filename:       "PRVIO_AppStore.mobileprovision"
     )
 
     profile_uuid = ENV["SIGH_UUID"]
@@ -151,10 +151,10 @@ platform :ios do
     # so xcodebuild command-line flags don't bleed into SPM package targets.
     update_code_signing_settings(
       use_automatic_signing: false,
-      path:                  "#{project_dir}/PRVHouse.xcodeproj",
-      targets:               ["PRVHouse"],
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIO"],
       build_configurations:  ["Release"],
-      bundle_identifier:     "com.prvhouse.app",
+      bundle_identifier:     "com.prvio.app",
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          profile_uuid
@@ -166,11 +166,11 @@ platform :ios do
     UI.important(">>> PHASE: archive START")
     sh(
       "set -o pipefail && xcodebuild archive " \
-      "-project #{project_dir}/PRVHouse.xcodeproj " \
-      "-scheme PRVHouse " \
+      "-project #{project_dir}/PRVIO.xcodeproj " \
+      "-scheme PRVIO " \
       "-configuration Release " \
       "-destination 'generic/platform=iOS' " \
-      "-archivePath /tmp/PRVHouse.xcarchive " \
+      "-archivePath /tmp/PRVIO.xcarchive " \
       "-derivedDataPath /tmp/DerivedData " \
       "-hideShellScriptEnvironment " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
@@ -180,7 +180,7 @@ platform :ios do
     UI.important(">>> PHASE: archive DONE")
 
     # Run actool manually — XcodeGen project doesn't compile asset catalogs.
-    archive_app = Dir.glob("/tmp/PRVHouse.xcarchive/Products/Applications/*.app").first
+    archive_app = Dir.glob("/tmp/PRVIO.xcarchive/Products/Applications/*.app").first
     raise "No .app found in archive" unless archive_app
 
     actool_plist = "/tmp/actool_partial_info.plist"
@@ -217,7 +217,7 @@ platform :ios do
         <string>manual</string>
         <key>provisioningProfiles</key>
         <dict>
-          <key>com.prvhouse.app</key>
+          <key>com.prvio.app</key>
           <string>#{profile_uuid}</string>
         </dict>
       </dict>
@@ -230,15 +230,15 @@ platform :ios do
     UI.important(">>> PHASE: export START")
     sh(
       "set -o pipefail && xcodebuild -exportArchive " \
-      "-archivePath /tmp/PRVHouse.xcarchive " \
-      "-exportPath /tmp/PRVHouse_ipa " \
+      "-archivePath /tmp/PRVIO.xcarchive " \
+      "-exportPath /tmp/PRVIO_ipa " \
       "-exportOptionsPlist #{export_options_path} 2>&1"
     )
     UI.important(">>> PHASE: export DONE — uploading to TestFlight")
 
     pilot(
       api_key:                           api_key,
-      ipa:                               "/tmp/PRVHouse_ipa/PRVHouse.ipa",
+      ipa:                               "/tmp/PRVIO_ipa/PRVIO.ipa",
       skip_waiting_for_build_processing: true,
       skip_submission:                   true,
       distribute_external:               false,
