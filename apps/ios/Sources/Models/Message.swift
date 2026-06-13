@@ -51,3 +51,34 @@ struct NewMessage: Encodable {
     let longitude: Double?
     let mentioned_ids: [String]
 }
+
+// MARK: - Read receipts
+
+struct MessageRead: Identifiable, Codable, Hashable {
+    let id: UUID
+    var messageId: UUID
+    var propertyId: UUID?
+    var userId: UUID?
+    var readerName: String
+    var readAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case messageId  = "message_id"
+        case propertyId = "property_id"
+        case userId     = "user_id"
+        case readerName = "reader_name"
+        case readAt     = "read_at"
+    }
+
+    var readTimeDisplay: String {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter()
+        f2.formatOptions = [.withInternetDateTime]
+        let d = f.date(from: readAt) ?? f2.date(from: readAt) ?? Date()
+        let out = DateFormatter()
+        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        return out.string(from: d)
+    }
+}

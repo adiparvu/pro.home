@@ -21,8 +21,7 @@ struct IntegrationsView: View {
                 .padding(.top, 8)
             }
         }
-        .navigationTitle("Integrations")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .task { await vm.checkStatuses() }
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
             Button("OK", role: .cancel) {}

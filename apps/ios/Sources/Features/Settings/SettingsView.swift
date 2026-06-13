@@ -119,6 +119,9 @@ struct SettingsView: View {
                     .environmentObject(documentService)
                     .environmentObject(propertyService)
             }
+            NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
+                BlueprintsView()
+            }
             NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
                 FinancesView()
                     .environmentObject(financialService)

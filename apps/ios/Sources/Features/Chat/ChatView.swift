@@ -50,10 +50,22 @@ struct ChatView: View {
             guard let pid = propertyId else { return }
             await messageService.load(propertyId: pid)
             messageService.resetUnread()
+            await messageService.loadReads(propertyId: pid)
+            await messageService.markRead(propertyId: pid, readerName: senderName)
+        }
+        .task {
+            guard let pid = propertyId else { return }
             await messageService.subscribeRealtime(propertyId: pid)
         }
+        .task {
+            guard let pid = propertyId else { return }
+            await messageService.subscribeReads(propertyId: pid)
+        }
         .onDisappear {
-            Task { await messageService.unsubscribe() }
+            Task {
+                await messageService.unsubscribe()
+                await messageService.unsubscribeReads()
+            }
         }
         .photosPicker(isPresented: $showAttachMenu,
                       selection: $photoPickerItems,
@@ -82,7 +94,8 @@ struct ChatView: View {
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
-                            members: familyService.members
+                            members: familyService.members,
+                            readers: messageService.reads[msg.id] ?? []
                         )
                         .id(msg.id)
                     }
@@ -94,6 +107,10 @@ struct ChatView: View {
             .onChange(of: messageService.messages.count) { _, _ in
                 if let last = messageService.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                }
+                // Mark newly-arrived messages as read while the chat is open.
+                if let pid = propertyId {
+                    Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
                 }
             }
             .onAppear {
@@ -242,10 +259,14 @@ struct MessageBubble: View {
     let message: Message
     let isOwn: Bool
     let members: [FamilyMember]
+    var readers: [MessageRead] = []
+
+    @State private var showReaders = false
 
     private var sender: FamilyMember? {
         members.first { $0.name == message.senderName }
     }
+    private var seen: Bool { !readers.isEmpty }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -263,13 +284,37 @@ struct MessageBubble: View {
                         .padding(.leading, 4)
                 }
                 bubbleContent
-                Text(message.timeDisplay)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.3))
-                    .padding(.horizontal, 4)
+                statusRow
             }
 
             if !isOwn { Spacer(minLength: 60) }
+        }
+        .sheet(isPresented: $showReaders) {
+            SeenBySheet(readers: readers, members: members)
+        }
+    }
+
+    @ViewBuilder
+    private var statusRow: some View {
+        if isOwn {
+            Button {
+                if seen { showReaders = true }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(message.timeDisplay)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.3))
+                    ReadCheck(seen: seen)
+                }
+                .padding(.horizontal, 4)
+            }
+            .buttonStyle(.plain)
+            .disabled(!seen)
+        } else {
+            Text(message.timeDisplay)
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.3))
+                .padding(.horizontal, 4)
         }
     }
 
@@ -320,6 +365,89 @@ struct MessageBubble: View {
                 .background(isOwn ? Color.blue.opacity(0.75) : Color.white.opacity(0.08),
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
+    }
+}
+
+// MARK: - Read Receipt Check
+
+private struct ReadCheck: View {
+    let seen: Bool
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 8, weight: .bold))
+            Image(systemName: "checkmark")
+                .font(.system(size: 8, weight: .bold))
+                .offset(x: 3.5)
+        }
+        .frame(width: 14, alignment: .leading)
+        .foregroundStyle(seen ? Color.blue : .white.opacity(0.4))
+    }
+}
+
+// MARK: - Seen By sheet
+
+private struct SeenBySheet: View {
+    let readers: [MessageRead]
+    let members: [FamilyMember]
+    @Environment(\.dismiss) private var dismiss
+
+    private func member(for name: String) -> FamilyMember? {
+        members.first { $0.name == name }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(readers.sorted { $0.readAt > $1.readAt }) { read in
+                            HStack(spacing: 12) {
+                                avatar(for: read)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(read.readerName.isEmpty ? "Member" : read.readerName)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                    Text("Seen \(read.readTimeDisplay)")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.white.opacity(0.45))
+                                }
+                                Spacer()
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.blue)
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                        }
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Seen by \(readers.count)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func avatar(for read: MessageRead) -> some View {
+        let m = member(for: read.readerName)
+        let color = m?.swiftColor ?? .blue
+        ZStack {
+            Circle().fill(color.opacity(0.2))
+            Text(m?.initials ?? String(read.readerName.prefix(1)).uppercased())
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(color)
+        }
+        .frame(width: 38, height: 38)
+        .overlay(Circle().strokeBorder(color, lineWidth: 1.5))
     }
 }
 
