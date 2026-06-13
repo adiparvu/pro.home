@@ -26,20 +26,19 @@ struct LoginView: View {
                 Spacer()
 
                 // Logo
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .frame(width: 72, height: 72)
-                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
-                        Text("🏠")
-                            .font(.system(size: 32))
+                VStack(spacing: 14) {
+                    PRVHouseLogoView(size: 84)
+                        .shadow(color: Color(red: 0.24, green: 0.50, blue: 1.00).opacity(0.50), radius: 22, y: 8)
+
+                    VStack(spacing: 4) {
+                        Text("PRVHouse")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                        Text("Property management")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .tracking(0.4)
                     }
-                    Text("PRV House")
-                        .font(.title.weight(.bold))
-                    Text("Property management")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                 }
                 .padding(.bottom, 48)
 
