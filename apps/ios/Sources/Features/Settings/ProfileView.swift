@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import LocalAuthentication
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
@@ -15,6 +16,9 @@ struct ProfileView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var toast: String?
     @State private var toastIsError = false
+    @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
+    @State private var biometricType: LABiometryType = .none
+    @State private var showDeleteConfirm2 = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -22,7 +26,8 @@ struct ProfileView: View {
                 avatarSection
                 infoCard
                 accountSection
-                Spacer(minLength: 80)
+                securitySection
+                Spacer(minLength: 110)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -72,6 +77,13 @@ struct ProfileView: View {
             if profileService.profile == nil, let uid = auth.session?.user.id {
                 await profileService.load(userId: uid)
             }
+        }
+        .task { checkBiometrics() }
+        .confirmationDialog("Delete Account", isPresented: $showDeleteConfirm2, titleVisibility: .visible) {
+            Button("Delete My Account", role: .destructive) { Task { try? await auth.signOut() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This is permanent and cannot be undone.")
         }
     }
 
@@ -199,6 +211,110 @@ struct ProfileView: View {
                 HapticFeedback.warning()
                 showDeleteConfirm = true
             }
+        }
+    }
+
+    // MARK: - Security Section
+
+    private var securitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SECURITY & PRIVACY")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.35))
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                // Face ID row
+                if biometricType != .none {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: biometricType == .faceID ? "faceid" : "touchid", color: Color(red: 0.3, green: 0.85, blue: 0.5))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(biometricType == .faceID ? "Face ID" : "Touch ID")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.white)
+                            Text("Unlock app without password")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
+                        Spacer()
+                        Toggle("", isOn: $biometricsEnabled)
+                            .labelsHidden()
+                            .tint(.blue)
+                            .onChange(of: biometricsEnabled) { _, newValue in
+                                if newValue { Task { await authenticateBiometric() } }
+                            }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    secRowDivider
+                }
+
+                // Change Password row
+                Button {
+                    showChangePassword = true
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "key.fill", color: .orange)
+                        Text("Change Password")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.28))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+                secRowDivider
+
+                // Delete Account
+                Button {
+                    showDeleteConfirm2 = true
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "trash.fill", color: .red)
+                        Text("Delete Account")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.red)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+            }
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+        }
+    }
+
+    private var secRowDivider: some View {
+        Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+    }
+
+    private func authenticateBiometric() async {
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            await MainActor.run { biometricsEnabled = false }
+            return
+        }
+        let reason = biometricType == .faceID ? "Enable Face ID for PRVHouse" : "Enable Touch ID for PRVHouse"
+        do {
+            let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
+            if !success { await MainActor.run { biometricsEnabled = false } }
+        } catch {
+            await MainActor.run { biometricsEnabled = false }
+        }
+    }
+
+    private func checkBiometrics() {
+        let context = LAContext()
+        var error: NSError?
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            biometricType = context.biometryType
         }
     }
 

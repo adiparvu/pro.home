@@ -52,5 +52,7 @@
 	<string>Used to convert your voice into search queries across your property data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to share your location in Family Chat and tag item locations in Inventory.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to unlock PRVHouse quickly and securely.</string>
 </dict>
 </plist>

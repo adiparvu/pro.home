@@ -13,6 +13,7 @@ struct SettingsView: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var messageService: MessageService
     @State private var showSignOut = false
+    @State private var showRateAlert = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -37,6 +38,11 @@ struct SettingsView: View {
                 Task { try? await auth.signOut() }
             }
             Button("Cancel", role: .cancel) {}
+        }
+        .alert("Thanks for using PRVHouse! 🏠", isPresented: $showRateAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Rating will be available once the app launches on the App Store.")
         }
     }
 
@@ -181,10 +187,6 @@ struct SettingsView: View {
                     .environmentObject(appSettings)
                     .environmentObject(auth)
             }
-            NavSettingsRow(icon: "lock.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Security & Privacy") {
-                SecurityView()
-                    .environmentObject(auth)
-            }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 SettingsPlaceholder(icon: "puzzlepiece.fill", title: "Integrations", description: "Connect smart home devices, calendars, and third-party services.")
             }
@@ -197,12 +199,10 @@ struct SettingsView: View {
                 EmergencyContactsView()
             }
             NavSettingsRow(icon: "questionmark.circle.fill", color: .cyan, label: "Help & FAQ") {
-                SettingsPlaceholder(icon: "questionmark.circle.fill", title: "Help & FAQ", description: "Browse common questions and contact our support team.")
+                HelpFAQView()
             }
             TapSettingsRow(icon: "star.fill", color: .yellow, label: "Rate App") {
-                if let url = URL(string: "itms-apps://itunes.apple.com/app/id0") {
-                    UIApplication.shared.open(url)
-                }
+                showRateAlert = true
             }
             InfoSettingsRow(icon: "info.circle.fill", color: .gray, label: "Version", value: appVersion)
         }
