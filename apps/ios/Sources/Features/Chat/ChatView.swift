@@ -363,7 +363,7 @@ struct MessageBubble: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(isOwn ? Color.blue.opacity(0.75) : ColorColor.primary.opacity(0.08),
+                .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }

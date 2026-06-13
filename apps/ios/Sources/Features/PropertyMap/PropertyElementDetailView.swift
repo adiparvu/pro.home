@@ -410,7 +410,7 @@ private struct DetailTabBar: View {
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(selected == tab ? ColorColor.primary.opacity(0.12) : .clear)
+                            .fill(selected == tab ? Color.primary.opacity(0.12) : .clear)
                     )
                 }
                 .buttonStyle(.plain)

@@ -234,7 +234,7 @@ private struct LayerChip: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
-                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : ColorColor.primary.opacity(0.07))
+                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
             )
             .overlay(
                 Capsule().strokeBorder(isSelected ? .clear : Color.primary.opacity(0.1), lineWidth: 0.5)
