@@ -188,7 +188,7 @@ struct SettingsView: View {
                     .environmentObject(auth)
             }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
-                SettingsPlaceholder(icon: "puzzlepiece.fill", title: "Integrations", description: "Connect smart home devices, calendars, and third-party services.")
+                IntegrationsView()
             }
         }
     }

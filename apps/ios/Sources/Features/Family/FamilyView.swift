@@ -225,7 +225,7 @@ private struct AddFamilyMemberSheet: View {
     @State private var color = "#5B8AF5"
     @State private var isSaving = false
 
-    private let roles = ["owner", "partner", "child", "member", "guest"]
+    private let roles = ["owner", "partner", "child", "member", "tenant", "guest"]
     private let colors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 
     var body: some View {
@@ -238,6 +238,9 @@ private struct AddFamilyMemberSheet: View {
                         colorPicker
                         fields
                         rolePicker
+                        if role == "tenant" {
+                            tenantNote
+                        }
                         Spacer(minLength: 40)
                     }
                     .padding(.horizontal, 20).padding(.top, 8)
@@ -324,6 +327,20 @@ private struct AddFamilyMemberSheet: View {
         }
     }
 
+    private var tenantNote: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.orange)
+                .font(.system(size: 16))
+            Text("Tenants get limited access — shared tasks and chat only. Property finances and documents remain private.")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.55))
+        }
+        .padding(12)
+        .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.orange.opacity(0.2), lineWidth: 0.5))
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -353,7 +370,7 @@ private struct EditFamilyMemberSheet: View {
     @State private var isSaving = false
     @State private var showDeleteConfirm = false
 
-    private let roles = ["owner", "partner", "child", "member", "guest"]
+    private let roles = ["owner", "partner", "child", "member", "tenant", "guest"]
     private let colors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 
     init(member: FamilyMember) {
@@ -410,6 +427,17 @@ private struct EditFamilyMemberSheet: View {
                                     }.buttonStyle(.plain)
                                 }
                             }
+                        }
+
+                        if role == "tenant" {
+                            HStack(spacing: 10) {
+                                Image(systemName: "info.circle.fill").foregroundStyle(.orange).font(.system(size: 16))
+                                Text("Tenants get limited access — shared tasks and chat only.")
+                                    .font(.system(size: 12)).foregroundStyle(.white.opacity(0.55))
+                            }
+                            .padding(12)
+                            .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.orange.opacity(0.2), lineWidth: 0.5))
                         }
 
                         Button { showDeleteConfirm = true } label: {

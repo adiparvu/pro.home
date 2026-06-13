@@ -243,15 +243,23 @@ struct MessageBubble: View {
     let isOwn: Bool
     let members: [FamilyMember]
 
+    private var sender: FamilyMember? {
+        members.first { $0.name == message.senderName }
+    }
+
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if isOwn { Spacer(minLength: 60) }
+            if isOwn {
+                Spacer(minLength: 60)
+            } else {
+                chatAvatar
+            }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                 if !isOwn {
                     Text(message.senderName)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(sender?.swiftColor ?? .white.opacity(0.45))
                         .padding(.leading, 4)
                 }
                 bubbleContent
@@ -262,6 +270,29 @@ struct MessageBubble: View {
             }
 
             if !isOwn { Spacer(minLength: 60) }
+        }
+    }
+
+    @ViewBuilder
+    private var chatAvatar: some View {
+        if let member = sender {
+            ZStack {
+                Circle()
+                    .fill(member.swiftColor.opacity(0.18))
+                Text(member.initials)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(member.swiftColor)
+            }
+            .frame(width: 32, height: 32)
+            .overlay(
+                Circle()
+                    .strokeBorder(member.swiftColor, lineWidth: 2)
+            )
+        } else {
+            Circle()
+                .fill(.white.opacity(0.08))
+                .frame(width: 32, height: 32)
+                .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 1.5))
         }
     }
 
