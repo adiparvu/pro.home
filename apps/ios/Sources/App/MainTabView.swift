@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum AppTab: String, CaseIterable {
-    case home, tasks, analytics, assistant, settings
+    case home, map, tasks, analytics, assistant, settings
 
     var icon: String {
         switch self {
         case .home:      return "house.fill"
+        case .map:       return "map.fill"
         case .tasks:     return "checklist"
         case .analytics: return "chart.bar.xaxis"
         case .assistant: return "sparkles"
@@ -16,6 +17,7 @@ enum AppTab: String, CaseIterable {
     var label: String {
         switch self {
         case .home:      return "Home"
+        case .map:       return "Hartă"
         case .tasks:     return "Tasks"
         case .analytics: return "Analytics"
         case .assistant: return "Assistant"
@@ -37,6 +39,7 @@ struct MainTabView: View {
     @StateObject private var familyService = FamilyService()
     @StateObject private var messageService = MessageService()
     @StateObject private var currencyService = CurrencyService()
+    @StateObject private var elementService = PropertyElementService()
     @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
@@ -62,6 +65,7 @@ struct MainTabView: View {
         .environmentObject(familyService)
         .environmentObject(messageService)
         .environmentObject(currencyService)
+        .environmentObject(elementService)
         .fullScreenCover(isPresented: .constant(!onboardingDone)) {
             OnboardingView()
                 .environmentObject(propertyService)
@@ -95,6 +99,8 @@ struct MainTabView: View {
         switch selectedTab {
         case .home:
             NavigationStack { DashboardView() }
+        case .map:
+            NavigationStack { PropertyMapView() }
         case .tasks:
             NavigationStack { TasksView() }
         case .analytics:
