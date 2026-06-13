@@ -129,7 +129,7 @@ struct FloatingTabBar: View {
                 }
             }
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
         .padding(.horizontal, 8)
         .background {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
@@ -166,10 +166,10 @@ struct FloatingTabItem: View {
                         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
 
                     Image(systemName: tab.icon)
-                        .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
+                        .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
                         .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
                         .symbolEffect(.bounce, value: isSelected)
-                        .frame(height: 36)
+                        .frame(height: 44)
 
                     if badge > 0 {
                         Text("\(min(badge, 9))")
@@ -180,11 +180,7 @@ struct FloatingTabItem: View {
                             .offset(x: 4, y: -4)
                     }
                 }
-                .frame(height: 36)
-
-                Text(tab.label)
-                    .font(.system(size: 9.5, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
+                .frame(height: 44)
             }
             .frame(maxWidth: .infinity)
         }
