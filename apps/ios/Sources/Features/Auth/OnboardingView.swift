@@ -49,7 +49,7 @@ struct OnboardingView: View {
         HStack(spacing: 6) {
             ForEach(0..<4) { i in
                 Capsule()
-                    .fill(i <= step ? .white : Color.primary.opacity(0.15))
+                    .fill(i <= step ? Color.white : Color.primary.opacity(0.15))
                     .frame(height: 3)
                     .animation(.spring(response: 0.3), value: step)
             }

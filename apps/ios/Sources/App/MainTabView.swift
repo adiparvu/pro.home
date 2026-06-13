@@ -171,7 +171,7 @@ struct FloatingTabItem: View {
         Button(action: action) {
             Image(systemName: tab.icon)
                 .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.38))
+                .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.38))
                 .symbolEffect(.bounce, value: isSelected)
                 .frame(width: 52, height: 40)
                 .background(

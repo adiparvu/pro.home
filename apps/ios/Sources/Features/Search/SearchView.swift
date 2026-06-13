@@ -72,7 +72,7 @@ struct SearchView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(speech.isListening ? .red : Color.primary.opacity(0.4))
+                .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
             TextField("Tasks, documents, finances…", text: $query)
                 .font(.system(size: 16))
@@ -199,7 +199,7 @@ struct SearchView: View {
                         ForEach(results.finances) { record in
                             SearchRow(
                                 icon: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                                color: record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red,
+                                color: record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red,
                                 title: record.title,
                                 subtitle: "\(record.category.capitalized) · \(record.dateFormatted)",
                                 badge: record.amountDisplay,

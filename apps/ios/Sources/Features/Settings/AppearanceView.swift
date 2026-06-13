@@ -75,7 +75,7 @@ struct AppearanceView: View {
                                     .frame(width: 40, height: 40)
                                 Text(cur.symbol)
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.5))
+                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -174,7 +174,7 @@ private struct ThemeOptionRow: View {
                         .frame(width: 40, height: 40)
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.5))
+                        .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
                 }
 
                 Text(title)

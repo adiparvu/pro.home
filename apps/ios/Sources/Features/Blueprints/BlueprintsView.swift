@@ -322,7 +322,7 @@ private struct AddPlanSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3))
+                    .foregroundStyle(canSave ? Color.blue : Color.primary.opacity(0.3))
                     .disabled(!canSave)
                 }
             }
@@ -440,7 +440,7 @@ private struct AddPlanSheet: View {
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
                                 .foregroundStyle(kind == k ? .black : Color.primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(kind == k ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                .background(kind == k ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }
                 }

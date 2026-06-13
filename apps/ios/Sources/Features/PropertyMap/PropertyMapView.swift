@@ -230,7 +230,7 @@ private struct LayerChip: View {
                 Text(label)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
             }
-            .foregroundStyle(isSelected ? .white : Color.secondary)
+            .foregroundStyle(isSelected ? Color.white : Color.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(

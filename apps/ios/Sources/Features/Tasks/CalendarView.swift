@@ -221,7 +221,7 @@ private struct DayCell: View {
             VStack(spacing: 3) {
                 ZStack {
                     Circle()
-                        .fill(isSelected ? .white : isToday ? Color.primary.opacity(0.15) : .clear)
+                        .fill(isSelected ? Color.white : isToday ? Color.primary.opacity(0.15) : Color.clear)
                         .frame(width: 32, height: 32)
                     Text("\(day)")
                         .font(.system(size: 14, weight: isToday || isSelected ? .bold : .regular))

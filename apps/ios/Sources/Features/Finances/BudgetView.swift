@@ -80,7 +80,7 @@ struct BudgetView: View {
                     Label(remaining >= 0 ? "\(financialService.currencySymbol)\(Int(abs(remaining))) remaining" : "\(financialService.currencySymbol)\(Int(abs(remaining))) over budget",
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(remaining >= 0 ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+                        .foregroundStyle(remaining >= 0 ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                     Spacer()
                     Text(String(format: "%.0f%%", progress * 100) + " used")
                         .font(.system(size: 12))

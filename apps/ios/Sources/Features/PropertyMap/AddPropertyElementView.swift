@@ -163,7 +163,7 @@ struct AddPropertyElementView: View {
                                             } label: {
                                                 Label(layer.displayName, systemImage: layer.icon)
                                                     .font(.caption.weight(selectedLayer == layer ? .semibold : .regular))
-                                                    .foregroundStyle(selectedLayer == layer ? .white : Color.secondary)
+                                                    .foregroundStyle(selectedLayer == layer ? Color.white : Color.secondary)
                                                     .padding(.horizontal, 10)
                                                     .padding(.vertical, 6)
                                                     .background(
@@ -281,7 +281,7 @@ private struct TypeChip: View {
                     )
                 Text(type.displayName)
                     .font(.system(size: 10))
-                    .foregroundStyle(isSelected ? .primary : Color.secondary)
+                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .frame(width: 56)
@@ -289,7 +289,7 @@ private struct TypeChip: View {
             .padding(6)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? type.accentColor.opacity(0.08) : .clear)
+                    .fill(isSelected ? type.accentColor.opacity(0.08) : Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .strokeBorder(isSelected ? type.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 0.8)

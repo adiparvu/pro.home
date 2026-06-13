@@ -143,7 +143,7 @@ struct FinancesView: View {
                     HStack(spacing: 5) {
                         if !isAll {
                             Circle()
-                                .fill(type == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+                                .fill(type == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                                 .frame(width: 6, height: 6)
                         }
                         Text(isAll ? "All" : type.capitalized)
@@ -238,7 +238,7 @@ struct FinancialRecordRow: View {
                         .frame(width: 44, height: 44)
                     Image(systemName: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                         .font(.system(size: 18))
-                        .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+                        .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -261,7 +261,7 @@ struct FinancialRecordRow: View {
 
                 Text("\(record.isIncome ? "+" : "-")\(displayAmount)")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+                    .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
             }
         }
     }

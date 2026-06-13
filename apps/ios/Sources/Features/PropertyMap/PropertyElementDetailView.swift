@@ -405,12 +405,12 @@ private struct DetailTabBar: View {
                         Text(tab.rawValue)
                             .font(.system(size: 11, weight: selected == tab ? .semibold : .regular))
                     }
-                    .foregroundStyle(selected == tab ? .white : Color.secondary)
+                    .foregroundStyle(selected == tab ? Color.white : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(selected == tab ? Color.primary.opacity(0.12) : .clear)
+                            .fill(selected == tab ? Color.primary.opacity(0.12) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
