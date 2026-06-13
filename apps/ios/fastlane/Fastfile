@@ -129,6 +129,11 @@ platform :ios do
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
     sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '#{keychain_password}' '#{keychain_path}' || true")
 
+    # Diagnostics: prove a codesigning identity is visible & usable headlessly.
+    sh("security list-keychains -d user")
+    sh("security find-identity -v -p codesigning '#{keychain_path}' || true")
+    sh("security find-identity -v -p codesigning || true")
+
     # Fetch or create the App Store Distribution provisioning profile.
     # Default sigh (no adhoc/development flag) = App Store profile.
     sigh(
@@ -158,6 +163,7 @@ platform :ios do
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
 
+    UI.important(">>> PHASE: archive START")
     sh(
       "set -o pipefail && xcodebuild archive " \
       "-project #{project_dir}/PRVHouse.xcodeproj " \
@@ -170,6 +176,8 @@ platform :ios do
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
     )
+
+    UI.important(">>> PHASE: archive DONE")
 
     # Run actool manually — XcodeGen project doesn't compile asset catalogs.
     archive_app = Dir.glob("/tmp/PRVHouse.xcarchive/Products/Applications/*.app").first
@@ -216,12 +224,17 @@ platform :ios do
       </plist>
     PLIST
 
+    # Keep the keychain unlocked for the export re-sign (another codesign pass).
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+
+    UI.important(">>> PHASE: export START")
     sh(
       "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-exportPath /tmp/PRVHouse_ipa " \
       "-exportOptionsPlist #{export_options_path} 2>&1"
     )
+    UI.important(">>> PHASE: export DONE — uploading to TestFlight")
 
     pilot(
       api_key:                           api_key,

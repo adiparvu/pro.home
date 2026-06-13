@@ -16,6 +16,7 @@ jobs:
   deploy:
     name: Build & Upload to TestFlight
     runs-on: macos-26
+    timeout-minutes: 25
 
     defaults:
       run:
