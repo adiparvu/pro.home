@@ -24,7 +24,6 @@ platform :ios do
       pbxproj = File.read(pbxproj_path)
       has_xcassets     = pbxproj.include?("Assets.xcassets")
       has_correct_type = pbxproj.include?("folder.assetcatalog")
-      UI.message("xcassets in project: #{has_xcassets}, correct file type: #{has_correct_type}")
 
       if has_xcassets && !has_correct_type
         fixed = pbxproj.split("\n").map { |line|
@@ -34,8 +33,6 @@ platform :ios do
         }.join("\n")
         File.write(pbxproj_path, fixed)
         UI.success("Patched Assets.xcassets to lastKnownFileType = folder.assetcatalog")
-      elsif !has_xcassets
-        UI.error("Assets.xcassets NOT found in generated project – icons will be missing!")
       end
     end
 
@@ -50,77 +47,52 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Import Distribution cert from GitHub Secret (no revocations, no Apple emails).
-    cert_p12 = ENV["IOS_DIST_CERTIFICATE_BASE64"]
-    cert_pass = ENV["IOS_DIST_CERTIFICATE_PASSWORD"] || ""
+    # Cert management: keep at most 1 Distribution cert on the portal so we have
+    # room to create a fresh one each CI run (CI keychain is ephemeral — we can't
+    # reuse an existing cert because we never have its private key).
+    require "spaceship"
+    token = Spaceship::ConnectAPI::Token.create(
+      key_id:    key_id,
+      issuer_id: issuer_id,
+      key:       key_content
+    )
+    Spaceship::ConnectAPI.token = token
+    existing = Spaceship::ConnectAPI::Certificate.all(
+      filter: { certificateType: "DISTRIBUTION" }
+    )
+    UI.message("Distribution certs on portal: #{existing.length}")
+    existing.each { |c| UI.message("  #{c.id} expires #{c.expirationDate}") }
 
-    if cert_p12 && !cert_p12.empty?
-      cert_path = "/tmp/dist_cert.p12"
-      File.binwrite(cert_path, Base64.decode64(cert_p12))
-      import_certificate(
-        certificate_path: cert_path,
-        certificate_password: cert_pass,
-        keychain_name: "build.keychain",
-        keychain_password: "buildpass"
-      )
-      UI.success("Distribution certificate imported from secret")
-
-      # import_certificate (unlike `cert`) does NOT install the Apple WWDR
-      # intermediate. Without it, `security find-identity -v -p codesigning`
-      # reports the leaf cert as an INVALID identity, so sigh fails with
-      # "Could not find a matching code signing identity for type 'AppStore'".
-      # Install the WWDR intermediates so the chain is complete and the
-      # identity is considered valid.
-      %w[G3 G6].each do |gen|
-        wwdr = "/tmp/AppleWWDRCA#{gen}.cer"
-        sh("curl -fsSL https://www.apple.com/certificateauthority/AppleWWDRCA#{gen}.cer -o #{wwdr} 2>&1 || true")
-        sh("security import #{wwdr} -k #{keychain_db} -T /usr/bin/codesign 2>&1 || true")
-      end
-      UI.success("Installed Apple WWDR intermediate certificates")
-      sh("security find-identity -v -p codesigning #{keychain_db} 2>&1 || true")
-    else
-      # Fallback: revoke oldest cert and create a fresh one.
-      require "spaceship"
-      token = Spaceship::ConnectAPI::Token.create(
-        key_id:    key_id,
-        issuer_id: issuer_id,
-        key:       key_content
-      )
-      Spaceship::ConnectAPI.token = token
-      existing = Spaceship::ConnectAPI::Certificate.all(
-        filter: { certificateType: "DISTRIBUTION" }
-      )
-      if existing.length >= 2
-        oldest = existing.min_by { |c| c.expirationDate }
-        UI.message("Revoking oldest Distribution cert (#{oldest.id}) to stay under Apple's limit")
-        oldest.delete!
-      end
-
-      cert(
-        api_key:           api_key,
-        keychain_path:     keychain_db,
-        keychain_password: "buildpass",
-        output_path:       "/tmp",
-        force:             true
-      )
+    if existing.length >= 2
+      oldest = existing.min_by { |c| c.expirationDate }
+      UI.message("Revoking oldest cert #{oldest.id} to make room (Apple limit = 2)")
+      oldest.delete!
     end
 
-    # Download (or renew) the App Store Distribution provisioning profile.
+    cert(
+      api_key:           api_key,
+      keychain_path:     keychain_db,
+      keychain_password: "buildpass",
+      output_path:       "/tmp",
+      force:             true
+    )
+
+    # Download (or create) the App Store Distribution provisioning profile.
     sigh(
       api_key: api_key,
       app_identifier: "com.prvhouse.app",
       output_path: "/tmp",
-      skip_install: false
+      skip_install: false,
+      force: true
     )
     profile_uuid = Actions.lane_context[SharedValues::SIGH_UUID]
     UI.message("App Store Distribution profile UUID: #{profile_uuid}")
 
     project_dir = File.expand_path("..")
 
-    # Inject the profile UUID into the xcodeproj for the PRVHouse target ONLY.
-    # Passing PROVISIONING_PROFILE on the xcodebuild command line applies it to
-    # ALL targets (including swift-crypto) which fails in Xcode 26.
-    # update_code_signing_settings scopes the change to the specified target.
+    # Inject the profile UUID into the xcodeproj for PRVHouse ONLY.
+    # Passing PROVISIONING_PROFILE on the xcodebuild command line applies it to ALL
+    # targets (including swift-crypto_Crypto) which Xcode 26 rejects.
     update_code_signing_settings(
       use_automatic_signing: false,
       path: "#{project_dir}/PRVHouse.xcodeproj",
@@ -144,11 +116,9 @@ platform :ios do
       "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_db}' 2>&1"
     )
 
-    # xcodebuild does not compile the asset catalog (XcodeGen project issue).
-    # Run actool manually on the archived .app to inject icons before export.
+    # Run actool manually — XcodeGen project doesn't compile asset catalogs.
     archive_app = Dir.glob("/tmp/PRVHouse.xcarchive/Products/Applications/*.app").first
-    raise "No .app found in /tmp/PRVHouse.xcarchive" unless archive_app
-    UI.message("Running actool on archived app: #{archive_app}")
+    raise "No .app found in archive" unless archive_app
 
     actool_plist = "/tmp/actool_partial_info.plist"
     FileUtils.rm_f(actool_plist)
@@ -158,8 +128,7 @@ platform :ios do
       "--compile '#{archive_app}' " \
       "--output-format human-readable-text " \
       "--notices --warnings --errors " \
-      "--target-device iphone " \
-      "--target-device ipad " \
+      "--target-device iphone --target-device ipad " \
       "--minimum-deployment-target 17.0 " \
       "--platform iphoneos " \
       "--app-icon AppIcon " \
