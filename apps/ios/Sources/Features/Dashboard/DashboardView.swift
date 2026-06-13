@@ -147,8 +147,8 @@ struct HealthScoreCard: View {
 
     private var color: Color {
         score >= 80 ? Color(red: 0.25, green: 0.88, blue: 0.55)
-            : score >= 55 ? .orange
-            : .red
+            : score >= 55 ? Color.orange
+            : Color.red
     }
     private var label: String {
         score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention"
