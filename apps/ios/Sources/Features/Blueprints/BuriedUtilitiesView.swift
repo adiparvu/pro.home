@@ -330,7 +330,7 @@ private struct AddBuriedUtilitySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .blue)
+                        .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
                         .disabled(name.isEmpty)
                 }
             }
@@ -357,7 +357,7 @@ private struct AddBuriedUtilitySheet: View {
                                 Image(systemName: BuriedUtilityKind.icon(t)).font(.system(size: 11))
                                 Text(BuriedUtilityKind.label(t)).font(.system(size: 13, weight: type == t ? .semibold : .regular))
                             }
-                            .foregroundStyle(type == t ? .black : Color.primary.opacity(0.7))
+                            .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.7))
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             .background(type == t ? BuriedUtilityKind.color(t) : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)

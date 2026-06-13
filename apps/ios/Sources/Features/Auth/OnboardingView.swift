@@ -208,10 +208,10 @@ private struct PropertyStep: View {
                         } label: {
                             Text(t.capitalized)
                                 .font(.system(size: 13, weight: type == t ? .semibold : .regular))
-                                .foregroundStyle(type == t ? .black : Color.primary.opacity(0.6))
+                                .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(type == t ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                .background(type == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }

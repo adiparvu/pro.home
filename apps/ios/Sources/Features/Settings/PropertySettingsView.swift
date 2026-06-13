@@ -196,10 +196,10 @@ private struct EditPropertySheet: View {
                                     } label: {
                                         Text(type.capitalized)
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
-                                            .foregroundStyle(propertyType == type ? .black : Color.primary.opacity(0.7))
+                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(0.7))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 8)
-                                            .background(propertyType == type ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                            .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -234,7 +234,7 @@ private struct EditPropertySheet: View {
                         } else {
                             Text("Save")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : .blue)
+                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
                         }
                     }
                     .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)

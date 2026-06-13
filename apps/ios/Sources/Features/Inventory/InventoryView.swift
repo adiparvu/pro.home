@@ -343,9 +343,9 @@ struct InventoryView: View {
                     Button { withAnimation(.spring(response: 0.25)) { filter = f } } label: {
                         Text(f.rawValue)
                             .font(.system(size: 13, weight: filter == f ? .semibold : .regular))
-                            .foregroundStyle(filter == f ? .black : Color.primary.opacity(0.6))
+                            .foregroundStyle(filter == f ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(filter == f ? .white : Color.primary.opacity(0.08), in: Capsule())
+                            .background(filter == f ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                     }.buttonStyle(.plain)
                 }
             }.padding(.horizontal, 20)
@@ -482,7 +482,7 @@ struct ItemDetailView: View {
     }
 
     private var conditionBadge: some View {
-        let map: [String: Color] = ["excellent": Color(red: 0.2, green: 0.8, blue: 0.3), "good": .blue, "fair": .orange, "poor": .red]
+        let map: [String: Color] = ["excellent": Color(red: 0.2, green: 0.8, blue: 0.3), "good": Color.blue, "fair": .orange, "poor": Color.red]
         let color = map[live.condition] ?? .gray
         return Text(live.condition.capitalized)
             .font(.system(size: 12, weight: .medium)).foregroundStyle(color)
@@ -1222,9 +1222,9 @@ private struct ItemLocationSheet: View {
                                         Button { trackerType = t } label: {
                                             Text(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : t.capitalized))
                                                 .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
-                                                .foregroundStyle(trackerType == t ? .black : Color.primary.opacity(0.7))
+                                                .foregroundStyle(trackerType == t ? Color.black : Color.primary.opacity(0.7))
                                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                                .background(trackerType == t ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                                .background(trackerType == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                         }.buttonStyle(.plain)
                                     }
                                 }

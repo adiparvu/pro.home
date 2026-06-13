@@ -103,7 +103,7 @@ struct AddTaskView: View {
                     Button { priority = p } label: {
                         Text(p.capitalized)
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
-                            .foregroundStyle(priority == p ? .black : Color.primary.opacity(0.6))
+                            .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 13).padding(.vertical, 8)
                             .background(priority == p ? priorityColor(p) : Color.primary.opacity(0.07), in: Capsule())
                     }
@@ -122,9 +122,9 @@ struct AddTaskView: View {
                         Button { category = cat } label: {
                             Text(cat.capitalized)
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
-                                .foregroundStyle(category == cat ? .black : Color.primary.opacity(0.6))
+                                .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 13).padding(.vertical, 8)
-                                .background(category == cat ? .white : Color.primary.opacity(0.07), in: Capsule())
+                                .background(category == cat ? Color.white : Color.primary.opacity(0.07), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -206,7 +206,7 @@ struct AddTaskView: View {
             HStack(spacing: 12) {
                 Image(systemName: calendarAdded ? "calendar.badge.checkmark" : "calendar.badge.plus")
                     .font(.system(size: 14))
-                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : .blue)
+                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.blue)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar")
@@ -245,7 +245,7 @@ struct AddTaskView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(canSave ? .white : Color.primary.opacity(0.35))
+            .background(canSave ? Color.white : Color.primary.opacity(0.35))
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }

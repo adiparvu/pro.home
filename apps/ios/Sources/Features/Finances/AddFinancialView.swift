@@ -83,12 +83,12 @@ struct AddFinancialView: View {
                             Text(t.capitalized)
                                 .font(.system(size: 14, weight: .semibold))
                         }
-                        .foregroundStyle(type == t ? .black : Color.primary.opacity(0.5))
+                        .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
                             type == t
-                                ? (t == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
+                                ? (t == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                                 : Color.clear,
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                         )

@@ -182,7 +182,7 @@ struct LocalAssistantView: View {
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(input.isEmpty ? Color.primary.opacity(0.2) : .blue)
+                    .foregroundStyle(input.isEmpty ? Color.primary.opacity(0.2) : Color.blue)
             }
             .disabled(input.isEmpty || isThinking)
         }

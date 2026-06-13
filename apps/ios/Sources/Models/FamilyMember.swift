@@ -29,7 +29,7 @@ struct FamilyMember: Identifiable, Codable, Hashable {
     }
 
     var swiftColor: Color {
-        Color(hex: color) ?? .blue
+        Color(hex: color) ?? Color.blue
     }
 
     var roleLabel: String {

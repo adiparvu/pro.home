@@ -95,7 +95,7 @@ struct DashboardView: View {
             DashStatCard(
                 value: "\(taskService.overdueCount)",
                 label: "Overdue",
-                color: taskService.overdueCount > 0 ? .red : Color(red: 0.3, green: 0.9, blue: 0.5)
+                color: taskService.overdueCount > 0 ? Color.red : Color(red: 0.3, green: 0.9, blue: 0.5)
             )
             DashStatCard(
                 value: "\(taskService.completedThisWeek)",
@@ -235,7 +235,7 @@ struct DashTaskRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : .white)
+                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.white)
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(0.35))
                     .lineLimit(1)
                 Text(task.dueDateDisplay)

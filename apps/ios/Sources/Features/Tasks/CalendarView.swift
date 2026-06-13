@@ -225,7 +225,7 @@ private struct DayCell: View {
                         .frame(width: 32, height: 32)
                     Text("\(day)")
                         .font(.system(size: 14, weight: isToday || isSelected ? .bold : .regular))
-                        .foregroundStyle(isSelected ? .black : Color.primary.opacity(isToday ? 1 : 0.7))
+                        .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(isToday ? 1 : 0.7))
                 }
                 HStack(spacing: 3) {
                     ForEach(Array(taskDots.prefix(3).enumerated()), id: \.offset) { _, c in

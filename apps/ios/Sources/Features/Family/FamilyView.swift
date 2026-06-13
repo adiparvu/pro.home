@@ -252,7 +252,7 @@ private struct AddFamilyMemberSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.blue) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .blue) }
+                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : Color.blue) }
                     }
                     .disabled(name.isEmpty || isSaving)
                 }
@@ -262,11 +262,11 @@ private struct AddFamilyMemberSheet: View {
 
     private var avatarPreview: some View {
         ZStack {
-            Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
-                .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
+            Circle().fill((Color(hex: color) ?? Color.blue).opacity(0.22))
+                .overlay(Circle().strokeBorder((Color(hex: color) ?? Color.blue).opacity(0.5), lineWidth: 2))
             Text(name.isEmpty ? "?" : String(name.prefix(2)).uppercased())
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(Color(hex: color) ?? .blue)
+                .foregroundStyle(Color(hex: color) ?? Color.blue)
         }
         .frame(width: 80, height: 80)
         .padding(.top, 8)
@@ -276,7 +276,7 @@ private struct AddFamilyMemberSheet: View {
         HStack(spacing: 10) {
             ForEach(colors, id: \.self) { c in
                 Button { color = c } label: {
-                    Circle().fill(Color(hex: c) ?? .blue)
+                    Circle().fill(Color(hex: c) ?? Color.blue)
                         .frame(width: 30, height: 30)
                         .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
                         .scaleEffect(color == c ? 1.15 : 1.0)
@@ -317,9 +317,9 @@ private struct AddFamilyMemberSheet: View {
                         Button { role = r } label: {
                             Text(r.capitalized)
                                 .font(.system(size: 13, weight: role == r ? .semibold : .regular))
-                                .foregroundStyle(role == r ? .black : Color.primary.opacity(0.7))
+                                .foregroundStyle(role == r ? Color.black : Color.primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(role == r ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                .background(role == r ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }
                 }
@@ -389,16 +389,16 @@ private struct EditFamilyMemberSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         ZStack {
-                            Circle().fill((Color(hex: color) ?? .blue).opacity(0.22))
-                                .overlay(Circle().strokeBorder((Color(hex: color) ?? .blue).opacity(0.5), lineWidth: 2))
+                            Circle().fill((Color(hex: color) ?? Color.blue).opacity(0.22))
+                                .overlay(Circle().strokeBorder((Color(hex: color) ?? Color.blue).opacity(0.5), lineWidth: 2))
                             Text(name.isEmpty ? "?" : String(name.prefix(2)).uppercased())
-                                .font(.system(size: 28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
+                                .font(.system(size: 28, weight: .bold)).foregroundStyle(Color(hex: color) ?? Color.blue)
                         }.frame(width: 80, height: 80).padding(.top, 8)
 
                         HStack(spacing: 10) {
                             ForEach(colors, id: \.self) { c in
                                 Button { color = c } label: {
-                                    Circle().fill(Color(hex: c) ?? .blue).frame(width: 30, height: 30)
+                                    Circle().fill(Color(hex: c) ?? Color.blue).frame(width: 30, height: 30)
                                         .overlay(Circle().strokeBorder(.white, lineWidth: color == c ? 2 : 0))
                                         .scaleEffect(color == c ? 1.15 : 1.0).animation(.spring(response: 0.2), value: color)
                                 }.buttonStyle(.plain)
@@ -421,9 +421,9 @@ private struct EditFamilyMemberSheet: View {
                                     Button { role = r } label: {
                                         Text(r.capitalized)
                                             .font(.system(size: 13, weight: role == r ? .semibold : .regular))
-                                            .foregroundStyle(role == r ? .black : Color.primary.opacity(0.7))
+                                            .foregroundStyle(role == r ? Color.black : Color.primary.opacity(0.7))
                                             .padding(.horizontal, 14).padding(.vertical, 8)
-                                            .background(role == r ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                            .background(role == r ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
                                 }
                             }

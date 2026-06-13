@@ -438,7 +438,7 @@ private struct AddPlanSheet: View {
                         Button { kind = k } label: {
                             Text(kindLabel(k))
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
-                                .foregroundStyle(kind == k ? .black : Color.primary.opacity(0.7))
+                                .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)
                                 .background(kind == k ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)

@@ -175,7 +175,7 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: isSending ? "clock" : "arrow.up.circle.fill")
                         .font(.system(size: 26))
-                        .foregroundStyle(text.isEmpty ? Color.primary.opacity(0.25) : .blue)
+                        .foregroundStyle(text.isEmpty ? Color.primary.opacity(0.25) : Color.blue)
                 }
                 .disabled(text.isEmpty || isSending)
             }

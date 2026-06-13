@@ -185,10 +185,10 @@ struct FilterChip: View {
                         .background(isSelected ? .black.opacity(0.12) : Color.primary.opacity(0.1), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? .black : Color.primary.opacity(0.7))
+            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(0.7))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isSelected ? .white : Color.primary.opacity(0.07), in: Capsule())
+            .background(isSelected ? Color.white : Color.primary.opacity(0.07), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -219,7 +219,7 @@ struct TaskRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : .white)
+                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.white)
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(0.3))
                     .lineLimit(1)
 

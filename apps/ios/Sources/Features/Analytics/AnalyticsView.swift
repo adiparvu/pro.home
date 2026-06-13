@@ -28,10 +28,10 @@ struct AnalyticsView: View {
                             } label: {
                                 Text(tab.rawValue)
                                     .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
-                                    .foregroundStyle(selectedTab == tab ? .black : Color.primary.opacity(0.6))
+                                    .foregroundStyle(selectedTab == tab ? Color.black : Color.primary.opacity(0.6))
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 8)
-                                    .background(selectedTab == tab ? .white : Color.primary.opacity(0.08), in: Capsule())
+                                    .background(selectedTab == tab ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }

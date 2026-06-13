@@ -196,9 +196,9 @@ struct DocumentsView: View {
                     } label: {
                         Text(isAll ? "All" : cat.capitalized)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .black : Color.primary.opacity(0.6))
+                            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(isSelected ? .white : Color.primary.opacity(0.08), in: Capsule())
+                            .background(isSelected ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }

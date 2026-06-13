@@ -82,7 +82,7 @@ struct PropertyHealthDashboardView: View {
                         .foregroundStyle(.secondary)
                     HStack(spacing: 16) {
                         miniStat(label: "Elemente", value: "\(elementService.elements.count)")
-                        miniStat(label: "Critice", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondary : .red)
+                        miniStat(label: "Critice", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondary : Color.red)
                         miniStat(label: "Atenție", value: "\(elementService.elementsNeedingAttention.count)", color: .orange)
                     }
                 }
