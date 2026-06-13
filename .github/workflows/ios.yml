@@ -48,6 +48,13 @@ jobs:
           key: gems-${{ hashFiles('apps/ios/Gemfile.lock') }}
           restore-keys: gems-
 
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ hashFiles('apps/ios/project.yml') }}
+          restore-keys: spm-
+
       - name: Install Gems
         run: |
           bundle config set path vendor/bundle
