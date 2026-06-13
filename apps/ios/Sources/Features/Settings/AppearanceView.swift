@@ -2,12 +2,14 @@ import SwiftUI
 
 struct AppearanceView: View {
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var auth: AuthService
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 themeSection
+                currencySection
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, 20)
@@ -16,6 +18,7 @@ struct AppearanceView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.large)
+        .task { await currencyService.refresh() }
     }
 
     // MARK: - Theme
@@ -46,6 +49,104 @@ struct AppearanceView: View {
                     .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
             )
         }
+    }
+
+    // MARK: - Currency
+
+    private var currencySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader("Currency")
+
+            VStack(spacing: 0) {
+                ForEach(CurrencyService.supported, id: \.code) { cur in
+                    let isSelected = appSettings.preferredCurrency == cur.code
+                    Button {
+                        withAnimation(.spring(response: 0.3)) {
+                            appSettings.preferredCurrency = cur.code
+                        }
+                        if let uid = auth.session?.user.id {
+                            appSettings.syncToProfile(userId: uid)
+                        }
+                    } label: {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(isSelected ? .white.opacity(0.18) : .white.opacity(0.07))
+                                    .frame(width: 40, height: 40)
+                                Text(cur.symbol)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(isSelected ? .white : .white.opacity(0.5))
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(cur.code) — \(cur.name)")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(.white)
+                                if isSelected {
+                                    Text(currencyService.rateDisplay(for: cur.code))
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white.opacity(0.4))
+                                        .transition(.opacity)
+                                }
+                            }
+
+                            Spacer()
+
+                            if currencyService.isLoading && isSelected {
+                                ProgressView().scaleEffect(0.7).tint(.white.opacity(0.5))
+                            } else if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.blue)
+                                    .transition(.scale.combined(with: .opacity))
+                            } else {
+                                Circle()
+                                    .strokeBorder(.white.opacity(0.2), lineWidth: 1.5)
+                                    .frame(width: 20, height: 20)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.plain)
+
+                    if cur.code != CurrencyService.supported.last?.code {
+                        Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 68)
+                    }
+                }
+            }
+            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 10))
+                Text("BNR rates · Updated \(currencyService.lastUpdatedDisplay)")
+                    .font(.system(size: 11))
+            }
+            .foregroundStyle(.white.opacity(0.3))
+            .padding(.leading, 4)
+
+            Button {
+                Task { await forceFetch() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("Refresh rates now")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(.blue)
+                .padding(.leading, 4)
+            }
+            .buttonStyle(.plain)
+            .disabled(currencyService.isLoading)
+        }
+    }
+
+    private func forceFetch() async {
+        UserDefaults.standard.removeObject(forKey: "prvhouse.bnr.ratesDate")
+        await currencyService.refresh()
     }
 
     private func sectionHeader(_ title: String) -> some View {

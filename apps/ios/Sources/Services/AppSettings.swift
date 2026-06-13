@@ -2,8 +2,9 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    @AppStorage("prvhouse.theme")  var theme: String  = "dark"
-    @AppStorage("prvhouse.locale") var locale: String = "en"
+    @AppStorage("prvhouse.theme")    var theme:             String = "dark"
+    @AppStorage("prvhouse.locale")   var locale:            String = "en"
+    @AppStorage("prvhouse.currency") var preferredCurrency: String = "EUR"
 
     var resolvedColorScheme: ColorScheme? {
         switch theme {

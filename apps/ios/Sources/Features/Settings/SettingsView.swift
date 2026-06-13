@@ -12,6 +12,7 @@ struct SettingsView: View {
     @EnvironmentObject private var budgetService: BudgetService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var messageService: MessageService
+    @EnvironmentObject private var currencyService: CurrencyService
     @State private var showSignOut = false
     @State private var showRateAlert = false
 
@@ -189,6 +190,7 @@ struct SettingsView: View {
                 AppearanceView()
                     .environmentObject(appSettings)
                     .environmentObject(auth)
+                    .environmentObject(currencyService)
             }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 IntegrationsView()

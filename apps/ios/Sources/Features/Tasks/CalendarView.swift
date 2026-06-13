@@ -28,8 +28,8 @@ struct CalendarView: View {
     private var monthHeader: some View {
         HStack {
             Button {
-                withAnimation(.spring(response: 0.3)) {
-                    displayedMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth)!
+                if let prev = calendar.date(byAdding: .month, value: -1, to: displayedMonth) {
+                    withAnimation(.spring(response: 0.3)) { displayedMonth = prev }
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -44,8 +44,8 @@ struct CalendarView: View {
                 .foregroundStyle(.white)
             Spacer()
             Button {
-                withAnimation(.spring(response: 0.3)) {
-                    displayedMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth)!
+                if let next = calendar.date(byAdding: .month, value: 1, to: displayedMonth) {
+                    withAnimation(.spring(response: 0.3)) { displayedMonth = next }
                 }
             } label: {
                 Image(systemName: "chevron.right")

@@ -3,6 +3,8 @@ import SwiftUI
 struct FinancesView: View {
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var budgetService: BudgetService
+    @EnvironmentObject private var currencyService: CurrencyService
+    @EnvironmentObject private var appSettings: AppSettings
     @State private var showAddSheet = false
     @State private var selectedType: String? = nil
 
@@ -75,26 +77,32 @@ struct FinancesView: View {
 
     // MARK: - Summary
 
+    private var preferred: String { appSettings.preferredCurrency }
+    private var sym: String { currencyService.symbol(for: preferred) }
+
+    private func monthlyTotal(type: String) -> Double {
+        financialService.currentMonthRecords
+            .filter { $0.type == type }
+            .reduce(0) { $0 + currencyService.convert($1.amount, from: $1.currency, to: preferred) }
+    }
+
+    private func fmtTotal(_ value: Double) -> String {
+        preferred == "RON"
+            ? String(format: "%.0f %@", value, sym)
+            : String(format: "%@%.0f", sym, value)
+    }
+
     private var summaryCards: some View {
-        HStack(spacing: 12) {
-            FinSummaryCard(
-                label: "Income",
-                value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
-                icon: "arrow.down.circle.fill",
-                color: Color(red: 0.3, green: 0.85, blue: 0.5)
-            )
-            FinSummaryCard(
-                label: "Expenses",
-                value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthExpenses))",
-                icon: "arrow.up.circle.fill",
-                color: .red
-            )
-            FinSummaryCard(
-                label: "Net",
-                value: "\(financialService.currentMonthNet >= 0 ? "+" : "")\(financialService.currencySymbol)\(Int(financialService.currentMonthNet))",
-                icon: "chart.line.uptrend.xyaxis",
-                color: financialService.currentMonthNet >= 0 ? .blue : .orange
-            )
+        let income   = monthlyTotal(type: "income")
+        let expenses = monthlyTotal(type: "expense")
+        let net      = income - expenses
+        return HStack(spacing: 12) {
+            FinSummaryCard(label: "Income",   value: fmtTotal(income),
+                           icon: "arrow.down.circle.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5))
+            FinSummaryCard(label: "Expenses", value: fmtTotal(expenses),
+                           icon: "arrow.up.circle.fill", color: .red)
+            FinSummaryCard(label: "Net",      value: (net >= 0 ? "+" : "") + fmtTotal(net),
+                           icon: "chart.line.uptrend.xyaxis", color: net >= 0 ? .blue : .orange)
         }
     }
 
@@ -169,8 +177,11 @@ struct FinancesView: View {
         } else {
             VStack(spacing: 8) {
                 ForEach(filteredRecords) { record in
-                    FinancialRecordRow(record: record, symbol: financialService.currencySymbol)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    FinancialRecordRow(
+                        record: record,
+                        displayAmount: currencyService.formatted(record.amount, from: record.currency, preferred: preferred)
+                    )
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 HapticFeedback.warning()
                                 Task { await financialService.delete(record) }
@@ -216,7 +227,7 @@ private struct FinSummaryCard: View {
 
 struct FinancialRecordRow: View {
     let record: FinancialRecord
-    let symbol: String
+    let displayAmount: String
 
     var body: some View {
         GlassCard {
@@ -248,7 +259,7 @@ struct FinancialRecordRow: View {
 
                 Spacer()
 
-                Text("\(record.isIncome ? "+" : "-")\(symbol)\(String(format: "%.0f", record.amount))")
+                Text("\(record.isIncome ? "+" : "-")\(displayAmount)")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : .red)
             }

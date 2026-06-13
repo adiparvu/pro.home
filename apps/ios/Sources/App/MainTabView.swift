@@ -36,6 +36,7 @@ struct MainTabView: View {
     @StateObject private var budgetService = BudgetService()
     @StateObject private var familyService = FamilyService()
     @StateObject private var messageService = MessageService()
+    @StateObject private var currencyService = CurrencyService()
     @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
@@ -60,12 +61,14 @@ struct MainTabView: View {
         .environmentObject(budgetService)
         .environmentObject(familyService)
         .environmentObject(messageService)
+        .environmentObject(currencyService)
         .fullScreenCover(isPresented: .constant(!onboardingDone)) {
             OnboardingView()
                 .environmentObject(propertyService)
                 .environmentObject(auth)
         }
         .task {
+            await currencyService.refresh()
             await propertyService.load()
             await taskService.load()
             await financialService.load()

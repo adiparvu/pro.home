@@ -3,6 +3,8 @@ import SwiftUI
 struct AddFinancialView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var currencyService: CurrencyService
+    @EnvironmentObject private var appSettings: AppSettings
 
     let onSaved: () async -> Void
 
@@ -107,7 +109,7 @@ struct AddFinancialView: View {
                     .foregroundStyle(.white.opacity(0.35))
 
                 HStack(alignment: .center, spacing: 8) {
-                    Text("€")
+                    Text(currencyService.symbol(for: appSettings.preferredCurrency))
                         .font(.system(size: 32, weight: .light))
                         .foregroundStyle(.white.opacity(0.5))
                     TextField("0", text: $amount)
@@ -245,7 +247,7 @@ struct AddFinancialView: View {
                     propertyId: propertyId,
                     title: title,
                     amount: amountDouble,
-                    currency: "EUR",
+                    currency: appSettings.preferredCurrency,
                     type: type,
                     category: category,
                     date: dateString,
