@@ -29,6 +29,7 @@ final class PropertyService: ObservableObject {
             let address_line1: String
             let city: String
             let country: String
+            let postal_code: String?
             let property_type: String
             let size_sqm: Double?
             let num_rooms: Int?
@@ -41,6 +42,7 @@ final class PropertyService: ObservableObject {
             address_line1: property.addressLine1,
             city: property.city,
             country: property.country,
+            postal_code: property.postalCode,
             property_type: property.propertyType,
             size_sqm: property.sizeSqm,
             num_rooms: property.numRooms,

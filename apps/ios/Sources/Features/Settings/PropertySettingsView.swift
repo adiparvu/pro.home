@@ -105,6 +105,9 @@ struct PropertySettingsView: View {
         SettingsGroup(title: "Details") {
             PropDetailRow(label: "Address", value: p.addressLine1)
             PropDetailRow(label: "City", value: p.city)
+            if let pc = p.postalCode, !pc.isEmpty {
+                PropDetailRow(label: "Cod poștal", value: pc)
+            }
             PropDetailRow(label: "Country", value: p.country)
             PropDetailRow(label: "Type", value: p.propertyType.capitalized)
             if let sqm = p.sizeSqm {
@@ -112,6 +115,10 @@ struct PropertySettingsView: View {
             }
             if let rooms = p.numRooms {
                 PropDetailRow(label: "Rooms", value: "\(rooms)")
+            }
+            if let lat = p.latitude, let lon = p.longitude {
+                PropDetailRow(label: "Coordonate",
+                              value: String(format: "%.5f, %.5f", lat, lon))
             }
         }
     }
@@ -173,6 +180,7 @@ private struct EditPropertySheet: View {
     @State private var name: String
     @State private var addressLine1: String
     @State private var city: String
+    @State private var postalCode: String
     @State private var country: String
     @State private var propertyType: String
     @State private var sizeSqmText: String
@@ -182,6 +190,8 @@ private struct EditPropertySheet: View {
     // Location
     @State private var latitude: Double?
     @State private var longitude: Double?
+    @State private var latText: String = ""
+    @State private var lonText: String = ""
     @State private var showMap = false
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isLocating = false
@@ -199,12 +209,15 @@ private struct EditPropertySheet: View {
         _name = State(initialValue: property.name)
         _addressLine1 = State(initialValue: property.addressLine1)
         _city = State(initialValue: property.city)
+        _postalCode = State(initialValue: property.postalCode ?? "")
         _country = State(initialValue: property.country)
         _propertyType = State(initialValue: property.propertyType)
         _sizeSqmText = State(initialValue: property.sizeSqm.map { String(format: "%.0f", $0) } ?? "")
         _numRoomsText = State(initialValue: property.numRooms.map { "\($0)" } ?? "")
         _latitude = State(initialValue: property.latitude)
         _longitude = State(initialValue: property.longitude)
+        _latText = State(initialValue: property.latitude.map { String(format: "%.6f", $0) } ?? "")
+        _lonText = State(initialValue: property.longitude.map { String(format: "%.6f", $0) } ?? "")
         if let lat = property.latitude, let lon = property.longitude {
             _mapPosition = State(initialValue: .region(MKCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
@@ -245,6 +258,8 @@ private struct EditPropertySheet: View {
                                 .padding(.horizontal, 16).padding(.vertical, 13)
                                 divider
                                 fieldRow("building.2.fill", "City", $city)
+                                divider
+                                fieldRow("envelope.fill", "Cod poștal", $postalCode, keyboard: .numbersAndPunctuation)
                                 divider
                                 fieldRow("globe.europe.africa.fill", "Country", $country)
                             }
@@ -393,8 +408,12 @@ private struct EditPropertySheet: View {
                 .frame(height: 220)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .onMapCameraChange { ctx in
-                    latitude = ctx.camera.centerCoordinate.latitude
-                    longitude = ctx.camera.centerCoordinate.longitude
+                    let lat = ctx.camera.centerCoordinate.latitude
+                    let lon = ctx.camera.centerCoordinate.longitude
+                    latitude = lat
+                    longitude = lon
+                    latText = String(format: "%.6f", lat)
+                    lonText = String(format: "%.6f", lon)
                 }
 
             // Center pin (always centered)
@@ -455,6 +474,50 @@ private struct EditPropertySheet: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8)
         )
+
+        // Manual coordinate input
+        HStack(spacing: 8) {
+            coordField("Latitudine", text: $latText, placeholder: "ex: 44.426800")
+            coordField("Longitudine", text: $lonText, placeholder: "ex: 26.102500")
+            Button {
+                applyManualCoords()
+            } label: {
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, 8)
+    }
+
+    private func coordField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.4))
+            TextField(placeholder, text: text)
+                .font(.system(size: 13).monospacedDigit())
+                .foregroundStyle(.primary)
+                .tint(.blue)
+                .keyboardType(.decimalPad)
+                .padding(.horizontal, 10).padding(.vertical, 8)
+                .background(Color.primary.opacity(0.05),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func applyManualCoords() {
+        guard let lat = Double(latText.replacingOccurrences(of: ",", with: ".")),
+              let lon = Double(lonText.replacingOccurrences(of: ",", with: ".")) else { return }
+        latitude = lat
+        longitude = lon
+        mapPosition = .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        ))
+        if !showMap { showMap = true }
     }
 
     // MARK: - Helpers
@@ -471,8 +534,13 @@ private struct EditPropertySheet: View {
                 }
                 city = placemark.locality ?? placemark.administrativeArea ?? city
                 country = placemark.countryCode ?? country
-                latitude = placemark.coordinate.latitude
-                longitude = placemark.coordinate.longitude
+                if let pc = placemark.postalCode, !pc.isEmpty { postalCode = pc }
+                let lat = placemark.coordinate.latitude
+                let lon = placemark.coordinate.longitude
+                latitude = lat
+                longitude = lon
+                latText = String(format: "%.6f", lat)
+                lonText = String(format: "%.6f", lon)
                 mapPosition = .region(MKCoordinateRegion(
                     center: placemark.coordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
@@ -491,6 +559,7 @@ private struct EditPropertySheet: View {
                 addressLine1 = thoroughfare + (placemark.subThoroughfare.map { " " + $0 } ?? "")
             }
             if let locality = placemark.locality { city = locality }
+            if let pc = placemark.postalCode, !pc.isEmpty { postalCode = pc }
             if let cc = placemark.isoCountryCode { country = cc }
         }
     }
@@ -546,6 +615,7 @@ private struct EditPropertySheet: View {
         updated.city = city
         updated.country = country
         updated.propertyType = propertyType
+        updated.postalCode = postalCode.isEmpty ? nil : postalCode
         updated.sizeSqm = Double(sizeSqmText)
         updated.numRooms = Int(numRoomsText)
         updated.latitude = latitude

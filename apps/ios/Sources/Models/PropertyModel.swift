@@ -9,6 +9,7 @@ struct PropertyModel: Identifiable, Codable {
     var propertyType: String
     var sizeSqm: Double?
     var numRooms: Int?
+    var postalCode: String?
     var healthScore: Int?
     var latitude: Double?
     var longitude: Double?
@@ -17,6 +18,7 @@ struct PropertyModel: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, name, city, country, latitude, longitude
         case addressLine1 = "address_line1"
+        case postalCode = "postal_code"
         case propertyType = "property_type"
         case sizeSqm = "size_sqm"
         case numRooms = "num_rooms"
