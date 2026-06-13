@@ -134,6 +134,15 @@ platform :ios do
     sh("security find-identity -v -p codesigning '#{keychain_path}' || true")
     sh("security find-identity -v -p codesigning || true")
 
+    # Ensure the App ID and App Store Connect record exist for the new bundle ID.
+    # produce is idempotent — safe to run even if the app already exists.
+    produce(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app",
+      app_name:       "PRVIO",
+      skip_itc:       false
+    )
+
     # Fetch or create the App Store Distribution provisioning profile.
     # Default sigh (no adhoc/development flag) = App Store profile.
     sigh(
