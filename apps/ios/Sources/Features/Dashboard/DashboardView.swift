@@ -22,6 +22,7 @@ struct DashboardView: View {
     )
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
+    @State private var showQuickActions = false
 
     // Property sections for map points and carousel
     private let sections = PropertySection.all
@@ -39,6 +40,12 @@ struct DashboardView: View {
         }
         .navigationBarHidden(true)
         .onAppear { startPulse() }
+        .sheet(isPresented: $showQuickActions) {
+            QuickActionsSheet(selectedTab: $selectedTab, isPresented: $showQuickActions)
+                .presentationDetents([.height(430)])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(28)
+        }
     }
 
     // MARK: - Map
@@ -150,17 +157,40 @@ struct DashboardView: View {
                     }
                 }
                 Spacer()
-                if let score = propertyService.primary?.healthScore {
-                    let col: Color = score >= 80
-                        ? Color(red: 0.25, green: 0.88, blue: 0.55)
-                        : score >= 55 ? Color.orange : Color.red
-                    HStack(spacing: 4) {
-                        Image(systemName: "heart.fill").font(.system(size: 11))
-                        Text("\(score)").font(.system(size: 13, weight: .bold))
+                HStack(spacing: 10) {
+                    if let score = propertyService.primary?.healthScore {
+                        let col: Color = score >= 80
+                            ? Color(red: 0.25, green: 0.88, blue: 0.55)
+                            : score >= 55 ? Color.orange : Color.red
+                        HStack(spacing: 4) {
+                            Image(systemName: "heart.fill").font(.system(size: 11))
+                            Text("\(score)").font(.system(size: 13, weight: .bold))
+                        }
+                        .foregroundStyle(col)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(col.opacity(0.15), in: Capsule())
                     }
-                    .foregroundStyle(col)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(col.opacity(0.15), in: Capsule())
+                    // Quick actions FAB
+                    Button {
+                        HapticFeedback.impact(.medium)
+                        showQuickActions = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(red: 0.4, green: 0.6, blue: 1.0),
+                                             Color(red: 0.6, green: 0.35, blue: 0.95)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: Circle()
+                            )
+                            .shadow(color: Color(red: 0.5, green: 0.45, blue: 0.95).opacity(0.5), radius: 8)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 20)
@@ -261,6 +291,142 @@ struct DashboardView: View {
         withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
             pulsing = true
         }
+    }
+}
+
+// MARK: - Quick Actions Sheet
+
+struct QuickActionsSheet: View {
+    @Binding var selectedTab: AppTab
+    @Binding var isPresented: Bool
+
+    @State private var showChat = false
+    @State private var showAddTask = false
+    @State private var showInventory = false
+
+    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Acțiuni rapide")
+                        .font(.system(size: 17, weight: .semibold))
+                    Spacer()
+                    Button { isPresented = false } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(Color.primary.opacity(0.3))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 22)
+                .padding(.bottom, 20)
+
+                LazyVGrid(columns: columns, spacing: 12) {
+                    // Chat
+                    NavigationLink {
+                        ChatView()
+                    } label: {
+                        QuickActionTile(icon: "message.fill",
+                                        color: Color(red: 0.35, green: 0.65, blue: 1.0),
+                                        title: "Chat",
+                                        subtitle: "Familie & colegi")
+                    }
+                    .buttonStyle(.plain)
+
+                    // ARIA — dismiss + switch tab
+                    Button {
+                        isPresented = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            selectedTab = .assistant
+                        }
+                    } label: {
+                        QuickActionTile(icon: "sparkles",
+                                        color: Color(red: 0.6, green: 0.35, blue: 0.95),
+                                        title: "ARIA",
+                                        subtitle: "Asistent AI")
+                    }
+                    .buttonStyle(.plain)
+
+                    // Sarcină nouă
+                    NavigationLink {
+                        AddTaskView()
+                    } label: {
+                        QuickActionTile(icon: "plus.circle.fill",
+                                        color: Color(red: 0.3, green: 0.85, blue: 0.45),
+                                        title: "Sarcină nouă",
+                                        subtitle: "Adaugă rapid")
+                    }
+                    .buttonStyle(.plain)
+
+                    // Scan scule
+                    NavigationLink {
+                        InventoryView()
+                    } label: {
+                        QuickActionTile(icon: "barcode.viewfinder",
+                                        color: Color(red: 1.0, green: 0.65, blue: 0.15),
+                                        title: "Scan scule",
+                                        subtitle: "Inventar rapid")
+                    }
+                    .buttonStyle(.plain)
+
+                    // Împrumut
+                    NavigationLink {
+                        InventoryView()
+                    } label: {
+                        QuickActionTile(icon: "arrow.left.arrow.right.circle.fill",
+                                        color: Color(red: 0.95, green: 0.45, blue: 0.35),
+                                        title: "Împrumut",
+                                        subtitle: "Unelte & obiecte")
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+
+                Spacer()
+            }
+        }
+    }
+}
+
+// MARK: - Quick Action Tile
+
+struct QuickActionTile: View {
+    let icon: String
+    let color: Color
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(color.opacity(0.15))
+                    .frame(width: 46, height: 46)
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(color)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.8)
+        )
     }
 }
 

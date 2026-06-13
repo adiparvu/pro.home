@@ -127,7 +127,7 @@ struct FloatingTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(AppTab.allCases, id: \.self) { tab in
+            ForEach(AppTab.allCases.filter { $0 != .assistant }, id: \.self) { tab in
                 FloatingTabItem(
                     tab: tab,
                     isSelected: selected == tab,
