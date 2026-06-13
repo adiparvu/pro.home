@@ -23,6 +23,7 @@ struct DashboardView: View {
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
     @State private var showQuickActions = false
+    @State private var showNotifications = false
 
     // Property sections for map points and carousel
     private let sections = PropertySection.all
@@ -45,6 +46,13 @@ struct DashboardView: View {
                 .presentationDetents([.height(430)])
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(28)
+        }
+        .sheet(isPresented: $showNotifications) {
+            NavigationStack {
+                NotificationsSettingsView()
+                    .navigationTitle("Notificări")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
         }
     }
 
