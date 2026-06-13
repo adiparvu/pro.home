@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import CoreLocation
 import MapKit
+import UserNotifications
 import Supabase
 
 struct ChatView: View {
