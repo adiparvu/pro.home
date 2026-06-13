@@ -314,7 +314,7 @@ struct SettingsView: View {
     private var initial: String { String(displayName.prefix(1)).uppercased() }
 }
 
-// MARK: - Settings Group
+// MARK: - Settings Group (iOS 26/27 liquid glass)
 
 struct SettingsGroup<Content: View>: View {
     let title: String
@@ -323,18 +323,30 @@ struct SettingsGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.38))
+                .padding(.leading, 8)
 
-            VStack(spacing: 0) {
-                content
-            }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
+            VStack(spacing: 0) { content }
+                .background {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(LinearGradient(
+                                    colors: [.white.opacity(0.14), .clear],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                ))
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(LinearGradient(
+                                    colors: [.white.opacity(0.32), .white.opacity(0.06)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                ), lineWidth: 0.7)
+                        }
+                }
+                .shadow(color: .black.opacity(0.10), radius: 18, y: 4)
         }
     }
 }
@@ -374,8 +386,8 @@ struct NavSettingsRow<D: View>: View {
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.05))
-            .frame(height: 0.5)
+            .fill(Color.primary.opacity(0.06))
+            .frame(height: 0.4)
             .padding(.leading, 52)
     }
 }
@@ -454,7 +466,7 @@ struct InfoSettingsRow: View {
     }
 }
 
-// MARK: - Colored Icon Badge
+// MARK: - Colored Icon Badge (iOS 26/27 squircle gradient)
 
 struct ColoredIconBadge: View {
     let icon: String
@@ -462,11 +474,18 @@ struct ColoredIconBadge: View {
     var size: CGFloat = 32
 
     var body: some View {
-        Image(systemName: icon)
-            .font(.system(size: size * 0.42, weight: .semibold))
-            .foregroundStyle(color)
-            .frame(width: size, height: size)
-            .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [color.opacity(0.95), color.opacity(0.75)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .frame(width: size, height: size)
+                .shadow(color: color.opacity(0.45), radius: 4, y: 2)
+            Image(systemName: icon)
+                .font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(.white)
+        }
     }
 }
 

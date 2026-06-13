@@ -142,24 +142,29 @@ struct FloatingTabBar: View {
                 }
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 9)
+        .padding(.horizontal, 9)
         .background {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 32, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.primary.opacity(0.22), Color.primary.opacity(0.06)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.8
-                        )
-                )
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay {
+                    // Specular shimmer on tab bar
+                    RoundedRectangle(cornerRadius: 34, style: .continuous)
+                        .fill(LinearGradient(
+                            colors: [.white.opacity(0.18), .clear, .white.opacity(0.04)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 34, style: .continuous)
+                        .strokeBorder(LinearGradient(
+                            colors: [.white.opacity(0.42), .white.opacity(0.08), .clear],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ), lineWidth: 0.8)
+                }
         }
-        .shadow(color: .black.opacity(0.45), radius: 32, y: 12)
+        .shadow(color: .black.opacity(0.50), radius: 36, y: 14)
+        .shadow(color: .black.opacity(0.12), radius: 6,  y: 2)
     }
 }
 
@@ -175,15 +180,23 @@ struct FloatingTabItem: View {
             ZStack {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.primary.opacity(0.22), Color.primary.opacity(0.10)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(LinearGradient(
+                                    colors: [.white.opacity(0.22), .white.opacity(0.06)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                ))
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(LinearGradient(
+                                    colors: [.white.opacity(0.50), .white.opacity(0.08)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                ), lineWidth: 0.7)
+                        }
                         .matchedGeometryEffect(id: "tabPill", in: namespace)
-                        .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                        .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                 }
                 Image(systemName: tab.icon)
                     .font(.system(size: 18, weight: isSelected ? .semibold : .regular))

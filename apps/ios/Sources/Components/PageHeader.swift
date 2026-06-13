@@ -7,22 +7,19 @@ struct PageHeader: View {
 
     var body: some View {
         HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 if let subtitle {
-                    Text(subtitle)
-                        .font(.caption)
+                    Text(subtitle.uppercased())
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
+                        .tracking(1.4)
                 }
                 Text(title)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
             }
             Spacer()
-            if let trailing {
-                trailing
-            }
+            if let trailing { trailing }
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)

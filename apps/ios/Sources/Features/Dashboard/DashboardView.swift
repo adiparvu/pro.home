@@ -839,7 +839,7 @@ private struct FinStat: View {
 var appBackground: Color {
     Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1)
-            : UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1)
+            ? UIColor(red: 0.04, green: 0.04, blue: 0.08, alpha: 1)   // deep navy-black
+            : UIColor(red: 0.96, green: 0.96, blue: 0.985, alpha: 1)  // cool frost white
     })
 }
