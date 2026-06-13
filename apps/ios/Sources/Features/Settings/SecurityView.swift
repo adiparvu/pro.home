@@ -58,7 +58,7 @@ struct SecurityView: View {
     // MARK: - Sessions
 
     private var sessionsSection: some View {
-        secGroup(title: "Sesiuni", footer: "Vezi toate dispozitivele și sesiunile care ți-au accesat contul. Poți verifica sesiunile active, elimina dispozitivele de încredere sau folosi „Deconectează-te de pe toate dispozitivele" pentru a încheia toate sesiunile.") {
+        secGroup(title: "Sesiuni", footer: "Vezi toate dispozitivele și sesiunile care ți-au accesat contul. Poți verifica sesiunile active, elimina dispozitivele de încredere sau folosi „Deconectează-te de pe toate dispozitivele\u{201D} pentru a încheia toate sesiunile.") {
             Button { showActiveSessions = true } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "macbook.and.iphone", color: .blue)
