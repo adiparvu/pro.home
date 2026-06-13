@@ -8,6 +8,10 @@ on:
       - '.github/workflows/ios.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Build & Upload to TestFlight

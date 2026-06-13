@@ -97,12 +97,37 @@ platform :ios do
 
     sh("ruby /tmp/revoke_dist_certs.rb '#{key_path}' '#{key_id}' '#{issuer_id}'")
 
-    # Create a new Distribution cert and install it into the runner's keychain.
-    cert(
-      api_key:     api_key,
-      platform:    "ios",
-      output_path: "/tmp"
+    # Create a dedicated, unlocked CI keychain. Importing the signing key into
+    # a keychain whose partition list we control lets codesign use the private
+    # key non-interactively. Without this, codesign blocks forever on a GUI
+    # authorization prompt that never appears on a headless runner.
+    keychain_name     = "prvhouse_ci.keychain"
+    keychain_password = "ci_temp_pw"
+    keychain_path     = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+
+    create_keychain(
+      name:            keychain_name,
+      password:        keychain_password,
+      default_keychain: true,
+      unlock:          true,
+      timeout:         3600,
+      lock_when_sleeps: false,
+      add_to_search_list: true
     )
+
+    # Create a new Distribution cert and install it into the CI keychain.
+    cert(
+      api_key:           api_key,
+      platform:          "ios",
+      output_path:       "/tmp",
+      keychain_path:     keychain_path,
+      keychain_password: keychain_password
+    )
+
+    # Authorize codesign (and Apple tools) to use the imported key without a
+    # prompt, then ensure the keychain is unlocked for the archive step.
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '#{keychain_password}' '#{keychain_path}' || true")
 
     # Fetch or create the App Store Distribution provisioning profile.
     # Default sigh (no adhoc/development flag) = App Store profile.
@@ -129,6 +154,9 @@ platform :ios do
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          profile_uuid
     )
+
+    # Re-unlock immediately before archiving so codesign never stalls.
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
 
     sh(
       "set -o pipefail && xcodebuild archive " \
