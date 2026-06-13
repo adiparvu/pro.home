@@ -43,12 +43,14 @@ struct MainTabView: View {
         ZStack(alignment: .bottom) {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+        }
+        .ignoresSafeArea(edges: .bottom)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             FloatingTabBar(selected: $selectedTab, overdueCount: taskService.overdueCount)
                 .padding(.horizontal, 20)
                 .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
+                .padding(.top, 4)
         }
-        .ignoresSafeArea(edges: .bottom)
         .environmentObject(taskService)
         .environmentObject(propertyService)
         .environmentObject(profileService)
@@ -158,31 +160,26 @@ struct FloatingTabItem: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
-                ZStack(alignment: .topTrailing) {
+            Image(systemName: tab.icon)
+                .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
+                .symbolEffect(.bounce, value: isSelected)
+                .frame(width: 52, height: 40)
+                .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(.white.opacity(isSelected ? 0.16 : 0))
-                        .frame(height: 36)
-                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isSelected)
-
-                    Image(systemName: tab.icon)
-                        .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
-                        .foregroundStyle(isSelected ? .white : .white.opacity(0.38))
-                        .symbolEffect(.bounce, value: isSelected)
-                        .frame(height: 44)
-
+                )
+                .overlay(alignment: .topTrailing) {
                     if badge > 0 {
                         Text("\(min(badge, 9))")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(minWidth: 16, minHeight: 16)
                             .background(.red, in: Circle())
-                            .offset(x: 4, y: -4)
+                            .offset(x: 8, y: -8)
                     }
                 }
-                .frame(height: 44)
-            }
-            .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
     }

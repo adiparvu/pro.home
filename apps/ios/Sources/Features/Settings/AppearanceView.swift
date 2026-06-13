@@ -8,7 +8,6 @@ struct AppearanceView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 themeSection
-                languageSection
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, 20)
@@ -46,48 +45,6 @@ struct AppearanceView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
             )
-        }
-    }
-
-    // MARK: - Language
-
-    private var languageSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Language")
-
-            VStack(spacing: 0) {
-                ForEach(AppSettings.languages, id: \.code) { lang in
-                    LanguageOptionRow(
-                        flag: lang.flag,
-                        name: lang.name,
-                        isSelected: appSettings.locale == lang.code
-                    ) {
-                        withAnimation(.spring(response: 0.3)) {
-                            appSettings.locale = lang.code
-                        }
-                        if let uid = auth.session?.user.id {
-                            appSettings.syncToProfile(userId: uid)
-                        }
-                    }
-
-                    if lang.code != AppSettings.languages.last?.code {
-                        Rectangle()
-                            .fill(.white.opacity(0.05))
-                            .frame(height: 0.5)
-                            .padding(.leading, 52)
-                    }
-                }
-            }
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
-            )
-
-            Text("Language changes apply immediately within the app.")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.35))
-                .padding(.leading, 4)
         }
     }
 
@@ -143,41 +100,3 @@ private struct ThemeOptionRow: View {
     }
 }
 
-// MARK: - Language Row
-
-private struct LanguageOptionRow: View {
-    let flag: String
-    let name: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Text(flag)
-                    .font(.system(size: 26))
-                    .frame(width: 40)
-
-                Text(name)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.blue)
-                        .transition(.scale.combined(with: .opacity))
-                } else {
-                    Circle()
-                        .strokeBorder(.white.opacity(0.2), lineWidth: 1.5)
-                        .frame(width: 20, height: 20)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-        }
-        .buttonStyle(.plain)
-    }
-}

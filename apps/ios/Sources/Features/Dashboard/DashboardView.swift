@@ -319,4 +319,10 @@ private struct FinStat: View {
 
 // MARK: - Shared bg
 
-var appBackground: Color { Color(red: 0.06, green: 0.06, blue: 0.08) }
+var appBackground: Color {
+    Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1)
+            : UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1)
+    })
+}

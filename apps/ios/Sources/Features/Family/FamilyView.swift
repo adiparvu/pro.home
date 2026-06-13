@@ -50,7 +50,6 @@ struct FamilyView: View {
                 }
             }
         }
-        .navigationTitle("Family")
         .navigationBarTitleDisplayMode(.large)
         .task { await familyService.load() }
         .sheet(isPresented: $showAdd) {
