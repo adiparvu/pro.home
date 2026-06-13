@@ -6,13 +6,7 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvhouse.locale")   var locale:            String = "en"
     @AppStorage("prvhouse.currency") var preferredCurrency: String = "EUR"
 
-    var resolvedColorScheme: ColorScheme? {
-        switch theme {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil
-        }
-    }
+    var resolvedColorScheme: ColorScheme? { .dark }
 
     // Sync to Supabase profiles after sign-in
     func syncToProfile(userId: UUID) {
@@ -40,9 +34,7 @@ final class AppSettings: ObservableObject {
     }
 
     static let themes: [(code: String, label: String, icon: String)] = [
-        ("dark",   "Dark",   "moon.fill"),
-        ("light",  "Light",  "sun.max.fill"),
-        ("system", "System", "circle.lefthalf.filled"),
+        ("dark", "Dark", "moon.fill"),
     ]
 
     static let languages: [(code: String, name: String, flag: String)] = [
