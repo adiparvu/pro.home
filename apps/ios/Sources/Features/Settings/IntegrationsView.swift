@@ -2,6 +2,7 @@ import SwiftUI
 import EventKit
 
 struct IntegrationsView: View {
+    @EnvironmentObject private var taskService: TaskService
     @StateObject private var vm = IntegrationsViewModel()
 
     var body: some View {
@@ -23,6 +24,7 @@ struct IntegrationsView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.checkStatuses() }
+        .task { vm.tasks = taskService.tasks }
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -148,8 +150,11 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var remindersStatus: IntegrationStatus = .notConnected
     @Published var showCalendarSuccess = false
     @Published var showPermissionDenied = false
+    var tasks: [MaintenanceTask] = []
 
     private let store = EKEventStore()
+    private let calendarSyncedKey = "prvhouse.calendar.synced_ids"
+    private let reminderSyncedKey = "prvhouse.reminders.synced_ids"
 
     func checkStatuses() async {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
@@ -159,6 +164,7 @@ final class IntegrationsViewModel: ObservableObject {
     func toggleCalendar() async {
         if calendarStatus == .connected {
             calendarStatus = .notConnected
+            UserDefaults.standard.removeObject(forKey: calendarSyncedKey)
             return
         }
         calendarStatus = .loading
@@ -176,11 +182,13 @@ final class IntegrationsViewModel: ObservableObject {
     func toggleReminders() async {
         if remindersStatus == .connected {
             remindersStatus = .notConnected
+            UserDefaults.standard.removeObject(forKey: reminderSyncedKey)
             return
         }
         remindersStatus = .loading
         let granted = await requestRemindersAccess()
         if granted {
+            await syncOverdueToReminders()
             remindersStatus = .connected
         } else {
             remindersStatus = .notConnected
@@ -191,8 +199,8 @@ final class IntegrationsViewModel: ObservableObject {
     // MARK: - Calendar
 
     private func checkCalendarAccess() async -> Bool {
-        EKEventStore.authorizationStatus(for: .event) == .fullAccess ||
-        EKEventStore.authorizationStatus(for: .event) == .authorized
+        let status = EKEventStore.authorizationStatus(for: .event)
+        return status == .fullAccess || status == .authorized
     }
 
     private func requestCalendarAccess() async -> Bool {
@@ -206,29 +214,52 @@ final class IntegrationsViewModel: ObservableObject {
     }
 
     private func syncTasksToCalendar() async {
-        // Create a PRV House calendar if it doesn't exist
         let sources = store.sources
-        guard let source = sources.first(where: { $0.sourceType == .local }) ?? sources.first else { return }
+        guard let source = sources.first(where: { $0.sourceType == .calDAV })
+                         ?? sources.first(where: { $0.sourceType == .local })
+                         ?? sources.first else { return }
 
-        let calendarTitle = "PRV House"
-        let existing = store.calendars(for: .event).first { $0.title == calendarTitle }
-        let calendar: EKCalendar
-        if let existing { calendar = existing }
-        else {
-            calendar = EKCalendar(for: .event, eventStore: store)
-            calendar.title = calendarTitle
-            calendar.source = source
-            calendar.cgColor = UIColor.systemBlue.cgColor
-            try? store.saveCalendar(calendar, commit: true)
+        let calTitle = "PRV House"
+        let cal: EKCalendar
+        if let existing = store.calendars(for: .event).first(where: { $0.title == calTitle }) {
+            cal = existing
+        } else {
+            cal = EKCalendar(for: .event, eventStore: store)
+            cal.title = calTitle
+            cal.source = source
+            cal.cgColor = UIColor.systemBlue.cgColor
+            try? store.saveCalendar(cal, commit: true)
         }
-        _ = calendar
+
+        var synced = UserDefaults.standard.stringArray(forKey: calendarSyncedKey) ?? []
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+
+        for task in tasks where !task.isCompleted {
+            guard let ds = task.dueDate, let date = iso.date(from: ds) else { continue }
+            let key = task.id.uuidString
+            guard !synced.contains(key) else { continue }
+
+            let event = EKEvent(eventStore: store)
+            event.title = task.title
+            event.notes = task.description
+            event.startDate = date
+            event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date
+            event.calendar = cal
+            event.isAllDay = true
+
+            if let _ = try? store.save(event, span: .thisEvent) {
+                synced.append(key)
+            }
+        }
+        try? store.commit()
+        UserDefaults.standard.set(synced, forKey: calendarSyncedKey)
     }
 
     // MARK: - Reminders
 
     private func checkRemindersAccess() async -> Bool {
-        EKEventStore.authorizationStatus(for: .reminder) == .fullAccess ||
-        EKEventStore.authorizationStatus(for: .reminder) == .authorized
+        let status = EKEventStore.authorizationStatus(for: .reminder)
+        return status == .fullAccess || status == .authorized
     }
 
     private func requestRemindersAccess() async -> Bool {
@@ -239,6 +270,47 @@ final class IntegrationsViewModel: ObservableObject {
                 return try await store.requestAccess(to: .reminder)
             }
         } catch { return false }
+    }
+
+    private func syncOverdueToReminders() async {
+        let listTitle = "PRV House"
+        let list: EKCalendar
+        if let existing = store.calendars(for: .reminder).first(where: { $0.title == listTitle }) {
+            list = existing
+        } else {
+            guard let source = store.sources.first(where: { $0.sourceType == .local }) ?? store.sources.first else { return }
+            let newList = EKCalendar(for: .reminder, eventStore: store)
+            newList.title = listTitle
+            newList.source = source
+            newList.cgColor = UIColor.systemOrange.cgColor
+            try? store.saveCalendar(newList, commit: true)
+            list = newList
+        }
+
+        var synced = UserDefaults.standard.stringArray(forKey: reminderSyncedKey) ?? []
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+
+        let overduePending = tasks.filter { $0.isOverdue || ($0.status == "pending" && !$0.isCompleted) }
+        for task in overduePending {
+            let key = task.id.uuidString
+            guard !synced.contains(key) else { continue }
+
+            let reminder = EKReminder(eventStore: store)
+            reminder.title = "[\(task.priority.capitalized)] \(task.title)"
+            reminder.notes = task.description
+            reminder.calendar = list
+
+            if let ds = task.dueDate, let date = iso.date(from: ds) {
+                let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+                reminder.dueDateComponents = comps
+            }
+
+            if let _ = try? store.save(reminder, commit: false) {
+                synced.append(key)
+            }
+        }
+        try? store.commit()
+        UserDefaults.standard.set(synced, forKey: reminderSyncedKey)
     }
 }
 

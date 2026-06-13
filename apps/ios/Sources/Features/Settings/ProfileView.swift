@@ -18,7 +18,6 @@ struct ProfileView: View {
     @State private var toastIsError = false
     @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
     @State private var biometricType: LABiometryType = .none
-    @State private var showDeleteConfirm2 = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -79,12 +78,6 @@ struct ProfileView: View {
             }
         }
         .task { checkBiometrics() }
-        .confirmationDialog("Delete Account", isPresented: $showDeleteConfirm2, titleVisibility: .visible) {
-            Button("Delete My Account", role: .destructive) { Task { try? await auth.signOut() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This is permanent and cannot be undone.")
-        }
     }
 
     // MARK: - Avatar
@@ -224,7 +217,6 @@ struct ProfileView: View {
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
-                // Face ID row
                 if biometricType != .none {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: biometricType == .faceID ? "faceid" : "touchid", color: Color(red: 0.3, green: 0.85, blue: 0.5))
@@ -246,44 +238,7 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    secRowDivider
                 }
-
-                // Change Password row
-                Button {
-                    showChangePassword = true
-                } label: {
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: "key.fill", color: .orange)
-                        Text("Change Password")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.white)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.28))
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
-                secRowDivider
-
-                // Delete Account
-                Button {
-                    showDeleteConfirm2 = true
-                } label: {
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: "trash.fill", color: .red)
-                        Text("Delete Account")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.red)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
             }
             .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))

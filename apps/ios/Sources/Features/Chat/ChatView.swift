@@ -29,11 +29,11 @@ struct ChatView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            messageList
-            inputBar
-        }
-        .background(appBackground.ignoresSafeArea())
+        messageList
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                inputBar
+            }
+            .background(appBackground.ignoresSafeArea())
         .navigationTitle("Family Chat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
