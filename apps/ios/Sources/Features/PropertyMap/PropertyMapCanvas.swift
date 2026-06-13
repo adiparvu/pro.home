@@ -29,7 +29,7 @@ struct PropertyMapCanvas: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
                         )
                         .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
                         .contentShape(Rectangle())
@@ -85,7 +85,7 @@ struct PropertyMapCanvas: View {
                         VStack(spacing: 12) {
                             Image(systemName: "map")
                                 .font(.system(size: 40))
-                                .foregroundStyle(.white.opacity(0.2))
+                                .foregroundStyle(.primary.opacity(0.2))
                             Text("Niciun element pe hartă")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -144,7 +144,7 @@ private struct MapBackground: View {
                         var path = Path()
                         path.move(to: CGPoint(x: x, y: 0))
                         path.addLine(to: CGPoint(x: x, y: size.height))
-                        ctx.stroke(path, with: .color(.white.opacity(0.04)), lineWidth: 0.5)
+                        ctx.stroke(path, with: .color(.primary.opacity(0.04)), lineWidth: 0.5)
                         x += step
                     }
                     var y: CGFloat = 0
@@ -152,7 +152,7 @@ private struct MapBackground: View {
                         var path = Path()
                         path.move(to: CGPoint(x: 0, y: y))
                         path.addLine(to: CGPoint(x: size.width, y: y))
-                        ctx.stroke(path, with: .color(.white.opacity(0.04)), lineWidth: 0.5)
+                        ctx.stroke(path, with: .color(.primary.opacity(0.04)), lineWidth: 0.5)
                         y += step
                     }
                 }
@@ -163,7 +163,7 @@ private struct MapBackground: View {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(
                         LinearGradient(
-                            colors: [.white.opacity(0.18), .white.opacity(0.06)],
+                            colors: [.primary.opacity(0.18), .primary.opacity(0.06)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         ),
                         style: StrokeStyle(lineWidth: 1.5, dash: [8, 6])
@@ -202,14 +202,14 @@ private struct ElementPin: View {
                     )
                     .frame(width: isDragging ? 48 : 38, height: isDragging ? 48 : 38)
                     .overlay(
-                        Circle().strokeBorder(.white.opacity(0.25), lineWidth: 1)
+                        Circle().strokeBorder(.primary.opacity(0.25), lineWidth: 1)
                     )
                     .shadow(color: element.elementType.accentColor.opacity(0.5), radius: isDragging ? 12 : 6, y: 2)
 
                 // Icon
                 Image(systemName: element.elementType.icon)
                     .font(.system(size: isDragging ? 20 : 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 // Health score ring
                 Circle()
@@ -222,7 +222,7 @@ private struct ElementPin: View {
                 if isEditMode {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(3)
                         .background(Circle().fill(Color.black.opacity(0.5)))
                         .offset(x: 13, y: -13)
@@ -232,7 +232,7 @@ private struct ElementPin: View {
             // Label
             Text(element.name)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
                 .lineLimit(1)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)

@@ -43,7 +43,7 @@ struct AddFinancialView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -83,7 +83,7 @@ struct AddFinancialView: View {
                             Text(t.capitalized)
                                 .font(.system(size: 14, weight: .semibold))
                         }
-                        .foregroundStyle(type == t ? .black : .white.opacity(0.5))
+                        .foregroundStyle(type == t ? .black : .primary.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
@@ -106,15 +106,15 @@ struct AddFinancialView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AMOUNT")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
 
                 HStack(alignment: .center, spacing: 8) {
                     Text(currencyService.symbol(for: appSettings.preferredCurrency))
                         .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.primary.opacity(0.5))
                     TextField("0", text: $amount)
                         .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .tint(.blue)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.leading)
@@ -132,7 +132,7 @@ struct AddFinancialView: View {
                 ColoredIconBadge(icon: "tag.fill", color: .blue)
                 TextField("Title", text: $title)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .tint(.blue)
             }
             .padding(.horizontal, 14)
@@ -145,14 +145,14 @@ struct AddFinancialView: View {
                 ColoredIconBadge(icon: "folder.fill", color: .purple)
                 Text("Category")
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Picker("", selection: $category) {
                     ForEach(categories, id: \.self) { cat in
                         Text(cat.capitalized).tag(cat)
                     }
                 }
-                .tint(.white.opacity(0.5))
+                .tint(.primary.opacity(0.5))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -164,16 +164,16 @@ struct AddFinancialView: View {
                 ColoredIconBadge(icon: "calendar", color: .orange)
                 DatePicker("Date", selection: $date, displayedComponents: .date)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .tint(.blue)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
         }
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
         )
     }
 
@@ -185,22 +185,22 @@ struct AddFinancialView: View {
                 ColoredIconBadge(icon: "note.text", color: .cyan)
                 TextField("Notes (optional)", text: $notes)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .tint(.blue)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
         )
     }
 
     private var divider: some View {
         Rectangle()
-            .fill(.white.opacity(0.05))
+            .fill(.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }

@@ -168,13 +168,13 @@ struct LocalAssistantView: View {
         HStack(spacing: 10) {
             TextField("Ask about your property…", text: $input, axis: .vertical)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .tint(.blue)
                 .focused($focused)
                 .lineLimit(1...4)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
 
             Button {
                 guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -182,7 +182,7 @@ struct LocalAssistantView: View {
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(input.isEmpty ? .white.opacity(0.2) : .blue)
+                    .foregroundStyle(input.isEmpty ? .primary.opacity(0.2) : .blue)
             }
             .disabled(input.isEmpty || isThinking)
         }
@@ -260,18 +260,18 @@ private struct LocalMessageBubble: View {
                         .frame(width: 30, height: 30)
                     Image(systemName: "cpu.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
             }
             Text(message.text)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(
                     isUser
                         ? AnyShapeStyle(.blue)
-                        : AnyShapeStyle(.white.opacity(0.08)),
+                        : AnyShapeStyle(.primary.opacity(0.08)),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
             if !isUser { Spacer(minLength: 60) }
@@ -287,19 +287,19 @@ private struct ThinkingBubble: View {
                 Circle()
                     .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 30, height: 30)
-                Image(systemName: "cpu.fill").font(.system(size: 12)).foregroundStyle(.white)
+                Image(systemName: "cpu.fill").font(.system(size: 12)).foregroundStyle(.primary)
             }
             HStack(spacing: 5) {
                 ForEach(0..<3) { i in
                     Circle()
-                        .fill(.white.opacity(0.5))
+                        .fill(.primary.opacity(0.5))
                         .frame(width: 7, height: 7)
                         .scaleEffect(phase == Double(i) ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             Spacer(minLength: 60)
         }
         .onAppear { phase = 2 }

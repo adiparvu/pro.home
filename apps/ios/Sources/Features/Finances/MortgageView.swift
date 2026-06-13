@@ -94,15 +94,15 @@ struct MortgageView: View {
                     .foregroundStyle(.blue.opacity(0.7))
                 Text("Mortgage Tracker")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("Enter your mortgage details to track payments, remaining balance, and equity buildup.")
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.primary.opacity(0.5))
                     .multilineTextAlignment(.center)
                 Button { isEditing = true } label: {
                     Text("Set Up Mortgage")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -120,21 +120,21 @@ struct MortgageView: View {
                 HStack {
                     Text("Monthly Payment")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text("\(Int(interestRate * 10) / 10)% · \(Int(termYears))yr")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                 }
                 Text("€\(String(format: "%.0f", monthlyPayment))")
                     .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 HStack(spacing: 0) {
                     MortgageStat(label: "Principal", value: "€\(Int(loanAmount))")
-                    Rectangle().fill(.white.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(.primary.opacity(0.07)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Interest", value: "€\(Int(totalInterest))")
-                    Rectangle().fill(.white.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(.primary.opacity(0.07)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Cost", value: "€\(Int(loanAmount + totalInterest))")
                 }
             }
@@ -149,15 +149,15 @@ struct MortgageView: View {
                 HStack {
                     Text("Repayment Progress")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.1f%%", paidProgress * 100))
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(.primary.opacity(0.07)).frame(height: 10)
                         Capsule()
                             .fill(LinearGradient(colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
                                                  startPoint: .leading, endPoint: .trailing))
@@ -171,19 +171,19 @@ struct MortgageView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Paid")
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.4))
                         Text("\(paidMonths) months")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 3) {
                         Text("Remaining")
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.4))
                         Text("\(remainingMonths) months")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                 }
 
@@ -191,7 +191,7 @@ struct MortgageView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Balance Remaining")
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.4))
                         Text("€\(Int(remainingLoanBalance))")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.orange)
@@ -203,7 +203,7 @@ struct MortgageView: View {
                         VStack(alignment: .trailing, spacing: 3) {
                             Text("Free By")
                                 .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.primary.opacity(0.4))
                             let f: DateFormatter = { let d = DateFormatter(); d.dateFormat = "MMM yyyy"; return d }()
                             Text(f.string(from: endDate))
                                 .font(.system(size: 15, weight: .bold))
@@ -223,7 +223,7 @@ struct MortgageView: View {
                 HStack {
                     Text("Equity")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.1f%%", equityPercent * 100))
                         .font(.system(size: 14, weight: .bold))
@@ -232,7 +232,7 @@ struct MortgageView: View {
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(.primary.opacity(0.07)).frame(height: 10)
                         Capsule()
                             .fill(Color(red: 0.3, green: 0.85, blue: 0.5))
                             .frame(width: geo.size.width * equityPercent, height: 10)
@@ -243,9 +243,9 @@ struct MortgageView: View {
 
                 HStack {
                     MortgageStat(label: "Property Value", value: "€\(Int(propertyValue))")
-                    Rectangle().fill(.white.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(.primary.opacity(0.07)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Your Equity", value: "€\(Int(max(0, propertyValue - remainingLoanBalance)))")
-                    Rectangle().fill(.white.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(.primary.opacity(0.07)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Owed", value: "€\(Int(remainingLoanBalance))")
                 }
             }
@@ -259,7 +259,7 @@ struct MortgageView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Payment Breakdown")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 let principalShare = loanAmount / (loanAmount + totalInterest)
                 let interestShare  = 1 - principalShare
@@ -282,12 +282,12 @@ private struct MortgageStat: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(.primary.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
@@ -304,16 +304,16 @@ private struct BreakdownRow: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle().fill(color).frame(width: 7, height: 7)
-                    Text(label).font(.system(size: 13)).foregroundStyle(.white.opacity(0.7))
+                    Text(label).font(.system(size: 13)).foregroundStyle(.primary.opacity(0.7))
                 }
                 Spacer()
                 Text(String(format: "%.1f%%", percent * 100))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.07)).frame(height: 6)
+                    Capsule().fill(.primary.opacity(0.07)).frame(height: 6)
                     Capsule().fill(color.opacity(0.7)).frame(width: geo.size.width * percent, height: 6)
                 }
             }.frame(height: 6)
@@ -350,7 +350,7 @@ struct MortgageSetupSheet: View {
 
                         GlassCard {
                             DatePicker("Mortgage Start Date", selection: $startDate, displayedComponents: .date)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .tint(.blue)
                         }
 
@@ -364,7 +364,7 @@ struct MortgageSetupSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
@@ -387,19 +387,19 @@ struct MortgageSetupSheet: View {
             HStack {
                 Text(label)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
                 Spacer()
                 HStack(spacing: 4) {
                     TextField("0", text: text)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .tint(.blue)
                         .keyboardType(keyboard)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)
                     Text(symbol)
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                 }
             }
         }

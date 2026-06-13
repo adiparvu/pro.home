@@ -53,14 +53,14 @@ struct TasksView: View {
                 } label: {
                     Image(systemName: "calendar")
                         .font(.system(size: 18))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.primary.opacity(0.85))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
             }
         }
@@ -149,10 +149,10 @@ struct TasksView: View {
             Spacer()
             Image(systemName: "checklist")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.18))
+                .foregroundStyle(.primary.opacity(0.18))
             Text(filter == .all ? "No tasks yet" : "No \(filter.rawValue.lowercased()) tasks")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
             if filter == .all {
                 Button("Add your first task") { showAdd = true }
                     .font(.system(size: 15))
@@ -179,16 +179,16 @@ struct FilterChip: View {
                 if count > 0 {
                     Text("\(count)")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(isSelected ? .black.opacity(0.6) : .white.opacity(0.4))
+                        .foregroundStyle(isSelected ? .black.opacity(0.6) : .primary.opacity(0.4))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
-                        .background(isSelected ? .black.opacity(0.12) : .white.opacity(0.1), in: Capsule())
+                        .background(isSelected ? .black.opacity(0.12) : .primary.opacity(0.1), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? .black : .white.opacity(0.7))
+            .foregroundStyle(isSelected ? .black : .primary.opacity(0.7))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isSelected ? .white : .white.opacity(0.07), in: Capsule())
+            .background(isSelected ? .white : .primary.opacity(0.07), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -211,7 +211,7 @@ struct TaskRowView: View {
                     .foregroundStyle(
                         task.isCompleted
                             ? Color(red: 0.25, green: 0.85, blue: 0.52)
-                            : .white.opacity(0.28)
+                            : .primary.opacity(0.28)
                     )
             }
             .buttonStyle(.plain)
@@ -219,20 +219,20 @@ struct TaskRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(task.isCompleted ? .white.opacity(0.38) : .white)
-                    .strikethrough(task.isCompleted, color: .white.opacity(0.3))
+                    .foregroundStyle(task.isCompleted ? .primary.opacity(0.38) : .white)
+                    .strikethrough(task.isCompleted, color: .primary.opacity(0.3))
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Text(task.category.capitalized)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.38))
+                        .foregroundStyle(.primary.opacity(0.38))
                     if task.dueDate != nil {
                         Text("·")
-                            .foregroundStyle(.white.opacity(0.22))
+                            .foregroundStyle(.primary.opacity(0.22))
                         Text(task.dueDateDisplay)
                             .font(.system(size: 11))
-                            .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : .white.opacity(0.38))
+                            .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : .primary.opacity(0.38))
                     }
                 }
             }
@@ -252,11 +252,11 @@ struct TaskRowView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(
-                    task.isOverdue ? .red.opacity(0.22) : .white.opacity(0.06),
+                    task.isOverdue ? .red.opacity(0.22) : .primary.opacity(0.06),
                     lineWidth: 0.5
                 )
         )

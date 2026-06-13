@@ -14,11 +14,11 @@ struct SplashView: View {
 
                 Text("PRVHouse")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .opacity(opacity)
 
                 ProgressView()
-                    .tint(.white.opacity(0.35))
+                    .tint(.primary.opacity(0.35))
                     .padding(.top, 8)
                     .opacity(opacity)
             }
@@ -48,7 +48,7 @@ struct SplashView: View {
                     .overlay(
                         Text("P")
                             .font(.system(size: 52, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     )
                     .shadow(color: .blue.opacity(0.45), radius: 20, y: 8)
             }

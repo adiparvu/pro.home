@@ -334,12 +334,12 @@ private struct IntegrationGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) { content }
-                .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+                .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 }
@@ -360,10 +360,10 @@ private struct IntegrationRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                         .lineLimit(2)
                 }
 
@@ -375,7 +375,7 @@ private struct IntegrationRow: View {
             .padding(.vertical, 12)
 
             Rectangle()
-                .fill(.white.opacity(0.05))
+                .fill(.primary.opacity(0.05))
                 .frame(height: 0.5)
                 .padding(.leading, 64)
         }
@@ -408,9 +408,9 @@ private struct IntegrationRow: View {
         case .comingSoon:
             Text("Soon")
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
                 .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(.white.opacity(0.06), in: Capsule())
+                .background(.primary.opacity(0.06), in: Capsule())
 
         case .deepLink(let label):
             Button {

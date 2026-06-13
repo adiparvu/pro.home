@@ -61,17 +61,17 @@ struct EmergencyContactsView: View {
         Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
             Label("Add Contact", systemImage: "plus")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
+                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
 
     private func sectionHeader(_ t: String) -> some View {
-        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.35)).padding(.leading, 4)
+        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -110,8 +110,8 @@ private struct EmergencyRow: View {
                     Image(systemName: isSystem ? "phone.fill" : "person.fill").font(.system(size: 18)).foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contact.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
-                    Text(contact.role).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+                    Text(contact.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                    Text(contact.role).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
                 }
                 Spacer()
                 Button {
@@ -122,7 +122,7 @@ private struct EmergencyRow: View {
                 } label: {
                     Text(contact.phone)
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 12).padding(.vertical, 7)
                         .background(color, in: Capsule())
                 }
@@ -148,14 +148,14 @@ private struct AddEmergencySheet: View {
                     divider
                     fieldRow("phone.fill", "Phone number", $phone, keyboard: .phonePad)
                 }
-                .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+                .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
                 .padding(.horizontal, 20).padding(.top, 8)
                 Spacer()
             }
             .navigationTitle("Add Contact").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(EmergencyContact(name: name, role: role, phone: phone))
@@ -169,8 +169,8 @@ private struct AddEmergencySheet: View {
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.white).tint(.blue).keyboardType(keyboard)
+            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private var divider: some View { Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var divider: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }

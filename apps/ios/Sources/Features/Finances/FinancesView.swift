@@ -48,7 +48,7 @@ struct FinancesView: View {
                     Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(width: 56, height: 56)
                             .background(
                                 LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing),
@@ -149,11 +149,11 @@ struct FinancesView: View {
                         Text(isAll ? "All" : type.capitalized)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                     }
-                    .foregroundStyle(isSelected ? .black : .white.opacity(0.6))
+                    .foregroundStyle(isSelected ? .black : .primary.opacity(0.6))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity)
-                    .background(isSelected ? .white : .white.opacity(0.08), in: Capsule())
+                    .background(isSelected ? .white : .primary.opacity(0.08), in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -168,10 +168,10 @@ struct FinancesView: View {
             VStack(spacing: 12) {
                 Image(systemName: "banknote")
                     .font(.system(size: 36))
-                    .foregroundStyle(.white.opacity(0.2))
+                    .foregroundStyle(.primary.opacity(0.2))
                 Text("No records yet")
                     .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
             .padding(.top, 40)
         } else {
@@ -211,12 +211,12 @@ private struct FinSummaryCard: View {
                     .foregroundStyle(color)
                 Text(value)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(label)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -244,16 +244,16 @@ struct FinancialRecordRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(record.title)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     HStack(spacing: 6) {
                         Text(record.category.capitalized)
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.4))
                         Text("·")
-                            .foregroundStyle(.white.opacity(0.2))
+                            .foregroundStyle(.primary.opacity(0.2))
                         Text(record.dateFormatted)
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.4))
                     }
                 }
 
@@ -280,11 +280,11 @@ private struct QuickLinkCard: View {
                 ColoredIconBadge(icon: icon, color: color, size: 36)
                 Text(label)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.25))
+                    .foregroundStyle(.primary.opacity(0.25))
             }
         }
     }

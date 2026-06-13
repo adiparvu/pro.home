@@ -15,7 +15,7 @@ struct CalendarView: View {
                 monthHeader
                 weekdayRow
                 daysGrid
-                Divider().background(.white.opacity(0.06)).padding(.top, 8)
+                Divider().background(.primary.opacity(0.06)).padding(.top, 8)
                 dayDetail
             }
         }
@@ -34,14 +34,14 @@ struct CalendarView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(.white.opacity(0.07), in: Circle())
+                    .background(.primary.opacity(0.07), in: Circle())
             }
             Spacer()
             Text(monthTitle)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Spacer()
             Button {
                 if let next = calendar.date(byAdding: .month, value: 1, to: displayedMonth) {
@@ -50,9 +50,9 @@ struct CalendarView: View {
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(.white.opacity(0.07), in: Circle())
+                    .background(.primary.opacity(0.07), in: Circle())
             }
         }
         .padding(.horizontal, 20)
@@ -66,7 +66,7 @@ struct CalendarView: View {
             ForEach(["Mo","Tu","We","Th","Fr","Sa","Su"], id: \.self) { d in
                 Text(d)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.primary.opacity(0.3))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -112,10 +112,10 @@ struct CalendarView: View {
                     Spacer()
                     Image(systemName: "checkmark.circle")
                         .font(.system(size: 30))
-                        .foregroundStyle(.white.opacity(0.2))
+                        .foregroundStyle(.primary.opacity(0.2))
                     Text("Nothing scheduled")
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(.primary.opacity(0.35))
                     Spacer()
                 }
             } else {
@@ -148,7 +148,7 @@ struct CalendarView: View {
                 Spacer()
                 Text("Tap a day to see events")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.25))
+                    .foregroundStyle(.primary.opacity(0.25))
                 Spacer()
             }
         }
@@ -221,11 +221,11 @@ private struct DayCell: View {
             VStack(spacing: 3) {
                 ZStack {
                     Circle()
-                        .fill(isSelected ? .white : isToday ? .white.opacity(0.15) : .clear)
+                        .fill(isSelected ? .white : isToday ? .primary.opacity(0.15) : .clear)
                         .frame(width: 32, height: 32)
                     Text("\(day)")
                         .font(.system(size: 14, weight: isToday || isSelected ? .bold : .regular))
-                        .foregroundStyle(isSelected ? .black : .white.opacity(isToday ? 1 : 0.7))
+                        .foregroundStyle(isSelected ? .black : .primary.opacity(isToday ? 1 : 0.7))
                 }
                 HStack(spacing: 3) {
                     ForEach(Array(taskDots.prefix(3).enumerated()), id: \.offset) { _, c in
@@ -254,18 +254,18 @@ private struct CalendarEventRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
             Spacer()
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
+            .strokeBorder(.primary.opacity(0.06), lineWidth: 0.5))
     }
 }

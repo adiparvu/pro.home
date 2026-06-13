@@ -43,11 +43,11 @@ struct BudgetView: View {
                 HStack {
                     Text("Total Budget")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text("This month")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                 }
 
                 let total = budgetService.totalBudget()
@@ -58,16 +58,16 @@ struct BudgetView: View {
                 HStack(alignment: .bottom, spacing: 4) {
                     Text(financialService.currencySymbol + String(format: "%.0f", spent))
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("/ " + financialService.currencySymbol + String(format: "%.0f", total))
                         .font(.system(size: 15))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                         .padding(.bottom, 4)
                 }
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.07)).frame(height: 8)
+                        Capsule().fill(.primary.opacity(0.07)).frame(height: 8)
                         Capsule()
                             .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : Color.blue)
                             .frame(width: geo.size.width * progress, height: 8)
@@ -84,7 +84,7 @@ struct BudgetView: View {
                     Spacer()
                     Text(String(format: "%.0f%%", progress * 100) + " used")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                 }
             }
         }
@@ -96,7 +96,7 @@ struct BudgetView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("PER CATEGORY")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 8) {
@@ -113,7 +113,7 @@ struct BudgetView: View {
                                     ColoredIconBadge(icon: categoryIcon(cat), color: categoryColor(cat), size: 32)
                                     Text(cat.capitalized)
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.primary)
                                     Spacer()
                                     VStack(alignment: .trailing, spacing: 1) {
                                         if budget > 0 {
@@ -128,7 +128,7 @@ struct BudgetView: View {
                                         if budget > 0 {
                                             Text(String(format: "%.0f%%", progress * 100))
                                                 .font(.system(size: 10))
-                                                .foregroundStyle(.white.opacity(0.35))
+                                                .foregroundStyle(.primary.opacity(0.35))
                                         }
                                     }
                                 }
@@ -136,7 +136,7 @@ struct BudgetView: View {
                                 if budget > 0 {
                                     GeometryReader { geo in
                                         ZStack(alignment: .leading) {
-                                            Capsule().fill(.white.opacity(0.07)).frame(height: 5)
+                                            Capsule().fill(.primary.opacity(0.07)).frame(height: 5)
                                             Capsule()
                                                 .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : categoryColor(cat))
                                                 .frame(width: geo.size.width * progress, height: 5)
@@ -182,7 +182,7 @@ struct BudgetView: View {
         case "taxes":       return .purple
         case "mortgage":    return .cyan
         case "supplies":    return .pink
-        default:            return .white.opacity(0.6)
+        default:            return .primary.opacity(0.6)
         }
     }
 }
@@ -207,14 +207,14 @@ private struct EditBudgetSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("MONTHLY BUDGET")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.35))
+                                .foregroundStyle(.primary.opacity(0.35))
                             HStack(spacing: 8) {
                                 Text("€")
                                     .font(.system(size: 32, weight: .light))
-                                    .foregroundStyle(.white.opacity(0.5))
+                                    .foregroundStyle(.primary.opacity(0.5))
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)
                                     .font(.system(size: 40, weight: .light))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                                     .tint(.blue)
                                     .keyboardType(.decimalPad)
                                     .focused($focused)
@@ -230,7 +230,7 @@ private struct EditBudgetSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {

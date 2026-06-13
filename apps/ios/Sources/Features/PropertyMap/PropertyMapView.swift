@@ -168,7 +168,7 @@ struct PropertyMapView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView()
-                .tint(.white.opacity(0.6))
+                .tint(.primary.opacity(0.6))
             Text("Se încarcă harta...")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -188,7 +188,7 @@ struct PropertyMapView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(width: 52, height: 52)
                         .background(
                             LinearGradient(
@@ -234,10 +234,10 @@ private struct LayerChip: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
-                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.white.opacity(0.07))
+                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
             )
             .overlay(
-                Capsule().strokeBorder(isSelected ? .clear : .white.opacity(0.1), lineWidth: 0.5)
+                Capsule().strokeBorder(isSelected ? .clear : .primary.opacity(0.1), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

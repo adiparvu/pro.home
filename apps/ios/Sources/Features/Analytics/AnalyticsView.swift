@@ -28,10 +28,10 @@ struct AnalyticsView: View {
                             } label: {
                                 Text(tab.rawValue)
                                     .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
-                                    .foregroundStyle(selectedTab == tab ? .black : .white.opacity(0.6))
+                                    .foregroundStyle(selectedTab == tab ? .black : .primary.opacity(0.6))
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 8)
-                                    .background(selectedTab == tab ? .white : .white.opacity(0.08), in: Capsule())
+                                    .background(selectedTab == tab ? .white : .primary.opacity(0.08), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
@@ -112,7 +112,7 @@ private struct FinancesSection: View {
                         .chartYAxis {
                             AxisMarks { val in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                    .foregroundStyle(.white.opacity(0.06))
+                                    .foregroundStyle(.primary.opacity(0.06))
                                 AxisValueLabel()
                                     .foregroundStyle(.secondary)
                             }
@@ -189,12 +189,12 @@ private struct TasksSection: View {
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
 
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(.white.opacity(0.08)).frame(height: 10)
+                            Capsule().fill(.primary.opacity(0.08)).frame(height: 10)
                             Capsule()
                                 .fill(LinearGradient(
                                     colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
@@ -224,7 +224,7 @@ private struct TasksSection: View {
                         .chartXAxis {
                             AxisMarks(values: .automatic(desiredCount: 4)) { val in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                                    .foregroundStyle(.white.opacity(0.06))
+                                    .foregroundStyle(.primary.opacity(0.06))
                                 AxisValueLabel().foregroundStyle(.secondary)
                             }
                         }
@@ -284,7 +284,7 @@ private struct ForecastSection: View {
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(.white.opacity(0.08), in: Capsule())
+                            .background(.primary.opacity(0.08), in: Capsule())
                     }
 
                     VStack(spacing: 12) {
@@ -299,7 +299,7 @@ private struct ForecastSection: View {
                             value: "\(symbol)\(Int(projectedExpenses))",
                             trend: projectedExpenses > 0 ? "annualized" : "—"
                         )
-                        Divider().background(.white.opacity(0.1))
+                        Divider().background(.primary.opacity(0.1))
                         ForecastRow(
                             label: "Net Profit",
                             value: "\(symbol)\(Int(projectedIncome - projectedExpenses))",
@@ -315,7 +315,7 @@ private struct ForecastSection: View {
                     VStack(spacing: 10) {
                         Image(systemName: "chart.bar.doc.horizontal")
                             .font(.system(size: 32))
-                            .foregroundStyle(.white.opacity(0.2))
+                            .foregroundStyle(.primary.opacity(0.2))
                         Text("Add financial records to see your forecast")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -341,7 +341,7 @@ private struct ForecastRow: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 Text(value).font(.subheadline.weight(.semibold))
-                Text(trend).font(.caption).foregroundStyle(positive ? .white.opacity(0.5) : .secondary)
+                Text(trend).font(.caption).foregroundStyle(positive ? .primary.opacity(0.5) : .secondary)
             }
         }
     }

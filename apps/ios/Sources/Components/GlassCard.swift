@@ -10,7 +10,7 @@ struct GlassCard<Content: View>: View {
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                    .strokeBorder(.primary.opacity(0.1), lineWidth: 0.5)
             )
     }
 }
@@ -25,7 +25,7 @@ struct HeavyGlassCard<Content: View>: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(.white.opacity(0.15), lineWidth: 0.5)
+                    .strokeBorder(.primary.opacity(0.15), lineWidth: 0.5)
             )
     }
 }
@@ -57,6 +57,6 @@ struct IconBadge: View {
             .font(.system(size: size * 0.42, weight: .semibold))
             .foregroundStyle(.primary.opacity(0.7))
             .frame(width: size, height: size)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+            .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
     }
 }

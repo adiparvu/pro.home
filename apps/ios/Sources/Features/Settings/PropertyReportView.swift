@@ -36,13 +36,13 @@ struct PropertyReportView: View {
                     ColoredIconBadge(icon: "doc.richtext.fill", color: .blue, size: 44)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(propertyService.primary?.name ?? "Property Report")
-                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                            .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
                         Text("Generated \(formattedToday)")
-                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.45))
+                            .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.45))
                     }
                     Spacer()
                 }
-                Divider().background(.white.opacity(0.07))
+                Divider().background(.primary.opacity(0.07))
                 VStack(spacing: 8) {
                     reportInfoRow("Tasks", "\(taskService.openCount) open, \(taskService.overdueCount) overdue")
                     reportInfoRow("Finances", "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome)) income this month")
@@ -59,17 +59,17 @@ struct PropertyReportView: View {
     private var contentToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("INCLUDE IN REPORT")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.35)).padding(.leading, 4)
+                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
-                Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 toggleRow("banknote.fill", Color(red: 0.3, green: 0.85, blue: 0.5), "Financial Summary", $includesFinances)
-                Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
             }
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 
@@ -86,7 +86,7 @@ struct PropertyReportView: View {
                     Text("Generate PDF")
                 }
             }
-            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
             .frame(maxWidth: .infinity).padding(.vertical, 15)
             .background(LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing),
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -100,16 +100,16 @@ struct PropertyReportView: View {
 
     private func reportInfoRow(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 13)).foregroundStyle(.white.opacity(0.5))
+            Text(label).font(.system(size: 13)).foregroundStyle(.primary.opacity(0.5))
             Spacer()
-            Text(value).font(.system(size: 13, weight: .medium)).foregroundStyle(.white)
+            Text(value).font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
         }
     }
 
     private func toggleRow(_ icon: String, _ color: Color, _ label: String, _ binding: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
-            Text(label).font(.system(size: 15)).foregroundStyle(.white)
+            Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: binding).labelsHidden().tint(.blue)
         }.padding(.horizontal, 14).padding(.vertical, 12)

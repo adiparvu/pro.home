@@ -107,25 +107,25 @@ struct BlueprintsView: View {
                             .frame(width: 44, height: 44)
                         Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Underground Map")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.45))
+                            .foregroundStyle(.primary.opacity(0.45))
                     }
                     Spacer()
                     if !service.utilities.isEmpty {
                         Text("\(service.utilities.count)")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.primary.opacity(0.6))
                     }
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                 }
             }
         }
@@ -138,7 +138,7 @@ struct BlueprintsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SAVED PLANS & MODELS")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             LazyVGrid(columns: columns, spacing: 12) {
@@ -165,13 +165,13 @@ struct BlueprintsView: View {
             Spacer(minLength: 30)
             Image(systemName: "ruler.fill")
                 .font(.system(size: 46))
-                .foregroundStyle(.white.opacity(0.16))
+                .foregroundStyle(.primary.opacity(0.16))
             Text("No plans yet")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.primary.opacity(0.5))
             Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
             Spacer(minLength: 30)
@@ -198,14 +198,14 @@ private struct QuickActionButton: View {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 8)
                 Text(title)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.primary.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 110)
@@ -249,7 +249,7 @@ private struct ScanCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(scan.name)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(scan.kindLabel)
                     .font(.system(size: 10, weight: .medium))
@@ -258,8 +258,8 @@ private struct ScanCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
         }
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+        .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
@@ -313,7 +313,7 @@ private struct AddPlanSheet: View {
             .navigationTitle("Add Plan").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -322,7 +322,7 @@ private struct AddPlanSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canSave ? .blue : .white.opacity(0.3))
+                    .foregroundStyle(canSave ? .blue : .primary.opacity(0.3))
                     .disabled(!canSave)
                 }
             }
@@ -388,12 +388,12 @@ private struct AddPlanSheet: View {
                     .foregroundStyle(.blue)
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
+            .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -409,11 +409,11 @@ private struct AddPlanSheet: View {
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "doc.richtext.fill").foregroundStyle(.red).font(.system(size: 22))
-                    Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(.white.opacity(0.7))
+                    Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(.primary.opacity(0.7))
                     Spacer()
                 }
                 .padding(14)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
             }
         }
     }
@@ -422,25 +422,25 @@ private struct AddPlanSheet: View {
         HStack(spacing: 12) {
             Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             TextField("Name", text: $name)
-                .font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.07), lineWidth: 0.5))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
     }
 
     private var kindPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CATEGORY").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.35)).padding(.leading, 4)
+            Text("CATEGORY").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in
                         Button { kind = k } label: {
                             Text(kindLabel(k))
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
-                                .foregroundStyle(kind == k ? .black : .white.opacity(0.7))
+                                .foregroundStyle(kind == k ? .black : .primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(kind == k ? .white : .white.opacity(0.08), in: Capsule())
+                                .background(kind == k ? .white : .primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }
                 }

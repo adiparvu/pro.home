@@ -43,7 +43,7 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: "person.2.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.primary.opacity(0.85))
                 }
             }
         }
@@ -138,7 +138,7 @@ struct ChatView: View {
                                     mentionedIds.removeAll { $0 == id }
                                     mentionedNames.removeAll { $0 == name }
                                 } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white.opacity(0.5))
+                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.primary.opacity(0.5))
                                 }
                             }
                             .padding(.horizontal, 8).padding(.vertical, 4)
@@ -162,12 +162,12 @@ struct ChatView: View {
 
                 TextField("Message…", text: $text, axis: .vertical)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .tint(.blue)
                     .lineLimit(1...5)
                     .focused($focused)
                     .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20))
+                    .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20))
 
                 Button {
                     guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -175,12 +175,12 @@ struct ChatView: View {
                 } label: {
                     Image(systemName: isSending ? "clock" : "arrow.up.circle.fill")
                         .font(.system(size: 26))
-                        .foregroundStyle(text.isEmpty ? .white.opacity(0.25) : .blue)
+                        .foregroundStyle(text.isEmpty ? .primary.opacity(0.25) : .blue)
                 }
                 .disabled(text.isEmpty || isSending)
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(.white.opacity(0.04))
+            .background(.primary.opacity(0.04))
         }
     }
 
@@ -281,7 +281,7 @@ struct MessageBubble: View {
                 if !isOwn {
                     Text(message.senderName)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(sender?.swiftColor ?? .white.opacity(0.45))
+                        .foregroundStyle(sender?.swiftColor ?? .primary.opacity(0.45))
                         .padding(.leading, 4)
                 }
                 bubbleContent
@@ -304,7 +304,7 @@ struct MessageBubble: View {
                 HStack(spacing: 4) {
                     Text(message.timeDisplay)
                         .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                     ReadCheck(seen: seen)
                 }
                 .padding(.horizontal, 4)
@@ -314,7 +314,7 @@ struct MessageBubble: View {
         } else {
             Text(message.timeDisplay)
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
                 .padding(.horizontal, 4)
         }
     }
@@ -336,9 +336,9 @@ struct MessageBubble: View {
             )
         } else {
             Circle()
-                .fill(.white.opacity(0.08))
+                .fill(.primary.opacity(0.08))
                 .frame(width: 32, height: 32)
-                .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 1.5))
+                .overlay(Circle().strokeBorder(.primary.opacity(0.15), lineWidth: 1.5))
         }
     }
 
@@ -353,7 +353,7 @@ struct MessageBubble: View {
                         .frame(maxWidth: 220, maxHeight: 160)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 } else {
-                    RoundedRectangle(cornerRadius: 16).fill(.white.opacity(0.07))
+                    RoundedRectangle(cornerRadius: 16).fill(.primary.opacity(0.07))
                         .frame(width: 160, height: 120)
                         .overlay(ProgressView().tint(.white))
                 }
@@ -361,9 +361,9 @@ struct MessageBubble: View {
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(isOwn ? Color.blue.opacity(0.75) : Color.white.opacity(0.08),
+                .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
@@ -383,7 +383,7 @@ private struct ReadCheck: View {
                 .offset(x: 3.5)
         }
         .frame(width: 14, alignment: .leading)
-        .foregroundStyle(seen ? Color.blue : .white.opacity(0.4))
+        .foregroundStyle(seen ? Color.blue : .primary.opacity(0.4))
     }
 }
 
@@ -410,10 +410,10 @@ private struct SeenBySheet: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(read.readerName.isEmpty ? "Member" : read.readerName)
                                         .font(.system(size: 15, weight: .semibold))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.primary)
                                     Text("Seen \(read.readTimeDisplay)")
                                         .font(.system(size: 12))
-                                        .foregroundStyle(.white.opacity(0.45))
+                                        .foregroundStyle(.primary.opacity(0.45))
                                 }
                                 Spacer()
                                 Image(systemName: "checkmark.seal.fill")
@@ -421,7 +421,7 @@ private struct SeenBySheet: View {
                                     .foregroundStyle(.blue)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
-                            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                            .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
                         }
                     }
                     .padding(.horizontal, 20).padding(.top, 8)
@@ -517,7 +517,7 @@ struct LocationShareSheet: View {
                             dismiss()
                         } label: {
                             Label("Share This Location", systemImage: "location.fill")
-                                .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                                .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity).padding(.vertical, 15)
                                 .background(LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing),
                                             in: RoundedRectangle(cornerRadius: 14))
@@ -528,7 +528,7 @@ struct LocationShareSheet: View {
                         Spacer()
                         ProgressView().tint(.white)
                         Text(locMgr.denied ? "Location access denied. Enable in Settings." : "Getting your location…")
-                            .font(.system(size: 14)).foregroundStyle(.white.opacity(0.5))
+                            .font(.system(size: 14)).foregroundStyle(.primary.opacity(0.5))
                         Spacer()
                     }
                 }
@@ -536,7 +536,7 @@ struct LocationShareSheet: View {
             }
             .navigationTitle("Share Location").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
             }
         }
         .task { locMgr.requestLocation() }

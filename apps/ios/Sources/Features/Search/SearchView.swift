@@ -55,7 +55,7 @@ struct SearchView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
                 }
             }
             .onAppear { focused = true }
@@ -72,11 +72,11 @@ struct SearchView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(speech.isListening ? .red : .white.opacity(0.4))
+                .foregroundStyle(speech.isListening ? .red : .primary.opacity(0.4))
 
             TextField("Tasks, documents, finances…", text: $query)
                 .font(.system(size: 16))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .tint(.blue)
                 .focused($focused)
                 .submitLabel(.search)
@@ -91,7 +91,7 @@ struct SearchView: View {
             } else if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(.primary.opacity(0.35))
                 }
             } else {
                 Button {
@@ -100,7 +100,7 @@ struct SearchView: View {
                 } label: {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(.primary.opacity(0.35))
                 }
             }
         }
@@ -109,7 +109,7 @@ struct SearchView: View {
         .background(
             speech.isListening
                 ? .red.opacity(0.08)
-                : .white.opacity(0.07),
+                : .primary.opacity(0.07),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
         .overlay(
@@ -126,20 +126,20 @@ struct SearchView: View {
             Spacer()
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundStyle(.white.opacity(0.12))
+                .foregroundStyle(.primary.opacity(0.12))
             VStack(spacing: 8) {
                 Text("Search across tasks, documents, and finances")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.primary.opacity(0.3))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                 HStack(spacing: 6) {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.2))
+                        .foregroundStyle(.primary.opacity(0.2))
                     Text("Tap the microphone to search by voice")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.2))
+                        .foregroundStyle(.primary.opacity(0.2))
                 }
             }
             Spacer()
@@ -153,10 +153,10 @@ struct SearchView: View {
             Spacer()
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundStyle(.white.opacity(0.15))
+                .foregroundStyle(.primary.opacity(0.15))
             Text("No results for \"\(query)\"")
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
             Spacer()
         }
     }
@@ -203,7 +203,7 @@ struct SearchView: View {
                                 title: record.title,
                                 subtitle: "\(record.category.capitalized) · \(record.dateFormatted)",
                                 badge: record.amountDisplay,
-                                badgeColor: .white.opacity(0.4)
+                                badgeColor: .primary.opacity(0.4)
                             )
                         }
                     }
@@ -240,13 +240,13 @@ private struct SearchSection<Content: View>: View {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
                 Text(title.uppercased())
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
                 Text("(\(count))")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.2))
+                    .foregroundStyle(.primary.opacity(0.2))
             }
             .padding(.leading, 4)
 
@@ -269,11 +269,11 @@ private struct SearchRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
             Spacer()
             if let badge = badge {
@@ -287,8 +287,8 @@ private struct SearchRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
+            .strokeBorder(.primary.opacity(0.06), lineWidth: 0.5))
     }
 }

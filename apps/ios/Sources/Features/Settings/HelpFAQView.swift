@@ -29,7 +29,7 @@ struct HelpFAQView: View {
                 VStack(spacing: 12) {
                     Text("Still need help?")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Button {
                         if let url = URL(string: "mailto:support@prvhouse.app") {
                             UIApplication.shared.open(url)
@@ -37,7 +37,7 @@ struct HelpFAQView: View {
                     } label: {
                         Label("Email Support", systemImage: "envelope.fill")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(.blue.opacity(0.2), in: RoundedRectangle(cornerRadius: 14))
@@ -71,12 +71,12 @@ private struct FAQRow: View {
                 HStack(spacing: 12) {
                     Text(item.question)
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
                     Spacer()
                     Image(systemName: item.isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
@@ -86,14 +86,14 @@ private struct FAQRow: View {
             if item.isExpanded {
                 Text(item.answer)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.leading)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.08), lineWidth: 0.5))
+        .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.08), lineWidth: 0.5))
     }
 }

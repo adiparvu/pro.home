@@ -25,20 +25,20 @@ private struct UnsupportedScanView: View {
             VStack(spacing: 18) {
                 Image(systemName: "cube.transparent")
                     .font(.system(size: 60))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.primary.opacity(0.3))
                 Text("3D Scanning Needs LiDAR")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("This device doesn't have a LiDAR sensor. 3D room capture is available on iPhone Pro and iPad Pro models. You can still add floor plans, blueprints, and photos.")
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
                 Button("Close") { onClose() }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 28).padding(.vertical, 12)
-                    .background(.white.opacity(0.12), in: Capsule())
+                    .background(.primary.opacity(0.12), in: Capsule())
                     .padding(.top, 8)
             }
         }

@@ -63,15 +63,15 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(displayName)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(0.5))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                 }
             }
         }
@@ -103,7 +103,7 @@ struct SettingsView: View {
                 .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text(initial)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
     }
 
@@ -259,16 +259,16 @@ struct SettingsGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
                 content
             }
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
             )
         }
     }
@@ -295,12 +295,12 @@ struct NavSettingsRow<D: View>: View {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Spacer()
             if chevron {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.28))
+                    .foregroundStyle(.primary.opacity(0.28))
             }
         }
         .padding(.horizontal, 14)
@@ -309,7 +309,7 @@ struct NavSettingsRow<D: View>: View {
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(.white.opacity(0.05))
+            .fill(.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }
@@ -327,7 +327,7 @@ struct TapSettingsRow: View {
                 ColoredIconBadge(icon: icon, color: color)
                 Text(label)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.horizontal, 14)
@@ -335,7 +335,7 @@ struct TapSettingsRow: View {
         }
         .buttonStyle(.plain)
         Rectangle()
-            .fill(.white.opacity(0.05))
+            .fill(.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }
@@ -352,7 +352,7 @@ struct ToggleSettingsRow: View {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: $value)
                 .labelsHidden()
@@ -361,7 +361,7 @@ struct ToggleSettingsRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         Rectangle()
-            .fill(.white.opacity(0.05))
+            .fill(.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }
@@ -378,11 +378,11 @@ struct InfoSettingsRow: View {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
                 .font(.system(size: 15))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Spacer()
             Text(value)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.38))
+                .foregroundStyle(.primary.opacity(0.38))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -417,21 +417,21 @@ struct SettingsPlaceholder: View {
             Spacer()
             Image(systemName: icon)
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.2))
+                .foregroundStyle(.primary.opacity(0.2))
             Text(title)
                 .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text(description)
                 .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.primary.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Text("Coming soon")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(.white.opacity(0.07), in: Capsule())
+                .background(.primary.opacity(0.07), in: Capsule())
             Spacer()
         }
         .background(appBackground.ignoresSafeArea())

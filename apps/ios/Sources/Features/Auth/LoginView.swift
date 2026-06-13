@@ -15,7 +15,7 @@ struct LoginView: View {
             // Background
             Color.black.ignoresSafeArea()
             RadialGradient(
-                colors: [.white.opacity(0.06), .clear],
+                colors: [.primary.opacity(0.06), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 400
@@ -31,7 +31,7 @@ struct LoginView: View {
                         Circle()
                             .fill(.ultraThinMaterial)
                             .frame(width: 72, height: 72)
-                            .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+                            .overlay(Circle().strokeBorder(.primary.opacity(0.15), lineWidth: 0.5))
                         Text("🏠")
                             .font(.system(size: 32))
                     }
@@ -150,7 +150,7 @@ private struct GlassTextField: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                .strokeBorder(.primary.opacity(0.1), lineWidth: 0.5)
         )
     }
 }

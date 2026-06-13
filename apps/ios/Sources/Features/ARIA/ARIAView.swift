@@ -97,7 +97,7 @@ struct ARIAView: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        .strokeBorder(.primary.opacity(0.1), lineWidth: 0.5)
                 )
 
             Button(action: send) {
@@ -114,7 +114,7 @@ struct ARIAView: View {
         .padding(.vertical, 12)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) {
-            Rectangle().fill(.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5)
         }
     }
 
@@ -191,7 +191,7 @@ private struct ARIAMessageBubble: View {
                     Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                     Image(systemName: "sparkles")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
                 }
             }
 
@@ -201,12 +201,12 @@ private struct ARIAMessageBubble: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(
-                    isUser ? AnyShapeStyle(.white.opacity(0.12)) : AnyShapeStyle(.ultraThinMaterial),
+                    isUser ? AnyShapeStyle(.primary.opacity(0.12)) : AnyShapeStyle(.ultraThinMaterial),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(.white.opacity(isUser ? 0 : 0.08), lineWidth: 0.5)
+                        .strokeBorder(.primary.opacity(isUser ? 0 : 0.08), lineWidth: 0.5)
                 )
 
             if !isUser { Spacer(minLength: 48) }
@@ -225,12 +225,12 @@ private struct ThinkingBubble: View {
                 Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                 Image(systemName: "sparkles")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.primary.opacity(0.7))
             }
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
-                        .fill(.white.opacity(0.5))
+                        .fill(.primary.opacity(0.5))
                         .frame(width: 6, height: 6)
                         .scaleEffect(phase == i ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)

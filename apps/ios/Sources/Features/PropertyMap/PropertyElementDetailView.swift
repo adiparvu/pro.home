@@ -204,7 +204,7 @@ struct PropertyElementDetailView: View {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.white.opacity(0.08)).frame(height: 8)
+                        Capsule().fill(.primary.opacity(0.08)).frame(height: 8)
                         Capsule()
                             .fill(
                                 LinearGradient(
@@ -309,7 +309,7 @@ struct PropertyElementDetailView: View {
                 } label: {
                     Label("Adaugă", systemImage: "plus")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
@@ -410,14 +410,14 @@ private struct DetailTabBar: View {
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(selected == tab ? Color.white.opacity(0.12) : .clear)
+                            .fill(selected == tab ? Color.primary.opacity(0.12) : .clear)
                     )
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(4)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 

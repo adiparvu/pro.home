@@ -70,7 +70,7 @@ struct UtilityView: View {
                             } label: {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 22))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.primary)
                             }
                            ))
                     .padding(.bottom, 12)
@@ -137,7 +137,7 @@ struct UtilityView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Last \(data.count) months")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
                 Chart(data, id: \.id) { e in
                     BarMark(
                         x: .value("Month", String(e.month.suffix(2))),
@@ -148,13 +148,13 @@ struct UtilityView: View {
                     .annotation(position: .top) {
                         Text("€\(String(format: "%.0f", e.amount))")
                             .font(.system(size: 9))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(0.5))
                     }
                 }
                 .frame(height: 130)
                 .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(.secondary) } }
                 .chartYAxis { AxisMarks { _ in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.white.opacity(0.06))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.primary.opacity(0.06))
                     AxisValueLabel().foregroundStyle(.secondary)
                 }}
                 HStack {
@@ -176,9 +176,9 @@ struct UtilityView: View {
         GlassCard {
             HStack(spacing: 0) {
                 statCell(title: "This Year", value: "€\(String(format: "%.0f", data.filter { $0.month.hasPrefix(currentYear) }.map(\.amount).reduce(0, +)))", color: color)
-                Divider().background(.white.opacity(0.08)).frame(height: 36)
+                Divider().background(.primary.opacity(0.08)).frame(height: 36)
                 statCell(title: "All Time", value: "€\(String(format: "%.0f", data.map(\.amount).reduce(0, +)))", color: color)
-                Divider().background(.white.opacity(0.08)).frame(height: 36)
+                Divider().background(.primary.opacity(0.08)).frame(height: 36)
                 statCell(title: "Bills", value: "\(data.count)", color: color)
             }
         }
@@ -187,7 +187,7 @@ struct UtilityView: View {
     private func statCell(title: String, value: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Text(value).font(.system(size: 16, weight: .bold)).foregroundStyle(color)
-            Text(title).font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+            Text(title).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
     }
@@ -200,11 +200,11 @@ struct UtilityView: View {
         VStack(spacing: 14) {
             Spacer(minLength: 40)
             Image(systemName: type?.icon ?? "bolt.fill")
-                .font(.system(size: 44)).foregroundStyle(.white.opacity(0.18))
+                .font(.system(size: 44)).foregroundStyle(.primary.opacity(0.18))
             Text("No \(type?.label ?? "") bills yet")
-                .font(.system(size: 16)).foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 16)).foregroundStyle(.primary.opacity(0.45))
             Text("Tap + to add manually or scan an invoice to extract data automatically.")
-                .font(.system(size: 13)).foregroundStyle(.white.opacity(0.3))
+                .font(.system(size: 13)).foregroundStyle(.primary.opacity(0.3))
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             Spacer(minLength: 40)
         }
@@ -235,16 +235,16 @@ private struct UtilitySummaryCard: View {
                 if entry.consumption > 0 {
                     Text("\(String(format: "%.0f", entry.consumption)) \(type.unit)")
                         .font(.system(size: 10))
-                        .foregroundStyle(isSelected ? .black.opacity(0.6) : .white.opacity(0.4))
+                        .foregroundStyle(isSelected ? .black.opacity(0.6) : .primary.opacity(0.4))
                 }
             } else {
                 Text("No data")
                     .font(.system(size: 13))
-                    .foregroundStyle(isSelected ? .black.opacity(0.5) : .white.opacity(0.3))
+                    .foregroundStyle(isSelected ? .black.opacity(0.5) : .primary.opacity(0.3))
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(isSelected ? type.color : .white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .background(isSelected ? type.color : .primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isSelected ? .clear : type.color.opacity(0.25), lineWidth: 1)
@@ -268,10 +268,10 @@ private struct UtilityEntryRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(displayMonth)
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
                     if entry.consumption > 0 {
                         Text("\(String(format: "%.0f", entry.consumption)) \(entry.unit)")
-                            .font(.system(size: 11)).foregroundStyle(.white.opacity(0.4))
+                            .font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
                     }
                 }
                 Spacer()
@@ -323,36 +323,36 @@ struct AddUtilitySheet: View {
 
                         GlassCard {
                             HStack {
-                                Text("Type").font(.system(size: 15)).foregroundStyle(.white)
+                                Text("Type").font(.system(size: 15)).foregroundStyle(.primary)
                                 Spacer()
                                 Picker("", selection: $type) {
                                     ForEach(types, id: \.self) { Text($0.capitalized).tag($0) }
-                                }.tint(.white.opacity(0.5))
+                                }.tint(.primary.opacity(0.5))
                             }
                         }
 
                         GlassCard {
                             VStack(spacing: 0) {
                                 HStack {
-                                    Text("Amount (€)").font(.system(size: 15)).foregroundStyle(.white)
+                                    Text("Amount (€)").font(.system(size: 15)).foregroundStyle(.primary)
                                     Spacer()
                                     TextField("0.00", text: $amount)
-                                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
                                         .tint(.blue).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
                                 }.padding(.vertical, 4)
-                                Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5)
+                                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5)
                                 HStack {
-                                    Text("Consumption (\(units[type] ?? "units"))").font(.system(size: 15)).foregroundStyle(.white)
+                                    Text("Consumption (\(units[type] ?? "units"))").font(.system(size: 15)).foregroundStyle(.primary)
                                     Spacer()
                                     TextField("0", text: $consumption)
-                                        .font(.system(size: 16)).foregroundStyle(.white)
+                                        .font(.system(size: 16)).foregroundStyle(.primary)
                                         .tint(.blue).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
                                 }.padding(.vertical, 4)
-                                Rectangle().fill(.white.opacity(0.05)).frame(height: 0.5)
+                                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5)
                                 DatePicker("Month", selection: $month, displayedComponents: [.date])
-                                    .font(.system(size: 15)).foregroundStyle(.white).tint(.blue)
+                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                             }
                         }
                         Spacer(minLength: 20)
@@ -363,7 +363,7 @@ struct AddUtilitySheet: View {
             .navigationTitle("Add Bill").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.white.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -378,7 +378,7 @@ struct AddUtilitySheet: View {
                         onSave(entry); HapticFeedback.success(); dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(amount.isEmpty ? .white.opacity(0.3) : .blue)
+                    .foregroundStyle(amount.isEmpty ? .primary.opacity(0.3) : .blue)
                     .disabled(amount.isEmpty)
                 }
             }
@@ -422,7 +422,7 @@ struct AddUtilitySheet: View {
                                 .font(.system(size: 15, weight: .semibold))
                         }
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
@@ -438,14 +438,14 @@ struct AddUtilitySheet: View {
             }
             Text("Auto-extracts amount, consumption, and month from your bill")
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
         }
     }
 
     private func scanResultBanner(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            Text(text).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7))
+            Text(text).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.7))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)

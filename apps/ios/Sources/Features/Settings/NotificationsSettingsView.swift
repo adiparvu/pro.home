@@ -54,10 +54,10 @@ struct NotificationsSettingsView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(statusTitle)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Text(statusSubtitle)
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(0.5))
                     }
                     Spacer()
                 }
@@ -68,7 +68,7 @@ struct NotificationsSettingsView: View {
                     } label: {
                         Text("Enable Notifications")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -78,7 +78,7 @@ struct NotificationsSettingsView: View {
                     Button { showOpenSettings = true } label: {
                         Text("Open iOS Settings")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(.orange, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -95,7 +95,7 @@ struct NotificationsSettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ALERT TYPES")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
@@ -143,22 +143,22 @@ struct NotificationsSettingsView: View {
                     )
                 )
             }
-            .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
             )
 
             Text("Notifications are scheduled locally on your device and fire even when the app is closed.")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
                 .padding(.leading, 4)
         }
     }
 
     private var divider: some View {
         Rectangle()
-            .fill(.white.opacity(0.05))
+            .fill(.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }
@@ -240,10 +240,10 @@ private struct NotifToggleRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
             Spacer()
             Toggle("", isOn: $value)
