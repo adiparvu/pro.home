@@ -3,8 +3,8 @@ import LocalAuthentication
 
 struct SecurityView: View {
     @EnvironmentObject private var auth: AuthService
-    @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
-    @AppStorage("prvhouse.lockMode") private var lockModeEnabled = false
+    @AppStorage("prvio.biometrics") private var biometricsEnabled = false
+    @AppStorage("prvio.lockMode") private var lockModeEnabled = false
     @State private var biometricType: LABiometryType = .none
     @State private var showDeleteConfirm = false
     @State private var showPasswordAlert = false
@@ -121,10 +121,10 @@ struct SecurityView: View {
         }
     }
 
-    // MARK: - Biometrics (PRVHouse codex)
+    // MARK: - Biometrics (PRVIO codex)
 
     private var biometricSection: some View {
-        secGroup(title: "PRVHouse") {
+        secGroup(title: "PRVIO") {
             if biometricType != .none {
                 HStack(spacing: 12) {
                     ColoredIconBadge(
@@ -134,7 +134,7 @@ struct SecurityView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(biometricType == .faceID ? "Solicită Face ID" : "Solicită Touch ID")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text("Face ID sau cod de acces pentru a accesa PRVHouse")
+                        Text("Face ID sau cod de acces pentru a accesa PRVIO")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
@@ -273,7 +273,7 @@ struct SecurityView: View {
 
     private func authenticateBiometric() async {
         let ctx = LAContext()
-        let reason = biometricType == .faceID ? "Activează Face ID pentru PRVHouse" : "Activează Touch ID pentru PRVHouse"
+        let reason = biometricType == .faceID ? "Activează Face ID pentru PRVIO" : "Activează Touch ID pentru PRVIO"
         do {
             let ok = try await ctx.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
             if !ok { biometricsEnabled = false }
@@ -311,7 +311,7 @@ struct SecurityView: View {
                     "tasks": tasks, "financial_records": records, "documents": docs
                 ]
                 let data = try JSONSerialization.data(withJSONObject: export, options: .prettyPrinted)
-                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("prvhouse_export.json")
+                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("prvio_export.json")
                 try data.write(to: tmp)
                 await MainActor.run { isExporting = false; exportItem = ExportItem(url: tmp) }
             } catch {

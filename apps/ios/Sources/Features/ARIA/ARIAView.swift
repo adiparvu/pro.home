@@ -4,7 +4,7 @@ struct ARIAView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var profileService: ProfileService
-    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false

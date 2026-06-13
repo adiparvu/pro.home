@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PRVHouseLogoView: View {
+struct PRVIOLogoView: View {
     var size: CGFloat = 80
     var showBackground: Bool = true
     @Environment(\.colorScheme) private var scheme
@@ -147,8 +147,8 @@ struct PRVHouseLogoView: View {
 
 #Preview {
     HStack(spacing: 20) {
-        PRVHouseLogoView(size: 96)
-        PRVHouseLogoView(size: 96).preferredColorScheme(.dark)
+        PRVIOLogoView(size: 96)
+        PRVIOLogoView(size: 96).preferredColorScheme(.dark)
     }
     .padding(24)
     .background(.gray.opacity(0.15))

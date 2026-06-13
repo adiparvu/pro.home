@@ -33,7 +33,7 @@ struct NotificationsSettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Enable notifications in iOS Settings to receive alerts from PRVHouse.")
+            Text("Enable notifications in iOS Settings to receive alerts from PRVIO.")
         }
     }
 

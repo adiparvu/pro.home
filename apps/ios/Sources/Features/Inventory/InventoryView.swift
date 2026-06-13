@@ -97,7 +97,7 @@ struct InventoryItem: Identifiable, Codable {
 @MainActor
 final class InventoryService: ObservableObject {
     @Published var items: [InventoryItem] = []
-    private let key = "prvhouse.inventory.v2"
+    private let key = "prvio.inventory.v2"
 
     init() { load() }
 
@@ -147,8 +147,8 @@ final class InventoryService: ObservableObject {
            let uuid = UUID(uuidString: idStr) {
             return items.first { $0.id == uuid }
         }
-        // Legacy app URL: prvhouse://inventory/{uuid}
-        let prefix = "prvhouse://inventory/"
+        // Legacy app URL: prvio://inventory/{uuid}
+        let prefix = "prvio://inventory/"
         if qrString.hasPrefix(prefix),
            let uuid = UUID(uuidString: String(qrString.dropFirst(prefix.count))) {
             return items.first { $0.id == uuid }

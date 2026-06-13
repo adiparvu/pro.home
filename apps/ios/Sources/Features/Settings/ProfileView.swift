@@ -19,8 +19,8 @@ struct ProfileView: View {
     @State private var showCamera = false
     @State private var toast: String?
     @State private var toastIsError = false
-    @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
-    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.biometrics") private var biometricsEnabled = false
+    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @State private var biometricType: LABiometryType = .none
 
     private var ringColor: Color { avatarRingColor(for: avatarRingColorName) }
@@ -309,7 +309,7 @@ struct ProfileView: View {
             await MainActor.run { biometricsEnabled = false }
             return
         }
-        let reason = biometricType == .faceID ? "Enable Face ID for PRVHouse" : "Enable Touch ID for PRVHouse"
+        let reason = biometricType == .faceID ? "Enable Face ID for PRVIO" : "Enable Touch ID for PRVIO"
         do {
             let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
             if !success { await MainActor.run { biometricsEnabled = false } }

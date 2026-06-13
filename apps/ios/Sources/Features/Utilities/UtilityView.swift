@@ -15,7 +15,7 @@ struct UtilityEntry: Identifiable, Codable {
 @MainActor
 final class UtilityService: ObservableObject {
     @Published var entries: [UtilityEntry] = []
-    private let key = "prvhouse.utilities"
+    private let key = "prvio.utilities"
 
     init() { load() }
 

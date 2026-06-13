@@ -81,13 +81,13 @@ struct EmergencyContactsView: View {
     ]
 
     private func load() {
-        if let d = UserDefaults.standard.data(forKey: "prvhouse.emergency"),
+        if let d = UserDefaults.standard.data(forKey: "prvio.emergency"),
            let decoded = try? JSONDecoder().decode([EmergencyContact].self, from: d) {
             contacts = decoded
         }
     }
     private func save() {
-        if let d = try? JSONEncoder().encode(contacts) { UserDefaults.standard.set(d, forKey: "prvhouse.emergency") }
+        if let d = try? JSONEncoder().encode(contacts) { UserDefaults.standard.set(d, forKey: "prvio.emergency") }
     }
 }
 

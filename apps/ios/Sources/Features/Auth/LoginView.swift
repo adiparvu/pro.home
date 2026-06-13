@@ -27,11 +27,11 @@ struct LoginView: View {
 
                 // Logo
                 VStack(spacing: 14) {
-                    PRVHouseLogoView(size: 84)
+                    PRVIOLogoView(size: 84)
                         .shadow(color: Color(red: 0.24, green: 0.50, blue: 1.00).opacity(0.50), radius: 22, y: 8)
 
                     VStack(spacing: 4) {
-                        Text("PRVHouse")
+                        Text("PRVIO")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                         Text("Property management")

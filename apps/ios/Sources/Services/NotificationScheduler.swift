@@ -11,10 +11,10 @@ final class NotificationScheduler: ObservableObject {
     @Published var weeklyDigest: Bool   { didSet { UserDefaults.standard.set(weeklyDigest,   forKey: Keys.weeklyDigest) } }
 
     private enum Keys {
-        static let taskReminders   = "prvhouse.notif.tasks"
-        static let documentExpiry  = "prvhouse.notif.docExpiry"
-        static let financialAlerts = "prvhouse.notif.financial"
-        static let weeklyDigest    = "prvhouse.notif.weekly"
+        static let taskReminders   = "prvio.notif.tasks"
+        static let documentExpiry  = "prvio.notif.docExpiry"
+        static let financialAlerts = "prvio.notif.financial"
+        static let weeklyDigest    = "prvio.notif.weekly"
     }
 
     init() {
@@ -188,7 +188,7 @@ final class NotificationScheduler: ObservableObject {
 
     private func weeklyDigestNotification() -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
-        content.title = "PRVHouse Weekly Digest"
+        content.title = "PRVIO Weekly Digest"
         content.body  = "Review your property tasks, finances, and documents for the week."
         content.sound = .default
 

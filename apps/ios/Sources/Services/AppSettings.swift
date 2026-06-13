@@ -2,11 +2,11 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    @AppStorage("prvhouse.theme")       var theme:             String = "dark"
-    @AppStorage("prvhouse.locale")      var locale:            String = "en"
-    @AppStorage("prvhouse.currency")    var preferredCurrency: String = "EUR"
-    @AppStorage("prvhouse.accentColor") var accentColor:       String = "blue"
-    @AppStorage("prvhouse.hapticOn")    var hapticEnabled:     Bool   = true
+    @AppStorage("prvio.theme")       var theme:             String = "dark"
+    @AppStorage("prvio.locale")      var locale:            String = "en"
+    @AppStorage("prvio.currency")    var preferredCurrency: String = "EUR"
+    @AppStorage("prvio.accentColor") var accentColor:       String = "blue"
+    @AppStorage("prvio.hapticOn")    var hapticEnabled:     Bool   = true
 
     var resolvedColorScheme: ColorScheme? {
         switch theme {

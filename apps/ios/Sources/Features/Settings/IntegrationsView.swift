@@ -28,7 +28,7 @@ struct IntegrationsView: View {
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Your upcoming tasks will appear in your Apple Calendar under the \"PRV House\" calendar.")
+            Text("Your upcoming tasks will appear in your Apple Calendar under the \"PRVIO\" calendar.")
         }
         .alert("Access Denied", isPresented: $vm.showPermissionDenied) {
             Button("Open Settings") {
@@ -153,8 +153,8 @@ final class IntegrationsViewModel: ObservableObject {
     var tasks: [MaintenanceTask] = []
 
     private let store = EKEventStore()
-    private let calendarSyncedKey = "prvhouse.calendar.synced_ids"
-    private let reminderSyncedKey = "prvhouse.reminders.synced_ids"
+    private let calendarSyncedKey = "prvio.calendar.synced_ids"
+    private let reminderSyncedKey = "prvio.reminders.synced_ids"
 
     func checkStatuses() async {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
@@ -219,7 +219,7 @@ final class IntegrationsViewModel: ObservableObject {
                          ?? sources.first(where: { $0.sourceType == .local })
                          ?? sources.first else { return }
 
-        let calTitle = "PRV House"
+        let calTitle = "PRVIO"
         let cal: EKCalendar
         if let existing = store.calendars(for: .event).first(where: { $0.title == calTitle }) {
             cal = existing
@@ -273,7 +273,7 @@ final class IntegrationsViewModel: ObservableObject {
     }
 
     private func syncOverdueToReminders() async {
-        let listTitle = "PRV House"
+        let listTitle = "PRVIO"
         let list: EKCalendar
         if let existing = store.calendars(for: .reminder).first(where: { $0.title == listTitle }) {
             list = existing

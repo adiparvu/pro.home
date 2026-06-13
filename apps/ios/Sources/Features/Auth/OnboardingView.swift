@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
+    @AppStorage("prvio.onboarding.done") private var onboardingDone = false
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var auth: AuthService
 
@@ -156,7 +156,7 @@ private struct WelcomeStep: View {
                     .foregroundStyle(.primary)
             }
             VStack(spacing: 12) {
-                Text("Welcome to PRVHouse")
+                Text("Welcome to PRVIO")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -301,7 +301,7 @@ private struct ReadyStep: View {
                 Text("You're All Set!")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.primary)
-                Text("PRVHouse is ready to help you manage your property smarter.")
+                Text("PRVIO is ready to help you manage your property smarter.")
                     .font(.system(size: 16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)

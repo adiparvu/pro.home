@@ -7,10 +7,10 @@ final class PropertyService: ObservableObject {
     @Published var error: String?
 
     var selectedPropertyId: UUID? {
-        get { UUID(uuidString: UserDefaults.standard.string(forKey: "prvhouse.selectedPropertyId") ?? "") }
+        get { UUID(uuidString: UserDefaults.standard.string(forKey: "prvio.selectedPropertyId") ?? "") }
         set {
             objectWillChange.send()
-            UserDefaults.standard.set(newValue?.uuidString, forKey: "prvhouse.selectedPropertyId")
+            UserDefaults.standard.set(newValue?.uuidString, forKey: "prvio.selectedPropertyId")
         }
     }
 

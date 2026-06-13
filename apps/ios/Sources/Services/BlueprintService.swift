@@ -6,8 +6,8 @@ final class BlueprintService: ObservableObject {
     @Published var scans: [HomeScan] = []
     @Published var utilities: [BuriedUtility] = []
 
-    private let scansKey = "prvhouse.blueprints.scans"
-    private let utilsKey = "prvhouse.blueprints.utilities"
+    private let scansKey = "prvio.blueprints.scans"
+    private let utilsKey = "prvio.blueprints.utilities"
 
     init() { load() }
 

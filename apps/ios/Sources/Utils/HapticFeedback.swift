@@ -2,9 +2,9 @@ import UIKit
 
 enum HapticFeedback {
     private static var enabled: Bool {
-        UserDefaults.standard.object(forKey: "prvhouse.hapticOn") == nil
+        UserDefaults.standard.object(forKey: "prvio.hapticOn") == nil
             ? true
-            : UserDefaults.standard.bool(forKey: "prvhouse.hapticOn")
+            : UserDefaults.standard.bool(forKey: "prvio.hapticOn")
     }
 
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {

@@ -10,9 +10,9 @@ struct TrustedContactView: View {
     @State private var showRemoveConfirm = false
 
     private var hasContact: Bool { !savedName.isEmpty }
-    @AppStorage("prvhouse.trustedContact.name")         private var savedName: String = ""
-    @AppStorage("prvhouse.trustedContact.phone")        private var savedPhone: String = ""
-    @AppStorage("prvhouse.trustedContact.relationship") private var savedRelationship: String = ""
+    @AppStorage("prvio.trustedContact.name")         private var savedName: String = ""
+    @AppStorage("prvio.trustedContact.phone")        private var savedPhone: String = ""
+    @AppStorage("prvio.trustedContact.relationship") private var savedRelationship: String = ""
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&

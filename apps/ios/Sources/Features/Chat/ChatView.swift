@@ -5,7 +5,7 @@ import MapKit
 import UserNotifications
 import Supabase
 
-private let kAvatarRingColorKey = "prvhouse.avatarRingColorName"
+private let kAvatarRingColorKey = "prvio.avatarRingColorName"
 
 struct ChatView: View {
     @EnvironmentObject private var messageService: MessageService
@@ -22,7 +22,7 @@ struct ChatView: View {
     @State private var mentionedNames: [String] = []
     @State private var isSending = false
     @FocusState private var focused: Bool
-    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
 
     private var propertyId: UUID? { propertyService.primary?.id }
     private var senderName: String {

@@ -16,7 +16,7 @@ struct HelpFAQView: View {
         FAQItem(question: "Is my data backed up?", answer: "Yes — all data is stored in Supabase (PostgreSQL) with automatic daily backups. Your data is safe even if you change devices."),
         FAQItem(question: "How does ARIA work?", answer: "ARIA is your AI property assistant powered by Claude. It has context about your tasks, finances, and documents, so you can ask it anything about your home."),
         FAQItem(question: "Can I export my data?", answer: "Yes. Go to your Profile → Security & Privacy → Export My Data. You'll get a JSON file with all your tasks, finances, documents, and more."),
-        FAQItem(question: "How do I contact support?", answer: "Email us at support@prvhouse.app. We typically respond within 24 hours on business days."),
+        FAQItem(question: "How do I contact support?", answer: "Email us at support@prvio.app. We typically respond within 24 hours on business days."),
     ]
 
     var body: some View {
@@ -31,7 +31,7 @@ struct HelpFAQView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                     Button {
-                        if let url = URL(string: "mailto:support@prvhouse.app") {
+                        if let url = URL(string: "mailto:support@prvio.app") {
                             UIApplication.shared.open(url)
                         }
                     } label: {

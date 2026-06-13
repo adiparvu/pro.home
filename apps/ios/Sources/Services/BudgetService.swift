@@ -5,7 +5,7 @@ final class BudgetService: ObservableObject {
     @Published var budgets: [String: Double] = [:]
 
     static let categories = ["rent", "utilities", "maintenance", "insurance", "taxes", "mortgage", "supplies", "other"]
-    private let key = "prvhouse.budgets"
+    private let key = "prvio.budgets"
 
     init() { load() }
 

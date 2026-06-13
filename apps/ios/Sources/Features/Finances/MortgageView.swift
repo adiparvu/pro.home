@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct MortgageView: View {
-    @AppStorage("prvhouse.mortgage.loanAmount")   private var loanAmount: Double   = 0
-    @AppStorage("prvhouse.mortgage.interestRate") private var interestRate: Double  = 0
-    @AppStorage("prvhouse.mortgage.termYears")    private var termYears: Double     = 25
-    @AppStorage("prvhouse.mortgage.startDate")    private var startDateStr: String  = ""
-    @AppStorage("prvhouse.mortgage.propertyValue") private var propertyValue: Double = 0
+    @AppStorage("prvio.mortgage.loanAmount")   private var loanAmount: Double   = 0
+    @AppStorage("prvio.mortgage.interestRate") private var interestRate: Double  = 0
+    @AppStorage("prvio.mortgage.termYears")    private var termYears: Double     = 25
+    @AppStorage("prvio.mortgage.startDate")    private var startDateStr: String  = ""
+    @AppStorage("prvio.mortgage.propertyValue") private var propertyValue: Double = 0
 
     @State private var isEditing = false
 

@@ -19,14 +19,14 @@ struct SplashView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                PRVHouseLogoView(size: 100)
+                PRVIOLogoView(size: 100)
                     .shadow(color: Color(red: 0.24, green: 0.50, blue: 1.00).opacity(0.60), radius: 28, y: 10)
                     .scaleEffect(scale)
                     .offset(y: logoY)
                     .opacity(opacity)
 
                 VStack(spacing: 4) {
-                    Text("PRVHouse")
+                    Text("PRVIO")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text("Property management")

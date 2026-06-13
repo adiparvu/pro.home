@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct PRVHouseApp: App {
+struct PRVIOApp: App {
     @StateObject private var auth        = AuthService.shared
     @StateObject private var appSettings = AppSettings()
 

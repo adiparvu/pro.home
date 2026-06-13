@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>PRV House</string>
+	<string>PRVIO</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -53,7 +53,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to share your location in Family Chat and tag item locations in Inventory.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Use Face ID to unlock PRVHouse quickly and securely.</string>
+	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Used to sync your maintenance tasks and reminders with Apple Calendar.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

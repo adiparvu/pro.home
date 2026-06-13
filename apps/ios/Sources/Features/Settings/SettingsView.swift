@@ -36,13 +36,13 @@ struct SettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
-        .confirmationDialog("Sign out of PRVHouse?", isPresented: $showSignOut, titleVisibility: .visible) {
+        .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }
             }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Thanks for using PRVHouse! 🏠", isPresented: $showRateAlert) {
+        .alert("Thanks for using PRVIO! 🏠", isPresented: $showRateAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Rating will be available once the app launches on the App Store.")

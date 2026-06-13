@@ -154,7 +154,7 @@ struct AppearanceView: View {
     }
 
     private func forceFetch() async {
-        UserDefaults.standard.removeObject(forKey: "prvhouse.bnr.ratesDate")
+        UserDefaults.standard.removeObject(forKey: "prvio.bnr.ratesDate")
         await currencyService.refresh()
     }
 

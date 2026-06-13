@@ -16,8 +16,8 @@ final class CurrencyService: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var isLoading = false
 
-    private let ratesKey = "prvhouse.bnr.rates"
-    private let dateKey  = "prvhouse.bnr.ratesDate"
+    private let ratesKey = "prvio.bnr.rates"
+    private let dateKey  = "prvio.bnr.ratesDate"
     private let ttl: TimeInterval = 4 * 3600   // refresh every 4 hours
 
     // MARK: - Refresh

@@ -40,7 +40,7 @@ struct MainTabView: View {
     @StateObject private var messageService = MessageService()
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
-    @AppStorage("prvhouse.onboarding.done") private var onboardingDone = false
+    @AppStorage("prvio.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
