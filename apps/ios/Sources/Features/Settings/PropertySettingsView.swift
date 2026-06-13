@@ -413,7 +413,7 @@ private struct EditPropertySheet: View {
 
     // MARK: - Map picker
 
-    private var mapPickerSection: some View {
+    @ViewBuilder private var mapPickerSection: some View {
         ZStack {
             Map(position: $mapPosition)
                 .frame(height: 220)
