@@ -98,7 +98,7 @@ struct MainTabView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .home:
-            NavigationStack { DashboardView() }
+            NavigationStack { DashboardView(selectedTab: $selectedTab) }
         case .map:
             NavigationStack { PropertyMapView() }
         case .tasks:

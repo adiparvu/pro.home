@@ -10,6 +10,9 @@ struct DashboardView: View {
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var familyService: FamilyService
+
+    @Binding var selectedTab: AppTab
 
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -18,43 +21,24 @@ struct DashboardView: View {
         )
     )
     @State private var selectedSection: PropertySection? = nil
-    @State private var showSearch = false
     @State private var pulsing = false
-    @State private var selectedThumb: Int = 0
-    @State private var showNotifications = false
 
     // Property sections for map points and carousel
     private let sections = PropertySection.all
 
     var body: some View {
         ZStack(alignment: .top) {
-            // Full-screen map
-            mapLayer
-                .ignoresSafeArea()
-
-            // Top overlay
+            mapLayer.ignoresSafeArea()
             topOverlay
                 .padding(.top, topSafeArea + 8)
                 .padding(.horizontal, 16)
-
-            // Bottom overlay
             VStack(spacing: 0) {
                 Spacer()
-                thumbnailCarousel
-                    .padding(.bottom, 12)
-                actionBar
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, bottomSafeArea > 0 ? bottomSafeArea + 60 : 74)
+                widgetPanel
             }
         }
         .navigationBarHidden(true)
         .onAppear { startPulse() }
-        .sheet(isPresented: $showSearch) {
-            SearchView()
-                .environmentObject(taskService)
-                .environmentObject(documentService)
-                .environmentObject(financialService)
-        }
     }
 
     // MARK: - Map
@@ -141,58 +125,107 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Thumbnail carousel
+    // MARK: - Widget panel
 
-    private var thumbnailCarousel: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(Array(sections.enumerated()), id: \.offset) { idx, section in
-                    ThumbnailCard(
-                        section: section,
-                        isSelected: selectedThumb == idx
-                    ) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            selectedThumb = idx
-                            selectedSection = section
-                            mapPosition = .region(MKCoordinateRegion(
-                                center: section.offset(from: propertyCoordinate),
-                                span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002)
-                            ))
-                        }
-                        HapticFeedback.selection()
+    private var widgetPanel: some View {
+        VStack(spacing: 0) {
+            // Drag indicator
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.primary.opacity(0.18))
+                .frame(width: 36, height: 4)
+                .padding(.top, 10)
+                .padding(.bottom, 14)
+
+            // Property header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(propertyService.primary?.name ?? "Proprietatea mea")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.primary)
+                    if let addr = propertyService.primary?.addressLine1 {
+                        Text(addr)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .lineLimit(1)
                     }
+                }
+                Spacer()
+                if let score = propertyService.primary?.healthScore {
+                    let col: Color = score >= 80
+                        ? Color(red: 0.25, green: 0.88, blue: 0.55)
+                        : score >= 55 ? Color.orange : Color.red
+                    HStack(spacing: 4) {
+                        Image(systemName: "heart.fill").font(.system(size: 11))
+                        Text("\(score)").font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundStyle(col)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(col.opacity(0.15), in: Capsule())
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 4)
+            .padding(.bottom, 14)
+
+            // 2×2 widget grid
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+                spacing: 12
+            ) {
+                HomeWidget(
+                    icon: "checklist",
+                    iconColor: taskService.overdueCount > 0 ? Color.red : Color(red: 0.35, green: 0.65, blue: 1.0),
+                    title: "Sarcini",
+                    value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
+                    subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
+                    badge: taskService.overdueCount
+                ) { selectedTab = .tasks }
+
+                HomeWidget(
+                    icon: "creditcard.fill",
+                    iconColor: financialService.currentMonthNet >= 0
+                        ? Color(red: 0.3, green: 0.85, blue: 0.45) : Color.orange,
+                    title: "Finanțe",
+                    value: netFormatted,
+                    subtitle: "luna aceasta"
+                ) { selectedTab = .analytics }
+
+                HomeWidget(
+                    icon: "doc.fill",
+                    iconColor: documentService.expiringDocs.isEmpty
+                        ? Color(red: 0.55, green: 0.55, blue: 0.95) : Color.orange,
+                    title: "Documente",
+                    value: documentService.expiringDocs.isEmpty
+                        ? "\(documentService.documents.count)"
+                        : "\(documentService.expiringDocs.count)",
+                    subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiră curând",
+                    badge: documentService.expiringDocs.count
+                ) { selectedTab = .settings }
+
+                HomeWidget(
+                    icon: "person.2.fill",
+                    iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
+                    title: "Familie",
+                    value: "\(familyService.members.count)",
+                    subtitle: familyService.members.count == 1 ? "membru" : "membri"
+                ) { selectedTab = .settings }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, bottomSafeArea > 0 ? bottomSafeArea + 64 : 80)
         }
+        .background(.ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8)
+        )
+        .shadow(color: .black.opacity(0.25), radius: 24, y: -6)
+        .ignoresSafeArea(edges: .bottom)
     }
 
-    // MARK: - Action bar
-
-    private var actionBar: some View {
-        HStack(spacing: 0) {
-            ForEach(ActionBarItem.allCases, id: \.self) { item in
-                Button {
-                    HapticFeedback.impact(.light)
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: item.icon)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.85))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(.white.opacity(0.15), lineWidth: 0.8)
-        )
-        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+    private var netFormatted: String {
+        let sym = financialService.currencySymbol
+        let abs = Int(Swift.abs(financialService.currentMonthNet))
+        return financialService.currentMonthNet >= 0 ? "+\(abs)\(sym)" : "-\(abs)\(sym)"
     }
 
     // MARK: - Helpers
@@ -228,6 +261,66 @@ struct DashboardView: View {
         withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
             pulsing = true
         }
+    }
+}
+
+// MARK: - Home Widget Card
+
+struct HomeWidget: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let value: String
+    let subtitle: String
+    var badge: Int = 0
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(iconColor.opacity(0.18))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: icon)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(iconColor)
+                    }
+                    Spacer()
+                    if badge > 0 {
+                        Text("\(min(badge, 99))")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.red, in: Capsule())
+                    }
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(value)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .lineLimit(1)
+                }
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial,
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.8)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
