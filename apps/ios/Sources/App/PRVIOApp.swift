@@ -29,17 +29,28 @@ struct PRVIOApp: App {
     }
 }
 
-// MARK: - iOS 26/27 global appearance
+// MARK: - Global appearance
 
 private func applyGlobalAppearance() {
-    // Navigation bar — transparent glass (liquid glass style)
-    let nav = UINavigationBarAppearance()
-    nav.configureWithTransparentBackground()
-    nav.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
-    nav.shadowColor = .clear
-    UINavigationBar.appearance().standardAppearance = nav
-    UINavigationBar.appearance().scrollEdgeAppearance = nav
-    UINavigationBar.appearance().compactAppearance = nav
+    if #available(iOS 26, *) {
+        // iOS 26+ — navigation bar uses Liquid Glass automatically.
+        // Resetting to default lets the system apply its native glass treatment.
+        let nav = UINavigationBarAppearance()
+        nav.configureWithDefaultBackground()
+        UINavigationBar.appearance().standardAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().compactAppearance = nav
+    } else {
+        // iOS 17–25 — use system blur material, which adapts to dark/light mode,
+        // reduceTransparency, and increaseContrast automatically via UIKit.
+        let nav = UINavigationBarAppearance()
+        nav.configureWithTransparentBackground()
+        nav.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        nav.shadowColor = .clear
+        UINavigationBar.appearance().standardAppearance = nav
+        UINavigationBar.appearance().scrollEdgeAppearance = nav
+        UINavigationBar.appearance().compactAppearance = nav
+    }
 
     // System tab bar hidden — we use custom floating bar
     UITabBar.appearance().isHidden = true

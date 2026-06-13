@@ -1,6 +1,33 @@
 import SwiftUI
 
-// MARK: - Liquid Glass Card (iOS 26/27)
+// MARK: - liquidGlass() — universal adaptive glass modifier
+//
+// On iOS 26+: uses native Liquid Glass (.glassEffect) which automatically
+//   adapts to the content beneath, respects dark/light mode, reduceTransparency,
+//   increaseContrast, and any future Liquid Glass updates from Apple.
+// On iOS 17–25: falls back to .ultraThinMaterial / .regularMaterial which are
+//   system-managed and equally respect all accessibility and appearance settings.
+//
+// Never use fixed opacity, blur, or colour values for glass — the system
+// determines the visual result automatically.
+
+extension View {
+    @ViewBuilder
+    func liquidGlass(cornerRadius: CGFloat = 24, thick: Bool = false) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            self
+                .background(thick ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.ultraThinMaterial),
+                            in: shape)
+                .shadow(color: Color.primary.opacity(0.07), radius: 20, y: 5)
+                .shadow(color: Color.primary.opacity(0.03), radius: 3, y: 1)
+        }
+    }
+}
+
+// MARK: - GlassCard
 
 struct GlassCard<Content: View>: View {
     var padding: CGFloat = 20
@@ -10,32 +37,11 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content()
             .padding(padding)
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    // Specular shimmer — top-leading light catch
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(LinearGradient(
-                                colors: [.white.opacity(0.18), .clear, .white.opacity(0.04)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ))
-                    }
-                    // Gradient border
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(LinearGradient(
-                                colors: [.white.opacity(0.40), .white.opacity(0.08), .clear],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ), lineWidth: 0.8)
-                    }
-            }
-            .shadow(color: .black.opacity(0.18), radius: 28, x: 0, y: 8)
-            .shadow(color: .black.opacity(0.07), radius: 4,  x: 0, y: 1)
+            .liquidGlass(cornerRadius: cornerRadius)
     }
 }
 
-// MARK: - Heavy Glass (modal sheets, prominent panels)
+// MARK: - HeavyGlassCard (modal sheets, prominent panels)
 
 struct HeavyGlassCard<Content: View>: View {
     var padding: CGFloat = 20
@@ -45,29 +51,11 @@ struct HeavyGlassCard<Content: View>: View {
     var body: some View {
         content()
             .padding(padding)
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.regularMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(LinearGradient(
-                                colors: [.white.opacity(0.12), .clear],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ))
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(LinearGradient(
-                                colors: [.white.opacity(0.35), .white.opacity(0.06)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ), lineWidth: 0.8)
-                    }
-            }
-            .shadow(color: .black.opacity(0.22), radius: 32, x: 0, y: 10)
+            .liquidGlass(cornerRadius: cornerRadius, thick: true)
     }
 }
 
-// MARK: - Stat Row
+// MARK: - StatRow
 
 struct StatRow: View {
     let label: String
@@ -87,7 +75,7 @@ struct StatRow: View {
     }
 }
 
-// MARK: - Icon Badge
+// MARK: - IconBadge
 
 struct IconBadge: View {
     let icon: String
@@ -98,6 +86,7 @@ struct IconBadge: View {
             .font(.system(size: size * 0.42, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(Color.primary.opacity(0.25), in: RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
+            .background(Color.primary.opacity(0.18),
+                        in: RoundedRectangle(cornerRadius: size * 0.32, style: .continuous))
     }
 }

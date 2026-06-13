@@ -324,29 +324,11 @@ struct SettingsGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.38))
+                .foregroundStyle(.secondary)
                 .padding(.leading, 8)
 
             VStack(spacing: 0) { content }
-                .background {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(LinearGradient(
-                                    colors: [.white.opacity(0.14), .clear],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                ))
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .strokeBorder(LinearGradient(
-                                    colors: [.white.opacity(0.32), .white.opacity(0.06)],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                ), lineWidth: 0.7)
-                        }
-                }
-                .shadow(color: .black.opacity(0.10), radius: 18, y: 4)
+                .liquidGlass(cornerRadius: 20)
         }
     }
 }
