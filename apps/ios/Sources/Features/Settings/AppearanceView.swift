@@ -5,10 +5,30 @@ struct AppearanceView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var auth: AuthService
 
+    private let accentOptions: [(name: String, color: Color, label: String)] = [
+        ("blue",   .blue,                                              "Albastru"),
+        ("purple", .purple,                                            "Violet"),
+        ("green",  Color(red: 0.25, green: 0.82, blue: 0.45),         "Verde"),
+        ("orange", .orange,                                            "Portocaliu"),
+        ("pink",   .pink,                                              "Roz"),
+        ("gold",   Color(red: 0.9,  green: 0.7,  blue: 0.15),         "Auriu"),
+        ("red",    .red,                                               "Roșu"),
+        ("teal",   .teal,                                              "Turcoaz"),
+    ]
+
+    private var currentLabel: String {
+        accentOptions.first(where: { $0.name == appSettings.accentColor })?.label ?? "Albastru"
+    }
+    private var currentColor: Color {
+        avatarRingColor(for: appSettings.accentColor)
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 themeSection
+                accentSection
+                hapticSection
                 currencySection
                 Spacer(minLength: 100)
             }
@@ -16,7 +36,7 @@ struct AppearanceView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Appearance")
+        .navigationTitle("Aspect")
         .navigationBarTitleDisplayMode(.large)
         .task { await currencyService.refresh() }
     }
@@ -24,30 +44,19 @@ struct AppearanceView: View {
     // MARK: - Theme
 
     private var themeSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("Theme")
-
-            VStack(spacing: 12) {
-                ForEach(AppSettings.themes, id: \.code) { theme in
-                    ThemeOptionRow(
-                        icon: theme.icon,
-                        title: theme.label,
-                        isSelected: appSettings.theme == theme.code
-                    ) {
-                        withAnimation(.spring(response: 0.3)) {
-                            appSettings.theme = theme.code
-                        }
-                        if let uid = auth.session?.user.id {
-                            appSettings.syncToProfile(userId: uid)
-                        }
-                    }
+        SettingsGroup(title: "Temă") {
+            ForEach(AppSettings.themes, id: \.code) { theme in
+                ThemeOptionRow(
+                    icon: theme.icon,
+                    title: theme.label,
+                    isSelected: appSettings.theme == theme.code,
+                    accentColor: currentColor
+                ) {
+                    withAnimation(.spring(response: 0.3)) { appSettings.theme = theme.code }
+                    HapticFeedback.selection()
+                    if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
                 }
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
         }
     }
 
@@ -149,6 +158,75 @@ struct AppearanceView: View {
         await currencyService.refresh()
     }
 
+    // MARK: - Accent Color
+
+    private var accentSection: some View {
+        SettingsGroup(title: "Temă vizuală") {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "paintpalette.fill", color: currentColor)
+                    Text("Culoare de accent")
+                        .font(.system(size: 15)).foregroundStyle(.primary)
+                    Spacer()
+                    Circle().fill(currentColor).frame(width: 12, height: 12)
+                    Text(currentLabel)
+                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+
+                Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+
+                HStack(spacing: 12) {
+                    ForEach(accentOptions, id: \.name) { opt in
+                        Button {
+                            withAnimation(.spring(response: 0.28)) {
+                                appSettings.accentColor = opt.name
+                                HapticFeedback.selection()
+                            }
+                            if let uid = auth.session?.user.id {
+                                appSettings.syncToProfile(userId: uid)
+                            }
+                        } label: {
+                            ZStack {
+                                Circle().fill(opt.color).frame(width: 26, height: 26)
+                                if appSettings.accentColor == opt.name {
+                                    Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
+                                    Circle().strokeBorder(opt.color, lineWidth: 1.5).frame(width: 32, height: 32)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 14)
+            }
+        }
+    }
+
+    // MARK: - Haptic
+
+    private var hapticSection: some View {
+        SettingsGroup(title: "General") {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Răspuns haptic")
+                        .font(.system(size: 15)).foregroundStyle(.primary)
+                    Text("Vibrații la acțiuni în aplicație")
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                }
+                Spacer()
+                Toggle("", isOn: $appSettings.hapticEnabled)
+                    .labelsHidden().tint(currentColor)
+                    .onChange(of: appSettings.hapticEnabled) { _, on in
+                        if on { HapticFeedback.impact(.medium) }
+                    }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 13)
+        }
+    }
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(size: 11, weight: .semibold))
@@ -163,39 +241,26 @@ private struct ThemeOptionRow: View {
     let icon: String
     let title: String
     let isSelected: Bool
+    var accentColor: Color = .blue
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
-                }
-
+                ColoredIconBadge(icon: icon, color: isSelected ? accentColor : Color.primary.opacity(0.4), size: 36)
                 Text(title)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.primary)
-
+                    .font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
-
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.blue)
+                        .font(.system(size: 20)).foregroundStyle(accentColor)
                         .transition(.scale.combined(with: .opacity))
                 } else {
-                    Circle()
-                        .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
+                    Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
                         .frame(width: 20, height: 20)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14).padding(.vertical, 13)
         }
         .buttonStyle(.plain)
     }

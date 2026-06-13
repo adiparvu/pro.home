@@ -231,23 +231,29 @@ struct ProfileView: View {
     // MARK: - Account actions
 
     private var accountSection: some View {
-        SettingsGroup(title: "Account") {
-            NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit Profile") {
+        SettingsGroup(title: "Cont") {
+            NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Editează profilul") {
                 EditProfileView().environmentObject(profileService)
             }
-            TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change Email") {
+            TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Schimbă e-mailul") {
                 showChangeEmail = true
             }
-            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Change Password") {
+            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Schimbă parola") {
                 showChangePassword = true
             }
-            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notification Preferences") {
+            NavSettingsRow(icon: "shield.fill", color: .purple, label: "Siguranță și securitate") {
+                SecurityView().environmentObject(auth)
+            }
+            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Contact de încredere") {
+                TrustedContactView().environmentObject(auth)
+            }
+            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notificări") {
                 NotificationsSettingsView()
                     .environmentObject(notificationScheduler)
                     .environmentObject(taskService)
                     .environmentObject(documentService)
             }
-            TapSettingsRow(icon: "trash.fill", color: .red, label: "Delete Account") {
+            TapSettingsRow(icon: "trash.fill", color: .red, label: "Șterge contul") {
                 HapticFeedback.warning()
                 showDeleteConfirm = true
             }

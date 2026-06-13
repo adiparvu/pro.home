@@ -22,6 +22,7 @@ struct PRVHouseApp: App {
                 }
             }
             .preferredColorScheme(appSettings.resolvedColorScheme)
+            .tint(avatarRingColor(for: appSettings.accentColor))
             .environment(\.locale, Locale(identifier: appSettings.locale))
             .environmentObject(auth)
         }
