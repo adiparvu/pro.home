@@ -340,18 +340,20 @@ struct NavSettingsRow<D: View>: View {
     let color: Color
     let label: String
     @ViewBuilder let destination: () -> D
+    @State private var iconBounce = false
 
     var body: some View {
         NavigationLink(destination: destination()) {
             rowInner(chevron: true)
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture().onEnded { iconBounce.toggle() })
         rowDivider
     }
 
     private func rowInner(chevron: Bool) -> some View {
         HStack(spacing: 12) {
-            ColoredIconBadge(icon: icon, color: color)
+            ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
             Text(label)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
@@ -380,11 +382,15 @@ struct TapSettingsRow: View {
     let color: Color
     let label: String
     let action: () -> Void
+    @State private var iconBounce = false
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            iconBounce.toggle()
+            action()
+        } label: {
             HStack(spacing: 12) {
-                ColoredIconBadge(icon: icon, color: color)
+                ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
                 Text(label)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
@@ -450,25 +456,28 @@ struct InfoSettingsRow: View {
     }
 }
 
-// MARK: - Colored Icon Badge (iOS 26/27 squircle gradient)
+// MARK: - Minimal Icon Badge (monochrome glass, Apple HIG)
 
 struct ColoredIconBadge: View {
     let icon: String
-    let color: Color
+    let color: Color   // kept for API compatibility; not used visually
     var size: CGFloat = 32
+    var bounce: Bool = false
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                .fill(LinearGradient(
-                    colors: [color.opacity(0.95), color.opacity(0.75)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
+                .fill(.ultraThinMaterial)
                 .frame(width: size, height: size)
-                .shadow(color: color.opacity(0.45), radius: 4, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                }
             Image(systemName: icon)
-                .font(.system(size: size * 0.42, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: size * 0.44, weight: .medium))
+                .foregroundStyle(.primary)
+                .symbolRenderingMode(.hierarchical)
+                .symbolEffect(.bounce, value: bounce)
         }
     }
 }

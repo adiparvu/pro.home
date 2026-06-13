@@ -156,9 +156,13 @@ struct FloatingTabItem: View {
     var badge: Int = 0
     let namespace: Namespace.ID
     let action: () -> Void
+    @State private var tapCount = 0
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            if !isSelected { tapCount += 1 }
+            action()
+        } label: {
             ZStack {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -169,6 +173,8 @@ struct FloatingTabItem: View {
                 Image(systemName: tab.icon)
                     .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.38))
+                    .symbolRenderingMode(.hierarchical)
+                    .symbolEffect(.bounce, value: tapCount)
                     .scaleEffect(isSelected ? 1.08 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isSelected)
                     .overlay(alignment: .topTrailing) {
