@@ -47,23 +47,6 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Cert management: keep at most 1 Distribution cert on the portal so we have
-    # room to create a fresh one each CI run (CI keychain is ephemeral — we can't
-    # reuse an existing cert because we never have its private key).
-    require "spaceship"
-    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(api_key: api_key)
-    existing = Spaceship::ConnectAPI::Certificate.all(
-      filter: { certificateType: "DISTRIBUTION" }
-    )
-    UI.message("Distribution certs on portal: #{existing.length}")
-    existing.each { |c| UI.message("  #{c.id} expires #{c.expirationDate}") }
-
-    if existing.length >= 2
-      oldest = existing.min_by { |c| c.expirationDate }
-      UI.message("Revoking oldest cert #{oldest.id} to make room (Apple limit = 2)")
-      oldest.delete!
-    end
-
     cert(
       api_key:           api_key,
       keychain_path:     keychain_db,
