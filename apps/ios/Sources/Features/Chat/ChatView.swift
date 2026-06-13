@@ -5,6 +5,8 @@ import MapKit
 import UserNotifications
 import Supabase
 
+private let kAvatarRingColorKey = "prvhouse.avatarRingColorName"
+
 struct ChatView: View {
     @EnvironmentObject private var messageService: MessageService
     @EnvironmentObject private var familyService: FamilyService
@@ -20,12 +22,16 @@ struct ChatView: View {
     @State private var mentionedNames: [String] = []
     @State private var isSending = false
     @FocusState private var focused: Bool
+    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
 
     private var propertyId: UUID? { propertyService.primary?.id }
     private var senderName: String {
         profileService.profile?.displayName
             ?? profileService.profile?.fullName
             ?? "Me"
+    }
+    private var ownerInitial: String {
+        String((profileService.profile?.preferredName ?? senderName).prefix(1)).uppercased()
     }
 
     var body: some View {
@@ -38,12 +44,13 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
+                MemberAvatarStack(
+                    members: familyService.members,
+                    ownerAvatarUrl: profileService.profile?.avatarUrl,
+                    ownerInitial: ownerInitial,
+                    ringColor: avatarRingColor(for: avatarRingColorName)
+                ) {
                     withAnimation { showMentionPicker.toggle() }
-                } label: {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Color.primary.opacity(0.85))
                 }
             }
         }

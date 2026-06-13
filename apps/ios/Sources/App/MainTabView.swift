@@ -124,6 +124,7 @@ struct MainTabView: View {
 struct FloatingTabBar: View {
     @Binding var selected: AppTab
     var overdueCount: Int = 0
+    @Namespace private var tabNS
 
     var body: some View {
         HStack(spacing: 0) {
@@ -131,10 +132,11 @@ struct FloatingTabBar: View {
                 FloatingTabItem(
                     tab: tab,
                     isSelected: selected == tab,
-                    badge: tab == .tasks ? overdueCount : 0
+                    badge: tab == .tasks ? overdueCount : 0,
+                    namespace: tabNS
                 ) {
                     HapticFeedback.selection()
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                    withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) {
                         selected = tab
                     }
                 }
@@ -165,30 +167,42 @@ struct FloatingTabItem: View {
     let tab: AppTab
     let isSelected: Bool
     var badge: Int = 0
+    let namespace: Namespace.ID
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: tab.icon)
-                .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.38))
-                .symbolEffect(.bounce, value: isSelected)
-                .frame(width: 52, height: 40)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.primary.opacity(isSelected ? 0.16 : 0))
-                )
-                .overlay(alignment: .topTrailing) {
-                    if badge > 0 {
-                        Text("\(min(badge, 9))")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .frame(minWidth: 16, minHeight: 16)
-                            .background(.red, in: Circle())
-                            .offset(x: 8, y: -8)
-                    }
+            ZStack {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.primary.opacity(0.22), Color.primary.opacity(0.10)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .matchedGeometryEffect(id: "tabPill", in: namespace)
+                        .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
                 }
-                .frame(maxWidth: .infinity)
+                Image(systemName: tab.icon)
+                    .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.38))
+                    .scaleEffect(isSelected ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isSelected)
+                    .overlay(alignment: .topTrailing) {
+                        if badge > 0 {
+                            Text("\(min(badge, 9))")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 16, minHeight: 16)
+                                .background(.red, in: Circle())
+                                .offset(x: 8, y: -8)
+                        }
+                    }
+            }
+            .frame(width: 52, height: 40)
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
     }

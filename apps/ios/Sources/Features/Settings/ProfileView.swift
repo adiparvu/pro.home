@@ -14,10 +14,16 @@ struct ProfileView: View {
     @State private var showChangePassword = false
     @State private var showDeleteConfirm = false
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var showPhotoPicker = false
+    @State private var showAvatarOptions = false
+    @State private var showCamera = false
     @State private var toast: String?
     @State private var toastIsError = false
     @AppStorage("prvhouse.biometrics") private var biometricsEnabled = false
+    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @State private var biometricType: LABiometryType = .none
+
+    private var ringColor: Color { avatarRingColor(for: avatarRingColorName) }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -65,6 +71,25 @@ struct ProfileView: View {
             guard let newItem else { return }
             Task { await handlePhotoPick(newItem) }
         }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
+        .sheet(isPresented: $showCamera) {
+            CameraCapture { img in
+                Task {
+                    do {
+                        try await profileService.uploadAvatar(img)
+                        showToast("Avatar actualizat")
+                    } catch {
+                        showToast(error.localizedDescription, isError: true)
+                    }
+                }
+            }
+            .ignoresSafeArea()
+        }
+        .confirmationDialog("Schimbă avatarul", isPresented: $showAvatarOptions, titleVisibility: .visible) {
+            Button("Fă o poză") { showCamera = true }
+            Button("Alege din Galerie") { showPhotoPicker = true }
+            Button("Anulează", role: .cancel) {}
+        }
         .overlay(alignment: .bottom) {
             if let msg = toast {
                 toastView(msg, isError: toastIsError)
@@ -88,10 +113,10 @@ struct ProfileView: View {
                 avatarImage
                     .frame(width: 96, height: 96)
                     .clipShape(Circle())
-                    .shadow(color: .blue.opacity(0.4), radius: 16, y: 6)
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1.5))
+                    .shadow(color: ringColor.opacity(0.45), radius: 16, y: 6)
+                    .overlay(Circle().strokeBorder(ringColor, lineWidth: 2.5))
 
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Button { showAvatarOptions = true } label: {
                     ZStack {
                         Circle().fill(.black.opacity(0.55)).frame(width: 30, height: 30)
                         if profileService.isUploadingAvatar {
@@ -99,10 +124,11 @@ struct ProfileView: View {
                         } else {
                             Image(systemName: "camera.fill")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                         }
                     }
                 }
+                .buttonStyle(.plain)
                 .disabled(profileService.isUploadingAvatar)
                 .offset(x: 4, y: 4)
             }
@@ -113,7 +139,28 @@ struct ProfileView: View {
             Text(auth.session?.user.email ?? "")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.5))
+
+            ringColorPicker
         }
+    }
+
+    private var ringColorPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(["blue", "purple", "green", "orange", "pink", "gold", "red", "teal"], id: \.self) { name in
+                let c = avatarRingColor(for: name)
+                Button { withAnimation(.spring(response: 0.3)) { avatarRingColorName = name } } label: {
+                    ZStack {
+                        Circle().fill(c).frame(width: 22, height: 22)
+                        if avatarRingColorName == name {
+                            Circle().strokeBorder(.white, lineWidth: 2).frame(width: 22, height: 22)
+                            Circle().strokeBorder(c, lineWidth: 1).frame(width: 26, height: 26)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 2)
     }
 
     @ViewBuilder

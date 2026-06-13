@@ -6,7 +6,20 @@ final class PropertyService: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    var primary: PropertyModel? { properties.first }
+    var selectedPropertyId: UUID? {
+        get { UUID(uuidString: UserDefaults.standard.string(forKey: "prvhouse.selectedPropertyId") ?? "") }
+        set {
+            objectWillChange.send()
+            UserDefaults.standard.set(newValue?.uuidString, forKey: "prvhouse.selectedPropertyId")
+        }
+    }
+
+    var primary: PropertyModel? {
+        if let id = selectedPropertyId, let p = properties.first(where: { $0.id == id }) { return p }
+        return properties.first
+    }
+
+    func select(_ property: PropertyModel) { selectedPropertyId = property.id }
 
     func load() async {
         isLoading = true

@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ARIAView: View {
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var profileService: ProfileService
+    @AppStorage("prvhouse.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false
@@ -38,14 +41,22 @@ struct ARIAView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button {
-                withAnimation { messages = ARIAMessage.welcome }
-            } label: {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
+            HStack(spacing: 10) {
+                MemberAvatarStack(
+                    members: familyService.members,
+                    ownerAvatarUrl: profileService.profile?.avatarUrl,
+                    ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
+                    ringColor: avatarRingColor(for: avatarRingColorName)
+                )
+                Button {
+                    withAnimation { messages = ARIAMessage.welcome }
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 36, height: 36)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
             }
         }
         .padding(.horizontal, 20)

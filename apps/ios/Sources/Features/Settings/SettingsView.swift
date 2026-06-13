@@ -15,11 +15,13 @@ struct SettingsView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @State private var showSignOut = false
     @State private var showRateAlert = false
+    @State private var showAccountSwitch = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 profileCard
+                switchCard
                 propertySection
                 familySection
                 notificationsSection
@@ -76,6 +78,69 @@ struct SettingsView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private var switchCard: some View {
+        GlassCard {
+            VStack(spacing: 0) {
+                Menu {
+                    ForEach(propertyService.properties) { p in
+                        Button {
+                            propertyService.select(p)
+                        } label: {
+                            Label(p.name, systemImage: propertyService.primary?.id == p.id ? "checkmark.circle.fill" : "house.fill")
+                        }
+                    }
+                    if propertyService.properties.isEmpty {
+                        Text("No properties yet")
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "house.fill", color: .blue)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Proprietate")
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            Text(propertyService.primary?.name ?? "Nicio proprietate")
+                                .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.2.squarepath")
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+
+                Button { showAccountSwitch = true } label: {
+                    HStack(spacing: 12) {
+                        ColoredIconBadge(icon: "person.circle.fill", color: .purple)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Cont")
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            Text(auth.session?.user.email ?? "—")
+                                .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .confirmationDialog("Schimbă contul", isPresented: $showAccountSwitch, titleVisibility: .visible) {
+            Button("Deconectare", role: .destructive) { showSignOut = true }
+            Button("Anulează", role: .cancel) {}
+        } message: {
+            Text("Pentru a schimba contul, deconectează-te și autentifică-te cu alt cont.")
+        }
     }
 
     @ViewBuilder
