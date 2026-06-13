@@ -1,5 +1,6 @@
 require "base64"
 require "fileutils"
+require "spaceship"
 
 default_platform(:ios)
 
@@ -10,8 +11,7 @@ platform :ios do
     issuer_id   = ENV["ASC_ISSUER_ID"]
     key_content = ENV["ASC_KEY_CONTENT"]
 
-    # Write P8 key to disk — xcodebuild uses it directly for automatic signing
-    key_pem = Base64.decode64(key_content)
+    key_pem  = Base64.decode64(key_content)
     key_path = "/tmp/asc_key.p8"
     File.write(key_path, key_pem)
 
@@ -43,14 +43,46 @@ platform :ios do
       end
     end
 
-    # Enable automatic signing — Xcode resolves cert + profile via the API key
+    # Revoke all existing iOS Distribution certs so cert() can create a fresh one.
+    # CI runners have no private key for previously-created certs, so we must
+    # clear the 2-cert limit before each build.
+    UI.message("Revoking existing iOS Distribution certificates via ASC API...")
+    Spaceship::ConnectAPI.auth(key_id: key_id, issuer_id: issuer_id, filepath: key_path)
+    Spaceship::ConnectAPI::Certificate.all.each do |c|
+      next unless c.certificate_type == "IOS_DISTRIBUTION"
+      c.delete!
+      UI.success("Revoked certificate #{c.id}")
+    end
+
+    # Create a new Distribution cert and install it into the runner's keychain.
+    cert(
+      api_key:     api_key,
+      platform:    "ios",
+      output_path: "/tmp"
+    )
+
+    # Fetch (or create) the App Store Distribution provisioning profile.
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvhouse.app",
+      platform:       "ios",
+      app_store:      true,
+      output_path:    "/tmp",
+      filename:       "PRVHouse_AppStore.mobileprovision"
+    )
+
+    profile_uuid = ENV["SIGH_UUID"]
+    UI.message("Provisioning profile UUID: #{profile_uuid}")
+
+    # Switch to manual signing so xcodebuild uses the cert+profile we just fetched.
     update_code_signing_settings(
-      use_automatic_signing: true,
-      path:         "#{project_dir}/PRVHouse.xcodeproj",
-      targets:      ["PRVHouse"],
-      build_configurations: ["Release"],
-      bundle_identifier: "com.prvhouse.app",
-      team_id:      "SU92TVZT8W"
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVHouse.xcodeproj",
+      targets:               ["PRVHouse"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvhouse.app",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution"
     )
 
     sh(
@@ -60,12 +92,11 @@ platform :ios do
       "-configuration Release " \
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
-      "-authenticationKeyPath #{key_path} " \
-      "-authenticationKeyID #{key_id} " \
-      "-authenticationKeyIssuerID #{issuer_id} " \
-      "-allowProvisioningUpdates " \
       "-hideShellScriptEnvironment " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
+      "CODE_SIGN_STYLE=Manual " \
+      "CODE_SIGN_IDENTITY='iPhone Distribution' " \
+      "PROVISIONING_PROFILE=#{profile_uuid} " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
     )
 
@@ -104,7 +135,12 @@ platform :ios do
         <key>teamID</key>
         <string>SU92TVZT8W</string>
         <key>signingStyle</key>
-        <string>automatic</string>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          <key>com.prvhouse.app</key>
+          <string>#{profile_uuid}</string>
+        </dict>
       </dict>
       </plist>
     PLIST
@@ -113,20 +149,16 @@ platform :ios do
       "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
       "-exportPath /tmp/PRVHouse_ipa " \
-      "-exportOptionsPlist #{export_options_path} " \
-      "-authenticationKeyPath #{key_path} " \
-      "-authenticationKeyID #{key_id} " \
-      "-authenticationKeyIssuerID #{issuer_id} " \
-      "-allowProvisioningUpdates 2>&1"
+      "-exportOptionsPlist #{export_options_path} 2>&1"
     )
 
     pilot(
-      api_key:                        api_key,
-      ipa:                            "/tmp/PRVHouse_ipa/PRVHouse.ipa",
+      api_key:                           api_key,
+      ipa:                               "/tmp/PRVHouse_ipa/PRVHouse.ipa",
       skip_waiting_for_build_processing: true,
-      skip_submission:                true,
-      distribute_external:            false,
-      notify_external_testers:        false
+      skip_submission:                   true,
+      distribute_external:               false,
+      notify_external_testers:           false
     )
   end
 end
