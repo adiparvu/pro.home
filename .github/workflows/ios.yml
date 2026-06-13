@@ -49,7 +49,9 @@ jobs:
           restore-keys: gems-
 
       - name: Install Gems
-        run: bundle install --path vendor/bundle
+        run: |
+          bundle config set path vendor/bundle
+          bundle install
 
       - name: Run Fastlane beta
         env:
