@@ -23,6 +23,40 @@ final class PropertyService: ObservableObject {
         }
     }
 
+    func create(name: String, addressLine1: String, city: String, country: String,
+                propertyType: String, postalCode: String?, sizeSqm: Double?,
+                numRooms: Int?, latitude: Double?, longitude: Double?) async {
+        struct PropertyCreate: Encodable {
+            let name: String
+            let address_line1: String
+            let city: String
+            let country: String
+            let property_type: String
+            let postal_code: String?
+            let size_sqm: Double?
+            let num_rooms: Int?
+            let latitude: Double?
+            let longitude: Double?
+        }
+        do {
+            let created: PropertyModel = try await supabase
+                .from("properties")
+                .insert(PropertyCreate(
+                    name: name, address_line1: addressLine1, city: city,
+                    country: country, property_type: propertyType,
+                    postal_code: postalCode, size_sqm: sizeSqm,
+                    num_rooms: numRooms, latitude: latitude, longitude: longitude
+                ))
+                .select()
+                .single()
+                .execute()
+                .value
+            properties.append(created)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func update(_ property: PropertyModel) async {
         struct PropertyUpdate: Encodable {
             let name: String
