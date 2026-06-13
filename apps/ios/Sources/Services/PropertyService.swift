@@ -32,6 +32,8 @@ final class PropertyService: ObservableObject {
             let property_type: String
             let size_sqm: Double?
             let num_rooms: Int?
+            let latitude: Double?
+            let longitude: Double?
         }
 
         let payload = PropertyUpdate(
@@ -41,7 +43,9 @@ final class PropertyService: ObservableObject {
             country: property.country,
             property_type: property.propertyType,
             size_sqm: property.sizeSqm,
-            num_rooms: property.numRooms
+            num_rooms: property.numRooms,
+            latitude: property.latitude,
+            longitude: property.longitude
         )
 
         do {

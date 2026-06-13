@@ -260,9 +260,12 @@ struct DashboardView: View {
 
     // MARK: - Helpers
 
-    // PropertyModel has no lat/lon fields — always use the default coordinate
     private var propertyCoordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025)
+        if let lat = propertyService.primary?.latitude,
+           let lon = propertyService.primary?.longitude {
+            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        }
+        return CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025)
     }
 
     private var displayName: String {

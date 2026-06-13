@@ -10,10 +10,12 @@ struct PropertyModel: Identifiable, Codable {
     var sizeSqm: Double?
     var numRooms: Int?
     var healthScore: Int?
+    var latitude: Double?
+    var longitude: Double?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, name, city, country
+        case id, name, city, country, latitude, longitude
         case addressLine1 = "address_line1"
         case propertyType = "property_type"
         case sizeSqm = "size_sqm"
