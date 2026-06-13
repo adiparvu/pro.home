@@ -7,17 +7,17 @@ struct PRVIOLogoView: View {
 
     var body: some View {
         Canvas { ctx, canvas in
-            let s  = canvas.size.width / 1024
-            let cx = canvas.size.width / 2
-            let w  = canvas.size.width
-            let h  = canvas.size.height
+            let s  = canvas.width / 1024
+            let cx = canvas.width / 2
+            let w  = canvas.width
+            let h  = canvas.height
 
             let isDark = scheme == .dark
 
             // ── BACKGROUND ──────────────────────────────────────────────────
             if showBackground {
                 if isDark {
-                    ctx.fill(Path(CGRect(origin: .zero, size: canvas.size)), with: .color(Color(red: 0.027, green: 0.043, blue: 0.094)))
+                    ctx.fill(Path(CGRect(origin: .zero, size: canvas)), with: .color(Color(red: 0.027, green: 0.043, blue: 0.094)))
                     // center glow
                     ctx.fill(
                         Path(ellipseIn: CGRect(x: w*0.1, y: h*0.05, width: w*0.8, height: h*0.75)),
@@ -29,7 +29,7 @@ struct PRVIOLogoView: View {
                     )
                 } else {
                     ctx.fill(
-                        Path(CGRect(origin: .zero, size: canvas.size)),
+                        Path(CGRect(origin: .zero, size: canvas)),
                         with: .linearGradient(
                             Gradient(stops: [
                                 .init(color: Color(red: 0.376, green: 0.682, blue: 1.00),  location: 0.00),
