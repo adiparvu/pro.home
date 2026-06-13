@@ -137,6 +137,7 @@ platform :ios do
       "-configuration Release " \
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVHouse.xcarchive " \
+      "-derivedDataPath /tmp/DerivedData " \
       "-hideShellScriptEnvironment " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
