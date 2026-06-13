@@ -122,7 +122,7 @@ struct AddPropertyElementView: View {
                                             .keyboardType(.decimalPad)
                                             .font(.subheadline)
                                             .padding(10)
-                                            .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Monedă")
@@ -134,7 +134,7 @@ struct AddPropertyElementView: View {
                                         }
                                         .pickerStyle(.menu)
                                         .padding(6)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     .frame(width: 80)
                                 }
@@ -163,11 +163,11 @@ struct AddPropertyElementView: View {
                                             } label: {
                                                 Label(layer.displayName, systemImage: layer.icon)
                                                     .font(.caption.weight(selectedLayer == layer ? .semibold : .regular))
-                                                    .foregroundStyle(selectedLayer == layer ? .white : .secondary)
+                                                    .foregroundStyle(selectedLayer == layer ? .white : Color.secondary)
                                                     .padding(.horizontal, 10)
                                                     .padding(.vertical, 6)
                                                     .background(
-                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : .primary.opacity(0.07))
+                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
                                                     )
                                             }
                                             .buttonStyle(.plain)
@@ -186,7 +186,7 @@ struct AddPropertyElementView: View {
                                     .scrollContentBackground(.hidden)
                                     .font(.subheadline)
                                     .padding(8)
-                                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 
@@ -205,7 +205,7 @@ struct AddPropertyElementView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Adaugă") { save() }
                         .fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : .secondary)
+                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
                         .disabled(!canSave)
                 }
             }
@@ -257,7 +257,7 @@ struct AddPropertyElementView: View {
             TextField(placeholder, text: text)
                 .font(.subheadline)
                 .padding(10)
-                .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
         }
     }
 }
@@ -274,14 +274,14 @@ private struct TypeChip: View {
             VStack(spacing: 4) {
                 Image(systemName: type.icon)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(isSelected ? type.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? type.accentColor : Color.secondary)
                     .frame(width: 32, height: 32)
                     .background(
-                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : .primary.opacity(0.06))
+                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(0.06))
                     )
                 Text(type.displayName)
                     .font(.system(size: 10))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .foregroundStyle(isSelected ? .primary : Color.secondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .frame(width: 56)
@@ -292,7 +292,7 @@ private struct TypeChip: View {
                     .fill(isSelected ? type.accentColor.opacity(0.08) : .clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(isSelected ? type.accentColor.opacity(0.4) : .primary.opacity(0.08), lineWidth: 0.8)
+                            .strokeBorder(isSelected ? type.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 0.8)
                     )
             )
         }
@@ -358,7 +358,7 @@ struct EditPropertyElementView: View {
                                     Text("Nume").font(.caption).foregroundStyle(.secondary)
                                     TextField("Nume element", text: $element.name)
                                         .font(.subheadline).padding(10)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Stare").font(.caption).foregroundStyle(.secondary)
@@ -382,7 +382,7 @@ struct EditPropertyElementView: View {
                                     Text("Note").font(.caption).foregroundStyle(.secondary)
                                     TextField("Note...", text: .init(get: { element.notes ?? "" }, set: { element.notes = $0.isEmpty ? nil : $0 }))
                                         .font(.subheadline).padding(10)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }
@@ -447,33 +447,33 @@ struct AddElementRecordView: View {
                                     Text("Titlu *").font(.caption).foregroundStyle(.secondary)
                                     TextField("ex. Revizie anuală", text: $title)
                                         .font(.subheadline).padding(10)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Detalii").font(.caption).foregroundStyle(.secondary)
                                     TextField("Descriere lucrare...", text: $content)
                                         .font(.subheadline).padding(10)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Efectuat de").font(.caption).foregroundStyle(.secondary)
                                     TextField("Firmă / persoană", text: $performedBy)
                                         .font(.subheadline).padding(10)
-                                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 HStack(spacing: 8) {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Cost").font(.caption).foregroundStyle(.secondary)
                                         TextField("0", text: $cost).keyboardType(.decimalPad)
                                             .font(.subheadline).padding(10)
-                                            .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Monedă").font(.caption).foregroundStyle(.secondary)
                                         Picker("", selection: $currency) {
                                             ForEach(["EUR", "RON", "USD"], id: \.self) { Text($0).tag($0) }
                                         }.pickerStyle(.menu).padding(6)
-                                            .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }.frame(width: 90)
                                 }
                                 HStack {
@@ -497,7 +497,7 @@ struct AddElementRecordView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Adaugă") { save() }.fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : .secondary)
+                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
                         .disabled(!canSave)
                 }
             }

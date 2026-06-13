@@ -252,7 +252,7 @@ struct InventoryView: View {
                 if service.items.isEmpty {
                     emptyState
                 } else if filtered.isEmpty {
-                    VStack { Spacer(); Text("No items in this category").font(.system(size: 16)).foregroundStyle(.primary.opacity(0.4)); Spacer() }
+                    VStack { Spacer(); Text("No items in this category").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4)); Spacer() }
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 10) {
@@ -286,7 +286,7 @@ struct InventoryView: View {
                     HapticFeedback.impact(.light)
                     showScanner = true
                 } label: {
-                    Image(systemName: "qrcode.viewfinder").font(.system(size: 18)).foregroundStyle(.primary.opacity(0.85))
+                    Image(systemName: "qrcode.viewfinder").font(.system(size: 18)).foregroundStyle(Color.primary.opacity(0.85))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -331,7 +331,7 @@ struct InventoryView: View {
         GlassCard(padding: 10) {
             VStack(spacing: 3) {
                 Text(value).font(.system(size: 14, weight: .bold)).foregroundStyle(highlight ? .orange : .white).lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(.system(size: 9)).foregroundStyle(.primary.opacity(0.4))
+                Text(label).font(.system(size: 9)).foregroundStyle(Color.primary.opacity(0.4))
             }.frame(maxWidth: .infinity)
         }
     }
@@ -343,9 +343,9 @@ struct InventoryView: View {
                     Button { withAnimation(.spring(response: 0.25)) { filter = f } } label: {
                         Text(f.rawValue)
                             .font(.system(size: 13, weight: filter == f ? .semibold : .regular))
-                            .foregroundStyle(filter == f ? .black : .primary.opacity(0.6))
+                            .foregroundStyle(filter == f ? .black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(filter == f ? .white : .primary.opacity(0.08), in: Capsule())
+                            .background(filter == f ? .white : Color.primary.opacity(0.08), in: Capsule())
                     }.buttonStyle(.plain)
                 }
             }.padding(.horizontal, 20)
@@ -355,8 +355,8 @@ struct InventoryView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(.primary.opacity(0.18))
-            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(.primary.opacity(0.5))
+            Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
+            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
             Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
             Spacer()
         }
@@ -376,10 +376,10 @@ private struct InventoryRow: View {
                     Text(item.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
-                            Text(item.brand).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
-                            Text("·").foregroundStyle(.primary.opacity(0.2))
+                            Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                            Text("·").foregroundStyle(Color.primary.opacity(0.2))
                         }
-                        Text(item.location.capitalized).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
+                        Text(item.location.capitalized).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
                         Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")
@@ -389,7 +389,7 @@ private struct InventoryRow: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(.system(size: 12, weight: .semibold)).foregroundStyle(.primary.opacity(0.5))
+                        Text("€\(Int(item.purchasePrice))").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
                     }
                     switch item.warrantyStatus {
                     case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
@@ -473,9 +473,9 @@ struct ItemDetailView: View {
             HStack(spacing: 8) {
                 conditionBadge
                 Text(live.location.capitalized)
-                    .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.5))
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                     .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(.primary.opacity(0.08), in: Capsule())
+                    .background(Color.primary.opacity(0.08), in: Capsule())
             }
         }
         .padding(.top, 4)
@@ -510,11 +510,11 @@ struct ItemDetailView: View {
                         ForEach(live.loanHistory) { loan in
                             rowDiv
                             HStack(spacing: 12) {
-                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(.primary.opacity(0.35)).frame(width: 28)
+                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(loan.borrowerName).font(.system(size: 13)).foregroundStyle(.primary)
                                     Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
-                                        .font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
+                                        .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                                 }
                             }
                             .padding(.horizontal, 16).padding(.vertical, 10)
@@ -526,9 +526,9 @@ struct ItemDetailView: View {
     }
 
     @ViewBuilder
-    private func dRow(_ icon: String, _ label: String, _ value: String, color: Color = .primary.opacity(0.55)) -> some View {
+    private func dRow(_ icon: String, _ label: String, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(.primary.opacity(0.4)).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
             Text(label).font(.system(size: 14)).foregroundStyle(.primary)
             Spacer()
             Text(value).font(.system(size: 13)).foregroundStyle(color)
@@ -536,7 +536,7 @@ struct ItemDetailView: View {
         .padding(.horizontal, 16).padding(.vertical, 12)
     }
 
-    private var rowDiv: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var rowDiv: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 
     private var warrantyIcon: String {
         switch live.warrantyStatus {
@@ -557,7 +557,7 @@ struct ItemDetailView: View {
         case .valid: return Color(red: 0.3, green: 0.85, blue: 0.5)
         case .expiringSoon: return .orange
         case .expired: return .red
-        case .none: return .primary.opacity(0.35)
+        case .none: return Color.primary.opacity(0.35)
         }
     }
 
@@ -586,7 +586,7 @@ struct ItemDetailView: View {
                             loanRow("Expected return", ret.formatted(date: .abbreviated, time: .omitted))
                         }
                     }
-                    .padding(12).background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(12).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
 
                     Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
                         Label("Mark as Returned", systemImage: "checkmark.circle.fill")
@@ -609,10 +609,10 @@ struct ItemDetailView: View {
 
     private func loanRow(_ label: String, _ value: String, highlight: Bool = false) -> some View {
         HStack {
-            Text(label).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.45))
+            Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
             Spacer()
             Text(value).font(.system(size: 13, weight: highlight ? .semibold : .regular))
-                .foregroundStyle(highlight ? .orange : .primary.opacity(0.7))
+                .foregroundStyle(highlight ? .orange : Color.primary.opacity(0.7))
         }
     }
 
@@ -622,14 +622,14 @@ struct ItemDetailView: View {
                 HStack {
                     Label("QR Code", systemImage: "qrcode").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
                     Spacer()
-                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(.primary.opacity(0.35))
+                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
                 }
                 QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
                 Button { shareQR() } label: {
                     Label("Share / Print", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary.opacity(0.7))
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.7))
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
             }
         }
@@ -690,12 +690,12 @@ struct ItemDetailView: View {
                 if !live.trackerIdentifier.isEmpty {
                     HStack {
                         Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.4))
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                         Text("Tracker: \(live.trackerIdentifier)")
-                            .font(.system(size: 13)).foregroundStyle(.primary.opacity(0.65))
+                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.65))
                         Spacer()
                     }
-                    .padding(10).background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
 
                 Button { showLocationPicker = true } label: {
@@ -722,12 +722,12 @@ struct ItemDetailView: View {
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     } else {
-                        Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(.primary.opacity(0.3))
-                            .padding(.horizontal, 8).padding(.vertical, 3).background(.primary.opacity(0.07), in: Capsule())
+                        Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color.primary.opacity(0.07), in: Capsule())
                     }
                 }
                 Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")
-                    .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.4)).lineSpacing(2)
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4)).lineSpacing(2)
 
                 if let p = live.publicProfile {
                     VStack(spacing: 4) {
@@ -735,7 +735,7 @@ struct ItemDetailView: View {
                         if !p.ownerPhone.isEmpty   { publicRow("phone.fill",      p.ownerPhone) }
                         if !p.ownerAddress.isEmpty { publicRow("house.fill",      p.ownerAddress) }
                     }
-                    .padding(10).background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
 
                 Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
@@ -751,8 +751,8 @@ struct ItemDetailView: View {
 
     private func publicRow(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.35)).frame(width: 16)
-            Text(text).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.65))
+            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35)).frame(width: 16)
+            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.65))
             Spacer()
         }
     }
@@ -760,8 +760,8 @@ struct ItemDetailView: View {
     private var notesCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Notes", systemImage: "note.text").font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary.opacity(0.5))
-                Text(live.notes).font(.system(size: 14)).foregroundStyle(.primary.opacity(0.8))
+                Label("Notes", systemImage: "note.text").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                Text(live.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
             }
         }
     }
@@ -814,11 +814,11 @@ private struct PublicContactSheet: View {
                                 div
                                 pField("building.fill", "Property name", $propertyName)
                             }
-                            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                             Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
-                                .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.35))
+                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.35))
                                 .multilineTextAlignment(.center).padding(.horizontal, 8)
                         }
                         Spacer(minLength: 60)
@@ -828,7 +828,7 @@ private struct PublicContactSheet: View {
             }
             .navigationTitle("Lost & Found Card").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         var updated = item
@@ -852,7 +852,7 @@ private struct PublicContactSheet: View {
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private var div: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
 
 // MARK: - Loan Sheet
@@ -874,7 +874,7 @@ private struct LoanItemSheet: View {
                             Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                             TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                         }.padding(.horizontal, 16).padding(.vertical, 14)
-                        Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                         HStack(spacing: 12) {
                             Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                             Text("Expected return").font(.system(size: 15)).foregroundStyle(.primary)
@@ -882,7 +882,7 @@ private struct LoanItemSheet: View {
                             Toggle("", isOn: $hasReturnDate).tint(.blue).labelsHidden()
                         }.padding(.horizontal, 16).padding(.vertical, 12)
                         if hasReturnDate {
-                            Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                             HStack(spacing: 12) {
                                 Color.clear.frame(width: 28)
                                 DatePicker("Return by", selection: $returnDate, in: Date()..., displayedComponents: .date)
@@ -890,11 +890,11 @@ private struct LoanItemSheet: View {
                             }.padding(.horizontal, 16).padding(.vertical, 8)
                         }
                     }
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                     Text("You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.")
-                        .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.38))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, 8)
                     Spacer()
                 }
@@ -902,7 +902,7 @@ private struct LoanItemSheet: View {
             }
             .navigationTitle("Loan Out Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Confirm") {
                         onSave(borrower.trimmingCharacters(in: .whitespaces), hasReturnDate ? returnDate : nil)
@@ -941,7 +941,7 @@ struct QRCodeImage: View {
                 .frame(width: size, height: size)
                 .padding(14).background(.white, in: RoundedRectangle(cornerRadius: 14))
         } else {
-            RoundedRectangle(cornerRadius: 14).fill(.primary.opacity(0.08)).frame(width: size, height: size)
+            RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.08)).frame(width: size, height: size)
         }
     }
 }
@@ -959,8 +959,8 @@ private struct QRScannerSheet: View {
             } else {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 16) {
-                    Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(.primary.opacity(0.25))
-                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(.primary.opacity(0.5)).multilineTextAlignment(.center)
+                    Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.25))
+                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.5)).multilineTextAlignment(.center)
                 }
             }
             VStack {
@@ -968,7 +968,7 @@ private struct QRScannerSheet: View {
                     Spacer()
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 30))
-                            .foregroundStyle(.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
+                            .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
                     }.padding(20)
                 }
                 Spacer()
@@ -1100,7 +1100,7 @@ private struct AddInventorySheet: View {
             }
             .navigationTitle("Add Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         var item = InventoryItem(name: name)
@@ -1121,8 +1121,8 @@ private struct AddInventorySheet: View {
 
     private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 0) { content() }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
@@ -1135,7 +1135,7 @@ private struct AddInventorySheet: View {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text($0.capitalized).tag($0) } }.tint(.primary.opacity(0.5))
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text($0.capitalized).tag($0) } }.tint(Color.primary.opacity(0.5))
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: String, _ b: Binding<Bool>) -> some View {
@@ -1146,7 +1146,7 @@ private struct AddInventorySheet: View {
             Toggle("", isOn: b).tint(.blue).labelsHidden()
         }.padding(.horizontal, 16).padding(.vertical, 12)
     }
-    private var div: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
 
 
@@ -1208,23 +1208,23 @@ private struct ItemLocationSheet: View {
 
                         VStack(spacing: 0) {
                             coordRow("Latitude", $latText)
-                            Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                            Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                             coordRow("Longitude", $lonText)
                         }
-                        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("TRACKER TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
+                            Text("TRACKER TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(trackerTypes, id: \.self) { t in
                                         Button { trackerType = t } label: {
                                             Text(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : t.capitalized))
                                                 .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
-                                                .foregroundStyle(trackerType == t ? .black : .primary.opacity(0.7))
+                                                .foregroundStyle(trackerType == t ? .black : Color.primary.opacity(0.7))
                                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                                .background(trackerType == t ? .white : .primary.opacity(0.08), in: Capsule())
+                                                .background(trackerType == t ? .white : Color.primary.opacity(0.08), in: Capsule())
                                         }.buttonStyle(.plain)
                                     }
                                 }
@@ -1239,15 +1239,15 @@ private struct ItemLocationSheet: View {
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                                 }.padding(.horizontal, 16).padding(.vertical, 13)
                             }
-                            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                             if trackerType == "airtag" {
                                 GlassCard(padding: 14) {
                                     HStack(spacing: 10) {
                                         Image(systemName: "info.circle.fill").foregroundStyle(.blue)
                                         Text("Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking.")
-                                            .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.55))
+                                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.55))
                                     }
                                 }
                             }
@@ -1259,7 +1259,7 @@ private struct ItemLocationSheet: View {
             }
             .navigationTitle("Location & Tracker").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         var updated = item
@@ -1286,7 +1286,7 @@ private struct ItemLocationSheet: View {
             Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(.primary.opacity(0.7)).tint(.blue)
+            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7)).tint(.blue)
                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 110)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }

@@ -51,7 +51,7 @@ struct PropertyHealthDashboardView: View {
             HStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .stroke(.primary.opacity(0.08), lineWidth: 8)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 8)
                         .frame(width: 90, height: 90)
                     Circle()
                         .trim(from: 0, to: CGFloat(elementService.overallHealthScore) / 100)
@@ -82,7 +82,7 @@ struct PropertyHealthDashboardView: View {
                         .foregroundStyle(.secondary)
                     HStack(spacing: 16) {
                         miniStat(label: "Elemente", value: "\(elementService.elements.count)")
-                        miniStat(label: "Critice", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? .secondary : .red)
+                        miniStat(label: "Critice", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondary : .red)
                         miniStat(label: "Atenție", value: "\(elementService.elementsNeedingAttention.count)", color: .orange)
                     }
                 }
@@ -145,7 +145,7 @@ struct PropertyHealthDashboardView: View {
                             }
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
-                                    Capsule().fill(.primary.opacity(0.06)).frame(height: 5)
+                                    Capsule().fill(Color.primary.opacity(0.06)).frame(height: 5)
                                     Capsule()
                                         .fill(scoreColor(avg))
                                         .frame(width: geo.size.width * CGFloat(avg) / 100, height: 5)
@@ -292,7 +292,7 @@ private struct HealthElementRow: View {
                         .foregroundStyle(element.healthColor)
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(.primary.opacity(0.08)).frame(height: 4)
+                            Capsule().fill(Color.primary.opacity(0.08)).frame(height: 4)
                             Capsule()
                                 .fill(element.healthColor)
                                 .frame(width: geo.size.width * CGFloat(element.healthScore) / 100, height: 4)

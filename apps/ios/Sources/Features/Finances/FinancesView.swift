@@ -149,11 +149,11 @@ struct FinancesView: View {
                         Text(isAll ? "All" : type.capitalized)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                     }
-                    .foregroundStyle(isSelected ? .black : .primary.opacity(0.6))
+                    .foregroundStyle(isSelected ? .black : Color.primary.opacity(0.6))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity)
-                    .background(isSelected ? .white : .primary.opacity(0.08), in: Capsule())
+                    .background(isSelected ? .white : Color.primary.opacity(0.08), in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -168,10 +168,10 @@ struct FinancesView: View {
             VStack(spacing: 12) {
                 Image(systemName: "banknote")
                     .font(.system(size: 36))
-                    .foregroundStyle(.primary.opacity(0.2))
+                    .foregroundStyle(Color.primary.opacity(0.2))
                 Text("No records yet")
                     .font(.system(size: 16))
-                    .foregroundStyle(.primary.opacity(0.4))
+                    .foregroundStyle(Color.primary.opacity(0.4))
             }
             .padding(.top, 40)
         } else {
@@ -216,7 +216,7 @@ private struct FinSummaryCard: View {
                     .minimumScaleFactor(0.7)
                 Text(label)
                     .font(.system(size: 11))
-                    .foregroundStyle(.primary.opacity(0.4))
+                    .foregroundStyle(Color.primary.opacity(0.4))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -248,12 +248,12 @@ struct FinancialRecordRow: View {
                     HStack(spacing: 6) {
                         Text(record.category.capitalized)
                             .font(.system(size: 11))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                         Text("·")
-                            .foregroundStyle(.primary.opacity(0.2))
+                            .foregroundStyle(Color.primary.opacity(0.2))
                         Text(record.dateFormatted)
                             .font(.system(size: 11))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
 
@@ -284,7 +284,7 @@ private struct QuickLinkCard: View {
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12))
-                    .foregroundStyle(.primary.opacity(0.25))
+                    .foregroundStyle(Color.primary.opacity(0.25))
             }
         }
     }

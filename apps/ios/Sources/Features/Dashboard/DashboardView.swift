@@ -59,7 +59,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Good \(greeting())")
                     .font(.callout)
-                    .foregroundStyle(.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(0.5))
                 Text(displayName)
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(.primary)
@@ -71,11 +71,11 @@ struct DashboardView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(.primary.opacity(0.07))
+                        .fill(Color.primary.opacity(0.07))
                         .frame(width: 44, height: 44)
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.primary.opacity(0.75))
+                        .foregroundStyle(Color.primary.opacity(0.75))
                 }
             }
             .buttonStyle(.plain)
@@ -159,7 +159,7 @@ struct HealthScoreCard: View {
             HStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .stroke(.primary.opacity(0.08), lineWidth: 9)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 9)
                     Circle()
                         .trim(from: 0, to: isLoading ? 0 : CGFloat(score) / 100)
                         .stroke(color, style: StrokeStyle(lineWidth: 9, lineCap: .round))
@@ -171,7 +171,7 @@ struct HealthScoreCard: View {
                             .foregroundStyle(.primary)
                         Text("/ 100")
                             .font(.system(size: 10))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
                 .frame(width: 88, height: 88)
@@ -187,7 +187,7 @@ struct HealthScoreCard: View {
                          ? "Everything looks on track."
                          : "Some tasks need attention.")
                         .font(.system(size: 11))
-                        .foregroundStyle(.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(0.45))
                         .lineLimit(2)
                 }
                 Spacer()
@@ -211,7 +211,7 @@ struct DashStatCard: View {
                     .foregroundStyle(color)
                 Text(label)
                     .font(.system(size: 11))
-                    .foregroundStyle(.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(0.5))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -235,26 +235,26 @@ struct DashTaskRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(task.isCompleted ? .primary.opacity(0.38) : .white)
-                    .strikethrough(task.isCompleted, color: .primary.opacity(0.35))
+                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : .white)
+                    .strikethrough(task.isCompleted, color: Color.primary.opacity(0.35))
                     .lineLimit(1)
                 Text(task.dueDateDisplay)
                     .font(.system(size: 11))
-                    .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : .primary.opacity(0.38))
+                    .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
             }
 
             Spacer()
 
             Text(task.statusDisplay)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(0.5))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(.primary.opacity(0.07), in: Capsule())
+                .background(Color.primary.opacity(0.07), in: Capsule())
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -277,16 +277,16 @@ struct FinancesSnapshotCard: View {
                     Spacer()
                     Text("This month")
                         .font(.system(size: 11))
-                        .foregroundStyle(.primary.opacity(0.4))
+                        .foregroundStyle(Color.primary.opacity(0.4))
                 }
                 if isLoading {
                     HStack { Spacer(); ProgressView().tint(.white).scaleEffect(0.8); Spacer() }
                 } else {
                     HStack(spacing: 0) {
                         FinStat(label: "Income", value: formatted(income), color: Color(red: 0.25, green: 0.88, blue: 0.55))
-                        Rectangle().fill(.primary.opacity(0.08)).frame(width: 0.5, height: 34)
+                        Rectangle().fill(Color.primary.opacity(0.08)).frame(width: 0.5, height: 34)
                         FinStat(label: "Expenses", value: formatted(expenses), color: .orange)
-                        Rectangle().fill(.primary.opacity(0.08)).frame(width: 0.5, height: 34)
+                        Rectangle().fill(Color.primary.opacity(0.08)).frame(width: 0.5, height: 34)
                         FinStat(label: "Net", value: formatted(net), color: net >= 0 ? .white : .red)
                     }
                 }
@@ -311,7 +311,7 @@ private struct FinStat: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.system(size: 11))
-                .foregroundStyle(.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(0.45))
         }
         .frame(maxWidth: .infinity)
     }

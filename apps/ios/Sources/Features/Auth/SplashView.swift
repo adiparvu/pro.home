@@ -18,7 +18,7 @@ struct SplashView: View {
                     .opacity(opacity)
 
                 ProgressView()
-                    .tint(.primary.opacity(0.35))
+                    .tint(Color.primary.opacity(0.35))
                     .padding(.top, 8)
                     .opacity(opacity)
             }

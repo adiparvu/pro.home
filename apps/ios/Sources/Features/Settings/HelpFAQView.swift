@@ -76,7 +76,7 @@ private struct FAQRow: View {
                     Spacer()
                     Image(systemName: item.isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.primary.opacity(0.4))
+                        .foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
@@ -86,14 +86,14 @@ private struct FAQRow: View {
             if item.isExpanded {
                 Text(item.answer)
                     .font(.system(size: 14))
-                    .foregroundStyle(.primary.opacity(0.65))
+                    .foregroundStyle(Color.primary.opacity(0.65))
                     .multilineTextAlignment(.leading)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.08), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 }

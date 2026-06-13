@@ -69,9 +69,9 @@ struct FamilyView: View {
     private var emptyState: some View {
         VStack(spacing: 14) {
             Spacer()
-            Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(.primary.opacity(0.15))
-            Text("No family members yet").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary.opacity(0.5))
-            Text("Add family members to collaborate on tasks and chat in the household.").font(.system(size: 13)).foregroundStyle(.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
+            Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
+            Text("No family members yet").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("Add family members to collaborate on tasks and chat in the household.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Add First Member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
             Spacer()
         }
@@ -94,7 +94,7 @@ struct FamilyMemberRow: View {
                         .foregroundStyle(.primary)
                     Text(member.roleLabel)
                         .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(0.45))
                 }
 
                 Spacer()
@@ -198,12 +198,12 @@ struct MemberPickerView: View {
                                 .foregroundStyle(m.swiftColor)
                                 .font(.system(size: 20))
                         } else {
-                            Circle().strokeBorder(.primary.opacity(0.2), lineWidth: 1.5)
+                            Circle().strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
                                 .frame(width: 22, height: 22)
                         }
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
             }
@@ -248,11 +248,11 @@ private struct AddFamilyMemberSheet: View {
             }
             .navigationTitle("Add Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.blue) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty ? .primary.opacity(0.3) : .blue) }
+                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .blue) }
                     }
                     .disabled(name.isEmpty || isSaving)
                 }
@@ -293,33 +293,33 @@ private struct AddFamilyMemberSheet: View {
                 Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                 TextField("Full name *", text: $name).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
             }.padding(.horizontal, 16).padding(.vertical, 13)
-            Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+            Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
             HStack(spacing: 12) {
                 Image(systemName: "phone.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                 TextField("Phone (optional)", text: $phone).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(.phonePad)
             }.padding(.horizontal, 16).padding(.vertical, 13)
-            Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+            Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
             HStack(spacing: 12) {
                 Image(systemName: "envelope.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                 TextField("Email (optional)", text: $email).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(.emailAddress).autocapitalization(.none)
             }.padding(.horizontal, 16).padding(.vertical, 13)
         }
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
     }
 
     private var rolePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(roles, id: \.self) { r in
                         Button { role = r } label: {
                             Text(r.capitalized)
                                 .font(.system(size: 13, weight: role == r ? .semibold : .regular))
-                                .foregroundStyle(role == r ? .black : .primary.opacity(0.7))
+                                .foregroundStyle(role == r ? .black : Color.primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(role == r ? .white : .primary.opacity(0.08), in: Capsule())
+                                .background(role == r ? .white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }
                 }
@@ -334,7 +334,7 @@ private struct AddFamilyMemberSheet: View {
                 .font(.system(size: 16))
             Text("Tenants get limited access — shared tasks and chat only. Property finances and documents remain private.")
                 .font(.system(size: 12))
-                .foregroundStyle(.primary.opacity(0.55))
+                .foregroundStyle(Color.primary.opacity(0.55))
         }
         .padding(12)
         .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
@@ -412,8 +412,8 @@ private struct EditFamilyMemberSheet: View {
                             div
                             row("envelope.fill", "Email", $email, keyboard: .emailAddress)
                         }
-                        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -421,9 +421,9 @@ private struct EditFamilyMemberSheet: View {
                                     Button { role = r } label: {
                                         Text(r.capitalized)
                                             .font(.system(size: 13, weight: role == r ? .semibold : .regular))
-                                            .foregroundStyle(role == r ? .black : .primary.opacity(0.7))
+                                            .foregroundStyle(role == r ? .black : Color.primary.opacity(0.7))
                                             .padding(.horizontal, 14).padding(.vertical, 8)
-                                            .background(role == r ? .white : .primary.opacity(0.08), in: Capsule())
+                                            .background(role == r ? .white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
                                 }
                             }
@@ -433,7 +433,7 @@ private struct EditFamilyMemberSheet: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "info.circle.fill").foregroundStyle(.orange).font(.system(size: 16))
                                 Text("Tenants get limited access — shared tasks and chat only.")
-                                    .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.55))
+                                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.55))
                             }
                             .padding(12)
                             .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
@@ -453,7 +453,7 @@ private struct EditFamilyMemberSheet: View {
             }
             .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.blue) }
@@ -481,7 +481,7 @@ private struct EditFamilyMemberSheet: View {
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
 
-    private var div: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 
     private func save() async {
         isSaving = true

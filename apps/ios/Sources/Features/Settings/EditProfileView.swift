@@ -56,7 +56,7 @@ struct EditProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                 }
             }
         }
@@ -68,12 +68,12 @@ struct EditProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(0.5))
             TextField(placeholder, text: text)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(14)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 

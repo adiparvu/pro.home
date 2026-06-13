@@ -57,7 +57,7 @@ struct NotificationsSettingsView: View {
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
                             .font(.system(size: 12))
-                            .foregroundStyle(.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(0.5))
                     }
                     Spacer()
                 }
@@ -95,7 +95,7 @@ struct NotificationsSettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ALERT TYPES")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
@@ -143,22 +143,22 @@ struct NotificationsSettingsView: View {
                     )
                 )
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
             )
 
             Text("Notifications are scheduled locally on your device and fire even when the app is closed.")
                 .font(.caption)
-                .foregroundStyle(.primary.opacity(0.3))
+                .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.leading, 4)
         }
     }
 
     private var divider: some View {
         Rectangle()
-            .fill(.primary.opacity(0.05))
+            .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }
@@ -243,7 +243,7 @@ private struct NotifToggleRow: View {
                     .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 12))
-                    .foregroundStyle(.primary.opacity(0.4))
+                    .foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
             Toggle("", isOn: $value)

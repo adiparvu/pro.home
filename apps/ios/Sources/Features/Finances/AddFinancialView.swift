@@ -43,7 +43,7 @@ struct AddFinancialView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -83,7 +83,7 @@ struct AddFinancialView: View {
                             Text(t.capitalized)
                                 .font(.system(size: 14, weight: .semibold))
                         }
-                        .foregroundStyle(type == t ? .black : .primary.opacity(0.5))
+                        .foregroundStyle(type == t ? .black : Color.primary.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
@@ -106,12 +106,12 @@ struct AddFinancialView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AMOUNT")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(0.35))
 
                 HStack(alignment: .center, spacing: 8) {
                     Text(currencyService.symbol(for: appSettings.preferredCurrency))
                         .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(0.5))
                     TextField("0", text: $amount)
                         .font(.system(size: 40, weight: .light))
                         .foregroundStyle(.primary)
@@ -152,7 +152,7 @@ struct AddFinancialView: View {
                         Text(cat.capitalized).tag(cat)
                     }
                 }
-                .tint(.primary.opacity(0.5))
+                .tint(Color.primary.opacity(0.5))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -170,10 +170,10 @@ struct AddFinancialView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
         }
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
         )
     }
 
@@ -191,16 +191,16 @@ struct AddFinancialView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
         }
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
         )
     }
 
     private var divider: some View {
         Rectangle()
-            .fill(.primary.opacity(0.05))
+            .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
     }

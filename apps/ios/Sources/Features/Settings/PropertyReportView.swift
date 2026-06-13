@@ -38,11 +38,11 @@ struct PropertyReportView: View {
                         Text(propertyService.primary?.name ?? "Property Report")
                             .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
                         Text("Generated \(formattedToday)")
-                            .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.45))
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                     Spacer()
                 }
-                Divider().background(.primary.opacity(0.07))
+                Divider().background(Color.primary.opacity(0.07))
                 VStack(spacing: 8) {
                     reportInfoRow("Tasks", "\(taskService.openCount) open, \(taskService.overdueCount) overdue")
                     reportInfoRow("Finances", "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome)) income this month")
@@ -59,17 +59,17 @@ struct PropertyReportView: View {
     private var contentToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("INCLUDE IN REPORT")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
+                .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
-                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 toggleRow("banknote.fill", Color(red: 0.3, green: 0.85, blue: 0.5), "Financial Summary", $includesFinances)
-                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 
@@ -100,7 +100,7 @@ struct PropertyReportView: View {
 
     private func reportInfoRow(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 13)).foregroundStyle(.primary.opacity(0.5))
+            Text(label).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
             Text(value).font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
         }

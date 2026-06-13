@@ -334,12 +334,12 @@ private struct IntegrationGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) { content }
-                .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 }
@@ -363,7 +363,7 @@ private struct IntegrationRow: View {
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
-                        .foregroundStyle(.primary.opacity(0.4))
+                        .foregroundStyle(Color.primary.opacity(0.4))
                         .lineLimit(2)
                 }
 
@@ -375,7 +375,7 @@ private struct IntegrationRow: View {
             .padding(.vertical, 12)
 
             Rectangle()
-                .fill(.primary.opacity(0.05))
+                .fill(Color.primary.opacity(0.05))
                 .frame(height: 0.5)
                 .padding(.leading, 64)
         }
@@ -408,9 +408,9 @@ private struct IntegrationRow: View {
         case .comingSoon:
             Text("Soon")
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.3))
+                .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(.primary.opacity(0.06), in: Capsule())
+                .background(Color.primary.opacity(0.06), in: Capsule())
 
         case .deepLink(let label):
             Button {

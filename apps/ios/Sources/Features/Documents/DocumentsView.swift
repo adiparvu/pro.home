@@ -168,17 +168,17 @@ struct DocumentsView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14))
-                .foregroundStyle(.primary.opacity(0.4))
+                .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Search documents...", text: $search)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
             if !search.isEmpty {
                 Button { search = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.primary.opacity(0.4))
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Category filter
@@ -196,9 +196,9 @@ struct DocumentsView: View {
                     } label: {
                         Text(isAll ? "All" : cat.capitalized)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? .black : .primary.opacity(0.6))
+                            .foregroundStyle(isSelected ? .black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(isSelected ? .white : .primary.opacity(0.08), in: Capsule())
+                            .background(isSelected ? .white : Color.primary.opacity(0.08), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -218,7 +218,7 @@ struct DocumentsView: View {
                     Text("\(documentService.expiringDocs.count) document\(documentService.expiringDocs.count == 1 ? "" : "s") expiring soon")
                         .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
                     Text("Review and renew before they expire")
-                        .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.5))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                 }
                 Spacer()
             }
@@ -232,13 +232,13 @@ struct DocumentsView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 52)).foregroundStyle(.primary.opacity(0.15))
+                .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
             VStack(spacing: 8) {
                 Text(search.isEmpty ? "No documents yet" : "No results found")
-                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary.opacity(0.6))
+                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
                 if search.isEmpty {
                     Text("Tap + to add your first document")
-                        .font(.system(size: 14)).foregroundStyle(.primary.opacity(0.35))
+                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35))
                 }
             }
             Spacer()
@@ -259,7 +259,7 @@ struct DocumentRow: View {
                 HStack(spacing: 14) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.primary.opacity(0.08)).frame(width: 48, height: 48)
+                            .fill(Color.primary.opacity(0.08)).frame(width: 48, height: 48)
                         Image(systemName: doc.categoryIcon)
                             .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(categoryColor)
@@ -283,7 +283,7 @@ struct DocumentRow: View {
                                 .background(categoryColor.opacity(0.12), in: Capsule())
                             if !doc.fileSizeDisplay.isEmpty {
                                 Text(doc.fileSizeDisplay)
-                                    .font(.system(size: 11)).foregroundStyle(.primary.opacity(0.35))
+                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
                             }
                         }
                         if let expiry = doc.expiresDisplay {
@@ -291,7 +291,7 @@ struct DocumentRow: View {
                                 Image(systemName: "calendar").font(.system(size: 10))
                                 Text("Expires \(expiry)").font(.system(size: 11))
                             }
-                            .foregroundStyle(doc.isExpiringSoon ? .orange : .primary.opacity(0.4))
+                            .foregroundStyle(doc.isExpiringSoon ? .orange : Color.primary.opacity(0.4))
                         }
                     }
 
@@ -380,7 +380,7 @@ struct AddDocumentSheet: View {
                                         Text(c.capitalized).tag(c)
                                     }
                                 }
-                                .tint(.primary.opacity(0.7))
+                                .tint(Color.primary.opacity(0.7))
                             }
                             .padding(.horizontal, 16).padding(.vertical, 13)
                         }
@@ -423,7 +423,7 @@ struct AddDocumentSheet: View {
                                     Spacer()
                                     Image(systemName: pickedFileData != nil ? "checkmark.circle.fill" : "chevron.right")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(pickedFileData != nil ? Color(red: 0.3, green: 0.85, blue: 0.5) : .primary.opacity(0.3))
+                                        .foregroundStyle(pickedFileData != nil ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.primary.opacity(0.3))
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 13)
                             }
@@ -444,7 +444,7 @@ struct AddDocumentSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
@@ -513,9 +513,9 @@ struct AddDocumentSheet: View {
 
     private func fieldGroup<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
     }
 
     private func rowField<Content: View>(_ icon: String, _ placeholder: String, @ViewBuilder content: () -> Content) -> some View {
@@ -536,7 +536,7 @@ struct AddDocumentSheet: View {
     }
 
     private var div: some View {
-        Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
     }
 }
 

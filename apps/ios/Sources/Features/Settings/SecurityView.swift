@@ -67,7 +67,7 @@ struct SecurityView: View {
                                 .foregroundStyle(.primary)
                             Text("Unlock app without password")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.primary.opacity(0.4))
+                                .foregroundStyle(Color.primary.opacity(0.4))
                         }
                         Spacer()
                         Toggle("", isOn: $biometricsEnabled)
@@ -81,7 +81,7 @@ struct SecurityView: View {
                     .padding(.vertical, 12)
 
                     Rectangle()
-                        .fill(.primary.opacity(0.05))
+                        .fill(Color.primary.opacity(0.05))
                         .frame(height: 0.5)
                         .padding(.leading, 52)
                 }
@@ -94,23 +94,23 @@ struct SecurityView: View {
                             .foregroundStyle(.primary)
                         Text("Locks after 5 minutes")
                             .font(.system(size: 12))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Text("5 min")
                         .font(.system(size: 14))
-                        .foregroundStyle(.primary.opacity(0.38))
+                        .foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.primary.opacity(0.28))
+                        .foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
             )
         }
     }
@@ -137,7 +137,7 @@ struct SecurityView: View {
                         } else {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.primary.opacity(0.28))
+                                .foregroundStyle(Color.primary.opacity(0.28))
                         }
                     }
                     .padding(.horizontal, 14)
@@ -146,7 +146,7 @@ struct SecurityView: View {
                 .buttonStyle(.plain)
 
                 Rectangle()
-                    .fill(.primary.opacity(0.05))
+                    .fill(Color.primary.opacity(0.05))
                     .frame(height: 0.5)
                     .padding(.leading, 52)
 
@@ -158,20 +158,20 @@ struct SecurityView: View {
                             .foregroundStyle(.primary)
                         Text("Managed via your email provider")
                             .font(.system(size: 12))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     Text("On")
                         .font(.system(size: 14))
-                        .foregroundStyle(.primary.opacity(0.38))
+                        .foregroundStyle(Color.primary.opacity(0.38))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
             )
         }
     }
@@ -194,7 +194,7 @@ struct SecurityView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.primary.opacity(0.28))
+                            .foregroundStyle(Color.primary.opacity(0.28))
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
@@ -202,7 +202,7 @@ struct SecurityView: View {
                 .buttonStyle(.plain)
 
                 Rectangle()
-                    .fill(.primary.opacity(0.05))
+                    .fill(Color.primary.opacity(0.05))
                     .frame(height: 0.5)
                     .padding(.leading, 52)
 
@@ -215,17 +215,17 @@ struct SecurityView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.primary.opacity(0.28))
+                            .foregroundStyle(Color.primary.opacity(0.28))
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
             )
         }
     }
@@ -233,7 +233,7 @@ struct SecurityView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.primary.opacity(0.35))
+            .foregroundStyle(Color.primary.opacity(0.35))
             .padding(.leading, 4)
     }
 

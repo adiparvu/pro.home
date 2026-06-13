@@ -174,7 +174,7 @@ struct LocalAssistantView: View {
                 .lineLimit(1...4)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
 
             Button {
                 guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -182,7 +182,7 @@ struct LocalAssistantView: View {
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(input.isEmpty ? .primary.opacity(0.2) : .blue)
+                    .foregroundStyle(input.isEmpty ? Color.primary.opacity(0.2) : .blue)
             }
             .disabled(input.isEmpty || isThinking)
         }
@@ -271,7 +271,7 @@ private struct LocalMessageBubble: View {
                 .background(
                     isUser
                         ? AnyShapeStyle(.blue)
-                        : AnyShapeStyle(.primary.opacity(0.08)),
+                        : AnyShapeStyle(Color.primary.opacity(0.08)),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
             if !isUser { Spacer(minLength: 60) }
@@ -292,14 +292,14 @@ private struct ThinkingBubble: View {
             HStack(spacing: 5) {
                 ForEach(0..<3) { i in
                     Circle()
-                        .fill(.primary.opacity(0.5))
+                        .fill(Color.primary.opacity(0.5))
                         .frame(width: 7, height: 7)
                         .scaleEffect(phase == Double(i) ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             Spacer(minLength: 60)
         }
         .onAppear { phase = 2 }

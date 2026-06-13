@@ -64,14 +64,14 @@ struct EmergencyContactsView: View {
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.08), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
 
     private func sectionHeader(_ t: String) -> some View {
-        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary.opacity(0.35)).padding(.leading, 4)
+        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -111,7 +111,7 @@ private struct EmergencyRow: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(contact.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                    Text(contact.role).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.4))
+                    Text(contact.role).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
                 Button {
@@ -148,14 +148,14 @@ private struct AddEmergencySheet: View {
                     divider
                     fieldRow("phone.fill", "Phone number", $phone, keyboard: .phonePad)
                 }
-                .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
                 .padding(.horizontal, 20).padding(.top, 8)
                 Spacer()
             }
             .navigationTitle("Add Contact").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(EmergencyContact(name: name, role: role, phone: phone))
@@ -172,5 +172,5 @@ private struct AddEmergencySheet: View {
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private var divider: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }

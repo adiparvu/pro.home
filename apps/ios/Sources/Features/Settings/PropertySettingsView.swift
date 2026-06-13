@@ -68,7 +68,7 @@ struct PropertySettingsView: View {
                             .foregroundStyle(.primary)
                         Text("\(p.addressLine1), \(p.city)")
                             .font(.system(size: 13))
-                            .foregroundStyle(.primary.opacity(0.55))
+                            .foregroundStyle(Color.primary.opacity(0.55))
                         Text(p.propertyType.capitalized)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.blue.opacity(0.8))
@@ -86,7 +86,7 @@ struct PropertySettingsView: View {
                             .foregroundStyle(.red.opacity(0.7))
                         Text("Health Score")
                             .font(.system(size: 13))
-                            .foregroundStyle(.primary.opacity(0.55))
+                            .foregroundStyle(Color.primary.opacity(0.55))
                         Spacer()
                         Text("\(score)/100")
                             .font(.system(size: 14, weight: .bold))
@@ -121,13 +121,13 @@ struct PropertySettingsView: View {
             Spacer(minLength: 60)
             Image(systemName: "house.circle")
                 .font(.system(size: 56))
-                .foregroundStyle(.primary.opacity(0.2))
+                .foregroundStyle(Color.primary.opacity(0.2))
             Text("No property found")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.55))
+                .foregroundStyle(Color.primary.opacity(0.55))
             Text("Your property data will appear here once it's configured.")
                 .font(.system(size: 14))
-                .foregroundStyle(.primary.opacity(0.38))
+                .foregroundStyle(Color.primary.opacity(0.38))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -182,7 +182,7 @@ private struct EditPropertySheet: View {
 
                         Text("TYPE")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.leading, 4)
                             .padding(.top, 20)
@@ -196,10 +196,10 @@ private struct EditPropertySheet: View {
                                     } label: {
                                         Text(type.capitalized)
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
-                                            .foregroundStyle(propertyType == type ? .black : .primary.opacity(0.7))
+                                            .foregroundStyle(propertyType == type ? .black : Color.primary.opacity(0.7))
                                             .padding(.horizontal, 14)
                                             .padding(.vertical, 8)
-                                            .background(propertyType == type ? .white : .primary.opacity(0.08), in: Capsule())
+                                            .background(propertyType == type ? .white : Color.primary.opacity(0.08), in: Capsule())
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -223,7 +223,7 @@ private struct EditPropertySheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -234,7 +234,7 @@ private struct EditPropertySheet: View {
                         } else {
                             Text("Save")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? .primary.opacity(0.3) : .blue)
+                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : .blue)
                         }
                     }
                     .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
@@ -247,8 +247,8 @@ private struct EditPropertySheet: View {
         VStack(spacing: 0) {
             content()
         }
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
     }
 
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
@@ -268,7 +268,7 @@ private struct EditPropertySheet: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
     }
 
     private func save() async {
@@ -298,7 +298,7 @@ private struct PropDetailRow: View {
         HStack {
             Text(label)
                 .font(.system(size: 14))
-                .foregroundStyle(.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .medium))
@@ -306,6 +306,6 @@ private struct PropDetailRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
     }
 }

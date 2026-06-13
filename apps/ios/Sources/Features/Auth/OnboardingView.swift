@@ -49,7 +49,7 @@ struct OnboardingView: View {
         HStack(spacing: 6) {
             ForEach(0..<4) { i in
                 Capsule()
-                    .fill(i <= step ? .white : .primary.opacity(0.15))
+                    .fill(i <= step ? .white : Color.primary.opacity(0.15))
                     .frame(height: 3)
                     .animation(.spring(response: 0.3), value: step)
             }
@@ -67,10 +67,10 @@ struct OnboardingView: View {
                 } label: {
                     Text("Back")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -94,7 +94,7 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
                         .background(
-                            LinearGradient(colors: step == 3 ? [.blue, .purple] : [.primary.opacity(0.15), .primary.opacity(0.15)],
+                            LinearGradient(colors: step == 3 ? [.blue, .purple] : [Color.primary.opacity(0.15), Color.primary.opacity(0.15)],
                                            startPoint: .leading, endPoint: .trailing),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
                         )
@@ -162,7 +162,7 @@ private struct WelcomeStep: View {
                     .multilineTextAlignment(.center)
                 Text("Your all-in-one property management companion. Let's get you set up in 3 quick steps.")
                     .font(.system(size: 16))
-                    .foregroundStyle(.primary.opacity(0.55))
+                    .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
@@ -188,16 +188,16 @@ private struct PropertyStep: View {
                     .foregroundStyle(.primary)
                 Text("Tell us a bit about your property.")
                     .font(.system(size: 15))
-                    .foregroundStyle(.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(0.5))
             }
 
             VStack(spacing: 0) {
                 fieldRow(icon: "house.fill", placeholder: "Property name (e.g. Main Apartment)", text: $name)
-                Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 fieldRow(icon: "mappin.circle.fill", placeholder: "Address (optional)", text: $address)
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -208,10 +208,10 @@ private struct PropertyStep: View {
                         } label: {
                             Text(t.capitalized)
                                 .font(.system(size: 13, weight: type == t ? .semibold : .regular))
-                                .foregroundStyle(type == t ? .black : .primary.opacity(0.6))
+                                .foregroundStyle(type == t ? .black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(type == t ? .white : .primary.opacity(0.08), in: Capsule())
+                                .background(type == t ? .white : Color.primary.opacity(0.08), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -257,7 +257,7 @@ private struct FeaturesStep: View {
                     .foregroundStyle(.primary)
                 Text("Packed with smart features to manage your property effortlessly.")
                     .font(.system(size: 15))
-                    .foregroundStyle(.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(0.5))
                     .multilineTextAlignment(.center)
             }
 
@@ -267,14 +267,14 @@ private struct FeaturesStep: View {
                         ColoredIconBadge(icon: f.icon, color: f.color, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(f.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                            Text(f.desc).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.45))
+                            Text(f.desc).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                         }
                         Spacer()
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.primary.opacity(0.06), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
                 }
             }
             Spacer()
@@ -303,7 +303,7 @@ private struct ReadyStep: View {
                     .foregroundStyle(.primary)
                 Text("PRVHouse is ready to help you manage your property smarter.")
                     .font(.system(size: 16))
-                    .foregroundStyle(.primary.opacity(0.55))
+                    .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }

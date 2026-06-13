@@ -107,11 +107,11 @@ struct ContractorsView: View {
 
                 if !service.contractors.isEmpty {
                     HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(.primary.opacity(0.4))
+                        Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .padding(.horizontal, 20).padding(.bottom, 12)
                 }
 
@@ -120,8 +120,8 @@ struct ContractorsView: View {
                 } else if filtered.isEmpty {
                     VStack(spacing: 14) {
                         Spacer()
-                        Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(.primary.opacity(0.18))
-                        Text(service.contractors.isEmpty ? "No contractors yet" : "No results").font(.system(size: 17)).foregroundStyle(.primary.opacity(0.5))
+                        Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
+                        Text(service.contractors.isEmpty ? "No contractors yet" : "No results").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
                         if service.contractors.isEmpty {
                             Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
                         }
@@ -168,7 +168,7 @@ private struct ContractorRow: View {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(contractor.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                    Text(contractor.specialty.capitalized).font(.system(size: 12)).foregroundStyle(.primary.opacity(0.45))
+                    Text(contractor.specialty.capitalized).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                 }
                 Spacer()
                 if !contractor.phone.isEmpty {
@@ -215,14 +215,14 @@ private struct AddContractorSheet: View {
                             fieldRow("note.text", "Notes (optional)", $notes)
                         }
                     }
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
             .navigationTitle("Add Contractor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
@@ -238,7 +238,7 @@ private struct AddContractorSheet: View {
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private var divider: some View { Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
+    private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 
     private func save() async {
         isSaving = true

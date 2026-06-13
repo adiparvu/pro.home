@@ -149,7 +149,7 @@ struct FloatingTabBar: View {
                     RoundedRectangle(cornerRadius: 32, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
-                                colors: [.primary.opacity(0.22), .primary.opacity(0.06)],
+                                colors: [Color.primary.opacity(0.22), Color.primary.opacity(0.06)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -171,12 +171,12 @@ struct FloatingTabItem: View {
         Button(action: action) {
             Image(systemName: tab.icon)
                 .font(.system(size: 19, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : .primary.opacity(0.38))
+                .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.38))
                 .symbolEffect(.bounce, value: isSelected)
                 .frame(width: 52, height: 40)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.primary.opacity(isSelected ? 0.16 : 0))
+                        .fill(Color.primary.opacity(isSelected ? 0.16 : 0))
                 )
                 .overlay(alignment: .topTrailing) {
                     if badge > 0 {

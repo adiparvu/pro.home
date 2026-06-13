@@ -43,10 +43,10 @@ struct AppearanceView: View {
                     }
                 }
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.primary.opacity(0.07), lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
             )
         }
     }
@@ -71,11 +71,11 @@ struct AppearanceView: View {
                         HStack(spacing: 14) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(isSelected ? .primary.opacity(0.18) : .primary.opacity(0.07))
+                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
                                     .frame(width: 40, height: 40)
                                 Text(cur.symbol)
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(isSelected ? .white : .primary.opacity(0.5))
+                                    .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.5))
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -85,7 +85,7 @@ struct AppearanceView: View {
                                 if isSelected {
                                     Text(currencyService.rateDisplay(for: cur.code))
                                         .font(.system(size: 11))
-                                        .foregroundStyle(.primary.opacity(0.4))
+                                        .foregroundStyle(Color.primary.opacity(0.4))
                                         .transition(.opacity)
                                 }
                             }
@@ -93,7 +93,7 @@ struct AppearanceView: View {
                             Spacer()
 
                             if currencyService.isLoading && isSelected {
-                                ProgressView().scaleEffect(0.7).tint(.primary.opacity(0.5))
+                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(0.5))
                             } else if isSelected {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 20))
@@ -101,7 +101,7 @@ struct AppearanceView: View {
                                     .transition(.scale.combined(with: .opacity))
                             } else {
                                 Circle()
-                                    .strokeBorder(.primary.opacity(0.2), lineWidth: 1.5)
+                                    .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
                                     .frame(width: 20, height: 20)
                             }
                         }
@@ -111,12 +111,12 @@ struct AppearanceView: View {
                     .buttonStyle(.plain)
 
                     if cur.code != CurrencyService.supported.last?.code {
-                        Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 68)
+                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 68)
                     }
                 }
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -124,7 +124,7 @@ struct AppearanceView: View {
                 Text("BNR rates · Updated \(currencyService.lastUpdatedDisplay)")
                     .font(.system(size: 11))
             }
-            .foregroundStyle(.primary.opacity(0.3))
+            .foregroundStyle(Color.primary.opacity(0.3))
             .padding(.leading, 4)
 
             Button {
@@ -152,7 +152,7 @@ struct AppearanceView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.primary.opacity(0.35))
+            .foregroundStyle(Color.primary.opacity(0.35))
             .padding(.leading, 4)
     }
 }
@@ -170,11 +170,11 @@ private struct ThemeOptionRow: View {
             HStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isSelected ? .primary.opacity(0.18) : .primary.opacity(0.07))
+                        .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
                         .frame(width: 40, height: 40)
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(isSelected ? .white : .primary.opacity(0.5))
+                        .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.5))
                 }
 
                 Text(title)
@@ -190,7 +190,7 @@ private struct ThemeOptionRow: View {
                         .transition(.scale.combined(with: .opacity))
                 } else {
                     Circle()
-                        .strokeBorder(.primary.opacity(0.2), lineWidth: 1.5)
+                        .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1.5)
                         .frame(width: 20, height: 20)
                 }
             }

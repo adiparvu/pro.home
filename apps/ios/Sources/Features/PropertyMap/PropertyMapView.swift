@@ -116,7 +116,7 @@ struct PropertyMapView: View {
                 } label: {
                     Image(systemName: isEditMode ? "checkmark.circle.fill" : "pencil.circle")
                         .font(.system(size: 22))
-                        .foregroundStyle(isEditMode ? Color(red: 0.2, green: 0.8, blue: 0.4) : .secondary)
+                        .foregroundStyle(isEditMode ? Color(red: 0.2, green: 0.8, blue: 0.4) : Color.secondary)
                 }
             }
         }
@@ -168,7 +168,7 @@ struct PropertyMapView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView()
-                .tint(.primary.opacity(0.6))
+                .tint(Color.primary.opacity(0.6))
             Text("Se încarcă harta...")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -230,14 +230,14 @@ private struct LayerChip: View {
                 Text(label)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
             }
-            .foregroundStyle(isSelected ? .white : .secondary)
+            .foregroundStyle(isSelected ? .white : Color.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
-                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : ColorColor.primary.opacity(0.07))
             )
             .overlay(
-                Capsule().strokeBorder(isSelected ? .clear : .primary.opacity(0.1), lineWidth: 0.5)
+                Capsule().strokeBorder(isSelected ? .clear : Color.primary.opacity(0.1), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

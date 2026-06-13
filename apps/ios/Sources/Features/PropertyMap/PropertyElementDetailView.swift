@@ -204,7 +204,7 @@ struct PropertyElementDetailView: View {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(.primary.opacity(0.08)).frame(height: 8)
+                        Capsule().fill(Color.primary.opacity(0.08)).frame(height: 8)
                         Capsule()
                             .fill(
                                 LinearGradient(
@@ -333,7 +333,7 @@ struct PropertyElementDetailView: View {
         GlassCard {
             VStack(spacing: 10) {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 32)).foregroundStyle(.secondary.opacity(0.5))
+                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
                 Text("Fără înregistrări")
                     .font(.subheadline).foregroundStyle(.secondary)
                 Text("Adaugă prima lucrare, cost sau notă")
@@ -350,7 +350,7 @@ struct PropertyElementDetailView: View {
         GlassCard {
             VStack(spacing: 10) {
                 Image(systemName: "doc.fill")
-                    .font(.system(size: 32)).foregroundStyle(.secondary.opacity(0.5))
+                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
                 Text("Documente element")
                     .font(.subheadline).foregroundStyle(.secondary)
                 Text("Integrare completă cu DocumentsView — filtrare după element disponibilă în versiunea următoare")
@@ -367,7 +367,7 @@ struct PropertyElementDetailView: View {
         GlassCard {
             VStack(spacing: 10) {
                 Image(systemName: "checklist")
-                    .font(.system(size: 32)).foregroundStyle(.secondary.opacity(0.5))
+                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
                 Text("Taskuri element")
                     .font(.subheadline).foregroundStyle(.secondary)
                 Text("Asociere taskuri per element disponibilă în versiunea următoare")
@@ -405,19 +405,19 @@ private struct DetailTabBar: View {
                         Text(tab.rawValue)
                             .font(.system(size: 11, weight: selected == tab ? .semibold : .regular))
                     }
-                    .foregroundStyle(selected == tab ? .white : .secondary)
+                    .foregroundStyle(selected == tab ? .white : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(selected == tab ? Color.primary.opacity(0.12) : .clear)
+                            .fill(selected == tab ? ColorColor.primary.opacity(0.12) : .clear)
                     )
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(4)
-        .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 

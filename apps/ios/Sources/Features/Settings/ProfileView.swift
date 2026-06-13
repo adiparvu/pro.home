@@ -37,7 +37,7 @@ struct ProfileView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Edit") { showEdit = true }
-                    .foregroundStyle(.primary.opacity(0.7))
+                    .foregroundStyle(Color.primary.opacity(0.7))
             }
         }
         .sheet(isPresented: $showEdit) {
@@ -89,7 +89,7 @@ struct ProfileView: View {
                     .frame(width: 96, height: 96)
                     .clipShape(Circle())
                     .shadow(color: .blue.opacity(0.4), radius: 16, y: 6)
-                    .overlay(Circle().strokeBorder(.primary.opacity(0.12), lineWidth: 1.5))
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1.5))
 
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
                     ZStack {
@@ -112,7 +112,7 @@ struct ProfileView: View {
                 .foregroundStyle(.primary)
             Text(auth.session?.user.email ?? "")
                 .font(.system(size: 14))
-                .foregroundStyle(.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(0.5))
         }
     }
 
@@ -170,7 +170,7 @@ struct ProfileView: View {
 
     private func infoRow(_ label: String, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(.primary.opacity(0.5))
+            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
             Text(value).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
         }
@@ -178,7 +178,7 @@ struct ProfileView: View {
     }
 
     private var div: some View {
-        Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
+        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
     }
 
     // MARK: - Account actions
@@ -213,7 +213,7 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("SECURITY & PRIVACY")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
@@ -226,7 +226,7 @@ struct ProfileView: View {
                                 .foregroundStyle(.primary)
                             Text("Unlock app without password")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.primary.opacity(0.4))
+                                .foregroundStyle(Color.primary.opacity(0.4))
                         }
                         Spacer()
                         Toggle("", isOn: $biometricsEnabled)
@@ -240,13 +240,13 @@ struct ProfileView: View {
                     .padding(.vertical, 12)
                 }
             }
-            .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 
     private var secRowDivider: some View {
-        Rectangle().fill(.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
     }
 
     private func authenticateBiometric() async {
@@ -361,14 +361,14 @@ private struct ChangeEmailSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         emailField("envelope.fill", "New email address", $email, keyboard: .emailAddress)
-                        Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                         emailField("checkmark.circle.fill", "Confirm new email", $confirm, keyboard: .emailAddress)
                     }
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                     Text("A verification link will be sent to your new address. Your email will only change after you confirm it.")
-                        .font(.system(size: 12)).foregroundStyle(.primary.opacity(0.38))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, 8)
                     Spacer()
                 }
@@ -377,7 +377,7 @@ private struct ChangeEmailSheet: View {
             .navigationTitle("Change Email").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Send") {
@@ -418,11 +418,11 @@ private struct ChangePasswordSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         passField("lock.fill", "New password", $password)
-                        Rectangle().fill(.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                         passField("lock.rotation", "Confirm password", $confirm)
                     }
-                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
 
                     if !password.isEmpty && password.count < 6 {
                         Text("Password must be at least 6 characters")
@@ -439,7 +439,7 @@ private struct ChangePasswordSheet: View {
             .navigationTitle("Change Password").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Update") {

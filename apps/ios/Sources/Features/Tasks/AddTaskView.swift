@@ -59,7 +59,7 @@ struct AddTaskView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(0.7))
                 }
             }
             .sheet(isPresented: $showAssigneePicker) {
@@ -79,7 +79,7 @@ struct AddTaskView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(14)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -91,7 +91,7 @@ struct AddTaskView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
                 .padding(14)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -103,9 +103,9 @@ struct AddTaskView: View {
                     Button { priority = p } label: {
                         Text(p.capitalized)
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
-                            .foregroundStyle(priority == p ? .black : .primary.opacity(0.6))
+                            .foregroundStyle(priority == p ? .black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 13).padding(.vertical, 8)
-                            .background(priority == p ? priorityColor(p) : .primary.opacity(0.07), in: Capsule())
+                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(0.07), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -122,9 +122,9 @@ struct AddTaskView: View {
                         Button { category = cat } label: {
                             Text(cat.capitalized)
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
-                                .foregroundStyle(category == cat ? .black : .primary.opacity(0.6))
+                                .foregroundStyle(category == cat ? .black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 13).padding(.vertical, 8)
-                                .background(category == cat ? .white : .primary.opacity(0.07), in: Capsule())
+                                .background(category == cat ? .white : Color.primary.opacity(0.07), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -162,10 +162,10 @@ struct AddTaskView: View {
                     if assigneeIds.isEmpty {
                         Image(systemName: "person.badge.plus")
                             .font(.system(size: 14))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                         Text("Add team members…")
                             .font(.system(size: 14))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     } else {
                         ForEach(Array(zip(assigneeIds, assigneeNames)), id: \.0) { _, name in
                             if let member = familyService.members.first(where: { $0.name == name }) {
@@ -176,16 +176,16 @@ struct AddTaskView: View {
                         }
                         Text(assigneeNames.joined(separator: ", "))
                             .font(.system(size: 13))
-                            .foregroundStyle(.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(0.7))
                             .lineLimit(1)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.25))
+                        .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .padding(14)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
         }
@@ -215,7 +215,7 @@ struct AddTaskView: View {
                     if !hasDueDate {
                         Text("Set a due date to enable")
                             .font(.system(size: 11))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
                 Spacer()
@@ -226,8 +226,8 @@ struct AddTaskView: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
-        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
         .opacity(hasDueDate ? 1 : 0.5)
     }
 
@@ -245,7 +245,7 @@ struct AddTaskView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(canSave ? .white : .primary.opacity(0.35))
+            .background(canSave ? .white : Color.primary.opacity(0.35))
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
@@ -339,7 +339,7 @@ struct AddTaskView: View {
     // MARK: - Helpers
 
     private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 13, weight: .medium)).foregroundStyle(.primary.opacity(0.5))
+        Text(text).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.5))
     }
 
     private func priorityColor(_ p: String) -> Color {
@@ -373,7 +373,7 @@ struct AssigneePickerSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("FAMILY MEMBERS")
                                     .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(.primary.opacity(0.35))
+                                    .foregroundStyle(Color.primary.opacity(0.35))
                                     .padding(.leading, 4)
                                 MemberPickerView(selectedIds: $assigneeIds, selectedNames: $assigneeNames)
                             }
@@ -382,7 +382,7 @@ struct AssigneePickerSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("SOMEONE ELSE")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(0.35))
                                 .padding(.leading, 4)
 
                             if showCustom {
@@ -390,7 +390,7 @@ struct AssigneePickerSheet: View {
                                     TextField("Name", text: $customName)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                                         .padding(.horizontal, 14).padding(.vertical, 11)
-                                        .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
                                     Button {
                                         let n = customName.trimmingCharacters(in: .whitespaces)
                                         guard !n.isEmpty else { return }
@@ -414,11 +414,11 @@ struct AssigneePickerSheet: View {
                                 } label: {
                                     HStack(spacing: 10) {
                                         Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(.blue)
-                                        Text("Add someone else…").font(.system(size: 14)).foregroundStyle(.primary.opacity(0.6))
+                                        Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 12)
-                                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -427,18 +427,18 @@ struct AssigneePickerSheet: View {
                                 ForEach(assigneeIds.filter { $0.hasPrefix("custom_") }, id: \.self) { id in
                                     let name = String(id.dropFirst("custom_".count))
                                     HStack {
-                                        Image(systemName: "person.fill").font(.system(size: 12)).foregroundStyle(.primary.opacity(0.4))
+                                        Image(systemName: "person.fill").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                                         Text(name).font(.system(size: 14)).foregroundStyle(.primary)
                                         Spacer()
                                         Button {
                                             assigneeIds.removeAll { $0 == id }
                                             assigneeNames.removeAll { $0 == name }
                                         } label: {
-                                            Image(systemName: "xmark.circle.fill").foregroundStyle(.primary.opacity(0.3))
+                                            Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                                         }
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 10)
-                                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }
