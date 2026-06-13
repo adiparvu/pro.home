@@ -8,7 +8,7 @@ enum AppTab: String, CaseIterable {
         case .home:      return "house.fill"
         case .tasks:     return "checklist"
         case .analytics: return "chart.bar.xaxis"
-        case .assistant: return "cpu.fill"
+        case .assistant: return "sparkles"
         case .settings:  return "gearshape.fill"
         }
     }
@@ -95,7 +95,7 @@ struct MainTabView: View {
         case .analytics:
             NavigationStack { AnalyticsView() }
         case .assistant:
-            NavigationStack { LocalAssistantView() }
+            NavigationStack { ARIAView() }
         case .settings:
             NavigationStack { SettingsView() }
         }
