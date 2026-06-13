@@ -144,7 +144,7 @@ struct DocumentsView: View {
                     try? data.write(to: tmp)
                     await MainActor.run { previewURL = tmp }
                 } else {
-                    UIApplication.shared.open(url)
+                    await UIApplication.shared.open(url)
                 }
             }
         } else {

@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import CoreLocation
 import MapKit
+import Supabase
 
 struct ChatView: View {
     @EnvironmentObject private var messageService: MessageService

@@ -63,7 +63,7 @@ struct ARIAView: View {
                 } else {
                     LazyVStack(spacing: 12) {
                         ForEach(messages) { msg in
-                            MessageBubble(message: msg)
+                            ARIAMessageBubble(message: msg)
                                 .id(msg.id)
                         }
                         if isThinking {
@@ -178,7 +178,7 @@ struct ARIAView: View {
 
 // MARK: - Message Bubble
 
-private struct MessageBubble: View {
+private struct ARIAMessageBubble: View {
     let message: ARIAMessage
     var isUser: Bool { message.role == .user }
 
