@@ -63,6 +63,12 @@ struct SuppliesView: View {
                 await supplyService.load(propertyId: id)
             }
         }
+        .userActivity("com.prvio.shopping") { activity in
+            activity.title = "Cumpărături — PRVIO"
+            activity.userInfo = ["tab": "shopping"]
+            activity.isEligibleForHandoff = true
+            activity.isEligibleForSearch = true
+        }
     }
 
     // MARK: Lists content

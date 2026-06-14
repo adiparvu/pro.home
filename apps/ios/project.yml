@@ -41,6 +41,7 @@ targets:
       - sdk: CoreSpotlight.framework
       - sdk: BackgroundTasks.framework
       - target: PRVIOWidgets
+      - target: PRVIOControls
     entitlements:
       path: Sources/App/PRVIO.entitlements
       properties:
@@ -55,7 +56,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "133"
+        CURRENT_PROJECT_VERSION: "134"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
@@ -94,6 +95,30 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_COMPILATION_MODE: singlefile
+
+  PRVIOControls:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Controls
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: AppIntents.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.controls
+        SWIFT_VERSION: "5.10"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: YES
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"

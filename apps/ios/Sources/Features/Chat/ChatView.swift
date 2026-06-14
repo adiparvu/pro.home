@@ -133,6 +133,12 @@ struct ChatView: View {
                 Task { await sendCameraPhoto(image) }
             }
         }
+        .userActivity("com.prvio.chat") { activity in
+            activity.title = "Chat familie — PRVIO"
+            activity.userInfo = ["tab": "chat"]
+            activity.isEligibleForHandoff = true
+            activity.isEligibleForSearch = false
+        }
     }
 
     // MARK: - Message list

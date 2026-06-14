@@ -107,6 +107,12 @@ struct TasksView: View {
             Text(taskService.error ?? "")
         }
         .refreshable { await taskService.load() }
+        .userActivity("com.prvio.task") { activity in
+            activity.title = "Tasks — PRVIO"
+            activity.userInfo = ["tab": "tasks"]
+            activity.isEligibleForHandoff = true
+            activity.isEligibleForSearch = true
+        }
     }
 
     private func countFor(_ f: TaskFilter) -> Int {

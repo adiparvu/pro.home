@@ -67,6 +67,12 @@ struct PlantsView: View {
                 await plantService.load(propertyId: id)
             }
         }
+        .userActivity("com.prvio.plants") { activity in
+            activity.title = "Plante — PRVIO"
+            activity.userInfo = ["tab": "plants"]
+            activity.isEligibleForHandoff = true
+            activity.isEligibleForSearch = true
+        }
     }
 
     // MARK: - Main content
