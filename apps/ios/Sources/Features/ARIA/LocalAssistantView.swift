@@ -129,7 +129,7 @@ struct LocalAssistantView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .glassCircle()
             }
         }
         .padding(.horizontal, 20)

@@ -18,66 +18,42 @@ struct ARIAView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                ariaHeader
                 messageList
                 inputBar
             }
         }
-        .task { await loadHistory() }
-    }
-
-    // MARK: - Header
-
-    private var ariaHeader: some View {
-        HStack {
-            if let onDismiss {
+        .navigationTitle("ARIA")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
                 Button {
                     HapticFeedback.selection()
-                    onDismiss()
+                    onDismiss?()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .padding(.horizontal, 10).padding(.vertical, 7)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                }
-                .buttonStyle(.plain)
-            }
-            VStack(alignment: onDismiss != nil ? .leading : .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text("ARIA")
-                        .font(.title2.weight(.bold))
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.yellow.opacity(0.85))
-                }
-                Text("AI Property Assistant")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            HStack(spacing: 10) {
-                MemberAvatarStack(
-                    members: familyService.members,
-                    ownerAvatarUrl: profileService.profile?.avatarUrl,
-                    ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
-                    ringColor: avatarRingColor(for: avatarRingColorName)
-                )
-                Button {
-                    withAnimation { messages = ARIAMessage.welcome }
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .foregroundStyle(.primary)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 10) {
+                    MemberAvatarStack(
+                        members: familyService.members,
+                        ownerAvatarUrl: profileService.profile?.avatarUrl,
+                        ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
+                        ringColor: avatarRingColor(for: avatarRingColorName)
+                    )
+                    Button {
+                        withAnimation { messages = ARIAMessage.welcome }
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .task { await loadHistory() }
     }
 
     // MARK: - Messages

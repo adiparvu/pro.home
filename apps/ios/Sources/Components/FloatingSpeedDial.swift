@@ -54,18 +54,14 @@ struct FloatingSpeedDial: View {
                 onSelect(only)
             }
         } label: {
-            ZStack {
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
-                Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
-                    .font(.system(size: isMenu ? 22 : 20, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
-                    .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
-            }
-            .frame(width: 58, height: 58)
+            Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
+                .font(.system(size: isMenu ? 22 : 20, weight: .bold))
+                .foregroundStyle(.primary)
+                .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
+                .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
+                .frame(width: 58, height: 58)
+                .glassCircle()
+                .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
         }
         .buttonStyle(.plain)
     }
@@ -81,19 +77,15 @@ struct FloatingSpeedDial: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    .glassCapsule()
                     .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
-                ZStack {
-                    Circle().fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                    Image(systemName: action.icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-                .frame(width: 44, height: 44)
-                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
+                Image(systemName: action.icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .glassCircle()
+                    .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
             }
         }
         .buttonStyle(.plain)

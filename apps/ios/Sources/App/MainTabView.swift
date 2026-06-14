@@ -54,21 +54,36 @@ struct MainTabView: View {
     @StateObject private var router = AppRouter()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            tabContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        TabView(selection: $router.selectedTab) {
+            NavigationStack { DashboardView() }
+                .tabItem { Label(AppTab.home.label, systemImage: AppTab.home.icon) }
+                .tag(AppTab.home)
+
+            NavigationStack { PropertyMapView() }
+                .tabItem { Label(AppTab.map.label, systemImage: AppTab.map.icon) }
+                .tag(AppTab.map)
+
+            NavigationStack { TasksView() }
+                .tabItem { Label(AppTab.tasks.label, systemImage: AppTab.tasks.icon) }
+                .badge(taskService.overdueCount)
+                .tag(AppTab.tasks)
+
+            NavigationStack { AnalyticsView() }
+                .tabItem { Label(AppTab.analytics.label, systemImage: AppTab.analytics.icon) }
+                .tag(AppTab.analytics)
+
+            NavigationStack { SettingsView() }
+                .tabItem { Label(AppTab.settings.label, systemImage: AppTab.settings.icon) }
+                .tag(AppTab.settings)
         }
-        .ignoresSafeArea(edges: .bottom)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if router.selectedTab != .assistant && !tabBarVis.isHidden && !tabBarVis.scrolledDown {
-                FloatingTabBar(selected: $router.selectedTab, overdueCount: taskService.overdueCount)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
-                    .padding(.top, 4)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+        .fullScreenCover(isPresented: $router.showARIA) {
+            NavigationStack {
+                ARIAView(onDismiss: { router.showARIA = false })
+                    .environmentObject(propertyService)
+                    .environmentObject(familyService)
+                    .environmentObject(profileService)
             }
         }
-        .animation(.spring(response: 0.38, dampingFraction: 0.82), value: tabBarVis.scrolledDown)
         .sheet(isPresented: $router.showAddTask) { AddTaskView() }
         .sheet(isPresented: $router.showChat) { NavigationStack { ChatView() } }
         .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
@@ -139,103 +154,4 @@ struct MainTabView: View {
         }
     }
 
-    @ViewBuilder
-    private var tabContent: some View {
-        switch router.selectedTab {
-        case .home:
-            NavigationStack { DashboardView() }
-        case .map:
-            NavigationStack { PropertyMapView() }
-        case .tasks:
-            NavigationStack { TasksView() }
-        case .analytics:
-            NavigationStack { AnalyticsView() }
-        case .assistant:
-            NavigationStack { ARIAView(onDismiss: { withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) { router.selectedTab = .home } }) }
-        case .settings:
-            NavigationStack { SettingsView() }
-        }
-    }
-
-    private var safeAreaBottom: CGFloat {
-        (UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.bottom) ?? 0
-    }
-}
-
-// MARK: - Floating Tab Bar
-
-struct FloatingTabBar: View {
-    @Binding var selected: AppTab
-    var overdueCount: Int = 0
-    @Namespace private var tabNS
-
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(AppTab.allCases.filter { $0 != .assistant }, id: \.self) { tab in
-                FloatingTabItem(
-                    tab: tab,
-                    isSelected: selected == tab,
-                    badge: tab == .tasks ? overdueCount : 0,
-                    namespace: tabNS
-                ) {
-                    HapticFeedback.selection()
-                    withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) {
-                        selected = tab
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 9)
-        .padding(.horizontal, 9)
-        .liquidGlass(cornerRadius: 34, thick: true)
-        .shadow(color: Color.primary.opacity(0.12), radius: 28, y: 10)
-        .shadow(color: Color.primary.opacity(0.04), radius: 4,  y: 1)
-    }
-}
-
-struct FloatingTabItem: View {
-    let tab: AppTab
-    let isSelected: Bool
-    var badge: Int = 0
-    let namespace: Namespace.ID
-    let action: () -> Void
-    @State private var tapCount = 0
-
-    var body: some View {
-        Button {
-            if !isSelected { tapCount += 1 }
-            action()
-        } label: {
-            ZStack {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                        .matchedGeometryEffect(id: "tabPill", in: namespace)
-                        .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
-                }
-                Image(systemName: tab.icon)
-                    .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.38))
-                    .symbolRenderingMode(.hierarchical)
-                    .symbolEffect(.bounce, value: tapCount)
-                    .scaleEffect(isSelected ? 1.08 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isSelected)
-                    .overlay(alignment: .topTrailing) {
-                        if badge > 0 {
-                            Text("\(min(badge, 9))")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(minWidth: 16, minHeight: 16)
-                                .background(.red, in: Circle())
-                                .offset(x: 8, y: -8)
-                        }
-                    }
-            }
-            .frame(width: 52, height: 40)
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
-    }
 }

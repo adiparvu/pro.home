@@ -140,8 +140,7 @@ struct FamilyMemberRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.primary)
                 .frame(width: 34, height: 34)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                .glassCircle()
         }
     }
 }

@@ -7,6 +7,7 @@ final class AppRouter: ObservableObject {
     @Published var selectedTab: AppTab = .home
 
     // Global quick-action presentations (handled at the MainTabView level).
+    @Published var showARIA = false
     @Published var showAddTask = false
     @Published var showChat = false
     @Published var showAddExpense = false
@@ -16,7 +17,7 @@ final class AppRouter: ObservableObject {
     func perform(_ action: DashboardQuickAction) {
         switch action {
         case .aria:
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .assistant }
+            showARIA = true
         case .finances:
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .analytics }
         case .newTask:

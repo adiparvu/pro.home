@@ -124,8 +124,7 @@ private struct EmergencyRow: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12).padding(.vertical, 7)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                        .glassCapsule()
                 }
             }
         }

@@ -46,18 +46,8 @@ struct ChatView: View {
             .background(appBackground.ignoresSafeArea())
         .navigationTitle("Family Chat")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    HapticFeedback.selection()
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 14) {
                     Button { showCallSheet = true } label: {

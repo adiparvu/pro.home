@@ -52,6 +52,4 @@ private func applyGlobalAppearance() {
         UINavigationBar.appearance().compactAppearance = nav
     }
 
-    // System tab bar hidden — we use custom floating bar
-    UITabBar.appearance().isHidden = true
 }

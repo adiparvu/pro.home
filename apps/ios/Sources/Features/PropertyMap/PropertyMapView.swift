@@ -35,12 +35,10 @@ struct PropertyMapView: View {
                         } label: {
                             Image(systemName: isEditMode ? "checkmark" : "pencil")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(isEditMode ? Color.green : .primary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 7)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .strokeBorder(isEditMode ? Color.green.opacity(0.35) : Color.primary.opacity(0.08), lineWidth: 0.5))
+                                .glassRoundedRect(12)
                         }
                         .buttonStyle(.plain)
                     }
@@ -397,8 +395,7 @@ struct PropertyMapView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 52, height: 52)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                .glassCircle()
                 .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
         }
     }
