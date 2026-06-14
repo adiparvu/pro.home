@@ -23,6 +23,9 @@ struct DigitalTwinView: View {
     @State private var addingToZone: PropertyZone?
     @State private var reshapeZone: PropertyZone?
     @State private var reshapePoints: [GeoPoint] = []
+    @State private var moveStartCenter: CLLocationCoordinate2D?
+    @State private var moveStartPoints: [GeoPoint]?
+    @State private var draggingObject: (id: UUID, coord: CLLocationCoordinate2D)?
     @State private var showAddObject = false
     @State private var showInsights = false
     @State private var showHealth = false
@@ -77,10 +80,18 @@ struct DigitalTwinView: View {
                 }
 
                 ForEach(visibleObjects) { obj in
-                    if let coord = obj.coordinate {
-                        Annotation("", coordinate: coord) {
-                            ObjectMarker(element: obj) { selectedElement = obj }
-                        }
+                    Annotation("", coordinate: objectCoord(obj)) {
+                        ObjectMarker(element: obj)
+                            .onTapGesture { if draggingObject == nil { selectedElement = obj } }
+                            .gesture(
+                                DragGesture(minimumDistance: 8, coordinateSpace: .named("twinmap"))
+                                    .onChanged { value in
+                                        if let c = proxy.convert(value.location, from: .named("twinmap")) {
+                                            draggingObject = (obj.id, c)
+                                        }
+                                    }
+                                    .onEnded { _ in Task { await commitObjectDrag(obj) } }
+                            )
                     }
                 }
 
@@ -125,6 +136,30 @@ struct DigitalTwinView: View {
                                         HapticFeedback.impact(.medium)
                                     }
                                 }
+                        }
+                    }
+                    if reshapePoints.count >= 3 {
+                        Annotation("", coordinate: reshapeCenter) {
+                            MoveHandle()
+                                .gesture(
+                                    DragGesture(coordinateSpace: .named("twinmap"))
+                                        .onChanged { value in
+                                            guard let c = proxy.convert(value.location, from: .named("twinmap")) else { return }
+                                            if moveStartCenter == nil {
+                                                moveStartCenter = c
+                                                moveStartPoints = reshapePoints
+                                            }
+                                            if let sc = moveStartCenter, let sp = moveStartPoints {
+                                                let dLat = c.latitude - sc.latitude
+                                                let dLon = c.longitude - sc.longitude
+                                                reshapePoints = sp.map { GeoPoint(lat: $0.lat + dLat, lon: $0.lon + dLon) }
+                                            }
+                                        }
+                                        .onEnded { _ in
+                                            moveStartCenter = nil
+                                            moveStartPoints = nil
+                                        }
+                                )
                         }
                     }
                 }
@@ -443,6 +478,32 @@ struct DigitalTwinView: View {
         reshapePoints = []
     }
 
+    private var reshapeCenter: CLLocationCoordinate2D {
+        guard !reshapePoints.isEmpty else { return propertyCoordinate }
+        let lat = reshapePoints.map(\.lat).reduce(0, +) / Double(reshapePoints.count)
+        let lon = reshapePoints.map(\.lon).reduce(0, +) / Double(reshapePoints.count)
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    private func objectCoord(_ obj: PropertyElement) -> CLLocationCoordinate2D {
+        if let d = draggingObject, d.id == obj.id { return d.coord }
+        return obj.coordinate ?? propertyCoordinate
+    }
+
+    private func commitObjectDrag(_ obj: PropertyElement) async {
+        guard let d = draggingObject, d.id == obj.id else { return }
+        let coord = d.coord
+        draggingObject = nil
+        let zone = zoneService.zone(containing: coord)
+        await elementService.updateGeo(
+            elementId: obj.id,
+            latitude: coord.latitude,
+            longitude: coord.longitude,
+            zoneId: zone?.id
+        )
+        HapticFeedback.success()
+    }
+
     private func startDrawing() {
         HapticFeedback.impact(.light)
         selectedZone = nil
@@ -586,20 +647,30 @@ private struct VertexHandle: View {
     }
 }
 
+private struct MoveHandle: View {
+    var body: some View {
+        Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 34, height: 34)
+            .background(Color.blue, in: Circle())
+            .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+            .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+            .contentShape(Circle())
+    }
+}
+
 private struct ObjectMarker: View {
     let element: PropertyElement
-    let onTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
-            Image(systemName: element.elementType.icon)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(element.healthColor.opacity(0.95), in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.85), lineWidth: 1.5))
-                .shadow(color: .black.opacity(0.3), radius: 4, y: 1)
-        }
-        .buttonStyle(.plain)
+        Image(systemName: element.elementType.icon)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 26, height: 26)
+            .background(element.healthColor.opacity(0.95), in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.85), lineWidth: 1.5))
+            .shadow(color: .black.opacity(0.3), radius: 4, y: 1)
+            .contentShape(Circle())
     }
 }
