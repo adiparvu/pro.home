@@ -1,11 +1,14 @@
 import SwiftUI
 import PDFKit
+import MapKit
 
 struct PropertyReportView: View {
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var zoneService: PropertyZoneService
+    @EnvironmentObject private var elementService: PropertyElementService
 
     @State private var isGenerating = false
     @State private var pdfURL: URL? = nil
@@ -13,6 +16,7 @@ struct PropertyReportView: View {
     @State private var includesTasks = true
     @State private var includesFinances = true
     @State private var includesDocuments = true
+    @State private var includesTwin = true
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -127,6 +131,8 @@ struct PropertyReportView: View {
                 toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Rezumat financiar", $includesFinances)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
                 toggleRow("doc.text.fill", .orange, "Documente", $includesDocuments)
+                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                toggleRow("map.fill", .indigo, "Digital Twin & Zone", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -193,8 +199,9 @@ struct PropertyReportView: View {
 
     private func generate() async {
         isGenerating = true
+        let twinImage = includesTwin ? await twinSnapshot() : nil
         let url = await Task.detached(priority: .userInitiated) { [self] in
-            return generatePDF()
+            return generatePDF(twinImage: twinImage)
         }.value
         pdfURL = url
         isGenerating = false
@@ -202,7 +209,50 @@ struct PropertyReportView: View {
         showShareSheet = true
     }
 
-    private func generatePDF() -> URL {
+    // MARK: - Twin map snapshot
+
+    private func twinRegion() -> MKCoordinateRegion {
+        let pts = zoneService.zones.flatMap { $0.polygon }
+        if pts.isEmpty {
+            let center = CLLocationCoordinate2D(
+                latitude: propertyService.primary?.latitude ?? 44.4268,
+                longitude: propertyService.primary?.longitude ?? 26.1025)
+            return MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002))
+        }
+        let lats = pts.map(\.lat), lons = pts.map(\.lon)
+        let center = CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2,
+                                            longitude: (lons.min()! + lons.max()!) / 2)
+        let span = MKCoordinateSpan(latitudeDelta: max((lats.max()! - lats.min()!) * 1.5, 0.001),
+                                    longitudeDelta: max((lons.max()! - lons.min()!) * 1.5, 0.001))
+        return MKCoordinateRegion(center: center, span: span)
+    }
+
+    private func twinSnapshot() async -> UIImage? {
+        let opts = MKMapSnapshotter.Options()
+        opts.region = twinRegion()
+        opts.size = CGSize(width: 515, height: 280)
+        opts.mapType = .hybrid
+        let snapshotter = MKMapSnapshotter(options: opts)
+        guard let snapshot = try? await snapshotter.start() else { return nil }
+        let zones = zoneService.zones
+        let renderer = UIGraphicsImageRenderer(size: opts.size)
+        return renderer.image { _ in
+            snapshot.image.draw(at: .zero)
+            for zone in zones where zone.isDrawable {
+                let pts = zone.coordinates.map { snapshot.point(for: $0) }
+                guard let first = pts.first else { continue }
+                let path = UIBezierPath()
+                path.move(to: first)
+                for p in pts.dropFirst() { path.addLine(to: p) }
+                path.close()
+                let color = UIColor(zone.tint)
+                color.withAlphaComponent(0.3).setFill(); path.fill()
+                color.setStroke(); path.lineWidth = 2; path.stroke()
+            }
+        }
+    }
+
+    private func generatePDF(twinImage: UIImage? = nil) -> URL {
         let pageRect = CGRect(x: 0, y: 0, width: 595.2, height: 841.8)
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
         let now = DateFormatter()
@@ -276,6 +326,38 @@ struct PropertyReportView: View {
 
             let footerAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.white.withAlphaComponent(0.3)]
             "Generat de PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
+
+            // Digital Twin page
+            if includesTwin {
+                ctx.beginPage()
+                UIColor(red: 0.06, green: 0.06, blue: 0.08, alpha: 1).setFill()
+                g.fill(pageRect)
+                var ty: CGFloat = 40
+                "DIGITAL TWIN".draw(at: CGPoint(x: 40, y: ty), withAttributes: titleAttr)
+                ty += 44
+
+                if let twinImage {
+                    let rect = CGRect(x: 40, y: ty, width: 515, height: 280)
+                    twinImage.draw(in: rect)
+                    UIColor.white.withAlphaComponent(0.12).setStroke()
+                    let border = UIBezierPath(roundedRect: rect, cornerRadius: 10)
+                    border.lineWidth = 1; border.stroke()
+                    ty += 300
+                }
+
+                "Zone: \(zoneService.zones.count)   Obiecte: \(elementService.elements.count)   Sănătate medie: \(elementService.overallHealthScore)%"
+                    .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
+                ty += 28
+                "ZONE".draw(at: CGPoint(x: 40, y: ty), withAttributes: sectionAttr)
+                ty += 20
+                for zone in zoneService.zones.prefix(12) {
+                    let count = elementService.elements(inZone: zone.id).count
+                    "  • \(zone.name) — \(zone.healthScore)%  ·  \(count) obiecte"
+                        .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
+                    ty += 17
+                }
+                "Generat de PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
+            }
         }
 
         return url

@@ -29,7 +29,13 @@ struct DigitalTwinView: View {
     @State private var showAddObject = false
     @State private var showInsights = false
     @State private var showHealth = false
+    @State private var showLabels = false
     @State private var didCenter = false
+
+    private var dragTargetZoneId: UUID? {
+        guard let d = draggingObject else { return nil }
+        return zoneService.zone(containing: d.coord)?.id
+    }
 
     private var editingShape: Bool { reshapeZone != nil }
 
@@ -68,7 +74,7 @@ struct DigitalTwinView: View {
                         MapPolygon(coordinates: zone.coordinates)
                             .foregroundStyle(zoneFill(zone))
                             .stroke(zoneStroke(zone),
-                                    lineWidth: selectedZone?.id == zone.id ? 3 : 1.5)
+                                    lineWidth: (selectedZone?.id == zone.id || zone.id == dragTargetZoneId) ? 3 : 1.5)
                     }
                     Annotation("", coordinate: zone.center) {
                         ZoneBadge(zone: zone,
@@ -81,17 +87,27 @@ struct DigitalTwinView: View {
 
                 ForEach(visibleObjects) { obj in
                     Annotation("", coordinate: objectCoord(obj)) {
-                        ObjectMarker(element: obj)
-                            .onTapGesture { if draggingObject == nil { selectedElement = obj } }
-                            .gesture(
-                                DragGesture(minimumDistance: 8, coordinateSpace: .named("twinmap"))
-                                    .onChanged { value in
-                                        if let c = proxy.convert(value.location, from: .named("twinmap")) {
-                                            draggingObject = (obj.id, c)
-                                        }
+                        VStack(spacing: 2) {
+                            ObjectMarker(element: obj)
+                            if showLabels {
+                                Text(obj.name)
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 5).padding(.vertical, 1)
+                                    .background(.black.opacity(0.5), in: Capsule())
+                            }
+                        }
+                        .onTapGesture { if draggingObject == nil { selectedElement = obj } }
+                        .gesture(
+                            DragGesture(minimumDistance: 8, coordinateSpace: .named("twinmap"))
+                                .onChanged { value in
+                                    if let c = proxy.convert(value.location, from: .named("twinmap")) {
+                                        draggingObject = (obj.id, c)
                                     }
-                                    .onEnded { _ in Task { await commitObjectDrag(obj) } }
-                            )
+                                }
+                                .onEnded { _ in Task { await commitObjectDrag(obj) } }
+                        )
                     }
                 }
 
@@ -179,6 +195,7 @@ struct DigitalTwinView: View {
         .overlay(alignment: .top) { if drawMode { drawBanner } }
         .overlay(alignment: .bottom) { if editingShape { reshapeToolbar } }
         .overlay(alignment: .top) { if editingShape { reshapeBanner } }
+        .overlay(alignment: .top) { if draggingObject != nil { objectDragBanner } }
         .navigationTitle("Digital Twin")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedZone) { zone in
@@ -303,6 +320,10 @@ struct DigitalTwinView: View {
                           tint: heatmap ? .orange : .primary) {
                 withAnimation(.spring(response: 0.3)) { heatmap.toggle() }
             }
+            controlButton(icon: showLabels ? "tag.fill" : "tag",
+                          tint: showLabels ? .blue : .primary) {
+                withAnimation(.spring(response: 0.3)) { showLabels.toggle() }
+            }
             controlButton(icon: "heart.text.square.fill", tint: .pink) {
                 showHealth = true
             }
@@ -396,6 +417,22 @@ struct DigitalTwinView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
+    private var objectDragBanner: some View {
+        let targetName = dragTargetZoneId.flatMap { id in zoneService.zones.first { $0.id == id }?.name }
+        return HStack(spacing: 6) {
+            Image(systemName: targetName != nil ? "arrow.down.to.line" : "mappin.slash")
+                .font(.system(size: 12, weight: .bold))
+            Text(targetName != nil ? "→ \(targetName!)" : "În afara zonelor")
+                .font(.system(size: 13, weight: .semibold))
+        }
+        .foregroundStyle(targetName != nil ? Color(red: 0.2, green: 0.75, blue: 0.4) : .secondary)
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .glassCapsule()
+        .padding(.top, 60)
+        .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
     private var reshapeBanner: some View {
         Text("Trage colțurile · dublu-tap pentru a șterge un colț")
             .font(.system(size: 13, weight: .semibold))
@@ -438,7 +475,9 @@ struct DigitalTwinView: View {
 
     private func zoneFill(_ zone: PropertyZone) -> some ShapeStyle {
         let base = heatmap ? zone.healthColor : zone.tint
-        return base.opacity(selectedZone?.id == zone.id ? 0.45 : 0.26)
+        let opacity: Double = zone.id == dragTargetZoneId ? 0.55
+            : (selectedZone?.id == zone.id ? 0.45 : 0.26)
+        return base.opacity(opacity)
     }
 
     private func zoneStroke(_ zone: PropertyZone) -> some ShapeStyle {
