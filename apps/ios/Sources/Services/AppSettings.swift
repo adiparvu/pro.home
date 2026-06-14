@@ -6,6 +6,7 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvio.locale")      var locale:            String = "en"
     @AppStorage("prvio.currency")    var preferredCurrency: String = "EUR"
     @AppStorage("prvio.accentColor") var accentColor:       String = "blue"
+    @AppStorage("prvio.accentOn")    var accentEnabled:     Bool   = true
     @AppStorage("prvio.hapticOn")    var hapticEnabled:     Bool   = true
 
     // Customizable floating (speed-dial) buttons — per page.

@@ -175,17 +175,29 @@ struct AppearanceView: View {
         SettingsGroup(title: "Temă vizuală") {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    ColoredIconBadge(icon: "paintpalette.fill", color: currentColor)
-                    Text("Culoare de accent")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
+                    ColoredIconBadge(icon: "paintpalette.fill", color: appSettings.accentEnabled ? currentColor : Color.primary.opacity(0.4))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Culoare de accent")
+                            .font(.system(size: 15)).foregroundStyle(.primary)
+                        Text(appSettings.accentEnabled ? currentLabel : "Dezactivat")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
                     Spacer()
-                    Circle().fill(currentColor).frame(width: 12, height: 12)
-                    Text(currentLabel)
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                    Toggle("", isOn: Binding(
+                        get: { appSettings.accentEnabled },
+                        set: { newVal in
+                            appSettings.objectWillChange.send()
+                            appSettings.accentEnabled = newVal
+                            HapticFeedback.selection()
+                            if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
+                        }
+                    ))
+                    .labelsHidden().tint(currentColor)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
 
-                Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+                if appSettings.accentEnabled {
+                    Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
 
                 HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
@@ -210,26 +222,32 @@ struct AppearanceView: View {
                         .frame(maxWidth: .infinity)
                     }
 
-                    // Custom color picker (rainbow circle)
+                    // Custom color picker (rainbow circle) — the ColorPicker sits
+                    // underneath with an enlarged hit area; the rainbow + rings are
+                    // visual-only so a tap anywhere on the swatch opens the picker.
                     ZStack {
+                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
+                            .labelsHidden()
+                            .scaleEffect(1.9)
+                            .opacity(0.02)
+                            .frame(width: 40, height: 40)
+
                         Circle()
                             .fill(AngularGradient(
                                 gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
                                 center: .center
                             ))
                             .frame(width: 26, height: 26)
+                            .allowsHitTesting(false)
                         if appSettings.accentColor.hasPrefix("#") {
-                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
-                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32)
+                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26).allowsHitTesting(false)
+                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32).allowsHitTesting(false)
                         }
-                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
-                            .labelsHidden()
-                            .opacity(0.02)
-                            .frame(width: 44, height: 44)
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 14)
+                }
             }
         }
     }

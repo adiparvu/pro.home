@@ -22,7 +22,7 @@ struct PRVIOApp: App {
                 }
             }
             .preferredColorScheme(appSettings.resolvedColorScheme)
-            .tint(avatarRingColor(for: appSettings.accentColor))
+            .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
             .environment(\.locale, Locale(identifier: appSettings.locale))
             .environmentObject(auth)
         }
