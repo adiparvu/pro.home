@@ -53,12 +53,6 @@ struct EditProfileView: View {
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                }
-            }
         }
         .onAppear { loadCurrentValues() }
     }
