@@ -182,7 +182,8 @@ private struct ContractorRow: View {
                             .font(.system(size: 16))
                             .foregroundStyle(.primary)
                             .frame(width: 38, height: 38)
-                            .background(Color(red: 0.3, green: 0.85, blue: 0.5), in: Circle())
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                     }
                 }
             }

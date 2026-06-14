@@ -35,6 +35,7 @@ struct BlueprintsView: View {
                 .padding(.top, 8)
             }
         }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in

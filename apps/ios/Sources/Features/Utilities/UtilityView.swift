@@ -126,6 +126,7 @@ struct UtilityView: View {
                 }
             }
         }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAdd) {
             AddUtilitySheet(defaultType: selectedType) { entry in service.add(entry) }

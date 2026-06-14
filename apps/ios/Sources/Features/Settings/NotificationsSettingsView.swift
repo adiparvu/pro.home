@@ -74,7 +74,9 @@ struct NotificationsSettingsView: View {
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
                     }
                     .buttonStyle(.plain)
                 } else if authStatus == .denied {
@@ -84,7 +86,9 @@ struct NotificationsSettingsView: View {
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(.orange, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
                     }
                     .buttonStyle(.plain)
                 }

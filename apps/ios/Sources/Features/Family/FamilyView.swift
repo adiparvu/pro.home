@@ -50,7 +50,8 @@ struct FamilyView: View {
                 }
             }
         }
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await familyService.load() }
         .sheet(isPresented: $showAdd) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id)
@@ -111,7 +112,8 @@ struct FamilyMemberRow: View {
                                 .font(.system(size: 14))
                                 .foregroundStyle(.primary)
                                 .frame(width: 34, height: 34)
-                                .background(Color(red: 0.3, green: 0.85, blue: 0.5), in: Circle())
+                                .background(.ultraThinMaterial, in: Circle())
+                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                         }
                     }
                     if let email = member.email, !email.isEmpty {
@@ -125,7 +127,8 @@ struct FamilyMemberRow: View {
                                 .font(.system(size: 14))
                                 .foregroundStyle(.primary)
                                 .frame(width: 34, height: 34)
-                                .background(.blue, in: Circle())
+                                .background(.ultraThinMaterial, in: Circle())
+                                .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                         }
                     }
                 }

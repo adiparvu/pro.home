@@ -30,6 +30,7 @@ struct FinancesView: View {
     @EnvironmentObject private var budgetService: BudgetService
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var showAddSheet    = false
     @State private var selectedType: String? = nil
@@ -76,8 +77,8 @@ struct FinancesView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            appBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            PageHeader(title: "Finanțe", trailing: AnyView(filterMenu))
 
             if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,38 +90,48 @@ struct FinancesView: View {
                         quickActionsRow
                             .padding(.top, 20)
                             .padding(.horizontal, 20)
-                        filterTabs
+                        transactionList
                             .padding(.top, 16)
                             .padding(.horizontal, 20)
-                        transactionList
-                            .padding(.top, 8)
-                            .padding(.horizontal, 20)
                         Spacer(minLength: 110)
+                    }
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(key: ScrollOffsetKey.self,
+                                                   value: geo.frame(in: .named("financesScroll")).minY)
+                        }
+                    )
+                }
+                .coordinateSpace(name: "financesScroll")
+                .onPreferenceChange(ScrollOffsetKey.self) { y in
+                    let shouldCollapse = y < -60
+                    if shouldCollapse != tabBarVis.scrolledDown {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            tabBarVis.scrolledDown = shouldCollapse
+                        }
                     }
                 }
                 .refreshable { await financialService.load() }
             }
-
-            // FAB
+        }
+        .background(appBackground.ignoresSafeArea())
+        .overlay(alignment: .bottomTrailing) {
             Button {
                 showAddSheet = true
                 HapticFeedback.impact(.medium)
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(colors: [.blue, .indigo],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: Circle()
-                    )
-                    .shadow(color: .blue.opacity(0.45), radius: 18, y: 6)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
             }
             .padding(.trailing, 24)
             .padding(.bottom, 110)
         }
-        .navigationTitle("Finanțe")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddSheet) {
             AddFinancialView { await financialService.load() }
@@ -132,6 +143,36 @@ struct FinancesView: View {
             Button("OK") { financialService.error = nil }
         } message: { Text(financialService.error ?? "") }
         .task { await financialService.load() }
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Button { withAnimation(.spring(response: 0.25)) { selectedType = nil } } label: {
+                Label("Toate", systemImage: "tray.full")
+            }
+            Button { withAnimation(.spring(response: 0.25)) { selectedType = "income" } } label: {
+                Label("Venituri", systemImage: "arrow.down.left")
+            }
+            Button { withAnimation(.spring(response: 0.25)) { selectedType = "expense" } } label: {
+                Label("Cheltuieli", systemImage: "arrow.up.right")
+            }
+        } label: {
+            Group {
+                if let type = selectedType {
+                    Image(systemName: type == "income" ? "arrow.down.left" : "arrow.up.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("…")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                }
+            }
+            .frame(width: 36, height: 32)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+        }
     }
 
     // MARK: - Hero
@@ -269,34 +310,6 @@ struct FinancesView: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    // MARK: - Filter Tabs
-
-    private var filterTabs: some View {
-        HStack(spacing: 6) {
-            filterTab("Toate", value: nil)
-            filterTab("Venituri", value: "income")
-            filterTab("Cheltuieli", value: "expense")
-        }
-        .padding(4)
-        .background(Color.primary.opacity(0.07), in: Capsule())
-    }
-
-    private func filterTab(_ label: String, value: String?) -> some View {
-        let active = selectedType == value
-        return Button {
-            withAnimation(.spring(response: 0.25)) { selectedType = value }
-        } label: {
-            Text(label)
-                .font(.system(size: 13, weight: active ? .semibold : .regular))
-                .foregroundStyle(active ? Color.primary : Color.primary.opacity(0.55))
-                .padding(.horizontal, 14).padding(.vertical, 7)
-                .frame(maxWidth: .infinity)
-                .background(active ? Color.primary.opacity(0.12) : Color.clear,
-                             in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Transactions

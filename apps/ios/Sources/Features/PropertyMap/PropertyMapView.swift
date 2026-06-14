@@ -5,6 +5,7 @@ struct PropertyMapView: View {
     @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var selectedLayer: PropertyLayer? = nil
     @State private var selectedElement: PropertyElement? = nil
@@ -14,86 +15,110 @@ struct PropertyMapView: View {
     @State private var addPosition: CGPoint = CGPoint(x: 0.5, y: 0.5)
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                layerFilterBar
-                    .padding(.horizontal, 20)
-
-                if elementService.isLoading && elementService.elements.isEmpty {
-                    loadingState
-                } else {
-                    PropertyMapCanvas(
-                        elements: elementService.elements(for: selectedLayer),
-                        isEditMode: isEditMode,
-                        onTap: { element in
+        VStack(spacing: 0) {
+            PageHeader(
+                title: "Hartă",
+                subtitle: "PROPRIETATE",
+                trailing: AnyView(
+                    HStack(spacing: 10) {
+                        Button {
                             HapticFeedback.selection()
-                            selectedElement = element
-                        },
-                        onLongPress: { position in
-                            guard isEditMode else { return }
-                            HapticFeedback.impact()
-                            addPosition = position
-                            showAddElement = true
-                        },
-                        onMove: { element, newX, newY in
-                            Task { await elementService.updatePosition(elementId: element.id, x: newX, y: newY) }
+                            showHealthDashboard = true
+                        } label: {
+                            healthScoreBadge
                         }
-                    )
-                    .padding(.horizontal, 16)
-                }
+                        .buttonStyle(.plain)
 
-                statsStrip
-                    .padding(.horizontal, 20)
+                        Button {
+                            HapticFeedback.selection()
+                            withAnimation(.spring(response: 0.3)) { isEditMode.toggle() }
+                        } label: {
+                            Image(systemName: isEditMode ? "checkmark" : "pencil")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(isEditMode ? Color.green.opacity(0.35) : Color.primary.opacity(0.08), lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                )
+            )
 
-                if !elementService.criticalElements.isEmpty {
-                    attentionSection
+            layerFilterBar
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    if elementService.isLoading && elementService.elements.isEmpty {
+                        loadingState
+                    } else {
+                        PropertyMapCanvas(
+                            elements: elementService.elements(for: selectedLayer),
+                            isEditMode: isEditMode,
+                            onTap: { element in
+                                HapticFeedback.selection()
+                                selectedElement = element
+                            },
+                            onLongPress: { position in
+                                guard isEditMode else { return }
+                                HapticFeedback.impact()
+                                addPosition = position
+                                showAddElement = true
+                            },
+                            onMove: { element, newX, newY in
+                                Task { await elementService.updatePosition(elementId: element.id, x: newX, y: newY) }
+                            }
+                        )
+                        .padding(.horizontal, 16)
+                    }
+
+                    statsStrip
                         .padding(.horizontal, 20)
-                }
 
-                if elementService.elements.isEmpty {
-                    emptyActionCard
-                        .padding(.horizontal, 20)
-                } else {
-                    elementListSection
-                        .padding(.horizontal, 20)
-                }
+                    if !elementService.criticalElements.isEmpty {
+                        attentionSection
+                            .padding(.horizontal, 20)
+                    }
 
-                Spacer(minLength: 110)
+                    if elementService.elements.isEmpty {
+                        emptyActionCard
+                            .padding(.horizontal, 20)
+                    } else {
+                        elementListSection
+                            .padding(.horizontal, 20)
+                    }
+
+                    Spacer(minLength: 110)
+                }
+                .padding(.top, 8)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: ScrollOffsetKey.self,
+                                               value: geo.frame(in: .named("mapScroll")).minY)
+                    }
+                )
             }
-            .padding(.top, 8)
+            .coordinateSpace(name: "mapScroll")
+            .onPreferenceChange(ScrollOffsetKey.self) { y in
+                let shouldCollapse = y < -60
+                if shouldCollapse != tabBarVis.scrolledDown {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        tabBarVis.scrolledDown = shouldCollapse
+                    }
+                }
+            }
+            .refreshable {
+                guard let pid = propertyService.primary?.id else { return }
+                await elementService.load(propertyId: pid)
+            }
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Harta Proprietății")
-                        .font(.title2.weight(.bold))
-                    Text("\(elementService.elements.count) elemente")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 10) {
-                    Button {
-                        HapticFeedback.selection()
-                        showHealthDashboard = true
-                    } label: {
-                        healthScoreBadge
-                    }
-
-                    Button {
-                        HapticFeedback.selection()
-                        withAnimation(.spring(response: 0.3)) { isEditMode.toggle() }
-                    } label: {
-                        Image(systemName: isEditMode ? "checkmark.circle.fill" : "pencil.circle")
-                            .font(.system(size: 22))
-                            .foregroundStyle(isEditMode ? Color(red: 0.2, green: 0.8, blue: 0.4) : Color.secondary)
-                    }
-                }
-            }
-        }
+        .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             fabButton
                 .padding(.trailing, 24)
@@ -118,10 +143,6 @@ struct PropertyMapView: View {
                 .environmentObject(appSettings)
         }
         .task {
-            guard let pid = propertyService.primary?.id else { return }
-            await elementService.load(propertyId: pid)
-        }
-        .refreshable {
             guard let pid = propertyService.primary?.id else { return }
             await elementService.load(propertyId: pid)
         }
@@ -374,16 +395,11 @@ struct PropertyMapView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(width: 52, height: 52)
-                .background(
-                    LinearGradient(
-                        colors: [Color(red: 0.29, green: 0.56, blue: 0.89), Color(red: 0.18, green: 0.38, blue: 0.72)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    in: Circle()
-                )
-                .shadow(color: Color(red: 0.29, green: 0.56, blue: 0.89).opacity(0.4), radius: 10, y: 4)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
         }
     }
 
