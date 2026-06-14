@@ -313,28 +313,28 @@ struct InventoryView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    Menu {
-                        ForEach(InvFilter.allCases, id: \.self) { f in
-                            Button {
-                                withAnimation(.spring(response: 0.25)) { filter = f }
-                            } label: {
-                                Label(
-                                    "\(f.rawValue)  (\(countFor(f)))",
-                                    systemImage: filter == f ? "checkmark" : f.icon
-                                )
-                            }
+                Menu {
+                    ForEach(InvFilter.allCases, id: \.self) { f in
+                        Button {
+                            withAnimation(.spring(response: 0.25)) { filter = f }
+                        } label: {
+                            Label(
+                                "\(f.rawValue)  (\(countFor(f)))",
+                                systemImage: filter == f ? "checkmark" : f.icon
+                            )
                         }
-                    } label: {
-                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
                     }
-                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
+                } label: {
+                    Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
             }
         }

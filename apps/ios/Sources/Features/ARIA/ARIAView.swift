@@ -36,20 +36,20 @@ struct ARIAView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    MemberAvatarStack(
-                        members: familyService.members,
-                        ownerAvatarUrl: profileService.profile?.avatarUrl,
-                        ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
-                        ringColor: avatarRingColor(for: avatarRingColorName)
-                    )
-                    Button {
-                        withAnimation { messages = ARIAMessage.welcome }
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
+                MemberAvatarStack(
+                    members: familyService.members,
+                    ownerAvatarUrl: profileService.profile?.avatarUrl,
+                    ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
+                    ringColor: avatarRingColor(for: avatarRingColorName)
+                )
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    withAnimation { messages = ARIAMessage.welcome }
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
             }
         }

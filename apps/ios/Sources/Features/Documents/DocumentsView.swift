@@ -73,19 +73,19 @@ struct DocumentsView: View {
         .floatingSpeedDial(.documents)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 10) {
-                    filterMenu
-                    Button {
-                        if propertyService.primary == nil {
-                            errorToast = "Please set up your property first in Settings."
-                        } else {
-                            showAdd = true
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.primary)
+                filterMenu
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if propertyService.primary == nil {
+                        errorToast = "Please set up your property first in Settings."
+                    } else {
+                        showAdd = true
                     }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
             }
         }
