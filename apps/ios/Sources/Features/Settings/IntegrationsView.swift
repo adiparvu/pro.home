@@ -6,12 +6,10 @@ struct IntegrationsView: View {
     @StateObject private var vm = IntegrationsViewModel()
 
     var body: some View {
-        ZStack {
-            appBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            PageHeader(title: "Integrations")
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-                    PageHeader(title: "Integrations")
-
                     calendarSection
                     smartHomeSection
                     comingSoonSection
@@ -22,6 +20,8 @@ struct IntegrationsView: View {
                 .padding(.top, 8)
             }
         }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.checkStatuses() }
         .task { vm.tasks = taskService.tasks }

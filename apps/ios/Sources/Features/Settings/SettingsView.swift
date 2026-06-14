@@ -20,38 +20,41 @@ struct SettingsView: View {
     @State private var showAddAccount = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                profileCard
-                switchCard
-                propertySection
-                familySection
-                notificationsSection
-                appSection
-                supportSection
-                signOutButton
-                Spacer(minLength: 110)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
+        VStack(spacing: 0) {
+            PageHeader(title: "Settings")
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    profileCard
+                    switchCard
+                    propertySection
+                    familySection
+                    notificationsSection
+                    appSection
+                    supportSection
+                    signOutButton
+                    Spacer(minLength: 110)
                 }
-            )
-        }
-        .coordinateSpace(name: "settingsScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { y in
-            let shouldCollapse = y < -30
-            if shouldCollapse != tabBarVis.scrolledDown {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                    tabBarVis.scrolledDown = shouldCollapse
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
+                    }
+                )
+            }
+            .coordinateSpace(name: "settingsScroll")
+            .onPreferenceChange(ScrollOffsetKey.self) { y in
+                let shouldCollapse = y < -30
+                if shouldCollapse != tabBarVis.scrolledDown {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        tabBarVis.scrolledDown = shouldCollapse
+                    }
                 }
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }

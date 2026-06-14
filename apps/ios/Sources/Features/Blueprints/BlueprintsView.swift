@@ -14,12 +14,10 @@ struct BlueprintsView: View {
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
-        ZStack {
-            appBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            PageHeader(title: "Plans & 3D")
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
-                    PageHeader(title: "Plans & 3D")
-
                     quickActions
                     buriedNav
 
@@ -35,6 +33,7 @@ struct BlueprintsView: View {
                 .padding(.top, 8)
             }
         }
+        .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showRoomScan) {
