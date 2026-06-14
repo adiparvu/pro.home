@@ -321,12 +321,15 @@ struct AddTaskView: View {
         guard !assigneeNames.isEmpty else { return }
         let center = UNUserNotificationCenter.current()
         let taskTitle = title.trimmingCharacters(in: .whitespaces)
-        let dateStr = hasDueDate ? DateFormatter().also { $0.dateStyle = .medium }.string(from: dueDate) : ""
+        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
+        let display = DateFormatter(); display.locale = Locale(identifier: "ro_RO"); display.dateStyle = .medium
+        let dateStr = hasDueDate ? display.string(from: dueDate) : ""
         for name in assigneeNames {
             let content = UNMutableNotificationContent()
-            content.title = "New Task Assigned"
-            content.body = "\(name) – you have a new task: \"\(taskTitle)\"\(dateStr.isEmpty ? "" : " due \(dateStr)")"
+            content.title = "Sarcină atribuită"
+            content.body = "\(name), ai o sarcină nouă: „\(taskTitle)"\(dateStr.isEmpty ? "" : " · Termen: \(dateStr)")"
             content.sound = .default
+            content.badge = 1
             let req = UNNotificationRequest(
                 identifier: "task.assign.\(UUID().uuidString)",
                 content: content,

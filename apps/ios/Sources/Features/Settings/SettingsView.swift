@@ -228,6 +228,10 @@ struct SettingsView: View {
                     .environmentObject(familyService)
                     .environmentObject(propertyService)
             }
+            NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supraveghere") {
+                SupervisionView()
+                    .environmentObject(familyService)
+            }
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Family Chat") {
                 Group {
                     if let propId = propertyService.primary?.id {
