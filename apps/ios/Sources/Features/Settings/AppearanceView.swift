@@ -37,6 +37,7 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
+                PageHeader(title: "Aspect")
                 themeSection
                 accentSection
                 hapticSection
@@ -47,8 +48,8 @@ struct AppearanceView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Aspect")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await currencyService.refresh() }
     }
 

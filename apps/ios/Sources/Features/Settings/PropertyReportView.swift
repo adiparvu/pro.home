@@ -21,6 +21,7 @@ struct PropertyReportView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                PageHeader(title: "Raport", subtitle: "PROPRIETATE")
                 heroCard
                 sectionToggles
                 generateButton
@@ -29,10 +30,9 @@ struct PropertyReportView: View {
             .padding(.horizontal, 20)
             .padding(.top, 4)
         }
-        .refreshable { }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Raport")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showShareSheet) {
             if let url = pdfURL { ShareSheet(url: url) }
         }

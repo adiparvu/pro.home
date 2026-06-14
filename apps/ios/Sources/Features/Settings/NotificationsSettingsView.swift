@@ -12,6 +12,7 @@ struct NotificationsSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
+                PageHeader(title: "Notificări")
                 permissionCard
                 if authStatus == .authorized || authStatus == .provisional {
                     preferencesSection
@@ -22,8 +23,8 @@ struct NotificationsSettingsView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Notificări")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await checkStatus() }
         .alert("Open Settings", isPresented: $showOpenSettings) {
             Button("Open Settings") {

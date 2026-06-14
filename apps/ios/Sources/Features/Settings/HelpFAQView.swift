@@ -22,6 +22,8 @@ struct HelpFAQView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
+                PageHeader(title: "Ajutor & FAQ")
+                    .padding(.bottom, 4)
                 ForEach(items.indices, id: \.self) { i in
                     FAQRow(item: $items[i])
                 }
@@ -53,8 +55,8 @@ struct HelpFAQView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Ajutor & FAQ")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

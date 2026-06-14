@@ -15,6 +15,7 @@ struct EmergencyContactsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
+                PageHeader(title: "Urgențe")
                 systemServicesSection
                 if !contacts.isEmpty { customSection }
                 addButton
@@ -23,8 +24,8 @@ struct EmergencyContactsView: View {
             .padding(.horizontal, 20).padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Contacte de urgență")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { load() }
         .sheet(isPresented: $showAdd) { AddEmergencySheet { save() } onSave: { c in contacts.append(c); save() } }
     }

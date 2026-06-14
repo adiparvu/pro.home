@@ -24,6 +24,7 @@ struct SecurityView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
+                PageHeader(title: "Securitate")
                 mfaSection
                 sessionsSection
                 advancedSection
@@ -35,8 +36,8 @@ struct SecurityView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Securitate")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { checkBiometrics() }
         .task { await loadFactors() }
         .sheet(isPresented: $showTOTPEnroll) {

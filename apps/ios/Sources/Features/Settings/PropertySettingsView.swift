@@ -1,20 +1,27 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import PhotosUI
 
 struct PropertySettingsView: View {
     @EnvironmentObject private var propertyService: PropertyService
-    @State private var showEdit = false
     @State private var showAdd = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                if let property = propertyService.primary {
-                    propertyCard(property)
-                    detailsSection(property)
-                } else {
+            VStack(spacing: 14) {
+                if propertyService.properties.isEmpty {
                     emptyState
+                } else {
+                    ForEach(propertyService.properties) { p in
+                        NavigationLink {
+                            PropertyDetailView(propertyId: p.id)
+                                .environmentObject(propertyService)
+                        } label: {
+                            propertyCard(p)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 Spacer(minLength: 80)
             }
@@ -26,24 +33,10 @@ struct PropertySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 12) {
-                    if propertyService.primary != nil {
-                        Button("Edit") { showEdit = true }
-                            .font(.system(size: 15))
-                            .foregroundStyle(.blue)
-                    }
-                    Button { showAdd = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.blue)
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showEdit) {
-            if let property = propertyService.primary {
-                EditPropertySheet(property: property) { updated in
-                    await propertyService.update(updated)
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.blue)
                 }
             }
         }
@@ -61,76 +54,63 @@ struct PropertySettingsView: View {
         .task { await propertyService.load() }
     }
 
-    // MARK: - Property card
+    // MARK: - Property card (list row)
 
     private func propertyCard(_ p: PropertyModel) -> some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 56, height: 56)
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(p.name)
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundStyle(.primary)
-                        Text("\(p.addressLine1), \(p.city)")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.55))
+            HStack(spacing: 14) {
+                propertyThumb(p)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(p.name)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text("\(p.addressLine1), \(p.city)")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.primary.opacity(0.55))
+                        .lineLimit(1)
+                    HStack(spacing: 8) {
                         Text(p.propertyType.capitalized)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.blue.opacity(0.8))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(.blue.opacity(0.15), in: Capsule())
-                    }
-                    Spacer()
-                }
-
-                if let score = p.healthScore {
-                    HStack {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red.opacity(0.7))
-                        Text("Health Score")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.55))
-                        Spacer()
-                        Text("\(score)/100")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.primary)
+                        if let score = p.healthScore {
+                            HStack(spacing: 3) {
+                                Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(.red.opacity(0.7))
+                                Text("\(score)").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
+                            }
+                        }
                     }
                 }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.28))
             }
         }
     }
 
-    // MARK: - Details
+    @ViewBuilder
+    private func propertyThumb(_ p: PropertyModel) -> some View {
+        if let urlStr = p.photoUrl, let url = URL(string: urlStr) {
+            AsyncImage(url: url) { phase in
+                if case .success(let img) = phase { img.resizable().scaledToFill() }
+                else { thumbPlaceholder }
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            thumbPlaceholder.frame(width: 56, height: 56)
+        }
+    }
 
-    private func detailsSection(_ p: PropertyModel) -> some View {
-        SettingsGroup(title: "Details") {
-            PropDetailRow(label: "Address", value: p.addressLine1)
-            PropDetailRow(label: "City", value: p.city)
-            if let pc = p.postalCode, !pc.isEmpty {
-                PropDetailRow(label: "Cod poștal", value: pc)
-            }
-            PropDetailRow(label: "Country", value: p.country)
-            PropDetailRow(label: "Type", value: p.propertyType.capitalized)
-            if let sqm = p.sizeSqm {
-                PropDetailRow(label: "Area", value: String(format: "%.0f m²", sqm))
-            }
-            if let rooms = p.numRooms {
-                PropDetailRow(label: "Rooms", value: "\(rooms)")
-            }
-            if let lat = p.latitude, let lon = p.longitude {
-                PropDetailRow(label: "Coordonate",
-                              value: String(format: "%.5f, %.5f", lat, lon))
-            }
+    private var thumbPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(LinearGradient(colors: [.blue.opacity(0.6), .purple.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Image(systemName: "house.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(.white)
         }
     }
 
@@ -198,6 +178,24 @@ private struct EditPropertySheet: View {
     @State private var numRoomsText: String
     @State private var isSaving = false
 
+    // Rich profile
+    @State private var yearBuiltText: String
+    @State private var story: String
+    @State private var renovations: [Renovation]
+    @State private var owners: [OwnerRecord]
+
+    // Add-renovation form
+    @State private var showRenovationForm = false
+    @State private var newRenTitle = ""
+    @State private var newRenFrom = ""
+    @State private var newRenTo = ""
+
+    // Add-owner form
+    @State private var showOwnerForm = false
+    @State private var newOwnerName = ""
+    @State private var newOwnerFrom = ""
+    @State private var newOwnerTo = ""
+
     // Location
     @State private var latitude: Double?
     @State private var longitude: Double?
@@ -225,6 +223,10 @@ private struct EditPropertySheet: View {
         _propertyType = State(initialValue: property.propertyType)
         _sizeSqmText = State(initialValue: property.sizeSqm.map { String(format: "%.0f", $0) } ?? "")
         _numRoomsText = State(initialValue: property.numRooms.map { "\($0)" } ?? "")
+        _yearBuiltText = State(initialValue: property.yearBuilt.map { "\($0)" } ?? "")
+        _story = State(initialValue: property.story ?? "")
+        _renovations = State(initialValue: property.renovations ?? [])
+        _owners = State(initialValue: property.owners ?? [])
         _latitude = State(initialValue: property.latitude)
         _longitude = State(initialValue: property.longitude)
         _latText = State(initialValue: property.latitude.map { String(format: "%.6f", $0) } ?? "")
@@ -376,8 +378,203 @@ private struct EditPropertySheet: View {
                             formFieldRow("ruler.fill", "Area (m²)", $sizeSqmText, keyboard: .decimalPad)
                             formDivider()
                             formFieldRow("door.left.hand.open", "Rooms", $numRoomsText, keyboard: .numberPad)
+                            formDivider()
+                            formFieldRow("calendar.badge.clock", "An construit", $yearBuiltText, keyboard: .numberPad)
                         }
                         .padding(.top, 16)
+
+                        // Story
+                        Text("POVESTE")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
+
+                        ZStack(alignment: .topLeading) {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.primary.opacity(0.04))
+                                .overlay(RoundedRectangle(cornerRadius: 16)
+                                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                            if story.isEmpty {
+                                Text("Scrie o poveste despre această proprietate…")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(Color.primary.opacity(0.28))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 13)
+                            }
+                            TextEditor(text: $story)
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                                .tint(.blue)
+                                .scrollContentBackground(.hidden)
+                                .background(.clear)
+                                .frame(minHeight: 100)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                        }
+
+                        // Renovations
+                        HStack {
+                            Text("RENOVĂRI")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.35))
+                            Spacer()
+                            Button { withAnimation { showRenovationForm.toggle() } } label: {
+                                Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .font(.system(size: 18))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.leading, 4).padding(.top, 20)
+
+                        if !renovations.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(renovations) { r in
+                                    HStack(spacing: 10) {
+                                        Circle().fill(.blue).frame(width: 8, height: 8)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(r.title).font(.system(size: 14, weight: .medium))
+                                            Text(r.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Button {
+                                            renovations.removeAll { $0.id == r.id }
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(Color.primary.opacity(0.3))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    .padding(.horizontal, 14).padding(.vertical, 10)
+                                    if r.id != renovations.last?.id {
+                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 32)
+                                    }
+                                }
+                            }
+                            .background(Color.primary.opacity(0.04),
+                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                            .padding(.top, 6)
+                        }
+
+                        if showRenovationForm {
+                            VStack(spacing: 8) {
+                                formFieldGroup {
+                                    formFieldRow("wrench.fill", "Titlu renovare", $newRenTitle)
+                                    formDivider()
+                                    formFieldRow("calendar", "Anul start", $newRenFrom, keyboard: .numberPad)
+                                    formDivider()
+                                    formFieldRow("calendar", "Anul final (opțional)", $newRenTo, keyboard: .numberPad)
+                                }
+                                Button {
+                                    guard !newRenTitle.isEmpty, let from = Int(newRenFrom) else { return }
+                                    renovations.append(Renovation(
+                                        yearFrom: from,
+                                        yearTo: Int(newRenTo),
+                                        title: newRenTitle
+                                    ))
+                                    newRenTitle = ""; newRenFrom = ""; newRenTo = ""
+                                    showRenovationForm = false
+                                } label: {
+                                    Text("Adaugă renovare")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(newRenTitle.isEmpty || newRenFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.primary.opacity(0.05),
+                                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(newRenTitle.isEmpty || newRenFrom.isEmpty)
+                            }
+                            .padding(.top, 6)
+                        }
+
+                        // Owners
+                        HStack {
+                            Text("PROPRIETARI")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.35))
+                            Spacer()
+                            Button { withAnimation { showOwnerForm.toggle() } } label: {
+                                Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .font(.system(size: 18))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.leading, 4).padding(.top, 20)
+
+                        if !owners.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(owners) { o in
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(Color.primary.opacity(0.4))
+                                            .frame(width: 20)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(o.name).font(.system(size: 14, weight: .medium))
+                                            Text(o.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Button {
+                                            owners.removeAll { $0.id == o.id }
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(Color.primary.opacity(0.3))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    .padding(.horizontal, 14).padding(.vertical, 10)
+                                    if o.id != owners.last?.id {
+                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 40)
+                                    }
+                                }
+                            }
+                            .background(Color.primary.opacity(0.04),
+                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                            .padding(.top, 6)
+                        }
+
+                        if showOwnerForm {
+                            VStack(spacing: 8) {
+                                formFieldGroup {
+                                    formFieldRow("person.fill", "Nume proprietar", $newOwnerName)
+                                    formDivider()
+                                    formFieldRow("calendar", "Anul start", $newOwnerFrom, keyboard: .numberPad)
+                                    formDivider()
+                                    formFieldRow("calendar", "Anul final (opțional)", $newOwnerTo, keyboard: .numberPad)
+                                }
+                                Button {
+                                    guard !newOwnerName.isEmpty, let from = Int(newOwnerFrom) else { return }
+                                    owners.append(OwnerRecord(
+                                        name: newOwnerName,
+                                        yearFrom: from,
+                                        yearTo: Int(newOwnerTo)
+                                    ))
+                                    newOwnerName = ""; newOwnerFrom = ""; newOwnerTo = ""
+                                    showOwnerForm = false
+                                } label: {
+                                    Text("Adaugă proprietar")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(newOwnerName.isEmpty || newOwnerFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.primary.opacity(0.05),
+                                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(newOwnerName.isEmpty || newOwnerFrom.isEmpty)
+                            }
+                            .padding(.top, 6)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
@@ -589,6 +786,10 @@ private struct EditPropertySheet: View {
         updated.numRooms = Int(numRoomsText)
         updated.latitude = latitude
         updated.longitude = longitude
+        updated.yearBuilt = Int(yearBuiltText)
+        updated.story = story.isEmpty ? nil : story
+        updated.renovations = renovations
+        updated.owners = owners
         await onSave(updated)
         HapticFeedback.success()
         dismiss()

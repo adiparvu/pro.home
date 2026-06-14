@@ -1,4 +1,6 @@
 import Foundation
+import Supabase
+import UIKit
 
 @MainActor
 final class PropertyService: ObservableObject {
@@ -82,6 +84,11 @@ final class PropertyService: ObservableObject {
             let num_rooms: Int?
             let latitude: Double?
             let longitude: Double?
+            let photo_url: String?
+            let year_built: Int?
+            let story: String?
+            let renovations: [Renovation]
+            let owners: [OwnerRecord]
         }
 
         let payload = PropertyUpdate(
@@ -94,7 +101,12 @@ final class PropertyService: ObservableObject {
             size_sqm: property.sizeSqm,
             num_rooms: property.numRooms,
             latitude: property.latitude,
-            longitude: property.longitude
+            longitude: property.longitude,
+            photo_url: property.photoUrl,
+            year_built: property.yearBuilt,
+            story: property.story,
+            renovations: property.renovations ?? [],
+            owners: property.owners ?? []
         )
 
         do {
@@ -108,6 +120,27 @@ final class PropertyService: ObservableObject {
                 .value
             if let idx = properties.firstIndex(where: { $0.id == property.id }) {
                 properties[idx] = updated
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Uploads a property photo to Storage and persists its public URL.
+    func uploadPhoto(propertyId: UUID, image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.82) else { return }
+        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
+        let path = "\(uid)/properties/\(propertyId.uuidString)/\(UUID().uuidString).jpg"
+        do {
+            try await supabase.storage.from("documents")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            let url = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
+            try await supabase.from("properties")
+                .update(["photo_url": url])
+                .eq("id", value: propertyId.uuidString)
+                .execute()
+            if let idx = properties.firstIndex(where: { $0.id == propertyId }) {
+                properties[idx].photoUrl = url
             }
         } catch {
             self.error = error.localizedDescription
