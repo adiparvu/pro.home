@@ -29,6 +29,27 @@ struct TasksView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            PageHeader(title: "Tasks",
+                       leading: AnyView(
+                        NavigationLink {
+                            CalendarView()
+                                .environmentObject(taskService)
+                                .environmentObject(documentService)
+                        } label: {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 18))
+                                .foregroundStyle(Color.primary.opacity(0.85))
+                        }
+                       ),
+                       trailing: AnyView(
+                        Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.primary)
+                        }
+                       ))
+                .padding(.bottom, 4)
+
             filterBar
 
             if taskService.isLoading {
@@ -42,28 +63,9 @@ struct TasksView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Tasks")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                NavigationLink {
-                    CalendarView()
-                        .environmentObject(taskService)
-                        .environmentObject(documentService)
-                } label: {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.primary.opacity(0.85))
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.primary)
-                }
-            }
-        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showAdd) {
             AddTaskView()
                 .environmentObject(taskService)

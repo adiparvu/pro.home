@@ -244,6 +244,26 @@ struct InventoryView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
+                PageHeader(title: "Inventory",
+                           leading: AnyView(
+                            Button {
+                                HapticFeedback.impact(.light)
+                                showScanner = true
+                            } label: {
+                                Image(systemName: "qrcode.viewfinder")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(Color.primary.opacity(0.85))
+                            }
+                           ),
+                           trailing: AnyView(
+                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundStyle(.primary)
+                            }
+                           ))
+                    .padding(.bottom, 8)
+
                 if !service.items.isEmpty {
                     summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
                 }
@@ -278,23 +298,8 @@ struct InventoryView: View {
                 }
             }
         }
-        .navigationTitle("Inventory")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    HapticFeedback.impact(.light)
-                    showScanner = true
-                } label: {
-                    Image(systemName: "qrcode.viewfinder").font(.system(size: 18)).foregroundStyle(Color.primary.opacity(0.85))
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.primary)
-                }
-            }
-        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAdd) { AddInventorySheet { service.add($0) } }
         .sheet(isPresented: $showScanner) {
             QRScannerSheet { qrValue in

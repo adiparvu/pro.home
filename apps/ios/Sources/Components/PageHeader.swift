@@ -3,10 +3,12 @@ import SwiftUI
 struct PageHeader: View {
     let title: String
     var subtitle: String? = nil
+    var leading: AnyView? = nil
     var trailing: AnyView? = nil
 
     var body: some View {
         HStack(alignment: .bottom) {
+            if let leading { leading }
             VStack(alignment: .leading, spacing: 3) {
                 if let subtitle {
                     Text(subtitle.uppercased())
