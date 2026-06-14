@@ -201,6 +201,7 @@ struct MainTabView: View {
             }
             writeWidgetSnapshot()
             updateDynamicShortcuts()
+            await indexSpotlight()
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
@@ -209,6 +210,7 @@ struct MainTabView: View {
                 await plantService.load(propertyId: newPropId)
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()
+                await indexSpotlight()
             }
         }
         .onChange(of: profileService.profile) { _, profile in
@@ -270,6 +272,16 @@ struct MainTabView: View {
         )
         SharedDataStore.writePlantCatalog(
             plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
+        )
+    }
+
+    private func indexSpotlight() async {
+        await SpotlightService.shared.indexAll(
+            tasks: taskService.tasks,
+            plants: plantService.plants,
+            lists: supplyService.lists,
+            items: supplyService.items,
+            docs: documentService.documents
         )
     }
 
