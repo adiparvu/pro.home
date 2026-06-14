@@ -12,8 +12,8 @@ struct DashboardView: View {
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var router: AppRouter
 
-    @Binding var selectedTab: AppTab
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var mapPosition: MapCameraPosition = .region(
@@ -24,12 +24,7 @@ struct DashboardView: View {
     )
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
-    @State private var fabExpanded = false
     @State private var showNotifications = false
-    @State private var showChat = false
-    @State private var showAddTask = false
-    @State private var showInventory = false
-    @State private var showAddExpense = false
 
     private let sections = PropertySection.all
 
@@ -62,22 +57,12 @@ struct DashboardView: View {
             }
             .background(appBackground.ignoresSafeArea())
 
-            if fabExpanded {
-                Color.black.opacity(0.35)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
-                            fabExpanded = false
-                        }
-                    }
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-
-            speedDialFAB
-                .padding(.trailing, 20)
-                .padding(.bottom, bottomSafeArea + 80)
-                .zIndex(2)
+            FloatingSpeedDial(
+                actions: appSettings.fabVisible(.home) ? appSettings.fabActions(.home) : [],
+                onSelect: { router.perform($0) },
+                bottomPadding: bottomSafeArea + 80
+            )
+            .zIndex(2)
         }
         .navigationBarHidden(true)
         .onAppear { startPulse() }
@@ -96,18 +81,6 @@ struct DashboardView: View {
                     .navigationTitle("Notificări")
                     .navigationBarTitleDisplayMode(.inline)
             }
-        }
-        .sheet(isPresented: $showChat) {
-            NavigationStack { ChatView() }
-        }
-        .sheet(isPresented: $showAddTask) {
-            NavigationStack { AddTaskView() }
-        }
-        .sheet(isPresented: $showInventory) {
-            NavigationStack { InventoryView(autoScan: true) }
-        }
-        .sheet(isPresented: $showAddExpense) {
-            AddFinancialView { await financialService.load() }
         }
     }
 
@@ -251,7 +224,7 @@ struct DashboardView: View {
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
                 badge: taskService.overdueCount
-            ) { selectedTab = .tasks }
+            ) { router.selectedTab = .tasks }
 
             HomeWidget(
                 icon: "creditcard.fill",
@@ -260,7 +233,7 @@ struct DashboardView: View {
                 title: "Finanțe",
                 value: netFormatted,
                 subtitle: "luna aceasta"
-            ) { selectedTab = .analytics }
+            ) { router.selectedTab = .analytics }
 
             HomeWidget(
                 icon: "doc.fill",
@@ -272,7 +245,7 @@ struct DashboardView: View {
                     : "\(documentService.expiringDocs.count)",
                 subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiră curând",
                 badge: documentService.expiringDocs.count
-            ) { selectedTab = .settings }
+            ) { router.selectedTab = .settings }
 
             HomeWidget(
                 icon: "person.2.fill",
@@ -280,91 +253,8 @@ struct DashboardView: View {
                 title: "Familie",
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? "membru" : "membri"
-            ) { selectedTab = .settings }
+            ) { router.selectedTab = .settings }
         }
-    }
-
-    // MARK: - Speed Dial FAB
-
-    private var speedDialFAB: some View {
-        VStack(alignment: .trailing, spacing: 12) {
-            if fabExpanded {
-                ForEach(appSettings.quickActions) { action in
-                    fabAction(icon: action.icon, color: action.color, title: action.title) {
-                        withAnimation(.spring()) { fabExpanded = false }
-                        perform(action)
-                    }
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-                }
-            }
-
-            Button {
-                HapticFeedback.impact(.medium)
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
-                    fabExpanded.toggle()
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-                        .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.primary)
-                        .rotationEffect(.degrees(fabExpanded ? 45 : 0))
-                        .animation(.spring(response: 0.38, dampingFraction: 0.72), value: fabExpanded)
-                }
-                .frame(width: 58, height: 58)
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func perform(_ action: DashboardQuickAction) {
-        switch action {
-        case .aria:
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .assistant }
-        case .newTask:
-            showAddTask = true
-        case .chat:
-            showChat = true
-        case .scan:
-            showInventory = true
-        case .addExpense:
-            showAddExpense = true
-        case .finances:
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .analytics }
-        }
-    }
-
-    private func fabAction(icon: String, color: Color, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                    .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
-
-                ZStack {
-                    Circle().fill(.ultraThinMaterial)
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                    Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-                .frame(width: 44, height: 44)
-                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

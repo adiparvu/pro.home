@@ -51,7 +51,7 @@ struct MainTabView: View {
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
     @StateObject private var tabBarVis = TabBarVisibility()
-    @State private var selectedTab: AppTab = .home
+    @StateObject private var router = AppRouter()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -60,8 +60,8 @@ struct MainTabView: View {
         }
         .ignoresSafeArea(edges: .bottom)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if selectedTab != .assistant && !tabBarVis.isHidden && !tabBarVis.scrolledDown {
-                FloatingTabBar(selected: $selectedTab, overdueCount: taskService.overdueCount)
+            if router.selectedTab != .assistant && !tabBarVis.isHidden && !tabBarVis.scrolledDown {
+                FloatingTabBar(selected: $router.selectedTab, overdueCount: taskService.overdueCount)
                     .padding(.horizontal, 20)
                     .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
                     .padding(.top, 4)
@@ -69,6 +69,12 @@ struct MainTabView: View {
             }
         }
         .animation(.spring(response: 0.38, dampingFraction: 0.82), value: tabBarVis.scrolledDown)
+        .sheet(isPresented: $router.showAddTask) { AddTaskView() }
+        .sheet(isPresented: $router.showChat) { NavigationStack { ChatView() } }
+        .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
+        .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
+        .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
+        .environmentObject(router)
         .environmentObject(tabBarVis)
         .environmentObject(taskService)
         .environmentObject(propertyService)
@@ -128,16 +134,16 @@ struct MainTabView: View {
                 }
             }
         }
-        .onChange(of: selectedTab) { _, _ in
+        .onChange(of: router.selectedTab) { _, _ in
             if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
         }
     }
 
     @ViewBuilder
     private var tabContent: some View {
-        switch selectedTab {
+        switch router.selectedTab {
         case .home:
-            NavigationStack { DashboardView(selectedTab: $selectedTab) }
+            NavigationStack { DashboardView() }
         case .map:
             NavigationStack { PropertyMapView() }
         case .tasks:
@@ -145,7 +151,7 @@ struct MainTabView: View {
         case .analytics:
             NavigationStack { AnalyticsView() }
         case .assistant:
-            NavigationStack { ARIAView(onDismiss: { withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) { selectedTab = .home } }) }
+            NavigationStack { ARIAView(onDismiss: { withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) { router.selectedTab = .home } }) }
         case .settings:
             NavigationStack { SettingsView() }
         }

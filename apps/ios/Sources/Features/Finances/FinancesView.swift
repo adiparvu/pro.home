@@ -31,6 +31,7 @@ struct FinancesView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @EnvironmentObject private var router: AppRouter
 
     @State private var showAddSheet    = false
     @State private var selectedType: String? = nil
@@ -114,20 +115,18 @@ struct FinancesView: View {
         }
         .background(appBackground.ignoresSafeArea())
         .overlay(alignment: .bottomTrailing) {
-            Button {
-                showAddSheet = true
-                HapticFeedback.impact(.medium)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 56, height: 56)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
-            }
-            .padding(.trailing, 24)
-            .padding(.bottom, 110)
+            FloatingSpeedDial(
+                actions: appSettings.fabVisible(.finances) ? appSettings.fabActions(.finances) : [],
+                onSelect: { action in
+                    if action == .addExpense {
+                        showAddSheet = true
+                        HapticFeedback.impact(.medium)
+                    } else {
+                        router.perform(action)
+                    }
+                },
+                bottomPadding: 110
+            )
         }
         .navigationTitle("Finanțe")
         .navigationBarTitleDisplayMode(.large)

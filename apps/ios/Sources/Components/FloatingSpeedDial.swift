@@ -1,0 +1,105 @@
+import SwiftUI
+
+/// A reusable floating speed-dial button.
+/// - When given multiple actions it expands into a menu.
+/// - When given a single action, tapping triggers that action directly.
+/// - When given no actions it renders nothing (hidden).
+struct FloatingSpeedDial: View {
+    let actions: [DashboardQuickAction]
+    let onSelect: (DashboardQuickAction) -> Void
+    var bottomPadding: CGFloat = 100
+    var trailingPadding: CGFloat = 20
+
+    @State private var expanded = false
+
+    private var isMenu: Bool { actions.count > 1 }
+
+    var body: some View {
+        if actions.isEmpty {
+            EmptyView()
+        } else {
+            ZStack(alignment: .bottomTrailing) {
+                if expanded && isMenu {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .onTapGesture { collapse() }
+                        .transition(.opacity)
+                }
+
+                VStack(alignment: .trailing, spacing: 12) {
+                    if expanded && isMenu {
+                        ForEach(actions) { action in
+                            actionRow(action)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .opacity
+                                ))
+                        }
+                    }
+                    mainButton
+                }
+                .padding(.trailing, trailingPadding)
+                .padding(.bottom, bottomPadding)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        }
+    }
+
+    private var mainButton: some View {
+        Button {
+            HapticFeedback.impact(.medium)
+            if isMenu {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded.toggle() }
+            } else if let only = actions.first {
+                onSelect(only)
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
+                Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
+                    .font(.system(size: isMenu ? 22 : 20, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
+                    .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
+            }
+            .frame(width: 58, height: 58)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func actionRow(_ action: DashboardQuickAction) -> some View {
+        Button {
+            collapse()
+            onSelect(action)
+        } label: {
+            HStack(spacing: 10) {
+                Text(action.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
+
+                ZStack {
+                    Circle().fill(.ultraThinMaterial)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                    Image(systemName: action.icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .frame(width: 44, height: 44)
+                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func collapse() {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded = false }
+    }
+}

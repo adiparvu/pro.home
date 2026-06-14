@@ -217,6 +217,9 @@ final class InventoryService: ObservableObject {
 
 struct InventoryView: View {
     var autoScan: Bool = false
+    var autoAdd: Bool = false
+    @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var router: AppRouter
     @StateObject private var service = InventoryService()
     @Environment(\.dismiss) private var dismiss
     @State private var filter: InvFilter = .all
@@ -225,6 +228,7 @@ struct InventoryView: View {
     @State private var selectedItem: InventoryItem?
     @State private var scannedUnknown = false
     @State private var didAutoScan = false
+    @State private var didAutoAdd = false
 
     enum InvFilter: String, CaseIterable {
         case all = "All", loaned = "Loaned", tools = "Tools"
@@ -292,21 +296,17 @@ struct InventoryView: View {
                 }
             }
 
-            Button {
-                HapticFeedback.impact(.light)
-                showScanner = true
-            } label: {
-                Image(systemName: "qrcode.viewfinder")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 56, height: 56)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 20)
-            .padding(.bottom, 30)
+            FloatingSpeedDial(
+                actions: appSettings.fabVisible(.inventory) ? appSettings.fabActions(.inventory) : [],
+                onSelect: { action in
+                    switch action {
+                    case .scan:    showScanner = true
+                    case .addItem: showAdd = true
+                    default:       router.perform(action)
+                    }
+                },
+                bottomPadding: 100
+            )
         }
         .navigationTitle("Inventory")
         .navigationBarTitleDisplayMode(.large)
@@ -362,6 +362,10 @@ struct InventoryView: View {
             if autoScan && !didAutoScan {
                 didAutoScan = true
                 showScanner = true
+            }
+            if autoAdd && !didAutoAdd {
+                didAutoAdd = true
+                showAdd = true
             }
         }
     }

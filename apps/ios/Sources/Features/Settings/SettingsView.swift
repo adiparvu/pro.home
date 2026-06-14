@@ -262,7 +262,7 @@ struct SettingsView: View {
                     .environmentObject(auth)
                     .environmentObject(currencyService)
             }
-            NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Button") {
+            NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
                 QuickActionsSettingsView()
                     .environmentObject(appSettings)
             }

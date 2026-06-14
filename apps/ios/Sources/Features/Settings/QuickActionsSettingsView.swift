@@ -1,34 +1,20 @@
 import SwiftUI
 
-/// Lets the user customize which quick actions appear on the home
-/// floating (speed-dial) button.
+/// Lets the user customize the floating (speed-dial) button on each page:
+/// which quick actions appear, and whether the button shows at all.
 struct QuickActionsSettingsView: View {
     @EnvironmentObject private var appSettings: AppSettings
 
-    private var enabledCount: Int { appSettings.quickActions.count }
-
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 header
 
-                SettingsGroup(title: "Acțiuni rapide") {
-                    ForEach(DashboardQuickAction.allCases) { action in
-                        QuickActionToggleRow(
-                            action: action,
-                            isOn: Binding(
-                                get: { appSettings.isQuickActionEnabled(action) },
-                                set: { newValue in
-                                    HapticFeedback.selection()
-                                    appSettings.setQuickAction(action, enabled: newValue)
-                                }
-                            ),
-                            isLast: action == DashboardQuickAction.allCases.last
-                        )
-                    }
+                ForEach(FloatingButtonHost.allCases) { host in
+                    hostSection(host)
                 }
 
-                Text("Acțiunile activate apar pe butonul plutitor de pe ecranul principal, în ordinea de aici.")
+                Text("Dacă o pagină are o singură acțiune activă, butonul o declanșează direct. Cu mai multe acțiuni, butonul deschide un meniu.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
@@ -39,7 +25,7 @@ struct QuickActionsSettingsView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Buton plutitor")
+        .navigationTitle("Butoane plutitoare")
         .navigationBarTitleDisplayMode(.large)
     }
 
@@ -56,10 +42,10 @@ struct QuickActionsSettingsView: View {
                         .foregroundStyle(.primary)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Personalizează butonul")
+                    Text("Personalizează butoanele")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
-                    Text("\(enabledCount) \(enabledCount == 1 ? "acțiune activă" : "acțiuni active")")
+                    Text("Alege ce acțiuni apar pe fiecare pagină — sau ascunde butonul complet.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.5))
                 }
@@ -67,9 +53,85 @@ struct QuickActionsSettingsView: View {
             }
         }
     }
+
+    private func hostSection(_ host: FloatingButtonHost) -> some View {
+        let visible = appSettings.fabVisible(host)
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(host.title.uppercased())
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 8)
+
+            VStack(spacing: 0) {
+                FabVisibilityRow(
+                    isOn: Binding(
+                        get: { appSettings.fabVisible(host) },
+                        set: { newValue in
+                            HapticFeedback.selection()
+                            appSettings.setFabVisible(host, newValue)
+                        }
+                    ),
+                    isLast: !visible
+                )
+
+                if visible {
+                    ForEach(DashboardQuickAction.allCases) { action in
+                        QuickActionToggleRow(
+                            action: action,
+                            isOn: Binding(
+                                get: { appSettings.isFabActionEnabled(host, action) },
+                                set: { newValue in
+                                    HapticFeedback.selection()
+                                    appSettings.setFabAction(host, action, enabled: newValue)
+                                }
+                            ),
+                            isLast: action == DashboardQuickAction.allCases.last
+                        )
+                    }
+                }
+            }
+            .liquidGlass(cornerRadius: 20)
+        }
+    }
 }
 
-// MARK: - Toggle Row
+// MARK: - Rows
+
+private struct FabVisibilityRow: View {
+    @Binding var isOn: Bool
+    var isLast: Bool = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.primary.opacity(0.08))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: isOn ? "eye.fill" : "eye.slash.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                Text("Afișează butonul")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Toggle("", isOn: $isOn)
+                    .labelsHidden()
+                    .tint(.blue)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+
+            if !isLast {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.06))
+                    .frame(height: 0.4)
+                    .padding(.leading, 58)
+            }
+        }
+    }
+}
 
 private struct QuickActionToggleRow: View {
     let action: DashboardQuickAction
