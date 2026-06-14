@@ -712,7 +712,7 @@ private struct ForecastRow: View {
 
 // MARK: - Calendar extension
 
-private extension Calendar {
+extension Calendar {
     func startOfMonth(_ date: Date) -> Date {
         let comps = dateComponents([.year, .month], from: date)
         return self.date(from: comps) ?? date
