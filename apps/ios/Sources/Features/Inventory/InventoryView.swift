@@ -216,6 +216,7 @@ final class InventoryService: ObservableObject {
 // MARK: - Main View
 
 struct InventoryView: View {
+    var autoScan: Bool = false
     @StateObject private var service = InventoryService()
     @Environment(\.dismiss) private var dismiss
     @State private var filter: InvFilter = .all
@@ -223,6 +224,7 @@ struct InventoryView: View {
     @State private var showScanner = false
     @State private var selectedItem: InventoryItem?
     @State private var scannedUnknown = false
+    @State private var didAutoScan = false
 
     enum InvFilter: String, CaseIterable {
         case all = "All", loaned = "Loaned", tools = "Tools"
@@ -323,27 +325,13 @@ struct InventoryView: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 5) {
-                            if filter != .all {
-                                Image(systemName: filter.icon)
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(filter.rawValue)
-                                    .font(.system(size: 13, weight: .semibold))
-                            } else {
-                                Text("…")
-                                    .font(.system(size: 15, weight: .semibold))
-                            }
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 9, weight: .medium))
-                        }
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                 }
@@ -369,6 +357,12 @@ struct InventoryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("This QR code doesn't match any item in your inventory.")
+        }
+        .onAppear {
+            if autoScan && !didAutoScan {
+                didAutoScan = true
+                showScanner = true
+            }
         }
     }
 

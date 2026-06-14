@@ -152,7 +152,7 @@ struct ContractorsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.primary)
+                    Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
                 }
             }
         }

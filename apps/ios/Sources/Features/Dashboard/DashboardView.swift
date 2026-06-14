@@ -11,6 +11,7 @@ struct DashboardView: View {
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var appSettings: AppSettings
 
     @Binding var selectedTab: AppTab
     @EnvironmentObject private var tabBarVis: TabBarVisibility
@@ -28,6 +29,7 @@ struct DashboardView: View {
     @State private var showChat = false
     @State private var showAddTask = false
     @State private var showInventory = false
+    @State private var showAddExpense = false
 
     private let sections = PropertySection.all
 
@@ -102,7 +104,10 @@ struct DashboardView: View {
             NavigationStack { AddTaskView() }
         }
         .sheet(isPresented: $showInventory) {
-            NavigationStack { InventoryView() }
+            NavigationStack { InventoryView(autoScan: true) }
+        }
+        .sheet(isPresented: $showAddExpense) {
+            AddFinancialView { await financialService.load() }
         }
     }
 
@@ -284,49 +289,16 @@ struct DashboardView: View {
     private var speedDialFAB: some View {
         VStack(alignment: .trailing, spacing: 12) {
             if fabExpanded {
-                fabAction(icon: "sparkles",
-                          color: Color(red: 0.6, green: 0.35, blue: 0.95),
-                          title: "ARIA") {
-                    withAnimation(.spring()) { fabExpanded = false }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .assistant }
+                ForEach(appSettings.quickActions) { action in
+                    fabAction(icon: action.icon, color: action.color, title: action.title) {
+                        withAnimation(.spring()) { fabExpanded = false }
+                        perform(action)
+                    }
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
+                    ))
                 }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .opacity
-                ))
-
-                fabAction(icon: "plus.circle.fill",
-                          color: Color(red: 0.3, green: 0.85, blue: 0.45),
-                          title: "Sarcină nouă") {
-                    withAnimation(.spring()) { fabExpanded = false }
-                    showAddTask = true
-                }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .opacity
-                ))
-
-                fabAction(icon: "message.fill",
-                          color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                          title: "Chat familie") {
-                    withAnimation(.spring()) { fabExpanded = false }
-                    showChat = true
-                }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .opacity
-                ))
-
-                fabAction(icon: "barcode.viewfinder",
-                          color: Color(red: 1.0, green: 0.65, blue: 0.15),
-                          title: "Scanare") {
-                    withAnimation(.spring()) { fabExpanded = false }
-                    showInventory = true
-                }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .opacity
-                ))
             }
 
             Button {
@@ -349,6 +321,23 @@ struct DashboardView: View {
                 .frame(width: 58, height: 58)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private func perform(_ action: DashboardQuickAction) {
+        switch action {
+        case .aria:
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .assistant }
+        case .newTask:
+            showAddTask = true
+        case .chat:
+            showChat = true
+        case .scan:
+            showInventory = true
+        case .addExpense:
+            showAddExpense = true
+        case .finances:
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { selectedTab = .analytics }
         }
     }
 

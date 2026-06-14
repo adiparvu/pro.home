@@ -121,8 +121,8 @@ struct UtilityView: View {
                     showAdd = true
                     HapticFeedback.impact(.medium)
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
             }

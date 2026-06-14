@@ -158,21 +158,11 @@ struct FinancesView: View {
                 Label("Cheltuieli", systemImage: "arrow.up.right")
             }
         } label: {
-            Group {
-                if let type = selectedType {
-                    Image(systemName: type == "income" ? "arrow.down.left" : "arrow.up.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                } else {
-                    Text("…")
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                }
-            }
-            .frame(width: 36, height: 32)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+            Image(systemName: selectedType == nil
+                  ? "line.3.horizontal.decrease"
+                  : (selectedType == "income" ? "arrow.down.left" : "arrow.up.right"))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
         }
     }
 

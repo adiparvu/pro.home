@@ -76,7 +76,6 @@ struct AddTaskView: View {
                 AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
             }
         }
-        .preferredColorScheme(.dark)
         .task { await familyService.load() }
     }
 
@@ -153,7 +152,6 @@ struct AddTaskView: View {
                 DatePicker("", selection: $dueDate, displayedComponents: .date)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .colorScheme(.dark)
                     .tint(.blue)
             }
         }

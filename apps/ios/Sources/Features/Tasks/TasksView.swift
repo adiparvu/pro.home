@@ -80,27 +80,13 @@ struct TasksView: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 5) {
-                            if filter != .all {
-                                Image(systemName: filter.icon)
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(filter.rawValue)
-                                    .font(.system(size: 13, weight: .semibold))
-                            } else {
-                                Text("…")
-                                    .font(.system(size: 15, weight: .semibold))
-                            }
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 9, weight: .medium))
-                        }
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
-                        .background(.ultraThinMaterial, in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                 }

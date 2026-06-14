@@ -81,8 +81,8 @@ struct DocumentsView: View {
                             showAdd = true
                         }
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 22))
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                 }
@@ -192,23 +192,11 @@ struct DocumentsView: View {
                 }
             }
         } label: {
-            HStack(spacing: 5) {
-                if let cat = selectedCategory {
-                    Image(systemName: categoryIcon(for: cat))
-                        .font(.system(size: 12, weight: .semibold))
-                    Text(cat.capitalized)
-                        .font(.system(size: 13, weight: .semibold))
-                } else {
-                    Text("…")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 9, weight: .medium))
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+            Image(systemName: selectedCategory == nil
+                  ? "line.3.horizontal.decrease"
+                  : categoryIcon(for: selectedCategory!))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
         }
     }
 
@@ -421,7 +409,6 @@ struct AddDocumentSheet: View {
                                     div
                                     DatePicker("", selection: $expiryDate, in: Date()..., displayedComponents: .date)
                                         .datePickerStyle(.compact)
-                                        .colorScheme(.dark)
                                         .padding(.horizontal, 16).padding(.vertical, 10)
                                 }
                             }

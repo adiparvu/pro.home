@@ -60,7 +60,6 @@ struct EditProfileView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .onAppear { loadCurrentValues() }
     }
 

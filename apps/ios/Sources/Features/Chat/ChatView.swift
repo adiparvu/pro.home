@@ -54,35 +54,23 @@ struct ChatView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .padding(.horizontal, 10).padding(.vertical, 7)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 6) {
+                HStack(spacing: 14) {
                     Button { showCallSheet = true } label: {
                         Image(systemName: "phone.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                     }
-                    .buttonStyle(.plain)
 
                     Button { showVideoSheet = true } label: {
                         Image(systemName: "video.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
-                            .frame(width: 34, height: 34)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                     }
-                    .buttonStyle(.plain)
 
                     MemberAvatarStack(
                         members: familyService.members,
