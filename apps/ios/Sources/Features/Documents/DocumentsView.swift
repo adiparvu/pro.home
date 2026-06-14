@@ -254,6 +254,7 @@ struct DocumentsView: View {
             }
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

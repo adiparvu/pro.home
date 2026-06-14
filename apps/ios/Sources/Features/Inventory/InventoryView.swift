@@ -409,6 +409,7 @@ struct InventoryView: View {
             Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
