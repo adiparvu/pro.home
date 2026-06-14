@@ -87,6 +87,29 @@ final class DocumentService: ObservableObject {
         documents.insert(newDoc, at: 0)
     }
 
+    func documents(forElement elementId: UUID) -> [DocumentModel] {
+        documents.filter { $0.elementId == elementId }
+    }
+
+    /// Link (or unlink, with nil) a document to an object.
+    func setElement(_ elementId: UUID?, for doc: DocumentModel) async {
+        struct ElementLink: Encodable {
+            let element_id: String?
+        }
+        do {
+            try await supabase
+                .from("documents")
+                .update(ElementLink(element_id: elementId?.uuidString))
+                .eq("id", value: doc.id.uuidString)
+                .execute()
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx].elementId = elementId
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func delete(_ doc: DocumentModel) async {
         do {
             // Remove from storage

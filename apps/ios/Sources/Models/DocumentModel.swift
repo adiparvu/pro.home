@@ -13,6 +13,7 @@ struct DocumentModel: Identifiable, Codable {
     var expiresAt: String?
     var isCritical: Bool
     var tags: [String]
+    var elementId: UUID?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -24,6 +25,7 @@ struct DocumentModel: Identifiable, Codable {
         case mimeType    = "mime_type"
         case expiresAt   = "expires_at"
         case isCritical  = "is_critical"
+        case elementId   = "element_id"
         case createdAt   = "created_at"
     }
 

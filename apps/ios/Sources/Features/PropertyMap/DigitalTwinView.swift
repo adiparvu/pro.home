@@ -16,6 +16,7 @@ struct DigitalTwinView: View {
     @State private var selectedElement: PropertyElement?
     @State private var activeLayer: PropertyLayer?
     @State private var heatmap = false
+    @State private var is3D = false
     @State private var drawMode = false
     @State private var draftPoints: [GeoPoint] = []
     @State private var editingZone: PropertyZone?
@@ -103,6 +104,7 @@ struct DigitalTwinView: View {
         }
         .overlay(alignment: .top) { if !drawMode { layerBar } }
         .overlay(alignment: .bottomTrailing) { if !drawMode { sideControls } }
+        .overlay(alignment: .bottomLeading) { if heatmap && !drawMode { heatmapLegend } }
         .overlay(alignment: .bottom) { if drawMode { drawToolbar } }
         .overlay(alignment: .top) { if drawMode { drawBanner } }
         .navigationTitle("Digital Twin")
@@ -205,6 +207,10 @@ struct DigitalTwinView: View {
 
     private var sideControls: some View {
         VStack(spacing: 12) {
+            controlButton(icon: is3D ? "rotate.3d.fill" : "rotate.3d",
+                          tint: is3D ? .blue : .primary) {
+                toggle3D()
+            }
             controlButton(icon: heatmap ? "flame.fill" : "flame",
                           tint: heatmap ? .orange : .primary) {
                 withAnimation(.spring(response: 0.3)) { heatmap.toggle() }
@@ -225,6 +231,36 @@ struct DigitalTwinView: View {
         }
         .padding(.trailing, 16)
         .padding(.bottom, 36)
+    }
+
+    private var heatmapLegend: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("SĂNĂTATE")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(LinearGradient(
+                        colors: [.red, .orange, Color(red: 0.2, green: 0.8, blue: 0.45)],
+                        startPoint: .bottom, endPoint: .top))
+                    .frame(width: 8, height: 56)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("100").font(.system(size: 9, weight: .semibold))
+                    Spacer()
+                    Text("50").font(.system(size: 9, weight: .semibold))
+                    Spacer()
+                    Text("0").font(.system(size: 9, weight: .semibold))
+                }
+                .frame(height: 56)
+                .foregroundStyle(.primary)
+            }
+        }
+        .padding(10)
+        .glassRoundedRect(14)
+        .padding(.leading, 16)
+        .padding(.bottom, 36)
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+        .transition(.opacity)
     }
 
     private func controlButton(icon: String, tint: Color, action: @escaping () -> Void) -> some View {
@@ -347,19 +383,33 @@ struct DigitalTwinView: View {
     }
 
     private func focus(on zone: PropertyZone) {
-        withAnimation(.easeInOut(duration: 0.6)) {
-            camera = .region(zone.region)
+        withAnimation(.easeInOut(duration: 0.7)) {
+            if is3D {
+                camera = .camera(MapCamera(centerCoordinate: zone.center, distance: 200, heading: 0, pitch: 60))
+            } else {
+                camera = .region(zone.region)
+            }
         }
     }
 
     private func recenter() {
-        withAnimation(.easeInOut(duration: 0.6)) {
-            camera = .region(MKCoordinateRegion(
-                center: propertyCoordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.0016, longitudeDelta: 0.0016)
-            ))
+        withAnimation(.easeInOut(duration: 0.7)) {
+            if is3D {
+                camera = .camera(MapCamera(centerCoordinate: propertyCoordinate, distance: 360, heading: 0, pitch: 55))
+            } else {
+                camera = .region(MKCoordinateRegion(
+                    center: propertyCoordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.0016, longitudeDelta: 0.0016)
+                ))
+            }
         }
         HapticFeedback.selection()
+    }
+
+    private func toggle3D() {
+        withAnimation(.spring(response: 0.3)) { is3D.toggle() }
+        HapticFeedback.impact(.light)
+        if let zone = selectedZone { focus(on: zone) } else { recenter() }
     }
 
     private func loadData() async {
