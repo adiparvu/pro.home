@@ -25,14 +25,32 @@ final class ProfileService: ObservableObject {
         }
     }
 
-    func update(fullName: String, displayName: String, phone: String?) async throws {
+    func update(
+        displayName: String,
+        fullName: String,
+        firstName: String?,
+        lastName: String?,
+        birthDate: String?,
+        phone: String?,
+        email: String?,
+        socialLinks: [SocialLink],
+        notes: String?
+    ) async throws {
         guard let id = profile?.id else { return }
         isSaving = true
         defer { isSaving = false }
+        func clean(_ s: String?) -> String? { (s?.isEmpty ?? true) ? nil : s }
+
         let payload = ProfileUpdate(
             fullName: fullName,
             displayName: displayName,
-            phone: phone.flatMap { $0.isEmpty ? nil : $0 },
+            firstName: clean(firstName),
+            lastName: clean(lastName),
+            birthDate: clean(birthDate),
+            phone: clean(phone),
+            email: clean(email),
+            socialLinks: socialLinks,
+            notes: clean(notes),
             updatedAt: ISO8601DateFormatter().string(from: Date())
         )
         try await supabase
@@ -41,8 +59,14 @@ final class ProfileService: ObservableObject {
             .eq("id", value: id.uuidString)
             .execute()
         profile?.fullName = fullName
-        profile?.displayName = displayName.isEmpty ? nil : displayName
-        profile?.phone = phone
+        profile?.displayName = clean(displayName)
+        profile?.firstName = clean(firstName)
+        profile?.lastName = clean(lastName)
+        profile?.birthDate = clean(birthDate)
+        profile?.phone = clean(phone)
+        if let e = clean(email) { profile?.email = e }
+        profile?.socialLinks = socialLinks
+        profile?.notes = clean(notes)
     }
 
     func uploadAvatar(_ image: UIImage) async throws {
