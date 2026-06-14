@@ -180,9 +180,10 @@ platform :ios do
     RUBY
 
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.controls' 'PRVIOControls' 'SU92TVZT8W'")
 
-    # Fetch or create the App Store Distribution provisioning profile.
-    # Default sigh (no adhoc/development flag) = App Store profile.
+    # Fetch or create App Store Distribution provisioning profiles for all targets.
     sigh(
       api_key:        api_key,
       app_identifier: "com.prvio.app",
@@ -190,9 +191,28 @@ platform :ios do
       output_path:    "/tmp",
       filename:       "PRVIO_AppStore.mobileprovision"
     )
-
     profile_uuid = ENV["SIGH_UUID"]
-    UI.message("Provisioning profile UUID: #{profile_uuid}")
+    UI.message("Main app profile UUID: #{profile_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.widgets",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWidgets_AppStore.mobileprovision"
+    )
+    widgets_uuid = ENV["SIGH_UUID"]
+    UI.message("Widgets profile UUID: #{widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.controls",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOControls_AppStore.mobileprovision"
+    )
+    controls_uuid = ENV["SIGH_UUID"]
+    UI.message("Controls profile UUID: #{controls_uuid}")
 
     # Manual signing — bake cert+profile into the project file (target-scoped)
     # so xcodebuild command-line flags don't bleed into SPM package targets.
@@ -205,6 +225,28 @@ platform :ios do
       team_id:               "SU92TVZT8W",
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          profile_uuid
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWidgets"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.widgets",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          widgets_uuid
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOControls"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.controls",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          controls_uuid
     )
 
     # Re-unlock immediately before archiving so codesign never stalls.
@@ -266,6 +308,10 @@ platform :ios do
         <dict>
           <key>com.prvio.app</key>
           <string>#{profile_uuid}</string>
+          <key>com.prvio.app.widgets</key>
+          <string>#{widgets_uuid}</string>
+          <key>com.prvio.app.controls</key>
+          <string>#{controls_uuid}</string>
         </dict>
       </dict>
       </plist>
