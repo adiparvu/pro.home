@@ -275,7 +275,6 @@ private struct NotifToggleRow: View {
             Spacer()
             Toggle("", isOn: $value)
                 .labelsHidden()
-                .tint(.tint)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

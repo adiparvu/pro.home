@@ -1,5 +1,6 @@
 import SwiftUI
 import LocalAuthentication
+import Supabase
 
 struct SecurityView: View {
     @EnvironmentObject private var auth: AuthService
@@ -16,6 +17,9 @@ struct SecurityView: View {
     @State private var isDeletingAccount = false
     @State private var showAutoLockPicker = false
     @AppStorage("prvio.autoLockMinutes") private var autoLockMinutes = 5
+    @State private var showTOTPEnroll = false
+    @State private var totpFactorId: String?
+    @State private var showRemoveTOTP = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -34,6 +38,14 @@ struct SecurityView: View {
         .navigationTitle("Securitate")
         .navigationBarTitleDisplayMode(.large)
         .task { checkBiometrics() }
+        .task { await loadFactors() }
+        .sheet(isPresented: $showTOTPEnroll) {
+            TOTPEnrollView { Task { await loadFactors() } }
+        }
+        .confirmationDialog("Dezactivezi aplicația de autentificare?", isPresented: $showRemoveTOTP, titleVisibility: .visible) {
+            Button("Dezactivează", role: .destructive) { Task { await removeTOTP() } }
+            Button("Anulează", role: .cancel) {}
+        }
         .alert(alertMessage, isPresented: $showPasswordAlert) {
             Button("OK", role: .cancel) {}
         }
@@ -58,9 +70,33 @@ struct SecurityView: View {
 
     private var mfaSection: some View {
         secGroup(title: "Autentificare multi-factor (MFA)", footer: "Solicită o verificare de securitate suplimentară la autentificare. Dacă nu reușești să treci de această verificare, vei avea opțiunea de a-ți recupera contul.") {
-            statusRow(icon: "apps.iphone", color: .indigo, title: "Aplicație de autentificare", status: "Dezactivat")
+            Button {
+                if totpFactorId != nil { showRemoveTOTP = true } else { showTOTPEnroll = true }
+            } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "apps.iphone", color: .indigo)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Aplicație de autentificare")
+                            .font(.system(size: 15)).foregroundStyle(.primary)
+                        Text("Coduri TOTP (Google Authenticator, 1Password…)")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                    Spacer()
+                    if totpFactorId != nil {
+                        Text("Activat").font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
+                    } else {
+                        Text("Dezactivat").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             divider
-            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Mesaje text", status: "Dezactivat")
+            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Mesaje text", status: "În curând")
         }
     }
 
@@ -257,6 +293,27 @@ struct SecurityView: View {
     }
 
     // MARK: - Actions
+
+    private func loadFactors() async {
+        do {
+            let factors = try await supabase.auth.mfa.listFactors()
+            totpFactorId = factors.totp.first?.id
+        } catch {
+            // leave as-is on error
+        }
+    }
+
+    private func removeTOTP() async {
+        guard let id = totpFactorId else { return }
+        do {
+            try await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: id))
+            totpFactorId = nil
+            HapticFeedback.success()
+        } catch {
+            alertMessage = "Nu s-a putut dezactiva. Încearcă din nou."
+            showPasswordAlert = true
+        }
+    }
 
     private func checkBiometrics() {
         let ctx = LAContext(); var err: NSError?

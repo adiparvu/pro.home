@@ -83,7 +83,6 @@ struct EditProfileView: View {
                 if hasBirthDate {
                     DatePicker("", selection: $birthDate, in: ...Date(), displayedComponents: .date)
                         .labelsHidden()
-                        .tint(.tint)
                     Spacer()
                     Button { withAnimation { hasBirthDate = false } } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
