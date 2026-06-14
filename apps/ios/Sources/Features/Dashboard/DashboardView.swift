@@ -13,6 +13,7 @@ struct DashboardView: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var zoneService: PropertyZoneService
 
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
@@ -73,6 +74,11 @@ struct DashboardView: View {
                     center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                     span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
                 ))
+            }
+        }
+        .task(id: propertyService.primary?.id) {
+            if let pid = propertyService.primary?.id {
+                await zoneService.load(propertyId: pid)
             }
         }
         .sheet(isPresented: $showNotifications) {
@@ -152,17 +158,26 @@ struct DashboardView: View {
             Map(position: $mapPosition) {
                 Annotation("Property", coordinate: propertyCoordinate) {
                     PropertyCoreMarker(pulsing: $pulsing) {
-                        selectedSection = nil
+                        router.selectedTab = .map
                         HapticFeedback.impact(.medium)
                     }
                 }
-                ForEach(sections) { section in
-                    Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
-                        PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                selectedSection = section
+                // Live Digital Twin preview — real zones drawn over satellite
+                ForEach(zoneService.zones) { zone in
+                    if zone.isDrawable {
+                        MapPolygon(coordinates: zone.coordinates)
+                            .foregroundStyle(zone.tint.opacity(0.28))
+                            .stroke(zone.tint.opacity(0.9), lineWidth: 1.5)
+                    }
+                }
+                // Fallback decorative sections only until real zones exist
+                if zoneService.zones.isEmpty {
+                    ForEach(sections) { section in
+                        Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
+                            PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
+                                router.selectedTab = .map
+                                HapticFeedback.impact(.light)
                             }
-                            HapticFeedback.impact(.light)
                         }
                     }
                 }
@@ -170,6 +185,20 @@ struct DashboardView: View {
             .mapStyle(.hybrid(elevation: .realistic))
             .mapControls { }
             .frame(height: 260)
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.selectedTab = .map
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 38, height: 38)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+                .padding(12)
+            }
 
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {

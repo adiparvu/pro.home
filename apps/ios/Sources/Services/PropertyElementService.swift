@@ -61,6 +61,9 @@ final class PropertyElementService: ObservableObject {
                 serialNumber: element.serialNumber,
                 notes: element.notes,
                 layer: element.layer.rawValue,
+                latitude: element.latitude,
+                longitude: element.longitude,
+                zoneId: element.zoneId,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase
@@ -119,6 +122,34 @@ final class PropertyElementService: ObservableObject {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    /// Geo-locate an object on the satellite map (and optionally assign a zone).
+    func updateGeo(elementId: UUID, latitude: Double?, longitude: Double?, zoneId: UUID?) async {
+        let payload = ElementGeoUpdate(
+            latitude: latitude,
+            longitude: longitude,
+            zoneId: zoneId,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        do {
+            try await supabase
+                .from("property_elements")
+                .update(payload)
+                .eq("id", value: elementId.uuidString)
+                .execute()
+            if let idx = elements.firstIndex(where: { $0.id == elementId }) {
+                elements[idx].latitude = latitude
+                elements[idx].longitude = longitude
+                elements[idx].zoneId = zoneId
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func elements(inZone zoneId: UUID) -> [PropertyElement] {
+        elements.filter { $0.zoneId == zoneId }
     }
 
     func delete(_ element: PropertyElement) async {

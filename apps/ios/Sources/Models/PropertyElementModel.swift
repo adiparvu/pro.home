@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreLocation
 
 // MARK: - PropertyElement
 
@@ -23,11 +24,15 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var notes: String?
     var layer: PropertyLayer
     var sortOrder: Int
+    // Digital Twin — optional geo placement on the satellite map + zone link.
+    var latitude: Double?
+    var longitude: Double?
+    var zoneId: UUID?
     let createdAt: String
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, brand, model, notes, layer
+        case id, name, description, brand, model, notes, layer, latitude, longitude
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -40,8 +45,15 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         case warrantyUntil     = "warranty_until"
         case serialNumber      = "serial_number"
         case sortOrder         = "sort_order"
+        case zoneId            = "zone_id"
         case createdAt         = "created_at"
         case updatedAt         = "updated_at"
+    }
+
+    /// Map coordinate when the object has been geo-located.
+    var coordinate: CLLocationCoordinate2D? {
+        guard let latitude, let longitude else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
     var healthColor: Color {
@@ -247,6 +259,16 @@ enum PropertyLayer: String, Codable, CaseIterable {
         case .smartHome:   return "homekit"
         }
     }
+
+    var color: Color {
+        switch self {
+        case .property:    return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .maintenance: return .orange
+        case .utility:     return Color(red: 0.95, green: 0.77, blue: 0.06)
+        case .financial:   return Color(red: 0.2, green: 0.8, blue: 0.45)
+        case .smartHome:   return Color(red: 0.48, green: 0.41, blue: 0.93)
+        }
+    }
 }
 
 // MARK: - ElementRecord
@@ -335,10 +357,13 @@ struct NewPropertyElement: Encodable {
     var serialNumber: String?
     var notes: String?
     var layer: String
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    var zoneId: UUID? = nil
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case name, description, brand, model, notes, layer
+        case name, description, brand, model, notes, layer, latitude, longitude
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -350,7 +375,20 @@ struct NewPropertyElement: Encodable {
         case purchaseDate      = "purchase_date"
         case warrantyUntil     = "warranty_until"
         case serialNumber      = "serial_number"
+        case zoneId            = "zone_id"
         case updatedAt         = "updated_at"
+    }
+}
+
+struct ElementGeoUpdate: Encodable {
+    var latitude: Double?
+    var longitude: Double?
+    var zoneId: UUID?
+    var updatedAt: String
+    enum CodingKeys: String, CodingKey {
+        case latitude, longitude
+        case zoneId    = "zone_id"
+        case updatedAt = "updated_at"
     }
 }
 

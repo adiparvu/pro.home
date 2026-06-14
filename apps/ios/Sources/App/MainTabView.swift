@@ -50,6 +50,7 @@ struct MainTabView: View {
     @StateObject private var messageService = MessageService()
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
+    @StateObject private var zoneService = PropertyZoneService()
     @StateObject private var tabBarVis = TabBarVisibility()
     @StateObject private var router = AppRouter()
 
@@ -59,7 +60,7 @@ struct MainTabView: View {
                 .tabItem { Label(AppTab.home.label, systemImage: AppTab.home.icon) }
                 .tag(AppTab.home)
 
-            NavigationStack { PropertyMapView() }
+            NavigationStack { DigitalTwinView() }
                 .tabItem { Label(AppTab.map.label, systemImage: AppTab.map.icon) }
                 .tag(AppTab.map)
 
@@ -102,6 +103,7 @@ struct MainTabView: View {
         .environmentObject(messageService)
         .environmentObject(currencyService)
         .environmentObject(elementService)
+        .environmentObject(zoneService)
         .task {
             await currencyService.refresh()
             await propertyService.load()
