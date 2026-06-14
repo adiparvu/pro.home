@@ -12,6 +12,15 @@ struct TasksView: View {
         case open = "Open"
         case overdue = "Overdue"
         case done = "Done"
+
+        var icon: String {
+            switch self {
+            case .all:     return "square.grid.2x2.fill"
+            case .open:    return "circle"
+            case .overdue: return "exclamationmark.circle.fill"
+            case .done:    return "checkmark.circle.fill"
+            }
+        }
     }
 
     private var filtered: [MaintenanceTask] {
@@ -42,15 +51,40 @@ struct TasksView: View {
                         }
                        ),
                        trailing: AnyView(
-                        Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 22))
+                        HStack(spacing: 10) {
+                            Menu {
+                                ForEach(TaskFilter.allCases, id: \.self) { f in
+                                    Button {
+                                        withAnimation(.spring(response: 0.25)) { filter = f }
+                                    } label: {
+                                        Label(
+                                            "\(f.rawValue)  (\(countFor(f)))",
+                                            systemImage: filter == f ? "checkmark" : f.icon
+                                        )
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: filter.icon)
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text(filter.rawValue)
+                                        .font(.system(size: 13, weight: .semibold))
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 9, weight: .medium))
+                                }
                                 .foregroundStyle(.primary)
+                                .padding(.horizontal, 12).padding(.vertical, 7)
+                                .background(.ultraThinMaterial, in: Capsule())
+                                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                            }
+                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundStyle(.primary)
+                            }
                         }
                        ))
                 .padding(.bottom, 4)
-
-            filterBar
 
             if taskService.isLoading {
                 Spacer()
@@ -80,26 +114,6 @@ struct TasksView: View {
             Text(taskService.error ?? "")
         }
         .refreshable { await taskService.load() }
-    }
-
-    // MARK: - Filter bar
-
-    private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(TaskFilter.allCases, id: \.self) { f in
-                    FilterChip(
-                        label: f.rawValue,
-                        count: countFor(f),
-                        isSelected: filter == f
-                    ) {
-                        withAnimation(.spring(response: 0.25)) { filter = f }
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
-        }
     }
 
     private func countFor(_ f: TaskFilter) -> Int {

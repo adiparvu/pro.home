@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ARIAView: View {
+    var onDismiss: (() -> Void)? = nil
+
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var profileService: ProfileService
@@ -28,7 +30,20 @@ struct ARIAView: View {
 
     private var ariaHeader: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
+            if let onDismiss {
+                Button {
+                    HapticFeedback.selection()
+                    onDismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .frame(width: 36, height: 36)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                }
+            }
+            VStack(alignment: onDismiss != nil ? .leading : .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text("ARIA")
                         .font(.title2.weight(.bold))

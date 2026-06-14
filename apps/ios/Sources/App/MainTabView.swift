@@ -141,7 +141,7 @@ struct MainTabView: View {
         case .analytics:
             NavigationStack { AnalyticsView() }
         case .assistant:
-            NavigationStack { ARIAView() }
+            NavigationStack { ARIAView(onDismiss: { withAnimation(.spring(response: 0.36, dampingFraction: 0.68)) { selectedTab = .home } }) }
         case .settings:
             NavigationStack { SettingsView() }
         }

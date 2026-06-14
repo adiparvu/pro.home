@@ -226,6 +226,18 @@ struct InventoryView: View {
     enum InvFilter: String, CaseIterable {
         case all = "All", loaned = "Loaned", tools = "Tools"
         case garden = "Garden", outdoor = "Outdoor", electronics = "Electronics", other = "Other"
+
+        var icon: String {
+            switch self {
+            case .all:         return "square.grid.2x2.fill"
+            case .loaned:      return "arrow.uturn.right.circle.fill"
+            case .tools:       return "wrench.and.screwdriver.fill"
+            case .garden:      return "leaf.fill"
+            case .outdoor:     return "sun.max.fill"
+            case .electronics: return "tv.fill"
+            case .other:       return "cube.fill"
+            }
+        }
     }
 
     private var filtered: [InventoryItem] {
@@ -256,10 +268,37 @@ struct InventoryView: View {
                             }
                            ),
                            trailing: AnyView(
-                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 22))
+                            HStack(spacing: 10) {
+                                Menu {
+                                    ForEach(InvFilter.allCases, id: \.self) { f in
+                                        Button {
+                                            withAnimation(.spring(response: 0.25)) { filter = f }
+                                        } label: {
+                                            Label(
+                                                "\(f.rawValue)  (\(countFor(f)))",
+                                                systemImage: filter == f ? "checkmark" : f.icon
+                                            )
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: filter.icon)
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text(filter.rawValue)
+                                            .font(.system(size: 13, weight: .semibold))
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 9, weight: .medium))
+                                    }
                                     .foregroundStyle(.primary)
+                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                    .background(.ultraThinMaterial, in: Capsule())
+                                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                                }
+                                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(.primary)
+                                }
                             }
                            ))
                     .padding(.bottom, 8)
@@ -267,7 +306,6 @@ struct InventoryView: View {
                 if !service.items.isEmpty {
                     summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
                 }
-                filterBar.padding(.bottom, 6)
 
                 if service.items.isEmpty {
                     emptyState
@@ -341,19 +379,15 @@ struct InventoryView: View {
         }
     }
 
-    private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(InvFilter.allCases, id: \.self) { f in
-                    Button { withAnimation(.spring(response: 0.25)) { filter = f } } label: {
-                        Text(f.rawValue)
-                            .font(.system(size: 13, weight: filter == f ? .semibold : .regular))
-                            .foregroundStyle(filter == f ? Color.black : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(filter == f ? Color.white : Color.primary.opacity(0.08), in: Capsule())
-                    }.buttonStyle(.plain)
-                }
-            }.padding(.horizontal, 20)
+    private func countFor(_ f: InvFilter) -> Int {
+        switch f {
+        case .all:         return service.items.count
+        case .loaned:      return service.items.filter { $0.isLoaned }.count
+        case .tools:       return service.items.filter { $0.category == "tools" }.count
+        case .garden:      return service.items.filter { $0.category == "garden" }.count
+        case .outdoor:     return service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }.count
+        case .electronics: return service.items.filter { $0.category == "electronics" }.count
+        case .other:       return service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }.count
         }
     }
 
