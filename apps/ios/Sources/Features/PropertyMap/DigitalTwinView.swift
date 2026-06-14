@@ -16,7 +16,9 @@ struct DigitalTwinView: View {
     @State private var selectedElement: PropertyElement?
     @State private var activeLayer: PropertyLayer?
     @State private var heatmap = false
-    @State private var placingZone = false
+    @State private var drawMode = false
+    @State private var draftPoints: [GeoPoint] = []
+    @State private var editingZone: PropertyZone?
     @State private var showHealth = false
     @State private var didCenter = false
 
@@ -73,6 +75,22 @@ struct DigitalTwinView: View {
                         }
                     }
                 }
+
+                // Draw-in-progress polygon
+                if draftPoints.count >= 3 {
+                    MapPolygon(coordinates: draftPoints.map(\.coordinate))
+                        .foregroundStyle(Color.blue.opacity(0.25))
+                        .stroke(Color.blue, lineWidth: 2)
+                }
+                ForEach(Array(draftPoints.enumerated()), id: \.offset) { idx, pt in
+                    Annotation("", coordinate: pt.coordinate) {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 14, height: 14)
+                            .overlay(Circle().fill(Color.blue).frame(width: 8, height: 8))
+                            .shadow(color: .black.opacity(0.3), radius: 3)
+                    }
+                }
             }
             .mapStyle(.hybrid(elevation: .realistic))
             .mapControls { MapCompass(); MapScaleView() }
@@ -81,14 +99,19 @@ struct DigitalTwinView: View {
                 handleTap(at: coord)
             }
         }
-        .overlay(alignment: .top) { layerBar }
-        .overlay(alignment: .bottomTrailing) { sideControls }
-        .overlay(alignment: .top) { if placingZone { placingBanner } }
+        .overlay(alignment: .top) { if !drawMode { layerBar } }
+        .overlay(alignment: .bottomTrailing) { if !drawMode { sideControls } }
+        .overlay(alignment: .bottom) { if drawMode { drawToolbar } }
+        .overlay(alignment: .top) { if drawMode { drawBanner } }
         .navigationTitle("Digital Twin")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedZone) { zone in
             ZoneBottomSheet(
                 zone: zone,
+                onEdit: {
+                    selectedZone = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { editingZone = zone }
+                },
                 onAddObject: { /* future: place object in zone */ },
                 onDelete: { Task { await zoneService.delete(zone); selectedZone = nil } },
                 onFocus: { focus(on: zone) }
@@ -100,6 +123,13 @@ struct DigitalTwinView: View {
             .presentationBackgroundInteraction(.enabled(upThrough: .height(320)))
             .presentationBackground(.thinMaterial)
             .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $editingZone) { zone in
+            ZoneEditSheet(
+                zone: zone,
+                onSave: { updated in Task { await zoneService.update(updated) } },
+                onDelete: { Task { await zoneService.delete(zone) } }
+            )
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
@@ -163,10 +193,8 @@ struct DigitalTwinView: View {
             controlButton(icon: "heart.text.square.fill", tint: .pink) {
                 showHealth = true
             }
-            controlButton(icon: placingZone ? "xmark" : "plus.viewfinder",
-                          tint: placingZone ? .red : .primary) {
-                withAnimation { placingZone.toggle() }
-                HapticFeedback.impact(.light)
+            controlButton(icon: "plus.viewfinder", tint: .primary) {
+                startDrawing()
             }
             controlButton(icon: "scope", tint: .primary) {
                 recenter()
@@ -188,8 +216,10 @@ struct DigitalTwinView: View {
         .buttonStyle(.plain)
     }
 
-    private var placingBanner: some View {
-        Text("Atinge harta pentru a plasa o zonă nouă")
+    private var drawBanner: some View {
+        Text(draftPoints.count < 3
+             ? "Atinge harta pentru a adăuga colțuri (\(draftPoints.count)/3)"
+             : "\(draftPoints.count) colțuri · atinge pentru mai multe")
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
@@ -197,6 +227,38 @@ struct DigitalTwinView: View {
             .padding(.top, 60)
             .shadow(color: Color.black.opacity(0.2), radius: 10, y: 3)
             .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private var drawToolbar: some View {
+        HStack(spacing: 10) {
+            drawButton("Anulează", icon: "xmark", tint: .red) { cancelDrawing() }
+            drawButton("Înapoi", icon: "arrow.uturn.backward", tint: .primary) {
+                if !draftPoints.isEmpty { draftPoints.removeLast() }
+            }
+            .disabled(draftPoints.isEmpty)
+            drawButton("Salvează", icon: "checkmark", tint: .green) {
+                Task { await saveDrawnZone() }
+            }
+            .disabled(draftPoints.count < 3)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .glassCapsule()
+        .padding(.bottom, 40)
+        .shadow(color: Color.black.opacity(0.25), radius: 14, y: 4)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    private func drawButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                Text(title).font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Styling
@@ -213,12 +275,46 @@ struct DigitalTwinView: View {
     // MARK: - Actions
 
     private func handleTap(at coord: CLLocationCoordinate2D) {
-        if placingZone {
-            Task { await placeZone(at: coord) }
-            withAnimation { placingZone = false }
+        if drawMode {
+            draftPoints.append(GeoPoint(lat: coord.latitude, lon: coord.longitude))
+            HapticFeedback.selection()
         } else if let zone = zoneService.zone(containing: coord) {
             select(zone)
         }
+    }
+
+    private func startDrawing() {
+        HapticFeedback.impact(.light)
+        selectedZone = nil
+        draftPoints = []
+        withAnimation { drawMode = true }
+    }
+
+    private func cancelDrawing() {
+        withAnimation { drawMode = false }
+        draftPoints = []
+    }
+
+    private func saveDrawnZone() async {
+        guard draftPoints.count >= 3, let pid = propertyService.primary?.id else { return }
+        let now = ISO8601DateFormatter().string(from: Date())
+        let payload = NewPropertyZone(
+            propertyId: pid,
+            name: "Zonă nouă",
+            icon: "square.dashed",
+            colorHex: PropertyLayer.property.color.hexString(),
+            layer: PropertyLayer.property.rawValue,
+            healthScore: 100,
+            polygon: draftPoints,
+            sortOrder: zoneService.zones.count,
+            createdAt: now,
+            updatedAt: now
+        )
+        let created = await zoneService.add(payload)
+        HapticFeedback.success()
+        withAnimation { drawMode = false }
+        draftPoints = []
+        if let created { editingZone = created }   // open editor to name it
     }
 
     private func select(_ zone: PropertyZone) {
@@ -241,14 +337,6 @@ struct DigitalTwinView: View {
             ))
         }
         HapticFeedback.selection()
-    }
-
-    private func placeZone(at coord: CLLocationCoordinate2D) async {
-        guard let pid = propertyService.primary?.id else { return }
-        if let created = await zoneService.createDefaultZone(propertyId: pid, center: coord) {
-            HapticFeedback.success()
-            select(created)
-        }
     }
 
     private func loadData() async {

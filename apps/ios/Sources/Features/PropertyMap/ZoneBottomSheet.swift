@@ -4,6 +4,7 @@ import SwiftUI
 /// Digital Twin map. Presented with `.presentationBackground(.thinMaterial)`.
 struct ZoneBottomSheet: View {
     let zone: PropertyZone
+    var onEdit: () -> Void
     var onAddObject: () -> Void
     var onDelete: () -> Void
     var onFocus: () -> Void
@@ -132,8 +133,8 @@ struct ZoneBottomSheet: View {
 
     private var actionRow: some View {
         HStack(spacing: 10) {
-            actionButton("Focalizează", icon: "scope", tint: .blue, action: onFocus)
-            actionButton("Adaugă", icon: "plus", tint: .green, action: onAddObject)
+            actionButton("Editează", icon: "slider.horizontal.3", tint: .blue, action: onEdit)
+            actionButton("Focalizează", icon: "scope", tint: .indigo, action: onFocus)
             actionButton("Șterge", icon: "trash", tint: .red, action: onDelete)
         }
     }
