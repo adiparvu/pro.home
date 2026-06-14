@@ -26,7 +26,6 @@ struct SettingsView: View {
                 switchCard
                 propertySection
                 familySection
-                notificationsSection
                 appSection
                 supportSection
                 signOutButton
@@ -239,17 +238,6 @@ struct SettingsView: View {
                         SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Family Chat", description: "Add a property first to start chatting.")
                     }
                 }
-            }
-        }
-    }
-
-    private var notificationsSection: some View {
-        SettingsGroup(title: "Notifications") {
-            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notification Preferences") {
-                NotificationsSettingsView()
-                    .environmentObject(notificationScheduler)
-                    .environmentObject(taskService)
-                    .environmentObject(documentService)
             }
         }
     }
