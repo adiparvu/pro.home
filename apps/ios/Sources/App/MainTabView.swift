@@ -90,11 +90,6 @@ struct MainTabView: View {
         .environmentObject(messageService)
         .environmentObject(currencyService)
         .environmentObject(elementService)
-        .fullScreenCover(isPresented: .constant(!onboardingDone)) {
-            OnboardingView()
-                .environmentObject(propertyService)
-                .environmentObject(auth)
-        }
         .task {
             await currencyService.refresh()
             await propertyService.load()

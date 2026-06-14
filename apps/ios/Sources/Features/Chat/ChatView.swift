@@ -131,7 +131,7 @@ struct ChatView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 12)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { _, _ in
                 if let last = messageService.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }

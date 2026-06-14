@@ -267,10 +267,6 @@ struct ProfileView: View {
                     .environmentObject(taskService)
                     .environmentObject(documentService)
             }
-            TapSettingsRow(icon: "trash.fill", color: .red, label: "Șterge contul") {
-                HapticFeedback.warning()
-                showDeleteConfirm = true
-            }
         }
     }
 

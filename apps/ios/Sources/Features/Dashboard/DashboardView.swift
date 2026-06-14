@@ -38,7 +38,7 @@ struct DashboardView: View {
                     greetingHeader
                     mapCard
                     widgetGrid
-                    Spacer(minLength: 100)
+                    Spacer(minLength: 160)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, topSafeArea + 8)
@@ -51,7 +51,7 @@ struct DashboardView: View {
             }
             .coordinateSpace(name: "dashScroll")
             .onPreferenceChange(ScrollOffsetKey.self) { y in
-                let shouldCollapse = y < -60
+                let shouldCollapse = y < -30
                 if shouldCollapse != tabBarVis.scrolledDown {
                     withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                         tabBarVis.scrolledDown = shouldCollapse

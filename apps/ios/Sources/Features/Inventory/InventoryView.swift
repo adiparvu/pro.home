@@ -254,37 +254,23 @@ struct InventoryView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 PageHeader(title: "Inventory",
                            leading: AnyView(
-                            HStack(spacing: 10) {
-                                Button {
-                                    HapticFeedback.selection()
-                                    dismiss()
-                                } label: {
-                                    Image(systemName: "chevron.left")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundStyle(Color.primary.opacity(0.75))
-                                        .padding(.horizontal, 10).padding(.vertical, 7)
-                                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                                }
-                                .buttonStyle(.plain)
-                                Button {
-                                    HapticFeedback.impact(.light)
-                                    showScanner = true
-                                } label: {
-                                    Image(systemName: "qrcode.viewfinder")
-                                        .font(.system(size: 18))
-                                        .foregroundStyle(Color.primary.opacity(0.75))
-                                        .padding(8)
-                                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                                }
-                                .buttonStyle(.plain)
+                            Button {
+                                HapticFeedback.selection()
+                                dismiss()
+                            } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color.primary.opacity(0.75))
+                                    .padding(.horizontal, 10).padding(.vertical, 7)
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                             }
+                            .buttonStyle(.plain)
                            ),
                            trailing: AnyView(
                             HStack(spacing: 10) {
@@ -359,6 +345,22 @@ struct InventoryView: View {
                     }
                 }
             }
+
+            Button {
+                HapticFeedback.impact(.light)
+                showScanner = true
+            } label: {
+                Image(systemName: "qrcode.viewfinder")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 56, height: 56)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                    .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 20)
+            .padding(.bottom, 30)
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
