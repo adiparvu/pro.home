@@ -18,6 +18,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
 
     var assigneeIds: [String]
     var assigneeNames: [String]
+    var elementId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, category, priority, status, notes, tags
@@ -29,6 +30,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         case updatedAt     = "updated_at"
         case assigneeIds   = "assignee_ids"
         case assigneeNames = "assignee_names"
+        case elementId     = "element_id"
     }
 
     var isCompleted: Bool { status == "completed" }

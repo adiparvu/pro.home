@@ -9,6 +9,7 @@ struct PropertyElementDetailView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var taskService: TaskService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info
@@ -18,6 +19,7 @@ struct PropertyElementDetailView: View {
     @State private var showDeleteConfirm = false
     @State private var showLocationPicker = false
     @State private var showLinkDocument = false
+    @State private var showLinkTask = false
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var isUploading = false
 
@@ -122,6 +124,10 @@ struct PropertyElementDetailView: View {
         .sheet(isPresented: $showLinkDocument) {
             DocumentLinkPicker(elementId: localElement.id)
                 .environmentObject(documentService)
+        }
+        .sheet(isPresented: $showLinkTask) {
+            TaskLinkPicker(elementId: localElement.id)
+                .environmentObject(taskService)
         }
         .onChange(of: photoItems) { _, items in
             Task { await uploadPhotos(items) }
@@ -512,17 +518,44 @@ struct PropertyElementDetailView: View {
     // MARK: - Tasks Tab
 
     private var tasksTab: some View {
-        GlassCard {
-            VStack(spacing: 10) {
-                Image(systemName: "checklist")
-                    .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
-                Text("Taskuri element")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Text("Asociere taskuri per element disponibilă în versiunea următoare")
-                    .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+        let linked = taskService.tasks(forElement: localElement.id)
+        return VStack(spacing: 12) {
+            HStack {
+                Text("Taskuri legate")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Button {
+                    HapticFeedback.selection()
+                    showLinkTask = true
+                } label: {
+                    Label("Leagă", systemImage: "link")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            if linked.isEmpty {
+                GlassCard {
+                    VStack(spacing: 10) {
+                        Image(systemName: "checklist")
+                            .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
+                        Text("Niciun task legat")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Text("Leagă sarcini de mentenanță de acest obiect")
+                            .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                }
+            } else {
+                ForEach(linked) { task in
+                    LinkedTaskRow(
+                        task: task,
+                        onToggle: { Task { await taskService.toggleComplete(task) } },
+                        onUnlink: { Task { await taskService.setElement(nil, for: task) } }
+                    )
+                }
+            }
         }
     }
 
@@ -721,6 +754,101 @@ private struct DocumentLinkPicker: View {
                 }
             }
             .navigationTitle("Leagă document")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Închide") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Linked task row
+
+private struct LinkedTaskRow: View {
+    let task: MaintenanceTask
+    let onToggle: () -> Void
+    let onUnlink: () -> Void
+
+    var body: some View {
+        GlassCard(padding: 12) {
+            HStack(spacing: 12) {
+                Button(action: onToggle) {
+                    Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22))
+                        .foregroundStyle(task.isCompleted ? Color(red: 0.2, green: 0.8, blue: 0.45) : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                        .strikethrough(task.isCompleted)
+                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Circle().fill(task.priorityColor).frame(width: 6, height: 6)
+                        Text(task.dueDateDisplay).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive, action: onUnlink) {
+                Label("Dezleagă", systemImage: "link.badge.minus")
+            }
+        }
+    }
+}
+
+// MARK: - Task link picker
+
+private struct TaskLinkPicker: View {
+    let elementId: UUID
+    @EnvironmentObject private var taskService: TaskService
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    let available = taskService.tasks.filter { $0.elementId == nil && !$0.isCompleted }
+                    VStack(spacing: 10) {
+                        if available.isEmpty {
+                            Text("Niciun task disponibil de legat.")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 40).padding(.horizontal, 24)
+                        } else {
+                            ForEach(available) { task in
+                                Button {
+                                    Task {
+                                        await taskService.setElement(elementId, for: task)
+                                        dismiss()
+                                    }
+                                } label: {
+                                    GlassCard(padding: 12) {
+                                        HStack(spacing: 12) {
+                                            Circle().fill(task.priorityColor).frame(width: 8, height: 8)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(task.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
+                                                Text(task.dueDateDisplay).font(.caption).foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Leagă task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

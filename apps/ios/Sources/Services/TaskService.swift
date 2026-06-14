@@ -48,6 +48,31 @@ final class TaskService: ObservableObject {
         tasks.insert(new, at: 0)
     }
 
+    func tasks(forElement elementId: UUID) -> [MaintenanceTask] {
+        tasks.filter { $0.elementId == elementId }
+    }
+
+    /// Link (or unlink, with nil) a task to an object.
+    func setElement(_ elementId: UUID?, for task: MaintenanceTask) async {
+        struct ElementLink: Encodable {
+            let element_id: String?
+            let updated_at: String
+        }
+        do {
+            try await supabase
+                .from("maintenance_tasks")
+                .update(ElementLink(element_id: elementId?.uuidString,
+                                    updated_at: ISO8601DateFormatter().string(from: Date())))
+                .eq("id", value: task.id.uuidString)
+                .execute()
+            if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
+                tasks[idx].elementId = elementId
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func toggleComplete(_ task: MaintenanceTask) async {
         let newStatus = task.isCompleted ? "pending" : "completed"
         let update = TaskStatusUpdate(
