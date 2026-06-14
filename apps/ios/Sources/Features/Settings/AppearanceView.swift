@@ -227,8 +227,8 @@ struct AppearanceView: View {
                         }
                         ColorPicker("", selection: customColorBinding, supportsOpacity: false)
                             .labelsHidden()
-                            .opacity(0.011)
-                            .frame(width: 26, height: 26)
+                            .opacity(0.02)
+                            .frame(width: 44, height: 44)
                     }
                     .frame(maxWidth: .infinity)
                 }

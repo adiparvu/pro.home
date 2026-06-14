@@ -170,8 +170,8 @@ struct ProfileView: View {
                     }
                 ), supportsOpacity: false)
                 .labelsHidden()
-                .opacity(0.011)
-                .frame(width: 22, height: 22)
+                .opacity(0.02)
+                .frame(width: 44, height: 44)
             }
         }
         .padding(.top, 2)
