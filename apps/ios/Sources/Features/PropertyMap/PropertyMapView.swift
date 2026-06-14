@@ -264,11 +264,11 @@ struct PropertyMapView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(element.elementType.color.opacity(0.18))
+                        .fill(element.elementType.accentColor.opacity(0.18))
                         .frame(width: 36, height: 36)
                     Image(systemName: element.elementType.icon)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(element.elementType.color)
+                        .foregroundStyle(element.elementType.accentColor)
                         .symbolRenderingMode(.hierarchical)
                 }
 
