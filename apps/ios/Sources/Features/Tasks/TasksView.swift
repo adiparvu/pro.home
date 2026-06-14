@@ -4,6 +4,7 @@ struct TasksView: View {
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
 
@@ -130,6 +131,10 @@ struct TasksView: View {
     private var taskList: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 10) {
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("tasksScroll")).minY)
+                }
+                .frame(height: 0)
                 ForEach(filtered) { task in
                     TaskRowView(task: task)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -155,6 +160,15 @@ struct TasksView: View {
             .padding(.horizontal, 20)
             .padding(.top, 4)
             .padding(.bottom, 110)
+        }
+        .coordinateSpace(name: "tasksScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { y in
+            let shouldCollapse = y < -60
+            if shouldCollapse != tabBarVis.scrolledDown {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                    tabBarVis.scrolledDown = shouldCollapse
+                }
+            }
         }
     }
 

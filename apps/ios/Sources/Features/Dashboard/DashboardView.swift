@@ -13,6 +13,7 @@ struct DashboardView: View {
     @EnvironmentObject private var familyService: FamilyService
 
     @Binding var selectedTab: AppTab
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -34,6 +35,10 @@ struct DashboardView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
+                    GeometryReader { geo in
+                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
+                    }
+                    .frame(height: 0)
                     greetingHeader
                     mapCard
                     widgetGrid
@@ -42,6 +47,15 @@ struct DashboardView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, topSafeArea + 8)
                 .padding(.bottom, 20)
+            }
+            .coordinateSpace(name: "dashScroll")
+            .onPreferenceChange(ScrollOffsetKey.self) { y in
+                let shouldCollapse = y < -60
+                if shouldCollapse != tabBarVis.scrolledDown {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        tabBarVis.scrolledDown = shouldCollapse
+                    }
+                }
             }
             .background(appBackground.ignoresSafeArea())
 

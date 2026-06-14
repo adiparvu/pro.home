@@ -13,6 +13,7 @@ struct SettingsView: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var messageService: MessageService
     @EnvironmentObject private var currencyService: CurrencyService
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
@@ -21,6 +22,10 @@ struct SettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
+                }
+                .frame(height: 0)
                 profileCard
                 switchCard
                 propertySection
@@ -33,6 +38,15 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
+        }
+        .coordinateSpace(name: "settingsScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { y in
+            let shouldCollapse = y < -60
+            if shouldCollapse != tabBarVis.scrolledDown {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                    tabBarVis.scrolledDown = shouldCollapse
+                }
+            }
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")

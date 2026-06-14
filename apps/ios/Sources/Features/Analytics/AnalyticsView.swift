@@ -4,6 +4,7 @@ import Charts
 struct AnalyticsView: View {
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
     @State private var selectedTab: AnalyticsTab = .finances
     @State private var displayedMonth: Date = Calendar.current.startOfMonth(Date())
 
@@ -43,6 +44,10 @@ struct AnalyticsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
+                        GeometryReader { geo in
+                            Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("analyticsScroll")).minY)
+                        }
+                        .frame(height: 0)
                         switch selectedTab {
                         case .finances:
                             FinancesSection(service: financialService, displayedMonth: $displayedMonth)
@@ -55,6 +60,15 @@ struct AnalyticsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
                     .padding(.bottom, 110)
+                }
+                .coordinateSpace(name: "analyticsScroll")
+                .onPreferenceChange(ScrollOffsetKey.self) { y in
+                    let shouldCollapse = y < -60
+                    if shouldCollapse != tabBarVis.scrolledDown {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            tabBarVis.scrolledDown = shouldCollapse
+                        }
+                    }
                 }
                 .refreshable {
                     await financialService.load()
