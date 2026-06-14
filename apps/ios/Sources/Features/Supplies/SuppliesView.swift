@@ -679,7 +679,7 @@ struct AddSupplyListSheet: View {
     }
 
     private var previewCard: some View {
-        let color = SupplyList.colorOptions.first { $0.hex == selectedColor }.map {
+        let color = SupplyList.colorOptions.first { $0.hex == selectedColor }.flatMap {
             Color(hex: $0.hex)
         } ?? .blue
         return GlassCard(padding: 0) {
@@ -729,7 +729,7 @@ struct AddSupplyListSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ICONIȚĂ")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            let color = Color(hex: selectedColor)
+            let color = Color(hex: selectedColor) ?? .blue
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
                 ForEach(iconOptions, id: \.self) { icon in
                     Button { selectedIcon = icon; HapticFeedback.selection() } label: {
@@ -758,7 +758,7 @@ struct AddSupplyListSheet: View {
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(SupplyList.colorOptions, id: \.hex) { opt in
-                    let c = Color(hex: opt.hex)
+                    let c = Color(hex: opt.hex) ?? .blue
                     Button { selectedColor = opt.hex; HapticFeedback.selection() } label: {
                         ZStack {
                             Circle().fill(c).frame(width: 32, height: 32)
@@ -1070,16 +1070,3 @@ struct AddSupplyItemSheet: View {
     }
 }
 
-// MARK: - Color(hex:) helper
-
-private extension Color {
-    init(hex: String) {
-        let h = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: h).scanHexInt64(&int)
-        let r = Double((int >> 16) & 0xFF) / 255
-        let g = Double((int >> 8) & 0xFF) / 255
-        let b = Double(int & 0xFF) / 255
-        self.init(red: r, green: g, blue: b)
-    }
-}

@@ -52,7 +52,7 @@ struct PropertyDetailView: View {
             }
         }
         .sheet(isPresented: $showCamera) {
-            CameraPickerView { image in Task { await upload(image) } }
+            PropertyCameraPickerView { image in Task { await upload(image) } }
         }
         .photosPicker(isPresented: $showGallery, selection: $pickerItem, matching: .images)
         .onChange(of: pickerItem) { _, item in
@@ -390,7 +390,7 @@ struct PropertyDetailView: View {
 
 // MARK: - Camera picker
 
-private struct CameraPickerView: UIViewControllerRepresentable {
+private struct PropertyCameraPickerView: UIViewControllerRepresentable {
     let onCapture: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -406,8 +406,8 @@ private struct CameraPickerView: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: UIImagePickerController, context: Context) {}
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraPickerView
-        init(_ parent: CameraPickerView) { self.parent = parent }
+        let parent: PropertyCameraPickerView
+        init(_ parent: PropertyCameraPickerView) { self.parent = parent }
 
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
