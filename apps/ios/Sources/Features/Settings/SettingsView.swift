@@ -22,10 +22,6 @@ struct SettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
-                }
-                .frame(height: 0)
                 profileCard
                 switchCard
                 propertySection
@@ -38,6 +34,11 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
+                }
+            )
         }
         .coordinateSpace(name: "settingsScroll")
         .onPreferenceChange(ScrollOffsetKey.self) { y in

@@ -136,10 +136,6 @@ struct TasksView: View {
     private var taskList: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 10) {
-                GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("tasksScroll")).minY)
-                }
-                .frame(height: 0)
                 ForEach(filtered) { task in
                     TaskRowView(task: task)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -165,6 +161,11 @@ struct TasksView: View {
             .padding(.horizontal, 20)
             .padding(.top, 4)
             .padding(.bottom, 110)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("tasksScroll")).minY)
+                }
+            )
         }
         .coordinateSpace(name: "tasksScroll")
         .onPreferenceChange(ScrollOffsetKey.self) { y in

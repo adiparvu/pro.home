@@ -44,10 +44,6 @@ struct AnalyticsView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
-                        GeometryReader { geo in
-                            Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("analyticsScroll")).minY)
-                        }
-                        .frame(height: 0)
                         switch selectedTab {
                         case .finances:
                             FinancesSection(service: financialService, displayedMonth: $displayedMonth)
@@ -60,6 +56,11 @@ struct AnalyticsView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
                     .padding(.bottom, 110)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("analyticsScroll")).minY)
+                        }
+                    )
                 }
                 .coordinateSpace(name: "analyticsScroll")
                 .onPreferenceChange(ScrollOffsetKey.self) { y in

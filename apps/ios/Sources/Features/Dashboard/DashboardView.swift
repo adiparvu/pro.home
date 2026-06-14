@@ -35,10 +35,6 @@ struct DashboardView: View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
-                    GeometryReader { geo in
-                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
-                    }
-                    .frame(height: 0)
                     greetingHeader
                     mapCard
                     widgetGrid
@@ -47,6 +43,11 @@ struct DashboardView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, topSafeArea + 8)
                 .padding(.bottom, 20)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
+                    }
+                )
             }
             .coordinateSpace(name: "dashScroll")
             .onPreferenceChange(ScrollOffsetKey.self) { y in
