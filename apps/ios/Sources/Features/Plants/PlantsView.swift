@@ -5,7 +5,6 @@ import SwiftUI
 struct PlantsView: View {
     @EnvironmentObject private var plantService: PlantService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var showAddPlant = false

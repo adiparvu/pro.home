@@ -157,7 +157,7 @@ final class NotificationScheduler: ObservableObject {
                 content.title = "Overdue Task"
                 content.body  = "\(task.title) was due \(task.dueDateDisplay)"
                 content.sound = .default
-                content.badge = 1
+                content.badge = NSNumber(value: 1)
                 content.categoryIdentifier = "TASK"
                 content.userInfo = ["taskId": task.id.uuidString]
 

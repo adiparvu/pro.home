@@ -67,6 +67,12 @@ struct TasksMediumView: View {
         entry.taskCatalog.filter { !$0.isCompleted }.prefix(3).map { $0 }
     }
 
+    private func makeCompleteTaskIntent(id: UUID, title: String, priority: String) -> CompleteTaskIntent {
+        var i = CompleteTaskIntent()
+        i.task = TaskEntity(id: id, title: title, priority: priority)
+        return i
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -111,12 +117,7 @@ struct TasksMediumView: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
-                            let intent = {
-                                var i = CompleteTaskIntent()
-                                i.task = TaskEntity(id: task.id, title: task.title, priority: task.priority)
-                                return i
-                            }()
-                            Button(intent: intent) {
+                            Button(intent: makeCompleteTaskIntent(id: task.id, title: task.title, priority: task.priority)) {
                                 Image(systemName: "circle")
                                     .font(.system(size: 16))
                                     .foregroundStyle(.secondary)

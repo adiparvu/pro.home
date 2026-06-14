@@ -66,6 +66,12 @@ struct PlantsMediumView: View {
         entry.plantCatalog.filter { $0.needsWatering }.prefix(3).map { $0 }
     }
 
+    private func makeWaterIntent(id: UUID, name: String, emoji: String) -> WaterPlantIntent {
+        var i = WaterPlantIntent()
+        i.plant = PlantEntity(id: id, name: name, emoji: emoji)
+        return i
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -108,12 +114,7 @@ struct PlantsMediumView: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
-                            let intent = {
-                                var i = WaterPlantIntent()
-                                i.plant = PlantEntity(id: plant.id, name: plant.name, emoji: plant.emoji)
-                                return i
-                            }()
-                            Button(intent: intent) {
+                            Button(intent: makeWaterIntent(id: plant.id, name: plant.name, emoji: plant.emoji)) {
                                 Image(systemName: "drop.fill")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.blue)

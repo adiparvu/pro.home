@@ -1,6 +1,7 @@
 import AppIntents
 
 struct PRVIOShortcutsProvider: AppShortcutsProvider {
+    @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: CreateTaskIntent(),
@@ -27,7 +28,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Open shopping list in \(.applicationName)",
                 "Deschide cumpărăturile în \(.applicationName)",
-                "Listă cumpărături \(.applicationName)"
+                "Listă cumpărături în \(.applicationName)"
             ],
             shortTitle: "Cumpărături",
             systemImageName: "cart.fill"
@@ -37,7 +38,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Open family chat in \(.applicationName)",
                 "Deschide chat-ul în \(.applicationName)",
-                "Chat familie \(.applicationName)"
+                "Chat familie în \(.applicationName)"
             ],
             shortTitle: "Chat familie",
             systemImageName: "message.fill"

@@ -81,6 +81,7 @@ targets:
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: AppIntents.framework
+      - sdk: ActivityKit.framework
     entitlements:
       path: Sources/App/PRVIO.entitlements
       properties:
