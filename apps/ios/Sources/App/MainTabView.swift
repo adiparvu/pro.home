@@ -51,7 +51,6 @@ struct MainTabView: View {
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
     @StateObject private var tabBarVis = TabBarVisibility()
-    @AppStorage("prvio.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
@@ -67,14 +66,6 @@ struct MainTabView: View {
                     .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
                     .padding(.top, 4)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if selectedTab != .assistant && selectedTab != .home && !tabBarVis.isHidden && tabBarVis.scrolledDown {
-                scrollFAB
-                    .padding(.trailing, 16)
-                    .padding(.bottom, safeAreaBottom + 24)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
         .animation(.spring(response: 0.38, dampingFraction: 0.82), value: tabBarVis.scrolledDown)
@@ -140,24 +131,6 @@ struct MainTabView: View {
         .onChange(of: selectedTab) { _, _ in
             if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
         }
-    }
-
-    private var scrollFAB: some View {
-        Button {
-            HapticFeedback.selection()
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                tabBarVis.scrolledDown = false
-            }
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.primary)
-                .frame(width: 52, height: 52)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 6)
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
