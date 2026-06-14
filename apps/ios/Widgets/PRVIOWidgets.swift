@@ -47,5 +47,10 @@ struct PRVIOWidgetBundle: WidgetBundle {
         LockScreenTasksWidget()
         LockScreenPlantsWidget()
         LockScreenDashboardWidget()
+        // Live Activities
+        ShoppingLiveActivity()
+        MaintenanceLiveActivity()
+        DeliveryLiveActivity()
+        PlantCareLiveActivity()
     }
 }

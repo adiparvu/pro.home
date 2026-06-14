@@ -55,7 +55,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "131"
+        CURRENT_PROJECT_VERSION: "132"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
@@ -76,6 +76,7 @@ targets:
       - path: Sources/Intents/PRVIOEntities.swift
       - path: Sources/Intents/TaskIntents.swift
       - path: Sources/Intents/PlantIntents.swift
+      - path: Sources/LiveActivities/PRVIOLiveActivities.swift
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: AppIntents.framework

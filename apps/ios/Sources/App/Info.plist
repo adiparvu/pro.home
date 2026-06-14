@@ -119,6 +119,10 @@
 	<string>Used to add overdue tasks to Apple Reminders for quick action.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Folosit pentru a adăuga sarcini, uda plantele și deschide PRVIO cu vocea.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
