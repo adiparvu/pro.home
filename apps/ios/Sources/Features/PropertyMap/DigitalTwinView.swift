@@ -21,9 +21,14 @@ struct DigitalTwinView: View {
     @State private var draftPoints: [GeoPoint] = []
     @State private var editingZone: PropertyZone?
     @State private var addingToZone: PropertyZone?
+    @State private var reshapeZone: PropertyZone?
+    @State private var reshapePoints: [GeoPoint] = []
     @State private var showAddObject = false
+    @State private var showInsights = false
     @State private var showHealth = false
     @State private var didCenter = false
+
+    private var editingShape: Bool { reshapeZone != nil }
 
     // MARK: - Derived
 
@@ -85,7 +90,7 @@ struct DigitalTwinView: View {
                         .foregroundStyle(Color.blue.opacity(0.25))
                         .stroke(Color.blue, lineWidth: 2)
                 }
-                ForEach(Array(draftPoints.enumerated()), id: \.offset) { idx, pt in
+                ForEach(Array(draftPoints.enumerated()), id: \.offset) { _, pt in
                     Annotation("", coordinate: pt.coordinate) {
                         Circle()
                             .fill(.white)
@@ -94,19 +99,51 @@ struct DigitalTwinView: View {
                             .shadow(color: .black.opacity(0.3), radius: 3)
                     }
                 }
+
+                // Reshape-in-progress polygon + draggable vertex handles
+                if editingShape {
+                    if reshapePoints.count >= 3 {
+                        MapPolygon(coordinates: reshapePoints.map(\.coordinate))
+                            .foregroundStyle(Color.blue.opacity(0.28))
+                            .stroke(Color.blue, lineWidth: 2.5)
+                    }
+                    ForEach(Array(reshapePoints.enumerated()), id: \.offset) { idx, pt in
+                        Annotation("", coordinate: pt.coordinate) {
+                            VertexHandle()
+                                .gesture(
+                                    DragGesture(coordinateSpace: .named("twinmap"))
+                                        .onChanged { value in
+                                            if idx < reshapePoints.count,
+                                               let c = proxy.convert(value.location, from: .named("twinmap")) {
+                                                reshapePoints[idx] = GeoPoint(lat: c.latitude, lon: c.longitude)
+                                            }
+                                        }
+                                )
+                                .onTapGesture(count: 2) {
+                                    if reshapePoints.count > 3, idx < reshapePoints.count {
+                                        reshapePoints.remove(at: idx)
+                                        HapticFeedback.impact(.medium)
+                                    }
+                                }
+                        }
+                    }
+                }
             }
             .mapStyle(.hybrid(elevation: .realistic))
+            .coordinateSpace(.named("twinmap"))
             .mapControls { MapCompass(); MapScaleView() }
             .onTapGesture { location in
                 guard let coord = proxy.convert(location, from: .local) else { return }
                 handleTap(at: coord)
             }
         }
-        .overlay(alignment: .top) { if !drawMode { layerBar } }
-        .overlay(alignment: .bottomTrailing) { if !drawMode { sideControls } }
-        .overlay(alignment: .bottomLeading) { if heatmap && !drawMode { heatmapLegend } }
+        .overlay(alignment: .top) { if !drawMode && !editingShape { layerBar } }
+        .overlay(alignment: .bottomTrailing) { if !drawMode && !editingShape { sideControls } }
+        .overlay(alignment: .bottomLeading) { if heatmap && !drawMode && !editingShape { heatmapLegend } }
         .overlay(alignment: .bottom) { if drawMode { drawToolbar } }
         .overlay(alignment: .top) { if drawMode { drawBanner } }
+        .overlay(alignment: .bottom) { if editingShape { reshapeToolbar } }
+        .overlay(alignment: .top) { if editingShape { reshapeBanner } }
         .navigationTitle("Digital Twin")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedZone) { zone in
@@ -115,6 +152,10 @@ struct DigitalTwinView: View {
                 onEdit: {
                     selectedZone = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { editingZone = zone }
+                },
+                onReshape: {
+                    selectedZone = nil
+                    startReshape(zone)
                 },
                 onAddObject: {
                     selectedZone = nil
@@ -164,6 +205,14 @@ struct DigitalTwinView: View {
                 .environmentObject(currencyService)
                 .environmentObject(appSettings)
         }
+        .sheet(isPresented: $showInsights) {
+            TwinInsightsSheet()
+                .environmentObject(propertyService)
+                .environmentObject(zoneService)
+                .environmentObject(elementService)
+                .environmentObject(currencyService)
+                .environmentObject(appSettings)
+        }
         .task { await loadData() }
     }
 
@@ -207,6 +256,10 @@ struct DigitalTwinView: View {
 
     private var sideControls: some View {
         VStack(spacing: 12) {
+            controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
+                showInsights = true
+                HapticFeedback.impact(.light)
+            }
             controlButton(icon: is3D ? "rotate.3d.fill" : "rotate.3d",
                           tint: is3D ? .blue : .primary) {
                 toggle3D()
@@ -308,6 +361,32 @@ struct DigitalTwinView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
+    private var reshapeBanner: some View {
+        Text("Trage colțurile · dublu-tap pentru a șterge un colț")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .glassCapsule()
+            .padding(.top, 60)
+            .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
+            .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private var reshapeToolbar: some View {
+        HStack(spacing: 10) {
+            drawButton("Anulează", icon: "xmark", tint: .red) { cancelReshape() }
+            drawButton("Salvează", icon: "checkmark", tint: .green) {
+                Task { await saveReshape() }
+            }
+            .disabled(reshapePoints.count < 3)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .glassCapsule()
+        .padding(.bottom, 40)
+        .shadow(color: .black.opacity(0.25), radius: 14, y: 4)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
     private func drawButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
@@ -334,12 +413,34 @@ struct DigitalTwinView: View {
     // MARK: - Actions
 
     private func handleTap(at coord: CLLocationCoordinate2D) {
+        if editingShape { return }   // vertex handles own the gestures while reshaping
         if drawMode {
             draftPoints.append(GeoPoint(lat: coord.latitude, lon: coord.longitude))
             HapticFeedback.selection()
         } else if let zone = zoneService.zone(containing: coord) {
             select(zone)
         }
+    }
+
+    private func startReshape(_ zone: PropertyZone) {
+        reshapePoints = zone.polygon
+        withAnimation { reshapeZone = zone }
+        focus(on: zone)
+        HapticFeedback.impact(.light)
+    }
+
+    private func cancelReshape() {
+        withAnimation { reshapeZone = nil }
+        reshapePoints = []
+    }
+
+    private func saveReshape() async {
+        guard var zone = reshapeZone, reshapePoints.count >= 3 else { return }
+        zone.polygon = reshapePoints
+        await zoneService.update(zone)
+        HapticFeedback.success()
+        withAnimation { reshapeZone = nil }
+        reshapePoints = []
     }
 
     private func startDrawing() {
@@ -470,6 +571,18 @@ private struct ZoneBadge: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selected)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct VertexHandle: View {
+    var body: some View {
+        Circle()
+            .fill(.white)
+            .frame(width: 26, height: 26)
+            .overlay(Circle().fill(Color.blue).frame(width: 13, height: 13))
+            .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+            .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+            .contentShape(Circle())
     }
 }
 

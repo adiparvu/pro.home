@@ -5,6 +5,7 @@ import SwiftUI
 struct ZoneBottomSheet: View {
     let zone: PropertyZone
     var onEdit: () -> Void
+    var onReshape: () -> Void
     var onAddObject: () -> Void
     var onDelete: () -> Void
     var onFocus: () -> Void
@@ -132,8 +133,9 @@ struct ZoneBottomSheet: View {
     // MARK: - Actions
 
     private var actionRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             actionButton("Editează", icon: "slider.horizontal.3", tint: .blue, action: onEdit)
+            actionButton("Remodelează", icon: "pencil.and.outline", tint: .indigo, action: onReshape)
             actionButton("Adaugă", icon: "plus", tint: .green, action: onAddObject)
             actionButton("Șterge", icon: "trash", tint: .red, action: onDelete)
         }
