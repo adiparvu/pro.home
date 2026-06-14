@@ -155,8 +155,8 @@ struct ContractorsView: View {
         } message: {
             Text(service.error ?? "")
         }
-        .navigationTitle("Contractors")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

@@ -1,5 +1,9 @@
 import SwiftUI
 
+final class TabBarVisibility: ObservableObject {
+    @Published var isHidden = false
+}
+
 enum AppTab: String, CaseIterable {
     case home, map, tasks, analytics, assistant, settings
 
@@ -40,6 +44,7 @@ struct MainTabView: View {
     @StateObject private var messageService = MessageService()
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
+    @StateObject private var tabBarVis = TabBarVisibility()
     @AppStorage("prvio.onboarding.done") private var onboardingDone = false
     @State private var selectedTab: AppTab = .home
 
@@ -50,11 +55,15 @@ struct MainTabView: View {
         }
         .ignoresSafeArea(edges: .bottom)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            FloatingTabBar(selected: $selectedTab, overdueCount: taskService.overdueCount)
-                .padding(.horizontal, 20)
-                .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
-                .padding(.top, 4)
+            if selectedTab != .assistant && !tabBarVis.isHidden {
+                FloatingTabBar(selected: $selectedTab, overdueCount: taskService.overdueCount)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, safeAreaBottom > 0 ? safeAreaBottom - 6 : 14)
+                    .padding(.top, 4)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .environmentObject(tabBarVis)
         .environmentObject(taskService)
         .environmentObject(propertyService)
         .environmentObject(profileService)

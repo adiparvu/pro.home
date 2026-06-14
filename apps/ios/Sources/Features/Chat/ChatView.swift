@@ -12,6 +12,7 @@ struct ChatView: View {
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var profileService: ProfileService
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var text = ""
     @State private var showAttachMenu = false
@@ -69,7 +70,9 @@ struct ChatView: View {
             guard let pid = propertyId else { return }
             await messageService.subscribeReads(propertyId: pid)
         }
+        .onAppear { withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true } }
         .onDisappear {
+            withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             Task {
                 await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
