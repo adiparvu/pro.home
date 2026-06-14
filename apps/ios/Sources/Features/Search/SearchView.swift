@@ -1,9 +1,12 @@
 import SwiftUI
+import CoreSpotlight
 
 struct SearchView: View {
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var financialService: FinancialService
+    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject private var deliveryService: DeliveryService
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
@@ -26,6 +29,17 @@ struct SearchView: View {
             finances: financialService.records.filter {
                 $0.title.lowercased().contains(q) ||
                 $0.category.lowercased().contains(q)
+            },
+            plants: plantService.plants.filter {
+                $0.name.lowercased().contains(q) ||
+                ($0.species?.lowercased().contains(q) ?? false) ||
+                ($0.location?.lowercased().contains(q) ?? false)
+            },
+            deliveries: deliveryService.deliveries.filter {
+                $0.description.lowercased().contains(q) ||
+                $0.carrier.lowercased().contains(q) ||
+                $0.trackingNumber.lowercased().contains(q) ||
+                ($0.notes?.lowercased().contains(q) ?? false)
             }
         )
     }
@@ -74,7 +88,7 @@ struct SearchView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
-            TextField("Tasks, documents, finances…", text: $query)
+            TextField("Sarcini, plante, documente…", text: $query)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -128,7 +142,7 @@ struct SearchView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(Color.primary.opacity(0.12))
             VStack(spacing: 8) {
-                Text("Search across tasks, documents, and finances")
+                Text("Caută sarcini, plante, documente și livrări")
                     .font(.subheadline)
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .multilineTextAlignment(.center)
@@ -137,7 +151,7 @@ struct SearchView: View {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.2))
-                    Text("Tap the microphone to search by voice")
+                    Text("Apasă microfonul pentru căutare vocală")
                         .font(.caption)
                         .foregroundStyle(Color.primary.opacity(0.2))
                 }
@@ -154,7 +168,7 @@ struct SearchView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundStyle(Color.primary.opacity(0.15))
-            Text("No results for \"\(query)\"")
+            Text("Niciun rezultat pentru \"\(query)\"")
                 .font(.subheadline)
                 .foregroundStyle(Color.primary.opacity(0.35))
             Spacer()
@@ -167,35 +181,63 @@ struct SearchView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 if !results.tasks.isEmpty {
-                    SearchSection(title: "Tasks", icon: "checklist", count: results.tasks.count) {
+                    SearchSection(title: "Sarcini", icon: "checklist", count: results.tasks.count) {
                         ForEach(results.tasks) { task in
                             SearchRow(
                                 icon: "checklist",
                                 color: task.priorityColor,
                                 title: task.title,
                                 subtitle: "\(task.category.capitalized) · \(task.dueDateDisplay)",
-                                badge: task.isOverdue ? "Overdue" : nil,
+                                badge: task.isOverdue ? "Depășit" : nil,
                                 badgeColor: .red
                             )
                         }
                     }
                 }
+                if !results.plants.isEmpty {
+                    SearchSection(title: "Plante", icon: "leaf.fill", count: results.plants.count) {
+                        ForEach(results.plants) { plant in
+                            SearchRow(
+                                icon: "leaf.fill",
+                                color: Color(red: 0.15, green: 0.80, blue: 0.40),
+                                title: "\(plant.emoji) \(plant.name)",
+                                subtitle: [plant.species, plant.location].compactMap { $0 }.joined(separator: " · "),
+                                badge: plant.needsWatering ? "Udare" : nil,
+                                badgeColor: .blue
+                            )
+                        }
+                    }
+                }
+                if !results.deliveries.isEmpty {
+                    SearchSection(title: "Livrări", icon: "shippingbox.fill", count: results.deliveries.count) {
+                        ForEach(results.deliveries) { delivery in
+                            SearchRow(
+                                icon: delivery.statusIcon,
+                                color: delivery.statusColor,
+                                title: delivery.description,
+                                subtitle: "\(delivery.carrier) · \(delivery.statusLabel)",
+                                badge: delivery.isActive ? "Activ" : nil,
+                                badgeColor: .orange
+                            )
+                        }
+                    }
+                }
                 if !results.documents.isEmpty {
-                    SearchSection(title: "Documents", icon: "doc.text.fill", count: results.documents.count) {
+                    SearchSection(title: "Documente", icon: "doc.text.fill", count: results.documents.count) {
                         ForEach(results.documents) { doc in
                             SearchRow(
                                 icon: doc.categoryIcon,
                                 color: .orange,
                                 title: doc.name,
                                 subtitle: doc.category.capitalized,
-                                badge: doc.isExpiringSoon ? "Expiring" : nil,
+                                badge: doc.isExpiringSoon ? "Expiră" : nil,
                                 badgeColor: .orange
                             )
                         }
                     }
                 }
                 if !results.finances.isEmpty {
-                    SearchSection(title: "Finances", icon: "banknote.fill", count: results.finances.count) {
+                    SearchSection(title: "Finanțe", icon: "banknote.fill", count: results.finances.count) {
                         ForEach(results.finances) { record in
                             SearchRow(
                                 icon: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
@@ -222,9 +264,14 @@ private struct SearchResults {
     let tasks: [MaintenanceTask]
     let documents: [DocumentModel]
     let finances: [FinancialRecord]
+    let plants: [Plant]
+    let deliveries: [Delivery]
 
-    var isEmpty: Bool { tasks.isEmpty && documents.isEmpty && finances.isEmpty }
-    static let empty = SearchResults(tasks: [], documents: [], finances: [])
+    var isEmpty: Bool {
+        tasks.isEmpty && documents.isEmpty && finances.isEmpty &&
+        plants.isEmpty && deliveries.isEmpty
+    }
+    static let empty = SearchResults(tasks: [], documents: [], finances: [], plants: [], deliveries: [])
 }
 
 // MARK: - Components
@@ -271,9 +318,11 @@ private struct SearchRow: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.4))
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                }
             }
             Spacer()
             if let badge = badge {

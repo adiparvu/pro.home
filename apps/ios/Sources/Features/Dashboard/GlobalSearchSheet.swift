@@ -3,6 +3,8 @@ import SwiftUI
 struct GlobalSearchSheet: View {
     @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject private var deliveryService: DeliveryService
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
@@ -18,7 +20,30 @@ struct GlobalSearchSheet: View {
         return documentService.documents.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
-    private var hasResults: Bool { !taskResults.isEmpty || !docResults.isEmpty }
+    private var plantResults: [Plant] {
+        guard query.count >= 2 else { return [] }
+        let q = query.lowercased()
+        return plantService.plants.filter {
+            $0.name.lowercased().contains(q) ||
+            ($0.species?.lowercased().contains(q) ?? false) ||
+            ($0.location?.lowercased().contains(q) ?? false)
+        }
+    }
+
+    private var deliveryResults: [Delivery] {
+        guard query.count >= 2 else { return [] }
+        let q = query.lowercased()
+        return deliveryService.deliveries.filter {
+            $0.description.lowercased().contains(q) ||
+            $0.carrier.lowercased().contains(q) ||
+            $0.trackingNumber.lowercased().contains(q)
+        }
+    }
+
+    private var hasResults: Bool {
+        !taskResults.isEmpty || !docResults.isEmpty ||
+        !plantResults.isEmpty || !deliveryResults.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
@@ -92,7 +117,7 @@ struct GlobalSearchSheet: View {
             Text("Caută în toată aplicația")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
-            Text("Sarcini · Documente · Proprietăți")
+            Text("Sarcini · Plante · Documente · Livrări")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
             Spacer()
@@ -132,6 +157,16 @@ struct GlobalSearchSheet: View {
                         }
                     }
                 }
+                if !plantResults.isEmpty {
+                    resultSection("Plante", icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)) {
+                        ForEach(plantResults.prefix(8)) { plant in
+                            resultRow("\(plant.emoji) \(plant.name)",
+                                      subtitle: plant.needsWatering ? "Necesită udare" : plant.wateringLabel,
+                                      icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40),
+                                      isLast: plant.id == plantResults.prefix(8).last?.id)
+                        }
+                    }
+                }
                 if !docResults.isEmpty {
                     resultSection("Documente", icon: "doc.fill", color: .orange) {
                         ForEach(docResults.prefix(8)) { doc in
@@ -139,6 +174,16 @@ struct GlobalSearchSheet: View {
                                       subtitle: doc.expiresDisplay ?? "Fără dată de expirare",
                                       icon: "doc.fill", color: .orange,
                                       isLast: doc.id == docResults.prefix(8).last?.id)
+                        }
+                    }
+                }
+                if !deliveryResults.isEmpty {
+                    resultSection("Livrări", icon: "shippingbox.fill", color: .orange) {
+                        ForEach(deliveryResults.prefix(8)) { delivery in
+                            resultRow(delivery.description,
+                                      subtitle: "\(delivery.carrier) · \(delivery.statusLabel)",
+                                      icon: delivery.statusIcon, color: delivery.statusColor,
+                                      isLast: delivery.id == deliveryResults.prefix(8).last?.id)
                         }
                     }
                 }

@@ -14,6 +14,8 @@ struct DashboardView: View {
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var zoneService: PropertyZoneService
+    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject private var deliveryService: DeliveryService
 
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
@@ -105,6 +107,8 @@ struct DashboardView: View {
             GlobalSearchSheet()
                 .environmentObject(taskService)
                 .environmentObject(documentService)
+                .environmentObject(plantService)
+                .environmentObject(deliveryService)
         }
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()
