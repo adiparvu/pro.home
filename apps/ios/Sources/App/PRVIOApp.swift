@@ -49,7 +49,22 @@ struct PRVIOApp: App {
             .onAppear { lock.appDidLaunch() }
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
-                case .active:                lock.didBecomeActive()
+                case .active:
+                    lock.didBecomeActive()
+                    NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
+                    // Process intent-triggered actions
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.openNewTask") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openNewTask")
+                        router.showAddTask = true
+                    }
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.showPlants") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showPlants")
+                        router.showWaterPlant = true
+                    }
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.showChat") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
+                        router.showChat = true
+                    }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
                 }

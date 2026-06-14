@@ -247,6 +247,9 @@ struct MainTabView: View {
             bounceTab = newTab
             if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .prvioProcessPending)) { _ in
+            processPendingIntentActions()
+        }
     }
 
     // MARK: Widget + Dynamic Shortcuts
@@ -260,6 +263,32 @@ struct MainTabView: View {
         snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
         snapshot.propertyName = propertyService.primary?.name
         SharedDataStore.write(snapshot)
+
+        // Write entity catalogs for App Intents
+        SharedDataStore.writeTaskCatalog(
+            taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority, isCompleted: $0.isCompleted) }
+        )
+        SharedDataStore.writePlantCatalog(
+            plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
+        )
+    }
+
+    private func processPendingIntentActions() {
+        let waterIds = SharedDataStore.popPendingWaterings()
+        for id in waterIds {
+            if let plant = plantService.plants.first(where: { $0.id == id }) {
+                Task { await plantService.markWatered(plant) }
+            }
+        }
+        let completeIds = SharedDataStore.popPendingCompletions()
+        for id in completeIds {
+            if let task = taskService.tasks.first(where: { $0.id == id }), !task.isCompleted {
+                Task { await taskService.toggleComplete(task) }
+            }
+        }
+        if !waterIds.isEmpty || !completeIds.isEmpty {
+            writeWidgetSnapshot()
+        }
     }
 
     private func updateDynamicShortcuts() {

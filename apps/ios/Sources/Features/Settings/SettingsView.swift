@@ -289,6 +289,9 @@ struct SettingsView: View {
                 QuickActionsSettingsView()
                     .environmentObject(appSettings)
             }
+            NavSettingsRow(icon: "mic.fill", color: Color(red: 0.55, green: 0.35, blue: 0.95), label: "Siri & Shortcuts") {
+                SiriShortcutsView()
+            }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 IntegrationsView()
             }

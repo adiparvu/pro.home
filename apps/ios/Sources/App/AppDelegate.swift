@@ -16,5 +16,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 extension Notification.Name {
-    static let prvioQuickAction = Notification.Name("prvio.quickAction")
+    static let prvioQuickAction    = Notification.Name("prvio.quickAction")
+    static let prvioProcessPending = Notification.Name("prvio.processPending")
 }
