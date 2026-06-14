@@ -46,6 +46,71 @@ final class NotificationScheduler: ObservableObject {
         self.weeklyDigest     = d.object(forKey: Keys.weeklyDigest)     as? Bool ?? false
     }
 
+    // MARK: - Category registration
+
+    func registerCategories() {
+        let taskComplete = UNNotificationAction(identifier: "TASK_COMPLETE", title: "Finalizat ✓",
+                                                options: [.authenticationRequired])
+        let taskRemind   = UNNotificationAction(identifier: "TASK_REMIND",   title: "Reamintește mâine", options: [])
+        let taskCategory = UNNotificationCategory(identifier: "TASK",
+                                                  actions: [taskComplete, taskRemind],
+                                                  intentIdentifiers: [], options: [])
+
+        let plantWatered = UNNotificationAction(identifier: "PLANT_WATERED", title: "Am udat 💧", options: [])
+        let plantRemind  = UNNotificationAction(identifier: "PLANT_REMIND",  title: "Reamintește în 2h", options: [])
+        let plantCategory = UNNotificationCategory(identifier: "PLANT",
+                                                   actions: [plantWatered, plantRemind],
+                                                   intentIdentifiers: [], options: [])
+
+        let supplyAdd     = UNNotificationAction(identifier: "SUPPLY_ADD",   title: "Adaugă în listă",
+                                                 options: [.foreground])
+        let supplyCategory = UNNotificationCategory(identifier: "SUPPLY",
+                                                    actions: [supplyAdd],
+                                                    intentIdentifiers: [], options: [])
+
+        UNUserNotificationCenter.current().setNotificationCategories([taskCategory, plantCategory, supplyCategory])
+    }
+
+    // MARK: - Plant watering notifications
+
+    func schedulePlantWateringNotifications(_ plants: [Plant]) async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized ||
+              settings.authorizationStatus == .provisional else { return }
+
+        let ids = plants.map { "plant.water.\($0.id.uuidString)" }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
+
+        let cal = Calendar.current
+        var requests: [UNNotificationRequest] = []
+
+        for plant in plants where plant.needsWatering || plant.daysUntilWatering <= 1 {
+            let content = UNMutableNotificationContent()
+            content.title = "Timp să udăm plantele! 💧"
+            content.body  = "\(plant.emoji) \(plant.name) are nevoie de apă"
+            content.sound = .default
+            content.categoryIdentifier = "PLANT"
+            content.userInfo = ["plantId": plant.id.uuidString]
+
+            var components = cal.dateComponents([.year, .month, .day], from: Date())
+            if !plant.needsWatering, let tomorrow = cal.date(byAdding: .day, value: 1, to: Date()) {
+                components = cal.dateComponents([.year, .month, .day], from: tomorrow)
+            }
+            components.hour   = 8
+            components.minute = 0
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            requests.append(UNNotificationRequest(
+                identifier: "plant.water.\(plant.id.uuidString)",
+                content: content,
+                trigger: trigger
+            ))
+        }
+
+        for request in requests { try? await center.add(request) }
+    }
+
     // MARK: - Main entry point
 
     func reschedule(tasks: [MaintenanceTask], documents: [DocumentModel]) async {

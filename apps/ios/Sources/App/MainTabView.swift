@@ -188,6 +188,7 @@ struct MainTabView: View {
                     appSettings.loadFromProfile(profile)
                 }
             }
+            notificationScheduler.registerCategories()
             await notificationScheduler.reschedule(
                 tasks: taskService.tasks,
                 documents: documentService.documents
@@ -202,6 +203,7 @@ struct MainTabView: View {
             writeWidgetSnapshot()
             updateDynamicShortcuts()
             await indexSpotlight()
+            await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
