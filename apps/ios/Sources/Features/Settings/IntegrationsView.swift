@@ -6,23 +6,20 @@ struct IntegrationsView: View {
     @StateObject private var vm = IntegrationsViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Integrations")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    calendarSection
-                    smartHomeSection
-                    comingSoonSection
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                calendarSection
+                smartHomeSection
+                comingSoonSection
 
-                    Spacer(minLength: 110)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                Spacer(minLength: 110)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Integrations")
+        .navigationBarTitleDisplayMode(.large)
         .task { await vm.checkStatuses() }
         .task { vm.tasks = taskService.tasks }
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {

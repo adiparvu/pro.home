@@ -77,10 +77,7 @@ struct FinancesView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Finanțe", trailing: AnyView(filterMenu))
-
-            if financialService.isLoading && financialService.records.isEmpty {
+        if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(showsIndicators: false) {
@@ -112,7 +109,6 @@ struct FinancesView: View {
                     }
                 }
                 .refreshable { await financialService.load() }
-            }
         }
         .background(appBackground.ignoresSafeArea())
         .overlay(alignment: .bottomTrailing) {
@@ -131,8 +127,11 @@ struct FinancesView: View {
             .padding(.trailing, 24)
             .padding(.bottom, 110)
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Finanțe")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        }
         .sheet(isPresented: $showAddSheet) {
             AddFinancialView { await financialService.load() }
         }

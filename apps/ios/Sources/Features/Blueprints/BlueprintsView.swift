@@ -14,28 +14,25 @@ struct BlueprintsView: View {
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Plans & 3D")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    quickActions
-                    buriedNav
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 18) {
+                quickActions
+                buriedNav
 
-                    if service.scans.isEmpty {
-                        emptyState
-                    } else {
-                        scansGrid
-                    }
-
-                    Spacer(minLength: 110)
+                if service.scans.isEmpty {
+                    emptyState
+                } else {
+                    scansGrid
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+
+                Spacer(minLength: 110)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Plans & 3D")
+        .navigationBarTitleDisplayMode(.large)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in
                 showRoomScan = false

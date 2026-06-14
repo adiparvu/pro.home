@@ -16,10 +16,12 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var text = ""
-    @State private var showAttachMenu = false
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
+    @State private var showCameraSheet = false
+    @State private var showCallSheet = false
+    @State private var showVideoSheet = false
     @State private var mentionedIds: [String] = []
     @State private var mentionedNames: [String] = []
     @State private var isSending = false
@@ -61,13 +63,35 @@ struct ChatView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                MemberAvatarStack(
-                    members: familyService.members,
-                    ownerAvatarUrl: profileService.profile?.avatarUrl,
-                    ownerInitial: ownerInitial,
-                    ringColor: avatarRingColor(for: avatarRingColorName)
-                ) {
-                    withAnimation { showMentionPicker.toggle() }
+                HStack(spacing: 6) {
+                    Button { showCallSheet = true } label: {
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 34, height: 34)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { showVideoSheet = true } label: {
+                        Image(systemName: "video.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 34, height: 34)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+
+                    MemberAvatarStack(
+                        members: familyService.members,
+                        ownerAvatarUrl: profileService.profile?.avatarUrl,
+                        ownerInitial: ownerInitial,
+                        ringColor: avatarRingColor(for: avatarRingColorName)
+                    ) {
+                        withAnimation { showMentionPicker.toggle() }
+                    }
                 }
             }
         }
@@ -94,13 +118,14 @@ struct ChatView: View {
                 await messageService.unsubscribeReads()
             }
         }
-        .photosPicker(isPresented: $showAttachMenu,
-                      selection: $photoPickerItems,
-                      maxSelectionCount: 1,
-                      matching: .images)
-        .onChange(of: photoPickerItems) { _, items in
-            Task { await sendPhoto(items) }
+        .onChange(of: text) { _, newValue in
+            if newValue.hasSuffix("@") && !showMentionPicker {
+                text = String(newValue.dropLast())
+                showMentionPicker = true
+            }
         }
+        .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
+        .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
         .sheet(isPresented: $showLocationSheet) {
             LocationShareSheet { lat, lon in
                 Task { await sendLocation(lat: lat, lon: lon) }
@@ -108,6 +133,17 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showMentionPicker) {
             MentionPickerSheet(selectedIds: $mentionedIds, selectedNames: $mentionedNames)
+        }
+        .sheet(isPresented: $showCallSheet) {
+            CallPickerSheet(members: familyService.members, isVideo: false)
+        }
+        .sheet(isPresented: $showVideoSheet) {
+            CallPickerSheet(members: familyService.members, isVideo: true)
+        }
+        .fullScreenCover(isPresented: $showCameraSheet) {
+            CameraPickerView { image in
+                Task { await sendCameraPhoto(image) }
+            }
         }
     }
 
@@ -136,7 +172,6 @@ struct ChatView: View {
                 if let last = messageService.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
-                // Mark newly-arrived messages as read while the chat is open.
                 if let pid = propertyId {
                     Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
                 }
@@ -176,42 +211,64 @@ struct ChatView: View {
                 }
             }
 
-            HStack(spacing: 10) {
-                Menu {
-                    Button { showAttachMenu = true } label: { Label("Photo / Video", systemImage: "photo") }
-                    Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
-                    Button { focused = true; text = "@"; showMentionPicker = true } label: { Label("Mention Person", systemImage: "at") }
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundStyle(.blue)
-                }
-
+            // iOS 26-style glass input container
+            VStack(alignment: .leading, spacing: 8) {
                 TextField("Message…", text: $text, axis: .vertical)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
                     .tint(.blue)
                     .lineLimit(1...5)
                     .focused($focused)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20))
 
-                Button {
-                    guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                    Task { await sendText() }
-                } label: {
-                    Image(systemName: isSending ? "clock" : "arrow.up.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundStyle(text.isEmpty ? Color.primary.opacity(0.25) : Color.blue)
+                HStack(spacing: 0) {
+                    Menu {
+                        Button { showCameraSheet = true } label: { Label("Camera", systemImage: "camera.fill") }
+                        Button { showPhotoPickerTrigger = true } label: { Label("Photo / Video", systemImage: "photo") }
+                        Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.55))
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    Button {
+                        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                        Task { await sendText() }
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(text.isEmpty ? Color.primary.opacity(0.12) : Color.primary)
+                                .frame(width: 30, height: 30)
+                            Image(systemName: isSending ? "stop.fill" : "arrow.up")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(text.isEmpty
+                                    ? Color.primary.opacity(0.35)
+                                    : Color(UIColor.systemBackground))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(text.isEmpty || isSending)
                 }
-                .disabled(text.isEmpty || isSending)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(Color.primary.opacity(0.04))
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.09), lineWidth: 0.5))
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            .background(Color.primary.opacity(0.03))
         }
     }
 
     // MARK: - Actions
+
+    @State private var showPhotoPickerTrigger = false
 
     private func sendText() async {
         guard let pid = propertyId else { return }
@@ -224,7 +281,6 @@ struct ChatView: View {
             propertyId: pid, senderName: senderName,
             body: body, mentionedIds: mentionedIds
         )
-        // Local notification to mentioned members
         scheduleLocalMentionNotifications(body: body)
         mentionedIds = []; mentionedNames = []
     }
@@ -246,6 +302,25 @@ struct ChatView: View {
         )
         HapticFeedback.success()
         photoPickerItems = []
+        mentionedIds = []; mentionedNames = []
+    }
+
+    private func sendCameraPhoto(_ image: UIImage) async {
+        guard let pid = propertyId,
+              let data = image.jpegData(compressionQuality: 0.8) else { return }
+        isSending = true
+        defer { isSending = false }
+        let fileName = "\(UUID().uuidString).jpg"
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: nil,
+            attachmentUrl: url?.absoluteString, attachmentType: "image",
+            mentionedIds: mentionedIds
+        )
+        HapticFeedback.success()
         mentionedIds = []; mentionedNames = []
     }
 
@@ -277,6 +352,178 @@ struct ChatView: View {
                 trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
             )
             center.add(req)
+        }
+    }
+}
+
+// MARK: - Camera picker
+
+struct CameraPickerView: UIViewControllerRepresentable {
+    let onImage: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraPickerView
+        init(_ parent: CameraPickerView) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = (info[.editedImage] ?? info[.originalImage]) as? UIImage {
+                parent.onImage(image)
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+
+// MARK: - Call picker sheet
+
+private struct CallPickerSheet: View {
+    let members: [FamilyMember]
+    let isVideo: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                if members.isEmpty {
+                    VStack(spacing: 12) {
+                        Spacer()
+                        Image(systemName: isVideo ? "video.slash.fill" : "phone.slash.fill")
+                            .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
+                        Text("No family members yet")
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+                        Spacer()
+                    }
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 10) {
+                            ForEach(members) { member in
+                                MemberCallRow(member: member, isVideo: isVideo)
+                            }
+                        }
+                        .padding(.horizontal, 20).padding(.top, 8)
+                    }
+                }
+            }
+            .navigationTitle(isVideo ? "Video Call" : "Call")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                }
+            }
+        }
+    }
+}
+
+private struct MemberCallRow: View {
+    let member: FamilyMember
+    let isVideo: Bool
+
+    private var callOptions: [(label: String, icon: String, url: URL?)] {
+        var opts: [(String, String, URL?)] = []
+
+        // FaceTime via email
+        if let email = member.email, !email.isEmpty {
+            let scheme = isVideo ? "facetime" : "facetime-audio"
+            opts.append(("FaceTime (\(email))", isVideo ? "facetime.fill" : "phone.fill",
+                         URL(string: "\(scheme)://\(email)")))
+        }
+        // FaceTime via phone
+        if let phone = member.phone, !phone.isEmpty {
+            let digits = phone.filter { $0.isNumber || $0 == "+" }
+            if !digits.isEmpty {
+                let scheme = isVideo ? "facetime" : "facetime-audio"
+                opts.append(("FaceTime (\(phone))", isVideo ? "facetime.fill" : "phone.fill",
+                             URL(string: "\(scheme)://\(digits)")))
+            }
+        }
+        // WhatsApp via social links
+        if let wa = member.socialLinks?.first(where: { $0.platform == "whatsapp" }) {
+            let digits = wa.handle.filter { $0.isNumber }
+            if !digits.isEmpty {
+                let waScheme = isVideo ? "whatsapp://video?phone=\(digits)" : "whatsapp://call?phone=\(digits)"
+                opts.append(("WhatsApp (\(wa.handle))", "message.fill", URL(string: waScheme)))
+            }
+        }
+        // WhatsApp via phone number
+        if opts.isEmpty, let phone = member.phone, !phone.isEmpty {
+            let digits = phone.filter { $0.isNumber }
+            if !digits.isEmpty {
+                opts.append(("Phone (\(phone))", "phone.fill", URL(string: "tel://\(digits)")))
+            }
+        }
+        return opts
+    }
+
+    var body: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle().fill(member.swiftColor.opacity(0.18))
+                        Text(member.initials)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(member.swiftColor)
+                    }
+                    .frame(width: 38, height: 38)
+                    .overlay(Circle().strokeBorder(member.swiftColor, lineWidth: 1.5))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(member.name)
+                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                        Text(member.roleLabel)
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    }
+                }
+
+                if callOptions.isEmpty {
+                    Text("No contact info available")
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                } else {
+                    VStack(spacing: 6) {
+                        ForEach(Array(callOptions.enumerated()), id: \.offset) { _, opt in
+                            Button {
+                                HapticFeedback.impact(.light)
+                                if let url = opt.url { UIApplication.shared.open(url) }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: opt.icon)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.blue)
+                                        .frame(width: 20)
+                                    Text(opt.label)
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.primary.opacity(0.3))
+                                }
+                                .padding(.horizontal, 12).padding(.vertical, 8)
+                                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
         }
     }
 }

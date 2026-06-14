@@ -97,14 +97,6 @@ struct ContractorsView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(title: "Contractors",
-                           trailing: AnyView(
-                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.primary)
-                            }
-                           ))
-                    .padding(.bottom, 12)
-
                 if !service.contractors.isEmpty {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
@@ -155,8 +147,15 @@ struct ContractorsView: View {
         } message: {
             Text(service.error ?? "")
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Contractors")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(.primary)
+                }
+            }
+        }
     }
 }
 

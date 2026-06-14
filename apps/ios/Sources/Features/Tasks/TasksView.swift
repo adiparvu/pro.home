@@ -38,64 +38,13 @@ struct TasksView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Tasks",
-                       leading: AnyView(
-                        NavigationLink {
-                            CalendarView()
-                                .environmentObject(taskService)
-                                .environmentObject(documentService)
-                        } label: {
-                            Image(systemName: "calendar")
-                                .font(.system(size: 18))
-                                .foregroundStyle(Color.primary.opacity(0.85))
-                        }
-                       ),
-                       trailing: AnyView(
-                        HStack(spacing: 10) {
-                            Menu {
-                                ForEach(TaskFilter.allCases, id: \.self) { f in
-                                    Button {
-                                        withAnimation(.spring(response: 0.25)) { filter = f }
-                                    } label: {
-                                        Label(
-                                            "\(f.rawValue)  (\(countFor(f)))",
-                                            systemImage: filter == f ? "checkmark" : f.icon
-                                        )
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 5) {
-                                    if filter != .all {
-                                        Image(systemName: filter.icon)
-                                            .font(.system(size: 12, weight: .semibold))
-                                        Text(filter.rawValue)
-                                            .font(.system(size: 13, weight: .semibold))
-                                    } else {
-                                        Text("…")
-                                            .font(.system(size: 15, weight: .semibold))
-                                    }
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 9, weight: .medium))
-                                }
-                                .foregroundStyle(.primary)
-                                .padding(.horizontal, 12).padding(.vertical, 7)
-                                .background(.ultraThinMaterial, in: Capsule())
-                                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                            }
-                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(.primary)
-                            }
-                        }
-                       ))
-                .padding(.bottom, 4)
-
+        Group {
             if taskService.isLoading {
-                Spacer()
-                ProgressView().tint(.white).scaleEffect(1.2)
-                Spacer()
+                VStack {
+                    Spacer()
+                    ProgressView().tint(.white).scaleEffect(1.2)
+                    Spacer()
+                }
             } else if filtered.isEmpty {
                 emptyState
             } else {
@@ -103,9 +52,60 @@ struct TasksView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
+        .navigationTitle("Tasks")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink {
+                    CalendarView()
+                        .environmentObject(taskService)
+                        .environmentObject(documentService)
+                } label: {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.primary.opacity(0.85))
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 10) {
+                    Menu {
+                        ForEach(TaskFilter.allCases, id: \.self) { f in
+                            Button {
+                                withAnimation(.spring(response: 0.25)) { filter = f }
+                            } label: {
+                                Label(
+                                    "\(f.rawValue)  (\(countFor(f)))",
+                                    systemImage: filter == f ? "checkmark" : f.icon
+                                )
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            if filter != .all {
+                                Image(systemName: filter.icon)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(filter.rawValue)
+                                    .font(.system(size: 13, weight: .semibold))
+                            } else {
+                                Text("…")
+                                    .font(.system(size: 15, weight: .semibold))
+                            }
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .medium))
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                    }
+                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showAdd) {
             AddTaskView()
                 .environmentObject(taskService)

@@ -35,23 +35,20 @@ struct AppearanceView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Aspect")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    themeSection
-                    accentSection
-                    hapticSection
-                    currencySection
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 24) {
+                themeSection
+                accentSection
+                hapticSection
+                currencySection
+                Spacer(minLength: 100)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Aspect")
+        .navigationBarTitleDisplayMode(.large)
         .task { await currencyService.refresh() }
     }
 

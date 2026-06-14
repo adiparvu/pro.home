@@ -15,25 +15,20 @@ struct PropertyReportView: View {
     @State private var includesDocuments = true
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Raport", subtitle: "PROPRIETATE")
-                .padding(.bottom, 8)
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    heroCard
-                    sectionToggles
-                    generateButton
-                    Spacer(minLength: 110)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                heroCard
+                sectionToggles
+                generateButton
+                Spacer(minLength: 110)
             }
-            .refreshable { }
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
         }
+        .refreshable { }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Raport")
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showShareSheet) {
             if let url = pdfURL { ShareSheet(url: url) }
         }

@@ -19,9 +19,6 @@ struct AnalyticsView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PageHeader(title: "Analytics")
-                    .padding(.bottom, 8)
-
                 HStack(spacing: 0) {
                     ForEach(AnalyticsTab.allCases, id: \.self) { tab in
                         Button {
@@ -77,6 +74,8 @@ struct AnalyticsView: View {
                 }
             }
         }
+        .navigationTitle("Analytics")
+        .navigationBarTitleDisplayMode(.large)
     }
 }
 

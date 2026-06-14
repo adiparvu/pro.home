@@ -20,44 +20,41 @@ struct HelpFAQView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Ajutor & FAQ")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 12) {
-                    ForEach(items.indices, id: \.self) { i in
-                        FAQRow(item: $items[i])
-                    }
-
-                    VStack(spacing: 12) {
-                        Text("Still need help?")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.primary)
-                        Button {
-                            if let url = URL(string: "mailto:support@prvio.app") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Label("Email Support", systemImage: "envelope.fill")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(.primary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.top, 8)
-
-                    Spacer(minLength: 100)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 12) {
+                ForEach(items.indices, id: \.self) { i in
+                    FAQRow(item: $items[i])
                 }
-                .padding(.horizontal, 20)
+
+                VStack(spacing: 12) {
+                    Text("Still need help?")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Button {
+                        if let url = URL(string: "mailto:support@prvio.app") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Email Support", systemImage: "envelope.fill")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                }
                 .padding(.top, 8)
+
+                Spacer(minLength: 100)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Ajutor & FAQ")
+        .navigationBarTitleDisplayMode(.large)
     }
 }
 

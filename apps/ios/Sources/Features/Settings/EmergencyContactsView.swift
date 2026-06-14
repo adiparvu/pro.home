@@ -13,21 +13,18 @@ struct EmergencyContactsView: View {
     @State private var showAdd = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Contacte de urgență")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    systemServicesSection
-                    if !contacts.isEmpty { customSection }
-                    addButton
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20).padding(.top, 8)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 16) {
+                systemServicesSection
+                if !contacts.isEmpty { customSection }
+                addButton
+                Spacer(minLength: 100)
             }
+            .padding(.horizontal, 20).padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Contacte de urgență")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear { load() }
         .sheet(isPresented: $showAdd) { AddEmergencySheet { save() } onSave: { c in contacts.append(c); save() } }
     }

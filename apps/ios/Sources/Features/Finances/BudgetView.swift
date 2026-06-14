@@ -7,21 +7,18 @@ struct BudgetView: View {
     @State private var editAmount = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Monthly Budget")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    summaryCard
-                    categoriesSection
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                summaryCard
+                categoriesSection
+                Spacer(minLength: 100)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Monthly Budget")
+        .navigationBarTitleDisplayMode(.large)
         .sheet(item: Binding(
             get: { editingCategory.map { IdentifiableString($0) } },
             set: { editingCategory = $0?.value }

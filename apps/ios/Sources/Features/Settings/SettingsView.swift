@@ -20,27 +20,24 @@ struct SettingsView: View {
     @State private var showAddAccount = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Settings")
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    profileCard
-                    switchCard
-                    propertySection
-                    familySection
-                    notificationsSection
-                    appSection
-                    supportSection
-                    signOutButton
-                    Spacer(minLength: 110)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                profileCard
+                switchCard
+                propertySection
+                familySection
+                notificationsSection
+                appSection
+                supportSection
+                signOutButton
+                Spacer(minLength: 110)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear { tabBarVis.scrolledDown = false }
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {

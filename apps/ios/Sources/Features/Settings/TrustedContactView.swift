@@ -20,8 +20,21 @@ struct TrustedContactView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Contact de Încredere", trailing: AnyView(
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 24) {
+                headerCard
+                formSection
+                if hasContact { removeButton }
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Contact de Încredere")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
                 Group {
                     if isSaving {
                         ProgressView().scaleEffect(0.8)
@@ -32,21 +45,8 @@ struct TrustedContactView: View {
                             .disabled(!isValid)
                     }
                 }
-            ))
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    headerCard
-                    formSection
-                    if hasContact { removeButton }
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
             }
         }
-        .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Elimină contactul de încredere?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
             Button("Elimină", role: .destructive) { removeContact() }
             Button("Anulează", role: .cancel) {}

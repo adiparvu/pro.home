@@ -35,25 +35,6 @@ struct DocumentsView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PageHeader(title: "Documents",
-                           trailing: AnyView(
-                            HStack(spacing: 10) {
-                                filterMenu
-                                Button {
-                                    if propertyService.primary == nil {
-                                        errorToast = "Please set up your property first in Settings."
-                                    } else {
-                                        showAdd = true
-                                    }
-                                } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-                           ))
-                    .padding(.bottom, 12)
-
                 searchBar
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
@@ -84,6 +65,26 @@ struct DocumentsView: View {
                         .padding(.bottom, 120)
                     }
                     .refreshable { await documentService.load() }
+                }
+            }
+        }
+        .navigationTitle("Documents")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 10) {
+                    filterMenu
+                    Button {
+                        if propertyService.primary == nil {
+                            errorToast = "Please set up your property first in Settings."
+                        } else {
+                            showAdd = true
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
         }

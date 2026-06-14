@@ -46,34 +46,34 @@ struct MortgageView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PageHeader(title: "Mortgage", trailing: AnyView(
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                if loanAmount == 0 {
+                    setupPrompt
+                } else {
+                    paymentCard
+                    progressCard
+                    if propertyValue > 0 { equityCard }
+                    breakdownCard
+                }
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Mortgage")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(loanAmount == 0 ? "Setup" : "Edit") {
                     isEditing = true
                     HapticFeedback.impact(.light)
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.blue)
-            ))
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    if loanAmount == 0 {
-                        setupPrompt
-                    } else {
-                        paymentCard
-                        progressCard
-                        if propertyValue > 0 { equityCard }
-                        breakdownCard
-                    }
-                    Spacer(minLength: 100)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
             }
         }
-        .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isEditing) {
             MortgageSetupSheet(
                 loanAmount: $loanAmount,

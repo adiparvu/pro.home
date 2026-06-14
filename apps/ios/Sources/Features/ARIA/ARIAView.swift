@@ -115,34 +115,67 @@ struct ARIAView: View {
     // MARK: - Input bar
 
     private var inputBar: some View {
-        HStack(spacing: 10) {
-            TextField("Ask about your property...", text: $input, axis: .vertical)
-                .font(.body)
-                .lineLimit(1...4)
-                .focused($focused)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-                )
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Ask about your property...", text: $input, axis: .vertical)
+                    .font(.system(size: 15))
+                    .lineLimit(1...5)
+                    .focused($focused)
 
-            Button(action: send) {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.black)
-                    .frame(width: 40, height: 40)
-                    .background(.white, in: Circle())
+                HStack(spacing: 0) {
+                    Button {
+                        input += input.isEmpty ? "```\n\n```" : "\n```\n\n```"
+                        focused = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Code")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundStyle(Color.primary.opacity(0.55))
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    Button {
+                        if isThinking { isThinking = false } else { send() }
+                    } label: {
+                        ZStack {
+                            if isThinking {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color.primary)
+                                    .frame(width: 28, height: 28)
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(Color(UIColor.systemBackground))
+                                    .frame(width: 10, height: 10)
+                            } else {
+                                let active = !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                Circle()
+                                    .fill(active ? Color.primary : Color.primary.opacity(0.12))
+                                    .frame(width: 30, height: 30)
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(active
+                                        ? Color(UIColor.systemBackground)
+                                        : Color.primary.opacity(0.35))
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isThinking)
+                }
             }
-            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isThinking)
-            .opacity(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5)
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.09), lineWidth: 0.5))
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            .background(Color.primary.opacity(0.03))
         }
     }
 
