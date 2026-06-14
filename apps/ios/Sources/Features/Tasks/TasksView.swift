@@ -54,6 +54,7 @@ struct TasksView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Tasks")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.tasks)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink {

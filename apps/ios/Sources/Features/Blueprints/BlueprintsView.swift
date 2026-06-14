@@ -33,6 +33,7 @@ struct BlueprintsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in
                 showRoomScan = false

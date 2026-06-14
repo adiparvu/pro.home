@@ -44,6 +44,7 @@ struct FamilyView: View {
         }
         .navigationTitle("Familie")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.family)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {

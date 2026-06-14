@@ -103,3 +103,30 @@ struct FloatingSpeedDial: View {
         withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded = false }
     }
 }
+
+// MARK: - Convenience modifier
+
+extension View {
+    /// Overlays a customizable floating speed-dial driven by the per-page
+    /// settings for `host`. All actions are routed through `AppRouter`.
+    func floatingSpeedDial(_ host: FloatingButtonHost, bottomPadding: CGFloat = 100) -> some View {
+        modifier(FloatingSpeedDialModifier(host: host, bottomPadding: bottomPadding))
+    }
+}
+
+private struct FloatingSpeedDialModifier: ViewModifier {
+    let host: FloatingButtonHost
+    var bottomPadding: CGFloat
+    @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var router: AppRouter
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottomTrailing) {
+            FloatingSpeedDial(
+                actions: appSettings.fabVisible(host) ? appSettings.fabActions(host) : [],
+                onSelect: { router.perform($0) },
+                bottomPadding: bottomPadding
+            )
+        }
+    }
+}

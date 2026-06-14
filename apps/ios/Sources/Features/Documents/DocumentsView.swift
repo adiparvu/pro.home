@@ -70,6 +70,7 @@ struct DocumentsView: View {
         }
         .navigationTitle("Documents")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.documents)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {

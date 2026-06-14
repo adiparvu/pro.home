@@ -76,6 +76,7 @@ struct AnalyticsView: View {
         }
         .navigationTitle("Analytics")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.analytics)
     }
 }
 

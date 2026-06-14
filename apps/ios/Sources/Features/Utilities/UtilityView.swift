@@ -115,6 +115,7 @@ struct UtilityView: View {
         }
         .navigationTitle("Utilities")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.utilities)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

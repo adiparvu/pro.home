@@ -149,6 +149,7 @@ struct ContractorsView: View {
         }
         .navigationTitle("Contractors")
         .navigationBarTitleDisplayMode(.large)
+        .floatingSpeedDial(.contractors)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {

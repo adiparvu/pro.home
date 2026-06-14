@@ -9,35 +9,30 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvio.hapticOn")    var hapticEnabled:     Bool   = true
 
     // Customizable floating (speed-dial) buttons — per page.
-    // Stored as ordered, comma-separated action rawValues, plus a visibility flag.
-    @AppStorage("prvio.quickActions")      var fabHomeRaw:      String = "aria,newTask,chat,scan"
-    @AppStorage("prvio.fab.finances")      var fabFinancesRaw:  String = "addExpense"
-    @AppStorage("prvio.fab.inventory")     var fabInventoryRaw: String = "scan,addItem"
-    @AppStorage("prvio.fab.home.on")       var fabHomeOn:       Bool   = true
-    @AppStorage("prvio.fab.finances.on")   var fabFinancesOn:   Bool   = true
-    @AppStorage("prvio.fab.inventory.on")  var fabInventoryOn:  Bool   = true
+    // Stored in UserDefaults, keyed by host, so this scales to any number of pages.
+    // (Home keeps its legacy key for backward compatibility.)
+
+    private func actionsKey(_ host: FloatingButtonHost) -> String {
+        host == .home ? "prvio.quickActions" : "prvio.fab.\(host.rawValue)"
+    }
+    private func visibleKey(_ host: FloatingButtonHost) -> String {
+        "prvio.fab.\(host.rawValue).on"
+    }
 
     func fabActions(_ host: FloatingButtonHost) -> [DashboardQuickAction] {
-        rawString(for: host)
-            .split(separator: ",")
-            .compactMap { DashboardQuickAction(rawValue: String($0)) }
+        let raw = UserDefaults.standard.string(forKey: actionsKey(host)) ?? host.defaultActionsRaw
+        return raw.split(separator: ",").compactMap { DashboardQuickAction(rawValue: String($0)) }
     }
 
     func fabVisible(_ host: FloatingButtonHost) -> Bool {
-        switch host {
-        case .home:      return fabHomeOn
-        case .finances:  return fabFinancesOn
-        case .inventory: return fabInventoryOn
-        }
+        if UserDefaults.standard.object(forKey: visibleKey(host)) == nil { return host.defaultVisible }
+        return UserDefaults.standard.bool(forKey: visibleKey(host))
     }
 
     func setFabVisible(_ host: FloatingButtonHost, _ on: Bool) {
+        // Direct UserDefaults writes don't auto-publish, so notify observers explicitly.
         objectWillChange.send()
-        switch host {
-        case .home:      fabHomeOn = on
-        case .finances:  fabFinancesOn = on
-        case .inventory: fabInventoryOn = on
-        }
+        UserDefaults.standard.set(on, forKey: visibleKey(host))
     }
 
     func isFabActionEnabled(_ host: FloatingButtonHost, _ action: DashboardQuickAction) -> Bool {
@@ -56,22 +51,8 @@ final class AppSettings: ObservableObject {
             .filter { current.contains($0) }
             .map(\.rawValue)
             .joined(separator: ",")
-        // @AppStorage inside an ObservableObject does not auto-publish, so notify
-        // observers (floating buttons, settings toggles) explicitly.
         objectWillChange.send()
-        switch host {
-        case .home:      fabHomeRaw = raw
-        case .finances:  fabFinancesRaw = raw
-        case .inventory: fabInventoryRaw = raw
-        }
-    }
-
-    private func rawString(for host: FloatingButtonHost) -> String {
-        switch host {
-        case .home:      return fabHomeRaw
-        case .finances:  return fabFinancesRaw
-        case .inventory: return fabInventoryRaw
-        }
+        UserDefaults.standard.set(raw, forKey: actionsKey(host))
     }
 
     var resolvedColorScheme: ColorScheme? {
@@ -189,24 +170,64 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
 
 enum FloatingButtonHost: String, CaseIterable, Identifiable {
     case home
+    case tasks
     case finances
+    case analytics
     case inventory
+    case documents
+    case contractors
+    case utilities
+    case family
+    case blueprints
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .home:      return "Ecran principal"
-        case .finances:  return "Finanțe"
-        case .inventory: return "Inventar"
+        case .home:        return "Ecran principal"
+        case .tasks:       return "Sarcini"
+        case .finances:    return "Finanțe"
+        case .analytics:   return "Analiză"
+        case .inventory:   return "Inventar"
+        case .documents:   return "Documente"
+        case .contractors: return "Contractori"
+        case .utilities:   return "Utilități"
+        case .family:      return "Familie"
+        case .blueprints:  return "Planuri & 3D"
         }
     }
 
     var icon: String {
         switch self {
-        case .home:      return "house.fill"
-        case .finances:  return "creditcard.fill"
-        case .inventory: return "shippingbox.fill"
+        case .home:        return "house.fill"
+        case .tasks:       return "checklist"
+        case .finances:    return "creditcard.fill"
+        case .analytics:   return "chart.bar.xaxis"
+        case .inventory:   return "shippingbox.fill"
+        case .documents:   return "doc.text.fill"
+        case .contractors: return "wrench.and.screwdriver.fill"
+        case .utilities:   return "bolt.fill"
+        case .family:      return "person.2.fill"
+        case .blueprints:  return "cube.transparent.fill"
+        }
+    }
+
+    /// Pages that historically already had a floating button stay visible by
+    /// default; every other page starts hidden so nothing is added unexpectedly.
+    var defaultVisible: Bool {
+        switch self {
+        case .home, .finances, .inventory: return true
+        default: return false
+        }
+    }
+
+    var defaultActionsRaw: String {
+        switch self {
+        case .home:      return "aria,newTask,chat,scan"
+        case .finances:  return "addExpense"
+        case .inventory: return "scan,addItem"
+        case .tasks:     return "newTask,aria"
+        default:         return "newTask,chat,aria"
         }
     }
 }
