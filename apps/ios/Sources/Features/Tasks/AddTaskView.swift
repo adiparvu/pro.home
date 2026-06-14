@@ -327,7 +327,7 @@ struct AddTaskView: View {
         for name in assigneeNames {
             let content = UNMutableNotificationContent()
             content.title = "Sarcină atribuită"
-            content.body = "\(name), ai o sarcină nouă: „\(taskTitle)"\(dateStr.isEmpty ? "" : " · Termen: \(dateStr)")"
+            content.body = "\(name), ai o sarcină nouă: „\(taskTitle)”\(dateStr.isEmpty ? "" : " · Termen: \(dateStr)")"
             content.sound = .default
             content.badge = 1
             let req = UNNotificationRequest(

@@ -65,8 +65,8 @@ struct SiriShortcutsView: View {
                         color: Color(red: 0.3, green: 0.85, blue: 0.45),
                         title: "Sarcină nouă",
                         phrases: [
-                            "„Adaugă sarcină în PRVIO"",
-                            "„Sarcină nouă în PRVIO""
+                            "„Adaugă sarcină în PRVIO”",
+                            "„Sarcină nouă în PRVIO”"
                         ]
                     )
                     rowDivider
@@ -75,8 +75,8 @@ struct SiriShortcutsView: View {
                         color: .blue,
                         title: "Udă planta",
                         phrases: [
-                            "„Udă planta în PRVIO"",
-                            "„Marchează udat în PRVIO""
+                            "„Udă planta în PRVIO”",
+                            "„Marchează udat în PRVIO”"
                         ]
                     )
                     rowDivider
@@ -85,8 +85,8 @@ struct SiriShortcutsView: View {
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
                         title: "Deschide cumpărăturile",
                         phrases: [
-                            "„Deschide cumpărăturile în PRVIO"",
-                            "„Listă cumpărături PRVIO""
+                            "„Deschide cumpărăturile în PRVIO”",
+                            "„Listă cumpărături PRVIO”"
                         ]
                     )
                     rowDivider
@@ -95,8 +95,8 @@ struct SiriShortcutsView: View {
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
                         title: "Chat familie",
                         phrases: [
-                            "„Deschide chat-ul în PRVIO"",
-                            "„Chat familie PRVIO""
+                            "„Deschide chat-ul în PRVIO”",
+                            "„Chat familie PRVIO”"
                         ]
                     )
                 }
