@@ -7,24 +7,52 @@ enum HapticFeedback {
             : UserDefaults.standard.bool(forKey: "prvio.hapticOn")
     }
 
+    // Retained generators — recreating + firing a generator inline (the old
+    // approach) often produces a weak or no haptic. Keeping them alive and
+    // calling prepare() right before triggering makes feedback reliable.
+    private static let impactLight  = UIImpactFeedbackGenerator(style: .light)
+    private static let impactMedium = UIImpactFeedbackGenerator(style: .medium)
+    private static let impactHeavy  = UIImpactFeedbackGenerator(style: .heavy)
+    private static let notification = UINotificationFeedbackGenerator()
+    private static let selectionGen = UISelectionFeedbackGenerator()
+
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
         guard enabled else { return }
-        UIImpactFeedbackGenerator(style: style).impactOccurred()
+        run {
+            let gen: UIImpactFeedbackGenerator
+            switch style {
+            case .light: gen = impactLight
+            case .heavy: gen = impactHeavy
+            case .medium: gen = impactMedium
+            default: gen = UIImpactFeedbackGenerator(style: style)
+            }
+            gen.prepare()
+            gen.impactOccurred()
+        }
     }
-    static func success() {
-        guard enabled else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
-    static func warning() {
-        guard enabled else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-    }
-    static func error() {
-        guard enabled else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
-    }
+
+    static func success() { notify(.success) }
+    static func warning() { notify(.warning) }
+    static func error()   { notify(.error) }
+
     static func selection() {
         guard enabled else { return }
-        UISelectionFeedbackGenerator().selectionChanged()
+        run {
+            selectionGen.prepare()
+            selectionGen.selectionChanged()
+        }
+    }
+
+    private static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        guard enabled else { return }
+        run {
+            notification.prepare()
+            notification.notificationOccurred(type)
+        }
+    }
+
+    /// Feedback generators must be used on the main thread.
+    private static func run(_ block: @escaping () -> Void) {
+        if Thread.isMainThread { block() } else { DispatchQueue.main.async(execute: block) }
     }
 }
