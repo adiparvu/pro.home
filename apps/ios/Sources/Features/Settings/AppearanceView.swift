@@ -117,7 +117,7 @@ struct AppearanceView: View {
                             } else if isSelected {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 20))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.tint)
                                     .transition(.scale.combined(with: .opacity))
                             } else {
                                 Circle()
@@ -156,7 +156,7 @@ struct AppearanceView: View {
                     Text("Refresh rates now")
                         .font(.system(size: 12, weight: .medium))
                 }
-                .foregroundStyle(.blue)
+                .foregroundStyle(.tint)
                 .padding(.leading, 4)
             }
             .buttonStyle(.plain)

@@ -28,10 +28,21 @@ final class CurrencyService: ObservableObject {
         defer { isLoading = false }
         do {
             let url = URL(string: "https://www.bnr.ro/nbrfxrates.xml")!
-            let (data, _) = try await URLSession.shared.data(from: url)
+            // BNR rejects requests without a browser-like User-Agent (returns 403),
+            // which would otherwise leave us on stale/empty rates.
+            var request = URLRequest(url: url)
+            request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+                             forHTTPHeaderField: "User-Agent")
+            request.setValue("application/xml,text/xml", forHTTPHeaderField: "Accept")
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                throw URLError(.badServerResponse)
+            }
             var parsed = try await Task.detached(priority: .utility) {
                 try BNRXMLParser.parse(data: data)
             }.value
+            guard parsed["EUR"] != nil else { throw URLError(.cannotParseResponse) }
             parsed["RON"] = 1.0
             rates = parsed
             lastUpdated = Date()
