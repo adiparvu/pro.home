@@ -93,6 +93,7 @@ struct MainTabView: View {
     @StateObject private var currencyService = CurrencyService()
     @StateObject private var elementService = PropertyElementService()
     @StateObject private var zoneService = PropertyZoneService()
+    @StateObject private var supplyService = SupplyService()
     @StateObject private var tabBarVis = TabBarVisibility()
     @StateObject private var router = AppRouter()
 
@@ -141,6 +142,11 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
         .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
         .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
+        .sheet(isPresented: $router.showAddSupply) {
+            AddSupplyItemSheet(list: nil, editingItem: nil)
+                .environmentObject(supplyService)
+                .environmentObject(propertyService)
+        }
         .environmentObject(router)
         .environmentObject(tabBarVis)
         .environmentObject(taskService)
@@ -155,6 +161,7 @@ struct MainTabView: View {
         .environmentObject(currencyService)
         .environmentObject(elementService)
         .environmentObject(zoneService)
+        .environmentObject(supplyService)
         .task {
             await currencyService.refresh()
             await propertyService.load()
@@ -175,6 +182,13 @@ struct MainTabView: View {
             if let propId = propertyService.primary?.id {
                 await messageService.load(propertyId: propId)
             }
+            if let propId = propertyService.primary?.id {
+                await supplyService.load(propertyId: propId)
+            }
+        }
+        .onChange(of: propertyService.primary?.id) { _, newPropId in
+            guard let newPropId else { return }
+            Task { await supplyService.load(propertyId: newPropId) }
         }
         .onChange(of: profileService.profile) { _, profile in
             if let profile, let s = auth.session {
@@ -199,6 +213,9 @@ struct MainTabView: View {
                 }
                 if let propId = propertyService.primary?.id {
                     await messageService.load(propertyId: propId)
+                }
+                if let propId = propertyService.primary?.id {
+                    await supplyService.load(propertyId: propId)
                 }
             }
         }

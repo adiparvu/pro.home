@@ -120,6 +120,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
     case addItem
     case addExpense
     case finances
+    case addSupply
 
     var id: String { rawValue }
 
@@ -132,6 +133,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .addItem:    return "Adaugă obiect"
         case .addExpense: return "Tranzacție nouă"
         case .finances:   return "Finanțe"
+        case .addSupply:  return "Articol nou"
         }
     }
 
@@ -144,6 +146,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .addItem:    return "Adaugă în inventar"
         case .addExpense: return "Venit sau cheltuială"
         case .finances:   return "Deschide finanțele"
+        case .addSupply:  return "Adaugă în consumabile"
         }
     }
 
@@ -156,6 +159,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .addItem:    return "shippingbox.fill"
         case .addExpense: return "creditcard.fill"
         case .finances:   return "chart.pie.fill"
+        case .addSupply:  return "cart.badge.plus"
         }
     }
 
@@ -168,6 +172,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .addItem:    return Color(red: 0.0,  green: 0.6,  blue: 0.85)
         case .addExpense: return Color(red: 0.2,  green: 0.78, blue: 0.6)
         case .finances:   return Color(red: 0.55, green: 0.55, blue: 0.95)
+        case .addSupply:  return Color(red: 0.35, green: 0.65, blue: 1.0)
         }
     }
 }
@@ -185,6 +190,7 @@ enum FloatingButtonHost: String, CaseIterable, Identifiable {
     case utilities
     case family
     case blueprints
+    case supplies
 
     var id: String { rawValue }
 
@@ -200,6 +206,7 @@ enum FloatingButtonHost: String, CaseIterable, Identifiable {
         case .utilities:   return "Utilități"
         case .family:      return "Familie"
         case .blueprints:  return "Planuri & 3D"
+        case .supplies:    return "Consumabile"
         }
     }
 
@@ -215,6 +222,7 @@ enum FloatingButtonHost: String, CaseIterable, Identifiable {
         case .utilities:   return "bolt.fill"
         case .family:      return "person.2.fill"
         case .blueprints:  return "cube.transparent.fill"
+        case .supplies:    return "cart.fill"
         }
     }
 
@@ -233,6 +241,7 @@ enum FloatingButtonHost: String, CaseIterable, Identifiable {
         case .finances:  return "addExpense"
         case .inventory: return "scan,addItem"
         case .tasks:     return "newTask,aria"
+        case .supplies:  return "addSupply"
         default:         return "newTask,chat,aria"
         }
     }

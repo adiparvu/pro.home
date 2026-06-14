@@ -13,6 +13,7 @@ final class AppRouter: ObservableObject {
     @Published var showAddExpense = false
     @Published var showInventoryScan = false
     @Published var showInventoryAdd = false
+    @Published var showAddSupply = false
 
     func perform(_ action: DashboardQuickAction) {
         switch action {
@@ -30,6 +31,8 @@ final class AppRouter: ObservableObject {
             showInventoryScan = true
         case .addItem:
             showInventoryAdd = true
+        case .addSupply:
+            showAddSupply = true
         }
     }
 }
