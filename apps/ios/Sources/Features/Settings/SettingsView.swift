@@ -254,6 +254,16 @@ struct SettingsView: View {
                 LanguageSettingsView()
                     .environmentObject(appSettings)
             }
+            NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activitate") {
+                ActivityFeedView()
+                    .environmentObject(financialService)
+                    .environmentObject(documentService)
+                    .environmentObject(familyService)
+                    .environmentObject(appSettings)
+            }
+            NavSettingsRow(icon: "app.fill", color: .purple, label: "Iconița aplicației") {
+                AppIconPickerView()
+            }
             NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
                 QuickActionsSettingsView()
                     .environmentObject(appSettings)

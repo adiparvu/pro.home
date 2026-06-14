@@ -42,6 +42,63 @@
 	</array>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
+	<key>CFBundleAlternateIcons</key>
+	<dict>
+		<key>AppIconMidnight</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconMidnight</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconSunset</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconSunset</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconForest</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconForest</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconLavender</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconLavender</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconRoseGold</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconRoseGold</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconArctic</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconArctic</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconCarbon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconCarbon</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconCrimson</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconCrimson</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconEmerald</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconEmerald</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
