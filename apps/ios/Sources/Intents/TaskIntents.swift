@@ -26,6 +26,6 @@ struct CompleteTaskIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingCompletion(task.id)
-        return .result(dialog: "Sarcina „\(task.title)" a fost finalizată.")
+        return .result(dialog: "Sarcina \"\(task.title)\" a fost finalizată.")
     }
 }
