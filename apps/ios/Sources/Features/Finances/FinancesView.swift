@@ -77,6 +77,7 @@ struct FinancesView: View {
     }
 
     var body: some View {
+        Group {
         if financialService.isLoading && financialService.records.isEmpty {
                 ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -109,6 +110,7 @@ struct FinancesView: View {
                     }
                 }
                 .refreshable { await financialService.load() }
+        }
         }
         .background(appBackground.ignoresSafeArea())
         .overlay(alignment: .bottomTrailing) {
