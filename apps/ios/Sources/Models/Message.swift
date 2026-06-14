@@ -38,6 +38,7 @@ struct Message: Identifiable, Codable {
     var isLocationMessage: Bool { attachmentType == "location" }
     var isImageMessage: Bool    { attachmentType == "image" }
     var isFileMessage: Bool     { attachmentType == "file" }
+    var isStickerMessage: Bool  { attachmentType == "sticker" }
 }
 
 struct NewMessage: Encodable {

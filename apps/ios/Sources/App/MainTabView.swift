@@ -94,6 +94,7 @@ struct MainTabView: View {
     @StateObject private var elementService = PropertyElementService()
     @StateObject private var zoneService = PropertyZoneService()
     @StateObject private var supplyService = SupplyService()
+    @StateObject private var stickerService = StickerService()
     @StateObject private var tabBarVis = TabBarVisibility()
     @StateObject private var router = AppRouter()
 
@@ -162,6 +163,7 @@ struct MainTabView: View {
         .environmentObject(elementService)
         .environmentObject(zoneService)
         .environmentObject(supplyService)
+        .environmentObject(stickerService)
         .task {
             await currencyService.refresh()
             await propertyService.load()

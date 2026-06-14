@@ -13,6 +13,7 @@ struct ChatView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @EnvironmentObject private var stickerService: StickerService
     @Environment(\.dismiss) private var dismiss
 
     @State private var text = ""
@@ -22,6 +23,7 @@ struct ChatView: View {
     @State private var showCameraSheet = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
+    @State private var showStickerPicker = false
     @State private var mentionedIds: [String] = []
     @State private var mentionedNames: [String] = []
     @State private var isSending = false
@@ -118,6 +120,14 @@ struct ChatView: View {
         .sheet(isPresented: $showVideoSheet) {
             CallPickerSheet(members: familyService.members, isVideo: true)
         }
+        .sheet(isPresented: $showStickerPicker) {
+            StickerPicker { sticker in
+                Task { await sendSticker(sticker) }
+            }
+            .environmentObject(stickerService)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.hidden)
+        }
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
@@ -211,6 +221,18 @@ struct ChatView: View {
                     }
                     .buttonStyle(.plain)
 
+                    Button {
+                        focused = false
+                        showStickerPicker = true
+                    } label: {
+                        Image(systemName: "face.smiling")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.55))
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 2)
+
                     Spacer()
 
                     Button {
@@ -261,6 +283,15 @@ struct ChatView: View {
         )
         scheduleLocalMentionNotifications(body: body)
         mentionedIds = []; mentionedNames = []
+    }
+
+    private func sendSticker(_ sticker: Sticker) async {
+        guard let pid = propertyId else { return }
+        HapticFeedback.success()
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName,
+            body: sticker.id, attachmentType: "sticker"
+        )
     }
 
     private func sendPhoto(_ items: [PhotosPickerItem]) async {
@@ -597,7 +628,9 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var bubbleContent: some View {
-        if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
+        if message.isStickerMessage, let stickerId = message.body {
+            StickerBubble(stickerId: stickerId)
+        } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
         } else if message.isImageMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
             AsyncImage(url: url) { phase in
