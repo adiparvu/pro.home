@@ -183,10 +183,11 @@ platform :ios do
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.controls' 'PRVIOControls' 'SU92TVZT8W'")
 
-    # Enable App Groups capability + register the shared group.
-    # Key fix: use filter[identifier] (not filter[name]) for App Groups lookup,
-    # and embed the group identifier directly in capability settings so Apple
-    # includes group.com.prvio.app in the generated provisioning profile.
+    # App Groups (group.com.prvio.app) are registered and linked in the Apple
+    # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
+    # and rejects APP_GROUPS_IDENTIFIER as a settings key (409). The script below
+    # only ensures the APP_GROUPS capability is enabled on each bundle ID; the
+    # group membership is handled by the portal config done once by the developer.
     File.write("/tmp/setup_app_groups.rb", <<~'RUBY')
       require 'openssl'; require 'base64'; require 'json'; require 'net/http'; require 'uri'
 
