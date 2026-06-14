@@ -7,7 +7,7 @@ import AppIntents
 struct AddTaskControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.addtask") {
-            ControlWidgetButton(action: OpenURLIntent(url: URL(string: "prvio://tasks/new")!)) {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://tasks/new")!)) {
                 Label("Sarcină nouă", systemImage: "checklist.checked")
             }
         }
@@ -21,7 +21,7 @@ struct AddTaskControl: ControlWidget {
 struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
-            ControlWidgetButton(action: OpenURLIntent(url: URL(string: "prvio://chat")!)) {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://chat")!)) {
                 Label("Chat familie", systemImage: "message.fill")
             }
         }
@@ -35,7 +35,7 @@ struct OpenChatControl: ControlWidget {
 struct ShoppingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.shopping") {
-            ControlWidgetButton(action: OpenURLIntent(url: URL(string: "prvio://shopping")!)) {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://shopping")!)) {
                 Label("Cumpărături", systemImage: "cart.fill")
             }
         }
@@ -49,7 +49,7 @@ struct ShoppingControl: ControlWidget {
 struct ScanControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
-            ControlWidgetButton(action: OpenURLIntent(url: URL(string: "prvio://scan")!)) {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://scan")!)) {
                 Label("Scanează bon", systemImage: "barcode.viewfinder")
             }
         }
