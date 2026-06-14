@@ -240,9 +240,8 @@ platform :ios do
         end
       end
 
-      # Settings block that tells Apple which group to include in the profile.
-      # The "key" in options is the App Group identifier string itself.
-      group_settings = [{ key: "APP_GROUPS_IDENTIFIER", options: [{ key: group_id }] }]
+      # Settings block: key is the App Group identifier; enabled: true is required.
+      group_settings = [{ key: "APP_GROUPS_IDENTIFIER", options: [{ key: group_id, enabled: true }] }]
 
       bundle_ids.each do |bundle_id|
         puts "\n=== #{bundle_id} ==="
@@ -262,7 +261,7 @@ platform :ios do
         ag_cap = caps.find { |c| c.dig("attributes","capabilityType") == "APP_GROUPS" }
 
         if ag_cap
-          # Already enabled — PATCH with group settings so the group appears in the profile
+          # Already enabled — PATCH to update the group list
           puts "  APP_GROUPS exists (id=#{ag_cap["id"]}), PATCHing with group settings"
           patch_rc = api("/v1/bundleIdCapabilities/#{ag_cap["id"]}", jwt, method: :patch, body: {
             data: {
@@ -271,9 +270,12 @@ platform :ios do
               attributes: { capabilityType: "APP_GROUPS", settings: group_settings }
             }
           })
-          puts "  PATCH → HTTP #{patch_rc.code}: #{patch_rc.body[0..300]}"
+          puts "  PATCH → HTTP #{patch_rc.code}: #{patch_rc.body[0..400]}"
+          # Re-read to confirm
+          confirm = api("/v1/bundleIdCapabilities/#{ag_cap["id"]}", jwt)
+          puts "  confirm → HTTP #{confirm.code}: #{confirm.body[0..400]}"
         else
-          # Enable with group settings embedded
+          # Enable App Groups with the group embedded in settings
           rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
             data: {
               type: "bundleIdCapabilities",
@@ -281,20 +283,11 @@ platform :ios do
               relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
             }
           })
-          puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..300]}"
-        end
-
-        # Also try the relationships endpoint as a belt-and-suspenders measure
-        if ag_id
-          rl = api("/v1/bundleIds/#{bid_id}/relationships/appGroups", jwt, method: :post, body: {
-            data: [{ type: "appGroups", id: ag_id }]
-          })
-          puts "  relationships/appGroups → HTTP #{rl.code}: #{rl.code == "404" ? "endpoint not available" : rl.body[0..200]}"
-        else
-          puts "  skip relationships link — ag_id not available"
+          puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..400]}"
         end
       end
       puts "\nsetup_app_groups done."
+      $stdout.flush
     RUBY
 
     sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets'")
@@ -314,6 +307,7 @@ platform :ios do
     )
     profile_uuid = ENV["SIGH_UUID"]
     UI.message("Main app profile UUID: #{profile_uuid}")
+    sh("echo '--- PRVIO profile App Groups ---'; security cms -D -i /tmp/PRVIO_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in profile'")
 
     sigh(
       api_key:        api_key,
@@ -325,6 +319,7 @@ platform :ios do
     )
     widgets_uuid = ENV["SIGH_UUID"]
     UI.message("Widgets profile UUID: #{widgets_uuid}")
+    sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
     sigh(
       api_key:        api_key,
@@ -383,6 +378,10 @@ platform :ios do
       "-archivePath /tmp/PRVIO.xcarchive " \
       "-derivedDataPath /tmp/DerivedData " \
       "-hideShellScriptEnvironment " \
+      "-allowProvisioningUpdates " \
+      "-authenticationKeyPath #{key_path} " \
+      "-authenticationKeyID #{key_id} " \
+      "-authenticationKeyIssuerID #{issuer_id} " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
     )
