@@ -18,21 +18,24 @@ struct SecurityView: View {
     @AppStorage("prvio.autoLockMinutes") private var autoLockMinutes = 5
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                mfaSection
-                sessionsSection
-                advancedSection
-                biometricSection
-                dataSection
-                Spacer(minLength: 100)
+        VStack(spacing: 0) {
+            PageHeader(title: "Securitate")
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    mfaSection
+                    sessionsSection
+                    advancedSection
+                    biometricSection
+                    dataSection
+                    Spacer(minLength: 100)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Siguranță și securitate")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { checkBiometrics() }
         .alert(alertMessage, isPresented: $showPasswordAlert) {
             Button("OK", role: .cancel) {}

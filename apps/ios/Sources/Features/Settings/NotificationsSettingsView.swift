@@ -10,20 +10,23 @@ struct NotificationsSettingsView: View {
     @State private var showOpenSettings = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                permissionCard
-                if authStatus == .authorized || authStatus == .provisional {
-                    preferencesSection
+        VStack(spacing: 0) {
+            PageHeader(title: "Notificări")
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    permissionCard
+                    if authStatus == .authorized || authStatus == .provisional {
+                        preferencesSection
+                    }
+                    Spacer(minLength: 100)
                 }
-                Spacer(minLength: 100)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await checkStatus() }
         .alert("Open Settings", isPresented: $showOpenSettings) {
             Button("Open Settings") {
