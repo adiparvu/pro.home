@@ -96,68 +96,91 @@ struct NotificationsSettingsView: View {
     // MARK: - Preferences
 
     private var preferencesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("ALERT TYPES")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
-
-            VStack(spacing: 0) {
-                NotifToggleRow(
-                    icon: "checklist",
-                    color: .blue,
-                    title: "Task Reminders",
-                    subtitle: "Due today & 3 days ahead, overdue alerts",
-                    value: Binding(
-                        get: { scheduler.taskReminders },
-                        set: { scheduler.taskReminders = $0; reschedule() }
-                    )
-                )
+        VStack(alignment: .leading, spacing: 22) {
+            group("SARCINI & DOCUMENTE") {
+                NotifToggleRow(icon: "checklist", color: .blue,
+                               title: "Memento sarcini",
+                               subtitle: "Scadente azi, cu 3 zile înainte și restante",
+                               value: bind(\.taskReminders, reschedule: true))
                 divider
-                NotifToggleRow(
-                    icon: "doc.badge.clock.fill",
-                    color: .orange,
-                    title: "Document Expiry",
-                    subtitle: "Alerts at 30 days and 7 days before expiry",
-                    value: Binding(
-                        get: { scheduler.documentExpiry },
-                        set: { scheduler.documentExpiry = $0; reschedule() }
-                    )
-                )
-                divider
-                NotifToggleRow(
-                    icon: "banknote.fill",
-                    color: Color(red: 0.3, green: 0.85, blue: 0.5),
-                    title: "Financial Alerts",
-                    subtitle: "Rent due & large transactions",
-                    value: Binding(
-                        get: { scheduler.financialAlerts },
-                        set: { scheduler.financialAlerts = $0 }
-                    )
-                )
-                divider
-                NotifToggleRow(
-                    icon: "newspaper.fill",
-                    color: .purple,
-                    title: "Weekly Digest",
-                    subtitle: "Every Monday at 9:00 AM",
-                    value: Binding(
-                        get: { scheduler.weeklyDigest },
-                        set: { scheduler.weeklyDigest = $0; reschedule() }
-                    )
-                )
+                NotifToggleRow(icon: "doc.badge.clock.fill", color: .orange,
+                               title: "Expirare documente",
+                               subtitle: "Alerte cu 30 și 7 zile înainte de expirare",
+                               value: bind(\.documentExpiry, reschedule: true))
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
 
-            Text("Notifications are scheduled locally on your device and fire even when the app is closed.")
+            group("PROPRIETATE & FINANȚE") {
+                NotifToggleRow(icon: "shield.lefthalf.filled", color: .teal,
+                               title: "Garanții obiecte",
+                               subtitle: "Garanții care expiră pentru obiectele din twin",
+                               value: bind(\.warrantyAlerts))
+                divider
+                NotifToggleRow(icon: "shippingbox.fill", color: .indigo,
+                               title: "Inventar & împrumuturi",
+                               subtitle: "Memento returnare obiecte împrumutate",
+                               value: bind(\.inventoryLoans))
+                divider
+                NotifToggleRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
+                               title: "Alerte financiare",
+                               subtitle: "Chirii scadente & tranzacții mari",
+                               value: bind(\.financialAlerts))
+            }
+
+            group("COMUNICARE") {
+                NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
+                               title: "Chat familie",
+                               subtitle: "Mesaje noi în chatul familiei",
+                               value: bind(\.chatMessages))
+                divider
+                NotifToggleRow(icon: "at", color: .purple,
+                               title: "Mențiuni",
+                               subtitle: "Când ești menționat cu @",
+                               value: bind(\.mentions))
+            }
+
+            group("AUTOMATIZĂRI") {
+                NotifToggleRow(icon: "gearshape.2.fill", color: .yellow,
+                               title: "Automatizări",
+                               subtitle: "Alerte de la automatizările proprietății",
+                               value: bind(\.automationAlerts))
+            }
+
+            group("REZUMAT") {
+                NotifToggleRow(icon: "newspaper.fill", color: .purple,
+                               title: "Rezumat săptămânal",
+                               subtitle: "În fiecare luni la 9:00",
+                               value: bind(\.weeklyDigest, reschedule: true))
+            }
+
+            Text("Notificările sunt programate local pe dispozitiv și se declanșează chiar și când aplicația este închisă.")
                 .font(.caption)
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.leading, 4)
         }
+    }
+
+    private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.35))
+                .padding(.leading, 4)
+            VStack(spacing: 0) { content() }
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        }
+    }
+
+    private func bind(_ keyPath: ReferenceWritableKeyPath<NotificationScheduler, Bool>, reschedule doReschedule: Bool = false) -> Binding<Bool> {
+        Binding(
+            get: { scheduler[keyPath: keyPath] },
+            set: { newVal in
+                scheduler[keyPath: keyPath] = newVal
+                HapticFeedback.selection()
+                if doReschedule { reschedule() }
+            }
+        )
     }
 
     private var divider: some View {
@@ -252,7 +275,7 @@ private struct NotifToggleRow: View {
             Spacer()
             Toggle("", isOn: $value)
                 .labelsHidden()
-                .tint(.blue)
+                .tint(.tint)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

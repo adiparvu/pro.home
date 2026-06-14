@@ -184,6 +184,7 @@ final class InventoryService: ObservableObject {
     }
 
     private func scheduleLoanReminders(for item: InventoryItem, loan: LoanRecord) {
+        guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.inventoryLoans) else { return }
         let center = UNUserNotificationCenter.current()
         let intervals: [(Int, String)] = [
             (1,  "Reminder: \(loan.borrowerName) still has your \"\(item.name)\"."),

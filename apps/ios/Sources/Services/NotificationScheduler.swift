@@ -8,21 +8,42 @@ final class NotificationScheduler: ObservableObject {
     @Published var taskReminders: Bool  { didSet { UserDefaults.standard.set(taskReminders,  forKey: Keys.taskReminders) } }
     @Published var documentExpiry: Bool { didSet { UserDefaults.standard.set(documentExpiry, forKey: Keys.documentExpiry) } }
     @Published var financialAlerts: Bool { didSet { UserDefaults.standard.set(financialAlerts, forKey: Keys.financialAlerts) } }
+    @Published var warrantyAlerts: Bool { didSet { UserDefaults.standard.set(warrantyAlerts, forKey: Keys.warrantyAlerts) } }
+    @Published var inventoryLoans: Bool { didSet { UserDefaults.standard.set(inventoryLoans, forKey: Keys.inventoryLoans) } }
+    @Published var chatMessages: Bool   { didSet { UserDefaults.standard.set(chatMessages,   forKey: Keys.chatMessages) } }
+    @Published var mentions: Bool       { didSet { UserDefaults.standard.set(mentions,        forKey: Keys.mentions) } }
+    @Published var automationAlerts: Bool { didSet { UserDefaults.standard.set(automationAlerts, forKey: Keys.automationAlerts) } }
     @Published var weeklyDigest: Bool   { didSet { UserDefaults.standard.set(weeklyDigest,   forKey: Keys.weeklyDigest) } }
 
-    private enum Keys {
+    enum Keys {
         static let taskReminders   = "prvio.notif.tasks"
         static let documentExpiry  = "prvio.notif.docExpiry"
         static let financialAlerts = "prvio.notif.financial"
+        static let warrantyAlerts  = "prvio.notif.warranty"
+        static let inventoryLoans  = "prvio.notif.inventory"
+        static let chatMessages    = "prvio.notif.chat"
+        static let mentions        = "prvio.notif.mentions"
+        static let automationAlerts = "prvio.notif.automation"
         static let weeklyDigest    = "prvio.notif.weekly"
+    }
+
+    /// Static check usable from anywhere that fires a local notification
+    /// (chat mentions, inventory loans, …) without holding the instance.
+    static func prefEnabled(_ key: String, default def: Bool = true) -> Bool {
+        UserDefaults.standard.object(forKey: key) == nil ? def : UserDefaults.standard.bool(forKey: key)
     }
 
     init() {
         let d = UserDefaults.standard
-        self.taskReminders   = d.object(forKey: Keys.taskReminders)   as? Bool ?? true
-        self.documentExpiry  = d.object(forKey: Keys.documentExpiry)  as? Bool ?? true
-        self.financialAlerts = d.object(forKey: Keys.financialAlerts) as? Bool ?? true
-        self.weeklyDigest    = d.object(forKey: Keys.weeklyDigest)    as? Bool ?? false
+        self.taskReminders    = d.object(forKey: Keys.taskReminders)    as? Bool ?? true
+        self.documentExpiry   = d.object(forKey: Keys.documentExpiry)   as? Bool ?? true
+        self.financialAlerts  = d.object(forKey: Keys.financialAlerts)  as? Bool ?? true
+        self.warrantyAlerts   = d.object(forKey: Keys.warrantyAlerts)   as? Bool ?? true
+        self.inventoryLoans   = d.object(forKey: Keys.inventoryLoans)   as? Bool ?? true
+        self.chatMessages     = d.object(forKey: Keys.chatMessages)     as? Bool ?? true
+        self.mentions         = d.object(forKey: Keys.mentions)         as? Bool ?? true
+        self.automationAlerts = d.object(forKey: Keys.automationAlerts) as? Bool ?? true
+        self.weeklyDigest     = d.object(forKey: Keys.weeklyDigest)     as? Bool ?? false
     }
 
     // MARK: - Main entry point

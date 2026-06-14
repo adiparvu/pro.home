@@ -318,6 +318,7 @@ struct ChatView: View {
 
     private func scheduleLocalMentionNotifications(body: String) {
         guard !mentionedNames.isEmpty else { return }
+        guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.mentions) else { return }
         let center = UNUserNotificationCenter.current()
         for name in mentionedNames {
             let content = UNMutableNotificationContent()
