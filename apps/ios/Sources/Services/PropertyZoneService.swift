@@ -101,7 +101,7 @@ final class PropertyZoneService: ObservableObject {
             propertyId: propertyId,
             name: name,
             icon: icon,
-            colorHex: layer.color.hexString,
+            colorHex: layer.color.hexString(),
             layer: layer.rawValue,
             healthScore: 100,
             polygon: PropertyZone.squarePolygon(around: center, metres: 10),
@@ -114,17 +114,5 @@ final class PropertyZoneService: ObservableObject {
 
     func zone(containing coordinate: CLLocationCoordinate2D) -> PropertyZone? {
         zones.first { $0.contains(coordinate) }
-    }
-}
-
-// MARK: - Color → hex (for persisting zone colours)
-
-extension Color {
-    var hexString: String {
-        let ui = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        ui.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return String(format: "#%02X%02X%02X",
-                      Int(round(r * 255)), Int(round(g * 255)), Int(round(b * 255)))
     }
 }
