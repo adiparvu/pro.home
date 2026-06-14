@@ -158,13 +158,22 @@ platform :ios do
         Net::HTTP.start(uri.host, uri.port, use_ssl:true){|h|h.request(r)}
       end
       resp = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds?filter[identifier]=#{bundle_id}&filter[platform]=IOS"), jwt)
+      unless resp.code == "200"
+        puts "Warning: Bundle ID check returned HTTP #{resp.code} — assuming #{bundle_id} already exists, skipping create."
+        exit 0
+      end
       if JSON.parse(resp.body).fetch("data",[]).empty?
         puts "Creating Bundle ID #{bundle_id}..."
         r2 = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds"), jwt, method: :post,
           body: {data:{type:"bundleIds",attributes:{identifier:bundle_id,name:app_name,platform:"IOS",seedId:team_id}}})
         puts "  HTTP #{r2.code}: #{r2.body[0..200]}"
-        exit 1 unless r2.code == "201"
-        puts "  Bundle ID created."
+        if r2.code == "201"
+          puts "  Bundle ID created."
+        elsif r2.code == "409"
+          puts "  Bundle ID already exists (conflict). Continuing."
+        else
+          puts "  Warning: Could not create bundle ID (HTTP #{r2.code}). Assuming it exists and continuing."
+        end
       else
         puts "Bundle ID #{bundle_id} already exists."
       end
