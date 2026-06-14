@@ -12,16 +12,6 @@ struct FamilyView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(title: "Familie",
-                           trailing: AnyView(
-                            Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                Image(systemName: "person.badge.plus")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundStyle(.primary)
-                            }
-                           ))
-                    .padding(.bottom, 12)
-
                 if familyService.isLoading && familyService.members.isEmpty {
                     Spacer(); ProgressView().tint(.white); Spacer()
                 } else if familyService.members.isEmpty {
@@ -52,8 +42,17 @@ struct FamilyView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Familie")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "person.badge.plus")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
         .task { await familyService.load() }
         .sheet(isPresented: $showAdd) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id)
