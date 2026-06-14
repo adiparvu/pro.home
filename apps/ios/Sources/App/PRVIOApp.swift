@@ -65,6 +65,10 @@ struct PRVIOApp: App {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
                         router.showChat = true
                     }
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.showShopping") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showShopping")
+                        router.showAddSupply = true
+                    }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
                 }

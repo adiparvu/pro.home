@@ -66,7 +66,7 @@ final class AppRouter: ObservableObject {
         switch type {
         case "com.prvio.action.addtask":  showAddTask = true
         case "com.prvio.action.plants":   showWaterPlant = true
-        case "com.prvio.action.shopping": break
+        case "com.prvio.action.shopping": showAddSupply = true
         case "com.prvio.action.chat":     showChat = true
         case "com.prvio.action.scan":     showInventoryScan = true
         default: break
