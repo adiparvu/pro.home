@@ -36,25 +36,12 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("settingsScroll")).minY)
-                    }
-                )
-            }
-            .coordinateSpace(name: "settingsScroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { y in
-                let shouldCollapse = y < -30
-                if shouldCollapse != tabBarVis.scrolledDown {
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                        tabBarVis.scrolledDown = shouldCollapse
-                    }
-                }
             }
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { tabBarVis.scrolledDown = false }
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }
