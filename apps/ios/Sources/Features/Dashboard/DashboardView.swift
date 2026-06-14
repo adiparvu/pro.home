@@ -26,15 +26,22 @@ struct DashboardView: View {
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
     @State private var showNotifications = false
+    @State private var showEditProfile = false
+    @State private var showSearch = false
+    @State private var showWidgetPicker = false
 
     private let sections = PropertySection.all
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
+                VStack(spacing: 0) {
                     greetingHeader
+                    Spacer().frame(height: 22)
                     mapCard
+                    Spacer().frame(height: 16)
+                    widgetSectionHeader
+                    Spacer().frame(height: 10)
                     widgetGrid
                     Spacer(minLength: 160)
                 }
@@ -88,38 +95,72 @@ struct DashboardView: View {
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
+        .sheet(isPresented: $showEditProfile) {
+            NavigationStack {
+                EditProfileView()
+                    .environmentObject(profileService)
+            }
+        }
+        .sheet(isPresented: $showSearch) {
+            GlobalSearchSheet()
+                .environmentObject(taskService)
+                .environmentObject(documentService)
+        }
+        .sheet(isPresented: $showWidgetPicker) {
+            WidgetPickerSheet()
+                .environmentObject(appSettings)
+        }
     }
 
     // MARK: - Greeting Header
 
     private var greetingHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(LinearGradient(
-                            colors: [Color(red: 0.3, green: 0.85, blue: 0.5),
-                                     Color(red: 0.2, green: 0.65, blue: 0.9)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        ))
-                    Text(avatarInitial)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 36, height: 36)
+        HStack(alignment: .center, spacing: 10) {
+            // Avatar — tapping opens Edit Profile
+            Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [Color(red: 0.3, green: 0.85, blue: 0.5),
+                                         Color(red: 0.2, green: 0.65, blue: 0.9)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ))
+                        if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
+                            AsyncImage(url: url) { phase in
+                                if case .success(let img) = phase {
+                                    img.resizable().scaledToFill()
+                                        .frame(width: 38, height: 38)
+                                        .clipShape(Circle())
+                                } else {
+                                    Text(avatarInitial)
+                                        .font(.system(size: 15, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                        } else {
+                            Text(avatarInitial)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 38, height: 38)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Bună ziua 👋")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.5))
-                    Text(displayName)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(greetingText)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                        Text(displayName)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
+            .buttonStyle(.plain)
 
             Spacer()
 
+            // Health score pill
             if let score = propertyService.primary?.healthScore {
                 let col: Color = score >= 80
                     ? Color(red: 0.25, green: 0.88, blue: 0.55)
@@ -133,21 +174,63 @@ struct DashboardView: View {
                 .background(col.opacity(0.12), in: Capsule())
             }
 
+            // Global search
+            Button {
+                HapticFeedback.impact(.light)
+                showSearch = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .frame(width: 38, height: 38)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+
+            // Notifications
             Button {
                 HapticFeedback.impact(.light)
                 showNotifications.toggle()
             } label: {
-                ZStack {
-                    Circle()
-                        .fill(Color.primary.opacity(0.07))
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.7))
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                }
-                .frame(width: 38, height: 38)
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .frame(width: 38, height: 38)
+                    .glassCircle()
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Widget section header
+
+    private var widgetSectionHeader: some View {
+        HStack {
+            Text("OVERVIEW")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.35))
+            Spacer()
+            Button {
+                HapticFeedback.impact(.light)
+                showWidgetPicker = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.blue.opacity(0.8))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Greeting text
+
+    private var greetingText: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12:  return "Bună dimineața 🌅"
+        case 12..<18: return "Bună ziua 👋"
+        case 18..<22: return "Bună seara 🌇"
+        default:      return "Noapte bună 🌙"
         }
     }
 
@@ -239,35 +322,49 @@ struct DashboardView: View {
         .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
     }
 
-    // MARK: - Widget Grid
+    // MARK: - Widget Grid (dynamic — driven by WidgetPicker selection)
+
+    private var enabledWidgets: [HomeWidgetType] { HomeWidgetType.load() }
 
     private var widgetGrid: some View {
         LazyVGrid(
             columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
             spacing: 12
         ) {
+            ForEach(enabledWidgets) { type in
+                widgetView(for: type)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func widgetView(for type: HomeWidgetType) -> some View {
+        switch type {
+        case .tasks:
             HomeWidget(
                 icon: "checklist",
-                iconColor: taskService.overdueCount > 0 ? Color.red : Color(red: 0.35, green: 0.65, blue: 1.0),
+                iconColor: taskService.overdueCount > 0 ? .red : Color(red: 0.35, green: 0.65, blue: 1.0),
                 title: "Sarcini",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
                 badge: taskService.overdueCount
             ) { router.selectedTab = .tasks }
 
+        case .finances:
             HomeWidget(
                 icon: "creditcard.fill",
                 iconColor: financialService.currentMonthNet >= 0
-                    ? Color(red: 0.3, green: 0.85, blue: 0.45) : Color.orange,
+                    ? Color(red: 0.3, green: 0.85, blue: 0.45) : .orange,
                 title: "Finanțe",
                 value: netFormatted,
                 subtitle: "luna aceasta"
             ) { router.selectedTab = .analytics }
 
+        case .documents:
             HomeWidget(
                 icon: "doc.fill",
                 iconColor: documentService.expiringDocs.isEmpty
-                    ? Color(red: 0.55, green: 0.55, blue: 0.95) : Color.orange,
+                    ? Color(red: 0.55, green: 0.55, blue: 0.95) : .orange,
                 title: "Documente",
                 value: documentService.expiringDocs.isEmpty
                     ? "\(documentService.documents.count)"
@@ -276,6 +373,7 @@ struct DashboardView: View {
                 badge: documentService.expiringDocs.count
             ) { router.selectedTab = .settings }
 
+        case .family:
             HomeWidget(
                 icon: "person.2.fill",
                 iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
@@ -283,7 +381,50 @@ struct DashboardView: View {
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? "membru" : "membri"
             ) { router.selectedTab = .settings }
+
+        case .healthScore:
+            HomeWidget(
+                icon: "heart.fill",
+                iconColor: .red,
+                title: "Sănătate",
+                value: propertyService.primary?.healthScore.map { "\($0)" } ?? "–",
+                subtitle: "scor proprietate"
+            ) { }
+
+        case .inventory:
+            HomeWidget(
+                icon: "shippingbox.fill",
+                iconColor: .orange,
+                title: "Inventar",
+                value: "–",
+                subtitle: "obiecte"
+            ) { router.selectedTab = .settings }
+
+        case .contractors:
+            HomeWidget(
+                icon: "hammer.fill",
+                iconColor: Color(red: 0.9, green: 0.65, blue: 0.2),
+                title: "Contractori",
+                value: "–",
+                subtitle: "activi"
+            ) { router.selectedTab = .settings }
+
+        case .calendar:
+            HomeWidget(
+                icon: "calendar",
+                iconColor: .teal,
+                title: "Calendar",
+                value: "\(Calendar.current.component(.day, from: Date()))",
+                subtitle: monthName
+            ) { }
         }
+    }
+
+    private var monthName: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM"
+        f.locale = Locale(identifier: "ro_RO")
+        return f.string(from: Date())
     }
 
     // MARK: - Helpers
