@@ -2,9 +2,11 @@ import SwiftUI
 
 @main
 struct PRVIOApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var auth        = AuthService.shared
     @StateObject private var appSettings = AppSettings()
     @StateObject private var lock        = AppLockManager()
+    @StateObject private var router      = AppRouter()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -20,6 +22,7 @@ struct PRVIOApp: App {
                     } else if auth.session != nil {
                         MainTabView()
                             .environmentObject(appSettings)
+                            .environmentObject(router)
                     } else {
                         LoginView()
                     }
@@ -30,7 +33,6 @@ struct PRVIOApp: App {
                 .environmentObject(auth)
                 .environmentObject(lock)
 
-                // App lock (only when signed in)
                 if auth.session != nil {
                     if lock.isLocked {
                         LockScreenView(manager: lock)
@@ -47,11 +49,24 @@ struct PRVIOApp: App {
             .onAppear { lock.appDidLaunch() }
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
-                case .active:               lock.didBecomeActive()
+                case .active:                lock.didBecomeActive()
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
                 }
             }
+            .onOpenURL { url in
+                router.handle(deepLink: url)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .prvioQuickAction)) { notif in
+                if let type = notif.object as? String {
+                    router.handle(quickActionType: type)
+                }
+            }
+            .onContinueUserActivity("com.prvio.task")     { router.handle(userActivity: $0) }
+            .onContinueUserActivity("com.prvio.plants")   { router.handle(userActivity: $0) }
+            .onContinueUserActivity("com.prvio.chat")     { router.handle(userActivity: $0) }
+            .onContinueUserActivity("com.prvio.shopping") { router.handle(userActivity: $0) }
+            .onContinueUserActivity("CSSearchableItemActionType") { router.handle(userActivity: $0) }
         }
     }
 }
@@ -60,16 +75,12 @@ struct PRVIOApp: App {
 
 private func applyGlobalAppearance() {
     if #available(iOS 26, *) {
-        // iOS 26+ — navigation bar uses Liquid Glass automatically.
-        // Resetting to default lets the system apply its native glass treatment.
         let nav = UINavigationBarAppearance()
         nav.configureWithDefaultBackground()
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
     } else {
-        // iOS 17–25 — use system blur material, which adapts to dark/light mode,
-        // reduceTransparency, and increaseContrast automatically via UIKit.
         let nav = UINavigationBarAppearance()
         nav.configureWithTransparentBackground()
         nav.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
@@ -78,5 +89,4 @@ private func applyGlobalAppearance() {
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
     }
-
 }

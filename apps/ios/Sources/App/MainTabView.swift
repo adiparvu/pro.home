@@ -95,8 +95,10 @@ struct MainTabView: View {
     @StateObject private var zoneService = PropertyZoneService()
     @StateObject private var supplyService = SupplyService()
     @StateObject private var stickerService = StickerService()
+    @StateObject private var plantService = PlantService()
+    @StateObject private var deliveryService = DeliveryService()
     @StateObject private var tabBarVis = TabBarVisibility()
-    @StateObject private var router = AppRouter()
+    @EnvironmentObject private var router: AppRouter
 
     @State private var bounceTab: AppTab? = nil
 
@@ -148,6 +150,13 @@ struct MainTabView: View {
                 .environmentObject(supplyService)
                 .environmentObject(propertyService)
         }
+        .sheet(isPresented: $router.showWaterPlant) {
+            NavigationStack {
+                PlantsView()
+                    .environmentObject(plantService)
+                    .environmentObject(propertyService)
+            }
+        }
         .environmentObject(router)
         .environmentObject(tabBarVis)
         .environmentObject(taskService)
@@ -164,6 +173,8 @@ struct MainTabView: View {
         .environmentObject(zoneService)
         .environmentObject(supplyService)
         .environmentObject(stickerService)
+        .environmentObject(plantService)
+        .environmentObject(deliveryService)
         .task {
             await currencyService.refresh()
             await propertyService.load()
@@ -186,11 +197,19 @@ struct MainTabView: View {
             }
             if let propId = propertyService.primary?.id {
                 await supplyService.load(propertyId: propId)
+                await plantService.load(propertyId: propId)
             }
+            writeWidgetSnapshot()
+            updateDynamicShortcuts()
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
-            Task { await supplyService.load(propertyId: newPropId) }
+            Task {
+                await supplyService.load(propertyId: newPropId)
+                await plantService.load(propertyId: newPropId)
+                writeWidgetSnapshot()
+                updateDynamicShortcuts()
+            }
         }
         .onChange(of: profileService.profile) { _, profile in
             if let profile, let s = auth.session {
@@ -218,13 +237,61 @@ struct MainTabView: View {
                 }
                 if let propId = propertyService.primary?.id {
                     await supplyService.load(propertyId: propId)
+                    await plantService.load(propertyId: propId)
                 }
+                writeWidgetSnapshot()
+                updateDynamicShortcuts()
             }
         }
         .onChange(of: router.selectedTab) { _, newTab in
             bounceTab = newTab
             if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
         }
+    }
+
+    // MARK: Widget + Dynamic Shortcuts
+
+    private func writeWidgetSnapshot() {
+        var snapshot = PRVIOWidgetSnapshot()
+        snapshot.overdueTaskCount = taskService.overdueCount
+        snapshot.openTaskCount = taskService.tasks.filter { !$0.isCompleted }.count
+        snapshot.plantsNeedingWater = plantService.plantsNeedingWater.count
+        snapshot.plantNames = Array(plantService.plantsNeedingWater.prefix(3).map(\.name))
+        snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
+        snapshot.propertyName = propertyService.primary?.name
+        SharedDataStore.write(snapshot)
+    }
+
+    private func updateDynamicShortcuts() {
+        var items: [UIApplicationShortcutItem] = []
+        if let plant = plantService.plantsNeedingWater.first {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.plants",
+                localizedTitle: "Udă: \(plant.name)",
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "drop.fill"),
+                userInfo: nil
+            ))
+        }
+        if let task = taskService.tasks.first(where: { !$0.isCompleted }) {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.addtask",
+                localizedTitle: task.title,
+                localizedSubtitle: "Sarcină",
+                icon: UIApplicationShortcutIcon(systemImageName: "checklist"),
+                userInfo: nil
+            ))
+        }
+        if deliveryService.activeDeliveries.count > 0 {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.shopping",
+                localizedTitle: "\(deliveryService.activeDeliveries.count) livrări active",
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill"),
+                userInfo: nil
+            ))
+        }
+        UIApplication.shared.shortcutItems = items
     }
 
 }

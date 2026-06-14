@@ -15,6 +15,8 @@ struct SettingsView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @EnvironmentObject private var supplyService: SupplyService
+    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject private var deliveryService: DeliveryService
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
@@ -206,6 +208,15 @@ struct SettingsView: View {
                 SuppliesView()
                     .environmentObject(supplyService)
                     .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plante") {
+                PlantsView()
+                    .environmentObject(plantService)
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Livrări") {
+                DeliveriesView()
+                    .environmentObject(deliveryService)
             }
             NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
                 UtilityView()
