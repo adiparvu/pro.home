@@ -2,12 +2,17 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    @AppStorage("prvio.theme")       var theme:             String = "dark"
-    @AppStorage("prvio.locale")      var locale:            String = "en"
-    @AppStorage("prvio.currency")    var preferredCurrency: String = "EUR"
-    @AppStorage("prvio.accentColor") var accentColor:       String = "blue"
-    @AppStorage("prvio.accentOn")    var accentEnabled:     Bool   = true
-    @AppStorage("prvio.hapticOn")    var hapticEnabled:     Bool   = true
+    @AppStorage("prvio.theme")              var theme:                 String = "dark"
+    @AppStorage("prvio.locale")             var locale:                String = "ro"
+    @AppStorage("prvio.followSystemLang")   var followSystemLanguage:  Bool   = true
+    @AppStorage("prvio.currency")           var preferredCurrency:     String = "EUR"
+    @AppStorage("prvio.accentColor")        var accentColor:           String = "blue"
+    @AppStorage("prvio.accentOn")           var accentEnabled:         Bool   = true
+    @AppStorage("prvio.hapticOn")           var hapticEnabled:         Bool   = true
+
+    var appLocale: Locale {
+        followSystemLanguage ? .autoupdatingCurrent : Locale(identifier: locale)
+    }
 
     // Customizable floating (speed-dial) buttons — per page.
     // Stored in UserDefaults, keyed by host, so this scales to any number of pages.

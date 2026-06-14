@@ -1,0 +1,129 @@
+/* ── Tabs ── */
+"Home" = "Home";
+"Hartă" = "Map";
+"Tasks" = "Tasks";
+"Analytics" = "Analytics";
+"Settings" = "Settings";
+
+/* ── Settings rows ── */
+"Language" = "Language";
+"Appearance" = "Appearance";
+"Floating Buttons" = "Floating Buttons";
+"Integrations" = "Integrations";
+"Emergency Contacts" = "Emergency Contacts";
+"Help & FAQ" = "Help & FAQ";
+"Rate App" = "Rate App";
+"Sign Out" = "Sign Out";
+
+/* ── Settings sections ── */
+"APP" = "APP";
+"SUPPORT" = "SUPPORT";
+"PROPERTY" = "PROPERTY";
+"FAMILY" = "FAMILY";
+"My Property" = "My Property";
+"Family Members" = "Family Members";
+"Trusted Contacts" = "Trusted Contacts";
+
+/* ── Language screen ── */
+"language_title" = "Language";
+"language_subtitle" = "PREFERENCES";
+"language_follow_ios" = "Follow iOS Language";
+"language_follow_ios_desc" = "The app adapts automatically to the language set in iOS Settings.";
+"language_select" = "SELECT LANGUAGE";
+"language_current" = "Current language";
+"language_ios_tip" = "You can also set a per-app language in iOS Settings → PRVIO → Language.";
+
+/* ── Common actions ── */
+"Cancel" = "Cancel";
+"Save" = "Save";
+"Delete" = "Delete";
+"Edit" = "Edit";
+"Add" = "Add";
+"Done" = "Done";
+"Close" = "Close";
+"OK" = "OK";
+"Back" = "Back";
+"Next" = "Next";
+"Retry" = "Retry";
+"Loading" = "Loading…";
+"Error" = "Error";
+"Success" = "Success";
+"Confirm" = "Confirm";
+
+/* ── Property ── */
+"My Home" = "My Home";
+"Add Property" = "Add Property";
+"Edit Property" = "Edit Property";
+"Property name" = "Property name";
+"Address" = "Address";
+"City" = "City";
+"Country" = "Country";
+"Area (m²)" = "Area (m²)";
+"Rooms" = "Rooms";
+"Adresă" = "Address";
+"Țară" = "Country";
+"Suprafață" = "Size";
+"Camere" = "Rooms";
+"An construit" = "Year Built";
+"Scor sănătate" = "Health Score";
+"Coordonate" = "Coordinates";
+"Poveste" = "Story";
+"Renovări" = "Renovations";
+"Proprietari" = "Owners";
+"Planuri proprietate" = "Property Plans";
+"No property found" = "No property found";
+
+/* ── Tasks ── */
+"No tasks yet" = "No tasks yet";
+"Add your first task" = "Add your first task";
+"No open tasks" = "No open tasks";
+"No overdue tasks" = "No overdue tasks";
+"No done tasks" = "No done tasks";
+
+/* ── Inventory ── */
+"No inventory yet" = "No inventory yet";
+"Add first item" = "Add first item";
+
+/* ── Documents ── */
+"No documents yet" = "No documents yet";
+"No results found" = "No results found";
+"Tap + to add your first document" = "Tap + to add your first document";
+
+/* ── Finances ── */
+"Income" = "Income";
+"Expenses" = "Expenses";
+"Balance" = "Balance";
+
+/* ── Security ── */
+"Securitate" = "Security";
+"Siguranță și securitate" = "Safety & Security";
+"Aspect" = "Appearance";
+"Notificări" = "Notifications";
+"Ajutor & FAQ" = "Help & FAQ";
+"Contacte de urgență" = "Emergency Contacts";
+"Urgențe" = "Emergency";
+
+/* ── Report ── */
+"Raport" = "Report";
+"PROPRIETATE" = "PROPERTY";
+"Generează PDF" = "Generate PDF";
+"INCLUDE ÎN RAPORT" = "INCLUDE IN REPORT";
+"Sarcini & Mentenanță" = "Tasks & Maintenance";
+"Rezumat financiar" = "Financial Summary";
+"Documente" = "Documents";
+"Digital Twin & Zone" = "Digital Twin & Zones";
+
+/* ── Map / Digital Twin ── */
+"Hartă" = "Map";
+"Zone" = "Zones";
+"Obiecte" = "Objects";
+
+/* ── Profile ── */
+"Profile" = "Profile";
+"Display Name" = "Display Name";
+"Edit Profile" = "Edit Profile";
+
+/* ── Empty / errors ── */
+"Something went wrong" = "Something went wrong";
+"Please try again" = "Please try again";
+"No data available" = "No data available";
