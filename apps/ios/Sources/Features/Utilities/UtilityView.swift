@@ -62,19 +62,6 @@ struct UtilityView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(title: "Utilities",
-                           trailing: AnyView(
-                            Button {
-                                showAdd = true
-                                HapticFeedback.impact(.medium)
-                            } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(.primary)
-                            }
-                           ))
-                    .padding(.bottom, 12)
-
                 // Summary cards
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -126,8 +113,20 @@ struct UtilityView: View {
                 }
             }
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Utilities")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showAdd = true
+                    HapticFeedback.impact(.medium)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
         .sheet(isPresented: $showAdd) {
             AddUtilitySheet(defaultType: selectedType) { entry in service.add(entry) }
         }

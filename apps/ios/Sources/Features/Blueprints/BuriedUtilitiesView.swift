@@ -14,21 +14,6 @@ struct BuriedUtilitiesView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(
-                    title: "Underground",
-                    trailing: AnyView(
-                        Button {
-                            showAdd = true
-                            HapticFeedback.impact(.medium)
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(.primary)
-                        }
-                    )
-                )
-                .padding(.bottom, 12)
-
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if !mapped.isEmpty {
@@ -55,7 +40,20 @@ struct BuriedUtilitiesView: View {
                 }
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Underground")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showAdd = true
+                    HapticFeedback.impact(.medium)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
         .sheet(isPresented: $showAdd) {
             AddBuriedUtilitySheet { utility, photo in
                 service.addUtility(utility, photo: photo)

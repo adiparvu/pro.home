@@ -257,62 +257,6 @@ struct InventoryView: View {
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                PageHeader(title: "Inventory",
-                           leading: AnyView(
-                            Button {
-                                HapticFeedback.selection()
-                                dismiss()
-                            } label: {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(Color.primary.opacity(0.75))
-                                    .padding(.horizontal, 10).padding(.vertical, 7)
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
-                            }
-                            .buttonStyle(.plain)
-                           ),
-                           trailing: AnyView(
-                            HStack(spacing: 10) {
-                                Menu {
-                                    ForEach(InvFilter.allCases, id: \.self) { f in
-                                        Button {
-                                            withAnimation(.spring(response: 0.25)) { filter = f }
-                                        } label: {
-                                            Label(
-                                                "\(f.rawValue)  (\(countFor(f)))",
-                                                systemImage: filter == f ? "checkmark" : f.icon
-                                            )
-                                        }
-                                    }
-                                } label: {
-                                    HStack(spacing: 5) {
-                                        if filter != .all {
-                                            Image(systemName: filter.icon)
-                                                .font(.system(size: 12, weight: .semibold))
-                                            Text(filter.rawValue)
-                                                .font(.system(size: 13, weight: .semibold))
-                                        } else {
-                                            Text("…")
-                                                .font(.system(size: 15, weight: .semibold))
-                                        }
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 9, weight: .medium))
-                                    }
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 12).padding(.vertical, 7)
-                                    .background(.ultraThinMaterial, in: Capsule())
-                                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                                }
-                                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-                           ))
-                    .padding(.bottom, 8)
-
                 if !service.items.isEmpty {
                     summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
                 }
@@ -362,9 +306,49 @@ struct InventoryView: View {
             .padding(.trailing, 20)
             .padding(.bottom, 30)
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .navigationTitle("Inventory")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 10) {
+                    Menu {
+                        ForEach(InvFilter.allCases, id: \.self) { f in
+                            Button {
+                                withAnimation(.spring(response: 0.25)) { filter = f }
+                            } label: {
+                                Label(
+                                    "\(f.rawValue)  (\(countFor(f)))",
+                                    systemImage: filter == f ? "checkmark" : f.icon
+                                )
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            if filter != .all {
+                                Image(systemName: filter.icon)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(filter.rawValue)
+                                    .font(.system(size: 13, weight: .semibold))
+                            } else {
+                                Text("…")
+                                    .font(.system(size: 15, weight: .semibold))
+                            }
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .medium))
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                    }
+                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showAdd) { AddInventorySheet { service.add($0) } }
         .sheet(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
