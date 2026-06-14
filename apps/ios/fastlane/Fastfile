@@ -184,8 +184,9 @@ platform :ios do
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.controls' 'PRVIOControls' 'SU92TVZT8W'")
 
     # Enable App Groups capability + register the shared group.
-    # Previous attempts failed because ASC filter[identifier] does prefix matching:
-    # "com.prvio.app" matched widgets/controls too. Fixed with exact-match guard.
+    # Key fix: use filter[identifier] (not filter[name]) for App Groups lookup,
+    # and embed the group identifier directly in capability settings so Apple
+    # includes group.com.prvio.app in the generated provisioning profile.
     File.write("/tmp/setup_app_groups.rb", <<~'RUBY')
       require 'openssl'; require 'base64'; require 'json'; require 'net/http'; require 'uri'
 
@@ -206,77 +207,91 @@ platform :ios do
 
       def api(path, jwt, method: :get, body: nil)
         uri = URI("https://api.appstoreconnect.apple.com#{path}")
-        klass = { get: Net::HTTP::Get, post: Net::HTTP::Post }[method]
+        klass = { get: Net::HTTP::Get, post: Net::HTTP::Post, patch: Net::HTTP::Patch }[method]
         req  = klass.new(uri)
         req["Authorization"] = "Bearer #{jwt}"
         if body; req["Content-Type"] = "application/json"; req.body = body.to_json; end
         Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
       end
 
-      # 1. Ensure App Group registered
-      puts "=== App Group #{group_id} ==="
-      resp = api("/v1/appGroups?filter[name]=#{URI.encode_www_form_component(group_id)}", jwt)
+      # 1. Find or create App Group — use filter[identifier] (more reliable than filter[name])
+      puts "=== App Group: #{group_id} ==="
+      resp = api("/v1/appGroups?filter[identifier]=#{URI.encode_www_form_component(group_id)}", jwt)
+      puts "  GET by identifier → HTTP #{resp.code}: #{resp.body[0..300]}"
       grps = resp.code == "200" ? JSON.parse(resp.body).fetch("data",[]).select { |g| g.dig("attributes","identifier") == group_id } : []
       ag_id = nil
       if grps.any?
         ag_id = grps[0]["id"]
-        puts "  exists id=#{ag_id}"
+        puts "  found id=#{ag_id}"
       else
         r2 = api("/v1/appGroups", jwt, method: :post, body: {
-          data: { type: "appGroups", attributes: { name: group_id, identifier: group_id } }
+          data: { type: "appGroups", attributes: { name: "PRVIO Shared", identifier: group_id } }
         })
+        puts "  POST appGroups → HTTP #{r2.code}: #{r2.body[0..300]}"
         if %w[200 201].include?(r2.code)
           ag_id = JSON.parse(r2.body).dig("data","id")
           puts "  created id=#{ag_id}"
         else
-          # 409 = already exists, re-query
-          r3 = api("/v1/appGroups?filter[name]=#{URI.encode_www_form_component(group_id)}", jwt)
+          # 409 or other — try filter[identifier] again and also filter[name]
+          r3 = api("/v1/appGroups?filter[identifier]=#{URI.encode_www_form_component(group_id)}", jwt)
           all = r3.code == "200" ? JSON.parse(r3.body).fetch("data",[]) : []
           ag_id = all.find { |g| g.dig("attributes","identifier") == group_id }&.dig("id")
-          puts "  HTTP #{r2.code} on create, re-queried: id=#{ag_id.inspect}"
+          puts "  re-query after #{r2.code}: id=#{ag_id.inspect} (response: #{r3.body[0..200]})"
         end
       end
+
+      # Settings block that tells Apple which group to include in the profile.
+      # The "key" in options is the App Group identifier string itself.
+      group_settings = [{ key: "APP_GROUPS_IDENTIFIER", options: [{ key: group_id }] }]
 
       bundle_ids.each do |bundle_id|
         puts "\n=== #{bundle_id} ==="
 
-        # EXACT match — ASC filter[identifier] does prefix matching
+        # Exact match — ASC filter[identifier] can return prefix matches
         resp = api("/v1/bundleIds?filter[identifier]=#{bundle_id}&limit=200", jwt)
         all_bids = resp.code == "200" ? JSON.parse(resp.body).fetch("data",[]) : []
         exact = all_bids.select { |b| b.dig("attributes","identifier") == bundle_id }
         if exact.empty?
-          puts "  [ERROR] bundle ID not found (HTTP #{resp.code}), skipping"; next
+          puts "  [ERROR] not found (HTTP #{resp.code}: #{resp.body[0..200]})"; next
         end
         bid_id = exact[0]["id"]
-        puts "  id=#{bid_id}"
+        puts "  bundle resource id=#{bid_id}"
 
-        # Enable APP_GROUPS capability
         caps_resp = api("/v1/bundleIds/#{bid_id}/bundleIdCapabilities", jwt)
         caps = caps_resp.code == "200" ? JSON.parse(caps_resp.body).fetch("data",[]) : []
-        if caps.any? { |c| c.dig("attributes","capabilityType") == "APP_GROUPS" }
-          puts "  APP_GROUPS already enabled"
+        ag_cap = caps.find { |c| c.dig("attributes","capabilityType") == "APP_GROUPS" }
+
+        if ag_cap
+          # Already enabled — PATCH with group settings so the group appears in the profile
+          puts "  APP_GROUPS exists (id=#{ag_cap["id"]}), PATCHing with group settings"
+          patch_rc = api("/v1/bundleIdCapabilities/#{ag_cap["id"]}", jwt, method: :patch, body: {
+            data: {
+              type: "bundleIdCapabilities",
+              id: ag_cap["id"],
+              attributes: { capabilityType: "APP_GROUPS", settings: group_settings }
+            }
+          })
+          puts "  PATCH → HTTP #{patch_rc.code}: #{patch_rc.body[0..300]}"
         else
+          # Enable with group settings embedded
           rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
             data: {
               type: "bundleIdCapabilities",
-              attributes: { capabilityType: "APP_GROUPS", settings: [] },
+              attributes: { capabilityType: "APP_GROUPS", settings: group_settings },
               relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
             }
           })
-          puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..150]}"
+          puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..300]}"
         end
 
-        # Link App Group to bundle ID
-        next unless ag_id
-        rl = api("/v1/bundleIds/#{bid_id}/relationships/appGroups", jwt, method: :post, body: {
-          data: [{ type: "appGroups", id: ag_id }]
-        })
-        if %w[200 201 204].include?(rl.code)
-          puts "  linked app group ✓"
-        elsif rl.code == "409"
-          puts "  app group already linked ✓"
+        # Also try the relationships endpoint as a belt-and-suspenders measure
+        if ag_id
+          rl = api("/v1/bundleIds/#{bid_id}/relationships/appGroups", jwt, method: :post, body: {
+            data: [{ type: "appGroups", id: ag_id }]
+          })
+          puts "  relationships/appGroups → HTTP #{rl.code}: #{rl.code == "404" ? "endpoint not available" : rl.body[0..200]}"
         else
-          puts "  link app group → HTTP #{rl.code}: #{rl.body[0..150]}"
+          puts "  skip relationships link — ag_id not available"
         end
       end
       puts "\nsetup_app_groups done."
@@ -285,7 +300,7 @@ platform :ios do
     sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets'")
 
     # Wait for Developer Portal capability changes to propagate before sigh().
-    sleep(8)
+    sleep(12)
 
     # Regenerate App Store Distribution profiles — force: true deletes the old profile
     # so the new one picks up the App Groups capability we just enabled.
