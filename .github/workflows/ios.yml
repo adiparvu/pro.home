@@ -1,0 +1,82 @@
+name: iOS — TestFlight Deploy
+
+on:
+  push:
+    branches: [main, claude/prv-house-vision-bjnc7z, claude/prv-house-vision-rh9ezh]
+    paths:
+      - 'apps/ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Upload to TestFlight
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    defaults:
+      run:
+        working-directory: apps/ios
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/ios
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Install iOS platform
+        run: |
+          xcodebuild -version
+          for i in 1 2 3; do
+            sudo xcodebuild -downloadPlatform iOS && break
+            echo "downloadPlatform attempt $i failed, retrying..."
+            sleep 10
+          done || echo "downloadPlatform failed; continuing — platform is usually preinstalled"
+
+      - name: Cache Gems
+        uses: actions/cache@v4
+        with:
+          path: apps/ios/vendor/bundle
+          key: gems-${{ hashFiles('apps/ios/Gemfile.lock') }}
+          restore-keys: gems-
+
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: spm-${{ hashFiles('apps/ios/project.yml') }}
+          restore-keys: spm-
+
+      - name: Cache DerivedData (SPM compiled modules)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/DerivedData/SourcePackages
+          key: dd-spm-${{ hashFiles('apps/ios/project.yml') }}
+          restore-keys: dd-spm-
+
+      - name: Install Gems
+        run: |
+          bundle config set path vendor/bundle
+          bundle install
+
+      - name: Run Fastlane beta
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
+          IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+        run: bundle exec fastlane beta

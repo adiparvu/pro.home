@@ -1,0 +1,6 @@
+git_url "https://github.com/adiparvu/pro.home"
+git_branch "certs"
+storage_mode "git"
+type "appstore"
+app_identifier "com.prvhouse.app"
+team_id "SU92TVZT8W"

@@ -1,0 +1,54 @@
+name: PRVIO
+options:
+  bundleIdPrefix: com.prvio
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "26.0"
+  swift: "5.10"
+  createIntermediateGroups: true
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
+
+targets:
+  PRVIO:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    resources:
+      - path: Resources/Assets.xcassets
+    dependencies:
+      - package: Supabase
+        product: Supabase
+      - sdk: Speech.framework
+      - sdk: AVFoundation.framework
+      - sdk: MapKit.framework
+      - sdk: CoreLocation.framework
+      - sdk: EventKit.framework
+      - sdk: UserNotifications.framework
+      - sdk: Vision.framework
+      - sdk: RoomPlan.framework
+      - sdk: QuickLook.framework
+      - sdk: ARKit.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app
+        SWIFT_VERSION: 5.10
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        INFOPLIST_FILE: Sources/App/Info.plist
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "105"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_COMPILATION_MODE: singlefile

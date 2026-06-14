@@ -1,0 +1,297 @@
+require "base64"
+require "fileutils"
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    key_id      = ENV["ASC_KEY_ID"]
+    issuer_id   = ENV["ASC_ISSUER_ID"]
+    key_content = ENV["ASC_KEY_CONTENT"]
+
+    key_pem  = Base64.decode64(key_content)
+    key_path = "/tmp/asc_key.p8"
+    File.write(key_path, key_pem)
+
+    api_key = app_store_connect_api_key(
+      key_id:                 key_id,
+      issuer_id:              issuer_id,
+      key_content:            key_content,
+      is_key_content_base64:  true
+    )
+
+    project_dir = File.expand_path("..")
+
+    Dir.chdir("..") do
+      sh("xcodegen generate")
+
+      pbxproj_path = "PRVIO.xcodeproj/project.pbxproj"
+      pbxproj = File.read(pbxproj_path)
+      has_xcassets     = pbxproj.include?("Assets.xcassets")
+      has_correct_type = pbxproj.include?("folder.assetcatalog")
+
+      if has_xcassets && !has_correct_type
+        fixed = pbxproj.split("\n").map { |line|
+          line.include?("Assets.xcassets") \
+            ? line.gsub("lastKnownFileType = folder;", "lastKnownFileType = folder.assetcatalog;") \
+            : line
+        }.join("\n")
+        File.write(pbxproj_path, fixed)
+        UI.success("Patched Assets.xcassets to lastKnownFileType = folder.assetcatalog")
+      end
+    end
+
+    # Revoke all existing Distribution certs via direct ASC REST API.
+    # Covers both IOS_DISTRIBUTION (old "iPhone Distribution") and
+    # DISTRIBUTION ("Apple Distribution") types to avoid the 2-cert limit
+    # on ephemeral CI runners that have no local private key.
+    File.write("/tmp/revoke_dist_certs.rb", <<~'RUBY')
+      require 'openssl'
+      require 'base64'
+      require 'json'
+      require 'net/http'
+
+      key_path, key_id, issuer_id = ARGV
+
+      key = OpenSSL::PKey::EC.new(File.read(key_path))
+      now = Time.now.to_i
+
+      header  = { "alg" => "ES256", "kid" => key_id, "typ" => "JWT" }
+      payload = { "iss" => issuer_id, "iat" => now, "exp" => now + 1200, "aud" => "appstoreconnect-v1" }
+
+      eh  = Base64.urlsafe_encode64(JSON.generate(header),  padding: false)
+      ep  = Base64.urlsafe_encode64(JSON.generate(payload), padding: false)
+      si  = "#{eh}.#{ep}"
+
+      der  = key.sign(OpenSSL::Digest::SHA256.new, si)
+      asn1 = OpenSSL::ASN1.decode(der)
+      r_hex = asn1.value[0].value.to_s(16).rjust(64, '0')
+      s_hex = asn1.value[1].value.to_s(16).rjust(64, '0')
+      sig  = Base64.urlsafe_encode64([r_hex + s_hex].pack('H*'), padding: false)
+      jwt  = "#{si}.#{sig}"
+
+      %w[IOS_DISTRIBUTION DISTRIBUTION].each do |cert_type|
+        uri = URI("https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=#{cert_type}&limit=50")
+        req = Net::HTTP::Get.new(uri)
+        req["Authorization"] = "Bearer #{jwt}"
+        resp = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+
+        unless resp.code == "200"
+          warn "GET certificates?type=#{cert_type} → #{resp.code}: #{resp.body}"
+          next
+        end
+
+        certs = JSON.parse(resp.body).fetch("data", [])
+        puts "#{cert_type}: #{certs.size} cert(s) found"
+
+        certs.each do |c|
+          cid = c["id"]
+          del = Net::HTTP::Delete.new(URI("https://api.appstoreconnect.apple.com/v1/certificates/#{cid}"))
+          del["Authorization"] = "Bearer #{jwt}"
+          r2 = Net::HTTP.start("api.appstoreconnect.apple.com", 443, use_ssl: true) { |h| h.request(del) }
+          puts "  Revoked #{cid} → HTTP #{r2.code}"
+        end
+      end
+    RUBY
+
+    sh("ruby /tmp/revoke_dist_certs.rb '#{key_path}' '#{key_id}' '#{issuer_id}'")
+
+    # Create a dedicated, unlocked CI keychain. Importing the signing key into
+    # a keychain whose partition list we control lets codesign use the private
+    # key non-interactively. Without this, codesign blocks forever on a GUI
+    # authorization prompt that never appears on a headless runner.
+    keychain_name     = "prvio_ci.keychain"
+    keychain_password = "ci_temp_pw"
+    keychain_path     = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+
+    create_keychain(
+      name:            keychain_name,
+      password:        keychain_password,
+      default_keychain: true,
+      unlock:          true,
+      timeout:         3600,
+      lock_when_sleeps: false,
+      add_to_search_list: true
+    )
+
+    # Create a new Distribution cert and install it into the CI keychain.
+    cert(
+      api_key:           api_key,
+      platform:          "ios",
+      output_path:       "/tmp",
+      keychain_path:     keychain_path,
+      keychain_password: keychain_password
+    )
+
+    # Authorize codesign (and Apple tools) to use the imported key without a
+    # prompt, then ensure the keychain is unlocked for the archive step.
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '#{keychain_password}' '#{keychain_path}' || true")
+
+    # Diagnostics: prove a codesigning identity is visible & usable headlessly.
+    sh("security list-keychains -d user")
+    sh("security find-identity -v -p codesigning '#{keychain_path}' || true")
+    sh("security find-identity -v -p codesigning || true")
+
+    # Ensure the Bundle ID exists on the Apple Developer Portal via ASC REST API.
+    # produce is not used because it requires `username` (Apple ID) which we do
+    # not store as a CI secret. The ASC API key is sufficient for this operation.
+    File.write("/tmp/ensure_bundle_id.rb", <<~'RUBY')
+      require 'openssl'; require 'base64'; require 'json'; require 'net/http'
+      key_path, key_id, issuer_id, bundle_id, app_name, team_id = ARGV
+      key = OpenSSL::PKey::EC.new(File.read(key_path))
+      now = Time.now.to_i
+      hdr = { "alg"=>"ES256","kid"=>key_id,"typ"=>"JWT" }
+      pay = { "iss"=>issuer_id,"iat"=>now,"exp"=>now+1200,"aud"=>"appstoreconnect-v1" }
+      eh  = Base64.urlsafe_encode64(JSON.generate(hdr), padding:false)
+      ep  = Base64.urlsafe_encode64(JSON.generate(pay), padding:false)
+      si  = "#{eh}.#{ep}"
+      der = key.sign(OpenSSL::Digest::SHA256.new, si)
+      asn = OpenSSL::ASN1.decode(der)
+      r   = asn.value[0].value.to_s(16).rjust(64,'0')
+      s   = asn.value[1].value.to_s(16).rjust(64,'0')
+      jwt = "#{si}.#{Base64.urlsafe_encode64([r+s].pack('H*'),padding:false)}"
+      def req(uri, jwt, method: :get, body: nil)
+        k = {get: Net::HTTP::Get, post: Net::HTTP::Post}[method]
+        r = k.new(uri); r["Authorization"]="Bearer #{jwt}"; r["Content-Type"]="application/json" if body; r.body=body.to_json if body
+        Net::HTTP.start(uri.host, uri.port, use_ssl:true){|h|h.request(r)}
+      end
+      resp = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds?filter[identifier]=#{bundle_id}&filter[platform]=IOS"), jwt)
+      unless resp.code == "200"
+        puts "Warning: Bundle ID check returned HTTP #{resp.code} — assuming #{bundle_id} already exists, skipping create."
+        exit 0
+      end
+      if JSON.parse(resp.body).fetch("data",[]).empty?
+        puts "Creating Bundle ID #{bundle_id}..."
+        r2 = req(URI("https://api.appstoreconnect.apple.com/v1/bundleIds"), jwt, method: :post,
+          body: {data:{type:"bundleIds",attributes:{identifier:bundle_id,name:app_name,platform:"IOS",seedId:team_id}}})
+        puts "  HTTP #{r2.code}: #{r2.body[0..200]}"
+        if r2.code == "201"
+          puts "  Bundle ID created."
+        elsif r2.code == "409"
+          puts "  Bundle ID already exists (conflict). Continuing."
+        else
+          puts "  Warning: Could not create bundle ID (HTTP #{r2.code}). Assuming it exists and continuing."
+        end
+      else
+        puts "Bundle ID #{bundle_id} already exists."
+      end
+    RUBY
+
+    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
+
+    # Fetch or create the App Store Distribution provisioning profile.
+    # Default sigh (no adhoc/development flag) = App Store profile.
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIO_AppStore.mobileprovision"
+    )
+
+    profile_uuid = ENV["SIGH_UUID"]
+    UI.message("Provisioning profile UUID: #{profile_uuid}")
+
+    # Manual signing — bake cert+profile into the project file (target-scoped)
+    # so xcodebuild command-line flags don't bleed into SPM package targets.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIO"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          profile_uuid
+    )
+
+    # Re-unlock immediately before archiving so codesign never stalls.
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+
+    UI.important(">>> PHASE: archive START")
+    sh(
+      "set -o pipefail && xcodebuild archive " \
+      "-project #{project_dir}/PRVIO.xcodeproj " \
+      "-scheme PRVIO " \
+      "-configuration Release " \
+      "-destination 'generic/platform=iOS' " \
+      "-archivePath /tmp/PRVIO.xcarchive " \
+      "-derivedDataPath /tmp/DerivedData " \
+      "-hideShellScriptEnvironment " \
+      "DEVELOPMENT_TEAM=SU92TVZT8W " \
+      "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
+    )
+
+    UI.important(">>> PHASE: archive DONE")
+
+    # Run actool manually — XcodeGen project doesn't compile asset catalogs.
+    archive_app = Dir.glob("/tmp/PRVIO.xcarchive/Products/Applications/*.app").first
+    raise "No .app found in archive" unless archive_app
+
+    actool_plist = "/tmp/actool_partial_info.plist"
+    FileUtils.rm_f(actool_plist)
+
+    sh(
+      "xcrun actool '#{project_dir}/Resources/Assets.xcassets' " \
+      "--compile '#{archive_app}' " \
+      "--output-format human-readable-text " \
+      "--notices --warnings --errors " \
+      "--target-device iphone --target-device ipad " \
+      "--minimum-deployment-target 17.0 " \
+      "--platform iphoneos " \
+      "--app-icon AppIcon " \
+      "--output-partial-info-plist '#{actool_plist}' 2>&1"
+    )
+
+    if File.exist?(actool_plist)
+      sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1 || true")
+      UI.success("Merged actool partial plist into bundle Info.plist")
+    end
+
+    export_options_path = "/tmp/ExportOptions.plist"
+    File.write(export_options_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key>
+        <string>app-store</string>
+        <key>teamID</key>
+        <string>SU92TVZT8W</string>
+        <key>signingStyle</key>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          <key>com.prvio.app</key>
+          <string>#{profile_uuid}</string>
+        </dict>
+      </dict>
+      </plist>
+    PLIST
+
+    # Keep the keychain unlocked for the export re-sign (another codesign pass).
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+
+    UI.important(">>> PHASE: export START")
+    sh(
+      "set -o pipefail && xcodebuild -exportArchive " \
+      "-archivePath /tmp/PRVIO.xcarchive " \
+      "-exportPath /tmp/PRVIO_ipa " \
+      "-exportOptionsPlist #{export_options_path} 2>&1"
+    )
+    UI.important(">>> PHASE: export DONE — uploading to TestFlight")
+
+    pilot(
+      api_key:                           api_key,
+      ipa:                               "/tmp/PRVIO_ipa/PRVIO.ipa",
+      skip_waiting_for_build_processing: true,
+      skip_submission:                   true,
+      distribute_external:               false,
+      notify_external_testers:           false,
+      verbose:                           true
+    )
+    UI.important(">>> PHASE: upload DONE")
+  end
+end

@@ -56,3 +56,6 @@ apps/web/android/local.properties
 .vscode/settings.json
 *.swp
 *.swo
+
+# Claude Code
+.claude/worktrees/
