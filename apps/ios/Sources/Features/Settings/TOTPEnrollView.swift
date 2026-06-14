@@ -150,7 +150,7 @@ struct TOTPEnrollView: View {
         defer { isLoading = false }
         do {
             let response = try await supabase.auth.mfa.enroll(
-                params: MFAEnrollParams(factorType: .totp, issuer: "PRVIO",
+                params: MFAEnrollParams(issuer: "PRVIO",
                                         friendlyName: "PRVIO-\(UUID().uuidString.prefix(6))")
             )
             factorId = response.id
