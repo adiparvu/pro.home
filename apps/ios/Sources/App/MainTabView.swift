@@ -11,7 +11,7 @@ struct ScrollOffsetKey: PreferenceKey {
 }
 
 enum AppTab: String, CaseIterable {
-    case home, map, tasks, analytics, assistant, settings
+    case home, map, tasks, analytics, settings
 
     var icon: String {
         switch self {
@@ -19,22 +19,64 @@ enum AppTab: String, CaseIterable {
         case .map:       return "map.fill"
         case .tasks:     return "checklist"
         case .analytics: return "chart.bar.xaxis"
-        case .assistant: return "sparkles"
-        case .settings:  return "gearshape.fill"
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .home:      return "Home"
-        case .map:       return "Hartă"
-        case .tasks:     return "Tasks"
-        case .analytics: return "Analytics"
-        case .assistant: return "Assistant"
-        case .settings:  return "Settings"
+        case .settings:  return "person.crop.circle.fill"
         }
     }
 }
+
+// MARK: - Custom animated tab bar
+
+private struct AnimatedTabBar: View {
+    @Binding var selected: AppTab
+    @Binding var bounceTab: AppTab?
+    let overdueCount: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                Button {
+                    HapticFeedback.selection()
+                    bounceTab = tab
+                    selected = tab
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 22, weight: tab == selected ? .semibold : .regular))
+                            .symbolEffect(.bounce, value: bounceTab == tab)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(tab == selected ? Color.primary : Color.primary.opacity(0.4))
+                            .frame(width: 44, height: 44)
+                            .contentTransition(.symbolEffect(.replace))
+
+                        if tab == .tasks && overdueCount > 0 {
+                            Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.red, in: Capsule())
+                                .offset(x: 4, y: -2)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 8)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 8)
+    }
+}
+
+// MARK: - Main tab view
 
 struct MainTabView: View {
     @EnvironmentObject private var auth: AuthService
@@ -54,28 +96,37 @@ struct MainTabView: View {
     @StateObject private var tabBarVis = TabBarVisibility()
     @StateObject private var router = AppRouter()
 
+    @State private var bounceTab: AppTab? = nil
+
     var body: some View {
         TabView(selection: $router.selectedTab) {
             NavigationStack { DashboardView() }
-                .tabItem { Label(AppTab.home.label, systemImage: AppTab.home.icon) }
+                .tabItem { Image(systemName: AppTab.home.icon) }
                 .tag(AppTab.home)
 
             NavigationStack { DigitalTwinView() }
-                .tabItem { Label(AppTab.map.label, systemImage: AppTab.map.icon) }
+                .tabItem { Image(systemName: AppTab.map.icon) }
                 .tag(AppTab.map)
 
             NavigationStack { TasksView() }
-                .tabItem { Label(AppTab.tasks.label, systemImage: AppTab.tasks.icon) }
-                .badge(taskService.overdueCount)
+                .tabItem { Image(systemName: AppTab.tasks.icon) }
                 .tag(AppTab.tasks)
 
             NavigationStack { AnalyticsView() }
-                .tabItem { Label(AppTab.analytics.label, systemImage: AppTab.analytics.icon) }
+                .tabItem { Image(systemName: AppTab.analytics.icon) }
                 .tag(AppTab.analytics)
 
             NavigationStack { SettingsView() }
-                .tabItem { Label(AppTab.settings.label, systemImage: AppTab.settings.icon) }
+                .tabItem { Image(systemName: AppTab.settings.icon) }
                 .tag(AppTab.settings)
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            AnimatedTabBar(
+                selected: $router.selectedTab,
+                bounceTab: $bounceTab,
+                overdueCount: taskService.overdueCount
+            )
         }
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
@@ -151,7 +202,8 @@ struct MainTabView: View {
                 }
             }
         }
-        .onChange(of: router.selectedTab) { _, _ in
+        .onChange(of: router.selectedTab) { _, newTab in
+            bounceTab = newTab
             if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
         }
     }
