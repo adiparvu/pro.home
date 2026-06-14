@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import LocalAuthentication
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
@@ -19,9 +18,7 @@ struct ProfileView: View {
     @State private var showCamera = false
     @State private var toast: String?
     @State private var toastIsError = false
-    @AppStorage("prvio.biometrics") private var biometricsEnabled = false
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
-    @State private var biometricType: LABiometryType = .none
 
     private var ringColor: Color { avatarRingColor(for: avatarRingColorName) }
 
@@ -31,7 +28,6 @@ struct ProfileView: View {
                 avatarSection
                 infoCard
                 accountSection
-                securitySection
                 Spacer(minLength: 110)
             }
             .padding(.horizontal, 20)
@@ -40,12 +36,6 @@ struct ProfileView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") { showEdit = true }
-                    .foregroundStyle(Color.primary.opacity(0.7))
-            }
-        }
         .sheet(isPresented: $showEdit) {
             EditProfileView().environmentObject(profileService)
         }
@@ -67,7 +57,7 @@ struct ProfileView: View {
         } message: {
             Text("All your data will be permanently deleted. This cannot be undone.")
         }
-        .onChange(of: selectedPhoto) { newItem in
+        .onChange(of: selectedPhoto) { _, newItem in
             guard let newItem else { return }
             Task { await handlePhotoPick(newItem) }
         }
@@ -102,7 +92,6 @@ struct ProfileView: View {
                 await profileService.load(userId: uid)
             }
         }
-        .task { checkBiometrics() }
     }
 
     // MARK: - Avatar
@@ -282,72 +271,6 @@ struct ProfileView: View {
                 HapticFeedback.warning()
                 showDeleteConfirm = true
             }
-        }
-    }
-
-    // MARK: - Security Section
-
-    private var securitySection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("SECURITY & PRIVACY")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
-
-            VStack(spacing: 0) {
-                if biometricType != .none {
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: biometricType == .faceID ? "faceid" : "touchid", color: Color(red: 0.3, green: 0.85, blue: 0.5))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(biometricType == .faceID ? "Face ID" : "Touch ID")
-                                .font(.system(size: 15))
-                                .foregroundStyle(.primary)
-                            Text("Unlock app without password")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.4))
-                        }
-                        Spacer()
-                        Toggle("", isOn: $biometricsEnabled)
-                            .labelsHidden()
-                            .tint(.blue)
-                            .onChange(of: biometricsEnabled) { _, newValue in
-                                if newValue { Task { await authenticateBiometric() } }
-                            }
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                }
-            }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        }
-    }
-
-    private var secRowDivider: some View {
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
-    }
-
-    private func authenticateBiometric() async {
-        let context = LAContext()
-        var error: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            await MainActor.run { biometricsEnabled = false }
-            return
-        }
-        let reason = biometricType == .faceID ? "Enable Face ID for PRVIO" : "Enable Touch ID for PRVIO"
-        do {
-            let success = try await context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
-            if !success { await MainActor.run { biometricsEnabled = false } }
-        } catch {
-            await MainActor.run { biometricsEnabled = false }
-        }
-    }
-
-    private func checkBiometrics() {
-        let context = LAContext()
-        var error: NSError?
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            biometricType = context.biometryType
         }
     }
 

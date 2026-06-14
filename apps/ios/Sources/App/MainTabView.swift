@@ -92,6 +92,32 @@ struct MainTabView: View {
                 await messageService.load(propertyId: propId)
             }
         }
+        .onChange(of: profileService.profile) { _, profile in
+            if let profile, let s = auth.session {
+                AccountsStore.shared.save(
+                    session: s,
+                    displayName: profile.preferredName,
+                    avatarUrl: profile.avatarUrl
+                )
+            }
+        }
+        .onChange(of: auth.session?.user.id) { oldId, newId in
+            guard let newId, newId != oldId else { return }
+            Task {
+                await propertyService.load()
+                await taskService.load()
+                await financialService.load()
+                await documentService.load()
+                await familyService.load()
+                await profileService.load(userId: newId)
+                if let profile = profileService.profile {
+                    appSettings.loadFromProfile(profile)
+                }
+                if let propId = propertyService.primary?.id {
+                    await messageService.load(propertyId: propId)
+                }
+            }
+        }
     }
 
     @ViewBuilder

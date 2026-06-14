@@ -26,8 +26,17 @@ final class AuthService: ObservableObject {
     private func listenToAuthChanges() async {
         for await (event, session) in await supabase.auth.authStateChanges {
             switch event {
-            case .initialSession, .signedIn, .tokenRefreshed, .userUpdated:
+            case .initialSession, .signedIn, .userUpdated:
                 self.session = session
+            case .tokenRefreshed:
+                self.session = session
+                if let s = session {
+                    AccountsStore.shared.updateTokens(
+                        userId: s.user.id.uuidString,
+                        accessToken: s.accessToken,
+                        refreshToken: s.refreshToken
+                    )
+                }
             case .signedOut, .passwordRecovery, .userDeleted:
                 self.session = nil
             default:
@@ -44,5 +53,13 @@ final class AuthService: ObservableObject {
     func signOut() async throws {
         try await supabase.auth.signOut()
         session = nil
+    }
+
+    func switchTo(account: SavedAccount) async throws {
+        let restored = try await supabase.auth.setSession(
+            accessToken: account.accessToken,
+            refreshToken: account.refreshToken
+        )
+        self.session = restored
     }
 }

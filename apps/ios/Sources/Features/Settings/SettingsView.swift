@@ -16,6 +16,7 @@ struct SettingsView: View {
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
+    @State private var showAddAccount = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -135,11 +136,13 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
         }
-        .confirmationDialog("Schimbă contul", isPresented: $showAccountSwitch, titleVisibility: .visible) {
-            Button("Deconectare", role: .destructive) { showSignOut = true }
-            Button("Anulează", role: .cancel) {}
-        } message: {
-            Text("Pentru a schimba contul, deconectează-te și autentifică-te cu alt cont.")
+        .sheet(isPresented: $showAccountSwitch) {
+            AccountSwitcherSheet(showAddAccount: $showAddAccount)
+                .environmentObject(auth)
+        }
+        .sheet(isPresented: $showAddAccount) {
+            AddAccountSheet()
+                .environmentObject(auth)
         }
     }
 

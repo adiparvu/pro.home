@@ -14,6 +14,8 @@ struct SecurityView: View {
     @State private var exportItem: ExportItem?
     @State private var isExporting = false
     @State private var isDeletingAccount = false
+    @State private var showAutoLockPicker = false
+    @AppStorage("prvio.autoLockMinutes") private var autoLockMinutes = 5
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -43,15 +45,22 @@ struct SecurityView: View {
         }
         .sheet(item: $exportItem) { item in ShareSheet(activityItems: [item.url]) }
         .sheet(isPresented: $showActiveSessions) { ActiveSessionsSheet() }
+        .confirmationDialog("Blocare automată", isPresented: $showAutoLockPicker, titleVisibility: .visible) {
+            ForEach([1, 5, 15, 30], id: \.self) { minutes in
+                Button("\(minutes) min") { autoLockMinutes = minutes }
+            }
+            Button("Niciodată") { autoLockMinutes = 0 }
+            Button("Anulează", role: .cancel) {}
+        }
     }
 
     // MARK: - MFA
 
     private var mfaSection: some View {
         secGroup(title: "Autentificare multi-factor (MFA)", footer: "Solicită o verificare de securitate suplimentară la autentificare. Dacă nu reușești să treci de această verificare, vei avea opțiunea de a-ți recupera contul.") {
-            secRow(icon: "apps.iphone", color: .indigo, title: "Aplicație de autentificare", value: "Dezactivat") {}
+            statusRow(icon: "apps.iphone", color: .indigo, title: "Aplicație de autentificare", status: "Dezactivat")
             divider
-            secRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Mesaje text", value: "Dezactivat") {}
+            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Mesaje text", status: "Dezactivat")
         }
     }
 
@@ -149,21 +158,25 @@ struct SecurityView: View {
                 divider
             }
 
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: "timer", color: .cyan)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Blocare automată")
-                        .font(.system(size: 15)).foregroundStyle(.primary)
-                    Text("Se blochează după 5 minute de inactivitate")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+            Button { showAutoLockPicker = true } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "timer", color: .cyan)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Blocare automată")
+                            .font(.system(size: 15)).foregroundStyle(.primary)
+                        Text(autoLockMinutes == 0 ? "Nu se blochează automat" : "Se blochează după \(autoLockMinutes) min de inactivitate")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                    Spacer()
+                    Text(autoLockMinutes == 0 ? "Niciodată" : "\(autoLockMinutes) min")
+                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                Spacer()
-                Text("5 min")
-                    .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                .padding(.horizontal, 14).padding(.vertical, 13)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .buttonStyle(.plain)
         }
     }
 
@@ -211,25 +224,11 @@ struct SecurityView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.38))
+                .foregroundStyle(.secondary)
                 .padding(.leading, 8)
 
             VStack(spacing: 0) { content() }
-                .background {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(LinearGradient(colors: [.white.opacity(0.14), .clear],
-                                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .strokeBorder(LinearGradient(colors: [.white.opacity(0.32), .white.opacity(0.06)],
-                                                             startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.7)
-                        }
-                }
-                .shadow(color: .black.opacity(0.10), radius: 18, y: 4)
+                .liquidGlass(cornerRadius: 20)
 
             if let footer {
                 Text(footer)
@@ -241,21 +240,16 @@ struct SecurityView: View {
         }
     }
 
-    private func secRow(icon: String, color: Color, title: String, value: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                ColoredIconBadge(icon: icon, color: color)
-                Text(title)
-                    .font(.system(size: 15)).foregroundStyle(.primary)
-                Spacer()
-                Text(value)
-                    .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
-            }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+    private func statusRow(icon: String, color: Color, title: String, status: String) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color)
+            Text(title)
+                .font(.system(size: 15)).foregroundStyle(.primary)
+            Spacer()
+            Text(status)
+                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 14).padding(.vertical, 13)
     }
 
     private var divider: some View {
@@ -357,15 +351,7 @@ private struct ActiveSessionsSheet: View {
                             isCurrent: true
                         )
                     }
-                    .background {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .strokeBorder(LinearGradient(colors: [.white.opacity(0.32), .white.opacity(0.06)],
-                                                                 startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.7)
-                            }
-                    }
+                    .liquidGlass(cornerRadius: 20)
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
 
