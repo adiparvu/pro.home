@@ -13,6 +13,7 @@ struct ChatView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(\.dismiss) private var dismiss
 
     @State private var text = ""
     @State private var showAttachMenu = false
@@ -43,7 +44,22 @@ struct ChatView: View {
             .background(appBackground.ignoresSafeArea())
         .navigationTitle("Family Chat")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    HapticFeedback.selection()
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .padding(.horizontal, 10).padding(.vertical, 7)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                }
+                .buttonStyle(.plain)
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 MemberAvatarStack(
                     members: familyService.members,
@@ -115,6 +131,7 @@ struct ChatView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 12)
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: messageService.messages.count) { _, _ in
                 if let last = messageService.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }

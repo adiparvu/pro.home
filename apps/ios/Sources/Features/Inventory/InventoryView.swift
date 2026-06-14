@@ -217,6 +217,7 @@ final class InventoryService: ObservableObject {
 
 struct InventoryView: View {
     @StateObject private var service = InventoryService()
+    @Environment(\.dismiss) private var dismiss
     @State private var filter: InvFilter = .all
     @State private var showAdd = false
     @State private var showScanner = false
@@ -258,13 +259,31 @@ struct InventoryView: View {
             VStack(spacing: 0) {
                 PageHeader(title: "Inventory",
                            leading: AnyView(
-                            Button {
-                                HapticFeedback.impact(.light)
-                                showScanner = true
-                            } label: {
-                                Image(systemName: "qrcode.viewfinder")
-                                    .font(.system(size: 18))
-                                    .foregroundStyle(Color.primary.opacity(0.85))
+                            HStack(spacing: 10) {
+                                Button {
+                                    HapticFeedback.selection()
+                                    dismiss()
+                                } label: {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(Color.primary.opacity(0.75))
+                                        .padding(.horizontal, 10).padding(.vertical, 7)
+                                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                                }
+                                .buttonStyle(.plain)
+                                Button {
+                                    HapticFeedback.impact(.light)
+                                    showScanner = true
+                                } label: {
+                                    Image(systemName: "qrcode.viewfinder")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(Color.primary.opacity(0.75))
+                                        .padding(8)
+                                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                                }
+                                .buttonStyle(.plain)
                             }
                            ),
                            trailing: AnyView(
@@ -282,10 +301,15 @@ struct InventoryView: View {
                                     }
                                 } label: {
                                     HStack(spacing: 5) {
-                                        Image(systemName: filter.icon)
-                                            .font(.system(size: 12, weight: .semibold))
-                                        Text(filter.rawValue)
-                                            .font(.system(size: 13, weight: .semibold))
+                                        if filter != .all {
+                                            Image(systemName: filter.icon)
+                                                .font(.system(size: 12, weight: .semibold))
+                                            Text(filter.rawValue)
+                                                .font(.system(size: 13, weight: .semibold))
+                                        } else {
+                                            Text("…")
+                                                .font(.system(size: 15, weight: .semibold))
+                                        }
                                         Image(systemName: "chevron.down")
                                             .font(.system(size: 9, weight: .medium))
                                     }
@@ -338,6 +362,7 @@ struct InventoryView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showAdd) { AddInventorySheet { service.add($0) } }
         .sheet(isPresented: $showScanner) {
             QRScannerSheet { qrValue in

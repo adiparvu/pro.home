@@ -58,8 +58,18 @@ struct AddTaskView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                    Button {
+                        HapticFeedback.selection()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.75))
+                            .padding(.horizontal, 10).padding(.vertical, 7)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .sheet(isPresented: $showAssigneePicker) {

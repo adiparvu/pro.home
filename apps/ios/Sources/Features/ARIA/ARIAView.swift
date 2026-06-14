@@ -36,12 +36,13 @@ struct ARIAView: View {
                     onDismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.primary.opacity(0.75))
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                        .padding(.horizontal, 10).padding(.vertical, 7)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
                 }
+                .buttonStyle(.plain)
             }
             VStack(alignment: onDismiss != nil ? .leading : .leading, spacing: 2) {
                 HStack(spacing: 6) {
@@ -101,6 +102,7 @@ struct ARIAView: View {
                     .padding(.bottom, 20)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: messages.count) {
                 withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
             }

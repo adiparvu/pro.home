@@ -66,10 +66,15 @@ struct TasksView: View {
                                 }
                             } label: {
                                 HStack(spacing: 5) {
-                                    Image(systemName: filter.icon)
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text(filter.rawValue)
-                                        .font(.system(size: 13, weight: .semibold))
+                                    if filter != .all {
+                                        Image(systemName: filter.icon)
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text(filter.rawValue)
+                                            .font(.system(size: 13, weight: .semibold))
+                                    } else {
+                                        Text("…")
+                                            .font(.system(size: 15, weight: .semibold))
+                                    }
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 9, weight: .medium))
                                 }
