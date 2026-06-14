@@ -1,5 +1,61 @@
 import SwiftUI
 
+struct SocialLink: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var platform: String
+    var handle: String
+
+    var platformLabel: String {
+        switch platform {
+        case "instagram": return "Instagram"
+        case "facebook":  return "Facebook"
+        case "whatsapp":  return "WhatsApp"
+        case "linkedin":  return "LinkedIn"
+        case "tiktok":    return "TikTok"
+        case "twitter":   return "X (Twitter)"
+        default:          return platform.capitalized
+        }
+    }
+
+    var platformIcon: String {
+        switch platform {
+        case "instagram": return "camera.filters"
+        case "facebook":  return "hand.thumbsup.fill"
+        case "whatsapp":  return "message.fill"
+        case "linkedin":  return "briefcase.fill"
+        case "tiktok":    return "music.note"
+        case "twitter":   return "bird"
+        default:          return "link"
+        }
+    }
+
+    var platformColor: Color {
+        switch platform {
+        case "instagram": return Color(red: 0.85, green: 0.20, blue: 0.55)
+        case "facebook":  return Color(red: 0.23, green: 0.35, blue: 0.68)
+        case "whatsapp":  return Color(red: 0.16, green: 0.72, blue: 0.37)
+        case "linkedin":  return Color(red: 0.10, green: 0.47, blue: 0.71)
+        case "tiktok":    return .primary
+        case "twitter":   return Color(red: 0.10, green: 0.55, blue: 0.92)
+        default:          return .blue
+        }
+    }
+
+    var openURL: URL? {
+        let h = handle.trimmingCharacters(in: .whitespacesAndNewlines)
+                      .replacingOccurrences(of: "@", with: "")
+        switch platform {
+        case "instagram": return URL(string: "https://instagram.com/\(h)")
+        case "facebook":  return URL(string: "https://facebook.com/\(h)")
+        case "whatsapp":  return URL(string: "https://wa.me/\(h.filter { $0.isNumber })")
+        case "linkedin":  return URL(string: "https://linkedin.com/in/\(h)")
+        case "tiktok":    return URL(string: "https://tiktok.com/@\(h)")
+        case "twitter":   return URL(string: "https://x.com/\(h)")
+        default:          return URL(string: h)
+        }
+    }
+}
+
 struct FamilyMember: Identifiable, Codable, Hashable {
     let id: UUID
     let ownerId: UUID
@@ -10,14 +66,17 @@ struct FamilyMember: Identifiable, Codable, Hashable {
     var role: String
     var avatarUrl: String?
     var color: String
+    var birthday: String?
+    var socialLinks: [SocialLink]?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, name, email, phone, role, color
-        case ownerId    = "owner_id"
-        case propertyId = "property_id"
-        case avatarUrl  = "avatar_url"
-        case createdAt  = "created_at"
+        case id, name, email, phone, role, color, birthday
+        case ownerId     = "owner_id"
+        case propertyId  = "property_id"
+        case avatarUrl   = "avatar_url"
+        case socialLinks = "social_links"
+        case createdAt   = "created_at"
     }
 
     var initials: String {
@@ -28,18 +87,24 @@ struct FamilyMember: Identifiable, Codable, Hashable {
         return String(name.prefix(2)).uppercased()
     }
 
-    var swiftColor: Color {
-        Color(hex: color) ?? Color.blue
-    }
+    var swiftColor: Color { Color(hex: color) ?? .blue }
 
     var roleLabel: String {
         switch role {
         case "owner":   return "Owner"
         case "partner": return "Partner"
-        case "child":   return "Child"
-        case "tenant":  return "Tenant"
-        case "guest":   return "Guest"
-        default:        return "Member"
+        case "child":   return "Copil"
+        case "tenant":  return "Chiriaș"
+        case "guest":   return "Oaspete"
+        default:        return "Membru"
         }
+    }
+
+    var birthdayDate: Date? {
+        guard let b = birthday else { return nil }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        return fmt.date(from: b)
     }
 }

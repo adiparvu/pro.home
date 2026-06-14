@@ -56,6 +56,8 @@
 	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Used to sync your maintenance tasks and reminders with Apple Calendar.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Used to add family birthdays as annual reminders in Apple Calendar.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Used to add overdue tasks to Apple Reminders for quick action.</string>
 </dict>
