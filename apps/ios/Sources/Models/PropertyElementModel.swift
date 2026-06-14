@@ -28,11 +28,15 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var latitude: Double?
     var longitude: Double?
     var zoneId: UUID?
+    var photoUrls: [String]?
     let createdAt: String
     var updatedAt: String
 
+    var photos: [String] { photoUrls ?? [] }
+
     enum CodingKeys: String, CodingKey {
         case id, name, description, brand, model, notes, layer, latitude, longitude
+        case photoUrls         = "photo_urls"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -360,10 +364,12 @@ struct NewPropertyElement: Encodable {
     var latitude: Double? = nil
     var longitude: Double? = nil
     var zoneId: UUID? = nil
+    var photoUrls: [String]? = nil
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
         case name, description, brand, model, notes, layer, latitude, longitude
+        case photoUrls         = "photo_urls"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -388,6 +394,15 @@ struct ElementGeoUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case latitude, longitude
         case zoneId    = "zone_id"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct ElementPhotosUpdate: Encodable {
+    var photoUrls: [String]
+    var updatedAt: String
+    enum CodingKeys: String, CodingKey {
+        case photoUrls = "photo_urls"
         case updatedAt = "updated_at"
     }
 }

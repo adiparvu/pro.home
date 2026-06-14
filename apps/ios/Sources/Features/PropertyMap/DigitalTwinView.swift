@@ -19,6 +19,8 @@ struct DigitalTwinView: View {
     @State private var drawMode = false
     @State private var draftPoints: [GeoPoint] = []
     @State private var editingZone: PropertyZone?
+    @State private var addingToZone: PropertyZone?
+    @State private var showAddObject = false
     @State private var showHealth = false
     @State private var didCenter = false
 
@@ -112,7 +114,10 @@ struct DigitalTwinView: View {
                     selectedZone = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { editingZone = zone }
                 },
-                onAddObject: { /* future: place object in zone */ },
+                onAddObject: {
+                    selectedZone = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { addingToZone = zone }
+                },
                 onDelete: { Task { await zoneService.delete(zone); selectedZone = nil } },
                 onFocus: { focus(on: zone) }
             )
@@ -130,6 +135,20 @@ struct DigitalTwinView: View {
                 onSave: { updated in Task { await zoneService.update(updated) } },
                 onDelete: { Task { await zoneService.delete(zone) } }
             )
+        }
+        .sheet(item: $addingToZone) { zone in
+            AddPropertyElementView(defaultPosition: CGPoint(x: 0.5, y: 0.5)) { payload in
+                var p = payload
+                p.zoneId = zone.id
+                p.latitude = zone.center.latitude
+                p.longitude = zone.center.longitude
+                Task { await elementService.add(p) }
+            }
+        }
+        .sheet(isPresented: $showAddObject) {
+            AddPropertyElementView(defaultPosition: CGPoint(x: 0.5, y: 0.5)) { payload in
+                Task { await elementService.add(payload) }
+            }
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
@@ -192,6 +211,10 @@ struct DigitalTwinView: View {
             }
             controlButton(icon: "heart.text.square.fill", tint: .pink) {
                 showHealth = true
+            }
+            controlButton(icon: "cube.box.fill", tint: .primary) {
+                showAddObject = true
+                HapticFeedback.impact(.light)
             }
             controlButton(icon: "plus.viewfinder", tint: .primary) {
                 startDrawing()

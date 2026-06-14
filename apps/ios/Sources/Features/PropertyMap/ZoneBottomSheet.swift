@@ -134,7 +134,7 @@ struct ZoneBottomSheet: View {
     private var actionRow: some View {
         HStack(spacing: 10) {
             actionButton("Editează", icon: "slider.horizontal.3", tint: .blue, action: onEdit)
-            actionButton("Focalizează", icon: "scope", tint: .indigo, action: onFocus)
+            actionButton("Adaugă", icon: "plus", tint: .green, action: onAddObject)
             actionButton("Șterge", icon: "trash", tint: .red, action: onDelete)
         }
     }

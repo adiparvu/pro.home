@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import Supabase
 
 struct PropertyElementDetailView: View {
     let element: PropertyElement
@@ -13,6 +15,9 @@ struct PropertyElementDetailView: View {
     @State private var showEditElement = false
     @State private var localElement: PropertyElement
     @State private var showDeleteConfirm = false
+    @State private var showLocationPicker = false
+    @State private var photoItems: [PhotosPickerItem] = []
+    @State private var isUploading = false
 
     init(element: PropertyElement) {
         self.element = element
@@ -108,6 +113,12 @@ struct PropertyElementDetailView: View {
             EditPropertyElementView(element: $localElement) {
                 Task { await elementService.update(localElement) }
             }
+        }
+        .sheet(isPresented: $showLocationPicker) {
+            ObjectLocationPicker(element: localElement)
+        }
+        .onChange(of: photoItems) { _, items in
+            Task { await uploadPhotos(items) }
         }
         .confirmationDialog("Ștergi \(localElement.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Șterge", role: .destructive) {
@@ -224,6 +235,9 @@ struct PropertyElementDetailView: View {
 
     private var infoTab: some View {
         VStack(spacing: 12) {
+            photosSection
+            locationSection
+
             if let desc = localElement.description {
                 GlassCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -293,6 +307,105 @@ struct PropertyElementDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Photos
+
+    private var photosSection: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label("Fotografii", systemImage: "photo.on.rectangle.angled")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    if isUploading { ProgressView().scaleEffect(0.7) }
+                    PhotosPicker(selection: $photoItems, maxSelectionCount: 5, matching: .images) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.blue)
+                    }
+                }
+                if localElement.photos.isEmpty {
+                    Text("Nicio fotografie încă")
+                        .font(.caption).foregroundStyle(.tertiary)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(localElement.photos, id: \.self) { urlStr in
+                                if let url = URL(string: urlStr) {
+                                    AsyncImage(url: url) { phase in
+                                        if case .success(let img) = phase {
+                                            img.resizable().scaledToFill()
+                                        } else {
+                                            Rectangle().fill(Color.primary.opacity(0.06))
+                                                .overlay(ProgressView().scaleEffect(0.6))
+                                        }
+                                    }
+                                    .frame(width: 96, height: 96)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            Task { await deletePhoto(urlStr) }
+                                        } label: { Label("Șterge", systemImage: "trash") }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var locationSection: some View {
+        GlassCard(padding: 14) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(Color.blue.opacity(0.15)).frame(width: 40, height: 40)
+                    Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
+                        .font(.system(size: 17))
+                        .foregroundStyle(.blue)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Locație pe hartă").font(.subheadline.weight(.medium))
+                    Text(localElement.coordinate == nil ? "Neplasat" : "Plasat pe hartă")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button { showLocationPicker = true } label: {
+                    Text(localElement.coordinate == nil ? "Plasează" : "Schimbă")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Capsule().fill(Color.blue))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func uploadPhotos(_ items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
+        isUploading = true
+        defer { isUploading = false }
+        var urls = localElement.photos
+        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            let path = "\(uid)/elements/\(localElement.id.uuidString)/\(UUID().uuidString).jpg"
+            try? await supabase.storage.from("documents")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            if let url = try? supabase.storage.from("documents").getPublicURL(path: path) {
+                urls.append(url.absoluteString)
+            }
+        }
+        await elementService.updatePhotos(elementId: localElement.id, urls: urls)
+        photoItems = []
+    }
+
+    private func deletePhoto(_ urlStr: String) async {
+        var urls = localElement.photos
+        urls.removeAll { $0 == urlStr }
+        await elementService.updatePhotos(elementId: localElement.id, urls: urls)
     }
 
     // MARK: - Records Tab

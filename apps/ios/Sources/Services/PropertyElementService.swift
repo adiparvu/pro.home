@@ -64,6 +64,7 @@ final class PropertyElementService: ObservableObject {
                 latitude: element.latitude,
                 longitude: element.longitude,
                 zoneId: element.zoneId,
+                photoUrls: element.photoUrls,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase
@@ -142,6 +143,25 @@ final class PropertyElementService: ObservableObject {
                 elements[idx].latitude = latitude
                 elements[idx].longitude = longitude
                 elements[idx].zoneId = zoneId
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func updatePhotos(elementId: UUID, urls: [String]) async {
+        let payload = ElementPhotosUpdate(
+            photoUrls: urls,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        do {
+            try await supabase
+                .from("property_elements")
+                .update(payload)
+                .eq("id", value: elementId.uuidString)
+                .execute()
+            if let idx = elements.firstIndex(where: { $0.id == elementId }) {
+                elements[idx].photoUrls = urls
             }
         } catch {
             self.error = error.localizedDescription
