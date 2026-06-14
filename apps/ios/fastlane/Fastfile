@@ -183,20 +183,177 @@ platform :ios do
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.controls' 'PRVIOControls' 'SU92TVZT8W'")
 
-    # Switch all targets to Automatic code signing. Combined with
-    # -allowProvisioningUpdates + the ASC auth key at archive/export time,
-    # Xcode reads each target's .entitlements file and registers any required
-    # capabilities (App Groups, etc.) in the Developer Portal automatically —
-    # no manual sigh() or capability API calls needed.
-    ["PRVIO", "PRVIOWidgets", "PRVIOControls"].each do |t|
-      update_code_signing_settings(
-        use_automatic_signing: true,
-        path:                  "#{project_dir}/PRVIO.xcodeproj",
-        targets:               [t],
-        build_configurations:  ["Release"],
-        team_id:               "SU92TVZT8W"
-      )
-    end
+    # Enable App Groups capability + register the shared group.
+    # Previous attempts failed because ASC filter[identifier] does prefix matching:
+    # "com.prvio.app" matched widgets/controls too. Fixed with exact-match guard.
+    File.write("/tmp/setup_app_groups.rb", <<~'RUBY')
+      require 'openssl'; require 'base64'; require 'json'; require 'net/http'; require 'uri'
+
+      key_path, key_id, issuer_id, group_id, *bundle_ids = ARGV
+
+      key = OpenSSL::PKey::EC.new(File.read(key_path))
+      now = Time.now.to_i
+      hdr = { "alg"=>"ES256","kid"=>key_id,"typ"=>"JWT" }
+      pay = { "iss"=>issuer_id,"iat"=>now,"exp"=>now+1200,"aud"=>"appstoreconnect-v1" }
+      eh = Base64.urlsafe_encode64(JSON.generate(hdr), padding:false)
+      ep = Base64.urlsafe_encode64(JSON.generate(pay), padding:false)
+      si = "#{eh}.#{ep}"
+      der = key.sign(OpenSSL::Digest::SHA256.new, si)
+      asn = OpenSSL::ASN1.decode(der)
+      r   = asn.value[0].value.to_s(16).rjust(64,'0')
+      s   = asn.value[1].value.to_s(16).rjust(64,'0')
+      jwt = "#{si}.#{Base64.urlsafe_encode64([r+s].pack('H*'),padding:false)}"
+
+      def api(path, jwt, method: :get, body: nil)
+        uri = URI("https://api.appstoreconnect.apple.com#{path}")
+        klass = { get: Net::HTTP::Get, post: Net::HTTP::Post }[method]
+        req  = klass.new(uri)
+        req["Authorization"] = "Bearer #{jwt}"
+        if body; req["Content-Type"] = "application/json"; req.body = body.to_json; end
+        Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+      end
+
+      # 1. Ensure App Group registered
+      puts "=== App Group #{group_id} ==="
+      resp = api("/v1/appGroups?filter[name]=#{URI.encode_www_form_component(group_id)}", jwt)
+      grps = resp.code == "200" ? JSON.parse(resp.body).fetch("data",[]).select { |g| g.dig("attributes","identifier") == group_id } : []
+      ag_id = nil
+      if grps.any?
+        ag_id = grps[0]["id"]
+        puts "  exists id=#{ag_id}"
+      else
+        r2 = api("/v1/appGroups", jwt, method: :post, body: {
+          data: { type: "appGroups", attributes: { name: group_id, identifier: group_id } }
+        })
+        if %w[200 201].include?(r2.code)
+          ag_id = JSON.parse(r2.body).dig("data","id")
+          puts "  created id=#{ag_id}"
+        else
+          # 409 = already exists, re-query
+          r3 = api("/v1/appGroups?filter[name]=#{URI.encode_www_form_component(group_id)}", jwt)
+          all = r3.code == "200" ? JSON.parse(r3.body).fetch("data",[]) : []
+          ag_id = all.find { |g| g.dig("attributes","identifier") == group_id }&.dig("id")
+          puts "  HTTP #{r2.code} on create, re-queried: id=#{ag_id.inspect}"
+        end
+      end
+
+      bundle_ids.each do |bundle_id|
+        puts "\n=== #{bundle_id} ==="
+
+        # EXACT match — ASC filter[identifier] does prefix matching
+        resp = api("/v1/bundleIds?filter[identifier]=#{bundle_id}&limit=200", jwt)
+        all_bids = resp.code == "200" ? JSON.parse(resp.body).fetch("data",[]) : []
+        exact = all_bids.select { |b| b.dig("attributes","identifier") == bundle_id }
+        if exact.empty?
+          puts "  [ERROR] bundle ID not found (HTTP #{resp.code}), skipping"; next
+        end
+        bid_id = exact[0]["id"]
+        puts "  id=#{bid_id}"
+
+        # Enable APP_GROUPS capability
+        caps_resp = api("/v1/bundleIds/#{bid_id}/bundleIdCapabilities", jwt)
+        caps = caps_resp.code == "200" ? JSON.parse(caps_resp.body).fetch("data",[]) : []
+        if caps.any? { |c| c.dig("attributes","capabilityType") == "APP_GROUPS" }
+          puts "  APP_GROUPS already enabled"
+        else
+          rc = api("/v1/bundleIdCapabilities", jwt, method: :post, body: {
+            data: {
+              type: "bundleIdCapabilities",
+              attributes: { capabilityType: "APP_GROUPS", settings: [] },
+              relationships: { bundleId: { data: { type: "bundleIds", id: bid_id } } }
+            }
+          })
+          puts "  enable APP_GROUPS → HTTP #{rc.code}: #{rc.body[0..150]}"
+        end
+
+        # Link App Group to bundle ID
+        next unless ag_id
+        rl = api("/v1/bundleIds/#{bid_id}/relationships/appGroups", jwt, method: :post, body: {
+          data: [{ type: "appGroups", id: ag_id }]
+        })
+        if %w[200 201 204].include?(rl.code)
+          puts "  linked app group ✓"
+        elsif rl.code == "409"
+          puts "  app group already linked ✓"
+        else
+          puts "  link app group → HTTP #{rl.code}: #{rl.body[0..150]}"
+        end
+      end
+      puts "\nsetup_app_groups done."
+    RUBY
+
+    sh("ruby /tmp/setup_app_groups.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'group.com.prvio.app' 'com.prvio.app' 'com.prvio.app.widgets'")
+
+    # Wait for Developer Portal capability changes to propagate before sigh().
+    sleep(8)
+
+    # Regenerate App Store Distribution profiles — force: true deletes the old profile
+    # so the new one picks up the App Groups capability we just enabled.
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIO_AppStore.mobileprovision",
+      force:          true
+    )
+    profile_uuid = ENV["SIGH_UUID"]
+    UI.message("Main app profile UUID: #{profile_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.widgets",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOWidgets_AppStore.mobileprovision",
+      force:          true
+    )
+    widgets_uuid = ENV["SIGH_UUID"]
+    UI.message("Widgets profile UUID: #{widgets_uuid}")
+
+    sigh(
+      api_key:        api_key,
+      app_identifier: "com.prvio.app.controls",
+      platform:       "ios",
+      output_path:    "/tmp",
+      filename:       "PRVIOControls_AppStore.mobileprovision",
+      force:          true
+    )
+    controls_uuid = ENV["SIGH_UUID"]
+    UI.message("Controls profile UUID: #{controls_uuid}")
+
+    # Manual signing: bake cert + profile UUID into the project file per-target
+    # so xcodebuild flags don't bleed into SPM package targets.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIO"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          profile_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOWidgets"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.widgets",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          widgets_uuid
+    )
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "#{project_dir}/PRVIO.xcodeproj",
+      targets:               ["PRVIOControls"],
+      build_configurations:  ["Release"],
+      bundle_identifier:     "com.prvio.app.controls",
+      team_id:               "SU92TVZT8W",
+      code_sign_identity:    "iPhone Distribution",
+      profile_uuid:          controls_uuid
+    )
 
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
@@ -210,10 +367,6 @@ platform :ios do
       "-destination 'generic/platform=iOS' " \
       "-archivePath /tmp/PRVIO.xcarchive " \
       "-derivedDataPath /tmp/DerivedData " \
-      "-allowProvisioningUpdates " \
-      "-authenticationKeyPath '#{key_path}' " \
-      "-authenticationKeyID '#{key_id}' " \
-      "-authenticationKeyIssuerID '#{issuer_id}' " \
       "-hideShellScriptEnvironment " \
       "DEVELOPMENT_TEAM=SU92TVZT8W " \
       "ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon 2>&1"
@@ -256,7 +409,16 @@ platform :ios do
         <key>teamID</key>
         <string>SU92TVZT8W</string>
         <key>signingStyle</key>
-        <string>automatic</string>
+        <string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict>
+          <key>com.prvio.app</key>
+          <string>#{profile_uuid}</string>
+          <key>com.prvio.app.widgets</key>
+          <string>#{widgets_uuid}</string>
+          <key>com.prvio.app.controls</key>
+          <string>#{controls_uuid}</string>
+        </dict>
       </dict>
       </plist>
     PLIST
@@ -269,11 +431,7 @@ platform :ios do
       "set -o pipefail && xcodebuild -exportArchive " \
       "-archivePath /tmp/PRVIO.xcarchive " \
       "-exportPath /tmp/PRVIO_ipa " \
-      "-exportOptionsPlist #{export_options_path} " \
-      "-allowProvisioningUpdates " \
-      "-authenticationKeyPath '#{key_path}' " \
-      "-authenticationKeyID '#{key_id}' " \
-      "-authenticationKeyIssuerID '#{issuer_id}' 2>&1"
+      "-exportOptionsPlist #{export_options_path} 2>&1"
     )
     UI.important(">>> PHASE: export DONE — uploading to TestFlight")
 
