@@ -163,7 +163,7 @@ private final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchC
 
 // MARK: - Edit sheet
 
-private struct EditPropertySheet: View {
+struct EditPropertySheet: View {
     @Environment(\.dismiss) private var dismiss
     let property: PropertyModel
     let onSave: (PropertyModel) async -> Void
