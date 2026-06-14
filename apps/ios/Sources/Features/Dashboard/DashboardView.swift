@@ -337,15 +337,12 @@ struct DashboardView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(LinearGradient(
-                            colors: [Color(red: 0.4, green: 0.6, blue: 1.0),
-                                     Color(red: 0.6, green: 0.35, blue: 0.95)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        ))
-                        .shadow(color: Color(red: 0.5, green: 0.45, blue: 0.95).opacity(0.55), radius: 14, y: 4)
+                        .fill(.ultraThinMaterial)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                        .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
                     Image(systemName: "plus")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .rotationEffect(.degrees(fabExpanded ? 45 : 0))
                         .animation(.spring(response: 0.38, dampingFraction: 0.72), value: fabExpanded)
                 }
@@ -363,17 +360,19 @@ struct DashboardView: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(.regularMaterial, in: Capsule())
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                    .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
                 ZStack {
-                    Circle().fill(color)
+                    Circle().fill(.ultraThinMaterial)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
                     Image(systemName: icon)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
                 .frame(width: 44, height: 44)
-                .shadow(color: color.opacity(0.5), radius: 8, y: 2)
+                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
             }
         }
         .buttonStyle(.plain)

@@ -35,15 +35,28 @@ struct DocumentsView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                PageHeader(title: "Documents")
+                PageHeader(title: "Documents",
+                           trailing: AnyView(
+                            HStack(spacing: 10) {
+                                filterMenu
+                                Button {
+                                    if propertyService.primary == nil {
+                                        errorToast = "Please set up your property first in Settings."
+                                    } else {
+                                        showAdd = true
+                                    }
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(.primary)
+                                }
+                            }
+                           ))
                     .padding(.bottom, 12)
 
                 searchBar
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
-
-                categoryFilter
-                    .padding(.bottom, 16)
 
                 if documentService.isLoading {
                     Spacer()
@@ -73,28 +86,6 @@ struct DocumentsView: View {
                     .refreshable { await documentService.load() }
                 }
             }
-
-            // FAB
-            Button {
-                if propertyService.primary == nil {
-                    errorToast = "Please set up your property first in Settings."
-                } else {
-                    showAdd = true
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(LinearGradient(colors: [.blue, .purple],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 56, height: 56)
-                        .shadow(color: .blue.opacity(0.45), radius: 14, y: 6)
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-            }
-            .padding(.trailing, 24)
-            .padding(.bottom, 110)
         }
         .task { await documentService.load() }
         .sheet(isPresented: $showAdd) {
@@ -181,30 +172,60 @@ struct DocumentsView: View {
         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    // MARK: - Category filter
+    // MARK: - Category filter menu
 
-    private var categoryFilter: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(categories, id: \.self) { cat in
-                    let isAll = cat == "All"
-                    let isSelected = isAll ? selectedCategory == nil : selectedCategory == cat
-                    Button {
-                        withAnimation(.spring(response: 0.25)) {
-                            selectedCategory = isAll ? nil : cat
-                        }
-                    } label: {
-                        Text(isAll ? "All" : cat.capitalized)
-                            .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(isSelected ? Color.white : Color.primary.opacity(0.08), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
+    private var filterMenu: some View {
+        Menu {
+            Button {
+                withAnimation(.spring(response: 0.25)) { selectedCategory = nil }
+            } label: {
+                Label("All  (\(documentService.documents.count))",
+                      systemImage: selectedCategory == nil ? "checkmark" : "square.grid.2x2.fill")
+            }
+            ForEach(categories.dropFirst(), id: \.self) { cat in
+                Button {
+                    withAnimation(.spring(response: 0.25)) { selectedCategory = cat }
+                } label: {
+                    Label("\(cat.capitalized)  (\(countFor(cat)))",
+                          systemImage: selectedCategory == cat ? "checkmark" : categoryIcon(for: cat))
                 }
             }
-            .padding(.horizontal, 20)
+        } label: {
+            HStack(spacing: 5) {
+                if let cat = selectedCategory {
+                    Image(systemName: categoryIcon(for: cat))
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(cat.capitalized)
+                        .font(.system(size: 13, weight: .semibold))
+                } else {
+                    Text("…")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .medium))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
         }
+    }
+
+    private func categoryIcon(for cat: String) -> String {
+        switch cat {
+        case "warranty":    return "checkmark.seal.fill"
+        case "contract":    return "doc.text.fill"
+        case "insurance":   return "shield.fill"
+        case "certificate": return "star.seal.fill"
+        case "manual":      return "book.fill"
+        case "invoice":     return "banknote.fill"
+        case "photo":       return "photo.fill"
+        default:            return "folder.fill"
+        }
+    }
+
+    private func countFor(_ cat: String) -> Int {
+        documentService.documents.filter { $0.category == cat }.count
     }
 
     // MARK: - Expiring banner
