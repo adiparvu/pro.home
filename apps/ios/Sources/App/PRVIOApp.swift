@@ -4,6 +4,8 @@ import SwiftUI
 struct PRVIOApp: App {
     @StateObject private var auth        = AuthService.shared
     @StateObject private var appSettings = AppSettings()
+    @StateObject private var lock        = AppLockManager()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         applyGlobalAppearance()
@@ -11,20 +13,45 @@ struct PRVIOApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if auth.isLoading {
-                    SplashView()
-                } else if auth.session != nil {
-                    MainTabView()
-                        .environmentObject(appSettings)
-                } else {
-                    LoginView()
+            ZStack {
+                Group {
+                    if auth.isLoading {
+                        SplashView()
+                    } else if auth.session != nil {
+                        MainTabView()
+                            .environmentObject(appSettings)
+                    } else {
+                        LoginView()
+                    }
+                }
+                .preferredColorScheme(appSettings.resolvedColorScheme)
+                .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
+                .environment(\.locale, Locale(identifier: appSettings.locale))
+                .environmentObject(auth)
+                .environmentObject(lock)
+
+                // App lock (only when signed in)
+                if auth.session != nil {
+                    if lock.isLocked {
+                        LockScreenView(manager: lock)
+                            .transition(.opacity)
+                            .zIndex(10)
+                    } else if lock.privacyCover {
+                        PrivacyCoverView()
+                            .transition(.opacity)
+                            .zIndex(9)
+                    }
                 }
             }
-            .preferredColorScheme(appSettings.resolvedColorScheme)
-            .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
-            .environment(\.locale, Locale(identifier: appSettings.locale))
-            .environmentObject(auth)
+            .animation(.easeInOut(duration: 0.2), value: lock.isLocked)
+            .onAppear { lock.appDidLaunch() }
+            .onChange(of: scenePhase) { _, phase in
+                switch phase {
+                case .active:               lock.didBecomeActive()
+                case .inactive, .background: lock.willResignActive()
+                @unknown default: break
+                }
+            }
         }
     }
 }

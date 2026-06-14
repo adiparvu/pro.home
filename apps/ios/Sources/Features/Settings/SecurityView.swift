@@ -322,9 +322,11 @@ struct SecurityView: View {
         isDeletingAccount = true
         do {
             let userId = try await supabase.auth.session.user.id
-            for table in ["maintenance_tasks", "financial_records", "documents", "contractors", "profiles"] {
+            for table in ["maintenance_tasks", "financial_records", "documents", "contractors"] {
                 try? await supabase.from(table).delete().eq("user_id", value: userId.uuidString).execute()
             }
+            // profiles is keyed by the user id itself, not a user_id column.
+            try? await supabase.from("profiles").delete().eq("id", value: userId.uuidString).execute()
             try? await supabase.auth.signOut()
         } catch { try? await supabase.auth.signOut() }
         isDeletingAccount = false
