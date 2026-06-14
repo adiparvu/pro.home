@@ -495,11 +495,17 @@ private struct TasksSection: View {
     @ObservedObject var service: TaskService
 
     var tasksByPriority: [(priority: String, count: Int, color: Color)] {
-        [("urgent", service.tasks.filter { $0.priority == "urgent" }.count, Color.red),
-         ("high",   service.tasks.filter { $0.priority == "high" }.count,   Color.orange),
-         ("medium", service.tasks.filter { $0.priority == "medium" }.count, Color.yellow),
-         ("low",    service.tasks.filter { $0.priority == "low" }.count,    Color.blue)]
-        .filter { $0.1 > 0 }
+        let urgentCount = service.tasks.filter { $0.priority == "urgent" }.count
+        let highCount   = service.tasks.filter { $0.priority == "high" }.count
+        let mediumCount = service.tasks.filter { $0.priority == "medium" }.count
+        let lowCount    = service.tasks.filter { $0.priority == "low" }.count
+        let all: [(priority: String, count: Int, color: Color)] = [
+            ("urgent", urgentCount, Color.red),
+            ("high",   highCount,   Color.orange),
+            ("medium", mediumCount, Color.yellow),
+            ("low",    lowCount,    Color.blue)
+        ]
+        return all.filter { $0.count > 0 }
     }
 
     var completionRate: Double {
