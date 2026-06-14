@@ -40,6 +40,7 @@ targets:
       - sdk: AppIntents.framework
       - sdk: CoreSpotlight.framework
       - sdk: BackgroundTasks.framework
+      - target: PRVIOWidgets
     entitlements:
       path: Sources/App/PRVIO.entitlements
       properties:
@@ -54,10 +55,44 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "130"
+        CURRENT_PROJECT_VERSION: "131"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+      configs:
+        Debug:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          SWIFT_COMPILATION_MODE: singlefile
+
+  PRVIOWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: Sources/Services/SharedDataStore.swift
+      - path: Sources/Intents/PRVIOEntities.swift
+      - path: Sources/Intents/TaskIntents.swift
+      - path: Sources/Intents/PlantIntents.swift
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: AppIntents.framework
+    entitlements:
+      path: Sources/App/PRVIO.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.prvio.app
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.widgets
+        SWIFT_VERSION: "5.10"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        INFOPLIST_FILE: Widgets/Info.plist
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        CODE_SIGN_STYLE: Manual
+        GENERATE_INFOPLIST_FILE: NO
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
