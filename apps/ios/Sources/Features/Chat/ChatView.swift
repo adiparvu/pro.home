@@ -50,28 +50,34 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                MemberAvatarStack(
+                    members: familyService.members,
+                    ownerAvatarUrl: profileService.profile?.avatarUrl,
+                    ownerInitial: ownerInitial,
+                    ringColor: avatarRingColor(for: avatarRingColorName)
+                ) {
+                    withAnimation { showMentionPicker.toggle() }
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 14) {
+                HStack(spacing: 0) {
                     Button { showCallSheet = true } label: {
                         Image(systemName: "phone.fill")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .frame(width: 38, height: 32)
                     }
+
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.15))
+                        .frame(width: 0.5, height: 18)
 
                     Button { showVideoSheet = true } label: {
                         Image(systemName: "video.fill")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .frame(width: 38, height: 32)
                     }
-
-                    MemberAvatarStack(
-                        members: familyService.members,
-                        ownerAvatarUrl: profileService.profile?.avatarUrl,
-                        ownerInitial: ownerInitial,
-                        ringColor: avatarRingColor(for: avatarRingColorName)
-                    ) {
-                        withAnimation { showMentionPicker.toggle() }
-                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

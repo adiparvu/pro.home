@@ -73,6 +73,9 @@ struct PRVIOApp: App {
                 @unknown default: break
                 }
             }
+            .onAppear { applyNavBarTint() }
+            .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
+            .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
             .onOpenURL { url in
                 router.handle(deepLink: url)
             }
@@ -87,6 +90,17 @@ struct PRVIOApp: App {
             .onContinueUserActivity("com.prvio.shopping") { router.handle(userActivity: $0) }
             .onContinueUserActivity("CSSearchableItemActionType") { router.handle(userActivity: $0) }
         }
+    }
+}
+
+// MARK: - Accent tint for UIKit back button
+
+extension PRVIOApp {
+    func applyNavBarTint() {
+        let c: UIColor = appSettings.accentEnabled
+            ? UIColor(avatarRingColor(for: appSettings.accentColor))
+            : .systemBlue
+        UINavigationBar.appearance().tintColor = c
     }
 }
 

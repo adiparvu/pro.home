@@ -68,28 +68,35 @@ struct TasksView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    ForEach(TaskFilter.allCases, id: \.self) { f in
-                        Button {
-                            withAnimation(.spring(response: 0.25)) { filter = f }
-                        } label: {
-                            Label(
-                                "\(f.rawValue)  (\(countFor(f)))",
-                                systemImage: filter == f ? "checkmark" : f.icon
-                            )
+                HStack(spacing: 0) {
+                    Menu {
+                        ForEach(TaskFilter.allCases, id: \.self) { f in
+                            Button {
+                                withAnimation(.spring(response: 0.25)) { filter = f }
+                            } label: {
+                                Label(
+                                    "\(f.rawValue)  (\(countFor(f)))",
+                                    systemImage: filter == f ? "checkmark" : f.icon
+                                )
+                            }
                         }
+                    } label: {
+                        Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 38, height: 32)
                     }
-                } label: {
-                    Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.primary)
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.15))
+                        .frame(width: 0.5, height: 18)
+                    Button {
+                        showAdd = true
+                        HapticFeedback.impact(.medium)
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 38, height: 32)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
