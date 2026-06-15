@@ -79,14 +79,14 @@ final class AppLockManager: ObservableObject {
         // Reuse context within the same lock session so failure count persists.
         if authContext == nil {
             let ctx = LAContext()
-            ctx.localizedFallbackTitle = "Folosește codul de acces"
+            ctx.localizedFallbackTitle = "Use passcode"
             authContext = ctx
         }
 
         do {
             let ok = try await authContext!.evaluatePolicy(
                 .deviceOwnerAuthentication,
-                localizedReason: "Deblochează PRVIO"
+                localizedReason: "Unlock PRVIO"
             )
             if ok {
                 // Set lastUnlockedAt BEFORE clearing isLocked so that the

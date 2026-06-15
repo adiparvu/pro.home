@@ -4,24 +4,24 @@ import Foundation
 // MARK: - Water Plant
 
 struct WaterPlantIntent: AppIntent {
-    static var title: LocalizedStringResource = "Udă planta"
-    static var description = IntentDescription("Marchează o plantă ca udată fără a deschide aplicația")
+    static var title: LocalizedStringResource = "Water plant"
+    static var description = IntentDescription("Mark a plant as watered without opening the app")
     static var openAppWhenRun: Bool = false
 
-    @Parameter(title: "Plantă", description: "Planta de udat")
+    @Parameter(title: "Plant", description: "The plant to water")
     var plant: PlantEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingWatering(plant.id)
-        return .result(dialog: "\(plant.emoji) \(plant.name) a fost udată!")
+        return .result(dialog: "\(plant.emoji) \(plant.name) has been watered!")
     }
 }
 
 // MARK: - Show Plants
 
 struct ShowPlantsIntent: AppIntent {
-    static var title: LocalizedStringResource = "Deschide Plante"
-    static var description = IntentDescription("Deschide secțiunea Plante în PRVIO")
+    static var title: LocalizedStringResource = "Open Plants"
+    static var description = IntentDescription("Open the Plants section in PRVIO")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {

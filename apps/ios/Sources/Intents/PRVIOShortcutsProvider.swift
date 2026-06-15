@@ -7,9 +7,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             intent: CreateTaskIntent(),
             phrases: [
                 "Create task in \(.applicationName)",
-                "New task in \(.applicationName)",
-                "Adaugă sarcină în \(.applicationName)",
-                "Sarcină nouă în \(.applicationName)"
+                "New task in \(.applicationName)"
             ],
             shortTitle: "New task",
             systemImageName: "checklist"
@@ -18,8 +16,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             intent: WaterPlantIntent(),
             phrases: [
                 "Water plant in \(.applicationName)",
-                "Udă planta în \(.applicationName)",
-                "Marchează udat în \(.applicationName)"
+                "Mark plant as watered in \(.applicationName)"
             ],
             shortTitle: "Water plants",
             systemImageName: "drop.fill"
@@ -28,8 +25,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             intent: OpenShoppingListIntent(),
             phrases: [
                 "Open shopping list in \(.applicationName)",
-                "Deschide cumpărăturile în \(.applicationName)",
-                "Listă cumpărături în \(.applicationName)"
+                "Shopping list in \(.applicationName)"
             ],
             shortTitle: "Shopping",
             systemImageName: "cart.fill"
@@ -38,8 +34,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             intent: OpenChatIntent(),
             phrases: [
                 "Open family chat in \(.applicationName)",
-                "Deschide chat-ul în \(.applicationName)",
-                "Chat familie în \(.applicationName)"
+                "Family chat in \(.applicationName)"
             ],
             shortTitle: "Family chat",
             systemImageName: "message.fill"

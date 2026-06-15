@@ -2,7 +2,17 @@ import SwiftUI
 
 final class TabBarVisibility: ObservableObject {
     @Published var isHidden = false
-    @Published var scrolledDown = false
+    @Published var scrollOffset: CGFloat = 0
+
+    // 0 = fully shown, 1 = fully hidden — drives continuous zoom-out
+    var hideProgress: CGFloat {
+        let start: CGFloat = -28
+        let end: CGFloat = -110
+        guard scrollOffset < start else { return 0 }
+        return min((scrollOffset - start) / (end - start), 1.0)
+    }
+
+    var scrolledDown: Bool { hideProgress > 0.55 }
 }
 
 struct ScrollOffsetKey: PreferenceKey {
@@ -38,7 +48,6 @@ enum AppTab: String, CaseIterable {
 
 struct TabScrollDetector: ViewModifier {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
-    private let threshold: CGFloat = 32
 
     func body(content: Content) -> some View {
         content
@@ -51,10 +60,8 @@ struct TabScrollDetector: ViewModifier {
                 }
             )
             .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                let goingDown = offset < -threshold
-                guard goingDown != tabBarVis.scrolledDown else { return }
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.80)) {
-                    tabBarVis.scrolledDown = goingDown
+                withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
+                    tabBarVis.scrollOffset = offset
                 }
             }
     }
@@ -71,7 +78,7 @@ private struct AnimatedTabBar: View {
     @Binding var bounceTab: AppTab?
     let overdueCount: Int
     let bottomPad: CGFloat
-    let scrolledDown: Bool
+    let hideProgress: CGFloat   // 0 = shown, 1 = hidden
 
     @EnvironmentObject private var profileService: ProfileService
 
@@ -96,12 +103,11 @@ private struct AnimatedTabBar: View {
         .shadow(color: .black.opacity(0.10), radius: 12, x: 0, y: 3)
         .padding(.horizontal, 40)
         .padding(.bottom, bottomPad)
-        // Instagram-style zoom-out → slide-down on scroll
-        .scaleEffect(scrolledDown ? 0.80 : 1.0, anchor: .bottom)
-        .opacity(scrolledDown ? 0 : 1)
-        .offset(y: scrolledDown ? 90 : 0)
-        .allowsHitTesting(!scrolledDown)
-        .animation(.spring(response: 0.36, dampingFraction: 0.76), value: scrolledDown)
+        // Instagram-style continuous zoom-out as you scroll
+        .scaleEffect(1.0 - hideProgress * 0.24, anchor: .bottom)
+        .opacity(max(0, 1.0 - hideProgress * 1.6))
+        .offset(y: hideProgress * 80)
+        .allowsHitTesting(hideProgress < 0.45)
     }
 
     @ViewBuilder
@@ -211,7 +217,7 @@ struct MainTabView: View {
                 bounceTab: $bounceTab,
                 overdueCount: taskService.overdueCount,
                 bottomPad: 2,
-                scrolledDown: tabBarVis.scrolledDown
+                hideProgress: tabBarVis.hideProgress
             )
             .environmentObject(profileService)
         }
@@ -331,7 +337,9 @@ struct MainTabView: View {
         }
         .onChange(of: router.selectedTab) { _, newTab in
             bounceTab = newTab
-            if tabBarVis.scrolledDown { tabBarVis.scrolledDown = false }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                tabBarVis.scrollOffset = 0
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .prvioProcessPending)) { _ in
             processPendingIntentActions()

@@ -12,7 +12,7 @@ struct AppearanceView: View {
         ("orange", .orange,                                            "Portocaliu"),
         ("pink",   .pink,                                              "Roz"),
         ("gold",   Color(red: 0.9,  green: 0.7,  blue: 0.15),         "Auriu"),
-        ("red",    .red,                                               "Roșu"),
+        ("red",    .red,                                               "Red"),
         ("teal",   .teal,                                              "Turcoaz"),
     ]
 
@@ -62,7 +62,7 @@ struct AppearanceView: View {
     // MARK: - Theme
 
     private var themeSection: some View {
-        SettingsGroup(title: "Temă") {
+        SettingsGroup(title: "Theme") {
             ForEach(AppSettings.themes, id: \.code) { theme in
                 ThemeOptionRow(
                     icon: theme.icon,
@@ -179,7 +179,7 @@ struct AppearanceView: View {
     // MARK: - Accent Color
 
     private var accentSection: some View {
-        SettingsGroup(title: "Temă vizuală") {
+        SettingsGroup(title: "Visual Theme") {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "paintpalette.fill", color: appSettings.accentEnabled ? currentColor : Color.primary.opacity(0.4))
@@ -266,9 +266,9 @@ struct AppearanceView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Răspuns haptic")
+                    Text("Haptic feedback")
                         .font(.system(size: 15)).foregroundStyle(.primary)
-                    Text("Vibrații la acțiuni în aplicație")
+                    Text("Vibrations on app interactions")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()

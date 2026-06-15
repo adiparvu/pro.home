@@ -13,12 +13,12 @@ struct LockScreenView: View {
                 Spacer()
                 PRVIOLogoView(size: 84)
                 VStack(spacing: 6) {
-                    Text("PRVIO este blocat")
+                    Text("PRVIO is locked")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(manager.authFailed
-                         ? "Autentificare eșuată. Încearcă din nou."
-                         : "Autentifică-te pentru a continua")
+                         ? "Authentication failed. Try again."
+                         : "Authenticate to continue")
                         .font(.system(size: 14))
                         .foregroundStyle(manager.authFailed ? .red : Color.primary.opacity(0.5))
                         .multilineTextAlignment(.center)
@@ -29,7 +29,7 @@ struct LockScreenView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "faceid")
-                        Text("Deblochează")
+                        Text("Unlock")
                     }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)

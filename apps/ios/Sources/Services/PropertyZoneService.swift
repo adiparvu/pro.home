@@ -92,7 +92,7 @@ final class PropertyZoneService: ObservableObject {
     func createDefaultZone(
         propertyId: UUID,
         center: CLLocationCoordinate2D,
-        name: String = "Zonă nouă",
+        name: String = "New zone",
         icon: String = "square.dashed",
         layer: PropertyLayer = .property
     ) async -> PropertyZone? {

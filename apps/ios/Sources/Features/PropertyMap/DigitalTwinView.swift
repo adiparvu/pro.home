@@ -10,6 +10,8 @@ struct DigitalTwinView: View {
     @EnvironmentObject private var zoneService: PropertyZoneService
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var taskService: TaskService
 
     @State private var camera: MapCameraPosition = .automatic
     @State private var selectedZone: PropertyZone?
@@ -250,6 +252,8 @@ struct DigitalTwinView: View {
                 .environmentObject(elementService)
                 .environmentObject(currencyService)
                 .environmentObject(appSettings)
+                .environmentObject(documentService)
+                .environmentObject(taskService)
         }
         .sheet(isPresented: $showHealth) {
             PropertyHealthDashboardView()

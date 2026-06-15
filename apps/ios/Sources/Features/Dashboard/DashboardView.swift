@@ -58,11 +58,8 @@ struct DashboardView: View {
         }
         .coordinateSpace(name: "dashScroll")
         .onPreferenceChange(ScrollOffsetKey.self) { y in
-            let shouldCollapse = y < -30
-            if shouldCollapse != tabBarVis.scrolledDown {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                    tabBarVis.scrolledDown = shouldCollapse
-                }
+            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82)) {
+                tabBarVis.scrollOffset = y
             }
         }
         .background(appBackground.ignoresSafeArea())

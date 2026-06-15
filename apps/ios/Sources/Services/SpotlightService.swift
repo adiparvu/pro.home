@@ -36,8 +36,8 @@ final class SpotlightService {
             var descParts: [String] = []
             if let species = plant.species, !species.isEmpty { descParts.append(species) }
             if let location = plant.location, !location.isEmpty { descParts.append(location) }
-            if plant.needsWatering { descParts.append("Nevoie de apă") }
-            attrs.contentDescription = descParts.isEmpty ? "Plantă" : descParts.joined(separator: " · ")
+            if plant.needsWatering { descParts.append("Needs watering") }
+            attrs.contentDescription = descParts.isEmpty ? "Plant" : descParts.joined(separator: " · ")
             attrs.keywords = ([plant.name] + [plant.species, plant.location].compactMap { $0 }).filter { !$0.isEmpty }
             let item = CSSearchableItem(
                 uniqueIdentifier: "plant-\(plant.id.uuidString)",
@@ -52,7 +52,7 @@ final class SpotlightService {
             let attrs = CSSearchableItemAttributeSet(contentType: .item)
             attrs.title = list.name
             let pendingCount = items.filter { $0.listId == list.id && !$0.isCompleted }.count
-            attrs.contentDescription = pendingCount > 0 ? "\(pendingCount) articole rămase" : "Listă completă"
+            attrs.contentDescription = pendingCount > 0 ? "\(pendingCount) items remaining" : "Complete list"
             attrs.keywords = [list.name]
             let item = CSSearchableItem(
                 uniqueIdentifier: "supply-\(list.id.uuidString)",
@@ -71,7 +71,7 @@ final class SpotlightService {
                 let f = ISO8601DateFormatter()
                 if let d = f.date(from: expires) {
                     let df = DateFormatter(); df.dateStyle = .medium; df.timeStyle = .none
-                    descParts.append("Expiră \(df.string(from: d))")
+                    descParts.append("Expires \(df.string(from: d))")
                 }
             }
             attrs.contentDescription = descParts.joined(separator: " · ")

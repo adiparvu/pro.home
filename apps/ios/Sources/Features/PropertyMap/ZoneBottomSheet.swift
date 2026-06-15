@@ -13,6 +13,8 @@ struct ZoneBottomSheet: View {
     @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var documentService: DocumentService
+    @EnvironmentObject private var taskService: TaskService
     @State private var selectedObject: PropertyElement?
 
     private var objects: [PropertyElement] { elementService.elements(inZone: zone.id) }
@@ -34,7 +36,7 @@ struct ZoneBottomSheet: View {
                 actionRow
 
                 if !objects.isEmpty {
-                    Text("OBIECTE ÎN ZONĂ")
+                    Text("OBJECTS IN ZONE")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)
@@ -54,6 +56,8 @@ struct ZoneBottomSheet: View {
                 .environmentObject(elementService)
                 .environmentObject(currencyService)
                 .environmentObject(appSettings)
+                .environmentObject(documentService)
+                .environmentObject(taskService)
         }
     }
 
@@ -108,9 +112,9 @@ struct ZoneBottomSheet: View {
 
     private var statsRow: some View {
         HStack(spacing: 10) {
-            statTile(value: "\(objects.count)", label: "Obiecte", icon: "cube.box.fill", color: .blue)
-            statTile(value: "\(zoneHealth)%", label: "Sănătate", icon: "heart.fill", color: healthColor)
-            statTile(value: valueString, label: "Valoare", icon: "eurosign.circle.fill", color: .green)
+            statTile(value: "\(objects.count)", label: "Objects", icon: "cube.box.fill", color: .blue)
+            statTile(value: "\(zoneHealth)%", label: "Health", icon: "heart.fill", color: healthColor)
+            statTile(value: valueString, label: "Value", icon: "eurosign.circle.fill", color: .green)
         }
     }
 

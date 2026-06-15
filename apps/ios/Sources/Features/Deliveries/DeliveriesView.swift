@@ -73,12 +73,7 @@ struct DeliveriesView: View {
         }
         .coordinateSpace(name: "deliveriesScroll")
         .onPreferenceChange(ScrollOffsetKey.self) { y in
-            let shouldCollapse = y < -30
-            if shouldCollapse != tabBarVis.scrolledDown {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                    tabBarVis.scrolledDown = shouldCollapse
-                }
-            }
+            tabBarVis.scrollOffset = y
         }
     }
 

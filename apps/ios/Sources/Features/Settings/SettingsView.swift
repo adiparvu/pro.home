@@ -40,7 +40,7 @@ struct SettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
-        .onAppear { tabBarVis.scrolledDown = false }
+        .onAppear { tabBarVis.scrollOffset = 0 }
         .confirmationDialog("Sign out of PRVIO?", isPresented: $showSignOut, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }

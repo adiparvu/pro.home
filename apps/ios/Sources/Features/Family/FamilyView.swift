@@ -441,7 +441,7 @@ struct AddFamilyMemberSheet: View {
     @State private var role = "member"
     @State private var color = "#5B8AF5"
     @State private var socialLinks: [SocialLink] = []
-    @State private var sendInvite = false
+    @State private var sendInvite = true
     @State private var isSaving = false
     @State private var showAddSocial = false
 

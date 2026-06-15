@@ -94,7 +94,7 @@ struct FamilyMember: Identifiable, Codable, Hashable {
         case "owner":   return "Owner"
         case "partner": return "Partner"
         case "child":   return "Copil"
-        case "tenant":  return "Chiriaș"
+        case "tenant":  return "Tenant"
         case "guest":   return "Oaspete"
         default:        return "Membru"
         }

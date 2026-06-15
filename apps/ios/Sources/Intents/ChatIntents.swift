@@ -2,8 +2,8 @@ import AppIntents
 import Foundation
 
 struct OpenChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "Chat familie"
-    static var description = IntentDescription("Deschide chat-ul familiei în PRVIO")
+    static var title: LocalizedStringResource = "Family chat"
+    static var description = IntentDescription("Open family chat in PRVIO")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
