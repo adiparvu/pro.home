@@ -107,7 +107,7 @@ struct PropertyValueView: View {
                     Spacer()
                     Image(systemName: "house.fill")
                         .font(.system(size: 24))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                         .frame(width: 48, height: 48)
                         .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
@@ -229,7 +229,7 @@ struct PropertyValueView: View {
             HStack(spacing: 14) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 36, height: 36)
                     .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
@@ -353,7 +353,7 @@ private struct AddPropertyValueSheet: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "banknote.fill")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                 TextField("0", text: $valueText)
                                     .font(.system(size: 22, weight: .bold))
@@ -392,7 +392,7 @@ private struct AddPropertyValueSheet: View {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "note.text")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                     .padding(.top, 2)
                                 TextField("Optional notes…", text: $notes, axis: .vertical)
@@ -424,7 +424,7 @@ private struct AddPropertyValueSheet: View {
                     } else {
                         Button("Save") { Task { await save() } }
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .disabled((Double(valueText) ?? 0) <= 0 || isSaving)
                     }
                 }
@@ -437,7 +437,7 @@ private struct AddPropertyValueSheet: View {
             HStack(spacing: 10) {
                 Image(systemName: "doc.text.fill")
                     .font(.system(size: 14))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 TextField("Source (e.g. Bank appraisal)", text: $source)
                     .font(.system(size: 15))

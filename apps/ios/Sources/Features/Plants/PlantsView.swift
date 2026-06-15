@@ -428,7 +428,7 @@ struct PlantDetailSheet: View {
                             } else {
                                 Text("Save")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                             }
                         }
                         .disabled(editedPlant.name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
@@ -438,7 +438,7 @@ struct PlantDetailSheet: View {
                         } label: {
                             Text("Edit")
                                 .font(.system(size: 15))
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                 }

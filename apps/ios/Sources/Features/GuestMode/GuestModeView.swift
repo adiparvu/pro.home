@@ -59,7 +59,7 @@ struct GuestModeView: View {
             HStack(spacing: 14) {
                 Image(systemName: "house.fill")
                     .font(.system(size: 24))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 48, height: 48)
                     .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -75,7 +75,7 @@ struct GuestModeView: View {
                     }
                     Text("Guest information sheet")
                         .font(.system(size: 12))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 Spacer()
@@ -108,7 +108,7 @@ struct GuestModeView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "list.bullet.clipboard.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
                         Text("Rules")
                             .font(.system(size: 13, weight: .medium))
@@ -138,7 +138,7 @@ struct GuestModeView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "note.text")
                             .font(.system(size: 14))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
                         Text("Notes")
                             .font(.system(size: 13, weight: .medium))
@@ -197,7 +197,7 @@ struct GuestModeView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: text)
                 .font(.system(size: 15))

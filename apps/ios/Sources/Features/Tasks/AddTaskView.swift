@@ -214,7 +214,7 @@ struct AddTaskView: View {
     private func personIcon(name: String) -> some View {
         ZStack {
             Circle().fill(.blue.opacity(0.25))
-            Text(String(name.prefix(1)).uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(.accentColor)
+            Text(String(name.prefix(1)).uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(Color.accentColor)
         }
         .frame(width: 30, height: 30)
     }
@@ -444,7 +444,7 @@ struct AssigneePickerSheet: View {
                                         HapticFeedback.success()
                                     } label: {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 28)).foregroundStyle(.accentColor)
+                                            .font(.system(size: 28)).foregroundStyle(Color.accentColor)
                                     }
                                 }
                             } else {
@@ -453,7 +453,7 @@ struct AssigneePickerSheet: View {
                                     HapticFeedback.impact(.light)
                                 } label: {
                                     HStack(spacing: 10) {
-                                        Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(.accentColor)
+                                        Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                                         Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
@@ -490,7 +490,7 @@ struct AssigneePickerSheet: View {
             .navigationTitle("Assign Task").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
         }

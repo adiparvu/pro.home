@@ -325,7 +325,7 @@ private struct AddPhotoJournalSheet: View {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "text.alignleft")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                     .padding(.top, 2)
                                 TextField("Caption (optional)…", text: $caption, axis: .vertical)
@@ -368,7 +368,7 @@ private struct AddPhotoJournalSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || selectedImageData == nil || isUploading)
                 }
             }
@@ -456,7 +456,7 @@ private struct AddPhotoJournalSheet: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
                 .font(.system(size: 15))

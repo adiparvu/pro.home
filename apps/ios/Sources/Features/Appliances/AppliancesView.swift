@@ -328,7 +328,7 @@ private struct AddApplianceSheet: View {
                                 HStack(spacing: 10) {
                                     Image(systemName: "calendar")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(.accentColor)
+                                        .foregroundStyle(Color.accentColor)
                                         .frame(width: 28)
                                     Text("Purchase Date")
                                         .font(.system(size: 15))
@@ -355,7 +355,7 @@ private struct AddApplianceSheet: View {
                                 HStack(spacing: 10) {
                                     Image(systemName: "shield.fill")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(.accentColor)
+                                        .foregroundStyle(Color.accentColor)
                                         .frame(width: 28)
                                     Text("Warranty Until")
                                         .font(.system(size: 15))
@@ -384,7 +384,7 @@ private struct AddApplianceSheet: View {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "note.text")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                     .padding(.top, 2)
                                 TextField("Additional notes…", text: $notes, axis: .vertical)
@@ -416,7 +416,7 @@ private struct AddApplianceSheet: View {
                     } else {
                         Button("Save") { Task { await save() } }
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
@@ -443,7 +443,7 @@ private struct AddApplianceSheet: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
                 .font(.system(size: 15))
@@ -459,7 +459,7 @@ private struct AddApplianceSheet: View {
         HStack(spacing: 10) {
             Image(systemName: "square.grid.2x2.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Category", selection: $category) {
                 ForEach(ApplianceCategory.allCases, id: \.self) { cat in
@@ -551,7 +551,7 @@ private struct ApplianceDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .confirmationDialog("Delete \"\(appliance.name)\"?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -676,7 +676,7 @@ private struct ApplianceDetailSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 13))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 24)
             Text(label)
                 .font(.system(size: 14))

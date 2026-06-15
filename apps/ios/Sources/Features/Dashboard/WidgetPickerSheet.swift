@@ -144,7 +144,7 @@ struct WidgetPickerSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 }
             }
         }

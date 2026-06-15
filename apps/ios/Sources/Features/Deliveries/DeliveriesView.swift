@@ -129,7 +129,7 @@ struct DeliveriesView: View {
             HStack(spacing: 6) {
                 Image(systemName: "shippingbox.fill")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 Text("IN PROGRESS · \(deliveryService.activeDeliveries.count)")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
@@ -545,7 +545,7 @@ struct DeliveryFormSheet: View {
                             if status == opt.id {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                             }
                         }
                         .padding(.horizontal, 14)
@@ -598,7 +598,7 @@ struct DeliveryFormSheet: View {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
                                 .font(.system(size: 14))
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(Color.accentColor)
                             Text("Set estimated date")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)

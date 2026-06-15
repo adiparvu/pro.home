@@ -410,7 +410,7 @@ struct InventoryView: View {
             Spacer()
             Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
             Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
-            Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.accentColor)
+            Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -652,7 +652,7 @@ struct ItemDetailView: View {
                 } else {
                     Button { HapticFeedback.impact(.medium); showLoan = true } label: {
                         Label("Loan Out to Someone", systemImage: "arrow.uturn.right.circle.fill")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.accentColor)
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
@@ -735,7 +735,7 @@ struct ItemDetailView: View {
                         }
                     } label: {
                         Label("Open in Maps", systemImage: "map.fill")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.accentColor)
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity).padding(.vertical, 10)
                             .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
@@ -755,7 +755,7 @@ struct ItemDetailView: View {
                 Button { showLocationPicker = true } label: {
                     Label(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker",
                           systemImage: live.hasLocation ? "pencil" : "plus.circle.fill")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.accentColor)
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -795,7 +795,7 @@ struct ItemDetailView: View {
                 Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
                     Label(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info",
                           systemImage: live.publicProfile == nil ? "plus.circle.fill" : "pencil")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.accentColor)
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -851,7 +851,7 @@ private struct PublicContactSheet: View {
                     VStack(spacing: 16) {
                         GlassCard {
                             HStack(spacing: 12) {
-                                Image(systemName: "qrcode.viewfinder").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+                                Image(systemName: "qrcode.viewfinder").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 Text("Show on public QR page").font(.system(size: 15)).foregroundStyle(.primary)
                                 Spacer()
                                 Toggle("", isOn: $isEnabled).tint(.accentColor).labelsHidden()
@@ -894,7 +894,7 @@ private struct PublicContactSheet: View {
                         }
                         onSave(updated); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -902,7 +902,7 @@ private struct PublicContactSheet: View {
 
     private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
@@ -925,12 +925,12 @@ private struct LoanItemSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
-                            Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+                            Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                             TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                         }.padding(.horizontal, 16).padding(.vertical, 14)
                         Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                         HStack(spacing: 12) {
-                            Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+                            Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                             Text("Expected return").font(.system(size: 15)).foregroundStyle(.primary)
                             Spacer()
                             Toggle("", isOn: $hasReturnDate).tint(.accentColor).labelsHidden()
@@ -962,7 +962,7 @@ private struct LoanItemSheet: View {
                         onSave(borrower.trimmingCharacters(in: .whitespaces), hasReturnDate ? returnDate : nil)
                         HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                     .disabled(borrower.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -1142,7 +1142,7 @@ private struct AddInventorySheet: View {
                         }
                         card {
                             HStack(spacing: 12) {
-                                Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+                                Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 TextField("Notes (optional)", text: $notes, axis: .vertical)
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, 16).padding(.vertical, 13)
@@ -1166,7 +1166,7 @@ private struct AddInventorySheet: View {
                         item.notes = notes
                         onSave(item); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -1180,13 +1180,13 @@ private struct AddInventorySheet: View {
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
     private func picker(_ icon: String, _ label: String, _ b: Binding<String>, _ opts: [String]) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Picker("", selection: b) { ForEach(opts, id: \.self) { Text($0.capitalized).tag($0) } }.tint(Color.primary.opacity(0.5))
@@ -1194,7 +1194,7 @@ private struct AddInventorySheet: View {
     }
     private func toggle(_ icon: String, _ label: String, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: b).tint(.accentColor).labelsHidden()
@@ -1255,7 +1255,7 @@ private struct ItemLocationSheet: View {
 
                         Button { locMgr.requestLocation() } label: {
                             Label("Use Current Location", systemImage: "location.fill")
-                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.accentColor)
+                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                                 .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                         }.buttonStyle(.plain)
@@ -1288,7 +1288,7 @@ private struct ItemLocationSheet: View {
                         if !trackerType.isEmpty {
                             VStack(spacing: 0) {
                                 HStack(spacing: 12) {
-                                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+                                    Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                     TextField("Tracker name / serial (optional)", text: $trackerIdentifier)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                 }.padding(.horizontal, 16).padding(.vertical, 13)
@@ -1299,7 +1299,7 @@ private struct ItemLocationSheet: View {
                             if trackerType == "airtag" {
                                 GlassCard(padding: 14) {
                                     HStack(spacing: 10) {
-                                        Image(systemName: "info.circle.fill").foregroundStyle(.accentColor)
+                                        Image(systemName: "info.circle.fill").foregroundStyle(Color.accentColor)
                                         Text("Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking.")
                                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.55))
                                     }
@@ -1324,7 +1324,7 @@ private struct ItemLocationSheet: View {
                         onSave(updated)
                         HapticFeedback.success()
                         dismiss()
-                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
             .onChange(of: locMgr.location) { _, loc in
@@ -1337,7 +1337,7 @@ private struct ItemLocationSheet: View {
 
     private func coordRow(_ label: String, _ binding: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7)).tint(.accentColor)

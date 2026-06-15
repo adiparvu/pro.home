@@ -32,7 +32,7 @@ struct AccountSwitcherSheet: View {
                         }
                     } label: {
                         Label("Add account", systemImage: "plus.circle.fill")
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
 
@@ -95,7 +95,7 @@ private struct AccountRow: View {
 
                 if isCurrent {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                         .font(.system(size: 18))
                 } else if isSwitching {
                     ProgressView()

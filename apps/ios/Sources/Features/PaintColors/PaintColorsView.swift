@@ -287,7 +287,7 @@ private struct AddPaintColorSheet: View {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "note.text")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                     .frame(width: 28)
                                     .padding(.top, 2)
                                 TextField("Additional notes…", text: $notes, axis: .vertical)
@@ -319,7 +319,7 @@ private struct AddPaintColorSheet: View {
                     } else {
                         Button("Save") { Task { await save() } }
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .disabled(colorName.trimmingCharacters(in: .whitespaces).isEmpty || roomName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
@@ -341,7 +341,7 @@ private struct AddPaintColorSheet: View {
                     HStack {
                         Text("Choose existing room")
                             .font(.system(size: 14))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -352,7 +352,7 @@ private struct AddPaintColorSheet: View {
                 HStack(spacing: 10) {
                     Image(systemName: "house.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                     Picker("Room", selection: $roomName) {
                         ForEach(paintColorService.roomNames, id: \.self) { r in
@@ -375,7 +375,7 @@ private struct AddPaintColorSheet: View {
                     HStack {
                         Text("Add new room")
                             .font(.system(size: 14))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -390,7 +390,7 @@ private struct AddPaintColorSheet: View {
         HStack(spacing: 10) {
             Image(systemName: "square.fill")
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Surface", selection: $surface) {
                 ForEach(surfaces, id: \.self) { s in
@@ -408,7 +408,7 @@ private struct AddPaintColorSheet: View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             Picker("Finish", selection: $finish) {
                 ForEach(PaintFinish.allCases, id: \.self) { f in
@@ -455,7 +455,7 @@ private struct AddPaintColorSheet: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             TextField(placeholder, text: binding)
                 .font(.system(size: 15))

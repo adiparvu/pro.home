@@ -78,7 +78,7 @@ struct FamilyView: View {
             Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
             Text("No members").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
             Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
-            Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.accentColor)
+            Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
     }
@@ -262,7 +262,7 @@ struct MemberProfileSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Edit") { showEdit = true }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
             .sheet(isPresented: $showEdit, onDismiss: {
@@ -616,8 +616,8 @@ struct AddFamilyMemberSheet: View {
                     showAddSocial = true
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(.accentColor)
-                        Text("Add social network").font(.system(size: 14)).foregroundStyle(.accentColor)
+                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -873,7 +873,7 @@ struct EditFamilyMemberSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor) }
+                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor) }
                     }
                     .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
@@ -1009,8 +1009,8 @@ struct EditFamilyMemberSheet: View {
                     showAddSocial = true
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(.accentColor)
-                        Text("Add social network").font(.system(size: 14)).foregroundStyle(.accentColor)
+                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                        Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 12)

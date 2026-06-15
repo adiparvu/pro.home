@@ -197,7 +197,7 @@ struct ChatView: View {
                             HStack(spacing: 4) {
                                 Text("@\(name)")
                                     .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                 Button {
                                     mentionedIds.removeAll { $0 == id }
                                     mentionedNames.removeAll { $0 == name }
@@ -552,7 +552,7 @@ private struct MemberCallRow: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: opt.icon)
                                         .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(.accentColor)
+                                        .foregroundStyle(Color.accentColor)
                                         .frame(width: 20)
                                     Text(opt.label)
                                         .font(.system(size: 13))
@@ -740,7 +740,7 @@ private struct SeenBySheet: View {
                                 Spacer()
                                 Image(systemName: "checkmark.seal.fill")
                                     .font(.system(size: 16))
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
@@ -753,7 +753,7 @@ private struct SeenBySheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -887,7 +887,7 @@ private struct MentionPickerSheet: View {
             .navigationTitle("Mention").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
             }
         }

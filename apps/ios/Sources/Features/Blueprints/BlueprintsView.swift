@@ -383,7 +383,7 @@ private struct AddPlanSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.primary)
@@ -418,7 +418,7 @@ private struct AddPlanSheet: View {
 
     private var nameField: some View {
         HStack(spacing: 12) {
-            Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
+            Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField("Name", text: $name)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }

@@ -135,7 +135,7 @@ struct AppIconPickerView: View {
                         Spacer()
                         if isSelected {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(Color.accentColor)
                                 .font(.system(size: 18))
                                 .transition(.scale.combined(with: .opacity))
                         }

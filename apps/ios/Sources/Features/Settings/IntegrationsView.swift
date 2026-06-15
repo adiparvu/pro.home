@@ -603,7 +603,7 @@ private struct IntegrationRow: View {
             } label: {
                 Text(label)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
