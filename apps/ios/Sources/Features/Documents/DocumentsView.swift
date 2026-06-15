@@ -118,7 +118,7 @@ struct DocumentsView: View {
         }
         .quickLookPreview($previewURL)
         .sheet(isPresented: $showShareSheet) {
-            ShareSheet(items: shareItems)
+            ShareSheet(activityItems: shareItems)
         }
         .onChange(of: documentService.error) { _, err in
             if let err { errorToast = err }
