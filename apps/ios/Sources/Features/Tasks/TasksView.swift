@@ -7,6 +7,7 @@ struct TasksView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
+    @State private var historyPeriod: HistoryPeriod = .month
 
     enum TaskFilter: String, CaseIterable {
         case all = "All"
@@ -24,6 +25,40 @@ struct TasksView: View {
         }
     }
 
+    enum HistoryPeriod: String, CaseIterable {
+        case today   = "Today"
+        case week    = "7 days"
+        case month   = "30 days"
+        case quarter = "3 months"
+        case year    = "1 year"
+        case all     = "All time"
+
+        func apply(to tasks: [MaintenanceTask]) -> [MaintenanceTask] {
+            guard self != .all else { return tasks }
+            let cutoff = cutoffDate
+            let f1 = ISO8601DateFormatter()
+            f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let f2 = ISO8601DateFormatter()
+            f2.formatOptions = [.withInternetDateTime]
+            return tasks.filter {
+                guard let d = f1.date(from: $0.updatedAt) ?? f2.date(from: $0.updatedAt) else { return false }
+                return d >= cutoff
+            }
+        }
+
+        private var cutoffDate: Date {
+            let cal = Calendar.current
+            switch self {
+            case .today:   return cal.startOfDay(for: Date())
+            case .week:    return cal.date(byAdding: .day,   value: -7,  to: Date())!
+            case .month:   return cal.date(byAdding: .day,   value: -30, to: Date())!
+            case .quarter: return cal.date(byAdding: .month, value: -3,  to: Date())!
+            case .year:    return cal.date(byAdding: .year,  value: -1,  to: Date())!
+            case .all:     return Date.distantPast
+            }
+        }
+    }
+
     private var filtered: [MaintenanceTask] {
         switch filter {
         case .all:
@@ -33,7 +68,7 @@ struct TasksView: View {
         case .overdue:
             return taskService.tasks.filter { $0.isOverdue || $0.status == "overdue" }
         case .done:
-            return taskService.tasks.filter { $0.isCompleted }
+            return historyPeriod.apply(to: taskService.tasks.filter { $0.isCompleted })
         }
     }
 
@@ -135,32 +170,38 @@ struct TasksView: View {
 
     private var taskList: some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 10) {
-                ForEach(filtered) { task in
-                    TaskRowView(task: task)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                HapticFeedback.warning()
-                                Task { await taskService.delete(task) }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                HapticFeedback.success()
-                                Task { await taskService.toggleComplete(task) }
-                            } label: {
-                                Label(task.isCompleted ? "Reopen" : "Done",
-                                      systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
-                            }
-                            .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
-                        }
+            VStack(spacing: 0) {
+                if filter == .done {
+                    historyPeriodBar
+                        .padding(.top, 4)
                 }
+                LazyVStack(spacing: 10) {
+                    ForEach(filtered) { task in
+                        TaskRowView(task: task)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    HapticFeedback.warning()
+                                    Task { await taskService.delete(task) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button {
+                                    HapticFeedback.success()
+                                    Task { await taskService.toggleComplete(task) }
+                                } label: {
+                                    Label(task.isCompleted ? "Reopen" : "Done",
+                                          systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
+                                }
+                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                            }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-            .padding(.bottom, 110)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("tasksScroll")).minY)
@@ -175,6 +216,32 @@ struct TasksView: View {
                     tabBarVis.scrolledDown = shouldCollapse
                 }
             }
+        }
+    }
+
+    private var historyPeriodBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(HistoryPeriod.allCases, id: \.self) { period in
+                    Button {
+                        withAnimation(.spring(response: 0.28)) { historyPeriod = period }
+                        HapticFeedback.selection()
+                    } label: {
+                        Text(period.rawValue)
+                            .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
+                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(0.7))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                historyPeriod == period ? Color.white : Color.primary.opacity(0.07),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 6)
         }
     }
 
