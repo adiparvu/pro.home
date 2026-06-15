@@ -191,7 +191,7 @@ struct DocumentsView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Search documents...", text: $search)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
             if !search.isEmpty {
                 Button { search = "" } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
@@ -357,7 +357,7 @@ struct DocumentRow: View {
             Button { onShare() } label: {
                 Label("Share", systemImage: "square.and.arrow.up")
             }
-            .tint(.blue)
+            .tint(.accentColor)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { onDelete() } label: {
@@ -416,7 +416,7 @@ struct AddDocumentSheet: View {
                         fieldGroup {
                             rowField("doc.text.fill", "Document name") {
                                 TextField("e.g. Home Insurance 2025", text: $name)
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                     .autocorrectionDisabled()
                             }
                         }
@@ -442,7 +442,7 @@ struct AddDocumentSheet: View {
                                 HStack(spacing: 12) {
                                     iconLabel("calendar", color: .orange, text: "Has expiry date")
                                     Spacer()
-                                    Toggle("", isOn: $hasExpiry).labelsHidden().tint(.blue)
+                                    Toggle("", isOn: $hasExpiry).labelsHidden().tint(.accentColor)
                                 }
                                 .padding(.horizontal, 16).padding(.vertical, 13)
 
@@ -498,7 +498,7 @@ struct AddDocumentSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
-                        ProgressView().tint(.blue)
+                        ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
                             .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)

@@ -4,8 +4,8 @@ import Foundation
 // MARK: - Create Task
 
 struct CreateTaskIntent: AppIntent {
-    static var title: LocalizedStringResource = "Sarcină nouă"
-    static var description = IntentDescription("Deschide PRVIO pentru a crea o sarcină nouă")
+    static var title: LocalizedStringResource = "New task"
+    static var description = IntentDescription("Opens PRVIO to create a new task")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
@@ -17,15 +17,15 @@ struct CreateTaskIntent: AppIntent {
 // MARK: - Complete Task
 
 struct CompleteTaskIntent: AppIntent {
-    static var title: LocalizedStringResource = "Finalizează sarcina"
-    static var description = IntentDescription("Marchează o sarcină ca finalizată")
+    static var title: LocalizedStringResource = "Complete task"
+    static var description = IntentDescription("Mark a task as completed")
     static var openAppWhenRun: Bool = false
 
-    @Parameter(title: "Sarcină", description: "Sarcina de finalizat")
+    @Parameter(title: "Task", description: "The task to complete")
     var task: TaskEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingCompletion(task.id)
-        return .result(dialog: "Sarcina \"\(task.title)\" a fost finalizată.")
+        return .result(dialog: "Task \"\(task.title)\" has been completed.")
     }
 }

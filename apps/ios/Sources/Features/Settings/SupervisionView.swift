@@ -287,7 +287,7 @@ struct MemberSupervisionDetailView: View {
                 Spacer()
                 Toggle("", isOn: $supervised)
                     .labelsHidden()
-                    .tint(.blue)
+                    .tint(.accentColor)
                     .onChange(of: supervised) { _, val in
                         SupervisionSettings.setSupervised(member.id, value: val)
                         HapticFeedback.selection()
@@ -333,7 +333,7 @@ struct MemberSupervisionDetailView: View {
                                     }
                                 ))
                                 .labelsHidden()
-                                .tint(.blue)
+                                .tint(.accentColor)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
 
@@ -377,7 +377,7 @@ struct MemberSupervisionDetailView: View {
                     Spacer()
                     Toggle("", isOn: $notifyOnTask)
                         .labelsHidden()
-                        .tint(.blue)
+                        .tint(.accentColor)
                         .onChange(of: notifyOnTask) { _, val in
                             SupervisionSettings.setNotifyOnTaskAssign(member.id, value: val)
                             HapticFeedback.selection()

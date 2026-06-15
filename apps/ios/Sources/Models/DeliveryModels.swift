@@ -34,10 +34,10 @@ struct Delivery: Identifiable, Codable, Hashable {
 
     var statusLabel: String {
         switch status {
-        case "ordered":          return "Comandat"
-        case "in_transit":       return "În tranzit"
-        case "out_for_delivery": return "În livrare"
-        case "delivered":        return "Livrat"
+        case "ordered":          return "Ordered"
+        case "in_transit":       return "In transit"
+        case "out_for_delivery": return "Out for delivery"
+        case "delivered":        return "Delivered"
         default:                 return status
         }
     }
@@ -49,17 +49,17 @@ struct Delivery: Identifiable, Codable, Hashable {
         let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
         guard let d = fmt.date(from: ds) else { return ds }
         let out = DateFormatter()
-        if Calendar.current.isDateInToday(d) { return "Azi" }
-        if Calendar.current.isDateInTomorrow(d) { return "Mâine" }
+        if Calendar.current.isDateInToday(d) { return "Today" }
+        if Calendar.current.isDateInTomorrow(d) { return "Tomorrow" }
         out.dateFormat = "d MMM"
         return out.string(from: d)
     }
 
     static let statusOptions: [(id: String, label: String)] = [
-        ("ordered",          "Comandat"),
-        ("in_transit",       "În tranzit"),
-        ("out_for_delivery", "În livrare"),
-        ("delivered",        "Livrat"),
+        ("ordered",          "Ordered"),
+        ("in_transit",       "In transit"),
+        ("out_for_delivery", "Out for delivery"),
+        ("delivered",        "Delivered"),
     ]
 
     static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Altul"]

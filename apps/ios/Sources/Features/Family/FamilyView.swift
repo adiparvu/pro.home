@@ -32,7 +32,7 @@ struct FamilyView: View {
                                         Button { selectedMember = member } label: {
                                             Label("Edit", systemImage: "pencil")
                                         }
-                                        .tint(.blue)
+                                        .tint(.accentColor)
                                     }
                             }
                         }
@@ -143,8 +143,8 @@ struct FamilyMemberRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.primary)
                 .frame(width: 34, height: 34)
-                .glassCircle()
         }
+        .glassCircle()
     }
 }
 
@@ -479,7 +479,7 @@ struct AddFamilyMemberSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
-                        if isSaving { ProgressView().tint(.blue) }
+                        if isSaving { ProgressView().tint(.accentColor) }
                         else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
                     }
                     .disabled(!canSave)
@@ -578,7 +578,7 @@ struct AddFamilyMemberSheet: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .tint(.blue)
+                .tint(.accentColor)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
@@ -640,7 +640,7 @@ struct AddFamilyMemberSheet: View {
                         Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                     Spacer()
-                    Toggle("", isOn: $sendInvite).labelsHidden().tint(.blue)
+                    Toggle("", isOn: $sendInvite).labelsHidden().tint(.accentColor)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)
             }
@@ -654,7 +654,7 @@ struct AddFamilyMemberSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
@@ -719,12 +719,6 @@ struct AddFamilyMemberSheet: View {
                 let propertyName: String?
                 let role: String
                 let inviterEmail: String?
-                enum CodingKeys: String, CodingKey {
-                    case to, name, role
-                    case propertyId = "propertyId"
-                    case propertyName = "propertyName"
-                    case inviterEmail = "inviterEmail"
-                }
             }
             let inviterEmail = try? await supabase.auth.session.user.email
             let payload = InvitePayload(
@@ -780,7 +774,7 @@ private struct AddSocialLinkSheet: View {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         TextField("@username", text: $handle)
-                            .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                            .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 13)
@@ -878,7 +872,7 @@ struct EditFamilyMemberSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
-                        if isSaving { ProgressView().tint(.blue) }
+                        if isSaving { ProgressView().tint(.accentColor) }
                         else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue) }
                     }
                     .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
@@ -976,7 +970,7 @@ struct EditFamilyMemberSheet: View {
                         Label(kRoleLabels[r] ?? r.capitalized, systemImage: kRoleIcons[r] ?? "person.fill").tag(r)
                     }
                 }
-                .pickerStyle(.menu).tint(.blue)
+                .pickerStyle(.menu).tint(.accentColor)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
@@ -1043,7 +1037,7 @@ struct EditFamilyMemberSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 28)
             TextField(placeholder, text: text)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
         .padding(.horizontal, 16).padding(.vertical, 13)

@@ -129,8 +129,8 @@ struct LocalAssistantView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
-                    .glassCircle()
             }
+            .glassCircle()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -169,7 +169,7 @@ struct LocalAssistantView: View {
             TextField("Ask about your property…", text: $input, axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .focused($focused)
                 .lineLimit(1...4)
                 .padding(.horizontal, 14)

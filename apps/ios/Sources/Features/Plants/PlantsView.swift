@@ -333,7 +333,7 @@ struct PlantCard: View {
             } label: {
                 Label("Watered!", systemImage: "drop.fill")
             }
-            .tint(.blue)
+            .tint(.accentColor)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
@@ -429,7 +429,7 @@ struct PlantDetailSheet: View {
                             save()
                         } label: {
                             if isSaving {
-                                ProgressView().tint(.blue)
+                                ProgressView().tint(.accentColor)
                             } else {
                                 Text("Save")
                                     .font(.system(size: 15, weight: .semibold))
@@ -650,7 +650,7 @@ struct PlantDetailSheet: View {
                 TextField("Plant name", text: $editedPlant.name)
                     .font(.system(size: 16))
                     .foregroundStyle(.primary)
-                    .tint(.blue)
+                    .tint(.accentColor)
                     .padding(14)
                     .background(
                         Color.primary.opacity(0.07),
@@ -667,7 +667,7 @@ struct PlantDetailSheet: View {
                 ))
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -684,7 +684,7 @@ struct PlantDetailSheet: View {
                 ))
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -748,7 +748,7 @@ struct PlantDetailSheet: View {
                 ), axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .lineLimit(3...6)
                 .padding(14)
                 .background(
@@ -894,7 +894,7 @@ struct AddPlantSheet: View {
             TextField("Plant name", text: $name)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -909,7 +909,7 @@ struct AddPlantSheet: View {
             TextField("e.g. Monstera deliciosa", text: $species)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -924,7 +924,7 @@ struct AddPlantSheet: View {
             TextField("e.g. Living room, Balcony, Kitchen", text: $location)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -939,7 +939,7 @@ struct AddPlantSheet: View {
             TextField("Notes about this plant…", text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .lineLimit(3...5)
                 .padding(14)
                 .background(

@@ -80,18 +80,18 @@ struct Plant: Identifiable, Codable, Hashable {
     }
 
     var wateringLabel: String {
-        if needsWatering { return "Are nevoie de apă" }
+        if needsWatering { return "Needs water" }
         let d = daysUntilWatering
-        if d == 0 { return "Udă azi" }
-        if d == 1 { return "Udă mâine" }
-        return "Peste \(d) zile"
+        if d == 0 { return "Water today" }
+        if d == 1 { return "Water tomorrow" }
+        return "In \(d) days"
     }
 
     var lastWateredDisplay: String {
-        guard let d = parseDate(lastWateredAt) else { return "Niciodată" }
+        guard let d = parseDate(lastWateredAt) else { return "Never" }
         let cal = Calendar.current
-        if cal.isDateInToday(d) { return "Azi" }
-        if cal.isDateInYesterday(d) { return "Ieri" }
+        if cal.isDateInToday(d) { return "Today" }
+        if cal.isDateInYesterday(d) { return "Yesterday" }
         let fmt = DateFormatter(); fmt.dateFormat = "d MMM"
         return fmt.string(from: d)
     }
@@ -99,10 +99,10 @@ struct Plant: Identifiable, Codable, Hashable {
     static let emojiOptions = ["🌿","🌱","🌸","🌺","🌻","🌹","🌷","🌵","🪴","🌾","🍀","🍃","🌳","🌲","🌊","🪸"]
 
     static let healthOptions: [(id: String, label: String)] = [
-        ("great",       "Excelent"),
-        ("good",        "Bine"),
-        ("needs_water", "Nevoie de apă"),
-        ("critical",    "Critic"),
+        ("great",       "Excellent"),
+        ("good",        "Good"),
+        ("needs_water", "Needs water"),
+        ("critical",    "Critical"),
     ]
 }
 

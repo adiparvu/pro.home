@@ -67,7 +67,7 @@ struct ProfileView: View {
                 Task {
                     do {
                         try await profileService.uploadAvatar(img)
-                        showToast("Avatar actualizat")
+                        showToast("Avatar updated")
                     } catch {
                         showToast(error.localizedDescription, isError: true)
                     }
@@ -75,10 +75,10 @@ struct ProfileView: View {
             }
             .ignoresSafeArea()
         }
-        .confirmationDialog("Schimbă avatarul", isPresented: $showAvatarOptions, titleVisibility: .visible) {
-            Button("Fă o poză") { showCamera = true }
-            Button("Alege din Galerie") { showPhotoPicker = true }
-            Button("Anulează", role: .cancel) {}
+        .confirmationDialog("Change avatar", isPresented: $showAvatarOptions, titleVisibility: .visible) {
+            Button("Take a photo") { showCamera = true }
+            Button("Choose from Gallery") { showPhotoPicker = true }
+            Button("Cancel", role: .cancel) {}
         }
         .overlay(alignment: .bottom) {
             if let msg = toast {
@@ -245,23 +245,23 @@ struct ProfileView: View {
     // MARK: - Account actions
 
     private var accountSection: some View {
-        SettingsGroup(title: "Cont") {
-            NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Editează profilul") {
+        SettingsGroup(title: "Account") {
+            NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit profile") {
                 EditProfileView().environmentObject(profileService)
             }
-            TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Schimbă e-mailul") {
+            TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change email") {
                 showChangeEmail = true
             }
-            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Schimbă parola") {
+            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Change password") {
                 showChangePassword = true
             }
-            NavSettingsRow(icon: "shield.fill", color: .purple, label: "Siguranță și securitate") {
+            NavSettingsRow(icon: "shield.fill", color: .purple, label: "Safety and security") {
                 SecurityView().environmentObject(auth)
             }
-            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Contact de încredere") {
+            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Trusted contact") {
                 TrustedContactView().environmentObject(auth)
             }
-            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notificări") {
+            NavSettingsRow(icon: "bell.fill", color: .red, label: "Notifications") {
                 NotificationsSettingsView()
                     .environmentObject(notificationScheduler)
                     .environmentObject(taskService)
@@ -391,7 +391,7 @@ private struct ChangeEmailSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             TextField(ph, text: b)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).autocorrectionDisabled().textInputAutocapitalization(.never)
         }.padding(.horizontal, 16).padding(.vertical, 14)
     }
@@ -453,7 +453,7 @@ private struct ChangePasswordSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             SecureField(ph, text: b)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, 16).padding(.vertical, 14)
     }
 }

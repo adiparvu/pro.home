@@ -31,7 +31,7 @@ struct AccountSwitcherSheet: View {
                             showAddAccount = true
                         }
                     } label: {
-                        Label("Adaugă cont", systemImage: "plus.circle.fill")
+                        Label("Add account", systemImage: "plus.circle.fill")
                             .foregroundStyle(.blue)
                     }
                 }
@@ -44,11 +44,11 @@ struct AccountSwitcherSheet: View {
                     }
                 }
             }
-            .navigationTitle("Conturi")
+            .navigationTitle("Accounts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Închide") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
         }
@@ -63,7 +63,7 @@ struct AccountSwitcherSheet: View {
             try await auth.switchTo(account: account)
             dismiss()
         } catch {
-            switchError = "Nu s-a putut comuta contul. Reautentifică-te."
+            switchError = "Could not switch account. Please sign in again."
         }
         isSwitching = false
     }

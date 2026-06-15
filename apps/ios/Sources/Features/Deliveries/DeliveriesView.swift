@@ -324,7 +324,7 @@ struct DeliveryRow: View {
             } label: {
                 Label("Edit", systemImage: "pencil")
             }
-            .tint(.blue)
+            .tint(.accentColor)
         }
         .contextMenu {
             if delivery.isActive {
@@ -451,7 +451,7 @@ struct DeliveryFormSheet: View {
             TextField("e.g. Laptop, Shoes, Book…", text: $description)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .padding(14)
                 .background(
                     Color.primary.opacity(0.07),
@@ -466,7 +466,7 @@ struct DeliveryFormSheet: View {
             TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.characters)
                 .padding(14)
@@ -483,7 +483,7 @@ struct DeliveryFormSheet: View {
             TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .lineLimit(2...4)
                 .padding(14)
                 .background(
@@ -609,7 +609,7 @@ struct DeliveryFormSheet: View {
                                 .foregroundStyle(.primary)
                         }
                     }
-                    .tint(.blue)
+                    .tint(.accentColor)
 
                     if hasExpectedDate {
                         Divider().opacity(0.3)
@@ -621,7 +621,7 @@ struct DeliveryFormSheet: View {
                         )
                         .labelsHidden()
                         .datePickerStyle(.graphical)
-                        .tint(.blue)
+                        .tint(.accentColor)
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }

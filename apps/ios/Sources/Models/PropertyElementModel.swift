@@ -94,10 +94,10 @@ enum WarrantyStatus {
     }
     var label: String {
         switch self {
-        case .none:         return "Fără garanție"
-        case .valid:        return "În garanție"
-        case .expiringSoon: return "Expiră curând"
-        case .expired:      return "Garanție expirată"
+        case .none:         return "No warranty"
+        case .valid:        return "Under warranty"
+        case .expiringSoon: return "Expiring soon"
+        case .expired:      return "Warranty expired"
         }
     }
 }
@@ -125,23 +125,23 @@ enum PropertyElementType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .house:           return "Casă"
-        case .garage:          return "Garaj"
-        case .gazebo:          return "Foișor"
-        case .pool:            return "Piscină"
-        case .yard:            return "Curte"
-        case .lawn:            return "Gazon"
-        case .tree:            return "Pom"
-        case .fence:           return "Gard"
-        case .gate:            return "Poartă"
-        case .camera:          return "Cameră supraveghere"
-        case .irrigation:      return "Sistem irigații"
-        case .solar:           return "Panouri fotovoltaice"
-        case .boiler:          return "Centrală termică"
-        case .electricalPanel: return "Tablou electric"
-        case .shed:            return "Magazie"
-        case .pet:             return "Animal"
-        case .other:           return "Altul"
+        case .house:           return "House"
+        case .garage:          return "Garage"
+        case .gazebo:          return "Gazebo"
+        case .pool:            return "Pool"
+        case .yard:            return "Yard"
+        case .lawn:            return "Lawn"
+        case .tree:            return "Tree"
+        case .fence:           return "Fence"
+        case .gate:            return "Gate"
+        case .camera:          return "Security camera"
+        case .irrigation:      return "Irrigation system"
+        case .solar:           return "Solar panels"
+        case .boiler:          return "Boiler"
+        case .electricalPanel: return "Electrical panel"
+        case .shed:            return "Shed"
+        case .pet:             return "Pet"
+        case .other:           return "Other"
         }
     }
 
@@ -206,11 +206,11 @@ enum TechnicalCondition: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .excellent: return "Excelentă"
-        case .good:      return "Bună"
-        case .fair:      return "Acceptabilă"
-        case .poor:      return "Degradată"
-        case .critical:  return "Critică"
+        case .excellent: return "Excellent"
+        case .good:      return "Good"
+        case .fair:      return "Fair"
+        case .poor:      return "Poor"
+        case .critical:  return "Critical"
         }
     }
 
@@ -246,10 +246,10 @@ enum PropertyLayer: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .property:    return "Proprietate"
-        case .maintenance: return "Mentenanță"
-        case .utility:     return "Utilități"
-        case .financial:   return "Financiar"
+        case .property:    return "Property"
+        case .maintenance: return "Maintenance"
+        case .utility:     return "Utilities"
+        case .financial:   return "Financial"
         case .smartHome:   return "Smart Home"
         }
     }
@@ -312,10 +312,10 @@ enum ElementRecordType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .note:        return "Notă"
-        case .maintenance: return "Lucrare"
+        case .note:        return "Note"
+        case .maintenance: return "Work"
         case .cost:        return "Cost"
-        case .inspection:  return "Inspecție"
+        case .inspection:  return "Inspection"
         case .reminder:    return "Reminder"
         }
     }

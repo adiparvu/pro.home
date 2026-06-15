@@ -215,7 +215,7 @@ private struct EditBudgetSheet: View {
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)
                                     .font(.system(size: 40, weight: .light))
                                     .foregroundStyle(.primary)
-                                    .tint(.blue)
+                                    .tint(.accentColor)
                                     .keyboardType(.decimalPad)
                                     .focused($focused)
                             }

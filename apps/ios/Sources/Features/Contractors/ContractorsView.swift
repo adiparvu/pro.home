@@ -100,7 +100,7 @@ struct ContractorsView: View {
                 if !service.contractors.isEmpty {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
-                        TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                        TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
                     .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -182,8 +182,8 @@ private struct ContractorRow: View {
                             .font(.system(size: 16))
                             .foregroundStyle(.primary)
                             .frame(width: 38, height: 38)
-                            .glassCircle()
                     }
+                    .glassCircle()
                 }
             }
         }
@@ -235,7 +235,7 @@ private struct AddContractorSheet: View {
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
+            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }

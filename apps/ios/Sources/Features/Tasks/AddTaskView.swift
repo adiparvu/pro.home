@@ -159,12 +159,12 @@ struct AddTaskView: View {
             Toggle(isOn: $hasDueDate.animation()) {
                 fieldLabel("Due Date")
             }
-            .tint(.blue)
+            .tint(.accentColor)
             if hasDueDate {
                 DatePicker("", selection: $dueDate, displayedComponents: .date)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
         }
     }
@@ -240,7 +240,7 @@ struct AddTaskView: View {
                 }
                 Spacer()
                 Toggle("", isOn: $addToCalendar)
-                    .tint(.blue)
+                    .tint(.accentColor)
                     .labelsHidden()
                     .disabled(!hasDueDate)
             }
@@ -359,12 +359,12 @@ struct AddTaskView: View {
         let center = UNUserNotificationCenter.current()
         let taskTitle = title.trimmingCharacters(in: .whitespaces)
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let display = DateFormatter(); display.locale = Locale(identifier: "ro_RO"); display.dateStyle = .medium
+        let display = DateFormatter(); display.locale = Locale(identifier: "en_US"); display.dateStyle = .medium
         let dateStr = hasDueDate ? display.string(from: dueDate) : ""
         for name in assigneeNames {
             let content = UNMutableNotificationContent()
-            content.title = "Sarcină atribuită"
-            content.body = "\(name), ai o sarcină nouă: „\(taskTitle)”\(dateStr.isEmpty ? "" : " · Termen: \(dateStr)")"
+            content.title = “Task assigned”
+            content.body = “\(name), you have a new task: \”\(taskTitle)\”\(dateStr.isEmpty ? “” : “ · Due: \(dateStr)”)”
             content.sound = .default
             content.badge = 1
             let req = UNNotificationRequest(
@@ -428,7 +428,7 @@ struct AssigneePickerSheet: View {
                             if showCustom {
                                 HStack(spacing: 10) {
                                     TextField("Name", text: $customName)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .padding(.horizontal, 14).padding(.vertical, 11)
                                         .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
                                     Button {

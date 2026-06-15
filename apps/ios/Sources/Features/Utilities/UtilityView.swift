@@ -339,7 +339,7 @@ struct AddUtilitySheet: View {
                                     Spacer()
                                     TextField("0.00", text: $amount)
                                         .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
-                                        .tint(.blue).keyboardType(.decimalPad)
+                                        .tint(.accentColor).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
                                 }.padding(.vertical, 4)
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
@@ -348,12 +348,12 @@ struct AddUtilitySheet: View {
                                     Spacer()
                                     TextField("0", text: $consumption)
                                         .font(.system(size: 16)).foregroundStyle(.primary)
-                                        .tint(.blue).keyboardType(.decimalPad)
+                                        .tint(.accentColor).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
                                 }.padding(.vertical, 4)
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
                                 DatePicker("Month", selection: $month, displayedComponents: [.date])
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                             }
                         }
                         Spacer(minLength: 20)

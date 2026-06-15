@@ -4,7 +4,7 @@ import Foundation
 // MARK: - Task Entity
 
 struct TaskEntity: AppEntity {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Sarcină"
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Task"
     static var defaultQuery = TaskEntityQuery()
 
     var id: UUID
@@ -35,7 +35,7 @@ struct TaskEntityQuery: EntityQuery {
 // MARK: - Plant Entity
 
 struct PlantEntity: AppEntity {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Plantă"
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Plant"
     static var defaultQuery = PlantEntityQuery()
 
     var id: UUID

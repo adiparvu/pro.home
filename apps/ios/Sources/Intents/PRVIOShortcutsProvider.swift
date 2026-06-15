@@ -7,10 +7,11 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             intent: CreateTaskIntent(),
             phrases: [
                 "Create task in \(.applicationName)",
+                "New task in \(.applicationName)",
                 "Adaugă sarcină în \(.applicationName)",
                 "Sarcină nouă în \(.applicationName)"
             ],
-            shortTitle: "Sarcină nouă",
+            shortTitle: "New task",
             systemImageName: "checklist"
         )
         AppShortcut(
@@ -20,7 +21,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
                 "Udă planta în \(.applicationName)",
                 "Marchează udat în \(.applicationName)"
             ],
-            shortTitle: "Udă plante",
+            shortTitle: "Water plants",
             systemImageName: "drop.fill"
         )
         AppShortcut(
@@ -30,7 +31,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
                 "Deschide cumpărăturile în \(.applicationName)",
                 "Listă cumpărături în \(.applicationName)"
             ],
-            shortTitle: "Cumpărături",
+            shortTitle: "Shopping",
             systemImageName: "cart.fill"
         )
         AppShortcut(
@@ -40,7 +41,7 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
                 "Deschide chat-ul în \(.applicationName)",
                 "Chat familie în \(.applicationName)"
             ],
-            shortTitle: "Chat familie",
+            shortTitle: "Family chat",
             systemImageName: "message.fill"
         )
     }

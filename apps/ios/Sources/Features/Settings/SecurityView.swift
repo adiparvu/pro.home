@@ -185,7 +185,7 @@ struct SecurityView: View {
                     }
                     Spacer()
                     Toggle("", isOn: $biometricsEnabled)
-                        .labelsHidden().tint(.blue)
+                        .labelsHidden().tint(.accentColor)
                         .onChange(of: biometricsEnabled) { _, newVal in
                             if newVal { Task { await authenticateBiometric() } }
                         }

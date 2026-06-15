@@ -464,7 +464,7 @@ struct ToggleSettingsRow: View {
             Spacer()
             Toggle("", isOn: $value)
                 .labelsHidden()
-                .tint(.blue)
+                .tint(.accentColor)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

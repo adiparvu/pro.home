@@ -420,7 +420,7 @@ private struct AddPlanSheet: View {
         HStack(spacing: 12) {
             Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             TextField("Name", text: $name)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))

@@ -38,7 +38,7 @@ struct PropertyHealthDashboardView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Închide") { dismiss() }.foregroundStyle(.secondary)
+                    Button("Close") { dismiss() }.foregroundStyle(.secondary)
                 }
             }
         }
@@ -81,9 +81,9 @@ struct PropertyHealthDashboardView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 16) {
-                        miniStat(label: "Elemente", value: "\(elementService.elements.count)")
-                        miniStat(label: "Critice", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondary : Color.red)
-                        miniStat(label: "Atenție", value: "\(elementService.elementsNeedingAttention.count)", color: .orange)
+                        miniStat(label: "Elements", value: "\(elementService.elements.count)")
+                        miniStat(label: "Critical", value: "\(elementService.criticalElements.count)", color: elementService.criticalElements.isEmpty ? Color.secondary : Color.red)
+                        miniStat(label: "Attention", value: "\(elementService.elementsNeedingAttention.count)", color: .orange)
                     }
                 }
                 Spacer()
@@ -95,7 +95,7 @@ struct PropertyHealthDashboardView: View {
 
     private var criticalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Necesită atenție urgentă", systemImage: "exclamationmark.triangle.fill")
+            Label("Requires urgent attention", systemImage: "exclamationmark.triangle.fill")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.red)
             ForEach(elementService.criticalElements.prefix(3)) { el in
@@ -108,7 +108,7 @@ struct PropertyHealthDashboardView: View {
 
     private var allElementsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Toate elementele")
+            Text("All elements")
                 .font(.subheadline.weight(.semibold))
             ForEach(elementService.elements.sorted { $0.healthScore < $1.healthScore }) { el in
                 HealthElementRow(element: el)
@@ -164,7 +164,7 @@ struct PropertyHealthDashboardView: View {
         GlassCard(padding: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Valoare totală estimată", systemImage: "banknote")
+                    Label("Total estimated value", systemImage: "banknote")
                         .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(currencyService.formatted(elementService.totalEstimatedValue(), from: "EUR", preferred: appSettings.preferredCurrency))
                         .font(.title3.weight(.bold))
@@ -191,26 +191,26 @@ struct PropertyHealthDashboardView: View {
                     if let worst = elementService.elements.min(by: { $0.healthScore < $1.healthScore }) {
                         aiTip(
                             icon: "wrench.and.screwdriver",
-                            title: "Prioritate: \(worst.name)",
-                            desc: "Cel mai mic scor (\(worst.healthScore)/100). Recomandăm o inspecție în 30 de zile.",
+                            title: "Priority: \(worst.name)",
+                            desc: "Lowest score (\(worst.healthScore)/100). We recommend an inspection within 30 days.",
                             color: worst.healthColor
                         )
                     }
                     aiTip(
                         icon: "calendar.badge.clock",
-                        title: "Revizie periodică",
-                        desc: "Planifică revizii anuale pentru centrală termică și tabloul electric.",
+                        title: "Periodic review",
+                        desc: "Schedule annual reviews for the boiler and electrical panel.",
                         color: .orange
                     )
                     aiTip(
                         icon: "chart.line.uptrend.xyaxis",
-                        title: "Analiză costuri",
-                        desc: "Adaugă costuri de mentenanță pentru o predicție precisă a cheltuielilor.",
+                        title: "Cost analysis",
+                        desc: "Add maintenance costs for an accurate expense prediction.",
                         color: Color(red: 0.29, green: 0.56, blue: 0.89)
                     )
                 }
 
-                Text("Funcționalitate AI completă — integrare cu ARIA în versiunea viitoare")
+                Text("Full AI functionality — ARIA integration coming in next version")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -252,11 +252,11 @@ struct PropertyHealthDashboardView: View {
 
     private func scoreLabel(_ score: Int) -> String {
         switch score {
-        case 90...100: return "Proprietate în stare excelentă"
-        case 70..<90:  return "Proprietate în stare bună"
-        case 50..<70:  return "Câteva elemente necesită atenție"
-        case 25..<50:  return "Mai multe probleme identificate"
-        default:       return "Intervenție urgentă necesară"
+        case 90...100: return "Property in excellent condition"
+        case 70..<90:  return "Property in good condition"
+        case 50..<70:  return "Some elements need attention"
+        case 25..<50:  return "Multiple issues identified"
+        default:       return "Urgent intervention required"
         }
     }
 }

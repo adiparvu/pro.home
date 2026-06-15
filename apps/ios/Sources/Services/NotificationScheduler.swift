@@ -49,20 +49,20 @@ final class NotificationScheduler: ObservableObject {
     // MARK: - Category registration
 
     func registerCategories() {
-        let taskComplete = UNNotificationAction(identifier: "TASK_COMPLETE", title: "Finalizat ✓",
+        let taskComplete = UNNotificationAction(identifier: "TASK_COMPLETE", title: "Completed ✓",
                                                 options: [.authenticationRequired])
-        let taskRemind   = UNNotificationAction(identifier: "TASK_REMIND",   title: "Reamintește mâine", options: [])
+        let taskRemind   = UNNotificationAction(identifier: "TASK_REMIND",   title: "Remind me tomorrow", options: [])
         let taskCategory = UNNotificationCategory(identifier: "TASK",
                                                   actions: [taskComplete, taskRemind],
                                                   intentIdentifiers: [], options: [])
 
-        let plantWatered = UNNotificationAction(identifier: "PLANT_WATERED", title: "Am udat 💧", options: [])
-        let plantRemind  = UNNotificationAction(identifier: "PLANT_REMIND",  title: "Reamintește în 2h", options: [])
+        let plantWatered = UNNotificationAction(identifier: "PLANT_WATERED", title: "Watered 💧", options: [])
+        let plantRemind  = UNNotificationAction(identifier: "PLANT_REMIND",  title: "Remind me in 2h", options: [])
         let plantCategory = UNNotificationCategory(identifier: "PLANT",
                                                    actions: [plantWatered, plantRemind],
                                                    intentIdentifiers: [], options: [])
 
-        let supplyAdd     = UNNotificationAction(identifier: "SUPPLY_ADD",   title: "Adaugă în listă",
+        let supplyAdd     = UNNotificationAction(identifier: "SUPPLY_ADD",   title: "Add to list",
                                                  options: [.foreground])
         let supplyCategory = UNNotificationCategory(identifier: "SUPPLY",
                                                     actions: [supplyAdd],
@@ -87,8 +87,8 @@ final class NotificationScheduler: ObservableObject {
 
         for plant in plants where plant.needsWatering || plant.daysUntilWatering <= 1 {
             let content = UNMutableNotificationContent()
-            content.title = "Timp să udăm plantele! 💧"
-            content.body  = "\(plant.emoji) \(plant.name) are nevoie de apă"
+            content.title = "Time to water the plants! 💧"
+            content.body  = "\(plant.emoji) \(plant.name) needs water"
             content.sound = .default
             content.categoryIdentifier = "PLANT"
             content.userInfo = ["plantId": plant.id.uuidString]

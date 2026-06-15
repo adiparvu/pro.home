@@ -66,11 +66,11 @@ struct GlobalSearchSheet: View {
                 }
             }
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle("Căutare globală")
+            .navigationTitle("Global Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Închide") { dismiss() }
+                    Button("Close") { dismiss() }
                         .font(.system(size: 15, weight: .semibold))
                 }
             }
@@ -85,10 +85,10 @@ struct GlobalSearchSheet: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.secondary)
-            TextField("Sarcini, documente, proprietăți…", text: $query)
+            TextField("Tasks, documents, properties…", text: $query)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .focused($focused)
                 .submitLabel(.search)
             if !query.isEmpty {
@@ -114,10 +114,10 @@ struct GlobalSearchSheet: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Caută în toată aplicația")
+            Text("Search across the entire app")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
-            Text("Sarcini · Plante · Documente · Livrări")
+            Text("Tasks · Plants · Documents · Deliveries")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
             Spacer()
@@ -131,7 +131,7 @@ struct GlobalSearchSheet: View {
             Image(systemName: "questionmark.magnifyingglass")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Niciun rezultat pentru")
+            Text("No results for")
                 .font(.system(size: 15))
                 .foregroundStyle(Color.primary.opacity(0.45))
             Text("„\(query)”")
@@ -148,7 +148,7 @@ struct GlobalSearchSheet: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 if !taskResults.isEmpty {
-                    resultSection("Sarcini", icon: "checklist", color: .blue) {
+                    resultSection("Tasks", icon: "checklist", color: .blue) {
                         ForEach(taskResults.prefix(8)) { task in
                             resultRow(task.title,
                                       subtitle: task.dueDateDisplay,
@@ -158,27 +158,27 @@ struct GlobalSearchSheet: View {
                     }
                 }
                 if !plantResults.isEmpty {
-                    resultSection("Plante", icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)) {
+                    resultSection("Plants", icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)) {
                         ForEach(plantResults.prefix(8)) { plant in
                             resultRow("\(plant.emoji) \(plant.name)",
-                                      subtitle: plant.needsWatering ? "Necesită udare" : plant.wateringLabel,
+                                      subtitle: plant.needsWatering ? "Needs watering" : plant.wateringLabel,
                                       icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40),
                                       isLast: plant.id == plantResults.prefix(8).last?.id)
                         }
                     }
                 }
                 if !docResults.isEmpty {
-                    resultSection("Documente", icon: "doc.fill", color: .orange) {
+                    resultSection("Documents", icon: "doc.fill", color: .orange) {
                         ForEach(docResults.prefix(8)) { doc in
                             resultRow(doc.name,
-                                      subtitle: doc.expiresDisplay ?? "Fără dată de expirare",
+                                      subtitle: doc.expiresDisplay ?? "No expiry date",
                                       icon: "doc.fill", color: .orange,
                                       isLast: doc.id == docResults.prefix(8).last?.id)
                         }
                     }
                 }
                 if !deliveryResults.isEmpty {
-                    resultSection("Livrări", icon: "shippingbox.fill", color: .orange) {
+                    resultSection("Deliveries", icon: "shippingbox.fill", color: .orange) {
                         ForEach(deliveryResults.prefix(8)) { delivery in
                             resultRow(delivery.description,
                                       subtitle: "\(delivery.carrier) · \(delivery.statusLabel)",

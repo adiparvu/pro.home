@@ -51,6 +51,7 @@ serve(async (req) => {
       },
     })
 
+    let inviteUrl: string
     if (linkError) {
       // User might already exist — fall back to a magic link
       const { data: mlData, error: mlError } = await admin.auth.admin.generateLink({
@@ -64,10 +65,9 @@ serve(async (req) => {
           headers: { ...CORS, 'Content-Type': 'application/json' },
         })
       }
-      // Use magic link URL
-      var inviteUrl = mlData.properties.action_link
+      inviteUrl = mlData.properties.action_link
     } else {
-      var inviteUrl = linkData.properties.action_link
+      inviteUrl = linkData.properties.action_link
     }
 
     const displayProperty = propertyName ?? 'your property'

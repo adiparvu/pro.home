@@ -9,13 +9,13 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .tasks:       return "Sarcini"
-        case .finances:    return "Finanțe"
-        case .documents:   return "Documente"
-        case .family:      return "Familie"
-        case .healthScore: return "Scor sănătate"
-        case .inventory:   return "Inventar"
-        case .contractors: return "Contractori"
+        case .tasks:       return "Tasks"
+        case .finances:    return "Finances"
+        case .documents:   return "Documents"
+        case .family:      return "Family"
+        case .healthScore: return "Health Score"
+        case .inventory:   return "Inventory"
+        case .contractors: return "Contractors"
         case .calendar:    return "Calendar"
         }
     }
@@ -70,11 +70,11 @@ struct WidgetPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                PageHeader(title: "Widgeturi", subtitle: "ACASĂ")
+                PageHeader(title: "Widgets", subtitle: "HOME")
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        Text("Alege ce widgeturi apar pe ecranul principal. Trage pentru a reordona.")
+                        Text("Choose which widgets appear on the home screen. Drag to reorder.")
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,7 +137,7 @@ struct WidgetPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Gata") {
+                    Button("Done") {
                         HomeWidgetType.save(Array(enabled))
                         appSettings.objectWillChange.send()
                         HapticFeedback.success()

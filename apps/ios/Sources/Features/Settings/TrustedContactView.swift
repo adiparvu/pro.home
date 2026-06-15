@@ -113,7 +113,7 @@ struct TrustedContactView: View {
             TextField(placeholder, text: text)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .keyboardType(keyboard)
                 .autocorrectionDisabled(keyboard != .default)
         }

@@ -128,7 +128,7 @@ struct FinancesView: View {
                 bottomPadding: 110
             )
         }
-        .navigationTitle("Finanțe")
+        .navigationTitle("Finances")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
@@ -148,13 +148,13 @@ struct FinancesView: View {
     private var filterMenu: some View {
         Menu {
             Button { withAnimation(.spring(response: 0.25)) { selectedType = nil } } label: {
-                Label("Toate", systemImage: "tray.full")
+                Label("All", systemImage: "tray.full")
             }
             Button { withAnimation(.spring(response: 0.25)) { selectedType = "income" } } label: {
-                Label("Venituri", systemImage: "arrow.down.left")
+                Label("Income", systemImage: "arrow.down.left")
             }
             Button { withAnimation(.spring(response: 0.25)) { selectedType = "expense" } } label: {
-                Label("Cheltuieli", systemImage: "arrow.up.right")
+                Label("Expenses", systemImage: "arrow.up.right")
             }
         } label: {
             Image(systemName: selectedType == nil
@@ -207,7 +207,7 @@ struct FinancesView: View {
 
             // Net balance
             VStack(spacing: 4) {
-                Text(isCurrentMonth ? "Balanță luna curentă" : "Balanță")
+                Text(isCurrentMonth ? "Current month balance" : "Balance")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(0.45))
 
@@ -227,12 +227,12 @@ struct FinancesView: View {
 
     private var kpiStrip: some View {
         HStack(spacing: 0) {
-            kpiCell(label: "Venituri", value: fmt(income), color: Color(red: 0.25, green: 0.82, blue: 0.5), icon: "arrow.down.left")
+            kpiCell(label: "Income", value: fmt(income), color: Color(red: 0.25, green: 0.82, blue: 0.5), icon: "arrow.down.left")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
-            kpiCell(label: "Cheltuieli", value: fmt(expenses), color: .red, icon: "arrow.up.right")
+            kpiCell(label: "Expenses", value: fmt(expenses), color: .red, icon: "arrow.up.right")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
             let savingsRate = income > 0 ? max(0, (income - expenses) / income * 100) : 0
-            kpiCell(label: "Economii", value: String(format: "%.0f%%", savingsRate),
+            kpiCell(label: "Savings", value: String(format: "%.0f%%", savingsRate),
                     color: savingsRate >= 20 ? Color(red: 0.25, green: 0.82, blue: 0.5) : savingsRate >= 10 ? .orange : .red,
                     icon: "percent")
         }
@@ -269,12 +269,12 @@ struct FinancesView: View {
                     .environmentObject(budgetService)
                     .environmentObject(financialService)
             } label: {
-                actionTile(icon: "chart.pie.fill", label: "Buget", color: .blue)
+                actionTile(icon: "chart.pie.fill", label: "Budget", color: .blue)
             }
             .buttonStyle(.plain)
 
             NavigationLink { MortgageView() } label: {
-                actionTile(icon: "house.and.flag.fill", label: "Credit", color: .purple)
+                actionTile(icon: "house.and.flag.fill", label: "Mortgage", color: .purple)
             }
             .buttonStyle(.plain)
         }
@@ -337,7 +337,7 @@ struct FinancesView: View {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
                                             Task { await financialService.delete(record) }
-                                        } label: { Label("Șterge", systemImage: "trash") }
+                                        } label: { Label("Delete", systemImage: "trash") }
                                     }
                                 if idx < group.records.count - 1 {
                                     Divider().padding(.leading, 68).opacity(0.5)
@@ -361,10 +361,10 @@ struct FinancesView: View {
                     .font(.system(size: 28))
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            Text("Nicio tranzacție")
+            Text("No transactions")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.55))
-            Text("Adaugă prima tranzacție apăsând +")
+            Text("Add your first transaction by tapping +")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.35))
         }
@@ -376,17 +376,17 @@ struct FinancesView: View {
 
     private var monthLabel: String {
         let f = DateFormatter()
-        f.dateFormat = isCurrentMonth ? "'Luna curentă'" : "MMMM yyyy"
-        f.locale = Locale(identifier: "ro_RO")
-        return isCurrentMonth ? "Luna curentă" : f.string(from: displayedMonth).capitalized
+        f.dateFormat = isCurrentMonth ? "'Current month'" : "MMMM yyyy"
+        f.locale = Locale(identifier: "en_US")
+        return isCurrentMonth ? "Current month" : f.string(from: displayedMonth).capitalized
     }
 
     private func groupDateLabel(_ dateStr: String) -> String {
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         guard let d = iso.date(from: dateStr) else { return dateStr }
-        if Calendar.current.isDateInToday(d) { return "Astăzi" }
-        if Calendar.current.isDateInYesterday(d) { return "Ieri" }
-        let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = Locale(identifier: "ro_RO")
+        if Calendar.current.isDateInToday(d) { return "Today" }
+        if Calendar.current.isDateInYesterday(d) { return "Yesterday" }
+        let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = Locale(identifier: "en_US")
         return out.string(from: d)
     }
 

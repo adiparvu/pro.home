@@ -86,7 +86,7 @@ struct DashboardView: View {
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
                 NotificationsSettingsView()
-                    .navigationTitle("Notificări")
+                    .navigationTitle("Notifications")
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
@@ -168,6 +168,7 @@ struct DashboardView: View {
                 .foregroundStyle(healthScoreColor(score))
                 .frame(width: 38, height: 38)
                 .glassCircle()
+                .allowsHitTesting(false)
             }
 
             // Global search
@@ -179,9 +180,9 @@ struct DashboardView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.primary.opacity(0.7))
                     .frame(width: 38, height: 38)
-                    .glassCircle()
             }
             .buttonStyle(.plain)
+            .glassCircle()
 
             // Notifications
             Button {
@@ -192,9 +193,9 @@ struct DashboardView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.7))
                     .frame(width: 38, height: 38)
-                    .glassCircle()
             }
             .buttonStyle(.plain)
+            .glassCircle()
         }
     }
 
@@ -214,9 +215,9 @@ struct DashboardView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.primary.opacity(0.7))
                     .frame(width: 32, height: 32)
-                    .glassCircle()
             }
             .buttonStyle(.plain)
+            .glassCircle()
         }
     }
 
@@ -225,10 +226,10 @@ struct DashboardView: View {
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
-        case 5..<12:  return "Bună dimineața 🌅"
-        case 12..<18: return "Bună ziua 👋"
-        case 18..<22: return "Bună seara 🌇"
-        default:      return "Noapte bună 🌙"
+        case 5..<12:  return "Good morning 🌅"
+        case 12..<18: return "Good afternoon 👋"
+        case 18..<22: return "Good evening 🌇"
+        default:      return "Good night 🌙"
         }
     }
 
@@ -275,15 +276,15 @@ struct DashboardView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(width: 38, height: 38)
-                        .glassCircle()
                 }
                 .buttonStyle(.plain)
+                .glassCircle()
                 .padding(12)
             }
 
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(propertyService.primary?.name ?? "Proprietatea mea")
+                    Text(propertyService.primary?.name ?? "My property")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
                     if let addr = propertyService.primary?.addressLine1 {
@@ -336,9 +337,9 @@ struct DashboardView: View {
             HomeWidget(
                 icon: "checklist",
                 iconColor: taskService.overdueCount > 0 ? .red : Color(red: 0.35, green: 0.65, blue: 1.0),
-                title: "Sarcini",
+                title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
-                subtitle: taskService.overdueCount > 0 ? "urgente" : "active",
+                subtitle: taskService.overdueCount > 0 ? "urgent" : "active",
                 badge: taskService.overdueCount
             ) { router.selectedTab = .tasks }
 
@@ -347,9 +348,9 @@ struct DashboardView: View {
                 icon: "creditcard.fill",
                 iconColor: financialService.currentMonthNet >= 0
                     ? Color(red: 0.3, green: 0.85, blue: 0.45) : .orange,
-                title: "Finanțe",
+                title: "Finances",
                 value: netFormatted,
-                subtitle: "luna aceasta"
+                subtitle: "this month"
             ) { router.selectedTab = .analytics }
 
         case .documents:
@@ -357,11 +358,11 @@ struct DashboardView: View {
                 icon: "doc.fill",
                 iconColor: documentService.expiringDocs.isEmpty
                     ? Color(red: 0.55, green: 0.55, blue: 0.95) : .orange,
-                title: "Documente",
+                title: "Documents",
                 value: documentService.expiringDocs.isEmpty
                     ? "\(documentService.documents.count)"
                     : "\(documentService.expiringDocs.count)",
-                subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiră curând",
+                subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiring soon",
                 badge: documentService.expiringDocs.count
             ) { router.selectedTab = .settings }
 
@@ -369,36 +370,36 @@ struct DashboardView: View {
             HomeWidget(
                 icon: "person.2.fill",
                 iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
-                title: "Familie",
+                title: "Family",
                 value: "\(familyService.members.count)",
-                subtitle: familyService.members.count == 1 ? "membru" : "membri"
+                subtitle: familyService.members.count == 1 ? "member" : "members"
             ) { router.selectedTab = .settings }
 
         case .healthScore:
             HomeWidget(
                 icon: "heart.fill",
                 iconColor: .red,
-                title: "Sănătate",
+                title: "Health",
                 value: propertyService.primary?.healthScore.map { "\($0)" } ?? "–",
-                subtitle: "scor proprietate"
+                subtitle: "property score"
             ) { }
 
         case .inventory:
             HomeWidget(
                 icon: "shippingbox.fill",
                 iconColor: .orange,
-                title: "Inventar",
+                title: "Inventory",
                 value: "–",
-                subtitle: "obiecte"
+                subtitle: "items"
             ) { router.selectedTab = .settings }
 
         case .contractors:
             HomeWidget(
                 icon: "hammer.fill",
                 iconColor: Color(red: 0.9, green: 0.65, blue: 0.2),
-                title: "Contractori",
+                title: "Contractors",
                 value: "–",
-                subtitle: "activi"
+                subtitle: "active"
             ) { router.selectedTab = .settings }
 
         case .calendar:
@@ -426,7 +427,7 @@ struct DashboardView: View {
     private var monthName: String {
         let f = DateFormatter()
         f.dateFormat = "MMMM"
-        f.locale = Locale(identifier: "ro_RO")
+        f.locale = Locale(identifier: "en_US")
         return f.string(from: Date())
     }
 
@@ -524,9 +525,9 @@ struct HomeWidget: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .liquidGlass(cornerRadius: 16)
         }
         .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: 16)
     }
 }
 
@@ -659,17 +660,17 @@ struct PropertySection: Identifiable {
     }
 
     static let all: [PropertySection] = [
-        PropertySection(name: "Casă",      icon: "house.fill",       color: Color(red: 0.35, green: 0.65, blue: 1.0),  latOffset:  1.2, lonOffset:  0.0),
-        PropertySection(name: "Curte",     icon: "leaf.fill",        color: Color(red: 0.3,  green: 0.85, blue: 0.45), latOffset: -0.8, lonOffset:  0.9),
-        PropertySection(name: "Garaj",     icon: "car.fill",         color: Color(red: 0.9,  green: 0.65, blue: 0.2),  latOffset: -1.2, lonOffset: -0.5),
-        PropertySection(name: "Grădină",   icon: "tree.fill",        color: Color(red: 0.25, green: 0.75, blue: 0.35), latOffset:  0.5, lonOffset:  1.3),
+        PropertySection(name: "House",      icon: "house.fill",       color: Color(red: 0.35, green: 0.65, blue: 1.0),  latOffset:  1.2, lonOffset:  0.0),
+        PropertySection(name: "Yard",      icon: "leaf.fill",        color: Color(red: 0.3,  green: 0.85, blue: 0.45), latOffset: -0.8, lonOffset:  0.9),
+        PropertySection(name: "Garage",    icon: "car.fill",         color: Color(red: 0.9,  green: 0.65, blue: 0.2),  latOffset: -1.2, lonOffset: -0.5),
+        PropertySection(name: "Garden",    icon: "tree.fill",        color: Color(red: 0.25, green: 0.75, blue: 0.35), latOffset:  0.5, lonOffset:  1.3),
         PropertySection(name: "Solar",     icon: "sun.max.fill",     color: Color(red: 1.0,  green: 0.85, blue: 0.2),  latOffset:  1.0, lonOffset: -1.2),
-        PropertySection(name: "Foișor",    icon: "umbrella.fill",    color: Color(red: 0.7,  green: 0.45, blue: 0.95), latOffset: -0.5, lonOffset:  1.5),
-        PropertySection(name: "Piscină",   icon: "drop.fill",        color: Color(red: 0.2,  green: 0.75, blue: 0.95), latOffset: -1.5, lonOffset:  0.8),
-        PropertySection(name: "Utilități", icon: "bolt.fill",        color: Color(red: 1.0,  green: 0.55, blue: 0.2),  latOffset:  0.8, lonOffset: -1.5),
-        PropertySection(name: "Proiecte",  icon: "hammer.fill",      color: Color(red: 0.95, green: 0.35, blue: 0.35), latOffset: -1.0, lonOffset: -1.3),
-        PropertySection(name: "Documente", icon: "doc.fill",         color: Color(red: 0.55, green: 0.55, blue: 0.95), latOffset:  1.5, lonOffset:  0.6),
-        PropertySection(name: "Inventar",  icon: "shippingbox.fill", color: Color(red: 0.8,  green: 0.5,  blue: 0.3),  latOffset: -0.3, lonOffset: -1.8),
+        PropertySection(name: "Gazebo",    icon: "umbrella.fill",    color: Color(red: 0.7,  green: 0.45, blue: 0.95), latOffset: -0.5, lonOffset:  1.5),
+        PropertySection(name: "Pool",      icon: "drop.fill",        color: Color(red: 0.2,  green: 0.75, blue: 0.95), latOffset: -1.5, lonOffset:  0.8),
+        PropertySection(name: "Utilities", icon: "bolt.fill",        color: Color(red: 1.0,  green: 0.55, blue: 0.2),  latOffset:  0.8, lonOffset: -1.5),
+        PropertySection(name: "Projects",  icon: "hammer.fill",      color: Color(red: 0.95, green: 0.35, blue: 0.35), latOffset: -1.0, lonOffset: -1.3),
+        PropertySection(name: "Documents", icon: "doc.fill",         color: Color(red: 0.55, green: 0.55, blue: 0.95), latOffset:  1.5, lonOffset:  0.6),
+        PropertySection(name: "Inventory", icon: "shippingbox.fill", color: Color(red: 0.8,  green: 0.5,  blue: 0.3),  latOffset: -0.3, lonOffset: -1.8),
     ]
 }
 

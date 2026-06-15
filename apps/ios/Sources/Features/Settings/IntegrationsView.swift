@@ -440,7 +440,7 @@ private struct IntegrationRow: View {
         case .notConnected:
             Toggle("", isOn: .constant(false))
                 .labelsHidden()
-                .tint(.blue)
+                .tint(.accentColor)
                 .onTapGesture { action?() }
                 .allowsHitTesting(true)
 

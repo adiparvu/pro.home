@@ -134,10 +134,10 @@ struct ZoneBottomSheet: View {
 
     private var actionRow: some View {
         HStack(spacing: 8) {
-            actionButton("Editează", icon: "slider.horizontal.3", tint: .blue, action: onEdit)
-            actionButton("Remodelează", icon: "pencil.and.outline", tint: .indigo, action: onReshape)
-            actionButton("Adaugă", icon: "plus", tint: .green, action: onAddObject)
-            actionButton("Șterge", icon: "trash", tint: .red, action: onDelete)
+            actionButton("Edit", icon: "slider.horizontal.3", tint: .blue, action: onEdit)
+            actionButton("Reshape", icon: "pencil.and.outline", tint: .indigo, action: onReshape)
+            actionButton("Add object", icon: "plus", tint: .green, action: onAddObject)
+            actionButton("Delete", icon: "trash", tint: .red, action: onDelete)
         }
     }
 
@@ -163,7 +163,7 @@ struct ZoneBottomSheet: View {
             Image(systemName: "cube.transparent")
                 .font(.system(size: 30))
                 .foregroundStyle(Color.primary.opacity(0.25))
-            Text("Niciun obiect în această zonă")
+            Text("No objects in this zone")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }

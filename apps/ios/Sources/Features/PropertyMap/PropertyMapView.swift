@@ -38,9 +38,9 @@ struct PropertyMapView: View {
                                 .foregroundStyle(isEditMode ? Color.green : .primary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 7)
-                                .glassRoundedRect(12)
                         }
                         .buttonStyle(.plain)
+                        .glassRoundedRect(12)
                     }
                 )
             )
@@ -395,9 +395,9 @@ struct PropertyMapView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 52, height: 52)
-                .glassCircle()
-                .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
         }
+        .glassCircle()
+        .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
     }
 
     // MARK: - Helpers

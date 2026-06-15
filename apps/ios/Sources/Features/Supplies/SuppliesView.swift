@@ -372,7 +372,7 @@ struct SupplyListDetailView: View {
             TextField("Search items…", text: $searchText)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
             if !searchText.isEmpty {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -628,7 +628,7 @@ private struct SupplyItemRow: View {
             Button { onEdit() } label: {
                 Label("Edit", systemImage: "pencil")
             }
-            .tint(.blue)
+            .tint(.accentColor)
         }
     }
 }
@@ -708,7 +708,7 @@ struct AddSupplyListSheet: View {
             Text("NAME")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
-                .font(.system(size: 16)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -719,7 +719,7 @@ struct AddSupplyListSheet: View {
             Text("NOTE (OPTIONAL)")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             TextField("Note about this list…", text: $note, axis: .vertical)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...4).padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -900,7 +900,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NAME")
             TextField("What needs to be bought?", text: $name)
-                .font(.system(size: 16)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -910,7 +910,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("QUANTITY (OPTIONAL)")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -920,7 +920,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -930,7 +930,7 @@ struct AddSupplyItemSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...5).padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }

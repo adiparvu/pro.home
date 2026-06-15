@@ -261,7 +261,7 @@ struct EditPropertySheet: View {
                                     TextField("Address", text: $addressLine1)
                                         .font(.system(size: 15))
                                         .foregroundStyle(.primary)
-                                        .tint(.blue)
+                                        .tint(.accentColor)
                                         .focused($addressFocused)
                                         .onChange(of: addressLine1) { _, val in
                                             completer.query(val + " " + city)
@@ -272,7 +272,7 @@ struct EditPropertySheet: View {
                                 formDivider()
                                 formFieldRow("building.2.fill", "City", $city)
                                 formDivider()
-                                formFieldRow("envelope.fill", "Cod poștal", $postalCode, keyboard: .numbersAndPunctuation)
+                                formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
                                 formDivider()
                                 formFieldRow("globe.europe.africa.fill", "Country", $country)
                             }
@@ -325,7 +325,7 @@ struct EditPropertySheet: View {
                         } label: {
                             HStack {
                                 Image(systemName: "map.fill").foregroundStyle(.blue)
-                                Text("Localizare pe hartă")
+                                Text("Location on map")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -379,12 +379,12 @@ struct EditPropertySheet: View {
                             formDivider()
                             formFieldRow("door.left.hand.open", "Rooms", $numRoomsText, keyboard: .numberPad)
                             formDivider()
-                            formFieldRow("calendar.badge.clock", "An construit", $yearBuiltText, keyboard: .numberPad)
+                            formFieldRow("calendar.badge.clock", "Year built", $yearBuiltText, keyboard: .numberPad)
                         }
                         .padding(.top, 16)
 
                         // Story
-                        Text("POVESTE")
+                        Text("STORY")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -396,7 +396,7 @@ struct EditPropertySheet: View {
                                 .overlay(RoundedRectangle(cornerRadius: 16)
                                     .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
                             if story.isEmpty {
-                                Text("Scrie o poveste despre această proprietate…")
+                                Text("Write a story about this property…")
                                     .font(.system(size: 15))
                                     .foregroundStyle(Color.primary.opacity(0.28))
                                     .padding(.horizontal, 16)
@@ -405,7 +405,7 @@ struct EditPropertySheet: View {
                             TextEditor(text: $story)
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
-                                .tint(.blue)
+                                .tint(.accentColor)
                                 .scrollContentBackground(.hidden)
                                 .background(.clear)
                                 .frame(minHeight: 100)
@@ -415,7 +415,7 @@ struct EditPropertySheet: View {
 
                         // Renovations
                         HStack {
-                            Text("RENOVĂRI")
+                            Text("RENOVATIONS")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(Color.primary.opacity(0.35))
                             Spacer()
@@ -463,11 +463,11 @@ struct EditPropertySheet: View {
                         if showRenovationForm {
                             VStack(spacing: 8) {
                                 formFieldGroup {
-                                    formFieldRow("wrench.fill", "Titlu renovare", $newRenTitle)
+                                    formFieldRow("wrench.fill", "Renovation title", $newRenTitle)
                                     formDivider()
-                                    formFieldRow("calendar", "Anul start", $newRenFrom, keyboard: .numberPad)
+                                    formFieldRow("calendar", "Start year", $newRenFrom, keyboard: .numberPad)
                                     formDivider()
-                                    formFieldRow("calendar", "Anul final (opțional)", $newRenTo, keyboard: .numberPad)
+                                    formFieldRow("calendar", "End year (optional)", $newRenTo, keyboard: .numberPad)
                                 }
                                 Button {
                                     guard !newRenTitle.isEmpty, let from = Int(newRenFrom) else { return }
@@ -479,7 +479,7 @@ struct EditPropertySheet: View {
                                     newRenTitle = ""; newRenFrom = ""; newRenTo = ""
                                     showRenovationForm = false
                                 } label: {
-                                    Text("Adaugă renovare")
+                                    Text("Add renovation")
                                         .font(.system(size: 15, weight: .semibold))
                                         .foregroundStyle(newRenTitle.isEmpty || newRenFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
                                         .frame(maxWidth: .infinity)
@@ -495,7 +495,7 @@ struct EditPropertySheet: View {
 
                         // Owners
                         HStack {
-                            Text("PROPRIETARI")
+                            Text("OWNERS")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(Color.primary.opacity(0.35))
                             Spacer()
@@ -546,11 +546,11 @@ struct EditPropertySheet: View {
                         if showOwnerForm {
                             VStack(spacing: 8) {
                                 formFieldGroup {
-                                    formFieldRow("person.fill", "Nume proprietar", $newOwnerName)
+                                    formFieldRow("person.fill", "Owner name", $newOwnerName)
                                     formDivider()
-                                    formFieldRow("calendar", "Anul start", $newOwnerFrom, keyboard: .numberPad)
+                                    formFieldRow("calendar", "Start year", $newOwnerFrom, keyboard: .numberPad)
                                     formDivider()
-                                    formFieldRow("calendar", "Anul final (opțional)", $newOwnerTo, keyboard: .numberPad)
+                                    formFieldRow("calendar", "End year (optional)", $newOwnerTo, keyboard: .numberPad)
                                 }
                                 Button {
                                     guard !newOwnerName.isEmpty, let from = Int(newOwnerFrom) else { return }
@@ -562,7 +562,7 @@ struct EditPropertySheet: View {
                                     newOwnerName = ""; newOwnerFrom = ""; newOwnerTo = ""
                                     showOwnerForm = false
                                 } label: {
-                                    Text("Adaugă proprietar")
+                                    Text("Add owner")
                                         .font(.system(size: 15, weight: .semibold))
                                         .foregroundStyle(newOwnerName.isEmpty || newOwnerFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
                                         .frame(maxWidth: .infinity)
@@ -595,7 +595,7 @@ struct EditPropertySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving {
-                            ProgressView().tint(.blue)
+                            ProgressView().tint(.accentColor)
                         } else {
                             Text("Save")
                                 .font(.system(size: 15, weight: .semibold))
@@ -647,7 +647,7 @@ struct EditPropertySheet: View {
                     Button {
                         Task { await reverseGeocode() }
                     } label: {
-                        Label("Aplică adresa", systemImage: "arrow.up.left.square.fill")
+                        Label("Apply address", systemImage: "arrow.up.left.square.fill")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 10).padding(.vertical, 7)
@@ -665,7 +665,7 @@ struct EditPropertySheet: View {
                         ZStack {
                             Circle().fill(.ultraThinMaterial).frame(width: 36, height: 36)
                             if isLocating {
-                                ProgressView().tint(.blue).scaleEffect(0.7)
+                                ProgressView().tint(.accentColor).scaleEffect(0.7)
                             } else {
                                 Image(systemName: "location.fill")
                                     .font(.system(size: 14))
@@ -685,8 +685,8 @@ struct EditPropertySheet: View {
 
         // Manual coordinate input
         HStack(spacing: 8) {
-            formCoordField("Latitudine", text: $latText, placeholder: "ex: 44.426800")
-            formCoordField("Longitudine", text: $lonText, placeholder: "ex: 26.102500")
+            formCoordField("Latitude", text: $latText, placeholder: "e.g. 44.426800")
+            formCoordField("Longitude", text: $lonText, placeholder: "e.g. 26.102500")
             Button {
                 applyManualCoords()
             } label: {
@@ -813,7 +813,7 @@ private func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Bind
         TextField(placeholder, text: binding)
             .font(.system(size: 15))
             .foregroundStyle(.primary)
-            .tint(.blue)
+            .tint(.accentColor)
             .keyboardType(keyboard)
     }
     .padding(.horizontal, 16).padding(.vertical, 13)
@@ -831,7 +831,7 @@ private func formCoordField(_ label: String, text: Binding<String>, placeholder:
         TextField(placeholder, text: text)
             .font(.system(size: 13).monospacedDigit())
             .foregroundStyle(.primary)
-            .tint(.blue)
+            .tint(.accentColor)
             .keyboardType(.decimalPad)
             .padding(.horizontal, 10).padding(.vertical, 8)
             .background(Color.primary.opacity(0.05),
@@ -890,7 +890,7 @@ private struct AddPropertySheet: View {
                                     TextField("Address", text: $addressLine1)
                                         .font(.system(size: 15))
                                         .foregroundStyle(.primary)
-                                        .tint(.blue)
+                                        .tint(.accentColor)
                                         .focused($addressFocused)
                                         .onChange(of: addressLine1) { _, val in
                                             completer.query(val + " " + city)
@@ -901,7 +901,7 @@ private struct AddPropertySheet: View {
                                 formDivider()
                                 formFieldRow("building.2.fill", "City", $city)
                                 formDivider()
-                                formFieldRow("envelope.fill", "Cod poștal", $postalCode, keyboard: .numbersAndPunctuation)
+                                formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
                                 formDivider()
                                 formFieldRow("globe.europe.africa.fill", "Country", $country)
                             }
@@ -948,7 +948,7 @@ private struct AddPropertySheet: View {
                         } label: {
                             HStack {
                                 Image(systemName: "map.fill").foregroundStyle(.blue)
-                                Text("Localizare pe hartă")
+                                Text("Location on map")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -1014,7 +1014,7 @@ private struct AddPropertySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving {
-                            ProgressView().tint(.blue)
+                            ProgressView().tint(.accentColor)
                         } else {
                             Text("Add")
                                 .font(.system(size: 15, weight: .semibold))
@@ -1055,7 +1055,7 @@ private struct AddPropertySheet: View {
                     Spacer()
                     HStack {
                         Button { Task { await reverseGeocode() } } label: {
-                            Label("Aplică adresa", systemImage: "arrow.up.left.square.fill")
+                            Label("Apply address", systemImage: "arrow.up.left.square.fill")
                                 .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
                                 .padding(.horizontal, 10).padding(.vertical, 7)
                                 .background(.blue, in: Capsule())
@@ -1066,7 +1066,7 @@ private struct AddPropertySheet: View {
                             ZStack {
                                 Circle().fill(.ultraThinMaterial).frame(width: 36, height: 36)
                                 if isLocating {
-                                    ProgressView().tint(.blue).scaleEffect(0.7)
+                                    ProgressView().tint(.accentColor).scaleEffect(0.7)
                                 } else {
                                     Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.blue)
                                 }

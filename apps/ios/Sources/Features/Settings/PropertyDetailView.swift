@@ -21,7 +21,7 @@ struct PropertyDetailView: View {
             if let property {
                 mainContent(property)
             } else {
-                ContentUnavailableView("Proprietate negăsită", systemImage: "house.slash")
+                ContentUnavailableView("Property not found", systemImage: "house.slash")
             }
         }
         .navigationTitle("")
@@ -42,11 +42,11 @@ struct PropertyDetailView: View {
                 .environmentObject(propertyService)
             }
         }
-        .confirmationDialog("Fotografie proprietate", isPresented: $showPhotoMenu, titleVisibility: .visible) {
-            Button("Fă o fotografie") { showCamera = true }
-            Button("Alege din galerie") { showGallery = true }
+        .confirmationDialog("Property photo", isPresented: $showPhotoMenu, titleVisibility: .visible) {
+            Button("Take a photo") { showCamera = true }
+            Button("Choose from gallery") { showGallery = true }
             if property?.photoUrl != nil {
-                Button("Șterge fotografia", role: .destructive) {
+                Button("Delete photo", role: .destructive) {
                     Task { await removePhoto() }
                 }
             }
@@ -150,9 +150,9 @@ struct PropertyDetailView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(12)
-                            .glassCircle()
                     }
                     .buttonStyle(.plain)
+                    .glassCircle()
                 }
             }
             .padding(16)
@@ -178,31 +178,31 @@ struct PropertyDetailView: View {
     private func basicCard(_ property: PropertyModel) -> some View {
         GlassCard(padding: 0) {
             VStack(spacing: 0) {
-                row("mappin.fill", "Adresă", "\(property.addressLine1), \(property.city)", .blue)
+                row("mappin.fill", "Address", "\(property.addressLine1), \(property.city)", .blue)
                 rowDivider()
                 if !property.country.isEmpty {
-                    row("globe.europe.africa.fill", "Țară", property.country, .blue)
+                    row("globe.europe.africa.fill", "Country", property.country, .blue)
                     rowDivider()
                 }
                 if let size = property.sizeSqm {
-                    row("ruler.fill", "Suprafață", "\(Int(size)) m²", .orange)
+                    row("ruler.fill", "Area", "\(Int(size)) m²", .orange)
                     rowDivider()
                 }
                 if let rooms = property.numRooms {
-                    row("door.left.hand.open", "Camere", "\(rooms)", .green)
+                    row("door.left.hand.open", "Rooms", "\(rooms)", .green)
                     rowDivider()
                 }
                 if let year = property.yearBuilt {
-                    row("calendar.badge.clock", "An construit", "\(year)", .indigo)
+                    row("calendar.badge.clock", "Year built", "\(year)", .indigo)
                     rowDivider()
                 }
                 if let score = property.healthScore {
-                    row("heart.fill", "Scor sănătate", "\(score)/100",
+                    row("heart.fill", "Health score", "\(score)/100",
                         score >= 70 ? .green : score >= 40 ? .orange : .red)
                     rowDivider()
                 }
                 if let lat = property.latitude, let lon = property.longitude {
-                    row("location.fill", "Coordonate",
+                    row("location.fill", "Coordinates",
                         String(format: "%.4f, %.4f", lat, lon), .teal)
                 }
             }
@@ -244,7 +244,7 @@ struct PropertyDetailView: View {
     private func storyCard(_ story: String) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Poveste", systemImage: "text.quote")
+                Label("Story", systemImage: "text.quote")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
@@ -261,7 +261,7 @@ struct PropertyDetailView: View {
     private func renovationsCard(_ renovations: [Renovation]) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Label("Renovări", systemImage: "wrench.and.screwdriver.fill")
+                Label("Renovations", systemImage: "wrench.and.screwdriver.fill")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
@@ -304,7 +304,7 @@ struct PropertyDetailView: View {
     private func ownersCard(_ owners: [OwnerRecord]) -> some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                Label("Proprietari", systemImage: "person.2.fill")
+                Label("Owners", systemImage: "person.2.fill")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
@@ -359,7 +359,7 @@ struct PropertyDetailView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.orange)
                 }
-                Text("Planuri proprietate")
+                Text("Property plans")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.primary)
                 Spacer()
@@ -368,9 +368,9 @@ struct PropertyDetailView: View {
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
             .padding(16)
-            .liquidGlass(cornerRadius: 18)
         }
         .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: 18)
     }
 
     // MARK: - Photo actions

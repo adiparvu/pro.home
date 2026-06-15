@@ -357,7 +357,7 @@ struct MainTabView: View {
         if let plant = plantService.plantsNeedingWater.first {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.plants",
-                localizedTitle: "Udă: \(plant.name)",
+                localizedTitle: "Water: \(plant.name)",
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "drop.fill"),
                 userInfo: nil
@@ -367,7 +367,7 @@ struct MainTabView: View {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.addtask",
                 localizedTitle: task.title,
-                localizedSubtitle: "Sarcină",
+                localizedSubtitle: "Task",
                 icon: UIApplicationShortcutIcon(systemImageName: "checklist"),
                 userInfo: nil
             ))
@@ -375,7 +375,7 @@ struct MainTabView: View {
         if deliveryService.activeDeliveries.count > 0 {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.shopping",
-                localizedTitle: "\(deliveryService.activeDeliveries.count) livrări active",
+                localizedTitle: "\(deliveryService.activeDeliveries.count) active deliveries",
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill"),
                 userInfo: nil

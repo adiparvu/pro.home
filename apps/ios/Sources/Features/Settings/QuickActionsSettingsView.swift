@@ -118,7 +118,7 @@ private struct FabVisibilityRow: View {
                 Spacer()
                 Toggle("", isOn: $isOn)
                     .labelsHidden()
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
@@ -160,7 +160,7 @@ private struct QuickActionToggleRow: View {
                 Spacer()
                 Toggle("", isOn: $isOn)
                     .labelsHidden()
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)

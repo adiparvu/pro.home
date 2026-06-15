@@ -88,10 +88,10 @@ struct SearchView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
-            TextField("Sarcini, plante, documente…", text: $query)
+            TextField("Tasks, plants, documents…", text: $query)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .tint(.blue)
+                .tint(.accentColor)
                 .focused($focused)
                 .submitLabel(.search)
 
@@ -142,7 +142,7 @@ struct SearchView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(Color.primary.opacity(0.12))
             VStack(spacing: 8) {
-                Text("Caută sarcini, plante, documente și livrări")
+                Text("Search tasks, plants, documents, and deliveries")
                     .font(.subheadline)
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .multilineTextAlignment(.center)
@@ -151,7 +151,7 @@ struct SearchView: View {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.2))
-                    Text("Apasă microfonul pentru căutare vocală")
+                    Text("Tap the microphone for voice search")
                         .font(.caption)
                         .foregroundStyle(Color.primary.opacity(0.2))
                 }
@@ -168,7 +168,7 @@ struct SearchView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundStyle(Color.primary.opacity(0.15))
-            Text("Niciun rezultat pentru \"\(query)\"")
+            Text("No results for \"\(query)\"")
                 .font(.subheadline)
                 .foregroundStyle(Color.primary.opacity(0.35))
             Spacer()
@@ -181,63 +181,63 @@ struct SearchView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 if !results.tasks.isEmpty {
-                    SearchSection(title: "Sarcini", icon: "checklist", count: results.tasks.count) {
+                    SearchSection(title: "Tasks", icon: "checklist", count: results.tasks.count) {
                         ForEach(results.tasks) { task in
                             SearchRow(
                                 icon: "checklist",
                                 color: task.priorityColor,
                                 title: task.title,
                                 subtitle: "\(task.category.capitalized) · \(task.dueDateDisplay)",
-                                badge: task.isOverdue ? "Depășit" : nil,
+                                badge: task.isOverdue ? "Overdue" : nil,
                                 badgeColor: .red
                             )
                         }
                     }
                 }
                 if !results.plants.isEmpty {
-                    SearchSection(title: "Plante", icon: "leaf.fill", count: results.plants.count) {
+                    SearchSection(title: "Plants", icon: "leaf.fill", count: results.plants.count) {
                         ForEach(results.plants) { plant in
                             SearchRow(
                                 icon: "leaf.fill",
                                 color: Color(red: 0.15, green: 0.80, blue: 0.40),
                                 title: "\(plant.emoji) \(plant.name)",
                                 subtitle: [plant.species, plant.location].compactMap { $0 }.joined(separator: " · "),
-                                badge: plant.needsWatering ? "Udare" : nil,
+                                badge: plant.needsWatering ? "Watering" : nil,
                                 badgeColor: .blue
                             )
                         }
                     }
                 }
                 if !results.deliveries.isEmpty {
-                    SearchSection(title: "Livrări", icon: "shippingbox.fill", count: results.deliveries.count) {
+                    SearchSection(title: "Deliveries", icon: "shippingbox.fill", count: results.deliveries.count) {
                         ForEach(results.deliveries) { delivery in
                             SearchRow(
                                 icon: delivery.statusIcon,
                                 color: delivery.statusColor,
                                 title: delivery.description,
                                 subtitle: "\(delivery.carrier) · \(delivery.statusLabel)",
-                                badge: delivery.isActive ? "Activ" : nil,
+                                badge: delivery.isActive ? "Active" : nil,
                                 badgeColor: .orange
                             )
                         }
                     }
                 }
                 if !results.documents.isEmpty {
-                    SearchSection(title: "Documente", icon: "doc.text.fill", count: results.documents.count) {
+                    SearchSection(title: "Documents", icon: "doc.text.fill", count: results.documents.count) {
                         ForEach(results.documents) { doc in
                             SearchRow(
                                 icon: doc.categoryIcon,
                                 color: .orange,
                                 title: doc.name,
                                 subtitle: doc.category.capitalized,
-                                badge: doc.isExpiringSoon ? "Expiră" : nil,
+                                badge: doc.isExpiringSoon ? "Expiring" : nil,
                                 badgeColor: .orange
                             )
                         }
                     }
                 }
                 if !results.finances.isEmpty {
-                    SearchSection(title: "Finanțe", icon: "banknote.fill", count: results.finances.count) {
+                    SearchSection(title: "Finances", icon: "banknote.fill", count: results.finances.count) {
                         ForEach(results.finances) { record in
                             SearchRow(
                                 icon: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",

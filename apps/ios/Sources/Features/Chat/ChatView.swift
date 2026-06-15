@@ -218,7 +218,7 @@ struct ChatView: View {
                 TextField("Message…", text: $text, axis: .vertical)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
-                    .tint(.blue)
+                    .tint(.accentColor)
                     .lineLimit(1...5)
                     .focused($focused)
 

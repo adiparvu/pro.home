@@ -81,6 +81,7 @@ struct FloatingSpeedDial: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
                     .glassCapsule()
+                    .allowsHitTesting(false)
                     .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
                 Image(systemName: action.icon)

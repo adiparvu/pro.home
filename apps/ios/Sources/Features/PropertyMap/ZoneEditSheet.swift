@@ -41,20 +41,20 @@ struct ZoneEditSheet: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     preview
-                    field("NUME") {
-                        TextField("Nume zonă", text: $name)
+                    field("NAME") {
+                        TextField("Zone name", text: $name)
                             .font(.system(size: 16))
                             .padding(14)
                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    field("CULOARE") { paletteRow }
-                    field("PICTOGRAMĂ") { iconGrid }
-                    field("STRAT") { layerRow }
+                    field("COLOR") { paletteRow }
+                    field("ICON") { iconGrid }
+                    field("LAYER") { layerRow }
 
                     Button(role: .destructive) {
                         showDeleteConfirm = true
                     } label: {
-                        Label("Șterge zona", systemImage: "trash")
+                        Label("Delete zone", systemImage: "trash")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -65,21 +65,21 @@ struct ZoneEditSheet: View {
                 .padding(20)
             }
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle("Editează zona")
+            .navigationTitle("Edit zone")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Salvează") { save() }
+                    Button("Save") { save() }
                         .fontWeight(.semibold)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .confirmationDialog("Ștergi această zonă?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-                Button("Șterge", role: .destructive) { onDelete(); dismiss() }
-                Button("Anulează", role: .cancel) {}
+            .confirmationDialog("Delete this zone?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("Delete", role: .destructive) { onDelete(); dismiss() }
+                Button("Cancel", role: .cancel) {}
             }
         }
     }
@@ -94,7 +94,7 @@ struct ZoneEditSheet: View {
                 .frame(width: 54, height: 54)
                 .background(tint, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text(name.isEmpty ? "Nume zonă" : name)
+                Text(name.isEmpty ? "Zone name" : name)
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.4) : .primary)
                 Text(layer.displayName)

@@ -153,10 +153,10 @@ struct StickerPicker: View {
                   : selectedCategoryId == "recent" ? "clock.fill" : "face.smiling")
                 .font(.system(size: 44))
                 .foregroundStyle(Color.primary.opacity(0.14))
-            Text(selectedCategoryId == "favorites" ? "Niciun favorit încă"
-                 : selectedCategoryId == "recent"   ? "Niciun sticker folosit"
-                 : selectedCategoryId == "mostused" ? "Niciun sticker"
-                 : "Niciun sticker")
+            Text(selectedCategoryId == "favorites" ? "No favorites yet"
+                 : selectedCategoryId == "recent"   ? "No stickers used yet"
+                 : selectedCategoryId == "mostused" ? "No stickers"
+                 : "No stickers")
                 .font(.system(size: 15))
                 .foregroundStyle(Color.primary.opacity(0.38))
             Spacer()
@@ -216,7 +216,7 @@ struct StickerCell: View {
                 onFavorite()
             } label: {
                 Label(
-                    isFavorite ? "Elimină din favorite" : "Adaugă la favorite",
+                    isFavorite ? "Remove from favorites" : "Add to favorites",
                     systemImage: isFavorite ? "heart.slash" : "heart.fill"
                 )
             }

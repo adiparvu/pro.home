@@ -287,7 +287,7 @@ struct InventoryView: View {
                                                 .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
                                         } else {
                                             Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
-                                                .tint(.blue)
+                                                .tint(.accentColor)
                                         }
                                     }
                             }
@@ -854,7 +854,7 @@ private struct PublicContactSheet: View {
                                 Image(systemName: "qrcode.viewfinder").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                                 Text("Show on public QR page").font(.system(size: 15)).foregroundStyle(.primary)
                                 Spacer()
-                                Toggle("", isOn: $isEnabled).tint(.blue).labelsHidden()
+                                Toggle("", isOn: $isEnabled).tint(.accentColor).labelsHidden()
                             }.padding(.horizontal, 16).padding(.vertical, 12)
                         }
 
@@ -903,7 +903,7 @@ private struct PublicContactSheet: View {
     private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
+            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
@@ -926,21 +926,21 @@ private struct LoanItemSheet: View {
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
                             Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-                            TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                            TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                         }.padding(.horizontal, 16).padding(.vertical, 14)
                         Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                         HStack(spacing: 12) {
                             Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                             Text("Expected return").font(.system(size: 15)).foregroundStyle(.primary)
                             Spacer()
-                            Toggle("", isOn: $hasReturnDate).tint(.blue).labelsHidden()
+                            Toggle("", isOn: $hasReturnDate).tint(.accentColor).labelsHidden()
                         }.padding(.horizontal, 16).padding(.vertical, 12)
                         if hasReturnDate {
                             Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
                             HStack(spacing: 12) {
                                 Color.clear.frame(width: 28)
                                 DatePicker("Return by", selection: $returnDate, in: Date()..., displayedComponents: .date)
-                                    .tint(.blue)
+                                    .tint(.accentColor)
                             }.padding(.horizontal, 16).padding(.vertical, 8)
                         }
                     }
@@ -1127,7 +1127,7 @@ private struct AddInventorySheet: View {
                                 div
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
-                                    DatePicker("", selection: $purchaseDate, in: ...Date(), displayedComponents: .date).tint(.blue)
+                                    DatePicker("", selection: $purchaseDate, in: ...Date(), displayedComponents: .date).tint(.accentColor)
                                 }.padding(.horizontal, 16).padding(.vertical, 6)
                             }
                             div
@@ -1136,7 +1136,7 @@ private struct AddInventorySheet: View {
                                 div
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
-                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.blue).font(.system(size: 15)).foregroundStyle(.primary)
+                                    DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(.system(size: 15)).foregroundStyle(.primary)
                                 }.padding(.horizontal, 16).padding(.vertical, 6)
                             }
                         }
@@ -1144,7 +1144,7 @@ private struct AddInventorySheet: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                                 TextField("Notes (optional)", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).lineLimit(3...5)
+                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, 16).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
@@ -1181,7 +1181,7 @@ private struct AddInventorySheet: View {
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
+            TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
     private func picker(_ icon: String, _ label: String, _ b: Binding<String>, _ opts: [String]) -> some View {
@@ -1197,7 +1197,7 @@ private struct AddInventorySheet: View {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            Toggle("", isOn: b).tint(.blue).labelsHidden()
+            Toggle("", isOn: b).tint(.accentColor).labelsHidden()
         }.padding(.horizontal, 16).padding(.vertical, 12)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
@@ -1290,7 +1290,7 @@ private struct ItemLocationSheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
                                     TextField("Tracker name / serial (optional)", text: $trackerIdentifier)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                 }.padding(.horizontal, 16).padding(.vertical, 13)
                             }
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
@@ -1340,7 +1340,7 @@ private struct ItemLocationSheet: View {
             Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7)).tint(.blue)
+            TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7)).tint(.accentColor)
                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 110)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }

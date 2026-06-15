@@ -12,7 +12,7 @@ struct NotificationsSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(title: "Notificări")
+                PageHeader(title: "Notifications")
                 permissionCard
                 if authStatus == .authorized || authStatus == .provisional {
                     preferencesSection
@@ -94,62 +94,62 @@ struct NotificationsSettingsView: View {
 
     private var preferencesSection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            group("SARCINI & DOCUMENTE") {
+            group("TASKS & DOCUMENTS") {
                 NotifToggleRow(icon: "checklist", color: .blue,
-                               title: "Memento sarcini",
-                               subtitle: "Scadente azi, cu 3 zile înainte și restante",
+                               title: "Task reminders",
+                               subtitle: "Due today, 3 days ahead and overdue",
                                value: bind(\.taskReminders, reschedule: true))
                 divider
                 NotifToggleRow(icon: "doc.badge.clock.fill", color: .orange,
-                               title: "Expirare documente",
-                               subtitle: "Alerte cu 30 și 7 zile înainte de expirare",
+                               title: "Document expiry",
+                               subtitle: "Alerts 30 and 7 days before expiry",
                                value: bind(\.documentExpiry, reschedule: true))
             }
 
-            group("PROPRIETATE & FINANȚE") {
+            group("PROPERTY & FINANCES") {
                 NotifToggleRow(icon: "shield.lefthalf.filled", color: .teal,
-                               title: "Garanții obiecte",
-                               subtitle: "Garanții care expiră pentru obiectele din twin",
+                               title: "Object warranties",
+                               subtitle: "Expiring warranties for objects in the twin",
                                value: bind(\.warrantyAlerts))
                 divider
                 NotifToggleRow(icon: "shippingbox.fill", color: .indigo,
-                               title: "Inventar & împrumuturi",
-                               subtitle: "Memento returnare obiecte împrumutate",
+                               title: "Inventory & loans",
+                               subtitle: "Reminder to return borrowed items",
                                value: bind(\.inventoryLoans))
                 divider
                 NotifToggleRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
-                               title: "Alerte financiare",
-                               subtitle: "Chirii scadente & tranzacții mari",
+                               title: "Financial alerts",
+                               subtitle: "Upcoming rents & large transactions",
                                value: bind(\.financialAlerts))
             }
 
-            group("COMUNICARE") {
+            group("COMMUNICATION") {
                 NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
-                               title: "Chat familie",
-                               subtitle: "Mesaje noi în chatul familiei",
+                               title: "Family chat",
+                               subtitle: "New messages in the family chat",
                                value: bind(\.chatMessages))
                 divider
                 NotifToggleRow(icon: "at", color: .purple,
-                               title: "Mențiuni",
-                               subtitle: "Când ești menționat cu @",
+                               title: "Mentions",
+                               subtitle: "When you are mentioned with @",
                                value: bind(\.mentions))
             }
 
-            group("AUTOMATIZĂRI") {
+            group("AUTOMATIONS") {
                 NotifToggleRow(icon: "gearshape.2.fill", color: .yellow,
-                               title: "Automatizări",
-                               subtitle: "Alerte de la automatizările proprietății",
+                               title: "Automations",
+                               subtitle: "Alerts from property automations",
                                value: bind(\.automationAlerts))
             }
 
-            group("REZUMAT") {
+            group("SUMMARY") {
                 NotifToggleRow(icon: "newspaper.fill", color: .purple,
-                               title: "Rezumat săptămânal",
-                               subtitle: "În fiecare luni la 9:00",
+                               title: "Weekly summary",
+                               subtitle: "Every Monday at 9:00",
                                value: bind(\.weeklyDigest, reschedule: true))
             }
 
-            Text("Notificările sunt programate local pe dispozitiv și se declanșează chiar și când aplicația este închisă.")
+            Text("Notifications are scheduled locally on the device and fire even when the app is closed.")
                 .font(.caption)
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.leading, 4)

@@ -125,8 +125,8 @@ private struct EmergencyRow: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12).padding(.vertical, 7)
-                        .glassCapsule()
                 }
+                .glassCapsule()
             }
         }
     }
@@ -170,7 +170,7 @@ private struct AddEmergencySheet: View {
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue).keyboardType(keyboard)
+            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }

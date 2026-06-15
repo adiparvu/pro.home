@@ -23,7 +23,7 @@ struct AddAccountSheet: View {
                         .submitLabel(.next)
                         .onSubmit { focus = .password }
 
-                    SecureField("Parolă", text: $password)
+                    SecureField("Password", text: $password)
                         .focused($focus, equals: .password)
                         .submitLabel(.go)
                         .onSubmit { Task { await signIn() } }
@@ -46,7 +46,7 @@ struct AddAccountSheet: View {
                             if isLoading {
                                 ProgressView()
                             } else {
-                                Text("Autentifică-te")
+                                Text("Sign in")
                                     .fontWeight(.semibold)
                             }
                             Spacer()
@@ -55,11 +55,11 @@ struct AddAccountSheet: View {
                     .disabled(email.isEmpty || password.isEmpty || isLoading)
                 }
             }
-            .navigationTitle("Adaugă cont")
+            .navigationTitle("Add account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
             .onAppear { focus = .email }
@@ -76,7 +76,7 @@ struct AddAccountSheet: View {
             try await auth.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password)
             dismiss()
         } catch {
-            errorMessage = "Email sau parolă incorectă."
+            errorMessage = "Incorrect email or password."
         }
         isLoading = false
     }

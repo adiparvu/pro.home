@@ -115,7 +115,7 @@ struct AddFinancialView: View {
                     TextField("0", text: $amount)
                         .font(.system(size: 40, weight: .light))
                         .foregroundStyle(.primary)
-                        .tint(.blue)
+                        .tint(.accentColor)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.leading)
                 }
@@ -133,7 +133,7 @@ struct AddFinancialView: View {
                 TextField("Title", text: $title)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
@@ -165,7 +165,7 @@ struct AddFinancialView: View {
                 DatePicker("Date", selection: $date, displayedComponents: .date)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -186,7 +186,7 @@ struct AddFinancialView: View {
                 TextField("Notes (optional)", text: $notes)
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
-                    .tint(.blue)
+                    .tint(.accentColor)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)

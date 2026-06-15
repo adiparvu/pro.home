@@ -278,7 +278,7 @@ struct DigitalTwinView: View {
     private var layerBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                layerChip(nil, label: "Toate", icon: "square.stack.3d.up.fill")
+                layerChip(nil, label: "All", icon: "square.stack.3d.up.fill")
                 ForEach(PropertyLayer.allCases, id: \.self) { layer in
                     layerChip(layer, label: layer.displayName, icon: layer.icon)
                 }
@@ -301,14 +301,14 @@ struct DigitalTwinView: View {
             }
             .foregroundStyle(active ? .primary : Color.primary.opacity(0.65))
             .padding(.horizontal, 12).padding(.vertical, 8)
-            .glassCapsule()
-            .overlay {
-                if active {
-                    Capsule().strokeBorder(Color.primary.opacity(0.35), lineWidth: 1.2)
-                }
-            }
         }
         .buttonStyle(.plain)
+        .glassCapsule()
+        .overlay {
+            if active {
+                Capsule().strokeBorder(Color.primary.opacity(0.35), lineWidth: 1.2)
+            }
+        }
     }
 
     private var sideControls: some View {
@@ -349,7 +349,7 @@ struct DigitalTwinView: View {
 
     private var heatmapLegend: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("SĂNĂTATE")
+            Text("HEALTH")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.secondary)
             HStack(spacing: 6) {
@@ -371,6 +371,7 @@ struct DigitalTwinView: View {
         }
         .padding(10)
         .glassRoundedRect(14)
+        .allowsHitTesting(false)
         .padding(.leading, 16)
         .padding(.bottom, 36)
         .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
@@ -383,20 +384,21 @@ struct DigitalTwinView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 48, height: 48)
-                .glassCircle()
-                .shadow(color: Color.black.opacity(0.18), radius: 10, y: 3)
         }
         .buttonStyle(.plain)
+        .glassCircle()
+        .shadow(color: Color.black.opacity(0.18), radius: 10, y: 3)
     }
 
     private var drawBanner: some View {
         Text(draftPoints.count < 3
-             ? "Atinge harta pentru a adăuga colțuri (\(draftPoints.count)/3)"
-             : "\(draftPoints.count) colțuri · atinge pentru mai multe")
+             ? "Tap the map to add corners (\(draftPoints.count)/3)"
+             : "\(draftPoints.count) corners · tap to add more")
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .glassCapsule()
+            .allowsHitTesting(false)
             .padding(.top, 60)
             .shadow(color: Color.black.opacity(0.2), radius: 10, y: 3)
             .transition(.move(edge: .top).combined(with: .opacity))
@@ -404,12 +406,12 @@ struct DigitalTwinView: View {
 
     private var drawToolbar: some View {
         HStack(spacing: 10) {
-            drawButton("Anulează", icon: "xmark", tint: .red) { cancelDrawing() }
-            drawButton("Înapoi", icon: "arrow.uturn.backward", tint: .primary) {
+            drawButton("Cancel", icon: "xmark", tint: .red) { cancelDrawing() }
+            drawButton("Undo", icon: "arrow.uturn.backward", tint: .primary) {
                 if !draftPoints.isEmpty { draftPoints.removeLast() }
             }
             .disabled(draftPoints.isEmpty)
-            drawButton("Salvează", icon: "checkmark", tint: .green) {
+            drawButton("Save", icon: "checkmark", tint: .green) {
                 Task { await saveDrawnZone() }
             }
             .disabled(draftPoints.count < 3)
@@ -427,23 +429,25 @@ struct DigitalTwinView: View {
         return HStack(spacing: 6) {
             Image(systemName: targetName != nil ? "arrow.down.to.line" : "mappin.slash")
                 .font(.system(size: 12, weight: .bold))
-            Text(targetName != nil ? "→ \(targetName!)" : "În afara zonelor")
+            Text(targetName != nil ? "→ \(targetName!)" : "Outside zones")
                 .font(.system(size: 13, weight: .semibold))
         }
         .foregroundStyle(targetName != nil ? Color(red: 0.2, green: 0.75, blue: 0.4) : .secondary)
         .padding(.horizontal, 16).padding(.vertical, 10)
         .glassCapsule()
+        .allowsHitTesting(false)
         .padding(.top, 60)
         .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     private var reshapeBanner: some View {
-        Text("Trage colțurile · dublu-tap pentru a șterge un colț")
+        Text("Drag corners · double-tap to remove a corner")
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .glassCapsule()
+            .allowsHitTesting(false)
             .padding(.top, 60)
             .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
             .transition(.move(edge: .top).combined(with: .opacity))
@@ -451,8 +455,8 @@ struct DigitalTwinView: View {
 
     private var reshapeToolbar: some View {
         HStack(spacing: 10) {
-            drawButton("Anulează", icon: "xmark", tint: .red) { cancelReshape() }
-            drawButton("Salvează", icon: "checkmark", tint: .green) {
+            drawButton("Cancel", icon: "xmark", tint: .red) { cancelReshape() }
+            drawButton("Save", icon: "checkmark", tint: .green) {
                 Task { await saveReshape() }
             }
             .disabled(reshapePoints.count < 3)
@@ -565,7 +569,7 @@ struct DigitalTwinView: View {
         let now = ISO8601DateFormatter().string(from: Date())
         let payload = NewPropertyZone(
             propertyId: pid,
-            name: "Zonă nouă",
+            name: "New zone",
             icon: "square.dashed",
             colorHex: PropertyLayer.property.color.hexString(),
             layer: PropertyLayer.property.rawValue,

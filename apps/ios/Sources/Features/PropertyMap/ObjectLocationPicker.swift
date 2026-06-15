@@ -63,23 +63,24 @@ struct ObjectLocationPicker: View {
             }
             .overlay(alignment: .top) { hint }
             .overlay(alignment: .bottom) { saveBar }
-            .navigationTitle("Plasează pe hartă")
+            .navigationTitle("Place on map")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
     }
 
     private var hint: some View {
-        Text(picked == nil ? "Atinge harta pentru a plasa obiectul" :
-                (pickedZone != nil ? "În zona: \(pickedZone!.name)" : "În afara zonelor"))
+        Text(picked == nil ? "Tap the map to place the object" :
+                (pickedZone != nil ? "In zone: \(pickedZone!.name)" : "Outside all zones"))
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .glassCapsule()
+            .allowsHitTesting(false)
             .padding(.top, 12)
             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
     }
@@ -88,7 +89,7 @@ struct ObjectLocationPicker: View {
         Button {
             Task { await save() }
         } label: {
-            Text("Salvează locația")
+            Text("Save location")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)

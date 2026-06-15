@@ -352,7 +352,7 @@ struct MortgageSetupSheet: View {
                         GlassCard {
                             DatePicker("Mortgage Start Date", selection: $startDate, displayedComponents: .date)
                                 .foregroundStyle(.primary)
-                                .tint(.blue)
+                                .tint(.accentColor)
                         }
 
                         Spacer(minLength: 60)
@@ -394,7 +394,7 @@ struct MortgageSetupSheet: View {
                     TextField("0", text: text)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
-                        .tint(.blue)
+                        .tint(.accentColor)
                         .keyboardType(keyboard)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)

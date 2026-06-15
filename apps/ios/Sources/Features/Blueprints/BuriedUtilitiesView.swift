@@ -374,7 +374,7 @@ private struct AddBuriedUtilitySheet: View {
                 Text("Depth (cm)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("60", text: $depth)
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.blue)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
             }.padding(.horizontal, 16).padding(.vertical, 13)
             div
@@ -383,7 +383,7 @@ private struct AddBuriedUtilitySheet: View {
                 Text("Length (m)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("0", text: $length)
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.blue)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
             }.padding(.horizontal, 16).padding(.vertical, 13)
             div
@@ -402,7 +402,7 @@ private struct AddBuriedUtilitySheet: View {
                         Text("Tag current location").font(.system(size: 15)).foregroundStyle(.primary)
                     }
                 }
-                .tint(.blue)
+                .tint(.accentColor)
                 .onChange(of: tagLocation) { _, on in
                     if on { locMgr.requestLocation() }
                 }
@@ -429,10 +429,10 @@ private struct AddBuriedUtilitySheet: View {
                         Image(systemName: "calendar").foregroundStyle(.blue)
                         Text("Installation date").font(.system(size: 15)).foregroundStyle(.primary)
                     }
-                }.tint(.blue)
+                }.tint(.accentColor)
                 if useInstalledDate {
                     DatePicker("Date", selection: $installedDate, displayedComponents: [.date])
-                        .font(.system(size: 14)).foregroundStyle(.primary).tint(.blue)
+                        .font(.system(size: 14)).foregroundStyle(.primary).tint(.accentColor)
                 }
             }
         }
@@ -458,7 +458,7 @@ private struct AddBuriedUtilitySheet: View {
     private func fieldRow(_ icon: String, _ placeholder: String, _ text: Binding<String>) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
-            TextField(placeholder, text: text).font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
+            TextField(placeholder, text: text).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
 

@@ -21,7 +21,7 @@ struct PropertyReportView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(title: "Raport", subtitle: "PROPRIETATE")
+                PageHeader(title: "Report", subtitle: "PROPERTY")
                 heroCard
                 sectionToggles
                 generateButton
@@ -62,7 +62,7 @@ struct PropertyReportView: View {
                         Text(propertyService.primary?.name ?? "My Home")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundStyle(.white)
-                        Text("Generat · \(formattedToday)")
+                        Text("Generated · \(formattedToday)")
                             .font(.system(size: 12))
                             .foregroundStyle(.white.opacity(0.7))
                     }
@@ -80,17 +80,17 @@ struct PropertyReportView: View {
             HStack(spacing: 0) {
                 statCell(icon: "checklist",
                          value: "\(taskService.openCount)",
-                         label: taskService.overdueCount > 0 ? "\(taskService.overdueCount) restante" : "deschise",
+                         label: taskService.overdueCount > 0 ? "\(taskService.overdueCount) overdue" : "open",
                          color: taskService.overdueCount > 0 ? .red : .blue)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "banknote",
                          value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
-                         label: "luna aceasta",
+                         label: "this month",
                          color: Color(red: 0.25, green: 0.82, blue: 0.5))
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "doc.fill",
                          value: "\(documentService.documents.count)",
-                         label: documentService.expiringDocs.isEmpty ? "total" : "\(documentService.expiringDocs.count) expiră",
+                         label: documentService.expiringDocs.isEmpty ? "total" : "\(documentService.expiringDocs.count) expiring",
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
             }
             .padding(.vertical, 14)
@@ -120,19 +120,19 @@ struct PropertyReportView: View {
 
     private var sectionToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INCLUDE ÎN RAPORT")
+            Text("INCLUDE IN REPORT")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
-                toggleRow("checklist", .blue, "Sarcini & Mentenanță", $includesTasks)
+                toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
-                toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Rezumat financiar", $includesFinances)
+                toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Financial summary", $includesFinances)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
-                toggleRow("doc.text.fill", .orange, "Documente", $includesDocuments)
+                toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
-                toggleRow("map.fill", .indigo, "Digital Twin & Zone", $includesTwin)
+                toggleRow("map.fill", .indigo, "Digital Twin & Zones", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -150,7 +150,7 @@ struct PropertyReportView: View {
             Spacer()
             Toggle("", isOn: binding)
                 .labelsHidden()
-                .tint(.blue)
+                .tint(.accentColor)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -173,7 +173,7 @@ struct PropertyReportView: View {
                 if isGenerating {
                     ProgressView().tint(.white)
                 } else {
-                    Label("Generează PDF", systemImage: "arrow.down.doc.fill")
+                    Label("Generate PDF", systemImage: "arrow.down.doc.fill")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                 }
@@ -191,7 +191,7 @@ struct PropertyReportView: View {
     private var formattedToday: String {
         let f = DateFormatter()
         f.dateFormat = "d MMMM yyyy"
-        f.locale = Locale(identifier: "ro_RO")
+        f.locale = Locale(identifier: "en_US")
         return f.string(from: Date())
     }
 
@@ -282,7 +282,7 @@ struct PropertyReportView: View {
                 .font: UIFont.systemFont(ofSize: 13),
                 .foregroundColor: UIColor.white.withAlphaComponent(0.5)
             ]
-            "Generat \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: y), withAttributes: subAttr)
+            "Generated \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: y), withAttributes: subAttr)
             y += 40
 
             UIColor.white.withAlphaComponent(0.1).setFill()
@@ -294,38 +294,38 @@ struct PropertyReportView: View {
             let sectionAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .semibold), .foregroundColor: UIColor.white.withAlphaComponent(0.4)]
 
             if includesTasks {
-                "SARCINI & MENTENANȚĂ".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
+                "TASKS & MAINTENANCE".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
                 y += 22
-                "Deschise: \(taskService.openCount)   Restante: \(taskService.overdueCount)   Finalizate săptămâna aceasta: \(taskService.completedThisWeek)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                "Open: \(taskService.openCount)   Overdue: \(taskService.overdueCount)   Completed this week: \(taskService.completedThisWeek)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                 y += 24
                 for t in taskService.tasks.filter({ $0.isOverdue }).prefix(5) {
-                    "  • \(t.title) — termen \(t.dueDateDisplay)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                    "  • \(t.title) — due \(t.dueDateDisplay)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                     y += 17
                 }
                 y += 16
             }
 
             if includesFinances {
-                "REZUMAT FINANCIAR".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
+                "FINANCIAL SUMMARY".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
                 y += 22
                 let sym = financialService.currencySymbol
-                "Luna aceasta: \(sym)\(Int(financialService.currentMonthIncome)) venituri · \(sym)\(Int(financialService.currentMonthExpenses)) cheltuieli · Net: \(sym)\(Int(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                "This month: \(sym)\(Int(financialService.currentMonthIncome)) income · \(sym)\(Int(financialService.currentMonthExpenses)) expenses · Net: \(sym)\(Int(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                 y += 30
             }
 
             if includesDocuments {
-                "DOCUMENTE".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
+                "DOCUMENTS".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
                 y += 22
-                "Total: \(documentService.documents.count)   Expiră curând: \(documentService.expiringDocs.count)   Critice: \(documentService.criticalDocs.count)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                "Total: \(documentService.documents.count)   Expiring soon: \(documentService.expiringDocs.count)   Critical: \(documentService.criticalDocs.count)".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                 y += 24
                 for doc in documentService.expiringDocs.prefix(5) {
-                    "  ⚠ \(doc.name) expiră \(doc.expiresDisplay ?? "")".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                    "  ⚠ \(doc.name) expires \(doc.expiresDisplay ?? "")".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                     y += 17
                 }
             }
 
             let footerAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.white.withAlphaComponent(0.3)]
-            "Generat de PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
+            "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
 
             // Digital Twin page
             if includesTwin {
@@ -345,18 +345,18 @@ struct PropertyReportView: View {
                     ty += 300
                 }
 
-                "Zone: \(zoneService.zones.count)   Obiecte: \(elementService.elements.count)   Sănătate medie: \(elementService.overallHealthScore)%"
+                "Zones: \(zoneService.zones.count)   Objects: \(elementService.elements.count)   Average health: \(elementService.overallHealthScore)%"
                     .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
                 ty += 28
-                "ZONE".draw(at: CGPoint(x: 40, y: ty), withAttributes: sectionAttr)
+                "ZONES".draw(at: CGPoint(x: 40, y: ty), withAttributes: sectionAttr)
                 ty += 20
                 for zone in zoneService.zones.prefix(12) {
                     let count = elementService.elements(inZone: zone.id).count
-                    "  • \(zone.name) — \(zone.healthScore)%  ·  \(count) obiecte"
+                    "  • \(zone.name) — \(zone.healthScore)%  ·  \(count) objects"
                         .draw(at: CGPoint(x: 40, y: ty), withAttributes: bodyAttr)
                     ty += 17
                 }
-                "Generat de PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
+                "Generated by PRVIO · \(now.string(from: Date()))".draw(at: CGPoint(x: 40, y: 800), withAttributes: footerAttr)
             }
         }
 
