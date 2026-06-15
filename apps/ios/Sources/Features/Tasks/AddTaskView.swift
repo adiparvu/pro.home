@@ -363,8 +363,8 @@ struct AddTaskView: View {
         let dateStr = hasDueDate ? display.string(from: dueDate) : ""
         for name in assigneeNames {
             let content = UNMutableNotificationContent()
-            content.title = “Task assigned”
-            content.body = “\(name), you have a new task: \”\(taskTitle)\”\(dateStr.isEmpty ? “” : “ · Due: \(dateStr)”)”
+            content.title = "Task assigned"
+            content.body = "\(name), you have a new task: \"\(taskTitle)\"\(dateStr.isEmpty ? "" : " · Due: \(dateStr)")"
             content.sound = .default
             content.badge = 1
             let req = UNNotificationRequest(
