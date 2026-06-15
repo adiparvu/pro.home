@@ -293,7 +293,7 @@ struct SettingsView: View {
                 icon: "waveform.and.mic",
                 color: Color(red: 0.15, green: 0.70, blue: 0.95),
                 label: "Voice Input in Chat",
-                isOn: $appSettings.voiceInputEnabled
+                value: $appSettings.voiceInputEnabled
             )
             NavSettingsRow(icon: "mic.fill", color: Color(red: 0.55, green: 0.35, blue: 0.95), label: "Siri & Shortcuts") {
                 SiriShortcutsView()
