@@ -48,6 +48,7 @@ struct DashboardView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, topSafeArea + 8)
+            .trackTabScroll()
             .padding(.bottom, 20)
             .background(
                 GeometryReader { geo in

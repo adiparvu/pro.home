@@ -128,28 +128,28 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .aria:       return "ARIA"
-        case .newTask:    return "Sarcină nouă"
-        case .chat:       return "Chat familie"
-        case .scan:       return "Scanare"
-        case .addItem:    return "Adaugă obiect"
-        case .addExpense: return "Tranzacție nouă"
-        case .finances:   return "Finanțe"
-        case .addSupply:   return "Articol nou"
-        case .waterPlant:  return "Udă plante"
+        case .newTask:    return String(localized: "New Task")
+        case .chat:       return String(localized: "Family Chat")
+        case .scan:       return String(localized: "Scan")
+        case .addItem:    return String(localized: "Add Object")
+        case .addExpense: return String(localized: "New Transaction")
+        case .finances:   return String(localized: "Finances")
+        case .addSupply:  return String(localized: "New Item")
+        case .waterPlant: return String(localized: "Water Plants")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .aria:       return "Asistentul AI"
-        case .newTask:    return "Adaugă o sarcină"
-        case .chat:       return "Mesaje cu familia"
-        case .scan:       return "Scanează un cod QR"
-        case .addItem:    return "Adaugă în inventar"
-        case .addExpense: return "Venit sau cheltuială"
-        case .finances:   return "Deschide finanțele"
-        case .addSupply:  return "Adaugă în consumabile"
-        case .waterPlant: return "Marchează udate"
+        case .aria:       return String(localized: "AI Assistant")
+        case .newTask:    return String(localized: "Add a task")
+        case .chat:       return String(localized: "Family messages")
+        case .scan:       return String(localized: "Scan a QR code")
+        case .addItem:    return String(localized: "Add to inventory")
+        case .addExpense: return String(localized: "Income or expense")
+        case .finances:   return String(localized: "Open finances")
+        case .addSupply:  return String(localized: "Add to supplies")
+        case .waterPlant: return String(localized: "Mark as watered")
         }
     }
 
@@ -202,18 +202,18 @@ enum FloatingButtonHost: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home:        return "Ecran principal"
-        case .tasks:       return "Sarcini"
-        case .finances:    return "Finanțe"
-        case .analytics:   return "Analiză"
-        case .inventory:   return "Inventar"
-        case .documents:   return "Documente"
-        case .contractors: return "Contractori"
-        case .utilities:   return "Utilități"
-        case .family:      return "Familie"
-        case .blueprints:  return "Planuri & 3D"
-        case .supplies:    return "Consumabile"
-        case .plants:      return "Plante"
+        case .home:        return String(localized: "Home")
+        case .tasks:       return String(localized: "Tasks")
+        case .finances:    return String(localized: "Finances")
+        case .analytics:   return String(localized: "Analytics")
+        case .inventory:   return String(localized: "Inventory")
+        case .documents:   return String(localized: "Documents")
+        case .contractors: return String(localized: "Contractors")
+        case .utilities:   return String(localized: "Utilities")
+        case .family:      return String(localized: "Family")
+        case .blueprints:  return String(localized: "Blueprints")
+        case .supplies:    return String(localized: "Supplies")
+        case .plants:      return String(localized: "Plants")
         }
     }
 

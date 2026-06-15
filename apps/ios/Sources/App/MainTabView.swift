@@ -24,6 +24,37 @@ enum AppTab: String, CaseIterable {
     }
 }
 
+// MARK: - Scroll-direction tracker (Instagram-style tab hide)
+
+struct TabScrollDetector: ViewModifier {
+    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    private let threshold: CGFloat = 32
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: ScrollOffsetKey.self,
+                        value: geo.frame(in: .named("scroll")).minY
+                    )
+                }
+            )
+            .onPreferenceChange(ScrollOffsetKey.self) { offset in
+                let goingDown = offset < -threshold
+                guard goingDown != tabBarVis.scrolledDown else { return }
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                    tabBarVis.scrolledDown = goingDown
+                }
+            }
+    }
+}
+
+extension View {
+    /// Place this on the *content* inside a ScrollView to auto-hide the tab bar on scroll down.
+    func trackTabScroll() -> some View { modifier(TabScrollDetector()) }
+}
+
 // MARK: - Custom animated tab bar
 
 private struct AnimatedTabBar: View {
@@ -31,6 +62,7 @@ private struct AnimatedTabBar: View {
     @Binding var bounceTab: AppTab?
     let overdueCount: Int
     let bottomPad: CGFloat
+    let scrolledDown: Bool
 
     var body: some View {
         HStack(spacing: 0) {
@@ -47,6 +79,8 @@ private struct AnimatedTabBar: View {
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(tab == selected ? Color.primary : Color.primary.opacity(0.4))
                             .frame(width: 44, height: 44)
+                            .scaleEffect(tab == selected ? 1.12 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selected)
                             .contentTransition(.symbolEffect(.replace))
 
                         if tab == .tasks && overdueCount > 0 {
@@ -69,6 +103,10 @@ private struct AnimatedTabBar: View {
         .liquidGlass(cornerRadius: 32)
         .padding(.horizontal, 24)
         .padding(.bottom, bottomPad)
+        .scaleEffect(scrolledDown ? 0.88 : 1.0)
+        .opacity(scrolledDown ? 0 : 1)
+        .offset(y: scrolledDown ? 80 : 0)
+        .allowsHitTesting(!scrolledDown)
     }
 }
 
@@ -131,12 +169,14 @@ struct MainTabView: View {
                 .opacity(router.selectedTab == .settings ? 1 : 0)
                 .allowsHitTesting(router.selectedTab == .settings)
         }
+        .coordinateSpace(name: "scroll")
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AnimatedTabBar(
                 selected: $router.selectedTab,
                 bounceTab: $bounceTab,
                 overdueCount: taskService.overdueCount,
-                bottomPad: 8
+                bottomPad: 8,
+                scrolledDown: tabBarVis.scrolledDown
             )
         }
         .fullScreenCover(isPresented: $router.showARIA) {

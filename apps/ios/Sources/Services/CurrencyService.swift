@@ -21,32 +21,34 @@ final class CurrencyService: ObservableObject {
     private let ttl: TimeInterval = 4 * 3600   // refresh every 4 hours
 
     // MARK: - Refresh
+    // Uses api.frankfurter.app — free, no key, updated daily by ECB.
+    // Requests EUR as base, computes RON-per-unit rates for all other currencies.
 
     func refresh() async {
         if let cached = loadCache() { rates = cached; return }
         isLoading = true
         defer { isLoading = false }
         do {
-            let url = URL(string: "https://www.bnr.ro/nbrfxrates.xml")!
-            // BNR rejects requests without a browser-like User-Agent (returns 403),
-            // which would otherwise leave us on stale/empty rates.
-            var request = URLRequest(url: url)
-            request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-                             forHTTPHeaderField: "User-Agent")
-            request.setValue("application/xml,text/xml", forHTTPHeaderField: "Accept")
-            request.cachePolicy = .reloadIgnoringLocalCacheData
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let url = URL(string: "https://api.frankfurter.app/latest?from=EUR&to=RON,USD,GBP,CHF")!
+            let (data, response) = try await URLSession.shared.data(from: url)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 throw URLError(.badServerResponse)
             }
-            var parsed = try await Task.detached(priority: .utility) {
-                try BNRXMLParser.parse(data: data)
-            }.value
-            guard parsed["EUR"] != nil else { throw URLError(.cannotParseResponse) }
-            parsed["RON"] = 1.0
-            rates = parsed
+            struct FrankfurterResponse: Decodable {
+                let rates: [String: Double]
+            }
+            let parsed = try JSONDecoder().decode(FrankfurterResponse.self, from: data)
+            guard let eurToRon = parsed.rates["RON"] else { throw URLError(.cannotParseResponse) }
+            // Convert to RON-per-unit format (RON = 1.0 base):
+            // 1 EUR = eurToRon RON → rates["EUR"] = eurToRon
+            // 1 USD = (eurToRon / eurToUSD) RON → rates["USD"] = eurToRon / eurToUSD
+            var result: [String: Double] = ["RON": 1.0, "EUR": eurToRon]
+            for (code, eurToCode) in parsed.rates where code != "RON" {
+                result[code] = eurToRon / eurToCode
+            }
+            rates = result
             lastUpdated = Date()
-            saveCache(parsed)
+            saveCache(result)
         } catch {
             if let stale = loadCache(ignoreAge: true) { rates = stale }
         }
@@ -104,41 +106,3 @@ final class CurrencyService: ObservableObject {
     }
 }
 
-// MARK: - BNR XML Parser (runs off main actor)
-
-private final class BNRXMLParser: NSObject, XMLParserDelegate {
-    private var result: [String: Double] = [:]
-    private var currentCurrency = ""
-    private var currentMultiplier = 1.0
-    private var currentChars = ""
-    private var parseError: Error?
-
-    static func parse(data: Data) throws -> [String: Double] {
-        let p = BNRXMLParser()
-        let parser = XMLParser(data: data)
-        parser.delegate = p
-        parser.parse()
-        if let e = p.parseError { throw e }
-        return p.result
-    }
-
-    func parser(_ p: XMLParser, didStartElement name: String, namespaceURI: String?,
-                qualifiedName qName: String?, attributes attr: [String: String]) {
-        guard name == "Rate" else { return }
-        currentCurrency   = attr["currency"] ?? ""
-        currentMultiplier = Double(attr["multiplier"] ?? "1") ?? 1.0
-        currentChars = ""
-    }
-
-    func parser(_ p: XMLParser, foundCharacters string: String) { currentChars += string }
-
-    func parser(_ p: XMLParser, didEndElement name: String, namespaceURI: String?, qualifiedName qName: String?) {
-        guard name == "Rate", !currentCurrency.isEmpty else { return }
-        if let v = Double(currentChars.trimmingCharacters(in: .whitespaces)) {
-            result[currentCurrency] = v / currentMultiplier
-        }
-        currentCurrency = ""
-    }
-
-    func parser(_ p: XMLParser, parseErrorOccurred error: Error) { parseError = error }
-}

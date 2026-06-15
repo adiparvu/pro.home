@@ -12,6 +12,8 @@ struct DocumentsView: View {
     @State private var showDeleteConfirm = false
     @State private var previewURL: URL?
     @State private var errorToast: String?
+    @State private var shareItems: [Any] = []
+    @State private var showShareSheet = false
 
     private let categories = ["All", "warranty", "contract", "insurance",
                                "certificate", "manual", "invoice", "photo", "other"]
@@ -54,6 +56,8 @@ struct DocumentsView: View {
                             ForEach(filteredDocuments) { doc in
                                 DocumentRow(doc: doc) {
                                     openDocument(doc)
+                                } onShare: {
+                                    shareDocument(doc)
                                 } onDelete: {
                                     docToDelete = doc
                                     showDeleteConfirm = true
@@ -113,6 +117,9 @@ struct DocumentsView: View {
             Text("This will permanently remove the file and cannot be undone.")
         }
         .quickLookPreview($previewURL)
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: shareItems)
+        }
         .onChange(of: documentService.error) { _, err in
             if let err { errorToast = err }
         }
@@ -132,13 +139,10 @@ struct DocumentsView: View {
 
     private func openDocument(_ doc: DocumentModel) {
         guard let url = URL(string: doc.fileUrl) else { return }
-        // Try QuickLook for local-accessible URLs, else open in browser
         if doc.mimeType == "application/pdf" || doc.mimeType?.hasPrefix("image/") == true {
-            // Download and preview
             Task {
                 if let data = try? Data(contentsOf: url) {
-                    let tmp = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(doc.fileName)
+                    let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(doc.fileName)
                     try? data.write(to: tmp)
                     await MainActor.run { previewURL = tmp }
                 } else {
@@ -147,6 +151,25 @@ struct DocumentsView: View {
             }
         } else {
             UIApplication.shared.open(url)
+        }
+    }
+
+    private func shareDocument(_ doc: DocumentModel) {
+        guard let url = URL(string: doc.fileUrl) else { return }
+        Task {
+            if let data = try? Data(contentsOf: url) {
+                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(doc.fileName)
+                try? data.write(to: tmp)
+                await MainActor.run {
+                    shareItems = [tmp]
+                    showShareSheet = true
+                }
+            } else {
+                await MainActor.run {
+                    shareItems = [url]
+                    showShareSheet = true
+                }
+            }
         }
     }
 
@@ -268,6 +291,7 @@ struct DocumentsView: View {
 struct DocumentRow: View {
     let doc: DocumentModel
     let onOpen: () -> Void
+    let onShare: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -315,15 +339,25 @@ struct DocumentRow: View {
                     Spacer()
 
                     Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: 18)).foregroundStyle(.blue.opacity(0.7))
+                        .font(.system(size: 18)).foregroundStyle(Color.accentColor.opacity(0.7))
                 }
             }
         }
         .buttonStyle(.plain)
         .contextMenu {
+            Button { onShare() } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            Divider()
             Button(role: .destructive) { onDelete() } label: {
                 Label("Delete", systemImage: "trash")
             }
+        }
+        .swipeActions(edge: .leading) {
+            Button { onShare() } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            .tint(.blue)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { onDelete() } label: {
