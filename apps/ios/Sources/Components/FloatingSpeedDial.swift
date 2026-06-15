@@ -45,6 +45,8 @@ struct FloatingSpeedDial: View {
         }
     }
 
+    // Glass and shadow are on the Button itself (not inside the label) so
+    // the glass layer never intercepts touches before the button action fires.
     private var mainButton: some View {
         Button {
             HapticFeedback.impact(.medium)
@@ -60,10 +62,11 @@ struct FloatingSpeedDial: View {
                 .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
                 .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
                 .frame(width: 58, height: 58)
-                .glassCircle()
-                .shadow(color: Color.primary.opacity(0.15), radius: 16, y: 4)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .glassCircle()
+        .shadow(color: Color.primary.opacity(0.22), radius: 20, y: 6)
     }
 
     private func actionRow(_ action: DashboardQuickAction) -> some View {
@@ -84,11 +87,17 @@ struct FloatingSpeedDial: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
                     .frame(width: 44, height: 44)
-                    .glassCircle()
-                    .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
+                    .contentShape(Circle())
             }
         }
         .buttonStyle(.plain)
+        .background(alignment: .trailing) {
+            Circle()
+                .frame(width: 44, height: 44)
+                .glassCircle()
+                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
+                .allowsHitTesting(false)
+        }
     }
 
     private func collapse() {

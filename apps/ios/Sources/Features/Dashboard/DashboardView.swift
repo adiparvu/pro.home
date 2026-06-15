@@ -35,45 +35,37 @@ struct DashboardView: View {
     private let sections = PropertySection.all
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    greetingHeader
-                    Spacer().frame(height: 22)
-                    mapCard
-                    Spacer().frame(height: 16)
-                    widgetSectionHeader
-                    Spacer().frame(height: 10)
-                    widgetGrid
-                    Spacer(minLength: 160)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, topSafeArea + 8)
-                .padding(.bottom, 20)
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
-                    }
-                )
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                greetingHeader
+                Spacer().frame(height: 22)
+                mapCard
+                Spacer().frame(height: 16)
+                widgetSectionHeader
+                Spacer().frame(height: 10)
+                widgetGrid
+                Spacer(minLength: 160)
             }
-            .coordinateSpace(name: "dashScroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { y in
-                let shouldCollapse = y < -30
-                if shouldCollapse != tabBarVis.scrolledDown {
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                        tabBarVis.scrolledDown = shouldCollapse
-                    }
+            .padding(.horizontal, 16)
+            .padding(.top, topSafeArea + 8)
+            .padding(.bottom, 20)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
                 }
-            }
-            .background(appBackground.ignoresSafeArea())
-
-            FloatingSpeedDial(
-                actions: appSettings.fabVisible(.home) ? appSettings.fabActions(.home) : [],
-                onSelect: { router.perform($0) },
-                bottomPadding: bottomSafeArea + 80
             )
-            .zIndex(2)
         }
+        .coordinateSpace(name: "dashScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { y in
+            let shouldCollapse = y < -30
+            if shouldCollapse != tabBarVis.scrolledDown {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                    tabBarVis.scrolledDown = shouldCollapse
+                }
+            }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .floatingSpeedDial(.home, bottomPadding: bottomSafeArea + 80)
         .navigationBarHidden(true)
         .onAppear { startPulse() }
         .task {
