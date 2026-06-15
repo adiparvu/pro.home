@@ -105,26 +105,20 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $router.selectedTab) {
             NavigationStack { DashboardView() }
-                .tabItem { Image(systemName: AppTab.home.icon) }
                 .tag(AppTab.home)
 
             NavigationStack { DigitalTwinView() }
-                .tabItem { Image(systemName: AppTab.map.icon) }
                 .tag(AppTab.map)
 
             NavigationStack { TasksView() }
-                .tabItem { Image(systemName: AppTab.tasks.icon) }
                 .tag(AppTab.tasks)
 
             NavigationStack { AnalyticsView() }
-                .tabItem { Image(systemName: AppTab.analytics.icon) }
                 .tag(AppTab.analytics)
 
             NavigationStack { SettingsView() }
-                .tabItem { Image(systemName: AppTab.settings.icon) }
                 .tag(AppTab.settings)
         }
-        .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AnimatedTabBar(
                 selected: $router.selectedTab,

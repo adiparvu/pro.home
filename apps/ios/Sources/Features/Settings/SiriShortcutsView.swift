@@ -145,35 +145,46 @@ struct SiriShortcutsView: View {
     // MARK: Donate button
 
     private var donateButton: some View {
-        Button {
-            Task {
-                await PRVIOShortcutsProvider.updateAppShortcutParameters()
-                HapticFeedback.success()
-                withAnimation { donated = true }
+        VStack(spacing: 10) {
+            Button {
+                guard !donated else { return }
+                Task {
+                    await PRVIOShortcutsProvider.updateAppShortcutParameters()
+                    HapticFeedback.success()
+                    withAnimation { donated = true }
+                    try? await Task.sleep(for: .seconds(2))
+                    withAnimation { donated = false }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text(donated ? "Comenzi activate!" : "Activează comenzile Siri")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(
+                    donated
+                        ? AnyShapeStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
+                        : AnyShapeStyle(LinearGradient(
+                            colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
             }
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
-                    .font(.system(size: 16, weight: .semibold))
-                Text(donated ? "Comenzi activate!" : "Activează comenzile Siri")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                donated
-                    ? AnyShapeStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
-                    : AnyShapeStyle(LinearGradient(
-                        colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
+            .buttonStyle(.plain)
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: donated)
+
+            Text("Pentru a dezactiva comenzile Siri, mergi la Setări iPhone › Siri › Scurtături aplicație.")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.primary.opacity(0.35))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
         }
-        .buttonStyle(.plain)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: donated)
     }
 
     // MARK: Helpers

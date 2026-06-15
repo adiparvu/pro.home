@@ -20,7 +20,13 @@ struct AppearanceView: View {
         if appSettings.accentColor.hasPrefix("#") { return "Personalizat" }
         return accentOptions.first(where: { $0.name == appSettings.accentColor })?.label ?? "Albastru"
     }
+    // Resolved accent color — respects the enabled/disabled toggle.
+    // Use accentPreviewColor where you always want the raw selected color
+    // (e.g., the color-picker dots and the toggle's own tint).
     private var currentColor: Color {
+        appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue
+    }
+    private var accentPreviewColor: Color {
         avatarRingColor(for: appSettings.accentColor)
     }
     private var customColorBinding: Binding<Color> {
@@ -193,7 +199,7 @@ struct AppearanceView: View {
                             if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
                         }
                     ))
-                    .labelsHidden().tint(currentColor)
+                    .labelsHidden().tint(accentPreviewColor)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
 

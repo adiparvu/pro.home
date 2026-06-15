@@ -63,6 +63,7 @@ struct DigitalTwinView: View {
     // MARK: - Body
 
     var body: some View {
+        ZStack(alignment: .bottomTrailing) {
         MapReader { proxy in
             Map(position: $camera) {
                 Annotation("", coordinate: propertyCoordinate) {
@@ -189,7 +190,6 @@ struct DigitalTwinView: View {
             }
         }
         .overlay(alignment: .top) { if !drawMode && !editingShape { layerBar } }
-        .overlay(alignment: .bottomTrailing) { if !drawMode && !editingShape { sideControls } }
         .overlay(alignment: .bottomLeading) { if heatmap && !drawMode && !editingShape { heatmapLegend } }
         .overlay(alignment: .bottom) { if drawMode { drawToolbar } }
         .overlay(alignment: .top) { if drawMode { drawBanner } }
@@ -266,6 +266,11 @@ struct DigitalTwinView: View {
                 .environmentObject(appSettings)
         }
         .task { await loadData() }
+
+        // sideControls is placed here, outside MapReader, so MKMapView's
+        // internal gesture recognizers cannot intercept button taps.
+        if !drawMode && !editingShape { sideControls }
+        } // ZStack
     }
 
     // MARK: - Controls
