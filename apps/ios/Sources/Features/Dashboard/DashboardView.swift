@@ -164,18 +164,17 @@ struct DashboardView: View {
 
             Spacer()
 
-            // Health score pill
+            // Health score — glass circle matching the search/bell buttons
             if let score = propertyService.primary?.healthScore {
-                let col: Color = score >= 80
-                    ? Color(red: 0.25, green: 0.88, blue: 0.55)
-                    : score >= 55 ? Color.orange : Color.red
-                HStack(spacing: 4) {
-                    Image(systemName: "heart.fill").font(.system(size: 10))
-                    Text("\(score)").font(.system(size: 12, weight: .bold))
+                VStack(spacing: 1) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 7, weight: .bold))
+                    Text("\(score)")
+                        .font(.system(size: 13, weight: .bold))
                 }
-                .foregroundStyle(col)
-                .padding(.horizontal, 9).padding(.vertical, 5)
-                .background(col.opacity(0.12), in: Capsule())
+                .foregroundStyle(healthScoreColor(score))
+                .frame(width: 38, height: 38)
+                .glassCircle()
             }
 
             // Global search
@@ -218,9 +217,11 @@ struct DashboardView: View {
                 HapticFeedback.impact(.light)
                 showWidgetPicker = true
             } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(.blue.opacity(0.8))
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .frame(width: 32, height: 32)
+                    .glassCircle()
             }
             .buttonStyle(.plain)
         }
@@ -421,6 +422,17 @@ struct DashboardView: View {
                 value: "\(Calendar.current.component(.day, from: Date()))",
                 subtitle: monthName
             ) { }
+        }
+    }
+
+    private func healthScoreColor(_ score: Int) -> Color {
+        switch score {
+        case 80...: return Color(red: 0.20, green: 0.87, blue: 0.45)  // bright green
+        case 60..<80: return Color(red: 0.55, green: 0.85, blue: 0.20) // lime / yellow-green
+        case 40..<60: return Color(red: 1.0,  green: 0.78, blue: 0.05) // amber
+        case 20..<40: return Color(red: 1.0,  green: 0.55, blue: 0.05) // orange
+        case 10..<20: return Color(red: 1.0,  green: 0.27, blue: 0.12) // red-orange
+        default:      return Color(red: 0.82, green: 0.05, blue: 0.12) // deep red
         }
     }
 
