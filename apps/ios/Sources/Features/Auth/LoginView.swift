@@ -146,10 +146,6 @@ private struct GlassTextField: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 52)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5)
-        )
+        .glassRoundedRect(14)
     }
 }

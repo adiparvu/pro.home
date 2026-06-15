@@ -66,12 +66,7 @@ private struct AnimatedTabBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
-        )
-        .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 8)
+        .liquidGlass(cornerRadius: 32)
         .padding(.horizontal, 24)
         .padding(.bottom, bottomPad)
     }
@@ -141,7 +136,7 @@ struct MainTabView: View {
                 selected: $router.selectedTab,
                 bounceTab: $bounceTab,
                 overdueCount: taskService.overdueCount,
-                bottomPad: max(deviceBottomSafe, 8)
+                bottomPad: 8
             )
         }
         .fullScreenCover(isPresented: $router.showARIA) {

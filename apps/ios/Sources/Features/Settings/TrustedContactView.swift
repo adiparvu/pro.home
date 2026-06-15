@@ -90,15 +90,7 @@ struct TrustedContactView: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.08), .clear],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 0.8
-                )
-        )
+        .liquidGlass(cornerRadius: 20)
     }
 
     // MARK: - Form

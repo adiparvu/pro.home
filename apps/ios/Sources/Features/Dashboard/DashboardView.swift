@@ -309,14 +309,8 @@ struct DashboardView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.8)
-        )
-        .shadow(color: .black.opacity(0.12), radius: 16, y: 4)
+        .liquidGlass(cornerRadius: 20)
     }
 
     // MARK: - Widget Grid (dynamic — driven by WidgetPicker selection)
@@ -529,12 +523,7 @@ struct HomeWidget: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.8)
-            )
+            .liquidGlass(cornerRadius: 16)
         }
         .buttonStyle(.plain)
     }

@@ -269,12 +269,10 @@ struct ChatView: View {
             .padding(.horizontal, 14)
             .padding(.top, 12)
             .padding(.bottom, 10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.primary.opacity(0.09), lineWidth: 0.5))
+            .liquidGlass(cornerRadius: 22)
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 6)
-            .background(Color.primary.opacity(0.03))
         }
     }
 
