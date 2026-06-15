@@ -244,7 +244,7 @@ private struct ApplianceRow: View {
                                 .foregroundStyle(Color.primary.opacity(0.45))
                         }
                         if let model = appliance.modelNumber, !model.isEmpty {
-                            if !appliance.brand.isEmpty {
+                            if appliance.brand?.isEmpty == false {
                                 Text("·").foregroundStyle(Color.primary.opacity(0.2))
                             }
                             Text(model)
