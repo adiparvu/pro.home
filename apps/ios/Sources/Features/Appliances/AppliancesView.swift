@@ -18,7 +18,7 @@ struct AppliancesView: View {
         if !search.isEmpty {
             list = list.filter {
                 $0.name.localizedCaseInsensitiveContains(search) ||
-                $0.brand.localizedCaseInsensitiveContains(search) ||
+                ($0.brand?.localizedCaseInsensitiveContains(search) ?? false) ||
                 ($0.location?.localizedCaseInsensitiveContains(search) ?? false)
             }
         }
@@ -238,8 +238,8 @@ private struct ApplianceRow: View {
                         .lineLimit(1)
 
                     HStack(spacing: 5) {
-                        if !appliance.brand.isEmpty {
-                            Text(appliance.brand)
+                        if let brand = appliance.brand, !brand.isEmpty {
+                            Text(brand)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.primary.opacity(0.45))
                         }
@@ -526,6 +526,23 @@ private struct ApplianceDetailSheet: View {
         return f
     }()
 
+    private static let isoParser: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static func formatDate(_ isoString: String) -> String {
+        if let date = isoParser.date(from: isoString) {
+            return dateFormatter.string(from: date)
+        }
+        let short = ISO8601DateFormatter()
+        if let date = short.date(from: isoString) {
+            return dateFormatter.string(from: date)
+        }
+        return isoString
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -596,8 +613,8 @@ private struct ApplianceDetailSheet: View {
             sectionHeader("Details")
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
-                    if !appliance.brand.isEmpty {
-                        infoRow(icon: "building.2.fill", label: "Brand", value: appliance.brand)
+                    if let brand = appliance.brand, !brand.isEmpty {
+                        infoRow(icon: "building.2.fill", label: "Brand", value: brand)
                         rowDivider
                     }
                     if let model = appliance.modelNumber, !model.isEmpty {
@@ -622,11 +639,11 @@ private struct ApplianceDetailSheet: View {
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     if let date = appliance.purchaseDate {
-                        infoRow(icon: "calendar", label: "Purchased", value: Self.dateFormatter.string(from: date))
+                        infoRow(icon: "calendar", label: "Purchased", value: Self.formatDate(date))
                         rowDivider
                     }
                     if let warranty = appliance.warrantyUntil {
-                        infoRow(icon: "shield.fill", label: "Warranty Until", value: Self.dateFormatter.string(from: warranty),
+                        infoRow(icon: "shield.fill", label: "Warranty Until", value: Self.formatDate(warranty),
                                 valueColor: appliance.warrantyColor)
                         rowDivider
                     }
