@@ -496,18 +496,20 @@ private struct AddPropertyValueSheet: View {
 
     private func save() async {
         guard let amount = Double(valueText), amount > 0,
-              let propertyId = propertyService.primary?.id else { return }
+              let propertyId = propertyService.primary?.id,
+              let ownerId = supabase.auth.currentSession?.user.id else { return }
         isSaving = true
         defer { isSaving = false }
         let payload = NewPropertyValuePayload(
             propertyId: propertyId,
+            ownerId: ownerId,
             valueAmount: amount,
             currency: currency,
             source: source.isEmpty ? nil : source,
             notes: notes.isEmpty ? nil : notes,
             enteredAt: ISO8601DateFormatter().string(from: date)
         )
-        try? await propertyValueService.add(payload)
+        await propertyValueService.add(payload)
         HapticFeedback.success()
         dismiss()
     }

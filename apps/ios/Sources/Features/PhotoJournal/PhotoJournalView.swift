@@ -476,6 +476,7 @@ private struct AddPhotoJournalSheet: View {
 
     private func save() async {
         guard let propertyId = propertyService.primary?.id,
+              let ownerId = supabase.auth.currentSession?.user.id,
               let imageData = selectedImageData else { return }
 
         isUploading = true
@@ -507,16 +508,20 @@ private struct AddPhotoJournalSheet: View {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
 
+            let now = ISO8601DateFormatter().string(from: Date())
             let payload = NewPhotoJournalPayload(
                 propertyId: propertyId,
+                ownerId: ownerId,
+                zoneId: nil,
                 title: title.trimmingCharacters(in: .whitespaces),
                 caption: caption.isEmpty ? nil : caption,
                 photoUrl: publicURL.absoluteString,
-                tags: tags,
-                takenAt: ISO8601DateFormatter().string(from: Date())
+                takenAt: now,
+                tags: tags.isEmpty ? nil : tags,
+                createdAt: now
             )
 
-            try await photoJournalService.add(payload)
+            await photoJournalService.add(payload)
             HapticFeedback.success()
             dismiss()
         } catch {

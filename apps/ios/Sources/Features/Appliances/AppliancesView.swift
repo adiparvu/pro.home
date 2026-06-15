@@ -483,22 +483,29 @@ private struct AddApplianceSheet: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let propertyId = propertyService.primary?.id else { return }
+        guard let propertyId = propertyService.primary?.id,
+              let ownerId = supabase.auth.currentSession?.user.id else { return }
         let price = Double(purchasePriceText) ?? 0
+        let iso = ISO8601DateFormatter()
+        let now = iso.string(from: Date())
         let payload = NewAppliancePayload(
             propertyId: propertyId,
+            ownerId: ownerId,
             name: name.trimmingCharacters(in: .whitespaces),
-            brand: brand.trimmingCharacters(in: .whitespaces),
-            category: category,
+            brand: brand.isEmpty ? nil : brand.trimmingCharacters(in: .whitespaces),
             modelNumber: modelNumber.isEmpty ? nil : modelNumber,
             serialNumber: serialNumber.isEmpty ? nil : serialNumber,
             location: location.isEmpty ? nil : location,
-            purchaseDate: hasPurchaseDate ? purchaseDate : nil,
-            warrantyUntil: hasWarrantyDate ? warrantyUntil : nil,
+            category: category.rawValue,
+            purchaseDate: hasPurchaseDate ? iso.string(from: purchaseDate) : nil,
+            warrantyUntil: hasWarrantyDate ? iso.string(from: warrantyUntil) : nil,
             purchasePrice: price > 0 ? price : nil,
-            notes: notes.isEmpty ? nil : notes
+            notes: notes.isEmpty ? nil : notes,
+            photoUrl: nil,
+            createdAt: now,
+            updatedAt: now
         )
-        try? await applianceService.add(payload)
+        await applianceService.add(payload)
         HapticFeedback.success()
         dismiss()
     }

@@ -490,19 +490,22 @@ private struct AddPaintColorSheet: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let propertyId = propertyService.primary?.id else { return }
+        guard let propertyId = propertyService.primary?.id,
+              let ownerId = supabase.auth.currentSession?.user.id else { return }
         let payload = NewPaintColorPayload(
             propertyId: propertyId,
+            ownerId: ownerId,
             roomName: roomName.trimmingCharacters(in: .whitespaces),
             surface: surface,
             colorName: colorName.trimmingCharacters(in: .whitespaces),
             brand: brand.isEmpty ? nil : brand,
             code: code.isEmpty ? nil : code,
-            finish: finish,
+            finish: finish.rawValue,
             hexColor: hexColor.isEmpty ? nil : hexColor,
-            notes: notes.isEmpty ? nil : notes
+            notes: notes.isEmpty ? nil : notes,
+            createdAt: ISO8601DateFormatter().string(from: Date())
         )
-        try? await paintColorService.add(payload)
+        await paintColorService.add(payload)
         HapticFeedback.success()
         dismiss()
     }
