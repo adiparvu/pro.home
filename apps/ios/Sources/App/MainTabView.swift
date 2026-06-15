@@ -103,21 +103,29 @@ struct MainTabView: View {
     @State private var bounceTab: AppTab? = nil
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
+        // ZStack instead of TabView to avoid the iOS 26 system UITabBar
+        // appearing alongside our custom AnimatedTabBar. All tabs are kept
+        // alive in the hierarchy; only the selected one is interactive.
+        ZStack {
             NavigationStack { DashboardView() }
-                .tag(AppTab.home)
+                .opacity(router.selectedTab == .home ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .home)
 
             NavigationStack { DigitalTwinView() }
-                .tag(AppTab.map)
+                .opacity(router.selectedTab == .map ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .map)
 
             NavigationStack { TasksView() }
-                .tag(AppTab.tasks)
+                .opacity(router.selectedTab == .tasks ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .tasks)
 
             NavigationStack { AnalyticsView() }
-                .tag(AppTab.analytics)
+                .opacity(router.selectedTab == .analytics ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .analytics)
 
             NavigationStack { SettingsView() }
-                .tag(AppTab.settings)
+                .opacity(router.selectedTab == .settings ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .settings)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AnimatedTabBar(
