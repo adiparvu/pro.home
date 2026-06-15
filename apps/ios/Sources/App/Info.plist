@@ -117,6 +117,8 @@
 	<string>Used to add family birthdays as annual reminders in Apple Calendar.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Used to add overdue tasks to Apple Reminders for quick action.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Used to sync family members to your iPhone Contacts.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Used to add tasks, water plants, and open PRVIO with your voice.</string>
 	<key>NSSupportsLiveActivities</key>

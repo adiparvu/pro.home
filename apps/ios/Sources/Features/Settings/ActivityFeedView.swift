@@ -142,7 +142,7 @@ struct ActivityFeedView: View {
                         .font(.system(size: 12, weight: period == p ? .semibold : .regular))
                         .foregroundStyle(period == p ? .white : Color.primary.opacity(0.6))
                         .padding(.horizontal, 13).padding(.vertical, 6)
-                        .background(period == p ? Color.blue : Color.primary.opacity(0.08),
+                        .background(period == p ? Color.accentColor : Color.primary.opacity(0.08),
                                     in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -182,7 +182,7 @@ struct ActivityFeedView: View {
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .background(
                             selectedMember == name
-                                ? Color.blue.opacity(0.12)
+                                ? Color.accentColor.opacity(0.12)
                                 : Color.primary.opacity(0.07),
                             in: Capsule()
                         )

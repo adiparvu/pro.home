@@ -54,7 +54,7 @@ struct AddFinancialView: View {
                         } else {
                             Text("Save")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.accentColor)
                         }
                     }
                     .disabled(isSaving || title.isEmpty || amount.isEmpty)

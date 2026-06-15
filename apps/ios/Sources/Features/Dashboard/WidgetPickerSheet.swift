@@ -109,7 +109,7 @@ struct WidgetPickerSheet: View {
                                                   : "circle")
                                                 .font(.system(size: 22))
                                                 .foregroundStyle(enabled.contains(type)
-                                                                 ? Color.blue
+                                                                 ? Color.accentColor
                                                                  : Color.primary.opacity(0.22))
                                         }
                                         .padding(.horizontal, 16)
@@ -144,7 +144,7 @@ struct WidgetPickerSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
                 }
             }
         }

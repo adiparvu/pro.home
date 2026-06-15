@@ -276,7 +276,7 @@ struct PropertyDetailView: View {
                                     .padding(.top, 4)
                                 if idx < renovations.count - 1 {
                                     Rectangle()
-                                        .fill(Color.blue.opacity(0.2))
+                                        .fill(Color.accentColor.opacity(0.2))
                                         .frame(width: 2, height: 32)
                                 }
                             }

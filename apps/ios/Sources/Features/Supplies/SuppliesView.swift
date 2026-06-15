@@ -223,7 +223,7 @@ struct SuppliesView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 13)
-                    .background(Color.blue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
             Spacer()
@@ -970,7 +970,7 @@ struct AddSupplyItemSheet: View {
                                 .font(.system(size: 13, weight: category == cat.id ? .semibold : .regular))
                                 .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, 13).padding(.vertical, 7)
-                                .background(category == cat.id ? Color.blue : Color.primary.opacity(0.07),
+                                .background(category == cat.id ? Color.accentColor : Color.primary.opacity(0.07),
                                             in: Capsule())
                         }
                         .buttonStyle(.plain)

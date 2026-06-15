@@ -71,7 +71,7 @@ struct MortgageView: View {
                     HapticFeedback.impact(.light)
                 }
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.accentColor)
             }
         }
         .sheet(isPresented: $isEditing) {
@@ -370,7 +370,7 @@ struct MortgageSetupSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.accentColor)
                 }
             }
         }

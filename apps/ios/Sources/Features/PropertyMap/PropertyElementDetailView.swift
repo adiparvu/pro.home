@@ -334,7 +334,7 @@ struct PropertyElementDetailView: View {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 5, matching: .images) {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.accentColor)
                     }
                 }
                 if localElement.photos.isEmpty {
@@ -373,10 +373,10 @@ struct PropertyElementDetailView: View {
         GlassCard(padding: 14) {
             HStack(spacing: 12) {
                 ZStack {
-                    Circle().fill(Color.blue.opacity(0.15)).frame(width: 40, height: 40)
+                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
                     Image(systemName: localElement.coordinate == nil ? "mappin.slash" : "mappin.circle.fill")
                         .font(.system(size: 17))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Map location").font(.subheadline.weight(.medium))
@@ -388,7 +388,7 @@ struct PropertyElementDetailView: View {
                     Text(localElement.coordinate == nil ? "Place" : "Change")
                         .font(.caption.weight(.semibold)).foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 7)
-                        .background(Capsule().fill(Color.blue))
+                        .background(Capsule().fill(Color.accentColor))
                 }
                 .buttonStyle(.plain)
             }
@@ -681,10 +681,10 @@ private struct LinkedDocumentRow: View {
         GlassCard(padding: 12) {
             HStack(spacing: 12) {
                 ZStack {
-                    Circle().fill(Color.blue.opacity(0.15)).frame(width: 36, height: 36)
+                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: doc.categoryIcon)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(doc.name).font(.subheadline.weight(.medium)).lineLimit(1)
@@ -693,7 +693,7 @@ private struct LinkedDocumentRow: View {
                 Spacer()
                 Button(action: onOpen) {
                     Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: 16)).foregroundStyle(.blue)
+                        .font(.system(size: 16)).foregroundStyle(.accentColor)
                 }
                 .buttonStyle(.plain)
             }
@@ -736,13 +736,13 @@ private struct DocumentLinkPicker: View {
                                     GlassCard(padding: 12) {
                                         HStack(spacing: 12) {
                                             Image(systemName: doc.categoryIcon)
-                                                .font(.system(size: 15)).foregroundStyle(.blue).frame(width: 28)
+                                                .font(.system(size: 15)).foregroundStyle(.accentColor).frame(width: 28)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(doc.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
                                                 Text(doc.category.capitalized).font(.caption).foregroundStyle(.secondary)
                                             }
                                             Spacer()
-                                            Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
+                                            Image(systemName: "plus.circle.fill").foregroundStyle(.accentColor)
                                         }
                                     }
                                 }
@@ -837,7 +837,7 @@ private struct TaskLinkPicker: View {
                                                 Text(task.dueDateDisplay).font(.caption).foregroundStyle(.secondary)
                                             }
                                             Spacer()
-                                            Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
+                                            Image(systemName: "plus.circle.fill").foregroundStyle(.accentColor)
                                         }
                                     }
                                 }

@@ -117,15 +117,15 @@ struct DigitalTwinView: View {
                 // Draw-in-progress polygon
                 if draftPoints.count >= 3 {
                     MapPolygon(coordinates: draftPoints.map(\.coordinate))
-                        .foregroundStyle(Color.blue.opacity(0.25))
-                        .stroke(Color.blue, lineWidth: 2)
+                        .foregroundStyle(Color.accentColor.opacity(0.25))
+                        .stroke(Color.accentColor, lineWidth: 2)
                 }
                 ForEach(Array(draftPoints.enumerated()), id: \.offset) { _, pt in
                     Annotation("", coordinate: pt.coordinate) {
                         Circle()
                             .fill(.white)
                             .frame(width: 14, height: 14)
-                            .overlay(Circle().fill(Color.blue).frame(width: 8, height: 8))
+                            .overlay(Circle().fill(Color.accentColor).frame(width: 8, height: 8))
                             .shadow(color: .black.opacity(0.3), radius: 3)
                     }
                 }
@@ -134,8 +134,8 @@ struct DigitalTwinView: View {
                 if editingShape {
                     if reshapePoints.count >= 3 {
                         MapPolygon(coordinates: reshapePoints.map(\.coordinate))
-                            .foregroundStyle(Color.blue.opacity(0.28))
-                            .stroke(Color.blue, lineWidth: 2.5)
+                            .foregroundStyle(Color.accentColor.opacity(0.28))
+                            .stroke(Color.accentColor, lineWidth: 2.5)
                     }
                     ForEach(Array(reshapePoints.enumerated()), id: \.offset) { idx, pt in
                         Annotation("", coordinate: pt.coordinate) {
@@ -221,6 +221,8 @@ struct DigitalTwinView: View {
             .environmentObject(elementService)
             .environmentObject(currencyService)
             .environmentObject(appSettings)
+            .environmentObject(documentService)
+            .environmentObject(taskService)
             .presentationDetents([.height(320), .large])
             .presentationBackgroundInteraction(.enabled(upThrough: .height(320)))
             .presentationBackground(.thinMaterial)
@@ -322,7 +324,7 @@ struct DigitalTwinView: View {
                 HapticFeedback.impact(.light)
             }
             controlButton(icon: is3D ? "rotate.3d.fill" : "rotate.3d",
-                          tint: is3D ? .blue : .primary) {
+                          tint: is3D ? .accentColor : .primary) {
                 toggle3D()
             }
             controlButton(icon: heatmap ? "flame.fill" : "flame",
@@ -330,7 +332,7 @@ struct DigitalTwinView: View {
                 withAnimation(.spring(response: 0.3)) { heatmap.toggle() }
             }
             controlButton(icon: showLabels ? "tag.fill" : "tag",
-                          tint: showLabels ? .blue : .primary) {
+                          tint: showLabels ? .accentColor : .primary) {
                 withAnimation(.spring(response: 0.3)) { showLabels.toggle() }
             }
             controlButton(icon: "heart.text.square.fill", tint: .pink) {
@@ -692,7 +694,7 @@ private struct VertexHandle: View {
         Circle()
             .fill(.white)
             .frame(width: 26, height: 26)
-            .overlay(Circle().fill(Color.blue).frame(width: 13, height: 13))
+            .overlay(Circle().fill(Color.accentColor).frame(width: 13, height: 13))
             .overlay(Circle().strokeBorder(.white, lineWidth: 2))
             .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
             .contentShape(Circle())
@@ -705,7 +707,7 @@ private struct MoveHandle: View {
             .font(.system(size: 13, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 34, height: 34)
-            .background(Color.blue, in: Circle())
+            .background(Color.accentColor, in: Circle())
             .overlay(Circle().strokeBorder(.white, lineWidth: 2))
             .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
             .contentShape(Circle())

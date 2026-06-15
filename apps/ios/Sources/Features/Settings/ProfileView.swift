@@ -380,7 +380,7 @@ private struct ChangeEmailSheet: View {
                     Button("Send") {
                         onSave(email); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
                     .disabled(!isValid)
                 }
             }
@@ -389,7 +389,7 @@ private struct ChangeEmailSheet: View {
 
     private func emailField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
             TextField(ph, text: b)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).autocorrectionDisabled().textInputAutocapitalization(.never)
@@ -442,7 +442,7 @@ private struct ChangePasswordSheet: View {
                     Button("Update") {
                         onSave(password); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
                     .disabled(!isValid)
                 }
             }
@@ -451,7 +451,7 @@ private struct ChangePasswordSheet: View {
 
     private func passField(_ icon: String, _ ph: String, _ b: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
             SecureField(ph, text: b)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, 16).padding(.vertical, 14)

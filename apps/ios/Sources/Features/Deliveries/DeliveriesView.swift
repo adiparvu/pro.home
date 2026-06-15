@@ -85,7 +85,7 @@ struct DeliveriesView: View {
         return HStack(spacing: 16) {
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color.blue)
+                    .fill(Color.accentColor)
                     .frame(width: 8, height: 8)
                 Text("\(active) active")
                     .font(.system(size: 13, weight: .medium))
@@ -129,7 +129,7 @@ struct DeliveriesView: View {
             HStack(spacing: 6) {
                 Image(systemName: "shippingbox.fill")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
                 Text("IN PROGRESS · \(deliveryService.activeDeliveries.count)")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
@@ -210,7 +210,7 @@ struct DeliveriesView: View {
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
                     .background(
-                        Color.blue,
+                        Color.accentColor,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous)
                     )
             }
@@ -506,7 +506,7 @@ struct DeliveryFormSheet: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(
-                                    carrier == c ? Color.blue : Color.primary.opacity(0.07),
+                                    carrier == c ? Color.accentColor : Color.primary.opacity(0.07),
                                     in: Capsule()
                                 )
                         }
@@ -545,7 +545,7 @@ struct DeliveryFormSheet: View {
                             if status == opt.id {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.accentColor)
                             }
                         }
                         .padding(.horizontal, 14)
@@ -598,7 +598,7 @@ struct DeliveryFormSheet: View {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
                                 .font(.system(size: 14))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.accentColor)
                             Text("Set estimated date")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
@@ -639,7 +639,7 @@ struct DeliveryFormSheet: View {
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
-                canSave ? Color.blue : Color.primary.opacity(0.2),
+                canSave ? Color.accentColor : Color.primary.opacity(0.2),
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .foregroundStyle(

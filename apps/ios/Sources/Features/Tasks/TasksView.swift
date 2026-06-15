@@ -254,7 +254,7 @@ struct TasksView: View {
             if filter == .all {
                 Button("Add your first task") { showAdd = true }
                     .font(.system(size: 15))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
             }
             Spacer()
         }

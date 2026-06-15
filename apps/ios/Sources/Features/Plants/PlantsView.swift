@@ -216,7 +216,7 @@ struct PlantsView: View {
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
                     .background(
-                        Color.blue,
+                        Color.accentColor,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous)
                     )
             }
@@ -428,7 +428,7 @@ struct PlantDetailSheet: View {
                             } else {
                                 Text("Save")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.accentColor)
                             }
                         }
                         .disabled(editedPlant.name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
@@ -438,7 +438,7 @@ struct PlantDetailSheet: View {
                         } label: {
                             Text("Edit")
                                 .font(.system(size: 15))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.accentColor)
                         }
                     }
                 }
@@ -594,7 +594,7 @@ struct PlantDetailSheet: View {
             .frame(height: 52)
             .background(
                 LinearGradient(
-                    colors: [Color.blue, Color(red: 0.1, green: 0.4, blue: 1.0)],
+                    colors: [Color.accentColor, Color(red: 0.1, green: 0.4, blue: 1.0)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
@@ -622,14 +622,14 @@ struct PlantDetailSheet: View {
                                 .frame(width: 40, height: 40)
                                 .background(
                                     editedPlant.emoji == emoji
-                                        ? Color.blue.opacity(0.18)
+                                        ? Color.accentColor.opacity(0.18)
                                         : Color.primary.opacity(0.06),
                                     in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                                         .strokeBorder(
-                                            editedPlant.emoji == emoji ? Color.blue : Color.clear,
+                                            editedPlant.emoji == emoji ? Color.accentColor : Color.clear,
                                             lineWidth: 2
                                         )
                                 )
@@ -861,14 +861,14 @@ struct AddPlantSheet: View {
                                 .frame(width: 52, height: 52)
                                 .background(
                                     selectedEmoji == emoji
-                                        ? Color.blue.opacity(0.15)
+                                        ? Color.accentColor.opacity(0.15)
                                         : Color.primary.opacity(0.06),
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .strokeBorder(
-                                            selectedEmoji == emoji ? Color.blue : Color.clear,
+                                            selectedEmoji == emoji ? Color.accentColor : Color.clear,
                                             lineWidth: 2
                                         )
                                 )
@@ -1016,7 +1016,7 @@ struct AddPlantSheet: View {
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
-                canSave ? Color.blue : Color.primary.opacity(0.2),
+                canSave ? Color.accentColor : Color.primary.opacity(0.2),
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .foregroundStyle(

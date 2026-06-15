@@ -1,13 +1,18 @@
 import SwiftUI
 import EventKit
+import Contacts
+import MapKit
 
 struct IntegrationsView: View {
     @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var familyService: FamilyService
     @StateObject private var vm = IntegrationsViewModel()
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                appleEcosystemSection
                 productivitySection
                 smartHomeSection
                 securitySection
@@ -26,10 +31,17 @@ struct IntegrationsView: View {
         .navigationBarTitleDisplayMode(.large)
         .task { await vm.checkStatuses() }
         .task { vm.tasks = taskService.tasks }
+        .task { vm.property = propertyService.primary }
+        .task { vm.familyMembers = familyService.members }
         .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Your upcoming tasks will appear in your Apple Calendar under the \"PRVIO\" calendar.")
+        }
+        .alert("Contacts Synced", isPresented: $vm.showContactsSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Family members have been added to your Contacts under the \"PRVIO Family\" group.")
         }
         .alert("Access Denied", isPresented: $vm.showPermissionDenied) {
             Button("Open Settings") {
@@ -45,6 +57,60 @@ struct IntegrationsView: View {
 
     // MARK: - Sections
 
+    private var appleEcosystemSection: some View {
+        IntegrationGroup(title: "iOS & Apple Ecosystem") {
+            NavigationLink {
+                SiriShortcutsView()
+            } label: {
+                IntegrationRowContent(
+                    icon: "mic.fill", color: Color(red: 0.58, green: 0.25, blue: 0.95),
+                    title: "Siri & Shortcuts",
+                    description: "Create tasks, water plants, and open features with your voice.",
+                    status: .deepLink("Configure"))
+            }
+
+            IntegrationRow(icon: "magnifyingglass", color: Color(red: 0.2, green: 0.6, blue: 0.95),
+                title: "Spotlight Search",
+                description: "Tasks, plants, and documents appear in iOS Spotlight search results.",
+                status: .active("Active"), action: nil)
+
+            IntegrationRow(icon: "map.fill", color: Color(red: 0.25, green: 0.75, blue: 0.45),
+                title: "Apple Maps",
+                description: "View your property location and get directions in Maps.",
+                status: .deepLink("Open"),
+                action: {
+                    if let lat = vm.property?.latitude, let lon = vm.property?.longitude {
+                        let coords = "\(lat),\(lon)"
+                        let name = (vm.property?.address ?? "My Property").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                        UIApplication.shared.open(URL(string: "maps://?ll=\(coords)&q=\(name)")!)
+                    } else {
+                        UIApplication.shared.open(URL(string: "maps://")!)
+                    }
+                })
+
+            IntegrationRow(
+                icon: "person.2.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15),
+                title: "Apple Contacts",
+                description: "Sync family members to your iPhone Contacts.",
+                status: vm.contactsStatus,
+                action: { Task { await vm.toggleContacts() } })
+
+            IntegrationRow(icon: "moon.fill", color: Color(red: 0.35, green: 0.35, blue: 0.85),
+                title: "Focus Modes",
+                description: "PRVIO notifications respect your iOS Focus settings automatically.",
+                status: .active("Automatic"),
+                action: {
+                    UIApplication.shared.open(URL(string: "App-Prefs:FOCUS")
+                        ?? URL(string: UIApplication.openSettingsURLString)!)
+                })
+
+            IntegrationRow(icon: "icloud.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95),
+                title: "iCloud Backup",
+                description: "App data is included in your iPhone iCloud backup automatically.",
+                status: .active("Automatic"), action: nil)
+        }
+    }
+
     private var productivitySection: some View {
         IntegrationGroup(title: "Productivity") {
             IntegrationRow(icon: "calendar", color: .red,
@@ -52,7 +118,7 @@ struct IntegrationsView: View {
                 description: "Sync tasks and maintenance reminders to your calendar.",
                 status: vm.calendarStatus,
                 action: { Task { await vm.toggleCalendar() } })
-            IntegrationRow(icon: "checklist", color: .blue,
+            IntegrationRow(icon: "checklist", color: Color(red: 0.25, green: 0.5, blue: 0.95),
                 title: "Apple Reminders",
                 description: "Add overdue tasks to Reminders for quick action.",
                 status: vm.remindersStatus,
@@ -81,12 +147,18 @@ struct IntegrationsView: View {
             IntegrationRow(icon: "homekit", color: Color(red: 0.98, green: 0.4, blue: 0.4),
                 title: "Apple HomeKit",
                 description: "Control smart home devices linked to your property.",
-                status: .deepLink("Open Home App"),
+                status: .deepLink("Open Home"),
                 action: { UIApplication.shared.open(URL(string: "homeapp://")!) })
+            IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
+                title: "Home Assistant",
+                description: "Connect to your local Home Assistant for full smart home control.",
+                status: UIApplication.shared.canOpenURL(URL(string: "homeassistant://")!) ? .deepLink("Open") : .comingSoon,
+                action: { UIApplication.shared.open(URL(string: "homeassistant://navigate/lovelace/0")!) })
             IntegrationRow(icon: "lightbulb.fill", color: .yellow,
                 title: "Philips Hue",
                 description: "Control lights and scenes across all rooms.",
-                status: .comingSoon, action: nil)
+                status: UIApplication.shared.canOpenURL(URL(string: "hue://")!) ? .deepLink("Open") : .comingSoon,
+                action: { UIApplication.shared.open(URL(string: "hue://")!) })
             IntegrationRow(icon: "thermometer.medium", color: .orange,
                 title: "Nest / Google Home",
                 description: "Monitor and adjust temperature remotely.",
@@ -94,19 +166,21 @@ struct IntegrationsView: View {
             IntegrationRow(icon: "speaker.wave.2.fill", color: Color(red: 0.0, green: 0.45, blue: 1.0),
                 title: "Sonos",
                 description: "Manage whole-home audio from your property dashboard.",
-                status: .comingSoon, action: nil)
+                status: UIApplication.shared.canOpenURL(URL(string: "sonos://")!) ? .deepLink("Open") : .comingSoon,
+                action: { UIApplication.shared.open(URL(string: "sonos://")!) })
             IntegrationRow(icon: "lock.shield.fill", color: Color(red: 0.3, green: 0.65, blue: 0.95),
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
-                status: .comingSoon, action: nil)
+                status: UIApplication.shared.canOpenURL(URL(string: "august-connects://")!) ? .deepLink("Open") : .comingSoon,
+                action: { UIApplication.shared.open(URL(string: "august-connects://")!) })
             IntegrationRow(icon: "lightswitch.on.fill", color: Color(red: 0.0, green: 0.65, blue: 0.55),
                 title: "IKEA TRÅDFRI",
                 description: "Control IKEA smart lighting and blinds.",
                 status: .comingSoon, action: nil)
-            IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
-                title: "Home Assistant",
-                description: "Connect to your local Home Assistant for full control.",
-                status: .comingSoon, action: nil)
+            IntegrationRow(icon: "atom", color: Color(red: 0.4, green: 0.7, blue: 0.95),
+                title: "Matter & Thread",
+                description: "Compatible Matter devices work automatically via Apple Home.",
+                status: .active("Via HomeKit"), action: nil)
         }
     }
 
@@ -119,7 +193,8 @@ struct IntegrationsView: View {
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "Ring Doorbell",
                 description: "See who's at the door and get motion alerts.",
-                status: .comingSoon, action: nil)
+                status: UIApplication.shared.canOpenURL(URL(string: "ring://")!) ? .deepLink("Open") : .comingSoon,
+                action: { UIApplication.shared.open(URL(string: "ring://")!) })
             IntegrationRow(icon: "sensor.tag.radiowaves.forward.fill", color: .purple,
                 title: "Arlo / Eufy",
                 description: "Integrate wireless security cameras and sensors.",
@@ -192,9 +267,13 @@ struct IntegrationsView: View {
 final class IntegrationsViewModel: ObservableObject {
     @Published var calendarStatus: IntegrationStatus = .notConnected
     @Published var remindersStatus: IntegrationStatus = .notConnected
+    @Published var contactsStatus: IntegrationStatus = .notConnected
     @Published var showCalendarSuccess = false
+    @Published var showContactsSuccess = false
     @Published var showPermissionDenied = false
     var tasks: [MaintenanceTask] = []
+    var property: PropertyModel? = nil
+    var familyMembers: [FamilyMember] = []
 
     private let store = EKEventStore()
     private let calendarSyncedKey = "prvio.calendar.synced_ids"
@@ -203,7 +282,10 @@ final class IntegrationsViewModel: ObservableObject {
     func checkStatuses() async {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
         remindersStatus = await checkRemindersAccess() ? .connected : .notConnected
+        contactsStatus = checkContactsAccess() ? .connected : .notConnected
     }
+
+    // MARK: - Calendar
 
     func toggleCalendar() async {
         if calendarStatus == .connected {
@@ -240,7 +322,58 @@ final class IntegrationsViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Calendar
+    // MARK: - Contacts
+
+    func toggleContacts() async {
+        if contactsStatus == .connected {
+            contactsStatus = .notConnected
+            return
+        }
+        contactsStatus = .loading
+        let granted = await requestContactsAccess()
+        if granted {
+            syncFamilyToContacts()
+            contactsStatus = .connected
+            showContactsSuccess = true
+        } else {
+            contactsStatus = .notConnected
+            showPermissionDenied = true
+        }
+    }
+
+    private func checkContactsAccess() -> Bool {
+        CNContactStore.authorizationStatus(for: .contacts) == .authorized
+    }
+
+    private func requestContactsAccess() async -> Bool {
+        do {
+            return try await CNContactStore().requestAccess(for: .contacts)
+        } catch { return false }
+    }
+
+    private func syncFamilyToContacts() {
+        let contactStore = CNContactStore()
+        let saveRequest = CNSaveRequest()
+
+        for member in familyMembers {
+            let contact = CNMutableContact()
+            let parts = member.name.split(separator: " ", maxSplits: 1)
+            contact.givenName = String(parts.first ?? Substring(member.name))
+            if parts.count > 1 { contact.familyName = String(parts[1]) }
+            if let email = member.email {
+                contact.emailAddresses = [CNLabeledValue(label: CNLabelHome, value: email as NSString)]
+            }
+            if let phone = member.phone {
+                contact.phoneNumbers = [CNLabeledValue(label: CNLabelPhoneNumberMain, value: CNPhoneNumber(stringValue: phone))]
+            }
+            contact.organizationName = "PRVIO Family"
+            saveRequest.add(contact, toContainerWithIdentifier: nil)
+        }
+
+        try? contactStore.execute(saveRequest)
+    }
+
+    // MARK: - Calendar helpers
 
     private func checkCalendarAccess() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .event)
@@ -299,7 +432,7 @@ final class IntegrationsViewModel: ObservableObject {
         UserDefaults.standard.set(synced, forKey: calendarSyncedKey)
     }
 
-    // MARK: - Reminders
+    // MARK: - Reminders helpers
 
     private func checkRemindersAccess() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .reminder)
@@ -365,6 +498,7 @@ enum IntegrationStatus: Equatable {
     case notConnected
     case loading
     case comingSoon
+    case active(String)
     case deepLink(String)
 }
 
@@ -446,7 +580,7 @@ private struct IntegrationRow: View {
 
         case .loading:
             ProgressView()
-                .tint(.white)
+                .tint(.accentColor)
                 .scaleEffect(0.8)
 
         case .comingSoon:
@@ -456,17 +590,65 @@ private struct IntegrationRow: View {
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Color.primary.opacity(0.06), in: Capsule())
 
+        case .active(let label):
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(Color.green.opacity(0.12), in: Capsule())
+
         case .deepLink(let label):
             Button {
                 action?()
             } label: {
                 Text(label)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(.blue.opacity(0.12), in: Capsule())
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+// Used for NavigationLink rows so the entire row is tappable
+private struct IntegrationRowContent: View {
+    let icon: String
+    let color: Color
+    let title: String
+    let description: String
+    let status: IntegrationStatus
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                ColoredIconBadge(icon: icon, color: color, size: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Text(description)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+
+            Rectangle()
+                .fill(Color.primary.opacity(0.05))
+                .frame(height: 0.5)
+                .padding(.leading, 64)
+        }
+        .contentShape(Rectangle())
     }
 }

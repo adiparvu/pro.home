@@ -262,7 +262,7 @@ private struct BuriedUtilityDetailSheet: View {
             .navigationTitle(utility.name).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
                 }
             }
         }
@@ -328,7 +328,7 @@ private struct AddBuriedUtilitySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
+                        .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                         .disabled(name.isEmpty)
                 }
             }
@@ -370,7 +370,7 @@ private struct AddBuriedUtilitySheet: View {
             fieldRow("textformat", "Name (e.g. Main power cable)", $name)
             div
             HStack(spacing: 12) {
-                Image(systemName: "arrow.down.to.line").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                Image(systemName: "arrow.down.to.line").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
                 Text("Depth (cm)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("60", text: $depth)
@@ -379,7 +379,7 @@ private struct AddBuriedUtilitySheet: View {
             }.padding(.horizontal, 16).padding(.vertical, 13)
             div
             HStack(spacing: 12) {
-                Image(systemName: "ruler").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+                Image(systemName: "ruler").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
                 Text("Length (m)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("0", text: $length)
@@ -426,7 +426,7 @@ private struct AddBuriedUtilitySheet: View {
             VStack(spacing: 10) {
                 Toggle(isOn: $useInstalledDate) {
                     HStack(spacing: 10) {
-                        Image(systemName: "calendar").foregroundStyle(.blue)
+                        Image(systemName: "calendar").foregroundStyle(.accentColor)
                         Text("Installation date").font(.system(size: 15)).foregroundStyle(.primary)
                     }
                 }.tint(.accentColor)
@@ -447,7 +447,7 @@ private struct AddBuriedUtilitySheet: View {
                 }
                 Button { showPhotoPicker = true } label: {
                     Label(photoImage == nil ? "Add reference photo" : "Change photo", systemImage: "photo.badge.plus")
-                        .font(.system(size: 14, weight: .medium)).foregroundStyle(.blue)
+                        .font(.system(size: 14, weight: .medium)).foregroundStyle(.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
@@ -457,7 +457,7 @@ private struct AddBuriedUtilitySheet: View {
 
     private func fieldRow(_ icon: String, _ placeholder: String, _ text: Binding<String>) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
             TextField(placeholder, text: text).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }

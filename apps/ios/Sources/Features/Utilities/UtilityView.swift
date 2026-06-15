@@ -379,7 +379,7 @@ struct AddUtilitySheet: View {
                         onSave(entry); HapticFeedback.success(); dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(amount.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
+                    .foregroundStyle(amount.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                     .disabled(amount.isEmpty)
                 }
             }

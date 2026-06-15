@@ -123,7 +123,7 @@ struct BudgetView: View {
                                         } else {
                                             Text("Set budget")
                                                 .font(.system(size: 12))
-                                                .foregroundStyle(.blue)
+                                                .foregroundStyle(.accentColor)
                                         }
                                         if budget > 0 {
                                             Text(String(format: "%.0f%%", progress * 100))
@@ -239,7 +239,7 @@ private struct EditBudgetSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
                 }
             }
         }

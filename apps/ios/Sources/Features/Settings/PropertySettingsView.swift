@@ -36,7 +36,7 @@ struct PropertySettingsView: View {
                 Button { showAdd = true } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.accentColor)
                 }
             }
         }
@@ -256,7 +256,7 @@ struct EditPropertySheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "mappin.fill")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.accentColor)
                                         .frame(width: 28)
                                     TextField("Address", text: $addressLine1)
                                         .font(.system(size: 15))
@@ -287,7 +287,7 @@ struct EditPropertySheet: View {
                                             HStack(spacing: 10) {
                                                 Image(systemName: "mappin.circle.fill")
                                                     .font(.system(size: 14))
-                                                    .foregroundStyle(.blue)
+                                                    .foregroundStyle(.accentColor)
                                                 VStack(alignment: .leading, spacing: 1) {
                                                     Text(s.title)
                                                         .font(.system(size: 14, weight: .medium))
@@ -324,7 +324,7 @@ struct EditPropertySheet: View {
                             }
                         } label: {
                             HStack {
-                                Image(systemName: "map.fill").foregroundStyle(.blue)
+                                Image(systemName: "map.fill").foregroundStyle(.accentColor)
                                 Text("Location on map")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.primary)
@@ -421,7 +421,7 @@ struct EditPropertySheet: View {
                             Spacer()
                             Button { withAnimation { showRenovationForm.toggle() } } label: {
                                 Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.accentColor)
                                     .font(.system(size: 18))
                             }
                             .buttonStyle(.plain)
@@ -501,7 +501,7 @@ struct EditPropertySheet: View {
                             Spacer()
                             Button { withAnimation { showOwnerForm.toggle() } } label: {
                                 Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.accentColor)
                                     .font(.system(size: 18))
                             }
                             .buttonStyle(.plain)
@@ -599,7 +599,7 @@ struct EditPropertySheet: View {
                         } else {
                             Text("Save")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
+                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                         }
                     }
                     .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
@@ -669,7 +669,7 @@ struct EditPropertySheet: View {
                             } else {
                                 Image(systemName: "location.fill")
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.accentColor)
                             }
                         }
                     }
@@ -692,7 +692,7 @@ struct EditPropertySheet: View {
             } label: {
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.system(size: 28))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
             }
             .buttonStyle(.plain)
         }
@@ -808,7 +808,7 @@ private func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Bind
     HStack(spacing: 12) {
         Image(systemName: icon)
             .font(.system(size: 14))
-            .foregroundStyle(.blue)
+            .foregroundStyle(.accentColor)
             .frame(width: 28)
         TextField(placeholder, text: binding)
             .font(.system(size: 15))
@@ -885,7 +885,7 @@ private struct AddPropertySheet: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "mappin.fill")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.accentColor)
                                         .frame(width: 28)
                                     TextField("Address", text: $addressLine1)
                                         .font(.system(size: 15))
@@ -913,7 +913,7 @@ private struct AddPropertySheet: View {
                                             HStack(spacing: 10) {
                                                 Image(systemName: "mappin.circle.fill")
                                                     .font(.system(size: 14))
-                                                    .foregroundStyle(.blue)
+                                                    .foregroundStyle(.accentColor)
                                                 VStack(alignment: .leading, spacing: 1) {
                                                     Text(s.title)
                                                         .font(.system(size: 14, weight: .medium))
@@ -947,7 +947,7 @@ private struct AddPropertySheet: View {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() }
                         } label: {
                             HStack {
-                                Image(systemName: "map.fill").foregroundStyle(.blue)
+                                Image(systemName: "map.fill").foregroundStyle(.accentColor)
                                 Text("Location on map")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(.primary)
@@ -1018,7 +1018,7 @@ private struct AddPropertySheet: View {
                         } else {
                             Text("Add")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.blue)
+                                .foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                         }
                     }
                     .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
@@ -1068,7 +1068,7 @@ private struct AddPropertySheet: View {
                                 if isLocating {
                                     ProgressView().tint(.accentColor).scaleEffect(0.7)
                                 } else {
-                                    Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.blue)
+                                    Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(.accentColor)
                                 }
                             }
                         }
@@ -1084,7 +1084,7 @@ private struct AddPropertySheet: View {
                 formCoordField("Longitudine", text: $lonText, placeholder: "ex: 26.102500")
                 Button { applyManualCoords() } label: {
                     Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 28)).foregroundStyle(.blue)
+                        .font(.system(size: 28)).foregroundStyle(.accentColor)
                 }
                 .buttonStyle(.plain)
             }

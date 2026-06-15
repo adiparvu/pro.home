@@ -214,7 +214,7 @@ struct AddTaskView: View {
     private func personIcon(name: String) -> some View {
         ZStack {
             Circle().fill(.blue.opacity(0.25))
-            Text(String(name.prefix(1)).uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(.blue)
+            Text(String(name.prefix(1)).uppercased()).font(.system(size: 11, weight: .bold)).foregroundStyle(.accentColor)
         }
         .frame(width: 30, height: 30)
     }
@@ -226,7 +226,7 @@ struct AddTaskView: View {
             HStack(spacing: 12) {
                 Image(systemName: calendarAdded ? "calendar.badge.checkmark" : "calendar.badge.plus")
                     .font(.system(size: 14))
-                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.blue)
+                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar")
@@ -444,7 +444,7 @@ struct AssigneePickerSheet: View {
                                         HapticFeedback.success()
                                     } label: {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 28)).foregroundStyle(.blue)
+                                            .font(.system(size: 28)).foregroundStyle(.accentColor)
                                     }
                                 }
                             } else {
@@ -453,7 +453,7 @@ struct AssigneePickerSheet: View {
                                     HapticFeedback.impact(.light)
                                 } label: {
                                     HStack(spacing: 10) {
-                                        Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(.blue)
+                                        Image(systemName: "person.badge.plus").font(.system(size: 14)).foregroundStyle(.accentColor)
                                         Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
@@ -490,7 +490,7 @@ struct AssigneePickerSheet: View {
             .navigationTitle("Assign Task").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
                 }
             }
         }

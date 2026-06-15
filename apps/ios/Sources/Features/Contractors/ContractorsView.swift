@@ -115,7 +115,7 @@ struct ContractorsView: View {
                         Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
                         Text(service.contractors.isEmpty ? "No contractors yet" : "No results").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
                         if service.contractors.isEmpty {
-                            Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
+                            Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.accentColor)
                         }
                         Spacer()
                     }
@@ -225,7 +225,7 @@ private struct AddContractorSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.accentColor)
                         .disabled(name.isEmpty || specialty.isEmpty || phone.isEmpty || isSaving)
                 }
             }
@@ -234,7 +234,7 @@ private struct AddContractorSheet: View {
 
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }

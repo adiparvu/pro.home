@@ -320,7 +320,7 @@ private struct AddPlanSheet: View {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canSave ? Color.blue : Color.primary.opacity(0.3))
+                    .foregroundStyle(canSave ? Color.accentColor : Color.primary.opacity(0.3))
                     .disabled(!canSave)
                 }
             }
@@ -383,7 +383,7 @@ private struct AddPlanSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accentColor)
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.primary)
@@ -418,7 +418,7 @@ private struct AddPlanSheet: View {
 
     private var nameField: some View {
         HStack(spacing: 12) {
-            Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
+            Image(systemName: "textformat").font(.system(size: 14)).foregroundStyle(.accentColor).frame(width: 28)
             TextField("Name", text: $name)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }

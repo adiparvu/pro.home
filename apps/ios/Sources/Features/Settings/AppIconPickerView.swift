@@ -135,7 +135,7 @@ struct AppIconPickerView: View {
                         Spacer()
                         if isSelected {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.accentColor)
                                 .font(.system(size: 18))
                                 .transition(.scale.combined(with: .opacity))
                         }
@@ -144,7 +144,7 @@ struct AppIconPickerView: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+                    .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
