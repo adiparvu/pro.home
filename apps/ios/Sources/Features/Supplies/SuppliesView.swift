@@ -616,17 +616,17 @@ private struct SupplyItemRow: View {
             Button {
                 onToggle()
             } label: {
-                Label(item.isCompleted ? "Anulează" : "Completat",
+                Label(item.isCompleted ? "Undo" : "Complete",
                       systemImage: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
             }
             .tint(item.isCompleted ? .orange : Color(red: 0.2, green: 0.78, blue: 0.45))
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { onDelete() } label: {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
             Button { onEdit() } label: {
-                Label("Editează", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
             .tint(.blue)
         }
@@ -668,11 +668,11 @@ struct AddSupplyListSheet: View {
                     .padding(.horizontal, 20).padding(.top, 16)
                 }
             }
-            .navigationTitle("Listă nouă")
+            .navigationTitle("New List")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulare") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
@@ -693,7 +693,7 @@ struct AddSupplyListSheet: View {
                         .foregroundStyle(.white.opacity(0.92))
                         .padding(14)
                 }
-                Text(name.isEmpty ? "Numele listei" : name)
+                Text(name.isEmpty ? "List name" : name)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .primary)
                     .padding(.horizontal, 12).padding(.vertical, 10)
@@ -705,9 +705,9 @@ struct AddSupplyListSheet: View {
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("DENUMIRE")
+            Text("NAME")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            TextField("ex. Supermarket, Grădină, Baie…", text: $name)
+            TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.blue)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -716,9 +716,9 @@ struct AddSupplyListSheet: View {
 
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NOTĂ (OPȚIONAL)")
+            Text("NOTE (OPTIONAL)")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            TextField("Notă despre această listă…", text: $note, axis: .vertical)
+            TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                 .lineLimit(2...4).padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -727,7 +727,7 @@ struct AddSupplyListSheet: View {
 
     private var iconPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ICONIȚĂ")
+            Text("ICON")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             let color = Color(hex: selectedColor) ?? .blue
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
@@ -754,7 +754,7 @@ struct AddSupplyListSheet: View {
 
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CULOARE")
+            Text("COLOR")
                 .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(SupplyList.colorOptions, id: \.hex) { opt in
@@ -781,7 +781,7 @@ struct AddSupplyListSheet: View {
             Group {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
-                    Text("Creează lista")
+                    Text("Create list")
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -879,11 +879,11 @@ struct AddSupplyItemSheet: View {
                     .padding(.horizontal, 20).padding(.top, 16)
                 }
             }
-            .navigationTitle(editingItem == nil ? "Articol nou" : "Editează articol")
+            .navigationTitle(editingItem == nil ? "New Item" : "Edit Item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulare") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
@@ -898,8 +898,8 @@ struct AddSupplyItemSheet: View {
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("DENUMIRE")
-            TextField("Ce trebuie cumpărat?", text: $name)
+            fieldLabel("NAME")
+            TextField("What needs to be bought?", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.blue)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -908,8 +908,8 @@ struct AddSupplyItemSheet: View {
 
     private var quantityField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("CANTITATE (OPȚIONAL)")
-            TextField("ex. 2 buc, 500 ml, 1 kg…", text: $quantity)
+            fieldLabel("QUANTITY (OPTIONAL)")
+            TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -918,8 +918,8 @@ struct AddSupplyItemSheet: View {
 
     private var locationField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LOCAȚIE (OPȚIONAL)")
-            TextField("ex. Cămară, Baie, Bucătărie…", text: $location)
+            fieldLabel("LOCATION (OPTIONAL)")
+            TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -928,8 +928,8 @@ struct AddSupplyItemSheet: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NOTE (OPȚIONAL)")
-            TextField("Notițe suplimentare…", text: $notes, axis: .vertical)
+            fieldLabel("NOTES (OPTIONAL)")
+            TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.blue)
                 .lineLimit(2...5).padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -938,7 +938,7 @@ struct AddSupplyItemSheet: View {
 
     private var listPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LISTĂ")
+            fieldLabel("LIST")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyService.lists) { l in
@@ -961,7 +961,7 @@ struct AddSupplyItemSheet: View {
 
     private var categoryPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("CATEGORIE")
+            fieldLabel("CATEGORY")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(supplyCategories, id: \.id) { cat in
@@ -983,7 +983,7 @@ struct AddSupplyItemSheet: View {
 
     private var priorityPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("PRIORITATE")
+            fieldLabel("PRIORITY")
             HStack(spacing: 8) {
                 ForEach(supplyPriorities, id: \.id) { p in
                     let item = SupplyItem(id: UUID(), listId: UUID(), propertyId: UUID(),
@@ -1008,7 +1008,7 @@ struct AddSupplyItemSheet: View {
             Group {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
-                    Text(editingItem == nil ? "Adaugă articol" : "Salvează modificările")
+                    Text(editingItem == nil ? "Add item" : "Save changes")
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

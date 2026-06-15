@@ -45,7 +45,7 @@ struct TwinInsightsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Gata") { dismiss() }.fontWeight(.semibold)
+                    Button("Done") { dismiss() }.fontWeight(.semibold)
                 }
             }
         }
@@ -63,9 +63,9 @@ struct TwinInsightsSheet: View {
                                    startPoint: .topLeading, endPoint: .bottomTrailing),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text("Starea proprietății")
+                Text("Property status")
                     .font(.system(size: 18, weight: .bold))
-                Text(propertyService.primary?.name ?? "Proprietatea mea")
+                Text(propertyService.primary?.name ?? "My property")
                     .font(.system(size: 13)).foregroundStyle(.secondary)
             }
             Spacer()
@@ -74,10 +74,10 @@ struct TwinInsightsSheet: View {
 
     private var statsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-            tile("\(zones.count)", "Zone", "square.dashed", .blue)
-            tile("\(objects.count)", "Obiecte", "cube.box.fill", .indigo)
-            tile("\(avgHealth)%", "Sănătate medie", "heart.fill", healthColor)
-            tile(valueString, "Valoare totală", "eurosign.circle.fill", .green)
+            tile("\(zones.count)", "Zones", "square.dashed", .blue)
+            tile("\(objects.count)", "Objects", "cube.box.fill", .indigo)
+            tile("\(avgHealth)%", "Average health", "heart.fill", healthColor)
+            tile(valueString, "Total value", "eurosign.circle.fill", .green)
         }
     }
 
@@ -100,7 +100,7 @@ struct TwinInsightsSheet: View {
     private var criticalCard: some View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Necesită atenție", systemImage: "exclamationmark.triangle.fill")
+                Label("Needs attention", systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.orange)
                 ForEach(critical.prefix(5)) { obj in
@@ -121,7 +121,7 @@ struct TwinInsightsSheet: View {
     private var aiCard: some View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Analiză ARIA", systemImage: "sparkles")
+                Label("ARIA Analysis", systemImage: "sparkles")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
 
@@ -133,11 +133,11 @@ struct TwinInsightsSheet: View {
                 } else if isThinking {
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text("ARIA analizează proprietatea…")
+                        Text("ARIA is analyzing your property…")
                             .font(.system(size: 14)).foregroundStyle(.secondary)
                     }
                 } else {
-                    Text("Cere o analiză AI pe baza zonelor, obiectelor și stării lor.")
+                    Text("Request an AI analysis based on zones, objects and their condition.")
                         .font(.system(size: 14)).foregroundStyle(.secondary)
                 }
 
@@ -146,7 +146,7 @@ struct TwinInsightsSheet: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                        Text(aiReply == nil ? "Întreabă ARIA" : "Reanalizează")
+                        Text(aiReply == nil ? "Ask ARIA" : "Re-analyze")
                     }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
@@ -170,10 +170,10 @@ struct TwinInsightsSheet: View {
         let criticalNames = critical.prefix(6).map { "\($0.name) (\($0.healthScore)%)" }.joined(separator: ", ")
         let zoneNames = zones.map(\.name).joined(separator: ", ")
         let prompt = """
-        Ești ARIA, asistentul pentru gemănul digital al proprietății. Pe baza datelor de mai jos, oferă 3–5 recomandări scurte și acționabile, în limba română.
-        Zone (\(zones.count)): \(zoneNames.isEmpty ? "niciuna" : zoneNames).
-        Obiecte: \(objects.count). Sănătate medie: \(avgHealth)%.
-        Obiecte care necesită atenție: \(criticalNames.isEmpty ? "niciunul" : criticalNames).
+        You are ARIA, the assistant for the property digital twin. Based on the data below, provide 3–5 short and actionable recommendations in English.
+        Zones (\(zones.count)): \(zoneNames.isEmpty ? "none" : zoneNames).
+        Objects: \(objects.count). Average health: \(avgHealth)%.
+        Objects needing attention: \(criticalNames.isEmpty ? "none" : criticalNames).
         """
         struct ARIAChatPayload: Encodable { let message: String; let property_id: String? }
         struct ARIAResponse: Decodable { let reply: String?; let error: String? }
@@ -181,9 +181,9 @@ struct TwinInsightsSheet: View {
             let payload = ARIAChatPayload(message: prompt, property_id: propertyService.primary?.id.uuidString)
             let decoded: ARIAResponse = try await supabase.functions
                 .invoke("aria-chat", options: .init(body: payload))
-            aiReply = decoded.reply ?? decoded.error ?? "Nu am putut genera o analiză acum."
+            aiReply = decoded.reply ?? decoded.error ?? "Could not generate an analysis right now."
         } catch {
-            aiReply = "Nu am putut contacta ARIA. Încearcă din nou."
+            aiReply = "Could not reach ARIA. Please try again."
         }
     }
 }

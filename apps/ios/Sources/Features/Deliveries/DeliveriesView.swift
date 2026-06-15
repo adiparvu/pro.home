@@ -527,7 +527,7 @@ struct DeliveryFormSheet: View {
 
     private var statusPickerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("STATUS")  // intentionally kept as STATUS — same in English
+            fieldLabel("STATUS")
             VStack(spacing: 0) {
                 ForEach(Array(Delivery.statusOptions.enumerated()), id: \.element.id) { idx, opt in
                     Button {

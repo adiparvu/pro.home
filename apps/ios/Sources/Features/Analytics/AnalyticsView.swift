@@ -370,7 +370,7 @@ private struct FinancesSection: View {
                 HStack(alignment: .top, spacing: 16) {
                     Chart(categoryData.prefix(6)) { cat in
                         SectorMark(
-                            angle: .value("Sumă", cat.amount),
+                            angle: .value("Amount", cat.amount),
                             innerRadius: .ratio(0.60),
                             angularInset: 2
                         )

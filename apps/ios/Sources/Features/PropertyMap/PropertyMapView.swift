@@ -17,8 +17,8 @@ struct PropertyMapView: View {
     var body: some View {
         VStack(spacing: 0) {
             PageHeader(
-                title: "Hartă",
-                subtitle: "PROPRIETATE",
+                title: "Map",
+                subtitle: "PROPERTY",
                 trailing: AnyView(
                     HStack(spacing: 10) {
                         Button {
@@ -168,7 +168,7 @@ struct PropertyMapView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 LayerChip(
-                    label: "Toate",
+                    label: "All",
                     icon: "square.grid.2x2",
                     count: elementService.elements.count,
                     isSelected: selectedLayer == nil
@@ -197,30 +197,30 @@ struct PropertyMapView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             statTile(
                 icon: "square.grid.2x2.fill",
-                label: "Elemente",
+                label: "Elements",
                 value: "\(elementService.elements.count)",
-                sub: "pe hartă",
+                sub: "on map",
                 color: .blue
             )
             statTile(
                 icon: "heart.fill",
-                label: "Sănătate",
+                label: "Health",
                 value: "\(elementService.overallHealthScore)%",
                 sub: healthLabel(elementService.overallHealthScore),
                 color: healthColor(elementService.overallHealthScore)
             )
             statTile(
                 icon: "banknote.fill",
-                label: "Valoare",
+                label: "Value",
                 value: formattedTotal,
-                sub: "estimată",
+                sub: "estimated",
                 color: Color(red: 0.3, green: 0.82, blue: 0.45)
             )
             statTile(
                 icon: "exclamationmark.triangle.fill",
-                label: "Atenție",
+                label: "Attention",
                 value: "\(elementService.elementsNeedingAttention.count)",
-                sub: "necesită inspecție",
+                sub: "needs inspection",
                 color: elementService.elementsNeedingAttention.isEmpty ? .secondary : .orange
             )
         }
@@ -251,7 +251,7 @@ struct PropertyMapView: View {
     // MARK: - Attention section
 
     private var attentionSection: some View {
-        SettingsGroup(title: "Necesită atenție") {
+        SettingsGroup(title: "Needs attention") {
             ForEach(Array(elementService.criticalElements.prefix(4).enumerated()), id: \.element.id) { idx, element in
                 if idx > 0 {
                     Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
@@ -265,7 +265,7 @@ struct PropertyMapView: View {
 
     private var elementListSection: some View {
         let filtered = elementService.elements(for: selectedLayer)
-        return SettingsGroup(title: "Toate elementele") {
+        return SettingsGroup(title: "All elements") {
             ForEach(Array(filtered.enumerated()), id: \.element.id) { idx, element in
                 if idx > 0 {
                     Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
@@ -340,10 +340,10 @@ struct PropertyMapView: View {
                 }
 
                 VStack(spacing: 6) {
-                    Text("Începe harta proprietății")
+                    Text("Start your property map")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text("Adaugă camere, aparate, instalații și urmărește starea lor")
+                    Text("Add rooms, appliances, systems and track their condition")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -355,7 +355,7 @@ struct PropertyMapView: View {
                     addPosition = CGPoint(x: 0.5, y: 0.45)
                     showAddElement = true
                 } label: {
-                    Text("Adaugă primul element")
+                    Text("Add first element")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
@@ -373,7 +373,7 @@ struct PropertyMapView: View {
     private var loadingState: some View {
         VStack(spacing: 12) {
             ProgressView().tint(Color.primary.opacity(0.6))
-            Text("Se încarcă harta...")
+            Text("Loading map...")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -421,11 +421,11 @@ struct PropertyMapView: View {
 
     private func healthLabel(_ score: Int) -> String {
         switch score {
-        case 90...100: return "excelentă"
-        case 70..<90:  return "bună"
-        case 50..<70:  return "satisfăcătoare"
-        case 25..<50:  return "slabă"
-        default:       return "critică"
+        case 90...100: return "excellent"
+        case 70..<90:  return "good"
+        case 50..<70:  return "satisfactory"
+        case 25..<50:  return "poor"
+        default:       return "critical"
         }
     }
 }
