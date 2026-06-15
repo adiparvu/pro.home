@@ -94,6 +94,52 @@ final class TaskService: ObservableObject {
         }
     }
 
+    func updateTask(
+        _ task: MaintenanceTask,
+        title: String, description: String?,
+        dueDate: String?, priority: String, category: String,
+        assigneeIds: [String], assigneeNames: [String]
+    ) async throws {
+        struct TaskFieldUpdate: Encodable {
+            let title: String
+            let description: String?
+            let dueDate: String?
+            let priority: String
+            let category: String
+            let assigneeIds: [String]
+            let assigneeNames: [String]
+            let updatedAt: String
+            enum CodingKeys: String, CodingKey {
+                case title, description, priority, category
+                case dueDate       = "due_date"
+                case assigneeIds   = "assignee_ids"
+                case assigneeNames = "assignee_names"
+                case updatedAt     = "updated_at"
+            }
+        }
+        let update = TaskFieldUpdate(
+            title: title, description: description,
+            dueDate: dueDate, priority: priority, category: category,
+            assigneeIds: assigneeIds, assigneeNames: assigneeNames,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        try await supabase
+            .from("maintenance_tasks")
+            .update(update)
+            .eq("id", value: task.id.uuidString)
+            .execute()
+        if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
+            tasks[idx].title = title
+            tasks[idx].description = description
+            tasks[idx].dueDate = dueDate
+            tasks[idx].priority = priority
+            tasks[idx].category = category
+            tasks[idx].assigneeIds = assigneeIds
+            tasks[idx].assigneeNames = assigneeNames
+            tasks[idx].updatedAt = update.updatedAt
+        }
+    }
+
     func delete(_ task: MaintenanceTask) async {
         do {
             try await supabase

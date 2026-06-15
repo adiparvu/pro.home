@@ -302,7 +302,11 @@ struct FilterChip: View {
 
 struct TaskRowView: View {
     @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var familyService: FamilyService
     let task: MaintenanceTask
+
+    @State private var showEdit = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -323,7 +327,7 @@ struct TaskRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.white)
+                    .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.primary)
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(0.3))
                     .lineLimit(1)
 
@@ -364,5 +368,33 @@ struct TaskRowView: View {
                     lineWidth: 0.5
                 )
         )
+        .contextMenu {
+            Button {
+                HapticFeedback.impact(.light)
+                showEdit = true
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            Button {
+                HapticFeedback.success()
+                Task { await taskService.toggleComplete(task) }
+            } label: {
+                Label(task.isCompleted ? "Reopen" : "Mark as Done",
+                      systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark.circle")
+            }
+            Divider()
+            Button(role: .destructive) {
+                HapticFeedback.warning()
+                Task { await taskService.delete(task) }
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .sheet(isPresented: $showEdit) {
+            AddTaskView(editing: task)
+                .environmentObject(taskService)
+                .environmentObject(propertyService)
+                .environmentObject(familyService)
+        }
     }
 }

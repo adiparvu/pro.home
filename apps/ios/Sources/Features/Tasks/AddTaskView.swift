@@ -8,6 +8,8 @@ struct AddTaskView: View {
     @EnvironmentObject private var familyService: FamilyService
     @Environment(\.dismiss) private var dismiss
 
+    var editing: MaintenanceTask? = nil
+
     @State private var title = ""
     @State private var description = ""
     @State private var priority = "medium"
@@ -54,7 +56,7 @@ struct AddTaskView: View {
                     .padding(.top, 16)
                 }
             }
-            .navigationTitle("New Task")
+            .navigationTitle(editing != nil ? "Edit Task" : "New Task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -67,8 +69,26 @@ struct AddTaskView: View {
             .sheet(isPresented: $showAssigneePicker) {
                 AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
             }
+            .onAppear { populateFromEditing() }
         }
         .task { await familyService.load() }
+    }
+
+    private func populateFromEditing() {
+        guard let t = editing else { return }
+        title = t.title
+        description = t.description ?? ""
+        priority = t.priority
+        category = t.category
+        assigneeIds = t.assigneeIds
+        assigneeNames = t.assigneeNames
+        if let ds = t.dueDate {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+            if let d = f.date(from: ds) {
+                hasDueDate = true
+                dueDate = d
+            }
+        }
     }
 
     // MARK: - Fields
@@ -239,7 +259,7 @@ struct AddTaskView: View {
                 if isSaving {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Add Task")
+                    Text(editing != nil ? "Save Changes" : "Add Task")
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -253,36 +273,53 @@ struct AddTaskView: View {
     }
 
     private var canSave: Bool {
-        !title.trimmingCharacters(in: .whitespaces).isEmpty && propertyService.primary != nil
+        !title.trimmingCharacters(in: .whitespaces).isEmpty && (editing != nil || propertyService.primary != nil)
     }
 
     private func save() {
-        guard let propId = propertyService.primary?.id else {
-            errorMsg = "No property found. Please set up your property first."
-            return
-        }
         isSaving = true
         errorMsg = nil
 
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let payload = NewTaskPayload(
-            propertyId: propId,
-            title: title.trimmingCharacters(in: .whitespaces),
-            description: description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description,
-            dueDate: hasDueDate ? iso.string(from: dueDate) : nil,
-            priority: priority,
-            category: category,
-            assigneeIds: assigneeIds,
-            assigneeNames: assigneeNames
-        )
+        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
+        let trimmedDesc = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description
+        let dueDateStr = hasDueDate ? iso.string(from: dueDate) : nil
 
         Task {
             do {
-                try await taskService.addTask(payload)
-                if addToCalendar && hasDueDate {
-                    await addToAppleCalendar(title: payload.title, date: dueDate, notes: description)
+                if let existing = editing {
+                    try await taskService.updateTask(
+                        existing,
+                        title: trimmedTitle,
+                        description: trimmedDesc,
+                        dueDate: dueDateStr,
+                        priority: priority,
+                        category: category,
+                        assigneeIds: assigneeIds,
+                        assigneeNames: assigneeNames
+                    )
+                } else {
+                    guard let propId = propertyService.primary?.id else {
+                        errorMsg = "No property found. Please set up your property first."
+                        isSaving = false
+                        return
+                    }
+                    let payload = NewTaskPayload(
+                        propertyId: propId,
+                        title: trimmedTitle,
+                        description: trimmedDesc,
+                        dueDate: dueDateStr,
+                        priority: priority,
+                        category: category,
+                        assigneeIds: assigneeIds,
+                        assigneeNames: assigneeNames
+                    )
+                    try await taskService.addTask(payload)
+                    if addToCalendar && hasDueDate {
+                        await addToAppleCalendar(title: trimmedTitle, date: dueDate, notes: description)
+                    }
+                    scheduleAssigneeNotifications()
                 }
-                scheduleAssigneeNotifications()
                 dismiss()
             } catch {
                 errorMsg = error.localizedDescription
