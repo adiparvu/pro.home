@@ -183,6 +183,10 @@ struct MainTabView: View {
     @StateObject private var stickerService = StickerService()
     @StateObject private var plantService = PlantService()
     @StateObject private var deliveryService = DeliveryService()
+    @StateObject private var applianceService = ApplianceService()
+    @StateObject private var photoJournalService = PhotoJournalService()
+    @StateObject private var paintColorService = PaintColorService()
+    @StateObject private var propertyValueService = PropertyValueService()
     @StateObject private var tabBarVis = TabBarVisibility()
     @EnvironmentObject private var router: AppRouter
 
@@ -263,6 +267,10 @@ struct MainTabView: View {
         .environmentObject(stickerService)
         .environmentObject(plantService)
         .environmentObject(deliveryService)
+        .environmentObject(applianceService)
+        .environmentObject(photoJournalService)
+        .environmentObject(paintColorService)
+        .environmentObject(propertyValueService)
         .task {
             await currencyService.refresh()
             await propertyService.load()
@@ -287,6 +295,10 @@ struct MainTabView: View {
             if let propId = propertyService.primary?.id {
                 await supplyService.load(propertyId: propId)
                 await plantService.load(propertyId: propId)
+                await applianceService.load(propertyId: propId)
+                await photoJournalService.load(propertyId: propId)
+                await paintColorService.load(propertyId: propId)
+                await propertyValueService.load(propertyId: propId)
             }
             writeWidgetSnapshot()
             updateDynamicShortcuts()
@@ -298,6 +310,10 @@ struct MainTabView: View {
             Task {
                 await supplyService.load(propertyId: newPropId)
                 await plantService.load(propertyId: newPropId)
+                await applianceService.load(propertyId: newPropId)
+                await photoJournalService.load(propertyId: newPropId)
+                await paintColorService.load(propertyId: newPropId)
+                await propertyValueService.load(propertyId: newPropId)
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()
                 await indexSpotlight()
@@ -330,6 +346,10 @@ struct MainTabView: View {
                 if let propId = propertyService.primary?.id {
                     await supplyService.load(propertyId: propId)
                     await plantService.load(propertyId: propId)
+                    await applianceService.load(propertyId: propId)
+                    await photoJournalService.load(propertyId: propId)
+                    await paintColorService.load(propertyId: propId)
+                    await propertyValueService.load(propertyId: propId)
                 }
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()

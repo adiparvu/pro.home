@@ -17,6 +17,10 @@ struct SettingsView: View {
     @EnvironmentObject private var supplyService: SupplyService
     @EnvironmentObject private var plantService: PlantService
     @EnvironmentObject private var deliveryService: DeliveryService
+    @EnvironmentObject private var applianceService: ApplianceService
+    @EnvironmentObject private var photoJournalService: PhotoJournalService
+    @EnvironmentObject private var paintColorService: PaintColorService
+    @EnvironmentObject private var propertyValueService: PropertyValueService
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
@@ -237,6 +241,36 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
+            }
+            NavSettingsRow(icon: "washer.fill", color: Color(red: 0.2, green: 0.55, blue: 0.95), label: "Appliances") {
+                AppliancesView()
+                    .environmentObject(applianceService)
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
+                PhotoJournalView()
+                    .environmentObject(photoJournalService)
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklist") {
+                SeasonalChecklistView()
+            }
+            NavSettingsRow(icon: "paintpalette.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15), label: "Paint Colors") {
+                PaintColorsView()
+                    .environmentObject(paintColorService)
+                    .environmentObject(propertyService)
+            }
+            NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
+                PropertyValueView()
+                    .environmentObject(propertyValueService)
+                    .environmentObject(propertyService)
+                    .environmentObject(currencyService)
+                    .environmentObject(appSettings)
+            }
+            NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
+                GuestModeView()
+                    .environmentObject(propertyService)
+                    .environmentObject(familyService)
             }
         }
     }
