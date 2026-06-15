@@ -61,42 +61,42 @@ struct SiriShortcutsView: View {
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     shortcutRow(
-                        icon: “checklist”,
+                        icon: "checklist",
                         color: Color(red: 0.3, green: 0.85, blue: 0.45),
-                        title: “New Task”,
+                        title: "New Task",
                         phrases: [
-                            “\”Add task in PRVIO\””,
-                            “\”New task in PRVIO\””
+                            "\"Add task in PRVIO\"",
+                            "\"New task in PRVIO\""
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: “drop.fill”,
+                        icon: "drop.fill",
                         color: .blue,
-                        title: “Water plant”,
+                        title: "Water plant",
                         phrases: [
-                            “\”Water plant in PRVIO\””,
-                            “\”Mark watered in PRVIO\””
+                            "\"Water plant in PRVIO\"",
+                            "\"Mark watered in PRVIO\""
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: “cart.fill”,
+                        icon: "cart.fill",
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                        title: “Open shopping”,
+                        title: "Open shopping",
                         phrases: [
-                            “\”Open shopping in PRVIO\””,
-                            “\”Shopping list PRVIO\””
+                            "\"Open shopping in PRVIO\"",
+                            "\"Shopping list PRVIO\""
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: “message.fill”,
+                        icon: "message.fill",
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                        title: “Family chat”,
+                        title: "Family chat",
                         phrases: [
-                            “\”Open chat in PRVIO\””,
-                            “\”Family chat PRVIO\””
+                            "\"Open chat in PRVIO\"",
+                            "\"Family chat PRVIO\""
                         ]
                     )
                 }
