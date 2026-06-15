@@ -134,7 +134,7 @@ struct GlobalSearchSheet: View {
             Text("No results for")
                 .font(.system(size: 15))
                 .foregroundStyle(Color.primary.opacity(0.45))
-            Text("„\(query)"")
+            Text("\"\(query)\"")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.6))
             Spacer()
