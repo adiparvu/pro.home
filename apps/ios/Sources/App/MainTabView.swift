@@ -11,15 +11,25 @@ struct ScrollOffsetKey: PreferenceKey {
 }
 
 enum AppTab: String, CaseIterable {
-    case home, map, tasks, analytics, settings
+    case home, digitalTwin, tasks, chat, settings
 
     var icon: String {
         switch self {
-        case .home:      return "house.fill"
-        case .map:       return "map.fill"
-        case .tasks:     return "checklist"
-        case .analytics: return "chart.bar.xaxis"
-        case .settings:  return "person.crop.circle.fill"
+        case .home:        return "house.fill"
+        case .digitalTwin: return "building.2.fill"
+        case .tasks:       return "checklist"
+        case .chat:        return "bubble.left.and.bubble.right.fill"
+        case .settings:    return "person.crop.circle.fill"
+        }
+    }
+
+    var inactiveIcon: String {
+        switch self {
+        case .home:        return "house"
+        case .digitalTwin: return "building.2"
+        case .tasks:       return "checklist"
+        case .chat:        return "bubble.left.and.bubble.right"
+        case .settings:    return "person.crop.circle"
         }
     }
 }
@@ -43,7 +53,7 @@ struct TabScrollDetector: ViewModifier {
             .onPreferenceChange(ScrollOffsetKey.self) { offset in
                 let goingDown = offset < -threshold
                 guard goingDown != tabBarVis.scrolledDown else { return }
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.80)) {
                     tabBarVis.scrolledDown = goingDown
                 }
             }
@@ -51,11 +61,10 @@ struct TabScrollDetector: ViewModifier {
 }
 
 extension View {
-    /// Place this on the *content* inside a ScrollView to auto-hide the tab bar on scroll down.
     func trackTabScroll() -> some View { modifier(TabScrollDetector()) }
 }
 
-// MARK: - Custom animated tab bar
+// MARK: - Instagram iOS 27-style animated tab bar
 
 private struct AnimatedTabBar: View {
     @Binding var selected: AppTab
@@ -63,6 +72,8 @@ private struct AnimatedTabBar: View {
     let overdueCount: Int
     let bottomPad: CGFloat
     let scrolledDown: Bool
+
+    @EnvironmentObject private var profileService: ProfileService
 
     var body: some View {
         HStack(spacing: 0) {
@@ -72,41 +83,76 @@ private struct AnimatedTabBar: View {
                     bounceTab = tab
                     selected = tab
                 } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 22, weight: tab == selected ? .semibold : .regular))
-                            .symbolEffect(.bounce, value: bounceTab == tab)
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(tab == selected ? Color.primary : Color.primary.opacity(0.4))
-                            .frame(width: 44, height: 44)
-                            .scaleEffect(tab == selected ? 1.12 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selected)
-                            .contentTransition(.symbolEffect(.replace))
-
-                        if tab == .tasks && overdueCount > 0 {
-                            Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(Color.red, in: Capsule())
-                                .offset(x: 4, y: -2)
-                        }
-                    }
+                    tabIcon(tab)
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .liquidGlass(cornerRadius: 32)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.10), radius: 16, x: 0, y: 4)
+        .padding(.horizontal, 28)
         .padding(.bottom, bottomPad)
-        .scaleEffect(scrolledDown ? 0.88 : 1.0)
+        // Instagram-style zoom-out → slide-down on scroll
+        .scaleEffect(scrolledDown ? 0.80 : 1.0, anchor: .bottom)
         .opacity(scrolledDown ? 0 : 1)
-        .offset(y: scrolledDown ? 80 : 0)
+        .offset(y: scrolledDown ? 90 : 0)
         .allowsHitTesting(!scrolledDown)
+        .animation(.spring(response: 0.36, dampingFraction: 0.76), value: scrolledDown)
+    }
+
+    @ViewBuilder
+    private func tabIcon(_ tab: AppTab) -> some View {
+        let isSelected = tab == selected
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if tab == .settings, let urlStr = profileService.profile?.avatarUrl,
+                   let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { phase in
+                        if let img = phase.image {
+                            img.resizable().scaledToFill()
+                                .frame(width: 26, height: 26)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(Color.primary.opacity(isSelected ? 0.85 : 0.25),
+                                                      lineWidth: isSelected ? 2 : 1)
+                                )
+                        } else {
+                            fallbackIcon(tab, isSelected: isSelected)
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                } else {
+                    fallbackIcon(tab, isSelected: isSelected)
+                        .frame(width: 44, height: 44)
+                }
+            }
+            .scaleEffect(isSelected ? 1.14 : 1.0)
+            .animation(.spring(response: 0.28, dampingFraction: 0.68), value: selected)
+
+            if tab == .tasks && overdueCount > 0 {
+                Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.red, in: Capsule())
+                    .offset(x: 6, y: -2)
+            }
+        }
+    }
+
+    private func fallbackIcon(_ tab: AppTab, isSelected: Bool) -> some View {
+        Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
+            .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.36))
+            .symbolEffect(.bounce, value: bounceTab == tab)
+            .contentTransition(.symbolEffect(.replace))
     }
 }
 
@@ -136,34 +182,23 @@ struct MainTabView: View {
 
     @State private var bounceTab: AppTab? = nil
 
-    // Reads the device's home-indicator safe area from UIKit so the pill
-    // always sits above the gesture zone regardless of device model.
-    private var deviceBottomSafe: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.bottom ?? 0
-    }
-
     var body: some View {
-        // ZStack instead of TabView to avoid the iOS 26 system UITabBar
-        // appearing alongside our custom AnimatedTabBar. All tabs are kept
-        // alive in the hierarchy; only the selected one is interactive.
         ZStack {
             NavigationStack { DashboardView() }
                 .opacity(router.selectedTab == .home ? 1 : 0)
                 .allowsHitTesting(router.selectedTab == .home)
 
             NavigationStack { DigitalTwinView() }
-                .opacity(router.selectedTab == .map ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .map)
+                .opacity(router.selectedTab == .digitalTwin ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .digitalTwin)
 
             NavigationStack { TasksView() }
                 .opacity(router.selectedTab == .tasks ? 1 : 0)
                 .allowsHitTesting(router.selectedTab == .tasks)
 
-            NavigationStack { AnalyticsView() }
-                .opacity(router.selectedTab == .analytics ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .analytics)
+            NavigationStack { ChatView() }
+                .opacity(router.selectedTab == .chat ? 1 : 0)
+                .allowsHitTesting(router.selectedTab == .chat)
 
             NavigationStack { SettingsView() }
                 .opacity(router.selectedTab == .settings ? 1 : 0)
@@ -178,6 +213,7 @@ struct MainTabView: View {
                 bottomPad: 8,
                 scrolledDown: tabBarVis.scrolledDown
             )
+            .environmentObject(profileService)
         }
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
@@ -188,7 +224,6 @@ struct MainTabView: View {
             }
         }
         .sheet(isPresented: $router.showAddTask) { AddTaskView() }
-        .sheet(isPresented: $router.showChat) { NavigationStack { ChatView() } }
         .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
         .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
         .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
@@ -315,7 +350,6 @@ struct MainTabView: View {
         snapshot.propertyName = propertyService.primary?.name
         SharedDataStore.write(snapshot)
 
-        // Write entity catalogs for App Intents
         SharedDataStore.writeTaskCatalog(
             taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority, isCompleted: $0.isCompleted) }
         )
@@ -383,5 +417,4 @@ struct MainTabView: View {
         }
         UIApplication.shared.shortcutItems = items
     }
-
 }

@@ -225,6 +225,9 @@ struct SettingsView: View {
                 ContractorsView()
                     .environmentObject(auth)
             }
+            NavSettingsRow(icon: "chart.bar.xaxis", color: .purple, label: "Analytics") {
+                AnalyticsView()
+            }
             NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
                 PropertyReportView()
                     .environmentObject(taskService)

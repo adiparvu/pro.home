@@ -240,7 +240,7 @@ struct DashboardView: View {
             Map(position: $mapPosition) {
                 Annotation("Property", coordinate: propertyCoordinate) {
                     PropertyCoreMarker(pulsing: $pulsing) {
-                        router.selectedTab = .map
+                        router.selectedTab = .digitalTwin
                         HapticFeedback.impact(.medium)
                     }
                 }
@@ -257,7 +257,7 @@ struct DashboardView: View {
                     ForEach(sections) { section in
                         Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
                             PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
-                                router.selectedTab = .map
+                                router.selectedTab = .digitalTwin
                                 HapticFeedback.impact(.light)
                             }
                         }
@@ -270,7 +270,7 @@ struct DashboardView: View {
             .overlay(alignment: .topTrailing) {
                 Button {
                     HapticFeedback.impact(.light)
-                    router.selectedTab = .map
+                    router.selectedTab = .digitalTwin
                 } label: {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 14, weight: .semibold))
@@ -351,7 +351,7 @@ struct DashboardView: View {
                 title: "Finances",
                 value: netFormatted,
                 subtitle: "this month"
-            ) { router.selectedTab = .analytics }
+            ) { router.selectedTab = .settings }
 
         case .documents:
             HomeWidget(

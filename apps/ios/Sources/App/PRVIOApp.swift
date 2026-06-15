@@ -63,7 +63,7 @@ struct PRVIOApp: App {
                     }
                     if UserDefaults.standard.bool(forKey: "prvio.intent.showChat") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
-                        router.showChat = true
+                        router.selectedTab = .chat
                     }
                     if UserDefaults.standard.bool(forKey: "prvio.intent.showShopping") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showShopping")

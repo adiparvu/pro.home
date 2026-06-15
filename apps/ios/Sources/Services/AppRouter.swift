@@ -7,7 +7,6 @@ final class AppRouter: ObservableObject {
     // Global quick-action presentations (handled at the MainTabView level).
     @Published var showARIA = false
     @Published var showAddTask = false
-    @Published var showChat = false
     @Published var showAddExpense = false
     @Published var showInventoryScan = false
     @Published var showInventoryAdd = false
@@ -21,9 +20,9 @@ final class AppRouter: ObservableObject {
     func perform(_ action: DashboardQuickAction) {
         switch action {
         case .aria:       showARIA = true
-        case .finances:   DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .analytics }
+        case .finances:   DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .settings }
         case .newTask:    showAddTask = true
-        case .chat:       showChat = true
+        case .chat:       DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .chat }
         case .addExpense: showAddExpense = true
         case .scan:       showInventoryScan = true
         case .addItem:    showInventoryAdd = true
@@ -52,7 +51,7 @@ final class AppRouter: ObservableObject {
         case "shopping", "supplies":
             break
         case "chat":
-            showChat = true
+            selectedTab = .chat
         case "scan":
             showInventoryScan = true
         case "receipts":
@@ -67,7 +66,7 @@ final class AppRouter: ObservableObject {
         case "com.prvio.action.addtask":  showAddTask = true
         case "com.prvio.action.plants":   showWaterPlant = true
         case "com.prvio.action.shopping": showAddSupply = true
-        case "com.prvio.action.chat":     showChat = true
+        case "com.prvio.action.chat":     selectedTab = .chat
         case "com.prvio.action.scan":     showInventoryScan = true
         default: break
         }
@@ -85,8 +84,8 @@ final class AppRouter: ObservableObject {
             }
         } else if let tab = activity.userInfo?["tab"] as? String {
             switch tab {
-            case "tasks":     selectedTab = .tasks
-            case "analytics": selectedTab = .analytics
+            case "tasks": selectedTab = .tasks
+            case "chat":  selectedTab = .chat
             default: break
             }
         }
