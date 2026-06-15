@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 final class TabBarVisibility: ObservableObject {
     @Published var isHidden = false
@@ -401,6 +402,7 @@ struct MainTabView: View {
         SharedDataStore.writePlantCatalog(
             plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
         )
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func indexSpotlight() async {

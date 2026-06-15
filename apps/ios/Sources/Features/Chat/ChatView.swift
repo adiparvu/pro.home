@@ -14,6 +14,7 @@ struct ChatView: View {
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @EnvironmentObject private var stickerService: StickerService
+    @EnvironmentObject private var router: AppRouter
     @Environment(\.dismiss) private var dismiss
 
     @State private var text = ""
@@ -53,13 +54,27 @@ struct ChatView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                MemberAvatarStack(
-                    members: familyService.members,
-                    ownerAvatarUrl: profileService.profile?.avatarUrl,
-                    ownerInitial: ownerInitial,
-                    ringColor: avatarRingColor(for: avatarRingColorName)
-                ) {
-                    withAnimation { showMentionPicker.toggle() }
+                HStack(spacing: 6) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            router.selectedTab = .home
+                        }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                    }
+                    .buttonStyle(.plain)
+
+                    MemberAvatarStack(
+                        members: familyService.members,
+                        ownerAvatarUrl: profileService.profile?.avatarUrl,
+                        ownerInitial: ownerInitial,
+                        ringColor: avatarRingColor(for: avatarRingColorName)
+                    ) {
+                        withAnimation { showMentionPicker.toggle() }
+                    }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
