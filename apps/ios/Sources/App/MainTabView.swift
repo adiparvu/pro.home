@@ -89,12 +89,12 @@ private struct AnimatedTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.10), radius: 16, x: 0, y: 4)
-        .padding(.horizontal, 28)
+        .shadow(color: .black.opacity(0.10), radius: 12, x: 0, y: 3)
+        .padding(.horizontal, 40)
         .padding(.bottom, bottomPad)
         // Instagram-style zoom-out → slide-down on scroll
         .scaleEffect(scrolledDown ? 0.80 : 1.0, anchor: .bottom)
@@ -114,7 +114,7 @@ private struct AnimatedTabBar: View {
                     AsyncImage(url: url) { phase in
                         if let img = phase.image {
                             img.resizable().scaledToFill()
-                                .frame(width: 26, height: 26)
+                                .frame(width: 22, height: 22)
                                 .clipShape(Circle())
                                 .overlay(
                                     Circle()
@@ -125,10 +125,10 @@ private struct AnimatedTabBar: View {
                             fallbackIcon(tab, isSelected: isSelected)
                         }
                     }
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36)
                 } else {
                     fallbackIcon(tab, isSelected: isSelected)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 36, height: 36)
                 }
             }
             .scaleEffect(isSelected ? 1.14 : 1.0)
@@ -148,7 +148,7 @@ private struct AnimatedTabBar: View {
 
     private func fallbackIcon(_ tab: AppTab, isSelected: Bool) -> some View {
         Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
-            .font(.system(size: 22, weight: isSelected ? .semibold : .regular))
+            .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.36))
             .symbolEffect(.bounce, value: bounceTab == tab)
@@ -210,7 +210,7 @@ struct MainTabView: View {
                 selected: $router.selectedTab,
                 bounceTab: $bounceTab,
                 overdueCount: taskService.overdueCount,
-                bottomPad: 8,
+                bottomPad: 2,
                 scrolledDown: tabBarVis.scrolledDown
             )
             .environmentObject(profileService)
