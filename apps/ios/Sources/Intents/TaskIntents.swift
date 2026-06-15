@@ -1,5 +1,6 @@
 import AppIntents
 import Foundation
+import WidgetKit
 
 // MARK: - Create Task
 
@@ -26,6 +27,7 @@ struct CompleteTaskIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingCompletion(task.id)
+        WidgetCenter.shared.reloadAllTimelines()
         return .result(dialog: "Task \"\(task.title)\" has been completed.")
     }
 }

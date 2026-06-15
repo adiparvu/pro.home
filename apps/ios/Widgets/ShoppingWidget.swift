@@ -8,8 +8,8 @@ struct ShoppingWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             ShoppingWidgetView(entry: entry)
         }
-        .configurationDisplayName("Cumpărături")
-        .description("Arată lista de cumpărături.")
+        .configurationDisplayName("Shopping")
+        .description("Shows your shopping list.")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -30,12 +30,12 @@ struct ShoppingWidgetView: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text("CUMPĂRĂTURI")
+                Text("SHOPPING")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.pendingSupplyCount > 0
-                     ? "\(entry.snapshot.pendingSupplyCount) articole"
-                     : "Listă goală")
+                     ? "\(entry.snapshot.pendingSupplyCount) items"
+                     : "Empty list")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
             }

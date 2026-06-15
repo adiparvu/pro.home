@@ -52,7 +52,12 @@ struct PRVIOApp: App {
                 case .active:
                     lock.didBecomeActive()
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
-                    // Process intent-triggered actions
+                    // Process quick action from cold launch (stored by AppDelegate before SwiftUI was ready)
+                    if let quickAction = UserDefaults.standard.string(forKey: "prvio.pendingQuickAction") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
+                        router.handle(quickActionType: quickAction)
+                    }
+                    // Process App Intent-triggered actions
                     if UserDefaults.standard.bool(forKey: "prvio.intent.openNewTask") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.openNewTask")
                         router.showAddTask = true

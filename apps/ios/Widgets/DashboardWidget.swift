@@ -11,7 +11,7 @@ struct DashboardWidget: Widget {
             DashboardWidgetView(entry: entry)
         }
         .configurationDisplayName("PRVIO Overview")
-        .description("Vizualizare rapidă a proprietății tale.")
+        .description("Quick overview of your property.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
@@ -42,13 +42,13 @@ struct DashboardMediumView: View {
             }
 
             HStack(spacing: 12) {
-                statPill(icon: "checklist", value: "\(entry.snapshot.overdueTaskCount)", label: "restante",
+                statPill(icon: "checklist", value: "\(entry.snapshot.overdueTaskCount)", label: "overdue",
                          color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
-                statPill(icon: "leaf.fill", value: "\(entry.snapshot.plantsNeedingWater)", label: "plante",
+                statPill(icon: "leaf.fill", value: "\(entry.snapshot.plantsNeedingWater)", label: "plants",
                          color: entry.snapshot.plantsNeedingWater > 0 ? .orange : .green)
-                statPill(icon: "shippingbox.fill", value: "\(entry.snapshot.activeDeliveryCount)", label: "livrări",
+                statPill(icon: "shippingbox.fill", value: "\(entry.snapshot.activeDeliveryCount)", label: "deliveries",
                          color: entry.snapshot.activeDeliveryCount > 0 ? .blue : .secondary)
-                statPill(icon: "square.and.pencil", value: "\(entry.snapshot.openTaskCount)", label: "deschise",
+                statPill(icon: "square.and.pencil", value: "\(entry.snapshot.openTaskCount)", label: "open",
                          color: .secondary)
             }
         }
@@ -107,7 +107,7 @@ struct DashboardLargeView: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("Actualizat")
+                    Text("Updated")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                     Text(relativeTime)
@@ -119,17 +119,17 @@ struct DashboardLargeView: View {
             // Stats row
             HStack(spacing: 8) {
                 largeStat(icon: "checklist", value: "\(entry.snapshot.overdueTaskCount)",
-                          label: "Restante", color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
+                          label: "Overdue", color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
                 largeStat(icon: "leaf.fill", value: "\(entry.snapshot.plantsNeedingWater)",
-                          label: "Plante", color: entry.snapshot.plantsNeedingWater > 0 ? .orange : .green)
+                          label: "Plants", color: entry.snapshot.plantsNeedingWater > 0 ? .orange : .green)
                 largeStat(icon: "shippingbox.fill", value: "\(entry.snapshot.activeDeliveryCount)",
-                          label: "Livrări", color: .blue)
+                          label: "Deliveries", color: .blue)
             }
 
             // Urgent tasks
             if !pendingTasks.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("URGENTE")
+                    Text("URGENT")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.secondary)
                     ForEach(pendingTasks, id: \.id) { task in
@@ -147,7 +147,7 @@ struct DashboardLargeView: View {
             // Plants needing water
             if !needsWater.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("NEVOIE DE APĂ")
+                    Text("NEEDS WATER")
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.secondary)
                     HStack(spacing: 10) {
@@ -188,7 +188,7 @@ struct DashboardLargeView: View {
 
     private var relativeTime: String {
         let diff = Date().timeIntervalSince(entry.snapshot.updatedAt)
-        if diff < 60 { return "acum" }
+        if diff < 60 { return "now" }
         if diff < 3600 { return "\(Int(diff/60))m" }
         return "\(Int(diff/3600))h"
     }

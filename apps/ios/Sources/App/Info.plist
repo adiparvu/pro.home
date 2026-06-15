@@ -151,7 +151,7 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
-			<string>checklist</string>
+			<string>plus.circle.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>New Task</string>
 			<key>UIApplicationShortcutItemType</key>
@@ -175,19 +175,11 @@
 		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
-			<string>message.fill</string>
+			<string>bubble.left.and.bubble.right.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Family Chat</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.chat</string>
-		</dict>
-		<dict>
-			<key>UIApplicationShortcutItemIconSymbolName</key>
-			<string>barcode.viewfinder</string>
-			<key>UIApplicationShortcutItemTitle</key>
-			<string>Scan Receipt</string>
-			<key>UIApplicationShortcutItemType</key>
-			<string>com.prvio.action.scan</string>
 		</dict>
 	</array>
 </dict>

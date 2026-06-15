@@ -434,34 +434,79 @@ struct MainTabView: View {
     }
 
     private func updateDynamicShortcuts() {
+        // iOS displays at most 4 items total (dynamic + static from Info.plist).
+        // We set all 4 dynamically so content is always data-driven and contextual.
         var items: [UIApplicationShortcutItem] = []
-        if let plant = plantService.plantsNeedingWater.first {
-            items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.plants",
-                localizedTitle: "Water: \(plant.name)",
-                localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "drop.fill"),
-                userInfo: nil
-            ))
-        }
-        if let task = taskService.tasks.first(where: { !$0.isCompleted }) {
+
+        // 1. Urgent/overdue task — highest priority signal
+        if let task = taskService.tasks.first(where: { $0.isOverdue }) {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.addtask",
                 localizedTitle: task.title,
-                localizedSubtitle: "Task",
-                icon: UIApplicationShortcutIcon(systemImageName: "checklist"),
-                userInfo: nil
+                localizedSubtitle: "Overdue task",
+                icon: UIApplicationShortcutIcon(systemImageName: "exclamationmark.circle.fill")
+            ))
+        } else if let task = taskService.tasks.first(where: { !$0.isCompleted }) {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.addtask",
+                localizedTitle: task.title,
+                localizedSubtitle: "Next task",
+                icon: UIApplicationShortcutIcon(systemImageName: "checklist")
+            ))
+        } else {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.addtask",
+                localizedTitle: "New Task",
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "plus.circle.fill")
             ))
         }
+
+        // 2. Plant needing water — contextual
+        if let plant = plantService.plantsNeedingWater.first {
+            let subtitle = plantService.plantsNeedingWater.count > 1
+                ? "\(plantService.plantsNeedingWater.count) need water"
+                : "Needs water"
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.plants",
+                localizedTitle: plant.name,
+                localizedSubtitle: subtitle,
+                icon: UIApplicationShortcutIcon(systemImageName: "drop.fill")
+            ))
+        } else {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.plants",
+                localizedTitle: "My Plants",
+                localizedSubtitle: plantService.plants.isEmpty ? nil : "All watered",
+                icon: UIApplicationShortcutIcon(systemImageName: "leaf.fill")
+            ))
+        }
+
+        // 3. Active delivery or shopping list
         if deliveryService.activeDeliveries.count > 0 {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.shopping",
-                localizedTitle: "\(deliveryService.activeDeliveries.count) active deliveries",
+                localizedTitle: "Active Deliveries",
+                localizedSubtitle: "\(deliveryService.activeDeliveries.count) in transit",
+                icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill")
+            ))
+        } else {
+            items.append(UIApplicationShortcutItem(
+                type: "com.prvio.action.shopping",
+                localizedTitle: "Shopping List",
                 localizedSubtitle: nil,
-                icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill"),
-                userInfo: nil
+                icon: UIApplicationShortcutIcon(systemImageName: "cart.fill")
             ))
         }
+
+        // 4. Family Chat
+        items.append(UIApplicationShortcutItem(
+            type: "com.prvio.action.chat",
+            localizedTitle: "Family Chat",
+            localizedSubtitle: nil,
+            icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill")
+        ))
+
         UIApplication.shared.shortcutItems = items
     }
 }

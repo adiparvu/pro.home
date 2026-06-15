@@ -16,6 +16,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         performActionFor shortcutItem: UIApplicationShortcutItem,
         completionHandler: @escaping (Bool) -> Void
     ) {
+        // Store for cold-launch case (SwiftUI onReceive may not be registered yet)
+        UserDefaults.standard.set(shortcutItem.type, forKey: "prvio.pendingQuickAction")
+        // Also post immediately for warm-launch (app already running)
         NotificationCenter.default.post(
             name: .prvioQuickAction,
             object: shortcutItem.type

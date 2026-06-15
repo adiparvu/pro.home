@@ -1,5 +1,6 @@
 import AppIntents
 import Foundation
+import WidgetKit
 
 // MARK: - Water Plant
 
@@ -13,6 +14,7 @@ struct WaterPlantIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingWatering(plant.id)
+        WidgetCenter.shared.reloadAllTimelines()
         return .result(dialog: "\(plant.emoji) \(plant.name) has been watered!")
     }
 }

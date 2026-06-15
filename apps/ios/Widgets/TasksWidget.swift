@@ -11,8 +11,8 @@ struct TasksWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             TasksWidgetView(entry: entry)
         }
-        .configurationDisplayName("Sarcini")
-        .description("Arată sarcinile restante și urgente.")
+        .configurationDisplayName("Tasks")
+        .description("Shows pending and overdue tasks.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -41,12 +41,12 @@ struct TasksWidgetSmallView: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.snapshot.overdueTaskCount > 0 ? "RESTANTE" : "SARCINI")
+                Text(entry.snapshot.overdueTaskCount > 0 ? "OVERDUE" : "TASKS")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.overdueTaskCount > 0
-                     ? "\(entry.snapshot.overdueTaskCount) urgente"
-                     : "\(entry.snapshot.openTaskCount) deschise")
+                     ? "\(entry.snapshot.overdueTaskCount) overdue"
+                     : "\(entry.snapshot.openTaskCount) open")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -77,7 +77,7 @@ struct TasksMediumView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label {
-                    Text("SARCINI")
+                    Text("TASKS")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
@@ -87,7 +87,7 @@ struct TasksMediumView: View {
                 }
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
-                    Text("\(entry.snapshot.overdueTaskCount) restante")
+                    Text("\(entry.snapshot.overdueTaskCount) overdue")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.red)
                         .padding(.horizontal, 8)
@@ -100,7 +100,7 @@ struct TasksMediumView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("Toate sarcinile sunt complete!")
+                    Text("All tasks are complete!")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }

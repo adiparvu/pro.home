@@ -11,8 +11,8 @@ struct PlantsWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             PlantsWidgetView(entry: entry)
         }
-        .configurationDisplayName("Plante")
-        .description("Arată plantele care au nevoie de apă.")
+        .configurationDisplayName("Plants")
+        .description("Shows plants that need watering.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -41,12 +41,12 @@ struct PlantsSmallView: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text("PLANTE")
+                Text("PLANTS")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.plantsNeedingWater > 0
-                     ? "Nevoie de apă"
-                     : "Toate udate")
+                     ? "Needs water"
+                     : "All watered")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
             }
@@ -76,7 +76,7 @@ struct PlantsMediumView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label {
-                    Text("PLANTE")
+                    Text("PLANTS")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.secondary)
                 } icon: {
@@ -86,7 +86,7 @@ struct PlantsMediumView: View {
                 }
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
-                    Text("\(entry.snapshot.plantsNeedingWater) nevoie de apă")
+                    Text("\(entry.snapshot.plantsNeedingWater) need water")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Color(red: 1.0, green: 0.62, blue: 0.1))
                         .padding(.horizontal, 8)
@@ -98,7 +98,7 @@ struct PlantsMediumView: View {
             if needsWater.isEmpty {
                 HStack(spacing: 8) {
                     Text("🌿")
-                    Text("Toate plantele sunt udate!")
+                    Text("All plants are watered!")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }

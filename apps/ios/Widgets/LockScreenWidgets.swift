@@ -10,8 +10,8 @@ struct LockScreenTasksWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             LockScreenTasksView(entry: entry)
         }
-        .configurationDisplayName("Sarcini (Ecran de blocare)")
-        .description("Numărul de sarcini restante.")
+        .configurationDisplayName("Tasks (Lock Screen)")
+        .description("Pending tasks count.")
         .supportedFamilies([.accessoryCircular])
     }
 }
@@ -54,8 +54,8 @@ struct LockScreenPlantsWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             LockScreenPlantsView(entry: entry)
         }
-        .configurationDisplayName("Plante (Ecran de blocare)")
-        .description("Plantele care au nevoie de apă.")
+        .configurationDisplayName("Plants (Lock Screen)")
+        .description("Plants that need watering.")
         .supportedFamilies([.accessoryCircular])
     }
 }
@@ -96,8 +96,8 @@ struct LockScreenDashboardWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             LockScreenDashboardView(entry: entry)
         }
-        .configurationDisplayName("PRVIO (Ecran de blocare)")
-        .description("Vizualizare rapidă PRVIO pe ecranul de blocare.")
+        .configurationDisplayName("PRVIO (Lock Screen)")
+        .description("Quick PRVIO overview on the lock screen.")
         .supportedFamilies([.accessoryRectangular, .accessoryInline])
     }
 }
@@ -145,10 +145,10 @@ struct LockScreenDashboardView: View {
     private var inlineText: String {
         var parts: [String] = []
         if entry.snapshot.overdueTaskCount > 0 {
-            parts.append("\(entry.snapshot.overdueTaskCount) sarcini")
+            parts.append("\(entry.snapshot.overdueTaskCount) tasks")
         }
         if entry.snapshot.plantsNeedingWater > 0 {
-            parts.append("\(entry.snapshot.plantsNeedingWater) plante")
+            parts.append("\(entry.snapshot.plantsNeedingWater) plants")
         }
         return parts.isEmpty ? "PRVIO ✓" : parts.joined(separator: " · ")
     }
