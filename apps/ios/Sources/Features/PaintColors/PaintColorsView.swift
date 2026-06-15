@@ -220,8 +220,8 @@ private struct PaintSwatch: View {
                 .lineLimit(1)
                 .frame(width: 70)
 
-            if !paintColor.code.isEmpty {
-                Text(paintColor.code)
+            if let code = paintColor.code, !code.isEmpty {
+                Text(code)
                     .font(.system(size: 10))
                     .foregroundStyle(Color.primary.opacity(0.4))
                     .lineLimit(1)

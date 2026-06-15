@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 
 // MARK: - PhotoJournalView
 
@@ -239,10 +240,10 @@ private struct PhotoEntryDetailSheet: View {
                                     .foregroundStyle(.white.opacity(0.8))
                             }
 
-                            if !entry.tags.isEmpty {
+                            if let entryTags = entry.tags, !entryTags.isEmpty {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 8) {
-                                        ForEach(entry.tags, id: \.self) { tag in
+                                        ForEach(entryTags, id: \.self) { tag in
                                             Text("#\(tag)")
                                                 .font(.system(size: 12, weight: .medium))
                                                 .foregroundStyle(.white.opacity(0.7))
