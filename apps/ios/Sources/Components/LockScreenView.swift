@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Full-screen lock shown when the app is protected and locked. Auto-prompts
-/// for Face ID / Touch ID / passcode and offers a retry button.
+/// for Face ID / Touch ID / passcode (triggered by AppLockManager) and offers
+/// a manual retry button.
 struct LockScreenView: View {
     @ObservedObject var manager: AppLockManager
 
@@ -41,7 +42,10 @@ struct LockScreenView: View {
                 .padding(.bottom, 50)
             }
         }
-        .task { await manager.authenticate() }
+        // No .task auto-trigger here — AppLockManager fires authenticate()
+        // via engageLock() so the prompt is tied to the lock session, not
+        // view lifecycle. This prevents a new LAContext (and reset failure
+        // counter) from being created each time SwiftUI rebuilds the view.
     }
 }
 

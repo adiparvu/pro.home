@@ -13,18 +13,23 @@ final class AppLockManager: ObservableObject {
     @Published var authFailed = false
 
     private var backgroundedAt: Date?
+    private var lastUnlockedAt: Date?
     private var isAuthenticating = false
 
-    // Live reads of the user's Security preferences.
+    // Persisted across calls within one lock session so iOS accumulates
+    // biometric failures and automatically offers passcode after 5 attempts.
+    private var authContext: LAContext?
+
     private var lockEnabled: Bool { UserDefaults.standard.bool(forKey: "prvio.biometrics") }
     private var lockdown: Bool    { UserDefaults.standard.bool(forKey: "prvio.lockMode") }
     private var autoLockMinutes: Int {
         UserDefaults.standard.object(forKey: "prvio.autoLockMinutes") as? Int ?? 5
     }
 
-    /// Cold launch — lock immediately if protection is on.
+    /// Cold launch — lock immediately if protection is on and auto-prompt.
     func appDidLaunch() {
-        if lockEnabled { isLocked = true }
+        guard lockEnabled else { return }
+        engageLock()
     }
 
     func willResignActive() {
@@ -35,37 +40,90 @@ final class AppLockManager: ObservableObject {
     func didBecomeActive() {
         privacyCover = false
         guard lockEnabled else { isLocked = false; backgroundedAt = nil; return }
-        if isLocked || isAuthenticating { return }
 
+        // Don't interfere while a biometric/passcode prompt is running.
+        if isAuthenticating { return }
+
+        // Grace period: skip re-lock checks for 2 seconds after a successful
+        // unlock to absorb the .inactive→.active cycle that iOS fires when the
+        // authentication dialog dismisses.
+        if let lu = lastUnlockedAt, Date().timeIntervalSince(lu) < 2.0 {
+            backgroundedAt = nil
+            return
+        }
+
+        // Already locked — lock screen is visible, nothing to do.
+        if isLocked { return }
+
+        let shouldLock: Bool
         if lockdown {
-            // Lockdown: always re-authenticate when returning to foreground.
-            isLocked = true
-        } else if autoLockMinutes > 0, let bg = backgroundedAt,
+            shouldLock = true
+        } else if autoLockMinutes > 0,
+                  let bg = backgroundedAt,
                   Date().timeIntervalSince(bg) >= Double(autoLockMinutes) * 60 {
-            isLocked = true
+            shouldLock = true
+        } else {
+            shouldLock = false
         }
         backgroundedAt = nil
+
+        if shouldLock { engageLock() }
     }
 
+    /// Prompts Face ID / Touch ID / passcode. Safe to call concurrently — only
+    /// one evaluation runs at a time.
     func authenticate() async {
         guard !isAuthenticating else { return }
         isAuthenticating = true
-        defer { isAuthenticating = false }
 
-        let context = LAContext()
-        context.localizedFallbackTitle = "Folosește codul de acces"
+        // Reuse context within the same lock session so failure count persists.
+        if authContext == nil {
+            let ctx = LAContext()
+            ctx.localizedFallbackTitle = "Folosește codul de acces"
+            authContext = ctx
+        }
 
         do {
-            let ok = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Deblochează PRVIO")
+            let ok = try await authContext!.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Deblochează PRVIO"
+            )
             if ok {
+                // Set lastUnlockedAt BEFORE clearing isLocked so that the
+                // .active scene phase fired by dialog-dismiss is absorbed by
+                // the grace period check in didBecomeActive().
+                lastUnlockedAt = Date()
                 isLocked = false
                 authFailed = false
                 backgroundedAt = nil
+                authContext = nil
             } else {
+                authFailed = true
+            }
+        } catch let error as LAError {
+            switch error.code {
+            case .userCancel, .systemCancel, .appCancel:
+                // User or system dismissed — not a real failure; don't show error.
+                break
+            default:
                 authFailed = true
             }
         } catch {
             authFailed = true
         }
+
+        isAuthenticating = false
+    }
+
+    // MARK: - Private
+
+    private func engageLock() {
+        // Reset per-session state.
+        authContext = nil
+        authFailed = false
+        isLocked = true
+        // Auto-prompt immediately — Task is detached from any view so it
+        // won't be cancelled by view removal.
+        Task { await authenticate() }
     }
 }
