@@ -31,7 +31,7 @@ struct TrustedContactView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Contact de Încredere")
+        .navigationTitle("Trusted Contact")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -39,7 +39,7 @@ struct TrustedContactView: View {
                     if isSaving {
                         ProgressView().scaleEffect(0.8)
                     } else {
-                        Button("Salvează") { save() }
+                        Button("Save") { save() }
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(isValid ? .blue : Color.primary.opacity(0.3))
                             .disabled(!isValid)
@@ -47,11 +47,11 @@ struct TrustedContactView: View {
                 }
             }
         }
-        .confirmationDialog("Elimină contactul de încredere?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
-            Button("Elimină", role: .destructive) { removeContact() }
-            Button("Anulează", role: .cancel) {}
+        .confirmationDialog("Remove trusted contact?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) { removeContact() }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Informațiile despre \(savedName) vor fi șterse.")
+            Text("Information about \(savedName) will be deleted.")
         }
         .onAppear { loadSaved() }
         .overlay(alignment: .bottom) {
@@ -77,12 +77,12 @@ struct TrustedContactView: View {
                     .foregroundStyle(.white)
             }
 
-            Text("Persoana ta de contact în caz de urgență")
+            Text("Your emergency contact person")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
-            Text("Această persoană poate fi notificată în situații de urgență legate de locuința ta. Informațiile sunt stocate local pe dispozitiv.")
+            Text("This person can be notified in emergency situations related to your home. Information is stored locally on the device.")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.5))
                 .multilineTextAlignment(.center)
@@ -96,13 +96,13 @@ struct TrustedContactView: View {
     // MARK: - Form
 
     private var formSection: some View {
-        SettingsGroup(title: "Detalii contact") {
+        SettingsGroup(title: "Contact details") {
             VStack(spacing: 0) {
-                fieldRow(icon: "person.fill", color: .blue, placeholder: "Nume complet", text: $name, keyboard: .default)
+                fieldRow(icon: "person.fill", color: .blue, placeholder: "Full name", text: $name, keyboard: .default)
                 rowDivider
-                fieldRow(icon: "phone.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), placeholder: "Număr de telefon", text: $phone, keyboard: .phonePad)
+                fieldRow(icon: "phone.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), placeholder: "Phone number", text: $phone, keyboard: .phonePad)
                 rowDivider
-                fieldRow(icon: "heart.fill", color: .pink, placeholder: "Relație (ex: soț, mamă, prieten)", text: $relationship, keyboard: .default)
+                fieldRow(icon: "heart.fill", color: .pink, placeholder: "Relationship (e.g. spouse, mother, friend)", text: $relationship, keyboard: .default)
             }
         }
     }
@@ -135,7 +135,7 @@ struct TrustedContactView: View {
             HStack(spacing: 8) {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 13))
-                Text("Elimină contactul de încredere")
+                Text("Remove trusted contact")
                     .font(.system(size: 14, weight: .medium))
             }
             .foregroundStyle(.red)
@@ -152,7 +152,7 @@ struct TrustedContactView: View {
     private var savedBadge: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            Text("Contact salvat")
+            Text("Contact saved")
                 .font(.system(size: 13, weight: .medium))
         }
         .foregroundStyle(.primary)

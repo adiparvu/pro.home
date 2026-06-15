@@ -26,11 +26,11 @@ struct FamilyView: View {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
                                             Task { await familyService.delete(member) }
-                                        } label: { Label("Elimină", systemImage: "trash") }
+                                        } label: { Label("Remove", systemImage: "trash") }
                                     }
                                     .swipeActions(edge: .leading) {
                                         Button { selectedMember = member } label: {
-                                            Label("Editează", systemImage: "pencil")
+                                            Label("Edit", systemImage: "pencil")
                                         }
                                         .tint(.blue)
                                     }
@@ -42,7 +42,7 @@ struct FamilyView: View {
                 }
             }
         }
-        .navigationTitle("Familie")
+        .navigationTitle("Family")
         .navigationBarTitleDisplayMode(.large)
         .floatingSpeedDial(.family)
         .toolbar {
@@ -61,7 +61,7 @@ struct FamilyView: View {
         .sheet(item: $selectedMember) { member in
             MemberProfileSheet(member: member)
         }
-        .alert("Eroare", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { familyService.error != nil },
             set: { if !$0 { familyService.error = nil } }
         )) {
@@ -73,9 +73,9 @@ struct FamilyView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
-            Text("Niciun membru").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
-            Text("Adaugă membrii familiei pentru a colabora pe taskuri și a chata.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
-            Button("Adaugă primul membru") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
+            Text("No members").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
+            Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(.blue)
             Spacer()
         }
     }
@@ -255,10 +255,10 @@ struct MemberProfileSheet: View {
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Închide") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Editează") { showEdit = true }
+                    Button("Edit") { showEdit = true }
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue)
                 }
             }
@@ -289,7 +289,7 @@ struct MemberProfileSheet: View {
     private var quickActions: some View {
         HStack(spacing: 12) {
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Apel", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                profileActionBtn(icon: "phone.fill", label: "Call", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
                 profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
@@ -352,7 +352,7 @@ struct MemberProfileSheet: View {
 
     private func socialSection(_ links: [SocialLink]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("REȚELE SOCIALE")
+            sectionLabel("SOCIAL NETWORKS")
             VStack(spacing: 0) {
                 ForEach(links) { link in
                     Button {
@@ -404,7 +404,7 @@ struct MemberProfileSheet: View {
     private func formatted(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "d MMMM"
-        fmt.locale = Locale(identifier: "ro_RO")
+        fmt.locale = Locale(identifier: "en_US")
         return fmt.string(from: date)
     }
 }
@@ -413,8 +413,8 @@ struct MemberProfileSheet: View {
 
 private let kRoles = ["owner", "partner", "child", "member", "tenant", "guest"]
 private let kRoleLabels: [String: String] = [
-    "owner": "Owner", "partner": "Partener", "child": "Copil",
-    "member": "Membru", "tenant": "Chiriaș", "guest": "Oaspete"
+    "owner": "Owner", "partner": "Partner", "child": "Child",
+    "member": "Member", "tenant": "Tenant", "guest": "Guest"
 ]
 private let kRoleIcons: [String: String] = [
     "owner": "house.fill", "partner": "heart.fill", "child": "figure.child",
@@ -468,15 +468,15 @@ struct AddFamilyMemberSheet: View {
                 }
                 .scrollDismissesKeyboard(.immediately)
             }
-            .navigationTitle("Adaugă Membru").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Add Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.blue) }
-                        else { Text("Adaugă").font(.system(size: 15, weight: .semibold)).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
+                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
                     }
                     .disabled(!canSave)
                 }
@@ -516,13 +516,13 @@ struct AddFamilyMemberSheet: View {
 
     private var fieldsSection: some View {
         VStack(spacing: 0) {
-            fieldRow(icon: "person.fill", color: .blue, placeholder: "Prenume *", text: $firstName)
+            fieldRow(icon: "person.fill", color: .blue, placeholder: "First name *", text: $firstName)
             div
-            fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Nume", text: $lastName)
+            fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Last name", text: $lastName)
             div
             fieldRow(icon: "envelope.fill", color: .orange, placeholder: "E-mail", text: $email, keyboard: .emailAddress, autocap: .never)
             div
-            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Telefon", text: $phone, keyboard: .phonePad)
+            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Phone", text: $phone, keyboard: .phonePad)
             div
             birthdayRow
         }
@@ -535,7 +535,7 @@ struct AddFamilyMemberSheet: View {
             Button { withAnimation { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
-                    Text(showBirthday ? formatted(birthday) : "Data nașterii")
+                    Text(showBirthday ? formatted(birthday) : "Date of birth")
                         .font(.system(size: 15))
                         .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(0.45))
                     Spacer()
@@ -556,19 +556,19 @@ struct AddFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROL").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(kRoleLabels[role] ?? role.capitalized)
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
                     if role == "tenant" {
-                        Text("Acces limitat — taskuri și chat")
+                        Text("Limited access — tasks and chat")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                 }
                 Spacer()
-                Picker("Rol", selection: $role) {
+                Picker("Role", selection: $role) {
                     ForEach(kRoles, id: \.self) { r in
                         Label(kRoleLabels[r] ?? r.capitalized, systemImage: kRoleIcons[r] ?? "person.fill").tag(r)
                     }
@@ -584,7 +584,7 @@ struct AddFamilyMemberSheet: View {
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("REȚELE SOCIALE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
@@ -613,7 +613,7 @@ struct AddFamilyMemberSheet: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(.blue)
-                        Text("Adaugă rețea socială").font(.system(size: 14)).foregroundStyle(.blue)
+                        Text("Add social network").font(.system(size: 14)).foregroundStyle(.blue)
                         Spacer()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -627,13 +627,13 @@ struct AddFamilyMemberSheet: View {
 
     private var inviteSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INVITAȚIE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("INVITATION").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "envelope.badge.fill", color: .blue, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Trimite invitație").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
-                        Text("Persoana va primi un email de invitație").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                        Text("Send invitation").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                     Spacer()
                     Toggle("", isOn: $sendInvite).labelsHidden().tint(.blue)
@@ -663,7 +663,7 @@ struct AddFamilyMemberSheet: View {
     private func formatted(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "d MMMM yyyy"
-        fmt.locale = Locale(identifier: "ro_RO")
+        fmt.locale = Locale(identifier: "en_US")
         return fmt.string(from: date)
     }
 
@@ -707,8 +707,8 @@ struct AddFamilyMemberSheet: View {
     }
 
     private func sendInviteEmail(to email: String, name: String) {
-        let subject = "Ești invitat în aplicația PRVIO"
-        let body = "Bună \(name),\n\nEști invitat să te alături proprietății noastre în aplicația PRVIO.\n\nDescarcă aplicația și loghează-te cu acest email pentru a vedea proprietatea."
+        let subject = "You're invited to the PRVIO app"
+        let body = "Hi \(name),\n\nYou have been invited to join our property in the PRVIO app.\n\nDownload the app and log in with this email to view the property."
         let encoded = "mailto:\(email)?subject=\(subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&body=\(body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         if let url = URL(string: encoded) { UIApplication.shared.open(url) }
     }
@@ -764,13 +764,13 @@ private struct AddSocialLinkSheet: View {
                     Spacer()
                 }
             }
-            .navigationTitle("Adaugă rețea").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Add Network").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Adaugă") {
+                    Button("Add") {
                         let h = handle.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "@", with: "")
                         guard !h.isEmpty else { return }
                         onAdd(SocialLink(platform: platform, handle: h))
@@ -844,24 +844,24 @@ struct EditFamilyMemberSheet: View {
                 }
                 .scrollDismissesKeyboard(.immediately)
             }
-            .navigationTitle("Editează Membrul").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.blue) }
-                        else { Text("Salvează").font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue) }
+                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue) }
                     }
                     .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
             }
-            .confirmationDialog("Elimină \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-                Button("Elimină", role: .destructive) {
+            .confirmationDialog("Remove \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("Remove", role: .destructive) {
                     Task { await familyService.delete(member); dismiss() }
                 }
-                Button("Anulează", role: .cancel) {}
+                Button("Cancel", role: .cancel) {}
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
@@ -893,13 +893,13 @@ struct EditFamilyMemberSheet: View {
 
     private var fieldsSection: some View {
         VStack(spacing: 0) {
-            fieldRow(icon: "person.fill", color: .blue, placeholder: "Prenume *", text: $firstName)
+            fieldRow(icon: "person.fill", color: .blue, placeholder: "First name *", text: $firstName)
             div
-            fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Nume", text: $lastName)
+            fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Last name", text: $lastName)
             div
             fieldRow(icon: "envelope.fill", color: .orange, placeholder: "E-mail", text: $email, keyboard: .emailAddress, autocap: .never)
             div
-            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Telefon", text: $phone, keyboard: .phonePad)
+            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Phone", text: $phone, keyboard: .phonePad)
             div
             birthdayRow
         }
@@ -912,7 +912,7 @@ struct EditFamilyMemberSheet: View {
             Button { withAnimation { showBirthday.toggle() } } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
-                    Text(showBirthday ? formatted(birthday) : "Data nașterii")
+                    Text(showBirthday ? formatted(birthday) : "Date of birth")
                         .font(.system(size: 15))
                         .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(0.45))
                     Spacer()
@@ -932,19 +932,19 @@ struct EditFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROL").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(kRoleLabels[role] ?? role.capitalized)
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
                     if role == "tenant" {
-                        Text("Acces limitat — taskuri și chat")
+                        Text("Limited access — tasks and chat")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                 }
                 Spacer()
-                Picker("Rol", selection: $role) {
+                Picker("Role", selection: $role) {
                     ForEach(kRoles, id: \.self) { r in
                         Label(kRoleLabels[r] ?? r.capitalized, systemImage: kRoleIcons[r] ?? "person.fill").tag(r)
                     }
@@ -959,7 +959,7 @@ struct EditFamilyMemberSheet: View {
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("REȚELE SOCIALE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
@@ -989,7 +989,7 @@ struct EditFamilyMemberSheet: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(.blue)
-                        Text("Adaugă rețea socială").font(.system(size: 14)).foregroundStyle(.blue)
+                        Text("Add social network").font(.system(size: 14)).foregroundStyle(.blue)
                         Spacer()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -1003,7 +1003,7 @@ struct EditFamilyMemberSheet: View {
 
     private var deleteButton: some View {
         Button { showDeleteConfirm = true } label: {
-            Label("Elimină membrul", systemImage: "trash")
+            Label("Remove member", systemImage: "trash")
                 .font(.system(size: 14, weight: .medium)).foregroundStyle(.red)
                 .frame(maxWidth: .infinity).padding(.vertical, 14)
                 .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
@@ -1029,7 +1029,7 @@ struct EditFamilyMemberSheet: View {
     private func formatted(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "d MMMM yyyy"
-        fmt.locale = Locale(identifier: "ro_RO")
+        fmt.locale = Locale(identifier: "en_US")
         return fmt.string(from: date)
     }
 

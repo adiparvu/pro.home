@@ -24,7 +24,7 @@ struct SecurityView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(title: "Securitate")
+                PageHeader(title: "Security")
                 mfaSection
                 sessionsSection
                 advancedSection
@@ -43,51 +43,51 @@ struct SecurityView: View {
         .sheet(isPresented: $showTOTPEnroll) {
             TOTPEnrollView { Task { await loadFactors() } }
         }
-        .confirmationDialog("Dezactivezi aplicația de autentificare?", isPresented: $showRemoveTOTP, titleVisibility: .visible) {
-            Button("Dezactivează", role: .destructive) { Task { await removeTOTP() } }
-            Button("Anulează", role: .cancel) {}
+        .confirmationDialog("Disable authenticator app?", isPresented: $showRemoveTOTP, titleVisibility: .visible) {
+            Button("Disable", role: .destructive) { Task { await removeTOTP() } }
+            Button("Cancel", role: .cancel) {}
         }
         .alert(alertMessage, isPresented: $showPasswordAlert) {
             Button("OK", role: .cancel) {}
         }
-        .confirmationDialog("Șterge contul", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Șterge permanent", role: .destructive) { Task { await deleteAccount() } }
-            Button("Anulează", role: .cancel) {}
+        .confirmationDialog("Delete account", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete permanently", role: .destructive) { Task { await deleteAccount() } }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Toate datele tale vor fi șterse definitiv. Această acțiune nu poate fi anulată.")
+            Text("All your data will be permanently deleted. This action cannot be undone.")
         }
         .sheet(item: $exportItem) { item in ShareSheet(activityItems: [item.url]) }
         .sheet(isPresented: $showActiveSessions) { ActiveSessionsSheet() }
-        .confirmationDialog("Blocare automată", isPresented: $showAutoLockPicker, titleVisibility: .visible) {
+        .confirmationDialog("Auto-lock", isPresented: $showAutoLockPicker, titleVisibility: .visible) {
             ForEach([1, 5, 15, 30], id: \.self) { minutes in
                 Button("\(minutes) min") { autoLockMinutes = minutes }
             }
-            Button("Niciodată") { autoLockMinutes = 0 }
-            Button("Anulează", role: .cancel) {}
+            Button("Never") { autoLockMinutes = 0 }
+            Button("Cancel", role: .cancel) {}
         }
     }
 
     // MARK: - MFA
 
     private var mfaSection: some View {
-        secGroup(title: "Autentificare multi-factor (MFA)", footer: "Solicită o verificare de securitate suplimentară la autentificare. Dacă nu reușești să treci de această verificare, vei avea opțiunea de a-ți recupera contul.") {
+        secGroup(title: "Multi-factor authentication (MFA)", footer: "Requires an additional security check at sign-in. If you fail this check, you will have the option to recover your account.") {
             Button {
                 if totpFactorId != nil { showRemoveTOTP = true } else { showTOTPEnroll = true }
             } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "apps.iphone", color: .indigo)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Aplicație de autentificare")
+                        Text("Authenticator app")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text("Coduri TOTP (Google Authenticator, 1Password…)")
+                        Text("TOTP codes (Google Authenticator, 1Password…)")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
                     if totpFactorId != nil {
-                        Text("Activat").font(.system(size: 13, weight: .semibold))
+                        Text("Enabled").font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
                     } else {
-                        Text("Dezactivat").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
+                        Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
@@ -97,18 +97,18 @@ struct SecurityView: View {
             }
             .buttonStyle(.plain)
             divider
-            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Mesaje text", status: "În curând")
+            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Text messages", status: "Coming soon")
         }
     }
 
     // MARK: - Sessions
 
     private var sessionsSection: some View {
-        secGroup(title: "Sesiuni", footer: "Vezi toate dispozitivele și sesiunile care ți-au accesat contul. Poți verifica sesiunile active, elimina dispozitivele de încredere sau folosi „Deconectează-te de pe toate dispozitivele\u{201D} pentru a încheia toate sesiunile.") {
+        secGroup(title: "Sessions", footer: "See all devices and sessions that have accessed your account. You can check active sessions, remove trusted devices, or use \"Sign out of all devices\" to end all sessions.") {
             Button { showActiveSessions = true } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "macbook.and.iphone", color: .blue)
-                    Text("Sesiuni active")
+                    Text("Active sessions")
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     Text("1")
@@ -125,16 +125,16 @@ struct SecurityView: View {
     // MARK: - Advanced security
 
     private var advancedSection: some View {
-        secGroup(title: "Securitate avansată") {
+        secGroup(title: "Advanced security") {
             Button {
                 Task { await sendPasswordReset() }
             } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "key.fill", color: .orange)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Securitate avansată a contului")
+                        Text("Advanced account security")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text("Schimbă parola sau e-mailul")
+                        Text("Change password or email")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
@@ -154,9 +154,9 @@ struct SecurityView: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "lock.shield.fill", color: .purple)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Mod blocare")
+                    Text("Lockdown mode")
                         .font(.system(size: 15)).foregroundStyle(.primary)
-                    Text("Cere metode de conectare mai sigure")
+                    Text("Requires more secure sign-in methods")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
@@ -178,9 +178,9 @@ struct SecurityView: View {
                         color: Color(red: 0.3, green: 0.82, blue: 0.45)
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(biometricType == .faceID ? "Solicită Face ID" : "Solicită Touch ID")
+                        Text(biometricType == .faceID ? "Require Face ID" : "Require Touch ID")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text("Face ID sau cod de acces pentru a accesa PRVIO")
+                        Text("Face ID or passcode to access PRVIO")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
@@ -199,13 +199,13 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "timer", color: .cyan)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Blocare automată")
+                        Text("Auto-lock")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text(autoLockMinutes == 0 ? "Nu se blochează automat" : "Se blochează după \(autoLockMinutes) min de inactivitate")
+                        Text(autoLockMinutes == 0 ? "Never auto-locks" : "Locks after \(autoLockMinutes) min of inactivity")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
-                    Text(autoLockMinutes == 0 ? "Niciodată" : "\(autoLockMinutes) min")
+                    Text(autoLockMinutes == 0 ? "Never" : "\(autoLockMinutes) min")
                         .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
@@ -220,11 +220,11 @@ struct SecurityView: View {
     // MARK: - Data & Privacy
 
     private var dataSection: some View {
-        secGroup(title: "Date & Confidențialitate") {
+        secGroup(title: "Data & Privacy") {
             Button { exportData() } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "square.and.arrow.up.fill", color: .cyan)
-                    Text("Exportă datele mele")
+                    Text("Export my data")
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     if isExporting {
@@ -243,7 +243,7 @@ struct SecurityView: View {
             Button { showDeleteConfirm = true } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "trash.fill", color: .red)
-                    Text("Șterge contul")
+                    Text("Delete account")
                         .font(.system(size: 15)).foregroundStyle(.red)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -311,7 +311,7 @@ struct SecurityView: View {
             totpFactorId = nil
             HapticFeedback.success()
         } catch {
-            alertMessage = "Nu s-a putut dezactiva. Încearcă din nou."
+            alertMessage = "Could not disable. Please try again."
             showPasswordAlert = true
         }
     }
@@ -325,7 +325,7 @@ struct SecurityView: View {
 
     private func authenticateBiometric() async {
         let ctx = LAContext()
-        let reason = biometricType == .faceID ? "Activează Face ID pentru PRVIO" : "Activează Touch ID pentru PRVIO"
+        let reason = biometricType == .faceID ? "Enable Face ID for PRVIO" : "Enable Touch ID for PRVIO"
         do {
             let ok = try await ctx.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
             if !ok { biometricsEnabled = false }
@@ -337,10 +337,10 @@ struct SecurityView: View {
         do {
             try await supabase.auth.resetPasswordForEmail(email)
             passwordResetSent = true
-            alertMessage = "Email de resetare trimis la \(email). Verifică inbox-ul."
+            alertMessage = "Reset email sent to \(email). Check your inbox."
             showPasswordAlert = true
         } catch {
-            alertMessage = "Nu s-a putut trimite emailul. Încearcă din nou."
+            alertMessage = "Could not send the email. Please try again."
             showPasswordAlert = true
         }
     }
@@ -369,7 +369,7 @@ struct SecurityView: View {
             } catch {
                 await MainActor.run {
                     isExporting = false
-                    alertMessage = "Export eșuat: \(error.localizedDescription)"
+                    alertMessage = "Export failed: \(error.localizedDescription)"
                     showPasswordAlert = true
                 }
             }
@@ -405,8 +405,8 @@ private struct ActiveSessionsSheet: View {
                     VStack(spacing: 0) {
                         sessionRow(
                             icon: "iphone",
-                            title: "Acest dispozitiv",
-                            subtitle: "Sesiune curentă · activă acum",
+                            title: "This device",
+                            subtitle: "Current session · active now",
                             color: Color(red: 0.3, green: 0.82, blue: 0.45),
                             isCurrent: true
                         )
@@ -415,14 +415,14 @@ private struct ActiveSessionsSheet: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
 
-                    Text("Poți deconecta alte sesiuni dacă observi activitate suspectă.")
+                    Text("You can sign out other sessions if you notice suspicious activity.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, 28).padding(.top, 16)
 
                     Button {
                         Task { try? await supabase.auth.signOut(scope: .others) }
                     } label: {
-                        Text("Deconectează toate celelalte sesiuni")
+                        Text("Sign out all other sessions")
                             .font(.system(size: 14, weight: .semibold)).foregroundStyle(.red)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
                             .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
@@ -431,11 +431,11 @@ private struct ActiveSessionsSheet: View {
                     .padding(.horizontal, 20).padding(.top, 20)
                 }
             }
-            .navigationTitle("Sesiuni active")
+            .navigationTitle("Active sessions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Gata") { dismiss() }.foregroundStyle(.blue)
+                    Button("Done") { dismiss() }.foregroundStyle(.blue)
                 }
             }
         }
@@ -448,7 +448,7 @@ private struct ActiveSessionsSheet: View {
                 HStack(spacing: 6) {
                     Text(title).font(.system(size: 15)).foregroundStyle(.primary)
                     if isCurrent {
-                        Text("CURENT")
+                        Text("CURRENT")
                             .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(color, in: Capsule())

@@ -25,7 +25,7 @@ struct TOTPEnrollView: View {
                     VStack(spacing: 20) {
                         if isLoading {
                             ProgressView().tint(.primary).padding(.top, 60)
-                            Text("Se pregătește înrolarea…")
+                            Text("Preparing enrollment…")
                                 .font(.system(size: 13)).foregroundStyle(.secondary)
                         } else if let error, factorId == nil {
                             errorState(error)
@@ -47,7 +47,7 @@ struct TOTPEnrollView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulează") { cancel() }
+                    Button("Cancel") { cancel() }
                 }
             }
             .task { await startEnroll() }
@@ -58,7 +58,7 @@ struct TOTPEnrollView: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Scanează codul cu o aplicație de autentificare (Google Authenticator, 1Password, Authy) sau introdu cheia manual, apoi tastează codul de 6 cifre.")
+            Text("Scan the code with an authenticator app (Google Authenticator, 1Password, Authy) or enter the key manually, then type the 6-digit code.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.6))
         }
@@ -81,7 +81,7 @@ struct TOTPEnrollView: View {
 
     private var secretCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("CHEIE MANUALĂ").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("MANUAL KEY").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             HStack {
                 Text(secret)
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
@@ -103,7 +103,7 @@ struct TOTPEnrollView: View {
 
     private var codeEntry: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("COD DE 6 CIFRE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("6-DIGIT CODE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             TextField("000000", text: $code)
                 .font(.system(size: 22, weight: .semibold, design: .monospaced))
                 .keyboardType(.numberPad)
@@ -120,7 +120,7 @@ struct TOTPEnrollView: View {
         Button { Task { await verify() } } label: {
             Group {
                 if isVerifying { ProgressView().tint(.white) }
-                else { Text("Activează").font(.system(size: 16, weight: .semibold)) }
+                else { Text("Activate").font(.system(size: 16, weight: .semibold)) }
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -134,7 +134,7 @@ struct TOTPEnrollView: View {
     private func errorState(_ message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.shield.fill").font(.system(size: 40)).foregroundStyle(.orange)
-            Text("Nu s-a putut porni înrolarea")
+            Text("Could not start enrollment")
                 .font(.system(size: 16, weight: .semibold))
             Text(message)
                 .font(.system(size: 13)).foregroundStyle(.secondary)
@@ -174,7 +174,7 @@ struct TOTPEnrollView: View {
             onEnrolled()
             dismiss()
         } catch {
-            self.error = "Cod invalid sau expirat. Încearcă din nou."
+            self.error = "Invalid or expired code. Please try again."
             HapticFeedback.error()
         }
     }

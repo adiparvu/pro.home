@@ -103,9 +103,9 @@ struct SettingsView: View {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: "house.fill", color: .blue)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("Proprietate")
+                            Text("Property")
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
-                            Text(propertyService.primary?.name ?? "Nicio proprietate")
+                            Text(propertyService.primary?.name ?? "No property")
                                 .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
@@ -124,7 +124,7 @@ struct SettingsView: View {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: "person.circle.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("Cont")
+                            Text("Account")
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                             Text(auth.session?.user.email ?? "—")
                                 .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
@@ -204,17 +204,17 @@ struct SettingsView: View {
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
                 InventoryView()
             }
-            NavSettingsRow(icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), label: "Consumabile") {
+            NavSettingsRow(icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), label: "Supplies") {
                 SuppliesView()
                     .environmentObject(supplyService)
                     .environmentObject(propertyService)
             }
-            NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plante") {
+            NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
                 PlantsView()
                     .environmentObject(plantService)
                     .environmentObject(propertyService)
             }
-            NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Livrări") {
+            NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
                 DeliveriesView()
                     .environmentObject(deliveryService)
             }
@@ -245,7 +245,7 @@ struct SettingsView: View {
                     .environmentObject(familyService)
                     .environmentObject(propertyService)
             }
-            NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supraveghere") {
+            NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supervision") {
                 SupervisionView()
                     .environmentObject(familyService)
             }
@@ -275,14 +275,14 @@ struct SettingsView: View {
                 LanguageSettingsView()
                     .environmentObject(appSettings)
             }
-            NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activitate") {
+            NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activity") {
                 ActivityFeedView()
                     .environmentObject(financialService)
                     .environmentObject(documentService)
                     .environmentObject(familyService)
                     .environmentObject(appSettings)
             }
-            NavSettingsRow(icon: "app.fill", color: .purple, label: "Iconița aplicației") {
+            NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()
             }
             NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {

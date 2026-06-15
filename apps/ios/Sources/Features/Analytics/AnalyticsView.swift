@@ -83,18 +83,18 @@ struct AnalyticsView: View {
 // MARK: - Chart range
 
 private enum ChartRange: String, CaseIterable {
-    case day = "1Z", week = "1S", month = "1L"
-    case threeMonths = "3L", sixMonths = "6L", year = "1An", custom = "↔"
+    case day = "1D", week = "1W", month = "1M"
+    case threeMonths = "3M", sixMonths = "6M", year = "1Y", custom = "↔"
 
     var menuLabel: String {
         switch self {
-        case .day:          return "1 Zi"
-        case .week:         return "1 Săptămână"
-        case .month:        return "1 Lună"
-        case .threeMonths:  return "3 Luni"
-        case .sixMonths:    return "6 Luni"
-        case .year:         return "1 An"
-        case .custom:       return "Personalizat…"
+        case .day:          return "1 Day"
+        case .week:         return "1 Week"
+        case .month:        return "1 Month"
+        case .threeMonths:  return "3 Months"
+        case .sixMonths:    return "6 Months"
+        case .year:         return "1 Year"
+        case .custom:       return "Custom…"
         }
     }
 }
@@ -256,7 +256,7 @@ private struct FinancesSection: View {
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                 if isCurrentMonth {
-                    Text("luna curentă")
+                    Text("current month")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -291,14 +291,14 @@ private struct FinancesSection: View {
     private var kpiRow: some View {
         HStack(spacing: 10) {
             TrendKPICard(
-                label: "Venituri",
+                label: "Income",
                 value: "\(sym)\(Int(income))",
                 icon: "arrow.down.circle.fill",
                 trendPct: trend(income, prevIncome),
                 trendPositive: income >= prevIncome
             )
             TrendKPICard(
-                label: "Cheltuieli",
+                label: "Expenses",
                 value: "\(sym)\(Int(expenses))",
                 icon: "arrow.up.circle.fill",
                 trendPct: trend(expenses, prevExpenses),
@@ -322,7 +322,7 @@ private struct FinancesSection: View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Label("Rata economisirii", systemImage: "leaf.fill")
+                    Label("Savings rate", systemImage: "leaf.fill")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
                     Spacer()
@@ -353,10 +353,10 @@ private struct FinancesSection: View {
     }
 
     private var savingsInsight: String {
-        if savingsRate >= 30 { return "Excelent! Economisești mai mult de 30% din venituri." }
-        if savingsRate >= 20 { return "Bine! Economisești \(Int(savingsRate))% din venituri." }
-        if savingsRate >= 0  { return "Poți economisi mai mult reducând cheltuielile." }
-        return "Cheltuielile depășesc veniturile acestei luni."
+        if savingsRate >= 30 { return "Excellent! You're saving more than 30% of your income." }
+        if savingsRate >= 20 { return "Good! You're saving \(Int(savingsRate))% of your income." }
+        if savingsRate >= 0  { return "You can save more by reducing expenses." }
+        return "Expenses exceed income this month."
     }
 
     // MARK: Category donut chart
@@ -364,7 +364,7 @@ private struct FinancesSection: View {
     private var categoryCard: some View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Cheltuieli pe categorie")
+                Text("Expenses by category")
                     .font(.system(size: 15, weight: .semibold))
 
                 HStack(alignment: .top, spacing: 16) {
@@ -430,7 +430,7 @@ private struct FinancesSection: View {
     private var chartCard: some View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Evoluție lunară")
+                Text("Monthly evolution")
                     .font(.system(size: 15, weight: .semibold))
 
                 rangeChips
@@ -444,8 +444,8 @@ private struct FinancesSection: View {
                     Chart {
                         ForEach(data, id: \.label) { item in
                             AreaMark(
-                                x: .value("Perioadă", item.label),
-                                y: .value("Venituri", item.income)
+                                x: .value("Period", item.label),
+                                y: .value("Income", item.income)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -457,8 +457,8 @@ private struct FinancesSection: View {
                             .interpolationMethod(.catmullRom)
 
                             LineMark(
-                                x: .value("Perioadă", item.label),
-                                y: .value("Venituri", item.income)
+                                x: .value("Period", item.label),
+                                y: .value("Income", item.income)
                             )
                             .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
                             .lineStyle(StrokeStyle(lineWidth: 2))
@@ -467,8 +467,8 @@ private struct FinancesSection: View {
                             .symbolSize(24)
 
                             AreaMark(
-                                x: .value("Perioadă", item.label),
-                                y: .value("Cheltuieli", item.expenses)
+                                x: .value("Period", item.label),
+                                y: .value("Expenses", item.expenses)
                             )
                             .foregroundStyle(
                                 LinearGradient(
@@ -479,8 +479,8 @@ private struct FinancesSection: View {
                             .interpolationMethod(.catmullRom)
 
                             LineMark(
-                                x: .value("Perioadă", item.label),
-                                y: .value("Cheltuieli", item.expenses)
+                                x: .value("Period", item.label),
+                                y: .value("Expenses", item.expenses)
                             )
                             .foregroundStyle(.red.opacity(0.75))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 4]))
@@ -506,28 +506,28 @@ private struct FinancesSection: View {
                 }
 
                 HStack(spacing: 16) {
-                    legendItem(color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Venituri", solid: true)
-                    legendItem(color: .red.opacity(0.75), label: "Cheltuieli", solid: false)
+                    legendItem(color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Income", solid: true)
+                    legendItem(color: .red.opacity(0.75), label: "Expenses", solid: false)
                 }
             }
         }
         .sheet(isPresented: $showCustomSheet) {
             NavigationStack {
                 Form {
-                    Section("Interval") {
-                        DatePicker("De la", selection: $customStart, displayedComponents: .date)
-                        DatePicker("Până la", selection: $customEnd,
+                    Section("Range") {
+                        DatePicker("From", selection: $customStart, displayedComponents: .date)
+                        DatePicker("To", selection: $customEnd,
                                    in: customStart..., displayedComponents: .date)
                     }
                 }
-                .navigationTitle("Interval personalizat")
+                .navigationTitle("Custom range")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Anulare") { showCustomSheet = false }
+                        Button("Cancel") { showCustomSheet = false }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Aplicare") {
+                        Button("Apply") {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = .custom }
                             showCustomSheet = false
                         }
@@ -544,7 +544,7 @@ private struct FinancesSection: View {
             Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 28))
                 .foregroundStyle(Color.primary.opacity(0.15))
-            Text("Adaugă tranzacții pentru a vedea graficul")
+            Text("Add transactions to see the chart")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -671,18 +671,18 @@ private struct TasksSection: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 10) {
-                TrendKPICard(label: "Deschise", value: "\(service.openCount)", icon: "circle", trendPct: nil, trendPositive: true)
-                TrendKPICard(label: "Restante", value: "\(service.overdueCount)", icon: "exclamationmark.circle",
+                TrendKPICard(label: "Open", value: "\(service.openCount)", icon: "circle", trendPct: nil, trendPositive: true)
+                TrendKPICard(label: "Overdue", value: "\(service.overdueCount)", icon: "exclamationmark.circle",
                              trendPct: nil, trendPositive: service.overdueCount == 0,
                              highlightValue: service.overdueCount > 0, positiveValue: false)
-                TrendKPICard(label: "Finalizate/7z", value: "\(service.completedThisWeek)", icon: "checkmark.circle.fill",
+                TrendKPICard(label: "Done/7d", value: "\(service.completedThisWeek)", icon: "checkmark.circle.fill",
                              trendPct: nil, trendPositive: true, highlightValue: service.completedThisWeek > 0, positiveValue: true)
             }
 
             GlassCard(padding: 18) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Rata de finalizare")
+                        Text("Completion rate")
                             .font(.system(size: 15, weight: .semibold))
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
@@ -708,13 +708,13 @@ private struct TasksSection: View {
             if !tasksByPriority.isEmpty {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Pe prioritate")
+                        Text("By priority")
                             .font(.system(size: 15, weight: .semibold))
 
                         Chart(tasksByPriority, id: \.priority) { item in
                             BarMark(
-                                x: .value("Număr", item.count),
-                                y: .value("Prioritate", item.priority.capitalized)
+                                x: .value("Count", item.count),
+                                y: .value("Priority", item.priority.capitalized)
                             )
                             .foregroundStyle(
                                 LinearGradient(colors: [item.color.opacity(0.9), item.color.opacity(0.6)],
@@ -766,9 +766,9 @@ private struct ForecastSection: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Proiecție 12 luni")
+                            Text("12-month projection")
                                 .font(.system(size: 15, weight: .semibold))
-                            Text("Bazat pe ultimele \(financialService.monthlyData.count) luni")
+                            Text("Based on the last \(financialService.monthlyData.count) months")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                         }
@@ -781,17 +781,17 @@ private struct ForecastSection: View {
                     }
 
                     VStack(spacing: 12) {
-                        ForecastRow(label: "Venituri proiectate",
+                        ForecastRow(label: "Projected income",
                                     value: "\(sym)\(Int(projectedIncome))",
-                                    sub: "anual", positive: true)
+                                    sub: "annual", positive: true)
                         Divider().background(Color.primary.opacity(0.07))
-                        ForecastRow(label: "Cheltuieli proiectate",
+                        ForecastRow(label: "Projected expenses",
                                     value: "\(sym)\(Int(projectedExpenses))",
-                                    sub: "anual", positive: false)
+                                    sub: "annual", positive: false)
                         Divider().background(Color.primary.opacity(0.07))
-                        ForecastRow(label: "Profit net estimat",
+                        ForecastRow(label: "Estimated net profit",
                                     value: "\(netProfit >= 0 ? "+" : "")\(sym)\(Int(netProfit))",
-                                    sub: "estimat", positive: netProfit >= 0)
+                                    sub: "estimated", positive: netProfit >= 0)
                     }
                 }
             }
@@ -799,14 +799,14 @@ private struct ForecastSection: View {
             if !financialService.monthlyData.isEmpty {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Tendință cheltuieli")
+                        Text("Expense trend")
                             .font(.system(size: 15, weight: .semibold))
 
                         Chart {
                             ForEach(financialService.monthlyData, id: \.month) { item in
                                 BarMark(
-                                    x: .value("Lună", item.month),
-                                    y: .value("Cheltuieli", item.expenses)
+                                    x: .value("Month", item.month),
+                                    y: .value("Expenses", item.expenses)
                                 )
                                 .foregroundStyle(
                                     LinearGradient(colors: [.blue.opacity(0.8), .blue.opacity(0.4)],
@@ -838,7 +838,7 @@ private struct ForecastSection: View {
                         Image(systemName: "chart.bar.doc.horizontal")
                             .font(.system(size: 32))
                             .foregroundStyle(Color.primary.opacity(0.18))
-                        Text("Adaugă înregistrări financiare pentru a vedea prognoza")
+                        Text("Add financial records to see the forecast")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

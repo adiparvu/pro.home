@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Models
 
 private enum ActivityPeriod: String, CaseIterable {
-    case week = "1S", month = "1L", threeMonths = "3L", sixMonths = "6L", year = "1An"
+    case week = "1W", month = "1M", threeMonths = "3M", sixMonths = "6M", year = "1Y"
 
     var days: Int {
         switch self {
@@ -37,7 +37,7 @@ struct ActivityFeedView: View {
     @State private var period: ActivityPeriod = .month
     @State private var selectedMember: String? = nil
 
-    private let currentUser = "Tu"
+    private let currentUser = "You"
 
     // MARK: Event synthesis
 
@@ -52,7 +52,7 @@ struct ActivityFeedView: View {
             events.append(ActivityEvent(
                 icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
                 color:    isIncome ? Color(red: 0.2, green: 0.78, blue: 0.45) : .red,
-                title:    isIncome ? "Venit adăugat" : "Cheltuială înregistrată",
+                title:    isIncome ? "Income added" : "Expense recorded",
                 subtitle: "\(r.title) · \(financialService.currencySymbol)\(Int(r.amount))",
                 date:     date,
                 member:   currentUser
@@ -64,7 +64,7 @@ struct ActivityFeedView: View {
             events.append(ActivityEvent(
                 icon:     doc.categoryIcon,
                 color:    .orange,
-                title:    "Document adăugat",
+                title:    "Document added",
                 subtitle: doc.name,
                 date:     date,
                 member:   currentUser
@@ -85,15 +85,15 @@ struct ActivityFeedView: View {
 
     private var groupedByDay: [(label: String, events: [ActivityEvent])] {
         let cal = Calendar.current
-        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "ro_RO")
+        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US")
         let grouped = Dictionary(grouping: filteredEvents) {
             cal.startOfDay(for: $0.date)
         }
         return grouped.keys
             .sorted(by: >)
             .map { day in
-                formatter.dateFormat = cal.isDateInToday(day) ? "'Azi'" :
-                    cal.isDateInYesterday(day) ? "'Ieri'" : "d MMMM"
+                formatter.dateFormat = cal.isDateInToday(day) ? "'Today'" :
+                    cal.isDateInYesterday(day) ? "'Yesterday'" : "d MMMM"
                 return (formatter.string(from: day), grouped[day]!.sorted { $0.date > $1.date })
             }
     }
@@ -108,7 +108,7 @@ struct ActivityFeedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Activitate", subtitle: "PROPRIETATE")
+            PageHeader(title: "Activity", subtitle: "PROPERTY")
 
             periodRow
                 .padding(.horizontal, 20)
@@ -194,7 +194,7 @@ struct ActivityFeedView: View {
                     Button {
                         withAnimation { selectedMember = nil }
                     } label: {
-                        Text("Toți")
+                        Text("All")
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -294,10 +294,10 @@ struct ActivityFeedView: View {
             Image(systemName: "clock.badge.questionmark")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Nicio activitate în această perioadă")
+            Text("No activity in this period")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
-            Text("Activitățile apar automat pe măsură ce\nadaugi sarcini, documente și tranzacții.")
+            Text("Activities appear automatically as you\nadd tasks, documents, and transactions.")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)

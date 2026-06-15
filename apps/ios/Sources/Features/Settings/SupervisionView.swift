@@ -13,12 +13,12 @@ struct SupervisionSettings {
 
         var label: String {
             switch self {
-            case .tasks:       return "Sarcini"
-            case .finances:    return "Finanțe"
-            case .documents:   return "Documente"
-            case .inventory:   return "Inventar"
-            case .contractors: return "Contractori"
-            case .analytics:   return "Analize"
+            case .tasks:       return "Tasks"
+            case .finances:    return "Finances"
+            case .documents:   return "Documents"
+            case .inventory:   return "Inventory"
+            case .contractors: return "Contractors"
+            case .analytics:   return "Analytics"
             }
         }
 
@@ -86,7 +86,7 @@ struct SupervisionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Supraveghere", subtitle: "FAMILIE")
+            PageHeader(title: "Supervision", subtitle: "FAMILY")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -135,10 +135,10 @@ struct SupervisionView: View {
                 .offset(x: 180, y: -10)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Supraveghere Familială")
+                    Text("Family Supervision")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Controlează ce poate vedea și accesa fiecare\nmembru al familiei în aplicație.")
+                    Text("Control what each family member\ncan see and access in the app.")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.82))
                         .lineSpacing(3)
@@ -152,7 +152,7 @@ struct SupervisionView: View {
 
     private var memberList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("MEMBRI")
+            Text("MEMBERS")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
@@ -163,10 +163,10 @@ struct SupervisionView: View {
                         Image(systemName: "person.2.slash")
                             .font(.system(size: 32))
                             .foregroundStyle(Color.primary.opacity(0.18))
-                        Text("Niciun membru adăugat")
+                        Text("No members added")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(0.45))
-                        Text("Adaugă membri în secțiunea Family Members pentru a configura supravegherea.")
+                        Text("Add members in the Family Members section to configure supervision.")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.3))
                             .multilineTextAlignment(.center)
@@ -203,7 +203,7 @@ struct SupervisionView: View {
                     Spacer()
 
                     let supervised = SupervisionSettings.isSupervised(member.id)
-                    Text(supervised ? "Activ" : "Inactiv")
+                    Text(supervised ? "Active" : "Inactive")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
                         .padding(.horizontal, 10).padding(.vertical, 4)
@@ -252,7 +252,7 @@ struct MemberSupervisionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: member.name, subtitle: "SUPRAVEGHERE")
+            PageHeader(title: member.name, subtitle: "SUPERVISION")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -278,9 +278,9 @@ struct MemberSupervisionDetailView: View {
             HStack(spacing: 12) {
                 MemberAvatar(member: member, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Activează supravegherea")
+                    Text("Enable supervision")
                         .font(.system(size: 15, weight: .medium))
-                    Text(supervised ? "Restricțiile sunt active" : "Membrul are acces complet")
+                    Text(supervised ? "Restrictions are active" : "Member has full access")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -302,7 +302,7 @@ struct MemberSupervisionDetailView: View {
 
     private var sectionsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("CE POATE VEDEA")
+            Text("WHAT THEY CAN SEE")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
@@ -352,7 +352,7 @@ struct MemberSupervisionDetailView: View {
 
     private var notificationsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("NOTIFICĂRI")
+            Text("NOTIFICATIONS")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
@@ -368,9 +368,9 @@ struct MemberSupervisionDetailView: View {
                             .foregroundStyle(.blue)
                     }
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Notificare la sarcini")
+                        Text("Task notifications")
                             .font(.system(size: 15))
-                        Text("Primește notificare când ți se atribuie o sarcină")
+                        Text("Receive a notification when a task is assigned to you")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
@@ -397,9 +397,9 @@ struct MemberSupervisionDetailView: View {
                     .font(.system(size: 18))
                     .foregroundStyle(.blue)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Cum funcționează")
+                    Text("How it works")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("Restricțiile se aplică la nivelul acestui dispozitiv. \(member.name) va vedea doar secțiunile activate. Sarcinile atribuite îi vor trimite automat o notificare.")
+                    Text("Restrictions apply at the device level. \(member.name) will only see the enabled sections. Assigned tasks will automatically send them a notification.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .lineSpacing(3)

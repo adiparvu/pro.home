@@ -37,7 +37,7 @@ struct AddPropertyElementView: View {
                         // Type picker
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 10) {
-                                Label("Tip element", systemImage: "tag").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Element type", systemImage: "tag").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 8) {
                                         ForEach(PropertyElementType.allCases, id: \.self) { type in
@@ -59,21 +59,21 @@ struct AddPropertyElementView: View {
                         // Basic info
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Informații de bază", systemImage: "info.circle").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Basic information", systemImage: "info.circle").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                fieldRow(label: "Nume *", placeholder: "ex. Centrală Viessmann", text: $name)
-                                fieldRow(label: "Descriere", placeholder: "Detalii suplimentare...", text: $description)
+                                fieldRow(label: "Name *", placeholder: "e.g. Viessmann Boiler", text: $name)
+                                fieldRow(label: "Description", placeholder: "Additional details...", text: $description)
                             }
                         }
 
                         // Condition & health
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Stare tehnică", systemImage: "heart").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Technical condition", systemImage: "heart").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
 
                                 HStack {
-                                    Text("Scor sănătate")
+                                    Text("Health score")
                                         .font(.subheadline)
                                     Spacer()
                                     Text("\(healthScore)")
@@ -84,7 +84,7 @@ struct AddPropertyElementView: View {
                                     .tint(scoreColor)
 
                                 HStack {
-                                    Text("Condiție")
+                                    Text("Condition")
                                         .font(.subheadline)
                                     Spacer()
                                     Picker("", selection: $condition) {
@@ -101,22 +101,22 @@ struct AddPropertyElementView: View {
                         // Technical details
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Detalii tehnice", systemImage: "wrench.and.screwdriver").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Technical details", systemImage: "wrench.and.screwdriver").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                fieldRow(label: "Marcă", placeholder: "ex. Viessmann", text: $brand)
-                                fieldRow(label: "Model", placeholder: "ex. Vitodens 200-W", text: $model)
-                                fieldRow(label: "Serie", placeholder: "Număr de serie", text: $serialNumber)
+                                fieldRow(label: "Brand", placeholder: "e.g. Viessmann", text: $brand)
+                                fieldRow(label: "Model", placeholder: "e.g. Vitodens 200-W", text: $model)
+                                fieldRow(label: "Serial", placeholder: "Serial number", text: $serialNumber)
                             }
                         }
 
                         // Financial
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Financiar", systemImage: "banknote").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Financial", systemImage: "banknote").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 HStack(spacing: 8) {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Valoare estimată")
+                                        Text("Estimated value")
                                             .font(.caption).foregroundStyle(.secondary)
                                         TextField("0", text: $estimatedValue)
                                             .keyboardType(.decimalPad)
@@ -125,7 +125,7 @@ struct AddPropertyElementView: View {
                                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Monedă")
+                                        Text("Currency")
                                             .font(.caption).foregroundStyle(.secondary)
                                         Picker("", selection: $currency) {
                                             ForEach(["EUR", "RON", "USD", "GBP", "CHF"], id: \.self) {
@@ -144,17 +144,17 @@ struct AddPropertyElementView: View {
                         // Dates
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Date importante", systemImage: "calendar").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Important dates", systemImage: "calendar").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                DateToggleRow(label: "Data achiziției", isShown: $showPurchaseDate, date: $purchaseDatePicker, stringValue: $purchaseDate)
-                                DateToggleRow(label: "Garanție până la", isShown: $showWarrantyDate, date: $warrantyDatePicker, stringValue: $warrantyUntil)
+                                DateToggleRow(label: "Purchase date", isShown: $showPurchaseDate, date: $purchaseDatePicker, stringValue: $purchaseDate)
+                                DateToggleRow(label: "Warranty until", isShown: $showWarrantyDate, date: $warrantyDatePicker, stringValue: $warrantyUntil)
                             }
                         }
 
                         // Layer
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 10) {
-                                Label("Layer hartă", systemImage: "square.3.layers.3d").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Map layer", systemImage: "square.3.layers.3d").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 8) {
                                         ForEach(PropertyLayer.allCases, id: \.self) { layer in
@@ -180,7 +180,7 @@ struct AddPropertyElementView: View {
                         // Notes
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Label("Note", systemImage: "note.text").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Notes", systemImage: "note.text").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                 TextEditor(text: $notes)
                                     .frame(minHeight: 72)
                                     .scrollContentBackground(.hidden)
@@ -196,14 +196,14 @@ struct AddPropertyElementView: View {
                     .padding(.top, 8)
                 }
             }
-            .navigationTitle("Element nou")
+            .navigationTitle("New element")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(.secondary)
+                    Button("Cancel") { dismiss() }.foregroundStyle(.secondary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Adaugă") { save() }
+                    Button("Add") { save() }
                         .fontWeight(.semibold)
                         .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
                         .disabled(!canSave)
@@ -352,16 +352,16 @@ struct EditPropertyElementView: View {
                     VStack(spacing: 16) {
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Editează element", systemImage: "pencil").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Edit element", systemImage: "pencil").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Nume").font(.caption).foregroundStyle(.secondary)
-                                    TextField("Nume element", text: $element.name)
+                                    Text("Name").font(.caption).foregroundStyle(.secondary)
+                                    TextField("Element name", text: $element.name)
                                         .font(.subheadline).padding(10)
                                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Stare").font(.caption).foregroundStyle(.secondary)
+                                    Text("Status").font(.caption).foregroundStyle(.secondary)
                                     HStack {
                                         Text("\(element.healthScore)/100").font(.subheadline.weight(.bold)).foregroundStyle(element.healthColor)
                                         Spacer()
@@ -370,7 +370,7 @@ struct EditPropertyElementView: View {
                                     }
                                 }
                                 HStack {
-                                    Text("Condiție").font(.subheadline)
+                                    Text("Condition").font(.subheadline)
                                     Spacer()
                                     Picker("", selection: $element.technicalCondition) {
                                         ForEach(TechnicalCondition.allCases, id: \.self) { c in
@@ -379,8 +379,8 @@ struct EditPropertyElementView: View {
                                     }.pickerStyle(.menu).tint(element.technicalCondition.color)
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Note").font(.caption).foregroundStyle(.secondary)
-                                    TextField("Note...", text: .init(get: { element.notes ?? "" }, set: { element.notes = $0.isEmpty ? nil : $0 }))
+                                    Text("Notes").font(.caption).foregroundStyle(.secondary)
+                                    TextField("Notes...", text: .init(get: { element.notes ?? "" }, set: { element.notes = $0.isEmpty ? nil : $0 }))
                                         .font(.subheadline).padding(10)
                                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
@@ -391,14 +391,14 @@ struct EditPropertyElementView: View {
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
-            .navigationTitle("Editează")
+            .navigationTitle("Edit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(.secondary)
+                    Button("Cancel") { dismiss() }.foregroundStyle(.secondary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Salvează") { onSave(); dismiss() }.fontWeight(.semibold)
+                    Button("Save") { onSave(); dismiss() }.fontWeight(.semibold)
                         .foregroundStyle(Color(red: 0.29, green: 0.56, blue: 0.89))
                 }
             }
@@ -435,7 +435,7 @@ struct AddElementRecordView: View {
                         GlassCard(padding: 14) {
                             VStack(spacing: 10) {
                                 HStack {
-                                    Text("Tip").font(.subheadline)
+                                    Text("Type").font(.subheadline)
                                     Spacer()
                                     Picker("", selection: $recordType) {
                                         ForEach(ElementRecordType.allCases, id: \.self) { t in
@@ -444,20 +444,20 @@ struct AddElementRecordView: View {
                                     }.pickerStyle(.menu)
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Titlu *").font(.caption).foregroundStyle(.secondary)
-                                    TextField("ex. Revizie anuală", text: $title)
+                                    Text("Title *").font(.caption).foregroundStyle(.secondary)
+                                    TextField("e.g. Annual inspection", text: $title)
                                         .font(.subheadline).padding(10)
                                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Detalii").font(.caption).foregroundStyle(.secondary)
-                                    TextField("Descriere lucrare...", text: $content)
+                                    Text("Details").font(.caption).foregroundStyle(.secondary)
+                                    TextField("Work description...", text: $content)
                                         .font(.subheadline).padding(10)
                                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Efectuat de").font(.caption).foregroundStyle(.secondary)
-                                    TextField("Firmă / persoană", text: $performedBy)
+                                    Text("Performed by").font(.caption).foregroundStyle(.secondary)
+                                    TextField("Company / person", text: $performedBy)
                                         .font(.subheadline).padding(10)
                                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                 }
@@ -469,7 +469,7 @@ struct AddElementRecordView: View {
                                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Monedă").font(.caption).foregroundStyle(.secondary)
+                                        Text("Currency").font(.caption).foregroundStyle(.secondary)
                                         Picker("", selection: $currency) {
                                             ForEach(["EUR", "RON", "USD"], id: \.self) { Text($0).tag($0) }
                                         }.pickerStyle(.menu).padding(6)
@@ -477,7 +477,7 @@ struct AddElementRecordView: View {
                                     }.frame(width: 90)
                                 }
                                 HStack {
-                                    Text("Data").font(.subheadline)
+                                    Text("Date").font(.subheadline)
                                     Spacer()
                                     DatePicker("", selection: $recordDate, displayedComponents: .date)
                                         .datePickerStyle(.compact).labelsHidden()
@@ -489,14 +489,14 @@ struct AddElementRecordView: View {
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
-            .navigationTitle("Înregistrare nouă")
+            .navigationTitle("New record")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Anulează") { dismiss() }.foregroundStyle(.secondary)
+                    Button("Cancel") { dismiss() }.foregroundStyle(.secondary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Adaugă") { save() }.fontWeight(.semibold)
+                    Button("Add") { save() }.fontWeight(.semibold)
                         .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
                         .disabled(!canSave)
                 }

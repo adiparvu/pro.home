@@ -41,10 +41,10 @@ struct SiriShortcutsView: View {
                         .foregroundStyle(.white)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Comenzi Siri")
+                    Text("Siri Commands")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
-                    Text("Controlează PRVIO cu vocea")
+                    Text("Control PRVIO with your voice")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -57,46 +57,46 @@ struct SiriShortcutsView: View {
 
     private var shortcutsSection: some View {
         VStack(spacing: 0) {
-            sectionHeader("COMENZI DISPONIBILE")
+            sectionHeader("AVAILABLE COMMANDS")
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     shortcutRow(
-                        icon: "checklist",
+                        icon: “checklist”,
                         color: Color(red: 0.3, green: 0.85, blue: 0.45),
-                        title: "Sarcină nouă",
+                        title: “New Task”,
                         phrases: [
-                            "„Adaugă sarcină în PRVIO”",
-                            "„Sarcină nouă în PRVIO”"
+                            “\”Add task in PRVIO\””,
+                            “\”New task in PRVIO\””
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: "drop.fill",
+                        icon: “drop.fill”,
                         color: .blue,
-                        title: "Udă planta",
+                        title: “Water plant”,
                         phrases: [
-                            "„Udă planta în PRVIO”",
-                            "„Marchează udat în PRVIO”"
+                            “\”Water plant in PRVIO\””,
+                            “\”Mark watered in PRVIO\””
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: "cart.fill",
+                        icon: “cart.fill”,
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                        title: "Deschide cumpărăturile",
+                        title: “Open shopping”,
                         phrases: [
-                            "„Deschide cumpărăturile în PRVIO”",
-                            "„Listă cumpărături PRVIO”"
+                            “\”Open shopping in PRVIO\””,
+                            “\”Shopping list PRVIO\””
                         ]
                     )
                     rowDivider
                     shortcutRow(
-                        icon: "message.fill",
+                        icon: “message.fill”,
                         color: Color(red: 0.35, green: 0.65, blue: 1.0),
-                        title: "Chat familie",
+                        title: “Family chat”,
                         phrases: [
-                            "„Deschide chat-ul în PRVIO”",
-                            "„Chat familie PRVIO”"
+                            “\”Open chat in PRVIO\””,
+                            “\”Family chat PRVIO\””
                         ]
                     )
                 }
@@ -159,7 +159,7 @@ struct SiriShortcutsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
                         .font(.system(size: 16, weight: .semibold))
-                    Text(donated ? "Comenzi activate!" : "Activează comenzile Siri")
+                    Text(donated ? "Commands activated!" : "Activate Siri Commands")
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -179,7 +179,7 @@ struct SiriShortcutsView: View {
             .buttonStyle(.plain)
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: donated)
 
-            Text("Pentru a dezactiva comenzile Siri, mergi la Setări iPhone › Siri › Scurtături aplicație.")
+            Text("To disable Siri commands, go to iPhone Settings › Siri › App Shortcuts.")
                 .font(.system(size: 11))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center)

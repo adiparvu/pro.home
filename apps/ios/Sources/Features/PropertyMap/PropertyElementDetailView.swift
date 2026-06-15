@@ -30,9 +30,9 @@ struct PropertyElementDetailView: View {
 
     enum DetailTab: String, CaseIterable {
         case info      = "Info"
-        case records   = "Istoric"
-        case documents = "Documente"
-        case tasks     = "Taskuri"
+        case records   = "History"
+        case documents = "Documents"
+        case tasks     = "Tasks"
 
         var icon: String {
             switch self {
@@ -95,10 +95,10 @@ struct PropertyElementDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { showEditElement = true } label: {
-                            Label("Editează", systemImage: "pencil")
+                            Label("Edit", systemImage: "pencil")
                         }
                         Button(role: .destructive) { showDeleteConfirm = true } label: {
-                            Label("Șterge element", systemImage: "trash")
+                            Label("Delete element", systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -132,8 +132,8 @@ struct PropertyElementDetailView: View {
         .onChange(of: photoItems) { _, items in
             Task { await uploadPhotos(items) }
         }
-        .confirmationDialog("Ștergi \(localElement.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Șterge", role: .destructive) {
+        .confirmationDialog("Delete \(localElement.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
                 Task {
                     await elementService.delete(localElement)
                     dismiss()
@@ -218,7 +218,7 @@ struct PropertyElementDetailView: View {
         GlassCard(padding: 14) {
             VStack(spacing: 8) {
                 HStack {
-                    Text("Stare tehnică")
+                    Text("Technical condition")
                         .font(.subheadline.weight(.medium))
                     Spacer()
                     Text("\(localElement.healthScore)/100")
@@ -253,7 +253,7 @@ struct PropertyElementDetailView: View {
             if let desc = localElement.description {
                 GlassCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Label("Descriere", systemImage: "text.alignleft")
+                        Label("Description", systemImage: "text.alignleft")
                             .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                         Text(desc)
                             .font(.subheadline)
@@ -264,25 +264,25 @@ struct PropertyElementDetailView: View {
             // Technical details grid
             GlassCard(padding: 14) {
                 VStack(spacing: 10) {
-                    SectionHeader("Detalii tehnice")
+                    SectionHeader("Technical details")
                     if let brand = localElement.brand {
-                        StatRow(label: "Marcă", value: brand)
+                        StatRow(label: "Brand", value: brand)
                     }
                     if let model = localElement.model {
                         StatRow(label: "Model", value: model)
                     }
                     if let serial = localElement.serialNumber {
-                        StatRow(label: "Serie", value: serial)
+                        StatRow(label: "Serial", value: serial)
                     }
                     if let purchase = localElement.purchaseDate {
-                        StatRow(label: "Data achiziției", value: formatted(date: purchase))
+                        StatRow(label: "Purchase date", value: formatted(date: purchase))
                     }
                     if let warranty = localElement.warrantyUntil {
-                        StatRow(label: "Garanție până", value: formatted(date: warranty), valueColor: localElement.warrantyStatus.color)
+                        StatRow(label: "Warranty until", value: formatted(date: warranty), valueColor: localElement.warrantyStatus.color)
                     }
                     if let value = localElement.estimatedValue {
                         let formatted = currencyService.formatted(value, from: localElement.valueCurrency, preferred: appSettings.preferredCurrency)
-                        StatRow(label: "Valoare estimată", value: formatted, valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
+                        StatRow(label: "Estimated value", value: formatted, valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
                     }
                 }
             }
@@ -290,7 +290,7 @@ struct PropertyElementDetailView: View {
             if let notes = localElement.notes, !notes.isEmpty {
                 GlassCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Label("Note", systemImage: "note.text")
+                        Label("Notes", systemImage: "note.text")
                             .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                         Text(notes)
                             .font(.subheadline)
@@ -306,14 +306,14 @@ struct PropertyElementDetailView: View {
                 let lastDate = recs.first?.recordDate
                 GlassCard(padding: 14) {
                     VStack(spacing: 10) {
-                        SectionHeader("Sumar")
-                        StatRow(label: "Total înregistrări", value: "\(recs.count)")
+                        SectionHeader("Summary")
+                        StatRow(label: "Total records", value: "\(recs.count)")
                         if totalCost > 0 {
-                            StatRow(label: "Total costuri", value: currencyService.formatted(totalCost, from: "EUR", preferred: appSettings.preferredCurrency),
+                            StatRow(label: "Total costs", value: currencyService.formatted(totalCost, from: "EUR", preferred: appSettings.preferredCurrency),
                                     valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
                         }
                         if let last = lastDate {
-                            StatRow(label: "Ultima înregistrare", value: formatted(date: last))
+                            StatRow(label: "Last record", value: formatted(date: last))
                         }
                     }
                 }
@@ -327,7 +327,7 @@ struct PropertyElementDetailView: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Label("Fotografii", systemImage: "photo.on.rectangle.angled")
+                    Label("Photos", systemImage: "photo.on.rectangle.angled")
                         .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Spacer()
                     if isUploading { ProgressView().scaleEffect(0.7) }
@@ -338,7 +338,7 @@ struct PropertyElementDetailView: View {
                     }
                 }
                 if localElement.photos.isEmpty {
-                    Text("Nicio fotografie încă")
+                    Text("No photos yet")
                         .font(.caption).foregroundStyle(.tertiary)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -358,7 +358,7 @@ struct PropertyElementDetailView: View {
                                     .contextMenu {
                                         Button(role: .destructive) {
                                             Task { await deletePhoto(urlStr) }
-                                        } label: { Label("Șterge", systemImage: "trash") }
+                                        } label: { Label("Delete", systemImage: "trash") }
                                     }
                                 }
                             }
@@ -379,13 +379,13 @@ struct PropertyElementDetailView: View {
                         .foregroundStyle(.blue)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Locație pe hartă").font(.subheadline.weight(.medium))
-                    Text(localElement.coordinate == nil ? "Neplasat" : "Plasat pe hartă")
+                    Text("Map location").font(.subheadline.weight(.medium))
+                    Text(localElement.coordinate == nil ? "Not placed" : "Placed on map")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button { showLocationPicker = true } label: {
-                    Text(localElement.coordinate == nil ? "Plasează" : "Schimbă")
+                    Text(localElement.coordinate == nil ? "Place" : "Change")
                         .font(.caption.weight(.semibold)).foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 7)
                         .background(Capsule().fill(Color.blue))
@@ -425,14 +425,14 @@ struct PropertyElementDetailView: View {
     private var recordsTab: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Istoric & Lucrări")
+                Text("History & Work")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Button {
                     HapticFeedback.selection()
                     showAddRecord = true
                 } label: {
-                    Label("Adaugă", systemImage: "plus")
+                    Label("Add", systemImage: "plus")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
@@ -459,9 +459,9 @@ struct PropertyElementDetailView: View {
             VStack(spacing: 10) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
-                Text("Fără înregistrări")
+                Text("No records")
                     .font(.subheadline).foregroundStyle(.secondary)
-                Text("Adaugă prima lucrare, cost sau notă")
+                Text("Add the first job, cost or note")
                     .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
@@ -475,14 +475,14 @@ struct PropertyElementDetailView: View {
         let linked = documentService.documents(forElement: localElement.id)
         return VStack(spacing: 12) {
             HStack {
-                Text("Documente legate")
+                Text("Linked documents")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Button {
                     HapticFeedback.selection()
                     showLinkDocument = true
                 } label: {
-                    Label("Leagă", systemImage: "link")
+                    Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -494,9 +494,9 @@ struct PropertyElementDetailView: View {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.fill")
                             .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
-                        Text("Niciun document legat")
+                        Text("No linked documents")
                             .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Leagă manuale, garanții sau facturi de acest obiect")
+                        Text("Link manuals, warranties or invoices to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 8)
@@ -521,14 +521,14 @@ struct PropertyElementDetailView: View {
         let linked = taskService.tasks(forElement: localElement.id)
         return VStack(spacing: 12) {
             HStack {
-                Text("Taskuri legate")
+                Text("Linked tasks")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Button {
                     HapticFeedback.selection()
                     showLinkTask = true
                 } label: {
-                    Label("Leagă", systemImage: "link")
+                    Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -540,9 +540,9 @@ struct PropertyElementDetailView: View {
                     VStack(spacing: 10) {
                         Image(systemName: "checklist")
                             .font(.system(size: 32)).foregroundStyle(Color.secondary.opacity(0.5))
-                        Text("Niciun task legat")
+                        Text("No linked tasks")
                             .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Leagă sarcini de mentenanță de acest obiect")
+                        Text("Link maintenance tasks to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 8)
@@ -653,7 +653,7 @@ struct ElementRecordRow: View {
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onDelete) {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -700,7 +700,7 @@ private struct LinkedDocumentRow: View {
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onUnlink) {
-                Label("Dezleagă", systemImage: "link.badge.minus")
+                Label("Unlink", systemImage: "link.badge.minus")
             }
         }
     }
@@ -721,7 +721,7 @@ private struct DocumentLinkPicker: View {
                     let available = documentService.documents.filter { $0.elementId == nil }
                     VStack(spacing: 10) {
                         if available.isEmpty {
-                            Text("Toate documentele sunt deja legate sau nu există documente.")
+                            Text("All documents are already linked or no documents exist.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 40).padding(.horizontal, 24)
@@ -753,11 +753,11 @@ private struct DocumentLinkPicker: View {
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
-            .navigationTitle("Leagă document")
+            .navigationTitle("Link document")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Închide") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
         }
@@ -796,7 +796,7 @@ private struct LinkedTaskRow: View {
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onUnlink) {
-                Label("Dezleagă", systemImage: "link.badge.minus")
+                Label("Unlink", systemImage: "link.badge.minus")
             }
         }
     }
@@ -817,7 +817,7 @@ private struct TaskLinkPicker: View {
                     let available = taskService.tasks.filter { $0.elementId == nil && !$0.isCompleted }
                     VStack(spacing: 10) {
                         if available.isEmpty {
-                            Text("Niciun task disponibil de legat.")
+                            Text("No tasks available to link.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 40).padding(.horizontal, 24)
@@ -848,11 +848,11 @@ private struct TaskLinkPicker: View {
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
-            .navigationTitle("Leagă task")
+            .navigationTitle("Link task")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Închide") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
         }

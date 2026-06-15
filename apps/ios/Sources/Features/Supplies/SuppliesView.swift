@@ -3,21 +3,21 @@ import SwiftUI
 // MARK: - Category helpers
 
 private let supplyCategories: [(id: String, label: String)] = [
-    ("food",        "Mâncare"),
-    ("cleaning",    "Curățenie"),
-    ("bathroom",    "Baie"),
-    ("garden",      "Grădină"),
-    ("diy",         "Bricolaj"),
-    ("electronics", "Electronice"),
-    ("pet",         "Animale"),
-    ("other",       "Altele"),
+    ("food",        "Food"),
+    ("cleaning",    "Cleaning"),
+    ("bathroom",    "Bathroom"),
+    ("garden",      "Garden"),
+    ("diy",         "DIY"),
+    ("electronics", "Electronics"),
+    ("pet",         "Pets"),
+    ("other",       "Other"),
 ]
 
 private let supplyPriorities: [(id: String, label: String)] = [
-    ("low",      "Scăzut"),
-    ("medium",   "Mediu"),
-    ("high",     "Ridicat"),
-    ("critical", "Critic"),
+    ("low",      "Low"),
+    ("medium",   "Medium"),
+    ("high",     "High"),
+    ("critical", "Critical"),
 ]
 
 // MARK: - Main Supplies view
@@ -29,7 +29,7 @@ struct SuppliesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Consumabile", subtitle: "PROPRIETATE")
+            PageHeader(title: "Supplies", subtitle: "PROPERTY")
 
             if propertyService.primary == nil {
                 noPropertyState
@@ -64,7 +64,7 @@ struct SuppliesView: View {
             }
         }
         .userActivity("com.prvio.shopping") { activity in
-            activity.title = "Cumpărături — PRVIO"
+            activity.title = "Shopping — PRVIO"
             activity.userInfo = ["tab": "shopping"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
@@ -96,11 +96,11 @@ struct SuppliesView: View {
     private var summaryCard: some View {
         GlassCard(padding: 18) {
             HStack(spacing: 0) {
-                statCell(value: "\(supplyService.lists.count)", label: "Liste")
+                statCell(value: "\(supplyService.lists.count)", label: "Lists")
                 Divider().frame(height: 32).opacity(0.3)
-                statCell(value: "\(supplyService.totalPending)", label: "De cumpărat")
+                statCell(value: "\(supplyService.totalPending)", label: "To buy")
                 Divider().frame(height: 32).opacity(0.3)
-                statCell(value: "\(supplyService.totalCompleted)", label: "Completate")
+                statCell(value: "\(supplyService.totalCompleted)", label: "Completed")
             }
         }
     }
@@ -121,7 +121,7 @@ struct SuppliesView: View {
 
     private var listsGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("LISTE")
+            Text("LISTS")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
@@ -141,7 +141,7 @@ struct SuppliesView: View {
                         Button(role: .destructive) {
                             Task { await supplyService.deleteList(list) }
                         } label: {
-                            Label("Șterge lista", systemImage: "trash")
+                            Label("Delete list", systemImage: "trash")
                         }
                     }
                 }
@@ -153,7 +153,7 @@ struct SuppliesView: View {
 
     private var upNextSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("URGENTE")
+            Text("URGENT")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
@@ -211,15 +211,15 @@ struct SuppliesView: View {
             Image(systemName: "cart.badge.plus")
                 .font(.system(size: 56))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Nicio listă de consumabile")
+            Text("No supplies lists")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Creează prima listă pentru alimente,\ncurățenie, grădină și altele.")
+            Text("Create your first list for food,\ncleaning, garden, and more.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
             Button { showAddList = true } label: {
-                Label("Adaugă prima listă", systemImage: "plus")
+                Label("Add first list", systemImage: "plus")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 13)
@@ -242,7 +242,7 @@ struct SuppliesView: View {
             Spacer()
             Image(systemName: "house.slash")
                 .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("Nicio proprietate adăugată")
+            Text("No property added")
                 .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
         }
@@ -279,7 +279,7 @@ private struct SupplyListCard: View {
                         .lineLimit(1)
 
                     let pending = supplyService.pendingCount(for: list.id)
-                    Text(pending == 0 ? "Totul completat" : "\(pending) de cumpărat")
+                    Text(pending == 0 ? "All done" : "\(pending) to buy")
                         .font(.system(size: 11))
                         .foregroundStyle(pending == 0
                             ? Color(red: 0.2, green: 0.78, blue: 0.45)
@@ -319,7 +319,7 @@ struct SupplyListDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: list.name, subtitle: "CONSUMABILE")
+            PageHeader(title: list.name, subtitle: "SUPPLIES")
 
             searchBar
                 .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)
@@ -369,7 +369,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
-            TextField("Caută articole…", text: $searchText)
+            TextField("Search items…", text: $searchText)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -392,7 +392,7 @@ struct SupplyListDetailView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Spacer(minLength: 20)
-                chip(label: "Toate", id: nil)
+                chip(label: "All", id: nil)
                 ForEach(supplyCategories, id: \.id) { cat in
                     let count = listItems.filter { $0.category == cat.id && !$0.isCompleted }.count
                     if count > 0 || selectedCategory == cat.id {
@@ -450,7 +450,7 @@ struct SupplyListDetailView: View {
                         }
                         .padding(.horizontal, 20)
                     } header: {
-                        sectionHeader("DE CUMPĂRAT · \(pending.count)")
+                        sectionHeader("TO BUY · \(pending.count)")
                     }
                 }
 
@@ -481,7 +481,7 @@ struct SupplyListDetailView: View {
                             HStack(spacing: 6) {
                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
                                     .font(.system(size: 10, weight: .semibold))
-                                Text("COMPLETATE · \(completed.count)")
+                                Text("COMPLETED · \(completed.count)")
                                     .font(.system(size: 11, weight: .semibold))
                                     .tracking(0.5)
                                 Spacer()
@@ -519,9 +519,9 @@ struct SupplyListDetailView: View {
             Spacer()
             Image(systemName: "cart")
                 .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("Niciun articol în această listă")
+            Text("No items in this list")
                 .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
-            Text("Apasă + pentru a adăuga primul articol.")
+            Text("Tap + to add the first item.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
             Spacer()
@@ -534,7 +534,7 @@ struct SupplyListDetailView: View {
             Spacer()
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 36)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("Niciun rezultat")
+            Text("No results")
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.4))
             Spacer()
         }
@@ -595,16 +595,16 @@ private struct SupplyItemRow: View {
             .padding(.horizontal, 14).padding(.vertical, 12)
             .contentShape(Rectangle())
             .contextMenu {
-                Button { onEdit() } label: { Label("Editează", systemImage: "pencil") }
+                Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
                 Button {
                     onToggle()
                 } label: {
-                    Label(item.isCompleted ? "Marchează incomplet" : "Marchează complet",
+                    Label(item.isCompleted ? "Mark as incomplete" : "Mark as complete",
                           systemImage: item.isCompleted ? "circle" : "checkmark.circle")
                 }
                 Divider()
                 Button(role: .destructive) { onDelete() } label: {
-                    Label("Șterge", systemImage: "trash")
+                    Label("Delete", systemImage: "trash")
                 }
             }
 

@@ -12,7 +12,7 @@ struct PlantsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Plante", subtitle: "PROPRIETATE")
+            PageHeader(title: "Plants", subtitle: "PROPERTY")
 
             if propertyService.primary == nil {
                 noPropertyState
@@ -48,7 +48,7 @@ struct PlantsView: View {
             PlantDetailSheet(plant: plant)
                 .environmentObject(plantService)
         }
-        .alert("Eroare", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { plantService.error != nil },
             set: { if !$0 { plantService.error = nil } }
         )) {
@@ -67,7 +67,7 @@ struct PlantsView: View {
             }
         }
         .userActivity("com.prvio.plants") { activity in
-            activity.title = "Plante — PRVIO"
+            activity.title = "Plants — PRVIO"
             activity.userInfo = ["tab": "plants"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
@@ -118,7 +118,7 @@ struct PlantsView: View {
                 Divider().frame(height: 32).opacity(0.3)
                 statCell(
                     value: "\(plantService.plantsNeedingWater.count)",
-                    label: "Nevoie de apă",
+                    label: "Needs water",
                     color: plantService.plantsNeedingWater.isEmpty
                         ? .primary
                         : Color(red: 1.0, green: 0.62, blue: 0.1)
@@ -126,7 +126,7 @@ struct PlantsView: View {
                 Divider().frame(height: 32).opacity(0.3)
                 statCell(
                     value: "\(plantService.healthyPlants.count)",
-                    label: "Sănătoase",
+                    label: "Healthy",
                     color: plantService.healthyPlants.isEmpty
                         ? .primary
                         : Color(red: 0.15, green: 0.80, blue: 0.4)
@@ -155,7 +155,7 @@ struct PlantsView: View {
         VStack(alignment: .leading, spacing: 16) {
             if !plantService.plantsNeedingWater.isEmpty {
                 sectionBlock(
-                    title: "NEVOIE DE APĂ",
+                    title: "NEEDS WATER",
                     icon: "drop.fill",
                     iconColor: Color(red: 1.0, green: 0.62, blue: 0.1),
                     plants: plantService.plantsNeedingWater
@@ -164,7 +164,7 @@ struct PlantsView: View {
 
             if !plantService.healthyPlants.isEmpty {
                 sectionBlock(
-                    title: "SĂNĂTOASE",
+                    title: "HEALTHY",
                     icon: "leaf.fill",
                     iconColor: Color(red: 0.15, green: 0.80, blue: 0.4),
                     plants: plantService.healthyPlants
@@ -207,15 +207,15 @@ struct PlantsView: View {
             Spacer()
             Text("🪴")
                 .font(.system(size: 60))
-            Text("Nicio plantă adăugată")
+            Text("No plants added")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Adaugă plante pentru a urmări\nudarea și starea lor de sănătate.")
+            Text("Add plants to track\nwatering and their health status.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
             Button { showAddPlant = true } label: {
-                Label("Adaugă prima plantă", systemImage: "plus")
+                Label("Add first plant", systemImage: "plus")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
@@ -247,7 +247,7 @@ struct PlantsView: View {
             Image(systemName: "house.slash")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Nicio proprietate adăugată")
+            Text("No property added")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
@@ -331,7 +331,7 @@ struct PlantCard: View {
                 HapticFeedback.success()
                 Task { await plantService.markWatered(plant) }
             } label: {
-                Label("Udat!", systemImage: "drop.fill")
+                Label("Watered!", systemImage: "drop.fill")
             }
             .tint(.blue)
         }
@@ -340,7 +340,7 @@ struct PlantCard: View {
                 HapticFeedback.warning()
                 Task { await plantService.delete(plant) }
             } label: {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
         .contextMenu {
@@ -348,14 +348,14 @@ struct PlantCard: View {
                 HapticFeedback.success()
                 Task { await plantService.markWatered(plant) }
             } label: {
-                Label("Marchează udat", systemImage: "drop.fill")
+                Label("Mark as watered", systemImage: "drop.fill")
             }
 
             Button {
                 HapticFeedback.impact(.light)
                 onTap()
             } label: {
-                Label("Editează", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
 
             Divider()
@@ -364,7 +364,7 @@ struct PlantCard: View {
                 HapticFeedback.warning()
                 Task { await plantService.delete(plant) }
             } label: {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -415,12 +415,12 @@ struct PlantDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if isEditing {
-                        Button("Anulare") {
+                        Button("Cancel") {
                             editedPlant = plant
                             withAnimation { isEditing = false }
                         }
                     } else {
-                        Button("Închide") { dismiss() }
+                        Button("Close") { dismiss() }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -431,7 +431,7 @@ struct PlantDetailSheet: View {
                             if isSaving {
                                 ProgressView().tint(.blue)
                             } else {
-                                Text("Salvează")
+                                Text("Save")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(.blue)
                             }
@@ -441,7 +441,7 @@ struct PlantDetailSheet: View {
                         Button {
                             withAnimation { isEditing = true }
                         } label: {
-                            Text("Editează")
+                            Text("Edit")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.blue)
                         }
@@ -496,22 +496,22 @@ struct PlantDetailSheet: View {
                     detailRow(
                         icon: plant.healthIcon,
                         iconColor: plant.healthColor,
-                        label: "Sănătate",
+                        label: "Health",
                         value: Plant.healthOptions.first { $0.id == plant.healthStatus }?.label ?? plant.healthStatus
                     )
                     rowDivider
                     detailRow(
                         icon: "drop.fill",
                         iconColor: .blue,
-                        label: "Ultima udare",
+                        label: "Last watered",
                         value: plant.lastWateredDisplay
                     )
                     rowDivider
                     detailRow(
                         icon: "clock.fill",
                         iconColor: .purple,
-                        label: "Interval udare",
-                        value: "La fiecare \(plant.wateringIntervalDays) zile"
+                        label: "Watering interval",
+                        value: "Every \(plant.wateringIntervalDays) days"
                     )
                     rowDivider
                     detailRow(
@@ -519,7 +519,7 @@ struct PlantDetailSheet: View {
                         iconColor: plant.needsWatering
                             ? Color(red: 1.0, green: 0.62, blue: 0.1)
                             : Color(red: 0.15, green: 0.80, blue: 0.4),
-                        label: "Status udare",
+                        label: "Watering status",
                         value: plant.wateringLabel
                     )
                     if let location = plant.location, !location.isEmpty {
@@ -527,7 +527,7 @@ struct PlantDetailSheet: View {
                         detailRow(
                             icon: "mappin.circle.fill",
                             iconColor: .red,
-                            label: "Locație",
+                            label: "Location",
                             value: location
                         )
                     }
@@ -537,7 +537,7 @@ struct PlantDetailSheet: View {
             if let notes = plant.notes, !notes.isEmpty {
                 GlassCard(padding: 16) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Note", systemImage: "note.text")
+                        Label("Notes", systemImage: "note.text")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.secondary)
                         Text(notes)
@@ -591,7 +591,7 @@ struct PlantDetailSheet: View {
             HStack(spacing: 8) {
                 Image(systemName: "drop.fill")
                     .font(.system(size: 16, weight: .semibold))
-                Text("Marchează udat")
+                Text("Mark as watered")
                     .font(.system(size: 16, weight: .semibold))
             }
             .foregroundStyle(.white)
@@ -646,8 +646,8 @@ struct PlantDetailSheet: View {
 
             // Name
             VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("DENUMIRE *")
-                TextField("Numele plantei", text: $editedPlant.name)
+                fieldLabel("NAME *")
+                TextField("Plant name", text: $editedPlant.name)
                     .font(.system(size: 16))
                     .foregroundStyle(.primary)
                     .tint(.blue)
@@ -660,8 +660,8 @@ struct PlantDetailSheet: View {
 
             // Species
             VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("SPECIE (OPȚIONAL)")
-                TextField("ex. Monstera deliciosa", text: Binding(
+                fieldLabel("SPECIES (OPTIONAL)")
+                TextField("e.g. Monstera deliciosa", text: Binding(
                     get: { editedPlant.species ?? "" },
                     set: { editedPlant.species = $0.isEmpty ? nil : $0 }
                 ))
@@ -677,8 +677,8 @@ struct PlantDetailSheet: View {
 
             // Location
             VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("LOCAȚIE (OPȚIONAL)")
-                TextField("ex. Living, Balcon, Bucătărie", text: Binding(
+                fieldLabel("LOCATION (OPTIONAL)")
+                TextField("e.g. Living room, Balcony, Kitchen", text: Binding(
                     get: { editedPlant.location ?? "" },
                     set: { editedPlant.location = $0.isEmpty ? nil : $0 }
                 ))
@@ -694,7 +694,7 @@ struct PlantDetailSheet: View {
 
             // Health status
             VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("STARE SĂNĂTATE")
+                fieldLabel("HEALTH STATUS")
                 HStack(spacing: 8) {
                     ForEach(Plant.healthOptions, id: \.id) { opt in
                         Button {
@@ -723,9 +723,9 @@ struct PlantDetailSheet: View {
 
             // Watering interval
             VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("INTERVAL UDARE")
+                fieldLabel("WATERING INTERVAL")
                 HStack {
-                    Text("La fiecare \(editedPlant.wateringIntervalDays) \(editedPlant.wateringIntervalDays == 1 ? "zi" : "zile")")
+                    Text("Every \(editedPlant.wateringIntervalDays) \(editedPlant.wateringIntervalDays == 1 ? "day" : "days")")
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     Spacer()
@@ -741,8 +741,8 @@ struct PlantDetailSheet: View {
 
             // Notes
             VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("NOTE (OPȚIONAL)")
-                TextField("Notițe despre această plantă…", text: Binding(
+                fieldLabel("NOTES (OPTIONAL)")
+                TextField("Notes about this plant…", text: Binding(
                     get: { editedPlant.notes ?? "" },
                     set: { editedPlant.notes = $0.isEmpty ? nil : $0 }
                 ), axis: .vertical)
@@ -839,11 +839,11 @@ struct AddPlantSheet: View {
                     .padding(.top, 16)
                 }
             }
-            .navigationTitle("Plantă nouă")
+            .navigationTitle("New Plant")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulare") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
@@ -890,8 +890,8 @@ struct AddPlantSheet: View {
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("DENUMIRE *")
-            TextField("Numele plantei", text: $name)
+            fieldLabel("NAME *")
+            TextField("Plant name", text: $name)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -905,8 +905,8 @@ struct AddPlantSheet: View {
 
     private var speciesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("SPECIE (OPȚIONAL)")
-            TextField("ex. Monstera deliciosa", text: $species)
+            fieldLabel("SPECIES (OPTIONAL)")
+            TextField("e.g. Monstera deliciosa", text: $species)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -920,8 +920,8 @@ struct AddPlantSheet: View {
 
     private var locationField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("LOCAȚIE (OPȚIONAL)")
-            TextField("ex. Living, Balcon, Bucătărie", text: $location)
+            fieldLabel("LOCATION (OPTIONAL)")
+            TextField("e.g. Living room, Balcony, Kitchen", text: $location)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -935,8 +935,8 @@ struct AddPlantSheet: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NOTE (OPȚIONAL)")
-            TextField("Notițe despre această plantă…", text: $notes, axis: .vertical)
+            fieldLabel("NOTES (OPTIONAL)")
+            TextField("Notes about this plant…", text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -953,7 +953,7 @@ struct AddPlantSheet: View {
 
     private var healthPickerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("STARE SĂNĂTATE")
+            fieldLabel("HEALTH STATUS")
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(Plant.healthOptions, id: \.id) { opt in
                     Button {
@@ -984,13 +984,13 @@ struct AddPlantSheet: View {
 
     private var wateringIntervalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("INTERVAL UDARE")
+            fieldLabel("WATERING INTERVAL")
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("La fiecare \(wateringIntervalDays) \(wateringIntervalDays == 1 ? "zi" : "zile")")
+                    Text("Every \(wateringIntervalDays) \(wateringIntervalDays == 1 ? "day" : "days")")
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
-                    Text("Vei fi notificat când e timpul să udați")
+                    Text("You'll be notified when it's time to water")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
@@ -1014,7 +1014,7 @@ struct AddPlantSheet: View {
                 if isSaving {
                     ProgressView().tint(.white)
                 } else {
-                    Text("Adaugă planta")
+                    Text("Add plant")
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

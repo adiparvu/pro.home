@@ -14,7 +14,7 @@ struct QuickActionsSettingsView: View {
                     hostSection(host)
                 }
 
-                Text("Dacă o pagină are o singură acțiune activă, butonul o declanșează direct. Cu mai multe acțiuni, butonul deschide un meniu.")
+                Text("If a page has a single active action, the button triggers it directly. With multiple actions, the button opens a menu.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
@@ -25,7 +25,7 @@ struct QuickActionsSettingsView: View {
             .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Butoane plutitoare")
+        .navigationTitle("Floating Buttons")
         .navigationBarTitleDisplayMode(.large)
     }
 
@@ -42,10 +42,10 @@ struct QuickActionsSettingsView: View {
                         .foregroundStyle(.primary)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Personalizează butoanele")
+                    Text("Customize buttons")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
-                    Text("Alege ce acțiuni apar pe fiecare pagină — sau ascunde butonul complet.")
+                    Text("Choose which actions appear on each page — or hide the button entirely.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.5))
                 }
@@ -112,7 +112,7 @@ private struct FabVisibilityRow: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
-                Text("Afișează butonul")
+                Text("Show button")
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
                 Spacer()

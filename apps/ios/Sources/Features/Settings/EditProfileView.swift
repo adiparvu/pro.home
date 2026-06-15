@@ -24,13 +24,13 @@ struct EditProfileView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        field("Display Name", placeholder: "Cum să-ți spună ARIA?", text: $displayName)
-                        field("Nume", placeholder: "Numele de familie", text: $lastName)
-                        field("Prenume", placeholder: "Prenumele", text: $firstName)
+                        field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)
+                        field("Last Name", placeholder: "Last name", text: $lastName)
+                        field("First Name", placeholder: "First name", text: $firstName)
                         birthDateField
-                        field("Telefon", placeholder: "+40 7xx xxx xxx", text: $phone)
+                        field("Phone", placeholder: "+1 xxx xxx xxxx", text: $phone)
                             .keyboardType(.phonePad)
-                        field("E-mail", placeholder: "nume@exemplu.com", text: $email)
+                        field("Email", placeholder: "name@example.com", text: $email)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)
                         socialSection
@@ -78,7 +78,7 @@ struct EditProfileView: View {
 
     private var birthDateField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("Data nașterii")
+            fieldLabel("Date of Birth")
             HStack {
                 if hasBirthDate {
                     DatePicker("", selection: $birthDate, in: ...Date(), displayedComponents: .date)
@@ -92,7 +92,7 @@ struct EditProfileView: View {
                     Button { withAnimation { hasBirthDate = true } } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundStyle(.tint)
-                            Text("Adaugă data nașterii").foregroundStyle(Color.primary.opacity(0.5))
+                            Text("Add date of birth").foregroundStyle(Color.primary.opacity(0.5))
                             Spacer()
                         }
                     }
@@ -106,8 +106,8 @@ struct EditProfileView: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("Notițe")
-            TextField("Notițe…", text: $notes, axis: .vertical)
+            fieldLabel("Notes")
+            TextField("Notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
@@ -140,7 +140,7 @@ struct EditProfileView: View {
             }
 
             if socialLinks.isEmpty {
-                Text("Adaugă conturi cu „+” (Instagram, WhatsApp, etc.)")
+                Text(“Add accounts with \”+\” (Instagram, WhatsApp, etc.)”)
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(0.35))
                     .padding(.vertical, 4)

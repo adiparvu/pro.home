@@ -12,7 +12,7 @@ struct DeliveriesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Livrări", subtitle: "PROPRIETATE")
+            PageHeader(title: "Deliveries", subtitle: "PROPERTY")
 
             if deliveryService.deliveries.isEmpty {
                 emptyState
@@ -103,7 +103,7 @@ struct DeliveriesView: View {
                 Circle()
                     .fill(Color(red: 0.2, green: 0.80, blue: 0.4))
                     .frame(width: 8, height: 8)
-                Text("\(delivered) livrate")
+                Text("\(delivered) delivered")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
             }
@@ -115,7 +115,7 @@ struct DeliveriesView: View {
                     Image(systemName: "clock.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(.orange)
-                    Text("\(deliveryService.todayDeliveries.count) azi")
+                    Text("\(deliveryService.todayDeliveries.count) today")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.orange)
                 }
@@ -135,7 +135,7 @@ struct DeliveriesView: View {
                 Image(systemName: "shippingbox.fill")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.blue)
-                Text("ÎN CURS · \(deliveryService.activeDeliveries.count)")
+                Text("IN PROGRESS · \(deliveryService.activeDeliveries.count)")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
@@ -168,7 +168,7 @@ struct DeliveriesView: View {
                     HStack(spacing: 6) {
                         Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
-                        Text("LIVRATE · \(completed.count)")
+                        Text("DELIVERED · \(completed.count)")
                             .font(.system(size: 11, weight: .semibold))
                             .tracking(0.5)
                         Spacer()
@@ -201,15 +201,15 @@ struct DeliveriesView: View {
             Image(systemName: "shippingbox")
                 .font(.system(size: 56))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Nicio livrare urmărită")
+            Text("No deliveries tracked")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Adaugă colete pentru a urmări\nstarea livrărilor tale.")
+            Text("Add packages to track\nyour deliveries.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
             Button { showAddDelivery = true } label: {
-                Label("Adaugă prima livrare", systemImage: "plus")
+                Label("Add first delivery", systemImage: "plus")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
@@ -277,7 +277,7 @@ struct DeliveryRow: View {
                             Text(expected)
                                 .font(.system(size: 11))
                                 .foregroundStyle(
-                                    expected == "Azi"
+                                    expected == "Today"
                                         ? Color.orange
                                         : Color.primary.opacity(0.4)
                                 )
@@ -305,7 +305,7 @@ struct DeliveryRow: View {
                     HapticFeedback.success()
                     deliveryService.markDelivered(delivery)
                 } label: {
-                    Label("Livrat", systemImage: "checkmark.seal.fill")
+                    Label("Delivered", systemImage: "checkmark.seal.fill")
                 }
                 .tint(Color(red: 0.2, green: 0.78, blue: 0.4))
             }
@@ -315,14 +315,14 @@ struct DeliveryRow: View {
                 HapticFeedback.warning()
                 deliveryService.delete(delivery)
             } label: {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
 
             Button {
                 HapticFeedback.impact(.light)
                 onEdit()
             } label: {
-                Label("Editează", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
             .tint(.blue)
         }
@@ -332,7 +332,7 @@ struct DeliveryRow: View {
                     HapticFeedback.success()
                     deliveryService.markDelivered(delivery)
                 } label: {
-                    Label("Marchează livrat", systemImage: "checkmark.seal.fill")
+                    Label("Mark as delivered", systemImage: "checkmark.seal.fill")
                 }
             }
 
@@ -340,14 +340,14 @@ struct DeliveryRow: View {
                 HapticFeedback.impact(.light)
                 onEdit()
             } label: {
-                Label("Editează", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
 
             Button {
                 UIPasteboard.general.string = delivery.trackingNumber
                 HapticFeedback.selection()
             } label: {
-                Label("Copiază tracking", systemImage: "doc.on.doc")
+                Label("Copy tracking", systemImage: "doc.on.doc")
             }
 
             Divider()
@@ -356,7 +356,7 @@ struct DeliveryRow: View {
                 HapticFeedback.warning()
                 deliveryService.delete(delivery)
             } label: {
-                Label("Șterge", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -433,11 +433,11 @@ struct DeliveryFormSheet: View {
                     .padding(.top, 16)
                 }
             }
-            .navigationTitle(isEditing ? "Editează livrare" : "Livrare nouă")
+            .navigationTitle(isEditing ? "Edit delivery" : "New delivery")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Anulare") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
@@ -447,8 +447,8 @@ struct DeliveryFormSheet: View {
 
     private var descriptionField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("DESCRIERE *")
-            TextField("ex. Laptop, Pantofi, Carte…", text: $description)
+            fieldLabel("DESCRIPTION *")
+            TextField("e.g. Laptop, Shoes, Book…", text: $description)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -462,7 +462,7 @@ struct DeliveryFormSheet: View {
 
     private var trackingField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("COD TRACKING")
+            fieldLabel("TRACKING CODE")
             TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
@@ -479,8 +479,8 @@ struct DeliveryFormSheet: View {
 
     private var notesField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            fieldLabel("NOTE (OPȚIONAL)")
-            TextField("Notițe suplimentare…", text: $notes, axis: .vertical)
+            fieldLabel("NOTES (OPTIONAL)")
+            TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.blue)
@@ -497,7 +497,7 @@ struct DeliveryFormSheet: View {
 
     private var carrierPickerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("CURIER")
+            fieldLabel("CARRIER")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Delivery.carrierOptions, id: \.self) { c in
@@ -527,7 +527,7 @@ struct DeliveryFormSheet: View {
 
     private var statusPickerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("STATUS")
+            fieldLabel("STATUS")  // intentionally kept as STATUS — same in English
             VStack(spacing: 0) {
                 ForEach(Array(Delivery.statusOptions.enumerated()), id: \.element.id) { idx, opt in
                     Button {
@@ -595,7 +595,7 @@ struct DeliveryFormSheet: View {
 
     private var expectedDateSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            fieldLabel("DATA ESTIMATĂ DE LIVRARE")
+            fieldLabel("ESTIMATED DELIVERY DATE")
 
             GlassCard(padding: 14) {
                 VStack(spacing: 12) {
@@ -604,7 +604,7 @@ struct DeliveryFormSheet: View {
                             Image(systemName: "calendar")
                                 .font(.system(size: 14))
                                 .foregroundStyle(.blue)
-                            Text("Setează data estimată")
+                            Text("Set estimated date")
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
                         }
@@ -637,7 +637,7 @@ struct DeliveryFormSheet: View {
                 if isSaving {
                     ProgressView().tint(.white)
                 } else {
-                    Text(isEditing ? "Salvează modificările" : "Adaugă livrare")
+                    Text(isEditing ? "Save changes" : "Add delivery")
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

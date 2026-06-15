@@ -118,7 +118,7 @@
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Used to add overdue tasks to Apple Reminders for quick action.</string>
 	<key>NSSiriUsageDescription</key>
-	<string>Folosit pentru a adăuga sarcini, uda plantele și deschide PRVIO cu vocea.</string>
+	<string>Used to add tasks, water plants, and open PRVIO with your voice.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
@@ -151,7 +151,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>checklist</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Sarcină nouă</string>
+			<string>New Task</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.addtask</string>
 		</dict>
@@ -159,7 +159,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>leaf.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Plantele mele</string>
+			<string>My Plants</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.plants</string>
 		</dict>
@@ -167,7 +167,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>cart.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Listă cumpărături</string>
+			<string>Shopping List</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.shopping</string>
 		</dict>
@@ -175,7 +175,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>message.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Chat familie</string>
+			<string>Family Chat</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.chat</string>
 		</dict>
@@ -183,7 +183,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>barcode.viewfinder</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Scanare</string>
+			<string>Scan Receipt</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.scan</string>
 		</dict>
