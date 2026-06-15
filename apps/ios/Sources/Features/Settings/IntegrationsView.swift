@@ -81,7 +81,7 @@ struct IntegrationsView: View {
                 action: {
                     if let lat = vm.property?.latitude, let lon = vm.property?.longitude {
                         let coords = "\(lat),\(lon)"
-                        let name = (vm.property?.address ?? "My Property").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                        let name = (vm.property?.addressLine1 ?? "My Property").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
                         UIApplication.shared.open(URL(string: "maps://?ll=\(coords)&q=\(name)")!)
                     } else {
                         UIApplication.shared.open(URL(string: "maps://")!)

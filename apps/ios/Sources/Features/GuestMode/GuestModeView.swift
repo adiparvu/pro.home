@@ -67,7 +67,7 @@ struct GuestModeView: View {
                     Text(propertyName)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(.primary)
-                    if let address = propertyService.primary?.address, !address.isEmpty {
+                    if let address = propertyService.primary?.addressLine1, !address.isEmpty {
                         Text(address)
                             .font(.system(size: 13))
                             .foregroundStyle(Color.primary.opacity(0.5))
