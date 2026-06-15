@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum Season: String, CaseIterable {
+enum Season: String, CaseIterable, Codable {
     case spring
     case summer
     case fall
