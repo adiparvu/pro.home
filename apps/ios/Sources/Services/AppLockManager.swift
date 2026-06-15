@@ -13,6 +13,7 @@ final class AppLockManager: ObservableObject {
     @Published var authFailed = false
 
     private var backgroundedAt: Date?
+    private var isAuthenticating = false
 
     // Live reads of the user's Security preferences.
     private var lockEnabled: Bool { UserDefaults.standard.bool(forKey: "prvio.biometrics") }
@@ -34,7 +35,7 @@ final class AppLockManager: ObservableObject {
     func didBecomeActive() {
         privacyCover = false
         guard lockEnabled else { isLocked = false; backgroundedAt = nil; return }
-        if isLocked { return }
+        if isLocked || isAuthenticating { return }
 
         if lockdown {
             // Lockdown: always re-authenticate when returning to foreground.
@@ -47,18 +48,15 @@ final class AppLockManager: ObservableObject {
     }
 
     func authenticate() async {
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
+        defer { isAuthenticating = false }
+
         let context = LAContext()
         context.localizedFallbackTitle = "Folosește codul de acces"
 
-        // Prefer biometrics, but allow the device passcode as a fallback so the
-        // user is never locked out (HIG-compliant).
-        var policyError: NSError?
-        let policy: LAPolicy = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &policyError)
-            ? .deviceOwnerAuthentication
-            : .deviceOwnerAuthentication
-
         do {
-            let ok = try await context.evaluatePolicy(policy, localizedReason: "Deblochează PRVIO")
+            let ok = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Deblochează PRVIO")
             if ok {
                 isLocked = false
                 authFailed = false
