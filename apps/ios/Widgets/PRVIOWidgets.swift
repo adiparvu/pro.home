@@ -52,5 +52,12 @@ struct PRVIOWidgetBundle: WidgetBundle {
         MaintenanceLiveActivity()
         DeliveryLiveActivity()
         PlantCareLiveActivity()
+        // Control Center (iOS 18+)
+        if #available(iOS 18.0, *) {
+            AddTaskControl()
+            OpenChatControl()
+            ShoppingControl()
+            ScanControl()
+        }
     }
 }

@@ -181,7 +181,6 @@ platform :ios do
 
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app' 'PRVIO' 'SU92TVZT8W'")
     sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.widgets' 'PRVIOWidgets' 'SU92TVZT8W'")
-    sh("ruby /tmp/ensure_bundle_id.rb '#{key_path}' '#{key_id}' '#{issuer_id}' 'com.prvio.app.controls' 'PRVIOControls' 'SU92TVZT8W'")
 
     # App Groups (group.com.prvio.app) are registered and linked in the Apple
     # Developer Portal manually — the ASC REST API does not expose /v1/appGroups
@@ -322,17 +321,6 @@ platform :ios do
     UI.message("Widgets profile UUID: #{widgets_uuid}")
     sh("echo '--- Widgets profile App Groups ---'; security cms -D -i /tmp/PRVIOWidgets_AppStore.mobileprovision 2>/dev/null | grep -A20 'application-groups' || echo 'NO application-groups key in widgets profile'")
 
-    sigh(
-      api_key:        api_key,
-      app_identifier: "com.prvio.app.controls",
-      platform:       "ios",
-      output_path:    "/tmp",
-      filename:       "PRVIOControls_AppStore.mobileprovision",
-      force:          true
-    )
-    controls_uuid = ENV["SIGH_UUID"]
-    UI.message("Controls profile UUID: #{controls_uuid}")
-
     # Manual signing: bake cert + profile UUID into the project file per-target
     # so xcodebuild flags don't bleed into SPM package targets.
     update_code_signing_settings(
@@ -355,17 +343,6 @@ platform :ios do
       code_sign_identity:    "iPhone Distribution",
       profile_uuid:          widgets_uuid
     )
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      path:                  "#{project_dir}/PRVIO.xcodeproj",
-      targets:               ["PRVIOControls"],
-      build_configurations:  ["Release"],
-      bundle_identifier:     "com.prvio.app.controls",
-      team_id:               "SU92TVZT8W",
-      code_sign_identity:    "iPhone Distribution",
-      profile_uuid:          controls_uuid
-    )
-
     # Re-unlock immediately before archiving so codesign never stalls.
     sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
 
@@ -431,8 +408,6 @@ platform :ios do
           <string>#{profile_uuid}</string>
           <key>com.prvio.app.widgets</key>
           <string>#{widgets_uuid}</string>
-          <key>com.prvio.app.controls</key>
-          <string>#{controls_uuid}</string>
         </dict>
       </dict>
       </plist>
