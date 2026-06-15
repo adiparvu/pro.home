@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 
 // MARK: - Dashboard (Scrollable Home)
 
@@ -25,6 +26,7 @@ struct DashboardView: View {
             span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
         )
     )
+    @State private var geocodedCoordinate: CLLocationCoordinate2D?
     @State private var selectedSection: PropertySection? = nil
     @State private var pulsing = false
     @State private var showNotifications = false
@@ -66,14 +68,8 @@ struct DashboardView: View {
         .floatingSpeedDial(.home, bottomPadding: bottomSafeArea + 80)
         .navigationBarHidden(true)
         .onAppear { startPulse() }
-        .task {
-            if let lat = propertyService.primary?.latitude,
-               let lon = propertyService.primary?.longitude {
-                mapPosition = .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                    span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
-                ))
-            }
+        .task(id: propertyService.primary?.id) {
+            await resolveMapCoordinate()
         }
         .task(id: propertyService.primary?.id) {
             if let pid = propertyService.primary?.id {
@@ -81,11 +77,8 @@ struct DashboardView: View {
             }
         }
         .sheet(isPresented: $showNotifications) {
-            NavigationStack {
-                NotificationsSettingsView()
-                    .navigationTitle("Notifications")
-                    .navigationBarTitleDisplayMode(.inline)
-            }
+            NotificationCenterView()
+                .environmentObject(auth)
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
@@ -441,7 +434,45 @@ struct DashboardView: View {
            let lon = propertyService.primary?.longitude {
             return CLLocationCoordinate2D(latitude: lat, longitude: lon)
         }
-        return CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025)
+        return geocodedCoordinate ?? CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025)
+    }
+
+    private func resolveMapCoordinate() async {
+        guard let property = propertyService.primary else { return }
+
+        if let lat = property.latitude, let lon = property.longitude {
+            let coord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            geocodedCoordinate = coord
+            mapPosition = .region(MKCoordinateRegion(
+                center: coord,
+                span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
+            ))
+            return
+        }
+
+        let addressString = [property.addressLine1, property.city, property.country]
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+        guard !addressString.isEmpty else { return }
+
+        do {
+            let placemarks: [CLPlacemark] = try await withCheckedThrowingContinuation { cont in
+                CLGeocoder().geocodeAddressString(addressString) { marks, error in
+                    if let error { cont.resume(throwing: error) }
+                    else { cont.resume(returning: marks ?? []) }
+                }
+            }
+            if let location = placemarks.first?.location {
+                let coord = location.coordinate
+                geocodedCoordinate = coord
+                mapPosition = .region(MKCoordinateRegion(
+                    center: coord,
+                    span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
+                ))
+            }
+        } catch {
+            // geocoding failed — map keeps last known position
+        }
     }
 
     private var displayName: String {

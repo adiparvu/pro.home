@@ -122,4 +122,9 @@ private func applyGlobalAppearance() {
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
     }
+    // Apply accent tint immediately from UserDefaults (appSettings not yet initialized in init)
+    let accentEnabled = UserDefaults.standard.bool(forKey: "prvio.accentOn")
+    let accentName = UserDefaults.standard.string(forKey: "prvio.accentColor") ?? "blue"
+    let tint: UIColor = accentEnabled ? UIColor(avatarRingColor(for: accentName)) : .systemBlue
+    UINavigationBar.appearance().tintColor = tint
 }

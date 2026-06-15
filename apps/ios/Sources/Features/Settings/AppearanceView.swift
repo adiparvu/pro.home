@@ -229,27 +229,23 @@ struct AppearanceView: View {
                         .frame(maxWidth: .infinity)
                     }
 
-                    // Custom color picker (rainbow circle) — the ColorPicker sits
-                    // underneath with an enlarged hit area; the rainbow + rings are
-                    // visual-only so a tap anywhere on the swatch opens the picker.
+                    // Custom color picker — visible ColorPicker overlaid with rainbow visual
                     ZStack {
-                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
-                            .labelsHidden()
-                            .scaleEffect(1.9)
-                            .opacity(0.02)
-                            .frame(width: 40, height: 40)
-
                         Circle()
                             .fill(AngularGradient(
                                 gradient: Gradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .pink, .red]),
                                 center: .center
                             ))
                             .frame(width: 26, height: 26)
-                            .allowsHitTesting(false)
                         if appSettings.accentColor.hasPrefix("#") {
-                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26).allowsHitTesting(false)
-                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32).allowsHitTesting(false)
+                            Circle().strokeBorder(.white, lineWidth: 2.5).frame(width: 26, height: 26)
+                            Circle().strokeBorder(currentColor, lineWidth: 1.5).frame(width: 32, height: 32)
                         }
+                        ColorPicker("", selection: customColorBinding, supportsOpacity: false)
+                            .labelsHidden()
+                            .opacity(0.015)
+                            .scaleEffect(2.2)
+                            .frame(width: 44, height: 44)
                     }
                     .frame(maxWidth: .infinity)
                 }

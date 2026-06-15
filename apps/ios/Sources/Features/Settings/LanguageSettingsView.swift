@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct LanguageSettingsView: View {
     @EnvironmentObject private var appSettings: AppSettings
@@ -161,15 +162,31 @@ struct LanguageSettingsView: View {
 
     private var iosSettingsTip: some View {
         GlassCard {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "info.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 1)
-                Text(String(localized: "language_ios_tip"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 1)
+                    Text("To change the app language, go to iOS Settings → PRVIO → Language. The app needs to restart to apply the change.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "gear")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Open iOS Settings")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
             }
         }
     }

@@ -6,6 +6,7 @@ final class TabBarVisibility: ObservableObject {
 
     // 0 = fully shown, 1 = fully hidden — drives continuous zoom-out
     var hideProgress: CGFloat {
+        if isHidden { return 1.0 }
         let start: CGFloat = -28
         let end: CGFloat = -110
         guard scrollOffset < start else { return 0 }
@@ -71,7 +72,7 @@ extension View {
     func trackTabScroll() -> some View { modifier(TabScrollDetector()) }
 }
 
-// MARK: - Instagram iOS 27-style animated tab bar
+// MARK: - Threads / Liquid Glass tab bar
 
 private struct AnimatedTabBar: View {
     @Binding var selected: AppTab
@@ -88,57 +89,59 @@ private struct AnimatedTabBar: View {
                 Button {
                     HapticFeedback.selection()
                     bounceTab = tab
-                    selected = tab
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) { selected = tab }
                 } label: {
-                    tabIcon(tab)
+                    tabItem(tab)
                         .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.10), radius: 12, x: 0, y: 3)
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 8)
         .padding(.bottom, bottomPad)
-        // Instagram-style continuous zoom-out as you scroll
-        .scaleEffect(1.0 - hideProgress * 0.24, anchor: .bottom)
-        .opacity(max(0, 1.0 - hideProgress * 1.6))
-        .offset(y: hideProgress * 80)
+        .background {
+            if #available(iOS 26, *) {
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .ignoresSafeArea(edges: .bottom)
+            } else {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .ignoresSafeArea(edges: .bottom)
+            }
+        }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(height: 0.5)
+        }
+        .scaleEffect(1.0 - hideProgress * 0.08, anchor: .bottom)
+        .opacity(max(0, 1.0 - hideProgress * 2.2))
+        .offset(y: hideProgress * 90)
         .allowsHitTesting(hideProgress < 0.45)
     }
 
     @ViewBuilder
-    private func tabIcon(_ tab: AppTab) -> some View {
+    private func tabItem(_ tab: AppTab) -> some View {
         let isSelected = tab == selected
         ZStack(alignment: .topTrailing) {
-            Group {
-                if tab == .settings, let urlStr = profileService.profile?.avatarUrl,
-                   let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { phase in
-                        if let img = phase.image {
-                            img.resizable().scaledToFill()
-                                .frame(width: 22, height: 22)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle()
-                                        .strokeBorder(Color.primary.opacity(isSelected ? 0.85 : 0.25),
-                                                      lineWidth: isSelected ? 2 : 1)
-                                )
-                        } else {
-                            fallbackIcon(tab, isSelected: isSelected)
-                        }
-                    }
-                    .frame(width: 36, height: 36)
-                } else {
-                    fallbackIcon(tab, isSelected: isSelected)
-                        .frame(width: 36, height: 36)
-                }
+            VStack(spacing: 5) {
+                iconView(tab, isSelected: isSelected)
+                    .font(.system(size: 23, weight: isSelected ? .semibold : .regular))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.33))
+                    .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, value: bounceTab == tab)
+                    .scaleEffect(isSelected ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.28, dampingFraction: 0.7), value: selected)
+
+                Circle()
+                    .fill(Color.primary)
+                    .frame(width: isSelected ? 4 : 0, height: isSelected ? 4 : 0)
+                    .opacity(isSelected ? 0.7 : 0)
+                    .animation(.spring(response: 0.28, dampingFraction: 0.7), value: selected)
             }
-            .scaleEffect(isSelected ? 1.14 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.68), value: selected)
 
             if tab == .tasks && overdueCount > 0 {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
@@ -147,18 +150,32 @@ private struct AnimatedTabBar: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background(Color.red, in: Capsule())
-                    .offset(x: 6, y: -2)
+                    .offset(x: 8, y: -1)
             }
         }
     }
 
-    private func fallbackIcon(_ tab: AppTab, isSelected: Bool) -> some View {
-        Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
-            .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.36))
-            .symbolEffect(.bounce, value: bounceTab == tab)
-            .contentTransition(.symbolEffect(.replace))
+    @ViewBuilder
+    private func iconView(_ tab: AppTab, isSelected: Bool) -> some View {
+        if tab == .settings, let urlStr = profileService.profile?.avatarUrl,
+           let url = URL(string: urlStr) {
+            AsyncImage(url: url) { phase in
+                if let img = phase.image {
+                    img.resizable().scaledToFill()
+                        .frame(width: 26, height: 26)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(
+                            isSelected ? Color.primary : Color.primary.opacity(0.25),
+                            lineWidth: isSelected ? 2.5 : 1.5
+                        ))
+                } else {
+                    Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
+                }
+            }
+            .frame(width: 26, height: 26)
+        } else {
+            Image(systemName: isSelected ? tab.icon : tab.inactiveIcon)
+        }
     }
 }
 
@@ -220,7 +237,7 @@ struct MainTabView: View {
                 selected: $router.selectedTab,
                 bounceTab: $bounceTab,
                 overdueCount: taskService.overdueCount,
-                bottomPad: 2,
+                bottomPad: 6,
                 hideProgress: tabBarVis.hideProgress
             )
             .environmentObject(profileService)

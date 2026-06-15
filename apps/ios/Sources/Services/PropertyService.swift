@@ -41,6 +41,7 @@ final class PropertyService: ObservableObject {
     func create(name: String, addressLine1: String, city: String, country: String,
                 propertyType: String, postalCode: String?, sizeSqm: Double?,
                 numRooms: Int?, latitude: Double?, longitude: Double?) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
         struct PropertyCreate: Encodable {
             let name: String
             let address_line1: String
@@ -52,6 +53,13 @@ final class PropertyService: ObservableObject {
             let num_rooms: Int?
             let latitude: Double?
             let longitude: Double?
+            let creator_id: UUID
+        }
+        struct MemberInsert: Encodable {
+            let property_id: UUID
+            let user_id: UUID
+            let role: String
+            let status: String
         }
         do {
             let created: PropertyModel = try await supabase
@@ -60,13 +68,20 @@ final class PropertyService: ObservableObject {
                     name: name, address_line1: addressLine1, city: city,
                     country: country, property_type: propertyType,
                     postal_code: postalCode, size_sqm: sizeSqm,
-                    num_rooms: numRooms, latitude: latitude, longitude: longitude
+                    num_rooms: numRooms, latitude: latitude, longitude: longitude,
+                    creator_id: uid
                 ))
                 .select()
                 .single()
                 .execute()
                 .value
             properties.append(created)
+            // Ensure creator is in property_members as owner (trigger handles this too)
+            try? await supabase
+                .from("property_members")
+                .upsert(MemberInsert(property_id: created.id, user_id: uid, role: "owner", status: "active"),
+                        onConflict: "property_id,user_id")
+                .execute()
         } catch {
             self.error = error.localizedDescription
         }

@@ -33,6 +33,27 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
         case elementId     = "element_id"
     }
 
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id             = try c.decode(UUID.self,    forKey: .id)
+        propertyId     = try c.decode(UUID.self,    forKey: .propertyId)
+        title          = try c.decode(String.self,  forKey: .title)
+        description    = try c.decodeIfPresent(String.self,  forKey: .description)
+        category       = try c.decode(String.self,  forKey: .category)
+        priority       = try c.decode(String.self,  forKey: .priority)
+        status         = try c.decode(String.self,  forKey: .status)
+        dueDate        = try c.decodeIfPresent(String.self,  forKey: .dueDate)
+        estimatedCost  = try c.decodeIfPresent(Double.self,  forKey: .estimatedCost)
+        costCurrency   = try c.decodeIfPresent(String.self,  forKey: .costCurrency)
+        notes          = try c.decodeIfPresent(String.self,  forKey: .notes)
+        tags           = (try? c.decode([String].self, forKey: .tags)) ?? []
+        createdAt      = try c.decode(String.self,  forKey: .createdAt)
+        updatedAt      = try c.decode(String.self,  forKey: .updatedAt)
+        assigneeIds    = (try? c.decode([String].self, forKey: .assigneeIds))   ?? []
+        assigneeNames  = (try? c.decode([String].self, forKey: .assigneeNames)) ?? []
+        elementId      = try c.decodeIfPresent(UUID.self, forKey: .elementId)
+    }
+
     var isCompleted: Bool { status == "completed" }
 
     var isOverdue: Bool {
