@@ -29,6 +29,8 @@ struct ChatView: View {
     @State private var isSending = false
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
+    @StateObject private var speech = SpeechRecognizer()
 
     private var propertyId: UUID? { propertyService.primary?.id }
     private var senderName: String {
@@ -245,10 +247,34 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .padding(.leading, 2)
 
+                    if voiceInputEnabled {
+                        Button {
+                            HapticFeedback.impact(.light)
+                            if speech.isListening {
+                                speech.stop()
+                            } else {
+                                focused = false
+                                Task { await speech.startListening() }
+                            }
+                        } label: {
+                            Image(systemName: speech.isListening ? "waveform" : "mic")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.55))
+                                .symbolEffect(.pulse, isActive: speech.isListening)
+                                .frame(width: 30, height: 30)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.leading, 2)
+                        .onChange(of: speech.transcript) { _, t in
+                            if !t.isEmpty { text = t }
+                        }
+                    }
+
                     Spacer()
 
                     Button {
                         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                        speech.stop()
                         Task { await sendText() }
                     } label: {
                         ZStack {

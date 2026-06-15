@@ -9,6 +9,7 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvio.accentColor")        var accentColor:           String = "blue"
     @AppStorage("prvio.accentOn")           var accentEnabled:         Bool   = true
     @AppStorage("prvio.hapticOn")           var hapticEnabled:         Bool   = true
+    @AppStorage("prvio.voiceInput")         var voiceInputEnabled:     Bool   = true
 
     var appLocale: Locale {
         followSystemLanguage ? .autoupdatingCurrent : Locale(identifier: locale)

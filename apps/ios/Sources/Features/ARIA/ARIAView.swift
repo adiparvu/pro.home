@@ -12,6 +12,8 @@ struct ARIAView: View {
     @State private var isThinking = false
     @State private var isLoadingHistory = true
     @FocusState private var focused: Bool
+    @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
+    @StateObject private var speech = SpeechRecognizer()
 
     var body: some View {
         ZStack {
@@ -113,9 +115,33 @@ struct ARIAView: View {
                     }
                     .buttonStyle(.plain)
 
+                    if voiceInputEnabled {
+                        Button {
+                            HapticFeedback.impact(.light)
+                            if speech.isListening {
+                                speech.stop()
+                            } else {
+                                focused = false
+                                Task { await speech.startListening() }
+                            }
+                        } label: {
+                            Image(systemName: speech.isListening ? "waveform" : "mic")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.55))
+                                .symbolEffect(.pulse, isActive: speech.isListening)
+                                .frame(width: 30, height: 30)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.leading, 8)
+                        .onChange(of: speech.transcript) { _, t in
+                            if !t.isEmpty { input = t }
+                        }
+                    }
+
                     Spacer()
 
                     Button {
+                        speech.stop()
                         if isThinking { isThinking = false } else { send() }
                     } label: {
                         ZStack {
