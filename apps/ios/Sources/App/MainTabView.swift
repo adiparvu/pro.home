@@ -30,6 +30,7 @@ private struct AnimatedTabBar: View {
     @Binding var selected: AppTab
     @Binding var bounceTab: AppTab?
     let overdueCount: Int
+    let bottomPad: CGFloat
 
     var body: some View {
         HStack(spacing: 0) {
@@ -72,7 +73,7 @@ private struct AnimatedTabBar: View {
         )
         .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 8)
         .padding(.horizontal, 24)
-        .padding(.bottom, 8)
+        .padding(.bottom, bottomPad)
     }
 }
 
@@ -101,6 +102,14 @@ struct MainTabView: View {
     @EnvironmentObject private var router: AppRouter
 
     @State private var bounceTab: AppTab? = nil
+
+    // Reads the device's home-indicator safe area from UIKit so the pill
+    // always sits above the gesture zone regardless of device model.
+    private var deviceBottomSafe: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom ?? 0
+    }
 
     var body: some View {
         // ZStack instead of TabView to avoid the iOS 26 system UITabBar
@@ -131,7 +140,8 @@ struct MainTabView: View {
             AnimatedTabBar(
                 selected: $router.selectedTab,
                 bounceTab: $bounceTab,
-                overdueCount: taskService.overdueCount
+                overdueCount: taskService.overdueCount,
+                bottomPad: max(deviceBottomSafe, 8)
             )
         }
         .fullScreenCover(isPresented: $router.showARIA) {
