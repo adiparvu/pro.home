@@ -1,0 +1,106 @@
+import SwiftUI
+import Charts
+
+// MARK: - Chart range
+
+enum ChartRange: String, CaseIterable {
+    case day = "1D", week = "1W", month = "1M"
+    case threeMonths = "3M", sixMonths = "6M", year = "1Y", custom = "↔"
+
+    var menuLabel: String {
+        switch self {
+        case .day:          return "1 Day"
+        case .week:         return "1 Week"
+        case .month:        return "1 Month"
+        case .threeMonths:  return "3 Months"
+        case .sixMonths:    return "6 Months"
+        case .year:         return "1 Year"
+        case .custom:       return "Custom…"
+        }
+    }
+}
+
+// MARK: - Category stat helper
+
+struct CategoryStat: Identifiable {
+    let id = UUID()
+    let name: String
+    let amount: Double
+
+    var color: Color {
+        let palette: [Color] = [
+            Color(red: 0.29, green: 0.56, blue: 0.89),
+            Color(red: 1.0, green: 0.45, blue: 0.1),
+            Color(red: 0.3, green: 0.82, blue: 0.45),
+            Color(red: 0.7, green: 0.3, blue: 0.9),
+            Color(red: 1.0, green: 0.75, blue: 0.1),
+            Color(red: 0.9, green: 0.3, blue: 0.35)
+        ]
+        let idx = abs(name.hashValue) % palette.count
+        return palette[idx]
+    }
+}
+
+// MARK: - TrendKPICard
+
+struct TrendKPICard: View {
+    let label: String
+    let value: String
+    let icon: String
+    let trendPct: Double?
+    let trendPositive: Bool
+    var highlightValue: Bool = false
+    var positiveValue: Bool = true
+
+    var body: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .symbolRenderingMode(.hierarchical)
+
+                Text(value)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(highlightValue
+                        ? (positiveValue ? Color(red: 0.2, green: 0.8, blue: 0.4) : .red)
+                        : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .contentTransition(.numericText())
+
+                if let pct = trendPct {
+                    HStack(spacing: 2) {
+                        Image(systemName: pct >= 0 ? "arrow.up" : "arrow.down")
+                            .font(.system(size: 8, weight: .bold))
+                        Text(String(format: "%.0f%%", abs(pct)))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(trendPositive
+                        ? Color(red: 0.2, green: 0.8, blue: 0.4)
+                        : .red)
+                } else {
+                    Text(label)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Calendar extension
+
+extension Calendar {
+    func startOfMonth(_ date: Date) -> Date {
+        let comps = dateComponents([.year, .month], from: date)
+        return self.date(from: comps) ?? date
+    }
+}
