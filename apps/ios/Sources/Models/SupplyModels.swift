@@ -40,14 +40,14 @@ struct SupplyList: Identifiable, Codable, Hashable {
     }
 
     static let colorOptions: [(name: String, hex: String)] = [
-        ("Albastru",  "007AFF"),
-        ("Verde",     "30D158"),
-        ("Portocaliu","FF9F0A"),
-        ("Roșu",      "FF453A"),
-        ("Violet",    "BF5AF2"),
-        ("Cyan",      "5AC8FA"),
-        ("Roz",       "FF375F"),
-        ("Maro",      "A2845E"),
+        ("Blue",   "007AFF"),
+        ("Green",  "30D158"),
+        ("Orange", "FF9F0A"),
+        ("Red",    "FF453A"),
+        ("Purple", "BF5AF2"),
+        ("Cyan",   "5AC8FA"),
+        ("Pink",   "FF375F"),
+        ("Brown",  "A2845E"),
     ]
 }
 

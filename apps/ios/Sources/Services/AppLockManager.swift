@@ -84,7 +84,8 @@ final class AppLockManager: ObservableObject {
         }
 
         do {
-            let ok = try await authContext!.evaluatePolicy(
+            guard let ctx = authContext else { isAuthenticating = false; return }
+            let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthentication,
                 localizedReason: "Unlock PRVIO"
             )
