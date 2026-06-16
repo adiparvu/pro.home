@@ -1,0 +1,354 @@
+import SwiftUI
+
+// MARK: - DeliveryFormSheet (Add + Edit)
+
+struct DeliveryFormSheet: View {
+    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(\.dismiss) private var dismiss
+
+    let editingDelivery: Delivery?
+
+    @State private var description: String
+    @State private var carrier: String
+    @State private var trackingNumber: String
+    @State private var status: String
+    @State private var hasExpectedDate: Bool
+    @State private var expectedDate: Date
+    @State private var notes: String
+    @State private var isSaving = false
+
+    private var isEditing: Bool { editingDelivery != nil }
+
+    private var canSave: Bool {
+        !description.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
+    }
+
+    init(editingDelivery: Delivery?) {
+        self.editingDelivery = editingDelivery
+
+        if let d = editingDelivery {
+            _description    = State(initialValue: d.description)
+            _carrier        = State(initialValue: d.carrier)
+            _trackingNumber = State(initialValue: d.trackingNumber)
+            _status         = State(initialValue: d.status)
+            _notes          = State(initialValue: d.notes ?? "")
+
+            if let ds = d.expectedDate,
+               let parsed = Self.parseExpectedDate(ds) {
+                _hasExpectedDate = State(initialValue: true)
+                _expectedDate    = State(initialValue: parsed)
+            } else {
+                _hasExpectedDate = State(initialValue: false)
+                _expectedDate    = State(initialValue: Date())
+            }
+        } else {
+            _description    = State(initialValue: "")
+            _carrier        = State(initialValue: Delivery.carrierOptions.first ?? "DHL")
+            _trackingNumber = State(initialValue: "")
+            _status         = State(initialValue: "ordered")
+            _hasExpectedDate = State(initialValue: false)
+            _expectedDate   = State(initialValue: Date())
+            _notes          = State(initialValue: "")
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        descriptionField
+                        carrierPickerSection
+                        trackingField
+                        statusPickerSection
+                        expectedDateSection
+                        notesField
+                        saveButton
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                }
+            }
+            .navigationTitle(isEditing ? "Edit delivery" : "New delivery")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    // MARK: Fields
+
+    private var descriptionField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            fieldLabel("DESCRIPTION *")
+            TextField("e.g. Laptop, Shoes, Book…", text: $description)
+                .font(.system(size: 16))
+                .foregroundStyle(.primary)
+                .tint(.accentColor)
+                .padding(14)
+                .background(
+                    Color.primary.opacity(0.07),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+        }
+    }
+
+    private var trackingField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            fieldLabel("TRACKING CODE")
+            TextField("ex. 1Z999AA10123456784", text: $trackingNumber)
+                .font(.system(size: 15))
+                .foregroundStyle(.primary)
+                .tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.characters)
+                .padding(14)
+                .background(
+                    Color.primary.opacity(0.07),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+        }
+    }
+
+    private var notesField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            fieldLabel("NOTES (OPTIONAL)")
+            TextField("Additional notes…", text: $notes, axis: .vertical)
+                .font(.system(size: 15))
+                .foregroundStyle(.primary)
+                .tint(.accentColor)
+                .lineLimit(2...4)
+                .padding(14)
+                .background(
+                    Color.primary.opacity(0.07),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+        }
+    }
+
+    // MARK: Carrier picker
+
+    private var carrierPickerSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            fieldLabel("CARRIER")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Delivery.carrierOptions, id: \.self) { c in
+                        Button {
+                            carrier = c
+                            HapticFeedback.selection()
+                        } label: {
+                            Text(c)
+                                .font(.system(size: 13, weight: carrier == c ? .semibold : .regular))
+                                .foregroundStyle(carrier == c ? .white : Color.primary.opacity(0.65))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    carrier == c ? Color.accentColor : Color.primary.opacity(0.07),
+                                    in: Capsule()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 1)
+            }
+        }
+    }
+
+    // MARK: Status picker
+
+    private var statusPickerSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            fieldLabel("STATUS")
+            VStack(spacing: 0) {
+                ForEach(Array(Delivery.statusOptions.enumerated()), id: \.element.id) { idx, opt in
+                    Button {
+                        status = opt.id
+                        HapticFeedback.selection()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(statusColor(for: opt.id).opacity(0.15))
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: statusIcon(for: opt.id))
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(statusColor(for: opt.id))
+                            }
+                            Text(opt.label)
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if status == opt.id {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    if idx < Delivery.statusOptions.count - 1 {
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.05))
+                            .frame(height: 0.5)
+                            .padding(.leading, 58)
+                    }
+                }
+            }
+            .liquidGlass(cornerRadius: 16)
+        }
+    }
+
+    private func statusColor(for id: String) -> Color {
+        switch id {
+        case "ordered":          return .gray
+        case "in_transit":       return .blue
+        case "out_for_delivery": return .orange
+        case "delivered":        return Color(red: 0.2, green: 0.80, blue: 0.4)
+        default:                 return .gray
+        }
+    }
+
+    private func statusIcon(for id: String) -> String {
+        switch id {
+        case "ordered":          return "shippingbox.fill"
+        case "in_transit":       return "airplane"
+        case "out_for_delivery": return "bicycle"
+        case "delivered":        return "checkmark.seal.fill"
+        default:                 return "shippingbox"
+        }
+    }
+
+    // MARK: Expected date
+
+    private var expectedDateSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            fieldLabel("ESTIMATED DELIVERY DATE")
+
+            GlassCard(padding: 14) {
+                VStack(spacing: 12) {
+                    Toggle(isOn: $hasExpectedDate) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.accentColor)
+                            Text("Set estimated date")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    .tint(.accentColor)
+
+                    if hasExpectedDate {
+                        Divider().opacity(0.3)
+                        DatePicker(
+                            "",
+                            selection: $expectedDate,
+                            in: Date()...,
+                            displayedComponents: .date
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.graphical)
+                        .tint(.accentColor)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Save button
+
+    private var saveButton: some View {
+        Button { save() } label: {
+            Group {
+                if isSaving {
+                    ProgressView().tint(.white)
+                } else {
+                    Text(isEditing ? "Save changes" : "Add delivery")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(
+                canSave ? Color.accentColor : Color.primary.opacity(0.2),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .foregroundStyle(
+                canSave ? Color.white : Color.primary.opacity(0.4)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!canSave)
+    }
+
+    // MARK: Helpers
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+    }
+
+    private static func parseExpectedDate(_ string: String) -> Date? {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.date(from: string)
+    }
+
+    private func expectedDateString() -> String? {
+        guard hasExpectedDate else { return nil }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.string(from: expectedDate)
+    }
+
+    private func save() {
+        let trimmedDesc = description.trimmingCharacters(in: .whitespaces)
+        guard !trimmedDesc.isEmpty else { return }
+        isSaving = true
+
+        let now = ISO8601DateFormatter().string(from: Date())
+
+        if var existing = editingDelivery {
+            existing.description     = trimmedDesc
+            existing.carrier         = carrier
+            existing.trackingNumber  = trackingNumber.trimmingCharacters(in: .whitespaces)
+            existing.status          = status
+            existing.expectedDate    = expectedDateString()
+            existing.notes           = notes.trimmingCharacters(in: .whitespaces).isEmpty
+                                          ? nil
+                                          : notes.trimmingCharacters(in: .whitespaces)
+            deliveryService.update(existing)
+        } else {
+            let delivery = Delivery(
+                id: UUID(),
+                carrier: carrier,
+                trackingNumber: trackingNumber.trimmingCharacters(in: .whitespaces),
+                description: trimmedDesc,
+                status: status,
+                expectedDate: expectedDateString(),
+                notes: notes.trimmingCharacters(in: .whitespaces).isEmpty
+                          ? nil
+                          : notes.trimmingCharacters(in: .whitespaces),
+                createdAt: now
+            )
+            deliveryService.add(delivery)
+        }
+
+        HapticFeedback.success()
+        isSaving = false
+        dismiss()
+    }
+}
