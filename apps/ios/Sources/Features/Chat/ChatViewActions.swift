@@ -1,0 +1,104 @@
+import SwiftUI
+import PhotosUI
+import UserNotifications
+import Supabase
+
+// MARK: - ChatView send actions
+
+extension ChatView {
+
+    func sendText() async {
+        guard let pid = propertyId else { return }
+        let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        text = ""
+        HapticFeedback.impact(.light)
+        isSending = true
+        defer { isSending = false }
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName,
+            body: body, mentionedIds: mentionedIds
+        )
+        scheduleLocalMentionNotifications(body: body)
+        mentionedIds = []; mentionedNames = []
+    }
+
+    func sendSticker(_ sticker: Sticker) async {
+        guard let pid = propertyId else { return }
+        HapticFeedback.success()
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName,
+            body: sticker.id, attachmentType: "sticker"
+        )
+    }
+
+    func sendPhoto(_ items: [PhotosPickerItem]) async {
+        guard let pid = propertyId, let item = items.first else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        isSending = true
+        defer { isSending = false }
+        let fileName = "\(UUID().uuidString).jpg"
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: nil,
+            attachmentUrl: url?.absoluteString, attachmentType: "image",
+            mentionedIds: mentionedIds
+        )
+        HapticFeedback.success()
+        photoPickerItems = []
+        mentionedIds = []; mentionedNames = []
+    }
+
+    func sendCameraPhoto(_ image: UIImage) async {
+        guard let pid = propertyId,
+              let data = image.jpegData(compressionQuality: 0.8) else { return }
+        isSending = true
+        defer { isSending = false }
+        let fileName = "\(UUID().uuidString).jpg"
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: nil,
+            attachmentUrl: url?.absoluteString, attachmentType: "image",
+            mentionedIds: mentionedIds
+        )
+        HapticFeedback.success()
+        mentionedIds = []; mentionedNames = []
+    }
+
+    func sendLocation(lat: Double, lon: Double) async {
+        guard let pid = propertyId else { return }
+        isSending = true
+        defer { isSending = false }
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName,
+            body: "📍 Shared a location",
+            attachmentType: "location", latitude: lat, longitude: lon,
+            mentionedIds: mentionedIds
+        )
+        HapticFeedback.success()
+        mentionedIds = []; mentionedNames = []
+    }
+
+    func scheduleLocalMentionNotifications(body: String) {
+        guard !mentionedNames.isEmpty else { return }
+        guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.mentions) else { return }
+        let center = UNUserNotificationCenter.current()
+        for name in mentionedNames {
+            let content = UNMutableNotificationContent()
+            content.title = "\(senderName) mentioned \(name)"
+            content.body = body
+            content.sound = .default
+            let req = UNNotificationRequest(
+                identifier: "mention.\(UUID().uuidString)",
+                content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            )
+            center.add(req)
+        }
+    }
+}
