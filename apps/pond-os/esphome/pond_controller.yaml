@@ -1,0 +1,125 @@
+# ESPHome — Pond Controller (Automations & Alerts)
+# Runs local automation logic independent of HA — works offline.
+# Paired with pond_sensors.yaml node via MQTT or native API.
+
+substitutions:
+  device_name: pond-controller
+  pond_name: "Main Pond"
+
+esphome:
+  name: ${device_name}
+  friendly_name: "${pond_name} Controller"
+  platform: ESP32
+  board: esp32dev
+  on_boot:
+    priority: -10
+    then:
+      - logger.log: "Pond Controller booted"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+  password: !secret api_password
+  services:
+    # Service callable from HA: esphome.pond_controller_trigger_feeding
+    - service: trigger_feeding
+      variables:
+        duration_seconds: int
+      then:
+        - switch.turn_on: auto_feeder
+        - delay: !lambda "return duration_seconds * 1000;"
+        - switch.turn_off: auto_feeder
+        - logger.log: "Manual feeding triggered via HA"
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  topic_prefix: pond/${device_name}
+  birth_message:
+    topic: pond/${device_name}/status
+    payload: online
+  will_message:
+    topic: pond/${device_name}/status
+    payload: offline
+
+logger:
+  level: WARN
+
+# ─── Local Automation: Low DO → Turn on aerator ─────────────────────────────
+
+interval:
+  - interval: 60s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              // If dissolved oxygen sensor available and DO < 5 mg/L, force aerator on
+              return id(dissolved_oxygen_ctrl).state < 5.0;
+          then:
+            - switch.turn_on: aerator_ctrl
+            - mqtt.publish:
+                topic: pond/${device_name}/alerts
+                payload: '{"type":"low_do","severity":"critical","value":${dissolved_oxygen_ctrl.state}}'
+
+# ─── Sensors (read from I2C / ADC) ──────────────────────────────────────────
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+sensor:
+  - platform: ezo
+    address: 0x63
+    name: "Controller pH"
+    id: ph_ctrl
+    update_interval: 60s
+
+  - platform: ezo
+    address: 0x61
+    name: "Controller Dissolved Oxygen"
+    id: dissolved_oxygen_ctrl
+    update_interval: 30s
+
+  - platform: dallas
+    address: 0x01234567890ABCDEF
+    name: "Controller Temperature"
+    id: temp_ctrl
+    update_interval: 30s
+
+# ─── Outputs ─────────────────────────────────────────────────────────────────
+
+switch:
+  - platform: gpio
+    pin: GPIO16
+    name: "Controller Aerator"
+    id: aerator_ctrl
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    pin: GPIO19
+    name: "Controller Auto Feeder"
+    id: auto_feeder
+    restore_mode: ALWAYS_OFF
+
+# ─── MQTT Publishing (for Node-RED / third-party integration) ───────────────
+
+# Pond telemetry published to: pond/pond-controller/telemetry
+# Every 60 seconds
+interval:
+  - interval: 60s
+    then:
+      - mqtt.publish:
+          topic: pond/${device_name}/telemetry
+          payload: !lambda |-
+            char buf[256];
+            snprintf(buf, sizeof(buf),
+              "{\"temp\":%.2f,\"ph\":%.2f,\"do\":%.2f,\"ts\":%lld}",
+              id(temp_ctrl).state,
+              id(ph_ctrl).state,
+              id(dissolved_oxygen_ctrl).state,
+              (long long)millis()
+            );
+            return std::string(buf);

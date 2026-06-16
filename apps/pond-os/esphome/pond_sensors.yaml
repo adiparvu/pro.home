@@ -1,0 +1,246 @@
+# ESPHome — Pond Sensor Node
+# Compatible with: ESP32 (recommended for I2C + Dallas + ADC)
+# Hardware: DS18B20, HC-SR04, Atlas Scientific EZO pH/DO/EC, SEN0189
+
+substitutions:
+  device_name: pond-sensor-node
+  pond_name: "Main Pond"
+
+esphome:
+  name: ${device_name}
+  friendly_name: "${pond_name} Sensor Node"
+  platform: ESP32
+  board: esp32dev
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name} Fallback"
+    password: !secret fallback_password
+
+api:
+  # Native API — Home Assistant auto-discovers all entities
+  password: !secret api_password
+
+ota:
+  password: !secret ota_password
+
+logger:
+  level: INFO
+
+# ─── 1-Wire Bus (DS18B20 Water Temperature) ─────────────────────────────────
+
+dallas:
+  - pin: GPIO4
+    update_interval: 30s
+
+sensor:
+
+  # Water Temperature (DS18B20)
+  # HA entity: sensor.pond_water_temperature
+  - platform: dallas
+    address: 0x01234567890ABCDEF  # Replace with your sensor address
+    name: "${pond_name} Water Temperature"
+    id: water_temperature
+    unit_of_measurement: "°C"
+    icon: "mdi:thermometer-water"
+    accuracy_decimals: 1
+    filters:
+      - sliding_window_moving_average:
+          window_size: 3
+          send_every: 1
+
+  # ─── Ultrasonic Water Level (HC-SR04) ──────────────────────────────────────
+
+  # Water Level
+  # HA entity: sensor.pond_water_level
+  - platform: ultrasonic
+    trigger_pin: GPIO12
+    echo_pin: GPIO14
+    name: "${pond_name} Water Level"
+    id: water_level
+    unit_of_measurement: "cm"
+    icon: "mdi:waves"
+    accuracy_decimals: 0
+    update_interval: 60s
+    filters:
+      # Convert distance-to-sensor to water depth
+      # Adjust max_distance_cm to your pond depth measurement point
+      - lambda: return 150.0 - x;  # 150cm = sensor mount height
+
+  # ─── Atlas Scientific EZO Sensors (I2C) ────────────────────────────────────
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+  # pH EZO (I2C address: 0x63)
+  # HA entity: sensor.pond_ph
+  - platform: ezo
+    address: 0x63
+    name: "${pond_name} pH"
+    id: water_ph
+    unit_of_measurement: "pH"
+    icon: "mdi:ph"
+    accuracy_decimals: 2
+    update_interval: 60s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 3
+          send_every: 1
+
+  # Dissolved Oxygen EZO (I2C address: 0x61)
+  # HA entity: sensor.pond_dissolved_oxygen
+  - platform: ezo
+    address: 0x61
+    name: "${pond_name} Dissolved Oxygen"
+    id: dissolved_oxygen
+    unit_of_measurement: "mg/L"
+    icon: "mdi:molecule"
+    accuracy_decimals: 2
+    update_interval: 60s
+
+  # Conductivity / Salinity EZO (I2C address: 0x64)
+  # HA entity: sensor.pond_conductivity
+  - platform: ezo
+    address: 0x64
+    name: "${pond_name} Conductivity"
+    id: conductivity
+    unit_of_measurement: "μS/cm"
+    icon: "mdi:flash"
+    accuracy_decimals: 0
+    update_interval: 120s
+
+  # RTD Temperature (EZO-RTD — backup / calibration reference)
+  - platform: ezo
+    address: 0x68
+    name: "${pond_name} RTD Temperature"
+    id: rtd_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 2
+    update_interval: 30s
+
+  # ─── Turbidity Sensor (SEN0189 — Analog) ─────────────────────────────────
+
+  # Turbidity (analog, 0–3.3V → NTU)
+  # HA entity: sensor.pond_turbidity
+  - platform: adc
+    pin: GPIO34
+    name: "${pond_name} Turbidity"
+    id: turbidity
+    unit_of_measurement: "NTU"
+    icon: "mdi:eye-off"
+    accuracy_decimals: 0
+    update_interval: 60s
+    attenuation: 11db
+    filters:
+      # SEN0189 conversion: voltage → NTU (empirical calibration)
+      - lambda: |-
+          float voltage = x;
+          if (voltage < 2.5) return 3000.0;
+          return (voltage - 2.5) / (3.3 - 2.5) * 0.0;
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 1
+
+  # ─── ORP Sensor (Atlas Scientific ORP EZO) ───────────────────────────────
+
+  - platform: ezo
+    address: 0x62
+    name: "${pond_name} ORP"
+    id: orp
+    unit_of_measurement: "mV"
+    icon: "mdi:waveform"
+    accuracy_decimals: 0
+    update_interval: 120s
+
+  # ─── Flow Sensor (YF-S201 — pump monitoring) ─────────────────────────────
+
+  - platform: pulse_counter
+    pin: GPIO5
+    name: "${pond_name} Flow Rate"
+    id: flow_rate
+    unit_of_measurement: "L/min"
+    icon: "mdi:water-pump"
+    update_interval: 10s
+    filters:
+      - lambda: return x / 7.5;  # YF-S201: 7.5 pulses/sec = 1 L/min
+
+# ─── Switches (Pump / Aerator / Feeder Control) ──────────────────────────────
+
+switch:
+
+  # Main Pump
+  # HA entity: switch.pond_main_pump
+  - platform: gpio
+    pin: GPIO16
+    name: "${pond_name} Main Pump"
+    id: main_pump
+    icon: "mdi:pump"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  # Aerator
+  # HA entity: switch.pond_aerator
+  - platform: gpio
+    pin: GPIO17
+    name: "${pond_name} Aerator"
+    id: aerator
+    icon: "mdi:air-humidifier"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  # UV Sterilizer
+  # HA entity: switch.pond_uv_sterilizer
+  - platform: gpio
+    pin: GPIO18
+    name: "${pond_name} UV Sterilizer"
+    id: uv_sterilizer
+    icon: "mdi:sun-wireless"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  # Auto Feeder (momentary trigger — opens feeder for 2 seconds)
+  # HA entity: switch.pond_auto_feeder
+  - platform: gpio
+    pin: GPIO19
+    name: "${pond_name} Auto Feeder"
+    id: auto_feeder
+    icon: "mdi:food"
+    on_turn_on:
+      - delay: 2s
+      - switch.turn_off: auto_feeder
+
+# ─── Binary Sensors ──────────────────────────────────────────────────────────
+
+binary_sensor:
+
+  # Leak / overflow detection (float switch)
+  # HA entity: binary_sensor.pond_overflow
+  - platform: gpio
+    pin:
+      number: GPIO35
+      mode: INPUT_PULLUP
+    name: "${pond_name} Overflow Detected"
+    device_class: moisture
+    icon: "mdi:water-alert"
+
+  # Filter bypass alarm
+  - platform: gpio
+    pin:
+      number: GPIO36
+      mode: INPUT_PULLUP
+    name: "${pond_name} Filter Bypass"
+    device_class: problem
+    icon: "mdi:filter-remove"
+
+# ─── Text Sensor (firmware info) ─────────────────────────────────────────────
+
+text_sensor:
+  - platform: version
+    name: "${pond_name} Firmware Version"
+
+  - platform: wifi_info
+    ip_address:
+      name: "${pond_name} IP Address"
+    ssid:
+      name: "${pond_name} WiFi SSID"
