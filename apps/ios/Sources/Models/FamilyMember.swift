@@ -93,10 +93,10 @@ struct FamilyMember: Identifiable, Codable, Hashable {
         switch role {
         case "owner":   return "Owner"
         case "partner": return "Partner"
-        case "child":   return "Copil"
+        case "child":   return "Child"
         case "tenant":  return "Tenant"
-        case "guest":   return "Oaspete"
-        default:        return "Membru"
+        case "guest":   return "Guest"
+        default:        return "Member"
         }
     }
 

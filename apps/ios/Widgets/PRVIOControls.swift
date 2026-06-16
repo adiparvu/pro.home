@@ -9,11 +9,11 @@ struct AddTaskControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.addtask") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://tasks/new")!)) {
-                Label("Sarcină nouă", systemImage: "checklist.checked")
+                Label("New Task", systemImage: "checklist.checked")
             }
         }
-        .displayName("Sarcină nouă")
-        .description("Adaugă rapid o sarcină nouă în PRVIO.")
+        .displayName("New Task")
+        .description("Quickly add a new task in PRVIO.")
     }
 }
 
@@ -24,11 +24,11 @@ struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://chat")!)) {
-                Label("Chat familie", systemImage: "message.fill")
+                Label("Family Chat", systemImage: "message.fill")
             }
         }
-        .displayName("Chat familie")
-        .description("Deschide chat-ul familiei în PRVIO.")
+        .displayName("Family Chat")
+        .description("Open the family chat in PRVIO.")
     }
 }
 
@@ -39,11 +39,11 @@ struct ShoppingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.shopping") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://shopping")!)) {
-                Label("Cumpărături", systemImage: "cart.fill")
+                Label("Shopping", systemImage: "cart.fill")
             }
         }
-        .displayName("Cumpărături")
-        .description("Deschide lista de cumpărături în PRVIO.")
+        .displayName("Shopping")
+        .description("Open the shopping list in PRVIO.")
     }
 }
 
@@ -54,10 +54,10 @@ struct ScanControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://scan")!)) {
-                Label("Scanează bon", systemImage: "barcode.viewfinder")
+                Label("Scan Receipt", systemImage: "barcode.viewfinder")
             }
         }
-        .displayName("Scanează bon")
-        .description("Scanează rapid un bon de casă în PRVIO.")
+        .displayName("Scan Receipt")
+        .description("Quickly scan a receipt in PRVIO.")
     }
 }
