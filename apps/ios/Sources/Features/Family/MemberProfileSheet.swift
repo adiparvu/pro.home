@@ -1,0 +1,190 @@
+import SwiftUI
+
+struct MemberProfileSheet: View {
+    @EnvironmentObject private var familyService: FamilyService
+    @Environment(\.dismiss) private var dismiss
+    let member: FamilyMember
+    @State private var showEdit = false
+    @State private var resolvedMember: FamilyMember
+
+    init(member: FamilyMember) {
+        self.member = member
+        _resolvedMember = State(initialValue: member)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        profileHeader
+                        quickActions
+                        if resolvedMember.email != nil || resolvedMember.phone != nil || resolvedMember.birthday != nil {
+                            contactSection
+                        }
+                        if let links = resolvedMember.socialLinks, !links.isEmpty {
+                            socialSection(links)
+                        }
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                }
+            }
+            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Edit") { showEdit = true }
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                }
+            }
+            .sheet(isPresented: $showEdit, onDismiss: {
+                if let updated = familyService.members.first(where: { $0.id == member.id }) {
+                    resolvedMember = updated
+                }
+            }) {
+                EditFamilyMemberSheet(member: resolvedMember)
+            }
+        }
+    }
+
+    private var profileHeader: some View {
+        VStack(spacing: 10) {
+            MemberAvatar(member: resolvedMember, size: 80)
+            Text(resolvedMember.name)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.primary)
+            Text(resolvedMember.roleLabel.uppercased())
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(resolvedMember.swiftColor)
+                .padding(.horizontal, 12).padding(.vertical, 4)
+                .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
+        }
+    }
+
+    private var quickActions: some View {
+        HStack(spacing: 12) {
+            if let phone = resolvedMember.phone, !phone.isEmpty {
+                profileActionBtn(icon: "phone.fill", label: "Call", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                    if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
+                }
+                profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
+                    if let url = URL(string: "facetime://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
+                }
+                profileActionBtn(icon: "message.badge.filled.fill", label: "WhatsApp", color: Color(red: 0.16, green: 0.72, blue: 0.37)) {
+                    let num = phone.filter { $0.isNumber }
+                    if let url = URL(string: "https://wa.me/\(num)") { UIApplication.shared.open(url) }
+                }
+            }
+            if let email = resolvedMember.email, !email.isEmpty {
+                profileActionBtn(icon: "envelope.fill", label: "Email", color: .orange) {
+                    if let url = URL(string: "mailto:\(email)") { UIApplication.shared.open(url) }
+                }
+            }
+        }
+    }
+
+    private func profileActionBtn(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 52, height: 52)
+                    .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(color.opacity(0.2), lineWidth: 0.5))
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var contactSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("CONTACT")
+            VStack(spacing: 0) {
+                if let email = resolvedMember.email, !email.isEmpty {
+                    contactRow(icon: "envelope.fill", color: .orange, value: email)
+                    if resolvedMember.phone != nil || resolvedMember.birthday != nil {
+                        divider
+                    }
+                }
+                if let phone = resolvedMember.phone, !phone.isEmpty {
+                    contactRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), value: phone)
+                    if resolvedMember.birthday != nil { divider }
+                }
+                if let bd = resolvedMember.birthdayDate {
+                    contactRow(icon: "gift.fill", color: .pink, value: formatted(bd))
+                }
+            }
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        }
+    }
+
+    private func socialSection(_ links: [SocialLink]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("SOCIAL NETWORKS")
+            VStack(spacing: 0) {
+                ForEach(links) { link in
+                    Button {
+                        if let url = link.openURL { UIApplication.shared.open(url) }
+                    } label: {
+                        HStack(spacing: 12) {
+                            ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(link.platformLabel)
+                                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                                Text("@\(link.handle.replacingOccurrences(of: "@", with: ""))")
+                                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.3))
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 11)
+                    }
+                    .buttonStyle(.plain)
+                    if link.id != links.last?.id { divider }
+                }
+            }
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        }
+    }
+
+    private func contactRow(icon: String, color: Color, value: String) -> some View {
+        HStack(spacing: 12) {
+            ColoredIconBadge(icon: icon, color: color, size: 36)
+            Text(value).font(.system(size: 14)).foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.primary.opacity(0.35))
+            .padding(.leading, 4)
+    }
+
+    private func formatted(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "d MMMM"
+        fmt.locale = Locale(identifier: "en_US")
+        return fmt.string(from: date)
+    }
+}
