@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HA Plugin Catalog Schema",
+  "version": "1.0.0",
+  "definitions": {
+    "Plugin": {
+      "type": "object",
+      "required": ["id", "name", "category", "description", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique kebab-case identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Integrations",
+            "Dashboards",
+            "Cards",
+            "Themes",
+            "AI",
+            "Cameras",
+            "Security",
+            "Energy",
+            "Garden",
+            "Voice",
+            "Automations",
+            "Monitoring",
+            "Media",
+            "MQTT",
+            "Zigbee",
+            "Matter",
+            "Utilities"
+          ]
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Fine-grained grouping within category (e.g. 'Climate', 'EV Charging')"
+        },
+        "description": {
+          "type": "string"
+        },
+        "githubUrl": {
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "websiteUrl": {
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "hacsUrl": {
+          "type": ["string", "null"],
+          "description": "HACS installation link if available"
+        },
+        "docsUrl": {
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "license": {
+          "type": ["string", "null"],
+          "description": "SPDX license identifier (e.g. Apache-2.0, MIT)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "archived", "deprecated", "unknown"]
+        },
+        "hacsCompatible": {
+          "type": "boolean",
+          "default": false
+        },
+        "stars": {
+          "type": ["integer", "null"],
+          "description": "GitHub star count at catalog build time"
+        },
+        "lastUpdated": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Last GitHub commit date (YYYY-MM-DD)"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "installType": {
+          "type": "string",
+          "enum": ["hacs", "manual", "addon", "lovelace", "theme", "blueprint"],
+          "description": "Primary installation method"
+        },
+        "requiresHAVersion": {
+          "type": ["string", "null"],
+          "description": "Minimum HA version required"
+        },
+        "sourceList": {
+          "type": "string",
+          "enum": ["awesome-ha", "custom"],
+          "default": "awesome-ha"
+        }
+      }
+    },
+    "Category": {
+      "type": "object",
+      "required": ["id", "name", "icon", "description"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string", "description": "SF Symbol name" },
+        "color": { "type": "string", "description": "Hex color" },
+        "description": { "type": "string" },
+        "pluginCount": { "type": "integer" }
+      }
+    }
+  }
+}

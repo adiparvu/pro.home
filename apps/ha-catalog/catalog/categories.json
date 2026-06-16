@@ -1,0 +1,140 @@
+{
+  "categories": [
+    {
+      "id": "integrations",
+      "name": "Integrations",
+      "icon": "puzzlepiece.extension.fill",
+      "color": "#5B8CFF",
+      "description": "Custom integrations that extend Home Assistant with new devices and services.",
+      "pluginCount": 0
+    },
+    {
+      "id": "ai",
+      "name": "AI",
+      "icon": "sparkles",
+      "color": "#BF5AF2",
+      "description": "AI and machine learning integrations for visual intelligence, automation suggestions, and LLMs.",
+      "pluginCount": 0
+    },
+    {
+      "id": "cameras",
+      "name": "Cameras",
+      "icon": "camera.fill",
+      "color": "#30B0C7",
+      "description": "Camera integrations and video processing for local NVR and cloud cameras.",
+      "pluginCount": 0
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "icon": "lock.shield.fill",
+      "color": "#FF3B30",
+      "description": "Alarm panels, locks, access control, and security monitoring.",
+      "pluginCount": 0
+    },
+    {
+      "id": "energy",
+      "name": "Energy",
+      "icon": "bolt.fill",
+      "color": "#FFD60A",
+      "description": "Solar, battery, EV charging, power monitoring, and energy cost optimization.",
+      "pluginCount": 0
+    },
+    {
+      "id": "garden",
+      "name": "Garden",
+      "icon": "leaf.fill",
+      "color": "#34C759",
+      "description": "Irrigation, soil sensors, plant monitoring, and outdoor automation.",
+      "pluginCount": 0
+    },
+    {
+      "id": "voice",
+      "name": "Voice",
+      "icon": "mic.fill",
+      "color": "#FF9F0A",
+      "description": "Voice assistants, media playback, and audio control integrations.",
+      "pluginCount": 0
+    },
+    {
+      "id": "automations",
+      "name": "Automations",
+      "icon": "gearshape.2.fill",
+      "color": "#636366",
+      "description": "Automation tooling, Node-RED companions, schedulers, and helper integrations.",
+      "pluginCount": 0
+    },
+    {
+      "id": "monitoring",
+      "name": "Monitoring",
+      "icon": "chart.xyaxis.line",
+      "color": "#FF6B35",
+      "description": "System monitoring, logging, analytics, Docker, NAS, and network monitoring.",
+      "pluginCount": 0
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "icon": "play.fill",
+      "color": "#FF2D55",
+      "description": "Media players, streaming services, Plex, Spotify, and audio systems.",
+      "pluginCount": 0
+    },
+    {
+      "id": "mqtt",
+      "name": "MQTT",
+      "icon": "antenna.radiowaves.left.and.right",
+      "color": "#6E4C9E",
+      "description": "MQTT brokers, bridges, and protocol integrations.",
+      "pluginCount": 0
+    },
+    {
+      "id": "zigbee",
+      "name": "Zigbee",
+      "icon": "wifi",
+      "color": "#32ADE6",
+      "description": "Zigbee coordinators, gateways, and device integrations via ZHA or Zigbee2MQTT.",
+      "pluginCount": 0
+    },
+    {
+      "id": "matter",
+      "name": "Matter",
+      "icon": "dot.radiowaves.right",
+      "color": "#00C7BE",
+      "description": "Matter and Thread protocol integrations for next-gen smart home devices.",
+      "pluginCount": 0
+    },
+    {
+      "id": "dashboards",
+      "name": "Dashboards",
+      "icon": "rectangle.3.offgrid.fill",
+      "color": "#1C1C1E",
+      "description": "Full dashboard frameworks, strategies, and pre-built UI systems for Lovelace.",
+      "pluginCount": 0
+    },
+    {
+      "id": "cards",
+      "name": "Cards",
+      "icon": "square.grid.2x2.fill",
+      "color": "#007AFF",
+      "description": "Individual Lovelace cards for all entity types — charts, climate, media, maps, and more.",
+      "pluginCount": 0
+    },
+    {
+      "id": "themes",
+      "name": "Themes",
+      "icon": "paintpalette.fill",
+      "color": "#FF6B9D",
+      "description": "Visual themes for the Home Assistant frontend.",
+      "pluginCount": 0
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "icon": "wrench.and.screwdriver.fill",
+      "color": "#8E8E93",
+      "description": "Configuration tools, backups, add-ons, file editors, and developer utilities.",
+      "pluginCount": 0
+    }
+  ]
+}
