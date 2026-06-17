@@ -258,7 +258,7 @@ struct AIInsightsView: View {
             result.append(.init(
                 icon: "exclamationmark.circle.fill",
                 iconColor: .orange,
-                title: "Zone "\(zone.name)" health is \(zone.healthScore)%",
+                title: "Zone \"\(zone.name)\" health is \(zone.healthScore)%",
                 elapsed: "This week"
             ))
         }
