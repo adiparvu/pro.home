@@ -101,6 +101,25 @@ struct AIInsightsView: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal, 16)
 
+                Spacer().frame(height: 10)
+
+                // Automation Builder — outline button
+                NavigationLink {
+                    AutomationBuilderView()
+                } label: {
+                    Text("Automation Builder")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+
                 Spacer(minLength: 120)
             }
             .trackTabScroll()

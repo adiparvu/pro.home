@@ -14,7 +14,6 @@ struct ZonesListView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var filter: ZoneFilter = .all
-    @State private var selectedZone: PropertyZone?
 
     enum ZoneFilter: String, CaseIterable {
         case all       = "All"
@@ -50,14 +49,20 @@ struct ZonesListView: View {
                 } else {
                     LazyVStack(spacing: 10) {
                         ForEach(filteredZones) { zone in
-                            ZoneListRow(
-                                zone: zone,
-                                elementCount: elementService.elements(inZone: zone.id).count
-                            )
-                            .onTapGesture {
-                                HapticFeedback.impact(.light)
-                                selectedZone = zone
+                            NavigationLink {
+                                ZoneDetailView(zone: zone)
+                                    .environmentObject(elementService)
+                                    .environmentObject(taskService)
+                                    .environmentObject(currencyService)
+                                    .environmentObject(appSettings)
+                                    .environmentObject(documentService)
+                            } label: {
+                                ZoneListRow(
+                                    zone: zone,
+                                    elementCount: elementService.elements(inZone: zone.id).count
+                                )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -93,25 +98,6 @@ struct ZonesListView: View {
                     .glassCircle()
                 }
             }
-        }
-        .sheet(item: $selectedZone) { zone in
-            ZoneBottomSheet(
-                zone: zone,
-                onEdit: { selectedZone = nil },
-                onReshape: { selectedZone = nil },
-                onAddObject: { selectedZone = nil },
-                onDelete: { Task { await zoneService.delete(zone); selectedZone = nil } },
-                onFocus: { selectedZone = nil }
-            )
-            .environmentObject(elementService)
-            .environmentObject(currencyService)
-            .environmentObject(appSettings)
-            .environmentObject(documentService)
-            .environmentObject(taskService)
-            .presentationDetents([.height(320), .large])
-            .presentationBackgroundInteraction(.enabled(upThrough: .height(320)))
-            .presentationBackground(.thinMaterial)
-            .presentationDragIndicator(.visible)
         }
     }
 
