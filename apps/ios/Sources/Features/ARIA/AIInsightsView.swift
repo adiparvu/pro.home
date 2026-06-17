@@ -12,6 +12,7 @@ struct AIInsightsView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var orbPulse = false
+    @State private var showTimeline = false
 
     private var insights: [ProactiveInsight] { computeInsights() }
 
@@ -80,8 +81,13 @@ struct AIInsightsView: View {
 
                 Spacer().frame(height: 14)
 
-                // View All Insights — outline button
-                Button {} label: {
+                // View Full Timeline — outline button
+                NavigationLink {
+                    PRVIOTimelineView()
+                        .environmentObject(taskService)
+                        .environmentObject(elementService)
+                        .environmentObject(tabBarVis)
+                } label: {
                     Text("View Full Timeline")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))

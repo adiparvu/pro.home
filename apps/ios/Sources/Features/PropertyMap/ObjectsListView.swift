@@ -94,7 +94,7 @@ struct ObjectsListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ObjectFilter.allCases, id: \.self) { f in
-                    FilterChip(label: f.rawValue, isActive: filter == f) {
+                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
                     }
                 }
@@ -184,28 +184,3 @@ struct ObjectListRow: View {
     }
 }
 
-// MARK: - PropertyElementType icon extension
-
-extension PropertyElementType {
-    var icon: String {
-        switch self {
-        case .house:           return "house.fill"
-        case .garage:          return "car.fill"
-        case .gazebo:          return "umbrella.fill"
-        case .pool:            return "drop.fill"
-        case .yard:            return "leaf.fill"
-        case .lawn:            return "leaf.fill"
-        case .tree:            return "tree.fill"
-        case .fence:           return "shield.fill"
-        case .gate:            return "door.left.hand.closed"
-        case .camera:          return "camera.fill"
-        case .irrigation:      return "drop.circle.fill"
-        case .solar:           return "sun.max.fill"
-        case .boiler:          return "flame.fill"
-        case .electricalPanel: return "bolt.fill"
-        case .shed:            return "building.fill"
-        case .pet:             return "pawprint.fill"
-        case .other:           return "cube.fill"
-        }
-    }
-}

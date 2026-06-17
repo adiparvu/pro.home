@@ -487,9 +487,9 @@ struct StatChip: View {
     }
 }
 
-// MARK: - FilterChip (reused across Zones, Objects, AI screens)
+// MARK: - CategoryFilterChip (used across Zones, Objects screens)
 
-struct FilterChip: View {
+struct CategoryFilterChip: View {
     let label: String
     var isActive: Bool
     var action: () -> Void

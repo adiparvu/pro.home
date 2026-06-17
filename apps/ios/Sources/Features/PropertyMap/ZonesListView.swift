@@ -121,7 +121,7 @@ struct ZonesListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ZoneFilter.allCases, id: \.self) { f in
-                    FilterChip(label: f.rawValue, isActive: filter == f) {
+                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
                     }
                 }
