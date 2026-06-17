@@ -29,41 +29,30 @@ struct MainTabView: View {
     @StateObject private var tabBarVis = TabBarVisibility()
     @EnvironmentObject private var router: AppRouter
 
-    @State private var bounceTab: AppTab? = nil
-
     var body: some View {
-        ZStack {
+        TabView(selection: $router.selectedTab) {
             NavigationStack { DashboardView() }
-                .opacity(router.selectedTab == .home ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .home)
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(AppTab.home)
 
             NavigationStack { DigitalTwinView() }
-                .opacity(router.selectedTab == .digitalTwin ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .digitalTwin)
+                .tabItem { Label("Twin", systemImage: "building.2.fill") }
+                .tag(AppTab.digitalTwin)
 
             NavigationStack { TasksView() }
-                .opacity(router.selectedTab == .tasks ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .tasks)
+                .tabItem { Label("Tasks", systemImage: "checklist") }
+                .tag(AppTab.tasks)
+                .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
 
             NavigationStack { ChatView() }
-                .opacity(router.selectedTab == .chat ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .chat)
+                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+                .tag(AppTab.chat)
 
             NavigationStack { SettingsView() }
-                .opacity(router.selectedTab == .settings ? 1 : 0)
-                .allowsHitTesting(router.selectedTab == .settings)
+                .tabItem { Label("You", systemImage: "person.crop.circle.fill") }
+                .tag(AppTab.settings)
         }
-        .coordinateSpace(name: "scroll")
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            AnimatedTabBar(
-                selected: $router.selectedTab,
-                bounceTab: $bounceTab,
-                overdueCount: taskService.overdueCount,
-                bottomPad: 6,
-                hideProgress: tabBarVis.hideProgress
-            )
-            .environmentObject(profileService)
-        }
+        .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
                 ARIAView(onDismiss: { router.showARIA = false })
@@ -194,11 +183,8 @@ struct MainTabView: View {
                 updateDynamicShortcuts()
             }
         }
-        .onChange(of: router.selectedTab) { _, newTab in
-            bounceTab = newTab
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                tabBarVis.scrollOffset = 0
-            }
+        .onChange(of: router.selectedTab) { _, _ in
+            tabBarVis.scrollOffset = 0
         }
         .onReceive(NotificationCenter.default.publisher(for: .prvioProcessPending)) { _ in
             processPendingIntentActions()
