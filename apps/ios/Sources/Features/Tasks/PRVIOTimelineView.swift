@@ -1,15 +1,42 @@
 import SwiftUI
 
-// MARK: - PRVIO Timeline — matches dark mockup (chronological events)
+// MARK: - PRVIO Timeline — matches dark mockup (chronological events + filter chips)
 
 struct PRVIOTimelineView: View {
     @EnvironmentObject var taskService: TaskService
     @EnvironmentObject var elementService: PropertyElementService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
+    enum TimeFilter: String, CaseIterable {
+        case today  = "Today"
+        case fiveMin = "5m"
+        case thirtyMin = "30m"
+        case day = "24h"
+
+        var interval: TimeInterval? {
+            switch self {
+            case .today:    return nil
+            case .fiveMin:  return 5 * 60
+            case .thirtyMin: return 30 * 60
+            case .day:      return 24 * 3600
+            }
+        }
+    }
+
+    @State private var filter: TimeFilter = .today
+
+    private var filteredEvents: [TimelineEvent] {
+        let all = buildEvents()
+        guard let interval = filter.interval else {
+            // "Today" → events from today only
+            return all.filter { Calendar.current.isDateInToday($0.date) || $0.date > Date() }
+        }
+        let cutoff = Date().addingTimeInterval(-interval)
+        return all.filter { $0.date >= cutoff }
+    }
+
     private var groupedEvents: [(String, [TimelineEvent])] {
-        let events = buildEvents()
-        let grouped = Dictionary(grouping: events) { $0.groupKey }
+        let grouped = Dictionary(grouping: filteredEvents) { $0.groupKey }
         let sorted = grouped.sorted { a, b in
             guard let d1 = a.value.first?.date, let d2 = b.value.first?.date else { return false }
             return d1 > d2
@@ -20,34 +47,44 @@ struct PRVIOTimelineView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(groupedEvents, id: \.0) { group, events in
-                    sectionHeader(group)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 18)
-                        .padding(.bottom, 8)
+                filterChipsRow
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 10)
 
-                    ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
-                        HStack(alignment: .top, spacing: 0) {
-                            // Timeline spine
-                            VStack(spacing: 0) {
-                                Circle()
-                                    .fill(event.color)
-                                    .frame(width: 10, height: 10)
-                                    .padding(.top, 5)
-                                if idx < events.count - 1 {
-                                    Rectangle()
-                                        .fill(Color.primary.opacity(0.1))
-                                        .frame(width: 1.5)
-                                        .frame(maxHeight: .infinity)
+                if groupedEvents.isEmpty {
+                    emptyState
+                        .padding(.top, 60)
+                } else {
+                    ForEach(groupedEvents, id: \.0) { group, events in
+                        sectionHeader(group)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 18)
+                            .padding(.bottom, 8)
+
+                        ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
+                            HStack(alignment: .top, spacing: 0) {
+                                // Timeline spine
+                                VStack(spacing: 0) {
+                                    Circle()
+                                        .fill(event.color)
+                                        .frame(width: 10, height: 10)
+                                        .padding(.top, 5)
+                                    if idx < events.count - 1 {
+                                        Rectangle()
+                                            .fill(Color.primary.opacity(0.1))
+                                            .frame(width: 1.5)
+                                            .frame(maxHeight: .infinity)
+                                    }
                                 }
-                            }
-                            .frame(width: 30)
-                            .padding(.leading, 16)
+                                .frame(width: 30)
+                                .padding(.leading, 16)
 
-                            // Event card
-                            TimelineEventCard(event: event)
-                                .padding(.horizontal, 10)
-                                .padding(.bottom, 8)
+                                // Event card
+                                TimelineEventCard(event: event)
+                                    .padding(.horizontal, 10)
+                                    .padding(.bottom, 8)
+                            }
                         }
                     }
                 }
@@ -60,6 +97,43 @@ struct PRVIOTimelineView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Text("\(filteredEvents.count)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(.regularMaterial, in: Capsule())
+            }
+        }
+    }
+
+    private var filterChipsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(TimeFilter.allCases, id: \.self) { f in
+                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
+                        withAnimation(.spring(response: 0.3)) { filter = f }
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 42, weight: .light))
+                .foregroundStyle(Color.primary.opacity(0.2))
+            Text("No events")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.45))
+            Text("No activity in this time range")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.primary.opacity(0.3))
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func sectionHeader(_ label: String) -> some View {
