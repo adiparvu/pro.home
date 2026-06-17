@@ -13,7 +13,7 @@ struct PropertyElementDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info
-    @State private var showAddRecord = false
+    @State var showAddRecord = false
     @State private var showEditElement = false
     @State var localElement: PropertyElement
     @State private var showDeleteConfirm = false

@@ -7,10 +7,10 @@ struct FinancesSection: View {
     @ObservedObject var service: FinancialService
     @Binding var displayedMonth: Date
 
-    @State private var chartRange: ChartRange = .sixMonths
-    @State private var customStart = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
-    @State private var customEnd = Date()
-    @State private var showCustomSheet = false
+    @State var chartRange: ChartRange = .sixMonths
+    @State var customStart = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+    @State var customEnd = Date()
+    @State var showCustomSheet = false
 
     private var cal: Calendar { Calendar.current }
     private var isCurrentMonth: Bool { cal.isDate(displayedMonth, equalTo: Date(), toGranularity: .month) }

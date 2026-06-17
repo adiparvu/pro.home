@@ -7,7 +7,7 @@ struct MortgageView: View {
     @AppStorage("prvio.mortgage.startDate")    var startDateStr: String  = ""
     @AppStorage("prvio.mortgage.propertyValue") var propertyValue: Double = 0
 
-    @State private var isEditing = false
+    @State var isEditing = false
 
     var monthlyRate: Double { interestRate / 100 / 12 }
     var totalPayments: Int { Int(termYears) * 12 }

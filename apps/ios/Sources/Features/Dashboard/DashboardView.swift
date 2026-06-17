@@ -5,30 +5,30 @@ import CoreLocation
 // MARK: - Dashboard (Scrollable Home)
 
 struct DashboardView: View {
-    @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject var auth: AuthService
     @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var profileService: ProfileService
+    @EnvironmentObject var propertyService: PropertyService
+    @EnvironmentObject var financialService: FinancialService
+    @EnvironmentObject var profileService: ProfileService
     @EnvironmentObject private var documentService: DocumentService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject var router: AppRouter
     @EnvironmentObject private var zoneService: PropertyZoneService
     @EnvironmentObject private var plantService: PlantService
     @EnvironmentObject private var deliveryService: DeliveryService
 
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
-    @State private var mapPosition: MapCameraPosition = .region(
+    @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025),
             span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
         )
     )
-    @State private var geocodedCoordinate: CLLocationCoordinate2D?
+    @State var geocodedCoordinate: CLLocationCoordinate2D?
     @State private var selectedSection: PropertySection? = nil
-    @State private var pulsing = false
+    @State var pulsing = false
     @State private var showNotifications = false
     @State private var showEditProfile = false
     @State private var showSearch = false

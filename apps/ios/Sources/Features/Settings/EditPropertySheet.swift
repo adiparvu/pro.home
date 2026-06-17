@@ -5,7 +5,7 @@ import CoreLocation
 // MARK: - Edit Property Sheet
 
 struct EditPropertySheet: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) var dismiss
     let property: PropertyModel
     let onSave: (PropertyModel) async -> Void
 

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreLocation
 
 // Used by InventoryItem.qrContent
 private let itemFoundBaseURL = "https://kwcanenheihuylaymwsl.supabase.co/functions/v1/item-found"
