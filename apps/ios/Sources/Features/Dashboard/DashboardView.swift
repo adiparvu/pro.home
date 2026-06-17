@@ -6,12 +6,12 @@ import CoreLocation
 
 struct DashboardView: View {
     @EnvironmentObject var auth: AuthService
-    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject var taskService: TaskService
     @EnvironmentObject var propertyService: PropertyService
     @EnvironmentObject var financialService: FinancialService
     @EnvironmentObject var profileService: ProfileService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject var documentService: DocumentService
+    @EnvironmentObject var familyService: FamilyService
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject private var zoneService: PropertyZoneService
