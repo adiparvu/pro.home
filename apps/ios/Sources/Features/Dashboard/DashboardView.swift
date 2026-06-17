@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// MARK: - Dashboard (redesigned — matches dark mockup)
+// MARK: - Dashboard — matches dark mockup exactly
 
 struct DashboardView: View {
     @EnvironmentObject var auth: AuthService
@@ -20,7 +20,6 @@ struct DashboardView: View {
     @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
-    // kept for geocoding / map compat
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025),
@@ -40,25 +39,31 @@ struct DashboardView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                // ── Header ──────────────────────────────────────────
+                // ── Header ──────────────────────────────────────────────
                 dashHeader
                     .padding(.horizontal, 16)
 
                 Spacer().frame(height: 14)
 
-                // ── Aerial Hero Card ─────────────────────────────────
+                // ── Aerial Hero Card ─────────────────────────────────────
                 aerialHero
                     .padding(.horizontal, 16)
 
-                Spacer().frame(height: 12)
+                Spacer().frame(height: 14)
 
-                // ── Stats row ────────────────────────────────────────
-                statsRow
+                // ── Property Health Card ─────────────────────────────────
+                propertyHealthCard
                     .padding(.horizontal, 16)
 
-                Spacer().frame(height: 20)
+                Spacer().frame(height: 14)
 
-                // ── Widget section ───────────────────────────────────
+                // ── Stats Strip ──────────────────────────────────────────
+                dashStatsStrip
+                    .padding(.horizontal, 16)
+
+                Spacer().frame(height: 22)
+
+                // ── Widget section ───────────────────────────────────────
                 widgetSectionHeader
                     .padding(.horizontal, 16)
                 Spacer().frame(height: 10)
@@ -120,7 +125,6 @@ struct DashboardView: View {
 
     private var dashHeader: some View {
         HStack(alignment: .center, spacing: 10) {
-            // Property name + live badge
             Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
                 HStack(spacing: 8) {
                     ZStack {
@@ -211,7 +215,6 @@ struct DashboardView: View {
 
     private var aerialHero: some View {
         ZStack(alignment: .bottomLeading) {
-            // Animated night illustration
             AerialPropertyView(
                 property: propertyService.primary,
                 zones: zoneService.zones,
@@ -221,13 +224,11 @@ struct DashboardView: View {
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity)
 
-            // Health gauge — bottom-left overlay
             if let score = propertyService.primary?.healthScore {
                 PropertyHealthGauge(score: score, size: 82)
                     .padding(14)
             }
 
-            // Expand → Digital Twin — top-right
             Button {
                 HapticFeedback.impact(.light)
                 router.selectedTab = .digitalTwin
@@ -242,7 +243,6 @@ struct DashboardView: View {
             .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
-            // Property name label — bottom trailing
             if let name = propertyService.primary?.name {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(name)
@@ -269,42 +269,31 @@ struct DashboardView: View {
         .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
     }
 
-    // MARK: - Stats row
+    // MARK: - Property Health Card
 
-    private var statsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                StatChip(icon: "square.stack.3d.up.fill", label: "Zones",
-                         value: "\(zoneService.zones.count)",
-                         color: Color(red: 0.35, green: 0.65, blue: 1.0)) {
-                    router.selectedTab = .digitalTwin
-                }
-                StatChip(icon: "cube.box.fill", label: "Objects",
-                         value: "\(elementService.elements.count)",
-                         color: Color(red: 0.7, green: 0.45, blue: 0.95)) {
-                    router.selectedTab = .digitalTwin
-                }
-                StatChip(icon: "checklist", label: "Tasks",
-                         value: "\(taskService.tasks.filter { !$0.isCompleted }.count)",
-                         color: taskService.overdueCount > 0 ? .red : Color(red: 0.20, green: 0.87, blue: 0.48)) {
-                    router.selectedTab = .tasks
-                }
-                if taskService.overdueCount > 0 {
-                    StatChip(icon: "exclamationmark.triangle.fill", label: "Alerts",
-                             value: "\(taskService.overdueCount)",
-                             color: .red) {
-                        router.selectedTab = .tasks
-                    }
-                }
-                StatChip(icon: "leaf.fill", label: "Plants",
-                         value: "\(plantService.plants.count)",
-                         color: Color(red: 0.3, green: 0.85, blue: 0.45))
-                StatChip(icon: "person.2.fill", label: "Family",
-                         value: "\(familyService.members.count)",
-                         color: Color(red: 0.9, green: 0.65, blue: 0.25))
-            }
-            .padding(.vertical, 4)
-        }
+    private var propertyHealthCard: some View {
+        let score = propertyService.primary?.healthScore ?? 87
+        let overdueTasks = taskService.overdueCount
+        let tasksPct = taskService.tasks.isEmpty ? 0 :
+            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
+        return PropertyHealthDashCard(
+            score: score,
+            maintenancePct: min(100, max(0, score - 10)),
+            utilitiesPct: min(100, max(0, score + 5)),
+            securityPct: min(100, max(0, score - 3)),
+            tasksPct: tasksPct
+        )
+    }
+
+    // MARK: - Stats Strip
+
+    private var dashStatsStrip: some View {
+        DashStatsStrip(items: [
+            .init(value: "\(zoneService.zones.count)", label: "Zones"),
+            .init(value: "\(elementService.elements.count)", label: "Objects"),
+            .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks"),
+            .init(value: "\(taskService.overdueCount)", label: "Alerts")
+        ])
     }
 
     // MARK: - Widget section header
@@ -329,7 +318,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Greeting text (kept for widget compat)
+    // MARK: - Greeting text
 
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())

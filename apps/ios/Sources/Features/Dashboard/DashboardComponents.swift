@@ -486,3 +486,159 @@ struct StatChip: View {
         .allowsHitTesting(action != nil)
     }
 }
+
+// MARK: - FilterChip (reused across Zones, Objects, AI screens)
+
+struct FilterChip: View {
+    let label: String
+    var isActive: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: { HapticFeedback.selection(); action() }) {
+            Text(label)
+                .font(.system(size: 13, weight: isActive ? .semibold : .medium))
+                .foregroundStyle(isActive ? .primary : Color.primary.opacity(0.55))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .background {
+            Capsule()
+                .fill(isActive ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.primary.opacity(0.06)))
+                .overlay {
+                    if isActive {
+                        Capsule().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - PropertyHealthDashCard (detailed health breakdown for Dashboard)
+
+struct PropertyHealthDashCard: View {
+    let score: Int
+    var maintenancePct: Int = 50
+    var utilitiesPct: Int  = 85
+    var securityPct: Int   = 80
+    var tasksPct: Int      = 6
+
+    private var scoreColor: Color {
+        score >= 80 ? Color(red: 0.20, green: 0.82, blue: 0.48) :
+        score >= 55 ? .orange : .red
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            // Circular gauge
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.06), lineWidth: 9)
+                Circle()
+                    .trim(from: 0, to: CGFloat(score) / 100)
+                    .stroke(
+                        AngularGradient(
+                            colors: [scoreColor.opacity(0.7), scoreColor],
+                            center: .center,
+                            startAngle: .degrees(-90),
+                            endAngle: .degrees(270)
+                        ),
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 1) {
+                    Text("\(score)")
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text("Health")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(scoreColor)
+                }
+            }
+            .frame(width: 88, height: 88)
+
+            // Sub-metrics
+            VStack(alignment: .leading, spacing: 8) {
+                metricRow("wrench.and.screwdriver", label: "Maintenance", pct: maintenancePct, color: .orange)
+                metricRow("bolt.fill", label: "Utilities", pct: utilitiesPct, color: Color(red: 0.35, green: 0.65, blue: 1.0))
+                metricRow("lock.shield.fill", label: "Security", pct: securityPct, color: Color(red: 0.48, green: 0.41, blue: 0.93))
+                metricRow("checklist", label: "Tasks", pct: tasksPct, color: Color(red: 0.20, green: 0.82, blue: 0.48))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
+                )
+        }
+        .shadow(color: .black.opacity(0.25), radius: 16, y: 4)
+    }
+
+    private func metricRow(_ icon: String, label: String, pct: Int, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 14)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(0.65))
+                .frame(width: 74, alignment: .leading)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.08)).frame(height: 4)
+                    Capsule().fill(color).frame(width: geo.size.width * CGFloat(pct) / 100, height: 4)
+                }
+                .frame(height: 4)
+            }
+            .frame(height: 4)
+            Text("\(pct)%")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.5))
+                .frame(width: 28, alignment: .trailing)
+        }
+    }
+}
+
+// MARK: - DashStatsStrip (bottom stats strip on Dashboard)
+
+struct DashStatsStrip: View {
+    struct StatItem { let value: String; let label: String }
+    let items: [StatItem]
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
+                if idx > 0 {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.12))
+                        .frame(width: 1, height: 28)
+                }
+                VStack(spacing: 2) {
+                    Text(item.value)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text(item.label)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 14)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
+                )
+        }
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 3)
+    }
+}

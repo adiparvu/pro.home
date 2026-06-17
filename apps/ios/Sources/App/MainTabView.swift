@@ -35,8 +35,8 @@ struct MainTabView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(AppTab.home)
 
-            NavigationStack { DigitalTwinView() }
-                .tabItem { Label("Twin", systemImage: "building.2.fill") }
+            NavigationStack { PropertyTabView() }
+                .tabItem { Label("Property", systemImage: "square.stack.3d.up.fill") }
                 .tag(AppTab.digitalTwin)
 
             NavigationStack { TasksView() }
@@ -44,9 +44,18 @@ struct MainTabView: View {
                 .tag(AppTab.tasks)
                 .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
 
-            NavigationStack { ChatView() }
-                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
-                .tag(AppTab.chat)
+            NavigationStack {
+                AIInsightsView()
+                    .environmentObject(taskService)
+                    .environmentObject(elementService)
+                    .environmentObject(zoneService)
+                    .environmentObject(plantService)
+                    .environmentObject(propertyService)
+                    .environmentObject(tabBarVis)
+                    .environmentObject(router)
+            }
+            .tabItem { Label("AI", systemImage: "sparkles") }
+            .tag(AppTab.chat)
 
             NavigationStack { SettingsView() }
                 .tabItem { Label("You", systemImage: "person.crop.circle.fill") }

@@ -27,9 +27,9 @@ enum AppTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .home:        return "house.fill"
-        case .digitalTwin: return "building.2.fill"
+        case .digitalTwin: return "square.stack.3d.up.fill"
         case .tasks:       return "checklist"
-        case .chat:        return "bubble.left.and.bubble.right.fill"
+        case .chat:        return "sparkles"
         case .settings:    return "person.crop.circle.fill"
         }
     }
@@ -37,10 +37,20 @@ enum AppTab: String, CaseIterable {
     var inactiveIcon: String {
         switch self {
         case .home:        return "house"
-        case .digitalTwin: return "building.2"
+        case .digitalTwin: return "square.stack.3d.up"
         case .tasks:       return "checklist"
-        case .chat:        return "bubble.left.and.bubble.right"
+        case .chat:        return "sparkles"
         case .settings:    return "person.crop.circle"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .home:        return "Home"
+        case .digitalTwin: return "Property"
+        case .tasks:       return "Tasks"
+        case .chat:        return "AI"
+        case .settings:    return "You"
         }
     }
 }
