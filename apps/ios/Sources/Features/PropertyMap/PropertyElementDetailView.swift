@@ -5,23 +5,23 @@ import Supabase
 struct PropertyElementDetailView: View {
     let element: PropertyElement
 
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject var elementService: PropertyElementService
+    @EnvironmentObject var currencyService: CurrencyService
+    @EnvironmentObject var appSettings: AppSettings
+    @EnvironmentObject var documentService: DocumentService
+    @EnvironmentObject var taskService: TaskService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info
     @State private var showAddRecord = false
     @State private var showEditElement = false
-    @State private var localElement: PropertyElement
+    @State var localElement: PropertyElement
     @State private var showDeleteConfirm = false
-    @State private var showLocationPicker = false
-    @State private var showLinkDocument = false
-    @State private var showLinkTask = false
-    @State private var photoItems: [PhotosPickerItem] = []
-    @State private var isUploading = false
+    @State var showLocationPicker = false
+    @State var showLinkDocument = false
+    @State var showLinkTask = false
+    @State var photoItems: [PhotosPickerItem] = []
+    @State var isUploading = false
 
     init(element: PropertyElement) {
         self.element = element

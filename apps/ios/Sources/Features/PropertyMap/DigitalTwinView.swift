@@ -3,45 +3,45 @@ import MapKit
 import CoreLocation
 
 struct DigitalTwinView: View {
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject var propertyService: PropertyService
+    @EnvironmentObject var elementService: PropertyElementService
+    @EnvironmentObject var zoneService: PropertyZoneService
+    @EnvironmentObject var currencyService: CurrencyService
+    @EnvironmentObject var appSettings: AppSettings
+    @EnvironmentObject var documentService: DocumentService
+    @EnvironmentObject var taskService: TaskService
 
-    @State private var camera: MapCameraPosition = .automatic
-    @State private var selectedZone: PropertyZone?
-    @State private var selectedElement: PropertyElement?
-    @State private var activeLayer: PropertyLayer?
-    @State private var heatmap = false
-    @State private var is3D = false
-    @State private var drawMode = false
-    @State private var draftPoints: [GeoPoint] = []
-    @State private var editingZone: PropertyZone?
-    @State private var addingToZone: PropertyZone?
-    @State private var reshapeZone: PropertyZone?
-    @State private var reshapePoints: [GeoPoint] = []
-    @State private var moveStartCenter: CLLocationCoordinate2D?
-    @State private var moveStartPoints: [GeoPoint]?
-    @State private var draggingObject: (id: UUID, coord: CLLocationCoordinate2D)?
-    @State private var showAddObject = false
-    @State private var showInsights = false
-    @State private var showHealth = false
-    @State private var showLabels = false
-    @State private var didCenter = false
+    @State var camera: MapCameraPosition = .automatic
+    @State var selectedZone: PropertyZone?
+    @State var selectedElement: PropertyElement?
+    @State var activeLayer: PropertyLayer?
+    @State var heatmap = false
+    @State var is3D = false
+    @State var drawMode = false
+    @State var draftPoints: [GeoPoint] = []
+    @State var editingZone: PropertyZone?
+    @State var addingToZone: PropertyZone?
+    @State var reshapeZone: PropertyZone?
+    @State var reshapePoints: [GeoPoint] = []
+    @State var moveStartCenter: CLLocationCoordinate2D?
+    @State var moveStartPoints: [GeoPoint]?
+    @State var draggingObject: (id: UUID, coord: CLLocationCoordinate2D)?
+    @State var showAddObject = false
+    @State var showInsights = false
+    @State var showHealth = false
+    @State var showLabels = false
+    @State var didCenter = false
 
-    private var dragTargetZoneId: UUID? {
+    var dragTargetZoneId: UUID? {
         guard let d = draggingObject else { return nil }
         return zoneService.zone(containing: d.coord)?.id
     }
 
-    private var editingShape: Bool { reshapeZone != nil }
+    var editingShape: Bool { reshapeZone != nil }
 
     // MARK: - Derived
 
-    private var propertyCoordinate: CLLocationCoordinate2D {
+    var propertyCoordinate: CLLocationCoordinate2D {
         if let lat = propertyService.primary?.latitude,
            let lon = propertyService.primary?.longitude {
             return CLLocationCoordinate2D(latitude: lat, longitude: lon)
