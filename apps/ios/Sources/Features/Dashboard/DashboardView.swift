@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// MARK: - Dashboard (Scrollable Home)
+// MARK: - Dashboard (redesigned — matches dark mockup)
 
 struct DashboardView: View {
     @EnvironmentObject var auth: AuthService
@@ -17,9 +17,10 @@ struct DashboardView: View {
     @EnvironmentObject private var zoneService: PropertyZoneService
     @EnvironmentObject private var plantService: PlantService
     @EnvironmentObject private var deliveryService: DeliveryService
-
+    @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
+    // kept for geocoding / map compat
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025),
@@ -39,22 +40,40 @@ struct DashboardView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
-                greetingHeader
-                Spacer().frame(height: 22)
-                mapCard
-                Spacer().frame(height: 16)
+                // ── Header ──────────────────────────────────────────
+                dashHeader
+                    .padding(.horizontal, 16)
+
+                Spacer().frame(height: 14)
+
+                // ── Aerial Hero Card ─────────────────────────────────
+                aerialHero
+                    .padding(.horizontal, 16)
+
+                Spacer().frame(height: 12)
+
+                // ── Stats row ────────────────────────────────────────
+                statsRow
+                    .padding(.horizontal, 16)
+
+                Spacer().frame(height: 20)
+
+                // ── Widget section ───────────────────────────────────
                 widgetSectionHeader
+                    .padding(.horizontal, 16)
                 Spacer().frame(height: 10)
                 widgetGrid
-                Spacer(minLength: 160)
+                    .padding(.horizontal, 16)
+
+                Spacer(minLength: 120)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, topSafeArea + 8)
+            .padding(.top, topSafeArea + 6)
             .trackTabScroll()
             .padding(.bottom, 20)
             .background(
                 GeometryReader { geo in
-                    Color.clear.preference(key: ScrollOffsetKey.self, value: geo.frame(in: .named("dashScroll")).minY)
+                    Color.clear.preference(key: ScrollOffsetKey.self,
+                                           value: geo.frame(in: .named("dashScroll")).minY)
                 }
             )
         }
@@ -68,9 +87,7 @@ struct DashboardView: View {
         .floatingSpeedDial(.home, bottomPadding: bottomSafeArea + 80)
         .navigationBarHidden(true)
         .onAppear { startPulse() }
-        .task(id: propertyService.primary?.id) {
-            await resolveMapCoordinate()
-        }
+        .task(id: propertyService.primary?.id) { await resolveMapCoordinate() }
         .task(id: propertyService.primary?.id) {
             if let pid = propertyService.primary?.id {
                 await zoneService.load(propertyId: pid)
@@ -99,17 +116,18 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Greeting Header
+    // MARK: - Header
 
-    private var greetingHeader: some View {
+    private var dashHeader: some View {
         HStack(alignment: .center, spacing: 10) {
+            // Property name + live badge
             Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(
-                                colors: [Color(red: 0.3, green: 0.85, blue: 0.5),
-                                         Color(red: 0.2, green: 0.65, blue: 0.9)],
+                                colors: [Color(red: 0.25, green: 0.82, blue: 0.48),
+                                         Color(red: 0.18, green: 0.60, blue: 0.88)],
                                 startPoint: .topLeading, endPoint: .bottomTrailing
                             ))
                         if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
@@ -120,25 +138,35 @@ struct DashboardView: View {
                                         .clipShape(Circle())
                                 } else {
                                     Text(avatarInitial)
-                                        .font(.system(size: 15, weight: .bold))
+                                        .font(.system(size: 14, weight: .bold))
                                         .foregroundStyle(.white)
                                 }
                             }
                         } else {
                             Text(avatarInitial)
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
                         }
                     }
                     .frame(width: 38, height: 38)
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(greetingText)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
-                        Text(displayName)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.primary)
+                        HStack(spacing: 5) {
+                            Text(propertyService.primary?.name ?? "My Property")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.35))
+                        }
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color(red: 0.20, green: 0.87, blue: 0.48))
+                                .frame(width: 5, height: 5)
+                            Text("Live")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(Color(red: 0.20, green: 0.87, blue: 0.48))
+                        }
                     }
                 }
             }
@@ -154,34 +182,128 @@ struct DashboardView: View {
                         .font(.system(size: 13, weight: .bold))
                 }
                 .foregroundStyle(healthScoreColor(score))
-                .frame(width: 38, height: 38)
+                .frame(width: 36, height: 36)
                 .glassCircle()
                 .allowsHitTesting(false)
             }
 
-            Button {
-                HapticFeedback.impact(.light)
-                showSearch = true
-            } label: {
+            Button { HapticFeedback.impact(.light); showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 38, height: 38)
+                    .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
             .glassCircle()
 
-            Button {
-                HapticFeedback.impact(.light)
-                showNotifications.toggle()
-            } label: {
+            Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
                 Image(systemName: "bell.fill")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 38, height: 38)
+                    .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
             .glassCircle()
+        }
+    }
+
+    // MARK: - Aerial Hero Card
+
+    private var aerialHero: some View {
+        ZStack(alignment: .bottomLeading) {
+            // Animated night illustration
+            AerialPropertyView(
+                property: propertyService.primary,
+                zones: zoneService.zones,
+                elements: elementService.elements,
+                cornerRadius: 20
+            )
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+
+            // Health gauge — bottom-left overlay
+            if let score = propertyService.primary?.healthScore {
+                PropertyHealthGauge(score: score, size: 82)
+                    .padding(14)
+            }
+
+            // Expand → Digital Twin — top-right
+            Button {
+                HapticFeedback.impact(.light)
+                router.selectedTab = .digitalTwin
+            } label: {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 34, height: 34)
+                    .glassCircle()
+            }
+            .buttonStyle(.plain)
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+
+            // Property name label — bottom trailing
+            if let name = propertyService.primary?.name {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(name)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                    if let addr = propertyService.primary?.addressLine1 {
+                        Text(addr)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .padding(.bottom, 2)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
+    }
+
+    // MARK: - Stats row
+
+    private var statsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                StatChip(icon: "square.stack.3d.up.fill", label: "Zones",
+                         value: "\(zoneService.zones.count)",
+                         color: Color(red: 0.35, green: 0.65, blue: 1.0)) {
+                    router.selectedTab = .digitalTwin
+                }
+                StatChip(icon: "cube.box.fill", label: "Objects",
+                         value: "\(elementService.elements.count)",
+                         color: Color(red: 0.7, green: 0.45, blue: 0.95)) {
+                    router.selectedTab = .digitalTwin
+                }
+                StatChip(icon: "checklist", label: "Tasks",
+                         value: "\(taskService.tasks.filter { !$0.isCompleted }.count)",
+                         color: taskService.overdueCount > 0 ? .red : Color(red: 0.20, green: 0.87, blue: 0.48)) {
+                    router.selectedTab = .tasks
+                }
+                if taskService.overdueCount > 0 {
+                    StatChip(icon: "exclamationmark.triangle.fill", label: "Alerts",
+                             value: "\(taskService.overdueCount)",
+                             color: .red) {
+                        router.selectedTab = .tasks
+                    }
+                }
+                StatChip(icon: "leaf.fill", label: "Plants",
+                         value: "\(plantService.plants.count)",
+                         color: Color(red: 0.3, green: 0.85, blue: 0.45))
+                StatChip(icon: "person.2.fill", label: "Family",
+                         value: "\(familyService.members.count)",
+                         color: Color(red: 0.9, green: 0.65, blue: 0.25))
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -207,95 +329,15 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Greeting text
+    // MARK: - Greeting text (kept for widget compat)
 
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
-        case 5..<12:  return "Good morning 🌅"
-        case 12..<18: return "Good afternoon 👋"
-        case 18..<22: return "Good evening 🌇"
-        default:      return "Good night 🌙"
+        case 5..<12:  return "Good morning"
+        case 12..<18: return "Good afternoon"
+        case 18..<22: return "Good evening"
+        default:      return "Good night"
         }
-    }
-
-    // MARK: - Map Card
-
-    private var mapCard: some View {
-        ZStack(alignment: .bottom) {
-            Map(position: $mapPosition) {
-                Annotation("Property", coordinate: propertyCoordinate) {
-                    PropertyCoreMarker(pulsing: $pulsing) {
-                        router.selectedTab = .digitalTwin
-                        HapticFeedback.impact(.medium)
-                    }
-                }
-                ForEach(zoneService.zones) { zone in
-                    if zone.isDrawable {
-                        MapPolygon(coordinates: zone.coordinates)
-                            .foregroundStyle(zone.tint.opacity(0.28))
-                            .stroke(zone.tint.opacity(0.9), lineWidth: 1.5)
-                    }
-                }
-                if zoneService.zones.isEmpty {
-                    ForEach(sections) { section in
-                        Annotation(section.name, coordinate: section.offset(from: propertyCoordinate)) {
-                            PropertyPointMarker(section: section, isSelected: selectedSection?.id == section.id) {
-                                router.selectedTab = .digitalTwin
-                                HapticFeedback.impact(.light)
-                            }
-                        }
-                    }
-                }
-            }
-            .mapStyle(.hybrid(elevation: .realistic))
-            .mapControls { }
-            .frame(height: 260)
-            .overlay(alignment: .topTrailing) {
-                Button {
-                    HapticFeedback.impact(.light)
-                    router.selectedTab = .digitalTwin
-                } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .frame(width: 38, height: 38)
-                }
-                .buttonStyle(.plain)
-                .glassCircle()
-                .padding(12)
-            }
-
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(propertyService.primary?.name ?? "My property")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    if let addr = propertyService.primary?.addressLine1 {
-                        Text(addr)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.primary.opacity(0.6))
-                            .lineLimit(1)
-                    }
-                }
-                Spacer()
-                if let section = selectedSection {
-                    HStack(spacing: 6) {
-                        Image(systemName: section.icon)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(section.color)
-                        Text(section.name)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(section.color.opacity(0.18), in: Capsule())
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-        }
-        .liquidGlass(cornerRadius: 20)
     }
 }

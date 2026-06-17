@@ -386,3 +386,103 @@ private struct FinStat: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+// MARK: - PropertyHealthGauge (compact overlay for AerialPropertyView)
+
+struct PropertyHealthGauge: View {
+    let score: Int
+    var size: CGFloat = 80
+
+    private var scoreColor: Color {
+        switch score {
+        case 80...: return Color(red: 0.20, green: 0.87, blue: 0.48)
+        case 55..<80: return .orange
+        default: return .red
+        }
+    }
+
+    private var label: String {
+        switch score {
+        case 80...: return "Good"
+        case 55..<80: return "Fair"
+        default: return "Poor"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            // Background card
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                )
+
+            VStack(spacing: 2) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.10), lineWidth: size * 0.075)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(score) / 100)
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [scoreColor.opacity(0.7), scoreColor]),
+                                center: .center,
+                                startAngle: .degrees(-90),
+                                endAngle: .degrees(270)
+                            ),
+                            style: StrokeStyle(lineWidth: size * 0.075, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .animation(.spring(response: 1.0, dampingFraction: 0.8), value: score)
+
+                    Text("\(score)")
+                        .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: size * 0.62, height: size * 0.62)
+
+                Text(label)
+                    .font(.system(size: size * 0.115, weight: .semibold))
+                    .foregroundStyle(scoreColor)
+            }
+            .padding(size * 0.10)
+        }
+        .frame(width: size, height: size)
+        .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
+    }
+}
+
+// MARK: - StatChip (horizontal stats row)
+
+struct StatChip: View {
+    let icon: String
+    let label: String
+    let value: String
+    var color: Color = .primary
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        Button(action: action ?? {}) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(color)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(value)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text(label)
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .liquidGlass(cornerRadius: 12)
+        .allowsHitTesting(action != nil)
+    }
+}
