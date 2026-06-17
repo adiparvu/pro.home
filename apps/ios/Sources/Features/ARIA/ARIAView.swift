@@ -24,7 +24,7 @@ struct ARIAView: View {
                 inputBar
             }
         }
-        .navigationTitle("ARIA")
+        .navigationTitle("AI Assistant")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -90,32 +90,40 @@ struct ARIAView: View {
         }
     }
 
-    // MARK: - Input bar
+    // MARK: - Input bar — matches mockup: text field + [mic|waveform|cloud] + glowing orb
 
     private var inputBar: some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Ask about your property...", text: $input, axis: .vertical)
-                    .font(.system(size: 15))
-                    .lineLimit(1...5)
-                    .focused($focused)
-
-                HStack(spacing: 0) {
-                    Button {
-                        input += input.isEmpty ? "```\n\n```" : "\n```\n\n```"
-                        focused = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Code")
-                                .font(.system(size: 13, weight: .semibold))
+            VStack(spacing: 10) {
+                // Text field row
+                HStack(spacing: 10) {
+                    TextField("Ask about your property...", text: $input, axis: .vertical)
+                        .font(.system(size: 15))
+                        .lineLimit(1...5)
+                        .focused($focused)
+                        .onChange(of: speech.transcript) { _, t in
+                            if !t.isEmpty { input = t }
                         }
-                        .foregroundStyle(Color.primary.opacity(0.55))
+                    if !input.isEmpty {
+                        Button {
+                            input = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(Color.primary.opacity(0.35))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                    if voiceInputEnabled {
+                // Icon buttons + orb row
+                HStack(spacing: 0) {
+                    // Left: 3 icon buttons matching mockup
+                    HStack(spacing: 16) {
+                        // Mic button
                         Button {
                             HapticFeedback.impact(.light)
                             if speech.isListening {
@@ -125,43 +133,110 @@ struct ARIAView: View {
                                 Task { await speech.startListening() }
                             }
                         } label: {
-                            Image(systemName: speech.isListening ? "waveform" : "mic")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.55))
-                                .symbolEffect(.pulse, isActive: speech.isListening)
-                                .frame(width: 30, height: 30)
+                            ZStack {
+                                Circle()
+                                    .fill(speech.isListening
+                                        ? Color.red.opacity(0.2)
+                                        : Color.primary.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "mic.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(speech.isListening
+                                        ? .red
+                                        : Color(red: 0.55, green: 0.70, blue: 1.0))
+                                    .symbolEffect(.pulse, isActive: speech.isListening)
+                            }
                         }
                         .buttonStyle(.plain)
-                        .padding(.leading, 8)
-                        .onChange(of: speech.transcript) { _, t in
-                            if !t.isEmpty { input = t }
+
+                        // Waveform / equalizer button
+                        Button {
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.primary.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "waveform")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
+                            }
                         }
+                        .buttonStyle(.plain)
+
+                        // Cloud / AI mode button
+                        Button {
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.primary.opacity(0.1))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "icloud")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     Spacer()
 
+                    // Right: large glowing blue orb (send / stop)
                     Button {
                         speech.stop()
                         if isThinking { isThinking = false } else { send() }
                     } label: {
                         ZStack {
+                            // Outer glow ring
+                            Circle()
+                                .fill(Color(red: 0.25, green: 0.45, blue: 0.95).opacity(0.25))
+                                .frame(width: 66, height: 66)
+                                .blur(radius: 10)
+
+                            // Mid glow
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            Color(red: 0.40, green: 0.60, blue: 1.0).opacity(0.5),
+                                            Color.clear
+                                        ],
+                                        center: .center, startRadius: 0, endRadius: 32
+                                    )
+                                )
+                                .frame(width: 60, height: 60)
+
+                            // Core orb
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color(red: 0.40, green: 0.62, blue: 1.0),
+                                            Color(red: 0.30, green: 0.38, blue: 0.98)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 52, height: 52)
+                                .shadow(color: Color(red: 0.35, green: 0.50, blue: 1.0).opacity(0.8), radius: 14, y: 3)
+
+                            // Inner highlight
+                            Circle()
+                                .fill(Color.white.opacity(0.18))
+                                .frame(width: 18, height: 18)
+                                .offset(x: -8, y: -8)
+                                .blur(radius: 4)
+
                             if isThinking {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color.primary)
-                                    .frame(width: 28, height: 28)
-                                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                    .fill(Color(UIColor.systemBackground))
-                                    .frame(width: 10, height: 10)
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(.white)
+                                    .frame(width: 14, height: 14)
                             } else {
-                                let active = !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                Circle()
-                                    .fill(active ? Color.primary : Color.primary.opacity(0.12))
-                                    .frame(width: 30, height: 30)
                                 Image(systemName: "arrow.up")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(active
-                                        ? Color(UIColor.systemBackground)
-                                        : Color.primary.opacity(0.35))
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundStyle(.white)
                             }
                         }
                     }
@@ -169,13 +244,13 @@ struct ARIAView: View {
                     .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isThinking)
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 10)
-            .liquidGlass(cornerRadius: 22)
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 6)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) {
+                Divider().opacity(0.15)
+            }
         }
     }
 
@@ -258,11 +333,15 @@ private struct ARIAMessageBubble: View {
 
             Text(LocalizedStringKey(message.content))
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(isUser ? .white : .primary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(
-                    isUser ? AnyShapeStyle(Color.primary.opacity(0.12)) : AnyShapeStyle(.ultraThinMaterial),
+                    isUser
+                        ? AnyShapeStyle(LinearGradient(
+                            colors: [Color(red: 0.25, green: 0.45, blue: 0.95), Color(red: 0.35, green: 0.30, blue: 0.90)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing))
+                        : AnyShapeStyle(.ultraThinMaterial),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
                 .overlay(

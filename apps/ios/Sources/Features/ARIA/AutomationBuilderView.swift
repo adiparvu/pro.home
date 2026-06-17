@@ -17,45 +17,45 @@ struct AutomationRule: Identifiable {
     static let examples: [AutomationRule] = [
         .init(
             name: "Irrigation Auto",
-            triggerIcon: "thermometer",
-            triggerLabel: "Temp > 28°C",
-            conditionIcon: "clock.fill",
-            conditionLabel: "Between 6-9 AM",
-            actionIcon: "drop.fill",
-            actionLabel: "Start Irrigation",
+            triggerIcon: "humidity.fill",
+            triggerLabel: "Soil Moisture\n< 30%",
+            conditionIcon: "cloud.rain.fill",
+            conditionLabel: "No Rain\nForecast",
+            actionIcon: "drop.circle.fill",
+            actionLabel: "Start Irrigation\nZone 1",
             isActive: true,
-            color: .blue
+            color: Color(red: 0.25, green: 0.65, blue: 0.55)
         ),
         .init(
             name: "Pool Pump",
             triggerIcon: "clock.fill",
-            triggerLabel: "Daily at 8:00",
+            triggerLabel: "Daily\nat 8:00",
             conditionIcon: "drop.fill",
-            conditionLabel: "pH < 7.0",
+            conditionLabel: "pH\n< 7.0",
             actionIcon: "bolt.fill",
-            actionLabel: "Run Pump 2h",
+            actionLabel: "Run Pump\n2 hours",
             isActive: true,
             color: .cyan
         ),
         .init(
             name: "Security Alert",
             triggerIcon: "camera.fill",
-            triggerLabel: "Motion Detected",
+            triggerLabel: "Motion\nDetected",
             conditionIcon: "moon.fill",
-            conditionLabel: "After Sunset",
+            conditionLabel: "After\nSunset",
             actionIcon: "bell.fill",
-            actionLabel: "Send Notification",
+            actionLabel: "Send\nNotification",
             isActive: false,
             color: .orange
         ),
         .init(
             name: "Greenhouse Vent",
             triggerIcon: "thermometer",
-            triggerLabel: "Temp > 25°C",
+            triggerLabel: "Temp\n> 25°C",
             conditionIcon: "humidity.fill",
-            conditionLabel: "Humidity > 80%",
+            conditionLabel: "Humidity\n> 80%",
             actionIcon: "wind",
-            actionLabel: "Open Vents",
+            actionLabel: "Open\nVents",
             isActive: true,
             color: .green
         ),
@@ -66,24 +66,28 @@ struct AutomationRule: Identifiable {
 
 struct AutomationBuilderView: View {
     @State private var automations: [AutomationRule] = AutomationRule.examples
-    @State private var showAddAutomation = false
+    @State private var activeFlowIndex: Int = 0
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
                 headerCard
-                automationsList
-                addButton
+                // Main visual flow canvas (Node-RED style)
+                flowCanvasCard
+                // Bottom action bar
+                actionBar
+                // Saved automations
+                savedSection
                 Spacer(minLength: 100)
             }
             .padding(16)
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Automations")
+        .navigationTitle("Automation Builder")
         .navigationBarTitleDisplayMode(.large)
     }
 
-    // MARK: - Header Card
+    // MARK: - Header
 
     private var headerCard: some View {
         HStack(spacing: 14) {
@@ -99,11 +103,11 @@ struct AutomationBuilderView: View {
                 Text("PRVIO Intelligence")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
-                Text("Automate your property with trigger-condition-action rules.")
+                Text("Visual automation with Node-RED power")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer()
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -113,12 +117,235 @@ struct AutomationBuilderView: View {
         )
     }
 
-    // MARK: - Automations List
+    // MARK: - Node-RED Flow Canvas
 
-    private var automationsList: some View {
+    private var flowCanvasCard: some View {
+        let rule = automations[activeFlowIndex]
+        return VStack(spacing: 0) {
+            // Rule selector chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(automations.indices, id: \.self) { i in
+                        let a = automations[i]
+                        Button {
+                            withAnimation(.spring(response: 0.3)) { activeFlowIndex = i }
+                        } label: {
+                            Text(a.name)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(activeFlowIndex == i ? .white : .secondary)
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .background(
+                                    activeFlowIndex == i
+                                        ? AnyShapeStyle(a.color)
+                                        : AnyShapeStyle(Color.primary.opacity(0.08)),
+                                    in: Capsule()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 2)
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 8)
+
+            // Canvas with nodes and connecting lines
+            GeometryReader { geo in
+                nodeRedCanvas(rule: rule, width: geo.size.width)
+            }
+            .frame(height: 260)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(rule.color.opacity(0.20), lineWidth: 1)
+                )
+        }
+        .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+    }
+
+    // MARK: - Node-RED Canvas Drawing
+
+    private func nodeRedCanvas(rule: AutomationRule, width: CGFloat) -> some View {
+        let nW: CGFloat = min((width - 32) * 0.44, 152)
+        let nH: CGFloat = 78
+        let gapX: CGFloat = width - 2 * nW  // horizontal gap between columns
+        let topY: CGFloat = 10
+        let botY: CGFloat = 170
+        let notifyW: CGFloat = min(nW * 0.65, 100)
+        let notifyX: CGFloat = nW + gapX * 0.45  // Notify node x offset
+
+        // Connector centers (right/left edges)
+        let n1r = CGPoint(x: nW, y: topY + nH / 2)
+        let n2l = CGPoint(x: nW + gapX, y: topY + nH / 2)
+        let n2r = CGPoint(x: nW + gapX + nW, y: topY + nH / 2)
+        let n3r = CGPoint(x: nW, y: botY + nH / 2)
+        let n4l = CGPoint(x: notifyX, y: botY + nH / 2)
+
+        return ZStack(alignment: .topLeading) {
+            // Lines + dots
+            Canvas { ctx, size in
+                let lineColor = GraphicsContext.Shading.color(Color.white.opacity(0.35))
+                let dotColor = GraphicsContext.Shading.color(Color.cyan.opacity(0.85))
+                let dotColorPurple = GraphicsContext.Shading.color(Color.purple.opacity(0.75))
+
+                // Line 1: N1.right → N2.left
+                var p1 = Path()
+                p1.move(to: n1r)
+                p1.addLine(to: n2l)
+                ctx.stroke(p1, with: lineColor, lineWidth: 1.5)
+
+                // Connector dot N1.right
+                let d1 = CGRect(x: n1r.x - 5, y: n1r.y - 5, width: 10, height: 10)
+                ctx.fill(Path(ellipseIn: d1), with: dotColor)
+                // Connector dot N2.left
+                let d2 = CGRect(x: n2l.x - 5, y: n2l.y - 5, width: 10, height: 10)
+                ctx.fill(Path(ellipseIn: d2), with: dotColor)
+
+                // Line 2: N2.right → right angle → N4.left
+                let pivotX = min(n2r.x + 18, size.width - 4)
+                var p2 = Path()
+                p2.move(to: n2r)
+                p2.addLine(to: CGPoint(x: pivotX, y: n2r.y))
+                p2.addLine(to: CGPoint(x: pivotX, y: n4l.y))
+                p2.addLine(to: n4l)
+                ctx.stroke(p2, with: lineColor, lineWidth: 1.5)
+
+                // Connector dot N2.right
+                let d3 = CGRect(x: n2r.x - 5, y: n2r.y - 5, width: 10, height: 10)
+                ctx.fill(Path(ellipseIn: d3), with: dotColor)
+                // Connector dot N4.left (purple for notify)
+                let d4 = CGRect(x: n4l.x - 5, y: n4l.y - 5, width: 10, height: 10)
+                ctx.fill(Path(ellipseIn: d4), with: dotColorPurple)
+
+                // Line 3: N3.right → N4.left
+                var p3 = Path()
+                p3.move(to: n3r)
+                p3.addLine(to: n4l)
+                ctx.stroke(p3, with: lineColor, lineWidth: 1.5)
+
+                // Connector dot N3.right
+                let d5 = CGRect(x: n3r.x - 5, y: n3r.y - 5, width: 10, height: 10)
+                ctx.fill(Path(ellipseIn: d5), with: dotColor)
+            }
+
+            // Node 1: Trigger
+            flowNode(
+                headerLabel: "When",
+                bodyText: rule.triggerLabel,
+                icon: rule.triggerIcon,
+                color: rule.color
+            )
+            .frame(width: nW, height: nH)
+            .offset(x: 0, y: topY)
+
+            // Node 2: Condition
+            flowNode(
+                headerLabel: "And",
+                bodyText: rule.conditionLabel,
+                icon: rule.conditionIcon,
+                color: Color(red: 0.15, green: 0.32, blue: 0.22)
+            )
+            .frame(width: nW, height: nH)
+            .offset(x: nW + gapX, y: topY)
+
+            // Node 3: Action
+            flowNode(
+                headerLabel: "Then",
+                bodyText: rule.actionLabel,
+                icon: rule.actionIcon,
+                color: Color(red: 0.12, green: 0.28, blue: 0.20)
+            )
+            .frame(width: nW, height: nH)
+            .offset(x: 0, y: botY)
+
+            // Node 4: Notify User
+            flowNode(
+                headerLabel: "Notify",
+                bodyText: "User",
+                icon: "bell.fill",
+                color: Color(red: 0.18, green: 0.14, blue: 0.30)
+            )
+            .frame(width: notifyW, height: nH)
+            .offset(x: notifyX, y: botY)
+        }
+    }
+
+    private func flowNode(headerLabel: String, bodyText: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header strip
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                Text(headerLabel)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(color)
+
+            // Body
+            Text(bodyText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(color.opacity(0.35))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(color.opacity(0.6), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Action Bar (+ Node / Test / Deploy)
+
+    private var actionBar: some View {
+        HStack(spacing: 10) {
+            actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0))
+            actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45))
+            actionButton(icon: "arrow.up.circle.fill", label: "Deploy", color: Color(red: 0.65, green: 0.45, blue: 0.95))
+        }
+    }
+
+    private func actionButton(icon: String, label: String, color: Color) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(label)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(color)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Saved Automations
+
+    private var savedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Your Automations")
+                Text("Saved Automations")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.primary)
                 Spacer()
@@ -130,120 +357,45 @@ struct AutomationBuilderView: View {
             }
 
             ForEach(automations.indices, id: \.self) { i in
-                automationCard(automations[i], index: i)
+                savedRow(automations[i], index: i)
             }
         }
     }
 
-    private func automationCard(_ automation: AutomationRule, index: Int) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                ZStack {
-                    Circle()
-                        .fill(automation.color.opacity(0.15))
-                        .frame(width: 32, height: 32)
-                    Image(systemName: automation.triggerIcon)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(automation.color)
-                }
-                Text(automation.name)
+    private func savedRow(_ rule: AutomationRule, index: Int) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(rule.color.opacity(0.15)).frame(width: 40, height: 40)
+                Image(systemName: rule.triggerIcon)
                     .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(rule.color)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(rule.name)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
-                Spacer()
-                Toggle("", isOn: .constant(automation.isActive))
-                    .toggleStyle(SwitchToggleStyle(tint: automation.color))
-                    .labelsHidden()
-                    .scaleEffect(0.85)
-            }
-
-            HStack(spacing: 6) {
-                flowStep(
-                    icon: automation.triggerIcon,
-                    label: "TRIGGER",
-                    value: automation.triggerLabel,
-                    color: automation.color
-                )
-
-                Image(systemName: "arrow.right")
+                Text("\(rule.triggerLabel.replacingOccurrences(of: "\n", with: " ")) → \(rule.actionLabel.replacingOccurrences(of: "\n", with: " "))")
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
-
-                flowStep(
-                    icon: automation.conditionIcon,
-                    label: "WHEN",
-                    value: automation.conditionLabel,
-                    color: .orange
-                )
-
-                Image(systemName: "arrow.right")
-                    .foregroundStyle(.secondary)
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
-
-                flowStep(
-                    icon: automation.actionIcon,
-                    label: "ACTION",
-                    value: automation.actionLabel,
-                    color: .green
-                )
+                    .lineLimit(1)
             }
+            Spacer()
+            Toggle("", isOn: .constant(rule.isActive))
+                .toggleStyle(SwitchToggleStyle(tint: rule.color))
+                .labelsHidden()
+                .scaleEffect(0.8)
         }
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(
-                    automation.isActive
-                        ? automation.color.opacity(0.25)
-                        : Color.white.opacity(0.06),
-                    lineWidth: 1
-                )
+                .strokeBorder(rule.isActive ? rule.color.opacity(0.20) : Color.white.opacity(0.06), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
-        .opacity(automation.isActive ? 1.0 : 0.6)
-    }
-
-    private func flowStep(icon: String, label: String, value: String, color: Color) -> some View {
-        VStack(alignment: .center, spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(color)
-                .frame(width: 28, height: 28)
-                .background(color.opacity(0.15), in: Circle())
-            Text(label)
-                .font(.system(size: 8, weight: .semibold))
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+        .opacity(rule.isActive ? 1.0 : 0.6)
+        .onTapGesture {
+            HapticFeedback.impact(.light)
+            withAnimation(.spring(response: 0.3)) { activeFlowIndex = index }
         }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Add Button
-
-    private var addButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
-            showAddAutomation = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("New Automation")
-                    .font(.system(size: 15, weight: .semibold))
-            }
-            .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
-            }
-        }
-        .buttonStyle(.plain)
     }
 }
