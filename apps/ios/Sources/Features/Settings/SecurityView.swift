@@ -20,6 +20,9 @@ struct SecurityView: View {
     @State private var showTOTPEnroll = false
     @State var totpFactorId: String?
     @State private var showRemoveTOTP = false
+    @State private var showBackupCodes = false
+    @State private var showAuditLog = false
+    @State private var showTrustedPersons = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -58,10 +61,17 @@ struct SecurityView: View {
         }
         .sheet(item: $exportItem) { item in ShareSheet(activityItems: [item.url]) }
         .sheet(isPresented: $showActiveSessions) { ActiveSessionsSheet() }
+        .sheet(isPresented: $showBackupCodes) { BackupCodesView() }
+        .sheet(isPresented: $showAuditLog) { AuditLogView() }
+        .sheet(isPresented: $showTrustedPersons) { TrustedPersonsView() }
         .confirmationDialog("Auto-lock", isPresented: $showAutoLockPicker, titleVisibility: .visible) {
-            ForEach([1, 5, 15, 30], id: \.self) { minutes in
-                Button("\(minutes) min") { autoLockMinutes = minutes }
-            }
+            Button("Immediately") { autoLockMinutes = -1 }
+            Button("30 seconds") { autoLockMinutes = -2 }
+            Button("1 minute") { autoLockMinutes = 1 }
+            Button("5 minutes") { autoLockMinutes = 5 }
+            Button("15 minutes") { autoLockMinutes = 15 }
+            Button("30 minutes") { autoLockMinutes = 30 }
+            Button("1 hour") { autoLockMinutes = 60 }
             Button("Never") { autoLockMinutes = 0 }
             Button("Cancel", role: .cancel) {}
         }
@@ -98,6 +108,24 @@ struct SecurityView: View {
             .buttonStyle(.plain)
             divider
             statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Text messages", status: "Coming soon")
+            divider
+            Button { showBackupCodes = true } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "key.horizontal.fill", color: .teal)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Backup codes")
+                            .font(.system(size: 15)).foregroundStyle(.primary)
+                        Text("Emergency access codes for account recovery")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -108,11 +136,43 @@ struct SecurityView: View {
             Button { showActiveSessions = true } label: {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "macbook.and.iphone", color: .blue)
-                    Text("Active sessions")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Active sessions")
+                            .font(.system(size: 15)).foregroundStyle(.primary)
+                        Text(UIDevice.current.model)
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+            }
+            .buttonStyle(.plain)
+
+            divider
+
+            Button { showTrustedPersons = true } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "person.badge.shield.checkmark.fill", color: .green)
+                    Text("Trusted persons")
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
-                    Text("1")
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 13)
+            }
+            .buttonStyle(.plain)
+
+            divider
+
+            Button { showAuditLog = true } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "list.clipboard.fill", color: .indigo)
+                    Text("Activity log")
+                        .font(.system(size: 15)).foregroundStyle(.primary)
+                    Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
                 }
@@ -201,11 +261,11 @@ struct SecurityView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-lock")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text(autoLockMinutes == 0 ? "Never auto-locks" : "Locks after \(autoLockMinutes) min of inactivity")
+                        Text(autoLockDescription)
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
-                    Text(autoLockMinutes == 0 ? "Never" : "\(autoLockMinutes) min")
+                    Text(autoLockLabel)
                         .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
@@ -291,5 +351,26 @@ struct SecurityView: View {
 
     private var divider: some View {
         Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+    }
+
+    private var autoLockLabel: String {
+        switch autoLockMinutes {
+        case -1: return "Immediately"
+        case -2: return "30 sec"
+        case 0:  return "Never"
+        case 1:  return "1 min"
+        case 60: return "1 hour"
+        default: return "\(autoLockMinutes) min"
+        }
+    }
+
+    private var autoLockDescription: String {
+        switch autoLockMinutes {
+        case -1: return "Locks every time the app backgrounds"
+        case -2: return "Locks after 30 seconds of inactivity"
+        case 0:  return "Never auto-locks"
+        case 60: return "Locks after 1 hour of inactivity"
+        default: return "Locks after \(autoLockMinutes) min of inactivity"
+        }
     }
 }

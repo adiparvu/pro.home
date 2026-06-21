@@ -6,11 +6,15 @@ struct ARIAView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var profileService: ProfileService
+    @EnvironmentObject private var taskService: TaskService
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
+    @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
     @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false
     @State private var isLoadingHistory = true
+    @State private var showSettings = false
     @FocusState private var focused: Bool
     @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
     @StateObject private var speech = SpeechRecognizer()
@@ -24,7 +28,7 @@ struct ARIAView: View {
                 inputBar
             }
         }
-        .navigationTitle("AI Assistant")
+        .navigationTitle(assistantName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -50,6 +54,13 @@ struct ARIAView: View {
                     withAnimation { messages = ARIAMessage.welcome }
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { ARIASettingsView() } label: {
+                    Image(systemName: "gearshape")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                 }

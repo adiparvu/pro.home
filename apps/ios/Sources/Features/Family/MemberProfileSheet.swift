@@ -5,6 +5,7 @@ struct MemberProfileSheet: View {
     @Environment(\.dismiss) private var dismiss
     let member: FamilyMember
     @State private var showEdit = false
+    @State private var showDM = false
     @State private var resolvedMember: FamilyMember
 
     init(member: FamilyMember) {
@@ -49,6 +50,9 @@ struct MemberProfileSheet: View {
             }) {
                 EditFamilyMemberSheet(member: resolvedMember)
             }
+            .navigationDestination(isPresented: $showDM) {
+                DirectMessageView(member: resolvedMember)
+            }
         }
     }
 
@@ -79,6 +83,16 @@ struct MemberProfileSheet: View {
                     let num = phone.filter { $0.isNumber }
                     if let url = URL(string: "https://wa.me/\(num)") { UIApplication.shared.open(url) }
                 }
+                if let tg = resolvedMember.socialLinks?.first(where: { $0.platform == "telegram" }) {
+                    let handle = tg.handle.replacingOccurrences(of: "@", with: "")
+                    profileActionBtn(icon: "paperplane.fill", label: "Telegram", color: Color(red: 0.13, green: 0.60, blue: 0.87)) {
+                        let url = URL(string: "tg://resolve?domain=\(handle)") ?? URL(string: "https://t.me/\(handle)")!
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+            profileActionBtn(icon: "bubble.left.fill", label: "Message", color: .purple) {
+                showDM = true
             }
             if let email = resolvedMember.email, !email.isEmpty {
                 profileActionBtn(icon: "envelope.fill", label: "Email", color: .orange) {

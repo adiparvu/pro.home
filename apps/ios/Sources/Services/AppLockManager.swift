@@ -25,6 +25,10 @@ final class AppLockManager: ObservableObject {
     private var autoLockMinutes: Int {
         UserDefaults.standard.object(forKey: "prvio.autoLockMinutes") as? Int ?? 5
     }
+    // Only used when autoLockMinutes == -2 (sub-minute seconds mode)
+    private var autoLockSeconds: Int {
+        UserDefaults.standard.object(forKey: "prvio.autoLockSeconds") as? Int ?? 30
+    }
 
     /// Cold launch — lock immediately if protection is on and auto-prompt.
     func appDidLaunch() {
@@ -57,6 +61,14 @@ final class AppLockManager: ObservableObject {
 
         let shouldLock: Bool
         if lockdown {
+            shouldLock = true
+        } else if autoLockMinutes == -1 {
+            // "Immediately" — lock every time the app backgrounds
+            shouldLock = true
+        } else if autoLockMinutes == -2,
+                  let bg = backgroundedAt,
+                  Date().timeIntervalSince(bg) >= Double(autoLockSeconds) {
+            // Sub-minute seconds mode
             shouldLock = true
         } else if autoLockMinutes > 0,
                   let bg = backgroundedAt,

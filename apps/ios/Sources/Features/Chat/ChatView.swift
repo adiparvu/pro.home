@@ -19,6 +19,8 @@ struct ChatView: View {
 
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
+    @State private var searchText = ""
+    @State private var showSearch = false
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
     @State private var showCameraSheet = false
@@ -35,6 +37,12 @@ struct ChatView: View {
     @StateObject var speech = SpeechRecognizer()
 
     var propertyId: UUID? { propertyService.primary?.id }
+    private var filteredMessages: [Message] {
+        guard showSearch && !searchText.isEmpty else { return messageService.messages }
+        return messageService.messages.filter {
+            ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+    }
     var senderName: String {
         profileService.profile?.displayName
             ?? profileService.profile?.fullName
@@ -80,6 +88,20 @@ struct ChatView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 0) {
+                    Button {
+                        withAnimation(.spring(response: 0.3)) { showSearch.toggle() }
+                        if !showSearch { searchText = "" }
+                    } label: {
+                        Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(width: 38, height: 32)
+                    }
+                    .buttonStyle(.plain)
+
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.15))
+                        .frame(width: 0.5, height: 18)
+
                     Button { showCallSheet = true } label: {
                         Image(systemName: "phone.fill")
                             .font(.system(size: 16, weight: .semibold))
@@ -169,9 +191,36 @@ struct ChatView: View {
 
     private var messageList: some View {
         ScrollViewReader { proxy in
+            VStack(spacing: 0) {
+                if showSearch {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                        TextField("Search messages…", text: $searchText)
+                            .font(.system(size: 15))
+                            .foregroundStyle(.primary)
+                            .tint(.accentColor)
+                        if !searchText.isEmpty {
+                            Button { searchText = "" } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color.primary.opacity(0.4))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .liquidGlass(cornerRadius: 16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 6) {
-                    ForEach(messageService.messages) { msg in
+                    ForEach(filteredMessages) { msg in
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
@@ -199,6 +248,7 @@ struct ChatView: View {
                     proxy.scrollTo(last.id, anchor: .bottom)
                 }
             }
+            } // end VStack (search + scroll)
         }
     }
 

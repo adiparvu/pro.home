@@ -13,6 +13,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "linkedin":  return "LinkedIn"
         case "tiktok":    return "TikTok"
         case "twitter":   return "X (Twitter)"
+        case "telegram":  return "Telegram"
         default:          return platform.capitalized
         }
     }
@@ -25,6 +26,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "linkedin":  return "briefcase.fill"
         case "tiktok":    return "music.note"
         case "twitter":   return "bird"
+        case "telegram":  return "paperplane.fill"
         default:          return "link"
         }
     }
@@ -37,6 +39,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "linkedin":  return Color(red: 0.10, green: 0.47, blue: 0.71)
         case "tiktok":    return .primary
         case "twitter":   return Color(red: 0.10, green: 0.55, blue: 0.92)
+        case "telegram":  return Color(red: 0.13, green: 0.60, blue: 0.87)
         default:          return .blue
         }
     }
@@ -51,6 +54,7 @@ struct SocialLink: Codable, Identifiable, Hashable {
         case "linkedin":  return URL(string: "https://linkedin.com/in/\(h)")
         case "tiktok":    return URL(string: "https://tiktok.com/@\(h)")
         case "twitter":   return URL(string: "https://x.com/\(h)")
+        case "telegram":  return URL(string: "https://t.me/\(h)")
         default:          return URL(string: h)
         }
     }

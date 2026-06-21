@@ -179,6 +179,11 @@ struct MessageBubble: View {
     var readers: [MessageRead] = []
 
     @State private var showReaders = false
+    @State private var localReactions: [String: Int] = [:]
+    @State private var myReaction: String? = nil
+    @State private var showReactionPicker = false
+
+    private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
     private var sender: FamilyMember? {
         members.first { $0.name == message.senderName }
@@ -201,6 +206,27 @@ struct MessageBubble: View {
                         .padding(.leading, 4)
                 }
                 bubbleContent
+                    .contextMenu {
+                        Button { UIPasteboard.general.string = message.body } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                        Button { showReactionPicker = true } label: {
+                            Label("React", systemImage: "face.smiling")
+                        }
+                        if isOwn {
+                            Divider()
+                            Button(role: .destructive) { } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                    .onLongPressGesture(minimumDuration: 0.4) {
+                        HapticFeedback.impact(.medium)
+                        showReactionPicker = true
+                    }
+                if !localReactions.isEmpty {
+                    reactionPills
+                }
                 statusRow
             }
 
@@ -208,6 +234,51 @@ struct MessageBubble: View {
         }
         .sheet(isPresented: $showReaders) {
             SeenBySheet(readers: readers, members: members)
+        }
+        .sheet(isPresented: $showReactionPicker) {
+            ReactionPickerView(myReaction: myReaction) { emoji in
+                toggleReaction(emoji)
+            }
+            .presentationDetents([.height(100)])
+        }
+    }
+
+    private var reactionPills: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(localReactions.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
+                Button {
+                    toggleReaction(emoji)
+                } label: {
+                    HStack(spacing: 3) {
+                        Text(emoji).font(.system(size: 14))
+                        if count > 1 {
+                            Text("\(count)").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary)
+                        }
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
+                                in: Capsule())
+                    .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func toggleReaction(_ emoji: String) {
+        if myReaction == emoji {
+            myReaction = nil
+            if let count = localReactions[emoji] {
+                if count <= 1 { localReactions.removeValue(forKey: emoji) }
+                else { localReactions[emoji] = count - 1 }
+            }
+        } else {
+            if let old = myReaction, let count = localReactions[old] {
+                if count <= 1 { localReactions.removeValue(forKey: old) }
+                else { localReactions[old] = count - 1 }
+            }
+            myReaction = emoji
+            localReactions[emoji, default: 0] += 1
         }
     }
 
@@ -367,5 +438,37 @@ private struct SeenBySheet: View {
         }
         .frame(width: 38, height: 38)
         .overlay(Circle().strokeBorder(color, lineWidth: 1.5))
+    }
+}
+
+// MARK: - Reaction Picker
+
+struct ReactionPickerView: View {
+    let myReaction: String?
+    let onSelect: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private let emojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(emojis, id: \.self) { emoji in
+                Button {
+                    onSelect(emoji)
+                    dismiss()
+                } label: {
+                    Text(emoji)
+                        .font(.system(size: 28))
+                        .scaleEffect(myReaction == emoji ? 1.2 : 1.0)
+                        .padding(8)
+                        .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.clear,
+                                    in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(appBackground.ignoresSafeArea())
     }
 }

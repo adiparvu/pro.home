@@ -6,6 +6,7 @@ import AppIntents
 
 struct PRVIOWidgetEntry: TimelineEntry {
     let date: Date
+    var relevance: TimelineEntryRelevance?
     let snapshot: PRVIOWidgetSnapshot
     let taskCatalog: [TaskCatalogEntry]
     let plantCatalog: [PlantCatalogEntry]
@@ -15,9 +16,15 @@ struct PRVIOWidgetEntry: TimelineEntry {
 
 struct PRVIOTimelineProvider: TimelineProvider {
     func makeEntry() -> PRVIOWidgetEntry {
-        PRVIOWidgetEntry(
+        let snap = SharedDataStore.read() ?? PRVIOWidgetSnapshot()
+        let urgency = snap.overdueTaskCount + snap.plantsNeedingWater
+        let relevance = urgency > 0
+            ? TimelineEntryRelevance(score: min(Float(urgency) * 2.5, 10.0), duration: 3600)
+            : TimelineEntryRelevance(score: 0.5, duration: 900)
+        return PRVIOWidgetEntry(
             date: Date(),
-            snapshot: SharedDataStore.read() ?? PRVIOWidgetSnapshot(),
+            relevance: relevance,
+            snapshot: snap,
             taskCatalog: SharedDataStore.readTaskCatalog(),
             plantCatalog: SharedDataStore.readPlantCatalog()
         )
@@ -52,6 +59,8 @@ struct PRVIOWidgetBundle: WidgetBundle {
         MaintenanceLiveActivity()
         DeliveryLiveActivity()
         PlantCareLiveActivity()
+        // Notification Center + Smart Stack
+        NotificationCenterWidget()
         // Control Center (iOS 18+)
         if #available(iOS 18.0, *) {
             AddTaskControl()
