@@ -31,6 +31,7 @@ struct DigitalTwinView: View {
     @State var showHealth = false
     @State var showLabels = false
     @State var didCenter = false
+    @State var isAerial = false
 
     var dragTargetZoneId: UUID? {
         guard let d = draggingObject else { return nil }
@@ -64,6 +65,19 @@ struct DigitalTwinView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+        if isAerial {
+            AerialPropertyView(
+                property: propertyService.primary,
+                zones: zoneService.zones,
+                elements: elementService.elements
+            )
+            .ignoresSafeArea()
+            .overlay(alignment: .top) { if !drawMode { layerBar } }
+            .overlay(alignment: .bottomTrailing) {
+                if !drawMode { sideControls }
+            }
+            .task { await loadData() }
+        } else {
         MapReader { proxy in
             Map(position: $camera) {
                 Annotation("", coordinate: propertyCoordinate) {
@@ -274,6 +288,7 @@ struct DigitalTwinView: View {
         // sideControls is placed outside MapReader so MKMapView's
         // internal gesture recognizers cannot intercept button taps.
         if !drawMode && !editingShape { sideControls }
+        } // else (map mode)
         } // ZStack
     }
 }

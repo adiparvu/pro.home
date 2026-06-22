@@ -45,6 +45,11 @@ extension DigitalTwinView {
 
     var sideControls: some View {
         VStack(spacing: 12) {
+            controlButton(icon: isAerial ? "map.fill" : "airplane",
+                          tint: isAerial ? .accentColor : .primary) {
+                withAnimation(.spring(response: 0.4)) { isAerial.toggle() }
+                HapticFeedback.selection()
+            }
             controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
                 showInsights = true
                 HapticFeedback.impact(.light)
