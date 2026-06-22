@@ -4,12 +4,16 @@ import PhotosUI
 import UniformTypeIdentifiers
 
 struct BlueprintsView: View {
+    @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var zoneService: PropertyZoneService
     @StateObject private var service = BlueprintService()
     @State private var showRoomScan = false
     @State private var showAddPlan = false
     @State private var previewItem: HomeScan?
     @State private var renameItem: HomeScan?
     @State private var renameText = ""
+    @State private var showSaveAsZone = false
+    @State private var pendingZoneName = ""
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -38,10 +42,20 @@ struct BlueprintsView: View {
             RoomScanView { url in
                 showRoomScan = false
                 if let url {
-                    service.addScanFile(name: defaultScanName(), kind: "room3d", sourceURL: url, format: "usdz")
+                    let name = defaultScanName()
+                    service.addScanFile(name: name, kind: "room3d", sourceURL: url, format: "usdz")
                     HapticFeedback.success()
+                    pendingZoneName = name
+                    showSaveAsZone = true
                 }
             }
+        }
+        .alert("Add to Digital Twin?", isPresented: $showSaveAsZone) {
+            TextField("Zone name", text: $pendingZoneName)
+            Button("Add as Zone") { saveZoneFromScan() }
+            Button("Skip", role: .cancel) { showSaveAsZone = false }
+        } message: {
+            Text("Link this 3D scan to a new zone in your Digital Twin.")
         }
         .sheet(isPresented: $showAddPlan) {
             AddPlanSheet { name, kind, data, ext, format in
@@ -179,5 +193,26 @@ struct BlueprintsView: View {
     private func defaultScanName() -> String {
         let f = DateFormatter(); f.dateFormat = "MMM d, HH:mm"
         return "Scan \(f.string(from: Date()))"
+    }
+
+    private func saveZoneFromScan() {
+        guard let propertyId = propertyService.primary?.id else { return }
+        let name = pendingZoneName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let now = ISO8601DateFormatter().string(from: Date())
+        let payload = NewPropertyZone(
+            propertyId: propertyId,
+            name: name,
+            icon: "cube.fill",
+            colorHex: "#5E5CE6",
+            layer: "indoor",
+            healthScore: 80,
+            polygon: [],
+            sortOrder: zoneService.zones.count,
+            createdAt: now,
+            updatedAt: now
+        )
+        Task { await zoneService.add(payload) }
+        HapticFeedback.success()
     }
 }
