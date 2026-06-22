@@ -23,7 +23,10 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Localized name of the language (translated into the current app language)
+    /// Localized name of the language (translated into the current app language).
+    /// Uses `String(localized:)` which resolves via the bundle swizzle when a custom
+    /// language is active; call sites that need reactive SwiftUI updates should use
+    /// `localizedNameKey` with a `Text` view instead.
     var localizedName: String {
         switch self {
         case .english:  return String(localized: "lang_english")
@@ -31,6 +34,18 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         case .french:   return String(localized: "lang_french")
         case .dutch:    return String(localized: "lang_dutch")
         case .german:   return String(localized: "lang_german")
+        }
+    }
+
+    /// `LocalizedStringKey` for the language name — use this in SwiftUI `Text` views so the
+    /// label updates automatically when the environment locale changes.
+    var localizedNameKey: LocalizedStringKey {
+        switch self {
+        case .english:  return "lang_english"
+        case .romanian: return "lang_romanian"
+        case .french:   return "lang_french"
+        case .dutch:    return "lang_dutch"
+        case .german:   return "lang_german"
         }
     }
 

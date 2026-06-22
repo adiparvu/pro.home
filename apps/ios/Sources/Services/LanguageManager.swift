@@ -41,9 +41,19 @@ extension Bundle {
             return prvio_localizedString(forKey: key, value: value, table: tableName)
         }
         let result = override.prvio_localizedString(forKey: key, value: value, table: tableName)
-        // Fall back to main bundle if key not found in override (returns key itself)
-        if result == key {
-            return prvio_localizedString(forKey: key, value: value, table: tableName)
+        // Fall back to main bundle if key not found in override.
+        // A missing key causes the system to return either the key itself or the `value`
+        // parameter (when non-nil/non-empty), so we treat both as "not found".
+        let notFound = result == key || (!result.isEmpty && result == (value ?? ""))
+        if notFound {
+            let fallback = prvio_localizedString(forKey: key, value: value, table: tableName)
+#if DEBUG
+            // Warn if the key is unresolved in both the override bundle and the fallback bundle.
+            if fallback == key || (!fallback.isEmpty && fallback == (value ?? "")) {
+                print("[LanguageManager] ⚠️ Missing localization key '\(key)' in override bundle and fallback bundle (table: \(tableName ?? "Localizable"))")
+            }
+#endif
+            return fallback
         }
         return result
     }

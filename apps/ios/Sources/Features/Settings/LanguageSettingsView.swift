@@ -5,8 +5,8 @@ struct LanguageSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: String(localized: "language_title"),
-                       subtitle: String(localized: "language_subtitle"))
+            PageHeader(titleKey: "language_title",
+                       subtitleKey: "language_subtitle")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -92,7 +92,7 @@ struct LanguageSettingsView: View {
                                     Text(lang.nativeName)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundStyle(.primary)
-                                    Text(lang.localizedName)
+                                    Text(lang.localizedNameKey)
                                         .font(.system(size: 12))
                                         .foregroundStyle(.secondary)
                                 }
