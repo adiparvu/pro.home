@@ -40,12 +40,8 @@ struct AIInsightsView: View {
                         }
                     }
 
-                    if insights.isEmpty {
-                        emptyInsights
-                    } else {
-                        ForEach(insights) { insight in
-                            InsightRow(insight: insight)
-                        }
+                    ForEach(insights) { insight in
+                        InsightRow(insight: insight)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -120,7 +116,7 @@ struct AIInsightsView: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal, 16)
 
-                Spacer(minLength: 120)
+                Spacer(minLength: 32)
             }
             .trackTabScroll()
         }

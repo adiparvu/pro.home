@@ -60,7 +60,7 @@ struct SeasonalChecklistView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         VStack(spacing: 4) {
-                            Text(season.icon)
+                            Image(systemName: season.icon)
                                 .font(.system(size: 20))
                             Text(season.displayName)
                                 .font(.system(size: 11, weight: selectedSeason == season ? .semibold : .regular))

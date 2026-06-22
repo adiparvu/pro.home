@@ -74,10 +74,10 @@ struct TasksView: View {
 
     var body: some View {
         Group {
-            if taskService.isLoading {
+            if taskService.isLoading && taskService.tasks.isEmpty {
                 VStack {
                     Spacer()
-                    ProgressView().tint(.white).scaleEffect(1.2)
+                    ProgressView().scaleEffect(1.2)
                     Spacer()
                 }
             } else if filtered.isEmpty {
