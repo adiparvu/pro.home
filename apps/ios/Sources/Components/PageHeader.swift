@@ -1,14 +1,34 @@
 import SwiftUI
 
 struct PageHeader: View {
-    let title: String
-    var subtitle: String? = nil
-    var leading: AnyView? = nil
-    var trailing: AnyView? = nil
+    private let title: String
+    private var subtitle: String?
+    private var leading: AnyView?
+    private var trailing: AnyView?
+    private var _titleKey:    LocalizedStringKey?
+    private var _subtitleKey: LocalizedStringKey?
 
-    // Backing storage for the LocalizedStringKey variant — nil when using plain String init.
-    fileprivate var _titleKey:    LocalizedStringKey? = nil
-    fileprivate var _subtitleKey: LocalizedStringKey? = nil
+    // Original call-site init — preserves all existing PageHeader(title:...) callers.
+    init(title: String, subtitle: String? = nil,
+         leading: AnyView? = nil, trailing: AnyView? = nil) {
+        self.title    = title
+        self.subtitle = subtitle
+        self.leading  = leading
+        self.trailing = trailing
+        self._titleKey    = nil
+        self._subtitleKey = nil
+    }
+
+    // LocalizedStringKey init — header updates reactively when env locale changes.
+    init(titleKey: LocalizedStringKey, subtitleKey: LocalizedStringKey? = nil,
+         leading: AnyView? = nil, trailing: AnyView? = nil) {
+        self.title    = ""
+        self.subtitle = nil
+        self.leading  = leading
+        self.trailing = trailing
+        self._titleKey    = titleKey
+        self._subtitleKey = subtitleKey
+    }
 
     var body: some View {
         HStack(alignment: .bottom) {
@@ -41,19 +61,5 @@ struct PageHeader: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
-    }
-}
-
-// Extension preserves the synthesized memberwise init(title:subtitle:leading:trailing:)
-// for all existing call sites while adding the LocalizedStringKey convenience.
-extension PageHeader {
-    init(titleKey: LocalizedStringKey, subtitleKey: LocalizedStringKey? = nil,
-         leading: AnyView? = nil, trailing: AnyView? = nil) {
-        self.title    = ""
-        self.subtitle = nil
-        self.leading  = leading
-        self.trailing = trailing
-        self._titleKey    = titleKey
-        self._subtitleKey = subtitleKey
     }
 }
