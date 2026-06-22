@@ -94,7 +94,7 @@ struct InventoryView: View {
                     default:       router.perform(action)
                     }
                 },
-                bottomPadding: 100
+                bottomPadding: 16
             )
         }
         .navigationTitle("Inventory")

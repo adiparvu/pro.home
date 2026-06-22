@@ -7,7 +7,7 @@ import SwiftUI
 struct FloatingSpeedDial: View {
     let actions: [DashboardQuickAction]
     let onSelect: (DashboardQuickAction) -> Void
-    var bottomPadding: CGFloat = 100
+    var bottomPadding: CGFloat = 16
     var trailingPadding: CGFloat = 20
 
     @State private var expanded = false
@@ -111,7 +111,7 @@ struct FloatingSpeedDial: View {
 extension View {
     /// Overlays a customizable floating speed-dial driven by the per-page
     /// settings for `host`. All actions are routed through `AppRouter`.
-    func floatingSpeedDial(_ host: FloatingButtonHost, bottomPadding: CGFloat = 100) -> some View {
+    func floatingSpeedDial(_ host: FloatingButtonHost, bottomPadding: CGFloat = 16) -> some View {
         modifier(FloatingSpeedDialModifier(host: host, bottomPadding: bottomPadding))
     }
 }

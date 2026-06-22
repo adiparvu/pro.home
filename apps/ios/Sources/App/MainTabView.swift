@@ -32,15 +32,15 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $router.selectedTab) {
             NavigationStack { DashboardView() }
-                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tabItem { Image(systemName: "house.fill") }
                 .tag(AppTab.home)
 
             NavigationStack { PropertyTabView() }
-                .tabItem { Label("Property", systemImage: "square.stack.3d.up.fill") }
+                .tabItem { Image(systemName: "square.stack.3d.up.fill") }
                 .tag(AppTab.digitalTwin)
 
             NavigationStack { TasksView() }
-                .tabItem { Label("Tasks", systemImage: "checklist") }
+                .tabItem { Image(systemName: "checklist") }
                 .tag(AppTab.tasks)
                 .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
 
@@ -54,11 +54,11 @@ struct MainTabView: View {
                     .environmentObject(tabBarVis)
                     .environmentObject(router)
             }
-            .tabItem { Label("AI", systemImage: "sparkles") }
+            .tabItem { Image(systemName: "sparkles") }
             .tag(AppTab.chat)
 
             NavigationStack { SettingsView() }
-                .tabItem { Label("You", systemImage: "person.crop.circle.fill") }
+                .tabItem { Image(systemName: "person.crop.circle.fill") }
                 .tag(AppTab.settings)
         }
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)

@@ -98,7 +98,7 @@ struct FinancesView: View {
                         router.perform(action)
                     }
                 },
-                bottomPadding: 110
+                bottomPadding: 16
             )
         }
         .navigationTitle("Finances")

@@ -89,7 +89,7 @@ struct DashboardView: View {
             }
         }
         .background(appBackground.ignoresSafeArea())
-        .floatingSpeedDial(.home, bottomPadding: bottomSafeArea + 80)
+        .floatingSpeedDial(.home)
         .navigationBarHidden(true)
         .onAppear { startPulse() }
         .task(id: propertyService.primary?.id) { await resolveMapCoordinate() }
