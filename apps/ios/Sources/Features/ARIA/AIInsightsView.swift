@@ -14,7 +14,7 @@ struct AIInsightsView: View {
     @State private var orbPulse = false
     @State private var showTimeline = false
 
-    private var insights: [ProactiveInsight] { computeInsights() }
+    private var insights: [AIInsight] { computeInsights() }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -44,7 +44,7 @@ struct AIInsightsView: View {
                     GlassCard(padding: 0) {
                         VStack(spacing: 0) {
                             ForEach(Array(insights.enumerated()), id: \.element.id) { idx, insight in
-                                InsightRow(insight: insight,
+                                AIInsightRow(insight: insight,
                                            isLast: idx == insights.count - 1)
                             }
                         }
@@ -216,8 +216,8 @@ struct AIInsightsView: View {
 
     // MARK: - Compute insights from live data
 
-    private func computeInsights() -> [ProactiveInsight] {
-        var result: [ProactiveInsight] = []
+    private func computeInsights() -> [AIInsight] {
+        var result: [AIInsight] = []
 
         // Overdue tasks
         if taskService.overdueCount > 0 {
@@ -291,9 +291,9 @@ struct AIInsightsView: View {
     }
 }
 
-// MARK: - ProactiveInsight model
+// MARK: - AIInsight model
 
-struct ProactiveInsight: Identifiable {
+struct AIInsight: Identifiable {
     let id = UUID()
     let icon: String
     let iconColor: Color
@@ -301,10 +301,10 @@ struct ProactiveInsight: Identifiable {
     let elapsed: String
 }
 
-// MARK: - InsightRow
+// MARK: - AIInsightRow
 
-struct InsightRow: View {
-    let insight: ProactiveInsight
+struct AIInsightRow: View {
+    let insight: AIInsight
     var isLast: Bool = false
 
     var body: some View {
