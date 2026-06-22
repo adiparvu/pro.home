@@ -23,11 +23,11 @@ struct PRVIOApp: App {
                         MainTabView()
                             .environmentObject(appSettings)
                             .environmentObject(router)
+                            .id(appSettings.appLocale.identifier)
                     } else {
                         LoginView()
                     }
                 }
-                .id(appSettings.appLocale.identifier)
                 .preferredColorScheme(appSettings.resolvedColorScheme)
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)

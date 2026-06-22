@@ -11,6 +11,15 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvio.hapticOn")           var hapticEnabled:         Bool   = true
     @AppStorage("prvio.voiceInput")         var voiceInputEnabled:     Bool   = true
 
+    init() {
+        // Restore language override immediately on every launch
+        let savedLocale = UserDefaults.standard.string(forKey: "prvio.locale") ?? "ro"
+        let followSystem = UserDefaults.standard.bool(forKey: "prvio.followSystemLang")
+        if !followSystem {
+            LanguageManager.apply(savedLocale)
+        }
+    }
+
     var appLocale: Locale {
         followSystemLanguage ? .autoupdatingCurrent : Locale(identifier: locale)
     }

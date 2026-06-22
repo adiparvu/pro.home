@@ -16,6 +16,7 @@ struct LanguageSettingsView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
+                    deviceLanguageCard
                     languageListCard
                     restartNotice
                     Spacer(minLength: 110)
@@ -27,6 +28,47 @@ struct LanguageSettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Device language toggle
+
+    private var deviceLanguageCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SYSTEM")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.35))
+                .padding(.leading, 4)
+
+            GlassCard(padding: 0) {
+                Button {
+                    HapticFeedback.selection()
+                    appSettings.followSystemLanguage = true
+                    LanguageManager.reset()
+                    UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+                } label: {
+                    HStack(spacing: 14) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Use Device Language")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(.primary)
+                            Text("Follows iOS Settings")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if appSettings.followSystemLanguage {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 
     // MARK: - Language list
@@ -43,8 +85,12 @@ struct LanguageSettingsView: View {
                     ForEach(Array(languages.enumerated()), id: \.element.code) { idx, lang in
                         Button {
                             HapticFeedback.selection()
+                            // 1. Swap the bundle strings immediately (no restart needed)
+                            LanguageManager.apply(lang.code)
+                            // 2. Update AppSettings → triggers .id() rebuild in PRVIOApp
                             appSettings.followSystemLanguage = false
                             appSettings.locale = lang.code
+                            // 3. Persist for next launch
                             UserDefaults.standard.set([lang.code], forKey: "AppleLanguages")
                             UserDefaults.standard.synchronize()
                         } label: {
@@ -84,7 +130,7 @@ struct LanguageSettingsView: View {
         }
     }
 
-    // MARK: - Restart notice
+    // MARK: - Info notice
 
     private var restartNotice: some View {
         GlassCard {
@@ -93,7 +139,7 @@ struct LanguageSettingsView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .padding(.top, 1)
-                Text("Restart the app to fully apply all language changes.")
+                Text("The app rebuilds instantly when you select a language. Some system UI elements may still follow the device language.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
