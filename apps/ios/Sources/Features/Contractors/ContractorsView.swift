@@ -3,24 +3,31 @@ import SwiftUI
 struct ContractorModel: Identifiable, Codable {
     let id: UUID
     var name: String
-    var specialty: String
-    var phone: String
+    var category: String    // DB column: category
+    var phone: String?
     var email: String?
     var notes: String?
     var rating: Int?
-    let createdAt: String
+    var isPreferred: Bool
+    var website: String?
+    var address: String?
+
     enum CodingKeys: String, CodingKey {
-        case id, name, specialty, phone, email, notes, rating
-        case createdAt = "created_at"
+        case id, name, category, phone, email, notes, rating, website, address
+        case isPreferred = "is_preferred"
     }
+
+    var specialty: String { category }  // backward-compat alias for UI
+
     var specialtyIcon: String {
-        switch specialty.lowercased() {
+        switch category.lowercased() {
         case let s where s.contains("electr"): return "bolt.fill"
         case let s where s.contains("plumb"): return "drop.fill"
         case let s where s.contains("paint"): return "paintbrush.fill"
         case let s where s.contains("roof"): return "house.fill"
         case let s where s.contains("hvac"), let s where s.contains("heat"): return "thermometer.medium"
         case let s where s.contains("clean"): return "sparkles"
+        case let s where s.contains("garden"), let s where s.contains("landscape"): return "leaf.fill"
         default: return "wrench.and.screwdriver.fill"
         }
     }
@@ -54,6 +61,32 @@ final class ContractorService: ObservableObject {
         contractors.sort { $0.name < $1.name }
     }
 
+    func update(_ c: ContractorModel) async {
+        do {
+            let result: ContractorModel = try await supabase
+                .from("contractors")
+                .update([
+                    "name": c.name,
+                    "category": c.category,
+                    "phone": c.phone ?? "",
+                    "email": c.email ?? "",
+                    "notes": c.notes ?? "",
+                    "rating": String(c.rating ?? 0),
+                    "is_preferred": c.isPreferred ? "true" : "false",
+                ])
+                .eq("id", value: c.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+            if let i = contractors.firstIndex(where: { $0.id == c.id }) {
+                contractors[i] = result
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func delete(_ c: ContractorModel) async {
         do {
             try await supabase.from("contractors").delete().eq("id", value: c.id.uuidString).execute()
@@ -65,24 +98,28 @@ final class ContractorService: ObservableObject {
 }
 
 struct NewContractor: Encodable {
-    let userId: UUID?
+    let propertyId: UUID
+    let createdBy: UUID?
     let name: String
-    let specialty: String
-    let phone: String
+    let category: String
+    let phone: String?
     let email: String?
     let notes: String?
-    let createdAt: String
+    let isPreferred: Bool
     enum CodingKeys: String, CodingKey {
-        case name, specialty, phone, email, notes
-        case userId = "user_id"
-        case createdAt = "created_at"
+        case name, category, phone, email, notes
+        case propertyId  = "property_id"
+        case createdBy   = "created_by"
+        case isPreferred = "is_preferred"
     }
 }
 
 struct ContractorsView: View {
     @EnvironmentObject private var service: ContractorService
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var propertyService: PropertyService
     @State private var showAdd = false
+    @State private var selectedContractor: ContractorModel? = nil
     @State private var search = ""
 
     var filtered: [ContractorModel] {
@@ -124,6 +161,11 @@ struct ContractorsView: View {
                         VStack(spacing: 10) {
                             ForEach(filtered) { c in
                                 ContractorRow(contractor: c)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        HapticFeedback.selection()
+                                        selectedContractor = c
+                                    }
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
@@ -138,7 +180,12 @@ struct ContractorsView: View {
             }
         }
         .task { await service.load() }
-        .sheet(isPresented: $showAdd) { AddContractorSheet(service: service, userId: auth.session?.user.id) }
+        .sheet(isPresented: $showAdd) {
+            AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)
+        }
+        .sheet(item: $selectedContractor) { c in
+            ContractorDetailSheet(contractor: c, service: service)
+        }
         .alert("Error", isPresented: Binding(
             get: { service.error != nil },
             set: { if !$0 { service.error = nil } }
@@ -192,9 +239,10 @@ private struct ContractorRow: View {
 
 private struct AddContractorSheet: View {
     @ObservedObject var service: ContractorService
+    let propertyId: UUID?
     let userId: UUID?
     @Environment(\.dismiss) private var dismiss
-    @State private var name = ""; @State private var specialty = ""; @State private var phone = ""
+    @State private var name = ""; @State private var category = ""; @State private var phone = ""
     @State private var email = ""; @State private var notes = ""; @State private var isSaving = false
 
     var body: some View {
@@ -206,7 +254,7 @@ private struct AddContractorSheet: View {
                         Group {
                             fieldRow("person.fill", "Name", $name)
                             divider
-                            fieldRow("wrench.fill", "Specialty (e.g. Plumber)", $specialty)
+                            fieldRow("wrench.fill", "Specialty (e.g. Plumber)", $category)
                             divider
                             fieldRow("phone.fill", "Phone", $phone, keyboard: .phonePad)
                             divider
@@ -226,7 +274,7 @@ private struct AddContractorSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
-                        .disabled(name.isEmpty || specialty.isEmpty || phone.isEmpty || isSaving)
+                        .disabled(name.isEmpty || category.isEmpty || isSaving)
                 }
             }
         }
@@ -241,11 +289,19 @@ private struct AddContractorSheet: View {
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 
     private func save() async {
+        guard let pid = propertyId else { dismiss(); return }
         isSaving = true
         defer { isSaving = false }
-        let c = NewContractor(userId: userId, name: name, specialty: specialty, phone: phone,
-                              email: email.isEmpty ? nil : email, notes: notes.isEmpty ? nil : notes,
-                              createdAt: ISO8601DateFormatter().string(from: Date()))
+        let c = NewContractor(
+            propertyId: pid,
+            createdBy: userId,
+            name: name,
+            category: category,
+            phone: phone.isEmpty ? nil : phone,
+            email: email.isEmpty ? nil : email,
+            notes: notes.isEmpty ? nil : notes,
+            isPreferred: false
+        )
         try? await service.add(c)
         HapticFeedback.success()
         dismiss()

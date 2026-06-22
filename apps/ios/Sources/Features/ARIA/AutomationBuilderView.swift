@@ -67,10 +67,12 @@ struct AutomationRule: Identifiable {
 struct AutomationBuilderView: View {
     @State private var automations: [AutomationRule] = AutomationRule.examples
     @State private var activeFlowIndex: Int = 0
+    @State private var showPreviewAlert = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
+                previewBanner
                 headerCard
                 // Main visual flow canvas (Node-RED style)
                 flowCanvasCard
@@ -85,6 +87,30 @@ struct AutomationBuilderView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Automation Builder")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Feature Preview", isPresented: $showPreviewAlert) {
+            Button("OK") {}
+        } message: {
+            Text("Automation rules are coming in an upcoming update. You can design flows here to preview the builder.")
+        }
+    }
+
+    private var previewBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
+            Text("Feature Preview — automation rules coming soon")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.25), lineWidth: 1)
+        )
     }
 
     // MARK: - Header
@@ -314,7 +340,21 @@ struct AutomationBuilderView: View {
         HStack(spacing: 10) {
             actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0))
             actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45))
-            actionButton(icon: "arrow.up.circle.fill", label: "Deploy", color: Color(red: 0.65, green: 0.45, blue: 0.95))
+            Button {
+                HapticFeedback.impact(.medium)
+                showPreviewAlert = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.circle.fill").font(.system(size: 12, weight: .semibold))
+                    Text("Deploy").font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.3), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -380,10 +420,13 @@ struct AutomationBuilderView: View {
                     .lineLimit(1)
             }
             Spacer()
-            Toggle("", isOn: .constant(rule.isActive))
+            Toggle("", isOn: $automations[index].isActive)
                 .toggleStyle(SwitchToggleStyle(tint: rule.color))
                 .labelsHidden()
                 .scaleEffect(0.8)
+                .onChange(of: automations[index].isActive) { _, _ in
+                    HapticFeedback.selection()
+                }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

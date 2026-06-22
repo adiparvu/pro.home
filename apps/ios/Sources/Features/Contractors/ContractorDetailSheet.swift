@@ -1,0 +1,252 @@
+import SwiftUI
+
+struct ContractorDetailSheet: View {
+    let contractor: ContractorModel
+    @ObservedObject var service: ContractorService
+    @EnvironmentObject private var router: AppRouter
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var showEdit = false
+    @State private var showDeleteConfirm = false
+    @State private var localRating: Int
+
+    init(contractor: ContractorModel, service: ContractorService) {
+        self.contractor = contractor
+        self.service = service
+        _localRating = State(initialValue: contractor.rating ?? 0)
+    }
+
+    var currentContractor: ContractorModel {
+        service.contractors.first(where: { $0.id == contractor.id }) ?? contractor
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        heroHeader
+                        contactSection
+                        if currentContractor.notes?.isEmpty == false {
+                            notesSection
+                        }
+                        actionsSection
+                        Spacer(minLength: 60)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                }
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }
+                        .foregroundStyle(Color.primary.opacity(0.6))
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { showEdit = true } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) { showDeleteConfirm = true } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
+            .confirmationDialog("Delete \(contractor.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("Delete Contractor", role: .destructive) {
+                    Task { await service.delete(contractor); dismiss() }
+                }
+            }
+        }
+    }
+
+    // MARK: - Hero Header
+
+    private var heroHeader: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.teal.opacity(0.18))
+                    .frame(width: 72, height: 72)
+                Image(systemName: contractor.specialtyIcon)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.teal)
+            }
+
+            VStack(spacing: 4) {
+                Text(currentContractor.name)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.primary)
+
+                Text(currentContractor.specialty.capitalized)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+
+            ratingStars
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+    }
+
+    private var ratingStars: some View {
+        HStack(spacing: 6) {
+            ForEach(1...5, id: \.self) { star in
+                Image(systemName: star <= localRating ? "star.fill" : "star")
+                    .font(.system(size: 22))
+                    .foregroundStyle(star <= localRating ? Color.yellow : Color.primary.opacity(0.25))
+                    .onTapGesture {
+                        HapticFeedback.selection()
+                        localRating = star
+                        var updated = contractor
+                        updated.rating = star
+                        Task { await service.update(updated) }
+                    }
+            }
+        }
+    }
+
+    // MARK: - Contact Section
+
+    private var contactSection: some View {
+        GlassCard(padding: 0) {
+            VStack(spacing: 0) {
+                if let phone = currentContractor.phone, !phone.isEmpty {
+                    contactRow(
+                        icon: "phone.fill",
+                        label: "Phone",
+                        value: phone,
+                        color: .green
+                    ) {
+                        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    rowDivider
+                }
+
+                if let email = currentContractor.email, !email.isEmpty {
+                    contactRow(
+                        icon: "envelope.fill",
+                        label: "Email",
+                        value: email,
+                        color: .blue
+                    ) {
+                        if let url = URL(string: "mailto:\(email)") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func contactRow(icon: String, label: String, value: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: { HapticFeedback.impact(.light); action() }) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
+                    Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(value).font(.system(size: 15)).foregroundStyle(.primary).lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(.horizontal, 16).padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var rowDivider: some View {
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 70)
+    }
+
+    // MARK: - Notes Section
+
+    private var notesSection: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Notes", systemImage: "note.text")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(currentContractor.notes ?? "")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.primary.opacity(0.75))
+            }
+        }
+    }
+
+    // MARK: - Actions Section
+
+    private var actionsSection: some View {
+        VStack(spacing: 10) {
+            if let phone = currentContractor.phone, !phone.isEmpty {
+                actionButton(
+                    icon: "phone.fill",
+                    label: "Call",
+                    color: .green
+                ) {
+                    if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+
+            actionButton(
+                icon: "checklist",
+                label: "Add Maintenance Task",
+                color: .orange
+            ) {
+                router.showAddTask = true
+                dismiss()
+            }
+
+            if let email = currentContractor.email, !email.isEmpty {
+                actionButton(
+                    icon: "envelope.fill",
+                    label: "Send Email",
+                    color: .blue
+                ) {
+                    if let url = URL(string: "mailto:\(email)") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+        }
+    }
+
+    private func actionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: { HapticFeedback.impact(.medium); action() }) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(color.opacity(0.15)).frame(width: 40, height: 40)
+                    Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
+                }
+                Text(label)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 16).padding(.vertical, 14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
