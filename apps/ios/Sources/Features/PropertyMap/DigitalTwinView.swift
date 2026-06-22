@@ -32,6 +32,16 @@ struct DigitalTwinView: View {
     @State var showLabels = false
     @State var didCenter = false
     @State var isAerial = false
+    @State var showStylePicker = false
+    @AppStorage("prvio.mapStyle") var savedMapStyle: String = "hybrid"
+
+    var currentMapStyle: MapStyle {
+        switch savedMapStyle {
+        case "standard":  return .standard
+        case "satellite": return .imagery(elevation: .realistic)
+        default:          return .hybrid(elevation: .realistic)
+        }
+    }
 
     var dragTargetZoneId: UUID? {
         guard let d = draggingObject else { return nil }
@@ -195,7 +205,7 @@ struct DigitalTwinView: View {
                     }
                 }
             }
-            .mapStyle(.hybrid(elevation: .realistic))
+            .mapStyle(currentMapStyle)
             .coordinateSpace(.named("twinmap"))
             .mapControls { MapCompass(); MapScaleView() }
             .onTapGesture { location in
@@ -282,6 +292,9 @@ struct DigitalTwinView: View {
                 .environmentObject(elementService)
                 .environmentObject(currencyService)
                 .environmentObject(appSettings)
+        }
+        .sheet(isPresented: $showStylePicker) {
+            MapStylePickerSheet(selected: $savedMapStyle)
         }
         .task { await loadData() }
 

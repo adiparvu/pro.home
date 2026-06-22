@@ -50,6 +50,12 @@ extension DigitalTwinView {
                 withAnimation(.spring(response: 0.4)) { isAerial.toggle() }
                 HapticFeedback.selection()
             }
+            if !isAerial {
+                controlButton(icon: "square.3.layers.3d", tint: .primary) {
+                    showStylePicker = true
+                    HapticFeedback.impact(.light)
+                }
+            }
             controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
                 showInsights = true
                 HapticFeedback.impact(.light)
