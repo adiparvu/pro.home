@@ -24,6 +24,11 @@ final class AppSettings: ObservableObject {
         followSystemLanguage ? .autoupdatingCurrent : Locale(identifier: locale)
     }
 
+    var currentLanguage: Language {
+        if followSystemLanguage { return Language.devicePreferred }
+        return Language(rawValue: locale) ?? Language.devicePreferred
+    }
+
     // Customizable floating (speed-dial) buttons — per page.
     // Stored in UserDefaults, keyed by host, so this scales to any number of pages.
     // (Home keeps its legacy key for backward compatibility.)
@@ -110,14 +115,11 @@ final class AppSettings: ObservableObject {
         ("system", "System", "circle.lefthalf.filled"),
     ]
 
-    static let languages: [(code: String, name: String, flag: String)] = [
-        ("en", "English",   "🇬🇧"),
-        ("ro", "Română",    "🇷🇴"),
-        ("de", "Deutsch",   "🇩🇪"),
-        ("fr", "Français",  "🇫🇷"),
-        ("es", "Español",   "🇪🇸"),
-        ("it", "Italiano",  "🇮🇹"),
-    ]
+    /// Supported languages — derived from the Language enum, which is
+    /// the single source of truth for what lproj bundles are shipped.
+    static var languages: [(code: String, name: String, flag: String)] {
+        Language.allCases.map { ($0.rawValue, $0.nativeName, $0.flag) }
+    }
 }
 
 // MARK: - Dashboard Quick Actions (customizable floating button)

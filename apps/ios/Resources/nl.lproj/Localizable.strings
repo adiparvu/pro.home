@@ -128,3 +128,86 @@
 "Something went wrong" = "Er is iets misgegaan";
 "Please try again" = "Probeer opnieuw";
 "No data available" = "Geen gegevens beschikbaar";
+
+/* ── Feature tab / page names ── */
+"Finances" = "Financiën";
+"Inventory" = "Inventaris";
+"Contractors" = "Aannemers";
+"Utilities" = "Nutsvoorzieningen";
+"Family" = "Familie";
+"Blueprints" = "3D-plannen";
+"Supplies" = "Benodigdheden";
+"Plants" = "Planten";
+"Scan" = "Scannen";
+
+/* ── Quick action titles ── */
+"New Task" = "Nieuwe taak";
+"Family Chat" = "Familiechat";
+"Add Object" = "Object toevoegen";
+"New Transaction" = "Nieuwe transactie";
+"New Item" = "Nieuw item";
+"Water Plants" = "Planten begieten";
+"AI Assistant" = "AI-assistent";
+"Add a task" = "Een taak toevoegen";
+"Family messages" = "Familieberichten";
+"Scan a QR code" = "Een QR-code scannen";
+"Add to inventory" = "Toevoegen aan inventaris";
+"Income or expense" = "Inkomsten of uitgaven";
+"Open finances" = "Financiën openen";
+"Add to supplies" = "Toevoegen aan benodigdheden";
+"Mark as watered" = "Markeer als begoten";
+
+/* ── ARIA ── */
+"aria_placeholder" = "Stel een vraag over uw eigendom…";
+"aria_welcome" = "Hallo! Ik ben ARIA, uw AI-eigendomsassistent, aangedreven door Claude. Ik kan uw taken, financiën en eigendomsgegevens bekijken. Stel me gerust een vraag!";
+"aria_error_generic" = "Er is iets misgegaan. Probeer opnieuw.";
+"aria_error_connection" = "Ik heb moeite met verbinden. Probeer opnieuw.";
+"aria_task_created" = "Taak \"%@\" is succesvol aangemaakt.";
+"aria_task_error" = "Ik kon de taak niet aanmaken. Probeer opnieuw.";
+"aria_plant_watered" = "\"%@\" gemarkeerd als begoten.";
+"aria_create_task_display" = "Taak aanmaken: \"%@\"";
+"aria_water_plant_display" = "Markeer als begoten: \"%@\"";
+
+/* ── AI Insights ── */
+"ai_insights_title" = "AI-inzichten";
+"ai_insights_recommendations" = "Proactieve aanbevelingen";
+"ai_insights_ask_aria" = "ARIA vragen";
+"ai_insights_timeline" = "Volledige tijdlijn bekijken";
+"ai_insights_automation" = "Automatiseringsbouwer";
+"ai_insights_property_intelligence" = "Eigendomsintelligentie";
+"ai_insights_all_good" = "Alles goed!";
+"ai_insights_healthy" = "Geen directe aanbevelingen. Uw eigendom ziet er gezond uit.";
+
+/* ── Language settings UI ── */
+"lang_use_device" = "Apparaattaal gebruiken";
+"lang_follows_ios" = "Volgt iOS-instellingen";
+"lang_select_section" = "TAAL SELECTEREN";
+"lang_system_section" = "SYSTEEM";
+"lang_instant_rebuild" = "De app herbouwt onmiddellijk wanneer u een taal selecteert. Sommige systeem-UI-elementen kunnen de apparaattaal blijven volgen.";
+"lang_english" = "Engels";
+"lang_romanian" = "Roemeens";
+"lang_french" = "Frans";
+"lang_dutch" = "Nederlands";
+"lang_german" = "Duits";
+
+/* ── Widgets ── */
+"widget_overview_name" = "PRVIO-overzicht";
+"widget_overview_desc" = "Snel overzicht van uw eigendom.";
+"widget_tasks_name" = "Taken";
+"widget_tasks_desc" = "Toont openstaande en achterstallige taken.";
+"widget_plants_name" = "Planten";
+"widget_plants_desc" = "Toont planten die water nodig hebben.";
+"widget_overdue" = "achterstallig";
+"widget_plants_label" = "planten";
+"widget_deliveries" = "leveringen";
+"widget_open" = "open";
+"widget_overdue_label" = "ACHTERSTALLIG";
+"widget_tasks_label" = "TAKEN";
+
+/* ── Notifications ── */
+"notif_overdue_title" = "Achterstallige taken";
+"notif_overdue_body" = "U heeft %d achterstallige taak/taken die aandacht vereisen.";
+"notif_water_title" = "Planten begieten";
+"notif_water_body" = "%d plant(en) heeft/hebben vandaag water nodig.";
+"notif_warranty_title" = "Garantie verloopt binnenkort";
+"notif_warranty_body" = "De garantie voor %@ verloopt binnenkort.";

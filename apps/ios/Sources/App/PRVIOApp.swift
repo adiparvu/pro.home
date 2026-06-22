@@ -24,6 +24,7 @@ struct PRVIOApp: App {
                             .environmentObject(appSettings)
                             .environmentObject(router)
                             .id(appSettings.appLocale.identifier)
+                            .environment(\.appLanguage, appSettings.currentLanguage)
                     } else {
                         LoginView()
                     }

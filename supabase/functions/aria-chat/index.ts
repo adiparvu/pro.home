@@ -71,7 +71,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: cors })
     }
 
-    const { message, propertyId } = await req.json()
+    const body = await req.json()
+    // iOS client sends snake_case; accept both for compatibility
+    const message: string = body.message
+    const propertyId: string | undefined = body.propertyId ?? body.property_id
+    const language: string | undefined = body.language
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: "Empty message" }), { status: 400, headers: cors })
     }
@@ -125,9 +129,15 @@ serve(async (req) => {
       ? `Property: ${property.name ?? "Home"} — ${property.address_line1 ?? ""}, ${property.city ?? ""}${property.health_score ? ` | Health: ${property.health_score}/100` : ""}`
       : ""
 
+    // Language instruction: explicit BCP-47 code from iOS client takes priority;
+    // fallback to "same language the user writes in" for safety.
+    const langInstruction = language
+      ? `Always respond in the user's selected app language (BCP-47: ${language}). Do NOT switch languages even if the user writes in a different one.`
+      : "Always respond in the same language the user writes in."
+
     const systemPrompt = `You are ARIA, the intelligent AI assistant built into PRVHouse — a smart property management app.
 You help the owner manage their property with practical, specific, and concise advice.
-Always respond in the same language the user writes in.
+${langInstruction}
 Keep responses under 200 words unless a detailed breakdown is requested.
 You have access to tools to create tasks, mark plants as watered, and query property health. Use them when the user's intent clearly matches.
 

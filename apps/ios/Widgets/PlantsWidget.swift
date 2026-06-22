@@ -11,8 +11,8 @@ struct PlantsWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             PlantsWidgetView(entry: entry)
         }
-        .configurationDisplayName("Plants")
-        .description("Shows plants that need watering.")
+        .configurationDisplayName(NSLocalizedString("widget_plants_name", comment: ""))
+        .description(NSLocalizedString("widget_plants_desc", comment: ""))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

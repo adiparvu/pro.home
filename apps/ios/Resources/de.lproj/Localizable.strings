@@ -1,0 +1,213 @@
+/* ── Tabs ── */
+"Home" = "Start";
+"Hartă" = "Karte";
+"Tasks" = "Aufgaben";
+"Analytics" = "Analyse";
+"Settings" = "Einstellungen";
+
+/* ── Settings rows ── */
+"Language" = "Sprache";
+"Appearance" = "Erscheinungsbild";
+"Floating Buttons" = "Schwebende Schaltflächen";
+"Integrations" = "Integrationen";
+"Emergency Contacts" = "Notfallkontakte";
+"Help & FAQ" = "Hilfe & FAQ";
+"Rate App" = "App bewerten";
+"Sign Out" = "Abmelden";
+
+/* ── Settings sections ── */
+"APP" = "APP";
+"SUPPORT" = "SUPPORT";
+"PROPERTY" = "IMMOBILIE";
+"FAMILY" = "FAMILIE";
+"My Property" = "Meine Immobilie";
+"Family Members" = "Familienmitglieder";
+"Trusted Contacts" = "Vertrauenskontakte";
+
+/* ── Language screen ── */
+"language_title" = "Sprache";
+"language_subtitle" = "EINSTELLUNGEN";
+"language_follow_ios" = "iOS-Sprache folgen";
+"language_follow_ios_desc" = "Die App passt sich automatisch an die in den iOS-Einstellungen festgelegte Sprache an.";
+"language_select" = "SPRACHE AUSWÄHLEN";
+"language_current" = "Aktuelle Sprache";
+"language_ios_tip" = "Sie können auch eine sprachspezifische Einstellung unter iOS-Einstellungen → PRVIO → Sprache vornehmen.";
+"language_restart_notice" = "Starten Sie die App neu, um alle Sprachänderungen vollständig zu übernehmen.";
+
+/* ── Common actions ── */
+"Cancel" = "Abbrechen";
+"Save" = "Speichern";
+"Delete" = "Löschen";
+"Edit" = "Bearbeiten";
+"Add" = "Hinzufügen";
+"Done" = "Fertig";
+"Close" = "Schließen";
+"OK" = "OK";
+"Back" = "Zurück";
+"Next" = "Weiter";
+"Retry" = "Erneut versuchen";
+"Loading" = "Wird geladen…";
+"Error" = "Fehler";
+"Success" = "Erfolg";
+"Confirm" = "Bestätigen";
+
+/* ── Property ── */
+"My Home" = "Mein Haus";
+"Add Property" = "Immobilie hinzufügen";
+"Edit Property" = "Immobilie bearbeiten";
+"Property name" = "Name der Immobilie";
+"Address" = "Adresse";
+"City" = "Stadt";
+"Country" = "Land";
+"Area (m²)" = "Fläche (m²)";
+"Rooms" = "Zimmer";
+"Adresă" = "Adresse";
+"Țară" = "Land";
+"Suprafață" = "Fläche";
+"Camere" = "Zimmer";
+"An construit" = "Baujahr";
+"Scor sănătate" = "Gesundheitswert";
+"Coordonate" = "Koordinaten";
+"Poveste" = "Geschichte";
+"Renovări" = "Renovierungen";
+"Proprietari" = "Eigentümer";
+"Planuri proprietate" = "Immobilienpläne";
+"No property found" = "Keine Immobilie gefunden";
+
+/* ── Tasks ── */
+"No tasks yet" = "Noch keine Aufgaben";
+"Add your first task" = "Erste Aufgabe hinzufügen";
+"No open tasks" = "Keine offenen Aufgaben";
+"No overdue tasks" = "Keine überfälligen Aufgaben";
+"No done tasks" = "Keine abgeschlossenen Aufgaben";
+
+/* ── Inventory ── */
+"No inventory yet" = "Inventar leer";
+"Add first item" = "Ersten Artikel hinzufügen";
+
+/* ── Documents ── */
+"No documents yet" = "Noch keine Dokumente";
+"No results found" = "Keine Ergebnisse";
+"Tap + to add your first document" = "Tippen Sie auf +, um das erste Dokument hinzuzufügen";
+
+/* ── Finances ── */
+"Income" = "Einnahmen";
+"Expenses" = "Ausgaben";
+"Balance" = "Kontostand";
+
+/* ── Security ── */
+"Securitate" = "Sicherheit";
+"Siguranță și securitate" = "Sicherheit & Schutz";
+"Aspect" = "Erscheinungsbild";
+"Notificări" = "Benachrichtigungen";
+"Ajutor & FAQ" = "Hilfe & FAQ";
+"Contacte de urgență" = "Notfallkontakte";
+"Urgențe" = "Notfälle";
+
+/* ── Report ── */
+"Raport" = "Bericht";
+"PROPRIETATE" = "IMMOBILIE";
+"Generează PDF" = "PDF erstellen";
+"INCLUDE ÎN RAPORT" = "IN BERICHT AUFNEHMEN";
+"Sarcini & Mentenanță" = "Aufgaben & Wartung";
+"Rezumat financiar" = "Finanzübersicht";
+"Documente" = "Dokumente";
+"Digital Twin & Zone" = "Digitaler Zwilling & Bereiche";
+
+/* ── Map / Digital Twin ── */
+"Hartă" = "Karte";
+"Zone" = "Bereiche";
+"Obiecte" = "Objekte";
+
+/* ── Profile ── */
+"Profile" = "Profil";
+"Display Name" = "Anzeigename";
+"Edit Profile" = "Profil bearbeiten";
+
+/* ── Empty / errors ── */
+"Something went wrong" = "Etwas ist schiefgelaufen";
+"Please try again" = "Bitte erneut versuchen";
+"No data available" = "Keine Daten verfügbar";
+
+/* ── Feature tab / page names ── */
+"Finances" = "Finanzen";
+"Inventory" = "Inventar";
+"Contractors" = "Handwerker";
+"Utilities" = "Versorger";
+"Family" = "Familie";
+"Blueprints" = "3D-Pläne";
+"Supplies" = "Vorräte";
+"Plants" = "Pflanzen";
+"Scan" = "Scannen";
+
+/* ── Quick action titles ── */
+"New Task" = "Neue Aufgabe";
+"Family Chat" = "Familien-Chat";
+"Add Object" = "Objekt hinzufügen";
+"New Transaction" = "Neue Transaktion";
+"New Item" = "Neuer Artikel";
+"Water Plants" = "Pflanzen gießen";
+"AI Assistant" = "KI-Assistent";
+"Add a task" = "Aufgabe hinzufügen";
+"Family messages" = "Familiennachrichten";
+"Scan a QR code" = "QR-Code scannen";
+"Add to inventory" = "Zum Inventar hinzufügen";
+"Income or expense" = "Einnahme oder Ausgabe";
+"Open finances" = "Finanzen öffnen";
+"Add to supplies" = "Zu Vorräten hinzufügen";
+"Mark as watered" = "Als gegossen markieren";
+
+/* ── ARIA ── */
+"aria_placeholder" = "Fragen Sie nach Ihrer Immobilie…";
+"aria_welcome" = "Hallo! Ich bin ARIA, Ihr KI-Immobilienassistent, betrieben von Claude. Ich kann Ihre Aufgaben, Finanzen und Immobiliendaten einsehen. Fragen Sie mich alles!";
+"aria_error_generic" = "Etwas ist schiefgelaufen. Versuchen Sie es erneut.";
+"aria_error_connection" = "Ich habe Verbindungsprobleme. Bitte erneut versuchen.";
+"aria_task_created" = "Aufgabe \"%@\" wurde erfolgreich erstellt.";
+"aria_task_error" = "Ich konnte die Aufgabe nicht erstellen. Bitte erneut versuchen.";
+"aria_plant_watered" = "\"%@\" als gegossen markiert.";
+"aria_create_task_display" = "Aufgabe erstellen: \"%@\"";
+"aria_water_plant_display" = "Als gegossen markieren: \"%@\"";
+
+/* ── AI Insights ── */
+"ai_insights_title" = "KI-Einblicke";
+"ai_insights_recommendations" = "Proaktive Empfehlungen";
+"ai_insights_ask_aria" = "ARIA fragen";
+"ai_insights_timeline" = "Vollständige Zeitleiste anzeigen";
+"ai_insights_automation" = "Automatisierungs-Builder";
+"ai_insights_property_intelligence" = "Immobilien-Intelligenz";
+"ai_insights_all_good" = "Alles gut!";
+"ai_insights_healthy" = "Keine unmittelbaren Empfehlungen. Ihre Immobilie sieht gesund aus.";
+
+/* ── Language settings UI ── */
+"lang_use_device" = "Gerätesprache verwenden";
+"lang_follows_ios" = "Folgt iOS-Einstellungen";
+"lang_select_section" = "SPRACHE AUSWÄHLEN";
+"lang_system_section" = "SYSTEM";
+"lang_instant_rebuild" = "Die App wird sofort neu geladen, wenn Sie eine Sprache auswählen. Einige System-UI-Elemente können weiterhin der Gerätesprache folgen.";
+"lang_english" = "Englisch";
+"lang_romanian" = "Rumänisch";
+"lang_french" = "Französisch";
+"lang_dutch" = "Niederländisch";
+"lang_german" = "Deutsch";
+
+/* ── Widgets ── */
+"widget_overview_name" = "PRVIO-Übersicht";
+"widget_overview_desc" = "Schnellübersicht Ihrer Immobilie.";
+"widget_tasks_name" = "Aufgaben";
+"widget_tasks_desc" = "Zeigt ausstehende und überfällige Aufgaben.";
+"widget_plants_name" = "Pflanzen";
+"widget_plants_desc" = "Zeigt Pflanzen, die Wasser benötigen.";
+"widget_overdue" = "überfällig";
+"widget_plants_label" = "Pflanzen";
+"widget_deliveries" = "Lieferungen";
+"widget_open" = "offen";
+"widget_overdue_label" = "ÜBERFÄLLIG";
+"widget_tasks_label" = "AUFGABEN";
+
+/* ── Notifications ── */
+"notif_overdue_title" = "Überfällige Aufgaben";
+"notif_overdue_body" = "Sie haben %d überfällige Aufgabe(n), die Aufmerksamkeit benötigen.";
+"notif_water_title" = "Pflanzen gießen";
+"notif_water_body" = "%d Pflanze(n) braucht/brauchen heute Wasser.";
+"notif_warranty_title" = "Garantie läuft bald ab";
+"notif_warranty_body" = "Die Garantie für %@ läuft bald ab.";

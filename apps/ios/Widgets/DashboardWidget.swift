@@ -10,8 +10,8 @@ struct DashboardWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             DashboardWidgetView(entry: entry)
         }
-        .configurationDisplayName("PRVIO Overview")
-        .description("Quick overview of your property.")
+        .configurationDisplayName(NSLocalizedString("widget_overview_name", comment: ""))
+        .description(NSLocalizedString("widget_overview_desc", comment: ""))
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
@@ -42,13 +42,17 @@ struct DashboardMediumView: View {
             }
 
             HStack(spacing: 12) {
-                statPill(icon: "checklist", value: "\(entry.snapshot.overdueTaskCount)", label: "overdue",
+                statPill(icon: "checklist", value: "\(entry.snapshot.overdueTaskCount)",
+                         label: NSLocalizedString("widget_overdue", comment: ""),
                          color: entry.snapshot.overdueTaskCount > 0 ? .red : .green)
-                statPill(icon: "leaf.fill", value: "\(entry.snapshot.plantsNeedingWater)", label: "plants",
+                statPill(icon: "leaf.fill", value: "\(entry.snapshot.plantsNeedingWater)",
+                         label: NSLocalizedString("widget_plants_label", comment: ""),
                          color: entry.snapshot.plantsNeedingWater > 0 ? .orange : .green)
-                statPill(icon: "shippingbox.fill", value: "\(entry.snapshot.activeDeliveryCount)", label: "deliveries",
+                statPill(icon: "shippingbox.fill", value: "\(entry.snapshot.activeDeliveryCount)",
+                         label: NSLocalizedString("widget_deliveries", comment: ""),
                          color: entry.snapshot.activeDeliveryCount > 0 ? .blue : .secondary)
-                statPill(icon: "square.and.pencil", value: "\(entry.snapshot.openTaskCount)", label: "open",
+                statPill(icon: "square.and.pencil", value: "\(entry.snapshot.openTaskCount)",
+                         label: NSLocalizedString("widget_open", comment: ""),
                          color: .secondary)
             }
         }

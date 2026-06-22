@@ -3,16 +3,10 @@ import SwiftUI
 struct LanguageSettingsView: View {
     @EnvironmentObject private var appSettings: AppSettings
 
-    private let languages: [(name: String, native: String, code: String)] = [
-        ("English",    "English",    "en"),
-        ("Romanian",   "Română",     "ro"),
-        ("French",     "Français",   "fr"),
-        ("Dutch",      "Nederlands", "nl"),
-    ]
-
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Language", subtitle: "PREFERENCES")
+            PageHeader(title: String(localized: "language_title"),
+                       subtitle: String(localized: "language_subtitle"))
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -34,7 +28,7 @@ struct LanguageSettingsView: View {
 
     private var deviceLanguageCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SYSTEM")
+            Text(String(localized: "lang_system_section"))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
@@ -48,10 +42,10 @@ struct LanguageSettingsView: View {
                 } label: {
                     HStack(spacing: 14) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Use Device Language")
+                            Text(String(localized: "lang_use_device"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(.primary)
-                            Text("Follows iOS Settings")
+                            Text(String(localized: "lang_follows_ios"))
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                         }
@@ -75,38 +69,37 @@ struct LanguageSettingsView: View {
 
     private var languageListCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("SELECT LANGUAGE")
+            Text(String(localized: "lang_select_section"))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
-                    ForEach(Array(languages.enumerated()), id: \.element.code) { idx, lang in
+                    ForEach(Array(Language.allCases.enumerated()), id: \.element.id) { idx, lang in
                         Button {
                             HapticFeedback.selection()
-                            // 1. Swap the bundle strings immediately (no restart needed)
-                            LanguageManager.apply(lang.code)
-                            // 2. Update AppSettings → triggers .id() rebuild in PRVIOApp
+                            LanguageManager.apply(lang.rawValue)
                             appSettings.followSystemLanguage = false
-                            appSettings.locale = lang.code
-                            // 3. Persist for next launch
-                            UserDefaults.standard.set([lang.code], forKey: "AppleLanguages")
+                            appSettings.locale = lang.rawValue
+                            UserDefaults.standard.set([lang.rawValue], forKey: "AppleLanguages")
                             UserDefaults.standard.synchronize()
                         } label: {
                             HStack(spacing: 14) {
+                                Text(lang.flag)
+                                    .font(.system(size: 22))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(lang.native)
+                                    Text(lang.nativeName)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundStyle(.primary)
-                                    Text(lang.name)
+                                    Text(lang.localizedName)
                                         .font(.system(size: 12))
                                         .foregroundStyle(.secondary)
                                 }
 
                                 Spacer()
 
-                                if appSettings.locale == lang.code && !appSettings.followSystemLanguage {
+                                if appSettings.locale == lang.rawValue && !appSettings.followSystemLanguage {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 20))
                                         .foregroundStyle(.blue)
@@ -118,7 +111,7 @@ struct LanguageSettingsView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if idx < languages.count - 1 {
+                        if idx < Language.allCases.count - 1 {
                             Rectangle()
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(height: 0.5)
@@ -139,11 +132,31 @@ struct LanguageSettingsView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .padding(.top, 1)
-                Text("The app rebuilds instantly when you select a language. Some system UI elements may still follow the device language.")
+                Text(String(localized: "lang_instant_rebuild"))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("English") {
+    NavigationStack { LanguageSettingsView() }
+        .environmentObject(AppSettings())
+        .previewLocalization(.english)
+}
+
+#Preview("Romanian") {
+    NavigationStack { LanguageSettingsView() }
+        .environmentObject(AppSettings())
+        .previewLocalization(.romanian)
+}
+
+#Preview("German") {
+    NavigationStack { LanguageSettingsView() }
+        .environmentObject(AppSettings())
+        .previewLocalization(.german)
 }

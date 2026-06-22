@@ -128,3 +128,86 @@
 "Something went wrong" = "Ceva nu a mers bine";
 "Please try again" = "Încearcă din nou";
 "No data available" = "Date indisponibile";
+
+/* ── Feature tab / page names ── */
+"Finances" = "Finanțe";
+"Inventory" = "Inventar";
+"Contractors" = "Contractori";
+"Utilities" = "Utilități";
+"Family" = "Familie";
+"Blueprints" = "Planuri 3D";
+"Supplies" = "Consumabile";
+"Plants" = "Plante";
+"Scan" = "Scanează";
+
+/* ── Quick action titles ── */
+"New Task" = "Sarcină nouă";
+"Family Chat" = "Chat familie";
+"Add Object" = "Adaugă obiect";
+"New Transaction" = "Tranzacție nouă";
+"New Item" = "Articol nou";
+"Water Plants" = "Udă plante";
+"AI Assistant" = "Asistent AI";
+"Add a task" = "Adaugă o sarcină";
+"Family messages" = "Mesaje familie";
+"Scan a QR code" = "Scanează un cod QR";
+"Add to inventory" = "Adaugă la inventar";
+"Income or expense" = "Venit sau cheltuială";
+"Open finances" = "Deschide finanțe";
+"Add to supplies" = "Adaugă la consumabile";
+"Mark as watered" = "Marchează ca udat";
+
+/* ── ARIA ── */
+"aria_placeholder" = "Întreabă despre proprietatea ta…";
+"aria_welcome" = "Bună! Sunt ARIA, asistentul tău AI de proprietate, alimentat de Claude. Pot vedea sarcinile, finanțele și datele proprietății tale. Întreabă-mă orice!";
+"aria_error_generic" = "Ceva nu a mers bine. Încearcă din nou.";
+"aria_error_connection" = "Am probleme cu conexiunea. Te rog încearcă din nou.";
+"aria_task_created" = "Sarcina \"%@\" a fost creată cu succes.";
+"aria_task_error" = "Nu am putut crea sarcina. Te rog încearcă din nou.";
+"aria_plant_watered" = "\"%@\" marcată ca udată.";
+"aria_create_task_display" = "Creează sarcina: \"%@\"";
+"aria_water_plant_display" = "Marchează ca udată: \"%@\"";
+
+/* ── AI Insights ── */
+"ai_insights_title" = "Perspective AI";
+"ai_insights_recommendations" = "Recomandări proactive";
+"ai_insights_ask_aria" = "Întreabă ARIA";
+"ai_insights_timeline" = "Vezi cronologia completă";
+"ai_insights_automation" = "Generator de automatizări";
+"ai_insights_property_intelligence" = "Inteligență proprietate";
+"ai_insights_all_good" = "Totul este bine!";
+"ai_insights_healthy" = "Nicio recomandare imediată. Proprietatea ta arată sănătoasă.";
+
+/* ── Language settings UI ── */
+"lang_use_device" = "Folosește limba dispozitivului";
+"lang_follows_ios" = "Urmează setările iOS";
+"lang_select_section" = "SELECTEAZĂ LIMBA";
+"lang_system_section" = "SISTEM";
+"lang_instant_rebuild" = "Aplicația se reconstruiește instant când selectezi o limbă. Unele elemente UI de sistem pot urma în continuare limba dispozitivului.";
+"lang_english" = "Engleză";
+"lang_romanian" = "Română";
+"lang_french" = "Franceză";
+"lang_dutch" = "Olandeză";
+"lang_german" = "Germană";
+
+/* ── Widgets ── */
+"widget_overview_name" = "Prezentare PRVIO";
+"widget_overview_desc" = "Prezentare rapidă a proprietății tale.";
+"widget_tasks_name" = "Sarcini";
+"widget_tasks_desc" = "Arată sarcinile în așteptare și restante.";
+"widget_plants_name" = "Plante";
+"widget_plants_desc" = "Arată plantele care necesită udare.";
+"widget_overdue" = "restante";
+"widget_plants_label" = "plante";
+"widget_deliveries" = "livrări";
+"widget_open" = "deschise";
+"widget_overdue_label" = "RESTANTE";
+"widget_tasks_label" = "SARCINI";
+
+/* ── Notifications ── */
+"notif_overdue_title" = "Sarcini restante";
+"notif_overdue_body" = "Ai %d sarcini restante care necesită atenție.";
+"notif_water_title" = "Plantele au nevoie de apă";
+"notif_water_body" = "%d plante necesită udare astăzi.";
+"notif_warranty_title" = "Garanție expiră curând";
+"notif_warranty_body" = "Garanția pentru %@ expiră curând.";

@@ -128,3 +128,86 @@
 "Something went wrong" = "Something went wrong";
 "Please try again" = "Please try again";
 "No data available" = "No data available";
+
+/* ── Feature tab / page names ── */
+"Finances" = "Finances";
+"Inventory" = "Inventory";
+"Contractors" = "Contractors";
+"Utilities" = "Utilities";
+"Family" = "Family";
+"Blueprints" = "Blueprints";
+"Supplies" = "Supplies";
+"Plants" = "Plants";
+"Scan" = "Scan";
+
+/* ── Quick action titles ── */
+"New Task" = "New Task";
+"Family Chat" = "Family Chat";
+"Add Object" = "Add Object";
+"New Transaction" = "New Transaction";
+"New Item" = "New Item";
+"Water Plants" = "Water Plants";
+"AI Assistant" = "AI Assistant";
+"Add a task" = "Add a task";
+"Family messages" = "Family messages";
+"Scan a QR code" = "Scan a QR code";
+"Add to inventory" = "Add to inventory";
+"Income or expense" = "Income or expense";
+"Open finances" = "Open finances";
+"Add to supplies" = "Add to supplies";
+"Mark as watered" = "Mark as watered";
+
+/* ── ARIA ── */
+"aria_placeholder" = "Ask about your property…";
+"aria_welcome" = "Hi! I'm ARIA, your AI property assistant powered by Claude. I can see your tasks, finances, and property data. Ask me anything!";
+"aria_error_generic" = "Something went wrong. Try again.";
+"aria_error_connection" = "I'm having trouble connecting. Please try again.";
+"aria_task_created" = "Task \"%@\" has been created successfully.";
+"aria_task_error" = "I couldn't create the task. Please try again.";
+"aria_plant_watered" = "\"%@\" marked as watered.";
+"aria_create_task_display" = "Create task: \"%@\"";
+"aria_water_plant_display" = "Mark as watered: \"%@\"";
+
+/* ── AI Insights ── */
+"ai_insights_title" = "AI Insights";
+"ai_insights_recommendations" = "Proactive Recommendations";
+"ai_insights_ask_aria" = "Ask ARIA";
+"ai_insights_timeline" = "View Full Timeline";
+"ai_insights_automation" = "Automation Builder";
+"ai_insights_property_intelligence" = "Property Intelligence";
+"ai_insights_all_good" = "All good!";
+"ai_insights_healthy" = "No immediate recommendations. Your property looks healthy.";
+
+/* ── Language settings UI ── */
+"lang_use_device" = "Use Device Language";
+"lang_follows_ios" = "Follows iOS Settings";
+"lang_select_section" = "SELECT LANGUAGE";
+"lang_system_section" = "SYSTEM";
+"lang_instant_rebuild" = "The app rebuilds instantly when you select a language. Some system UI elements may still follow the device language.";
+"lang_english" = "English";
+"lang_romanian" = "Romanian";
+"lang_french" = "French";
+"lang_dutch" = "Dutch";
+"lang_german" = "German";
+
+/* ── Widgets ── */
+"widget_overview_name" = "PRVIO Overview";
+"widget_overview_desc" = "Quick overview of your property.";
+"widget_tasks_name" = "Tasks";
+"widget_tasks_desc" = "Shows pending and overdue tasks.";
+"widget_plants_name" = "Plants";
+"widget_plants_desc" = "Shows plants that need watering.";
+"widget_overdue" = "overdue";
+"widget_plants_label" = "plants";
+"widget_deliveries" = "deliveries";
+"widget_open" = "open";
+"widget_overdue_label" = "OVERDUE";
+"widget_tasks_label" = "TASKS";
+
+/* ── Notifications ── */
+"notif_overdue_title" = "Overdue Tasks";
+"notif_overdue_body" = "You have %d overdue task(s) that need attention.";
+"notif_water_title" = "Plants Need Water";
+"notif_water_body" = "%d plant(s) need watering today.";
+"notif_warranty_title" = "Warranty Expiring Soon";
+"notif_warranty_body" = "The warranty for %@ is expiring soon.";

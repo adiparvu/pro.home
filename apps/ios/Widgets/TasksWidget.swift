@@ -11,8 +11,8 @@ struct TasksWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             TasksWidgetView(entry: entry)
         }
-        .configurationDisplayName("Tasks")
-        .description("Shows pending and overdue tasks.")
+        .configurationDisplayName(NSLocalizedString("widget_tasks_name", comment: ""))
+        .description(NSLocalizedString("widget_tasks_desc", comment: ""))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -41,12 +41,14 @@ struct TasksWidgetSmallView: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.snapshot.overdueTaskCount > 0 ? "OVERDUE" : "TASKS")
+                Text(entry.snapshot.overdueTaskCount > 0
+                     ? NSLocalizedString("widget_overdue_label", comment: "")
+                     : NSLocalizedString("widget_tasks_label", comment: ""))
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.overdueTaskCount > 0
-                     ? "\(entry.snapshot.overdueTaskCount) overdue"
-                     : "\(entry.snapshot.openTaskCount) open")
+                     ? "\(entry.snapshot.overdueTaskCount) \(NSLocalizedString("widget_overdue", comment: ""))"
+                     : "\(entry.snapshot.openTaskCount) \(NSLocalizedString("widget_open", comment: ""))")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)

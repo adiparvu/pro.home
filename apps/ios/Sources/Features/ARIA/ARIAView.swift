@@ -24,7 +24,9 @@ struct ARIAView: View {
     @State private var isLoadingHistory = true
     @State private var proposedAction: ARIAProposedAction? = nil
     @FocusState private var focused: Bool
-    @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
+    @AppStorage("prvio.voiceInput")        private var voiceInputEnabled: Bool = true
+    @AppStorage("prvio.locale")            private var currentLocale: String = "en"
+    @AppStorage("prvio.followSystemLang")  private var followSystemLanguage: Bool = true
     @StateObject private var speech = SpeechRecognizer()
 
     var body: some View {
@@ -128,7 +130,7 @@ struct ARIAView: View {
             VStack(spacing: 10) {
                 // Text field row
                 HStack(spacing: 10) {
-                    TextField("Ask about your property...", text: $input, axis: .vertical)
+                    TextField(String(localized: "aria_placeholder"), text: $input, axis: .vertical)
                         .font(.system(size: 15))
                         .lineLimit(1...5)
                         .focused($focused)
@@ -321,18 +323,23 @@ struct ARIAView: View {
         Task {
             do {
                 let propId = propertyService.primary?.id.uuidString
+                let lang = followSystemLanguage
+                    ? (Language.devicePreferred.rawValue)
+                    : currentLocale
                 struct ARIAChatPayload: Encodable {
                     let message: String
                     let property_id: String?
+                    let language: String
                 }
-                let payload = ARIAChatPayload(message: text, property_id: propId)
+                let payload = ARIAChatPayload(message: text, property_id: propId, language: lang)
                 let rawResponse: Data = try await supabase.functions
                     .invoke("aria-chat", options: .init(body: payload))
 
                 isThinking = false
 
                 guard let json = try? JSONSerialization.jsonObject(with: rawResponse) as? [String: Any] else {
-                    messages.append(ARIAMessage(role: .aria, content: "Something went wrong. Try again."))
+                    messages.append(ARIAMessage(role: .aria,
+                        content: String(localized: "aria_error_generic")))
                     return
                 }
 
@@ -355,11 +362,13 @@ struct ARIAView: View {
                 } else if let reply = json["reply"] as? String {
                     messages.append(ARIAMessage(role: .aria, content: reply))
                 } else {
-                    messages.append(ARIAMessage(role: .aria, content: "Something went wrong. Try again."))
+                    messages.append(ARIAMessage(role: .aria,
+                        content: String(localized: "aria_error_generic")))
                 }
             } catch {
                 isThinking = false
-                messages.append(ARIAMessage(role: .aria, content: "I'm having trouble connecting. Please try again."))
+                messages.append(ARIAMessage(role: .aria,
+                    content: String(localized: "aria_error_connection")))
             }
         }
     }
@@ -368,11 +377,11 @@ struct ARIAView: View {
         let displayText: String
         switch tool {
         case "create_task":
-            let name = input["name"] as? String ?? "New task"
-            displayText = "Create task: \"\(name)\""
+            let name = input["name"] as? String ?? String(localized: "New Task")
+            displayText = String(format: String(localized: "aria_create_task_display"), name)
         case "mark_plant_watered":
-            let plantName = input["plant_name"] as? String ?? "Plant"
-            displayText = "Mark as watered: \"\(plantName)\""
+            let plantName = input["plant_name"] as? String ?? String(localized: "Plants")
+            displayText = String(format: String(localized: "aria_water_plant_display"), plantName)
         default:
             displayText = tool.replacingOccurrences(of: "_", with: " ").capitalized
         }
@@ -402,20 +411,20 @@ struct ARIAView: View {
                     try await taskService.addTask(payload)
                     messages.append(ARIAMessage(
                         role: .aria,
-                        content: "Task \"\(name)\" has been created successfully."
+                        content: String(format: String(localized: "aria_task_created"), name)
                     ))
                 } catch {
                     messages.append(ARIAMessage(
                         role: .aria,
-                        content: "I couldn't create the task. Please try again."
+                        content: String(localized: "aria_task_error")
                     ))
                 }
 
             case "mark_plant_watered":
-                let plantName = action.input["plant_name"] as? String ?? "Plant"
+                let plantName = action.input["plant_name"] as? String ?? String(localized: "Plants")
                 messages.append(ARIAMessage(
                     role: .aria,
-                    content: "\"\(plantName)\" marked as watered."
+                    content: String(format: String(localized: "aria_plant_watered"), plantName)
                 ))
 
             default:
@@ -505,9 +514,9 @@ struct ARIAMessage: Identifiable {
     let role: Role
     let content: String
 
-    static let welcome = [
-        ARIAMessage(role: .aria, content: "Hi! I'm ARIA, your AI property assistant powered by Claude. I can see your tasks, finances, and property data. Ask me anything!")
-    ]
+    static var welcome: [ARIAMessage] {
+        [ARIAMessage(role: .aria, content: String(localized: "aria_welcome"))]
+    }
 }
 
 // MARK: - Action Banner

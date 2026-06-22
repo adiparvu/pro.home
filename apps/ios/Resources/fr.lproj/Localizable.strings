@@ -128,3 +128,86 @@
 "Something went wrong" = "Une erreur s'est produite";
 "Please try again" = "Veuillez réessayer";
 "No data available" = "Aucune donnée disponible";
+
+/* ── Feature tab / page names ── */
+"Finances" = "Finances";
+"Inventory" = "Inventaire";
+"Contractors" = "Prestataires";
+"Utilities" = "Utilitaires";
+"Family" = "Famille";
+"Blueprints" = "Plans 3D";
+"Supplies" = "Fournitures";
+"Plants" = "Plantes";
+"Scan" = "Scanner";
+
+/* ── Quick action titles ── */
+"New Task" = "Nouvelle tâche";
+"Family Chat" = "Chat famille";
+"Add Object" = "Ajouter un objet";
+"New Transaction" = "Nouvelle transaction";
+"New Item" = "Nouvel article";
+"Water Plants" = "Arroser les plantes";
+"AI Assistant" = "Assistant IA";
+"Add a task" = "Ajouter une tâche";
+"Family messages" = "Messages famille";
+"Scan a QR code" = "Scanner un code QR";
+"Add to inventory" = "Ajouter à l'inventaire";
+"Income or expense" = "Revenu ou dépense";
+"Open finances" = "Ouvrir les finances";
+"Add to supplies" = "Ajouter aux fournitures";
+"Mark as watered" = "Marquer comme arrosée";
+
+/* ── ARIA ── */
+"aria_placeholder" = "Posez une question sur votre propriété…";
+"aria_welcome" = "Bonjour ! Je suis ARIA, votre assistant IA immobilier propulsé par Claude. Je peux voir vos tâches, vos finances et les données de votre propriété. Posez-moi n'importe quelle question !";
+"aria_error_generic" = "Une erreur s'est produite. Réessayez.";
+"aria_error_connection" = "J'ai du mal à me connecter. Veuillez réessayer.";
+"aria_task_created" = "La tâche \"%@\" a été créée avec succès.";
+"aria_task_error" = "Je n'ai pas pu créer la tâche. Veuillez réessayer.";
+"aria_plant_watered" = "\"%@\" marquée comme arrosée.";
+"aria_create_task_display" = "Créer la tâche : \"%@\"";
+"aria_water_plant_display" = "Marquer comme arrosée : \"%@\"";
+
+/* ── AI Insights ── */
+"ai_insights_title" = "Perspectives IA";
+"ai_insights_recommendations" = "Recommandations proactives";
+"ai_insights_ask_aria" = "Demander à ARIA";
+"ai_insights_timeline" = "Voir la chronologie complète";
+"ai_insights_automation" = "Générateur d'automatisations";
+"ai_insights_property_intelligence" = "Intelligence immobilière";
+"ai_insights_all_good" = "Tout va bien !";
+"ai_insights_healthy" = "Aucune recommandation immédiate. Votre propriété est en bonne santé.";
+
+/* ── Language settings UI ── */
+"lang_use_device" = "Utiliser la langue de l'appareil";
+"lang_follows_ios" = "Suit les réglages iOS";
+"lang_select_section" = "SÉLECTIONNER LA LANGUE";
+"lang_system_section" = "SYSTÈME";
+"lang_instant_rebuild" = "L'application se reconstruit instantanément lorsque vous sélectionnez une langue. Certains éléments d'interface système peuvent toujours suivre la langue de l'appareil.";
+"lang_english" = "Anglais";
+"lang_romanian" = "Roumain";
+"lang_french" = "Français";
+"lang_dutch" = "Néerlandais";
+"lang_german" = "Allemand";
+
+/* ── Widgets ── */
+"widget_overview_name" = "Aperçu PRVIO";
+"widget_overview_desc" = "Aperçu rapide de votre propriété.";
+"widget_tasks_name" = "Tâches";
+"widget_tasks_desc" = "Affiche les tâches en cours et en retard.";
+"widget_plants_name" = "Plantes";
+"widget_plants_desc" = "Affiche les plantes nécessitant de l'eau.";
+"widget_overdue" = "en retard";
+"widget_plants_label" = "plantes";
+"widget_deliveries" = "livraisons";
+"widget_open" = "ouvertes";
+"widget_overdue_label" = "EN RETARD";
+"widget_tasks_label" = "TÂCHES";
+
+/* ── Notifications ── */
+"notif_overdue_title" = "Tâches en retard";
+"notif_overdue_body" = "Vous avez %d tâche(s) en retard nécessitant votre attention.";
+"notif_water_title" = "Plantes à arroser";
+"notif_water_body" = "%d plante(s) ont besoin d'eau aujourd'hui.";
+"notif_warranty_title" = "Garantie expirant bientôt";
+"notif_warranty_body" = "La garantie de %@ expire bientôt.";
