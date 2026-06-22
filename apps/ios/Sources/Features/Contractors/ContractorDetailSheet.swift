@@ -65,6 +65,9 @@ struct ContractorDetailSheet: View {
                     Task { await service.delete(contractor); dismiss() }
                 }
             }
+            .sheet(isPresented: $showEdit) {
+                EditContractorSheet(contractor: currentContractor, service: service)
+            }
         }
     }
 
@@ -248,5 +251,92 @@ struct ContractorDetailSheet: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Edit Contractor Sheet
+
+private struct EditContractorSheet: View {
+    let contractor: ContractorModel
+    @ObservedObject var service: ContractorService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var category: String
+    @State private var phone: String
+    @State private var email: String
+    @State private var notes: String
+    @State private var isSaving = false
+
+    init(contractor: ContractorModel, service: ContractorService) {
+        self.contractor = contractor
+        self.service = service
+        _name     = State(initialValue: contractor.name)
+        _category = State(initialValue: contractor.category)
+        _phone    = State(initialValue: contractor.phone ?? "")
+        _email    = State(initialValue: contractor.email ?? "")
+        _notes    = State(initialValue: contractor.notes ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Group {
+                            fieldRow("person.fill", "Name", $name)
+                            divider
+                            fieldRow("wrench.fill", "Specialty", $category)
+                            divider
+                            fieldRow("phone.fill", "Phone", $phone, keyboard: .phonePad)
+                            divider
+                            fieldRow("envelope.fill", "Email", $email, keyboard: .emailAddress)
+                            divider
+                            fieldRow("note.text", "Notes", $notes)
+                        }
+                    }
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                    .padding(.horizontal, 20).padding(.top, 8)
+                }
+            }
+            .navigationTitle("Edit Contractor").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { Task { await save() } }
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .disabled(name.isEmpty || category.isEmpty || isSaving)
+                }
+            }
+        }
+    }
+
+    private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+            TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
+        }.padding(.horizontal, 16).padding(.vertical, 13)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        var updated = contractor
+        updated.name = name
+        updated.category = category
+        updated.phone = phone.isEmpty ? nil : phone
+        updated.email = email.isEmpty ? nil : email
+        updated.notes = notes.isEmpty ? nil : notes
+        await service.update(updated)
+        HapticFeedback.success()
+        dismiss()
     }
 }
