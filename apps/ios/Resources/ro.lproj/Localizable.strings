@@ -190,7 +190,7 @@
 "lang_follows_ios" = "Urmează setările iOS";
 "lang_select_section" = "SELECTEAZĂ LIMBA";
 "lang_system_section" = "SISTEM";
-"lang_instant_rebuild" = "Aplicația se reconstruiește instant când selectezi o limbă. Unele elemente UI de sistem pot urma în continuare limba dispozitivului.";
+"lang_instant_rebuild" = "Limba se actualizează instant când selectezi o opțiune. Unele elemente UI de sistem pot urma în continuare limba dispozitivului.";
 "lang_english" = "Engleză";
 "lang_romanian" = "Română";
 "lang_french" = "Franceză";

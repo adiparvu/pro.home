@@ -190,7 +190,7 @@
 "lang_follows_ios" = "Suit les réglages iOS";
 "lang_select_section" = "SÉLECTIONNER LA LANGUE";
 "lang_system_section" = "SYSTÈME";
-"lang_instant_rebuild" = "L'application se reconstruit instantanément lorsque vous sélectionnez une langue. Certains éléments d'interface système peuvent toujours suivre la langue de l'appareil.";
+"lang_instant_rebuild" = "La langue se met à jour instantanément lorsque vous sélectionnez une option. Certains éléments d'interface système peuvent toujours suivre la langue de l'appareil.";
 "lang_english" = "Anglais";
 "lang_romanian" = "Roumain";
 "lang_french" = "Français";

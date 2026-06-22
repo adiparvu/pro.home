@@ -190,7 +190,7 @@
 "lang_follows_ios" = "Volgt iOS-instellingen";
 "lang_select_section" = "TAAL SELECTEREN";
 "lang_system_section" = "SYSTEEM";
-"lang_instant_rebuild" = "De app herbouwt onmiddellijk wanneer u een taal selecteert. Sommige systeem-UI-elementen kunnen de apparaattaal blijven volgen.";
+"lang_instant_rebuild" = "De taal wordt direct bijgewerkt wanneer u een optie selecteert. Sommige systeem-UI-elementen kunnen de apparaattaal blijven volgen.";
 "lang_english" = "Engels";
 "lang_romanian" = "Roemeens";
 "lang_french" = "Frans";

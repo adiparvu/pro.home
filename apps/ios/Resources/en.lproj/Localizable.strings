@@ -190,7 +190,7 @@
 "lang_follows_ios" = "Follows iOS Settings";
 "lang_select_section" = "SELECT LANGUAGE";
 "lang_system_section" = "SYSTEM";
-"lang_instant_rebuild" = "The app rebuilds instantly when you select a language. Some system UI elements may still follow the device language.";
+"lang_instant_rebuild" = "Language updates instantly when you select an option. Some system UI elements may still follow the device language.";
 "lang_english" = "English";
 "lang_romanian" = "Romanian";
 "lang_french" = "French";

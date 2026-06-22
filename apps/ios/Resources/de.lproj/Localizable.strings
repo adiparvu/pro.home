@@ -190,7 +190,7 @@
 "lang_follows_ios" = "Folgt iOS-Einstellungen";
 "lang_select_section" = "SPRACHE AUSWÄHLEN";
 "lang_system_section" = "SYSTEM";
-"lang_instant_rebuild" = "Die App wird sofort neu geladen, wenn Sie eine Sprache auswählen. Einige System-UI-Elemente können weiterhin der Gerätesprache folgen.";
+"lang_instant_rebuild" = "Die Sprache aktualisiert sich sofort, wenn Sie eine Option wählen. Einige System-UI-Elemente können weiterhin der Gerätesprache folgen.";
 "lang_english" = "Englisch";
 "lang_romanian" = "Rumänisch";
 "lang_french" = "Französisch";
