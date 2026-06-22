@@ -642,3 +642,75 @@ struct DashStatsStrip: View {
         .shadow(color: .black.opacity(0.18), radius: 12, y: 3)
     }
 }
+
+// MARK: - Proactive Insights Strip
+
+struct ProactiveInsightsStrip: View {
+    @ObservedObject var engine: ProactiveEngine
+
+    var body: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                    Text("Property Insights")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.5))
+                    Spacer()
+                    Text("\(engine.activeInsights.count)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Color(red: 0.6, green: 0.35, blue: 0.95), in: Capsule())
+                }
+                ForEach(engine.activeInsights.prefix(3)) { insight in
+                    InsightRow(insight: insight) {
+                        engine.dismiss(insight)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct InsightRow: View {
+    let insight: ProactiveInsight
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: insight.category.icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(categoryColor)
+                .frame(width: 28, height: 28)
+                .background(categoryColor.opacity(0.15), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(insight.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text(insight.body)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(0.55))
+                    .lineLimit(2)
+            }
+            Spacer()
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+        }
+    }
+
+    private var categoryColor: Color {
+        switch insight.category {
+        case .warranty:    return .orange
+        case .maintenance: return .blue
+        case .seasonal:    return .teal
+        case .financial:   return .green
+        case .age:         return .red
+        }
+    }
+}

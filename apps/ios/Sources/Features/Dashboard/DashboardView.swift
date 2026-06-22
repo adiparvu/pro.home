@@ -21,6 +21,7 @@ struct DashboardView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @EnvironmentObject var inventoryService: InventoryService
     @EnvironmentObject var contractorService: ContractorService
+    @EnvironmentObject var proactiveEngine: ProactiveEngine
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -56,6 +57,13 @@ struct DashboardView: View {
                 // ── Property Health Card ─────────────────────────────────
                 propertyHealthCard
                     .padding(.horizontal, 16)
+
+                // ── Proactive Insights ───────────────────────────────────
+                if !proactiveEngine.activeInsights.isEmpty {
+                    ProactiveInsightsStrip(engine: proactiveEngine)
+                        .padding(.horizontal, 16)
+                    Spacer().frame(height: 14)
+                }
 
                 Spacer().frame(height: 14)
 
