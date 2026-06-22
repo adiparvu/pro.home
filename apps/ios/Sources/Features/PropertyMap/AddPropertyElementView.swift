@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct AddPropertyElementView: View {
     let defaultPosition: CGPoint
@@ -25,6 +26,8 @@ struct AddPropertyElementView: View {
     @State private var showWarrantyDate = false
     @State private var purchaseDatePicker = Date()
     @State private var warrantyDatePicker = Date()
+    @State private var scanPickerItem: PhotosPickerItem? = nil
+    @State private var isScanning = false
 
     private var canSave: Bool { name.trimmingCharacters(in: .whitespaces).count >= 2 }
 
@@ -101,8 +104,41 @@ struct AddPropertyElementView: View {
                         // Technical details
                         GlassCard(padding: 14) {
                             VStack(spacing: 12) {
-                                Label("Technical details", systemImage: "wrench.and.screwdriver").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                HStack {
+                                    Label("Technical details", systemImage: "wrench.and.screwdriver").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                    Spacer()
+                                    PhotosPicker(selection: $scanPickerItem, matching: .images) {
+                                        HStack(spacing: 4) {
+                                            if isScanning {
+                                                ProgressView().scaleEffect(0.7)
+                                            } else {
+                                                Image(systemName: "camera.viewfinder")
+                                            }
+                                            Text("Scan label").font(.caption.weight(.semibold))
+                                        }
+                                        .foregroundStyle(.accentColor)
+                                        .padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                    }
+                                    .onChange(of: scanPickerItem) { _, item in
+                                        guard let item else { return }
+                                        isScanning = true
+                                        Task {
+                                            defer { isScanning = false; scanPickerItem = nil }
+                                            guard let data = try? await item.loadTransferable(type: Data.self),
+                                                  let uiImage = UIImage(data: data) else { return }
+                                            let lines = await VisionCaptureService.recognizeText(in: uiImage)
+                                            let parsed = VisionCaptureService.parseProduct(from: lines)
+                                            await MainActor.run {
+                                                if !parsed.brand.isEmpty { brand = parsed.brand }
+                                                if !parsed.model.isEmpty { model = parsed.model }
+                                                if !parsed.serialNumber.isEmpty { serialNumber = parsed.serialNumber }
+                                                if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
+                                                HapticFeedback.success()
+                                            }
+                                        }
+                                    }
+                                }
                                 fieldRow(label: "Brand", placeholder: "e.g. Viessmann", text: $brand)
                                 fieldRow(label: "Model", placeholder: "e.g. Vitodens 200-W", text: $model)
                                 fieldRow(label: "Serial", placeholder: "Serial number", text: $serialNumber)
