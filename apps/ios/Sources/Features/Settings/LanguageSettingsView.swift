@@ -3,11 +3,11 @@ import SwiftUI
 struct LanguageSettingsView: View {
     @EnvironmentObject private var appSettings: AppSettings
 
-    private let languages: [(name: String, native: String, code: String, flag: String)] = [
-        ("English",    "English",    "en", "🇬🇧"),
-        ("Romanian",   "Română",     "ro", "🇷🇴"),
-        ("French",     "Français",   "fr", "🇫🇷"),
-        ("Dutch",      "Nederlands", "nl", "🇳🇱"),
+    private let languages: [(name: String, native: String, code: String)] = [
+        ("English",    "English",    "en"),
+        ("Romanian",   "Română",     "ro"),
+        ("French",     "Français",   "fr"),
+        ("Dutch",      "Nederlands", "nl"),
     ]
 
     var body: some View {
@@ -49,10 +49,6 @@ struct LanguageSettingsView: View {
                             UserDefaults.standard.synchronize()
                         } label: {
                             HStack(spacing: 14) {
-                                Text(lang.flag)
-                                    .font(.system(size: 28))
-                                    .frame(width: 40)
-
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(lang.native)
                                         .font(.system(size: 15, weight: .medium))
@@ -80,7 +76,7 @@ struct LanguageSettingsView: View {
                             Rectangle()
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(height: 0.5)
-                                .padding(.leading, 70)
+                                .padding(.leading, 16)
                         }
                     }
                 }
