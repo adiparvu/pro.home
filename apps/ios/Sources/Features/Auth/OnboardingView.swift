@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct OnboardingView: View {
     @AppStorage("prvio.onboarding.done") private var onboardingDone = false
@@ -123,20 +124,29 @@ struct OnboardingView: View {
                     case createdAt = "created_at"
                 }
             }
-            try? await supabase
-                .from("properties")
-                .insert(NewProperty(
-                    userId: uid,
-                    name: propertyName,
-                    address: propertyAddress,
-                    type: propertyType,
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                ))
-                .execute()
+            struct InsertedProperty: Decodable { let id: UUID }
+            // Capture the inserted ID directly from the response so zone creation
+            // doesn't depend on load() timing / RLS propagation race.
+            var newPropertyId: UUID?
+            do {
+                let resp: PostgrestResponse<InsertedProperty> = try await supabase
+                    .from("properties")
+                    .insert(NewProperty(
+                        userId: uid,
+                        name: propertyName,
+                        address: propertyAddress,
+                        type: propertyType,
+                        createdAt: ISO8601DateFormatter().string(from: Date())
+                    ))
+                    .select("id")
+                    .single()
+                    .execute()
+                newPropertyId = resp.value.id
+            } catch {}
             await propertyService.load()
 
             // Generate default zones for the new property's type
-            if let propertyId = propertyService.primary?.id {
+            if let propertyId = newPropertyId ?? propertyService.primary?.id {
                 let now = ISO8601DateFormatter().string(from: Date())
                 let templates = PropertyTypeZones.templates(for: propertyType)
                 for (index, template) in templates.enumerated() {

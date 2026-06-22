@@ -301,7 +301,7 @@ struct AIInsightsView: View {
 // MARK: - AIInsight model
 
 struct AIInsight: Identifiable {
-    let id = UUID()
+    var id: String { icon + title }
     let icon: String
     let iconColor: Color
     let title: String
