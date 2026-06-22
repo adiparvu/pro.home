@@ -33,10 +33,10 @@ struct AIInsightsView: View {
                         Spacer()
                         if !insights.isEmpty {
                             Text("\(insights.count)")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(.regularMaterial, in: Capsule())
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 7).padding(.vertical, 3)
+                                .background(Color.accentColor, in: Capsule())
                         }
                     }
 
