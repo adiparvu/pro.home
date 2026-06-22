@@ -32,6 +32,7 @@
 "language_select" = "SELECTEAZĂ LIMBA";
 "language_current" = "Limbă curentă";
 "language_ios_tip" = "Poți seta limba per-aplicație și din Setări iOS → PRVIO → Limbă.";
+"language_restart_notice" = "Repornește aplicația pentru a aplica complet modificările de limbă.";
 
 /* ── Common actions ── */
 "Cancel" = "Anulează";

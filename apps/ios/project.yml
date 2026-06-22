@@ -22,6 +22,8 @@ targets:
       - path: Resources/Assets.xcassets
       - path: Resources/en.lproj
       - path: Resources/ro.lproj
+      - path: Resources/fr.lproj
+      - path: Resources/nl.lproj
     dependencies:
       - package: Supabase
         product: Supabase
@@ -60,7 +62,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "222"
+        CURRENT_PROJECT_VERSION: "223"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
@@ -101,7 +103,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "222"
+        CURRENT_PROJECT_VERSION: "223"
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"

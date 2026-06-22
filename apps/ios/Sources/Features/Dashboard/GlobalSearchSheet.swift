@@ -141,7 +141,6 @@ struct GlobalSearchSheet: View {
             }
         }
         .onAppear { focused = true }
-        // Inline detail sheets for types that have dedicated views
         .sheet(item: $selectedMember) { m in
             MemberProfileSheet(member: m)
                 .environmentObject(familyService)
@@ -234,130 +233,192 @@ struct GlobalSearchSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Results
+    // MARK: - Results (split into sections to avoid type-checker timeout)
 
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                if !peopleResults.isEmpty {
-                    resultSection("People", icon: "person.2.fill", color: .purple) {
-                        ForEach(peopleResults.prefix(8)) { m in
-                            resultRow(m.name, subtitle: m.roleLabel,
-                                      icon: "person.fill", color: .purple,
-                                      isLast: m.id == peopleResults.prefix(8).last?.id) {
-                                selectedMember = m
-                            }
-                        }
-                    }
-                }
-                if !taskResults.isEmpty {
-                    resultSection("Tasks", icon: "checklist", color: .blue) {
-                        ForEach(taskResults.prefix(8)) { t in
-                            resultRow(t.title, subtitle: t.dueDateDisplay,
-                                      icon: "checklist", color: .blue,
-                                      isLast: t.id == taskResults.prefix(8).last?.id) {
-                                navigateAway(to: .tasks) { r in r.deepLinkTaskId = t.id }
-                            }
-                        }
-                    }
-                }
-                if !docResults.isEmpty {
-                    resultSection("Documents", icon: "doc.fill", color: .orange) {
-                        ForEach(docResults.prefix(8)) { d in
-                            resultRow(d.name, subtitle: d.expiresDisplay ?? "No expiry",
-                                      icon: "doc.fill", color: .orange,
-                                      isLast: d.id == docResults.prefix(8).last?.id) {
-                                navigateAway(to: .digitalTwin)
-                            }
-                        }
-                    }
-                }
-                if !applianceResults.isEmpty {
-                    resultSection("Appliances", icon: "washer.fill", color: .teal) {
-                        ForEach(applianceResults.prefix(8)) { a in
-                            resultRow(a.name,
-                                      subtitle: [a.brand, a.category.displayName].compactMap { $0 }.joined(separator: " · "),
-                                      icon: a.categoryIcon, color: a.categoryColor,
-                                      isLast: a.id == applianceResults.prefix(8).last?.id) {
-                                selectedAppliance = a
-                            }
-                        }
-                    }
-                }
-                if !elementResults.isEmpty {
-                    resultSection("Property Elements", icon: "house.fill", color: .indigo) {
-                        ForEach(elementResults.prefix(8)) { e in
-                            resultRow(e.name,
-                                      subtitle: [e.brand, e.description].compactMap { $0 }.first ?? e.category,
-                                      icon: "square.grid.2x2.fill", color: .indigo,
-                                      isLast: e.id == elementResults.prefix(8).last?.id) {
-                                selectedElement = e
-                            }
-                        }
-                    }
-                }
-                if !financialResults.isEmpty {
-                    resultSection("Finances", icon: "creditcard.fill", color: Color(red: 0.20, green: 0.78, blue: 0.35)) {
-                        ForEach(financialResults.prefix(8)) { f in
-                            resultRow(f.title, subtitle: f.category,
-                                      icon: "creditcard.fill", color: Color(red: 0.20, green: 0.78, blue: 0.35),
-                                      isLast: f.id == financialResults.prefix(8).last?.id) {
-                                navigateAway(to: .home)
-                            }
-                        }
-                    }
-                }
-                if !inventoryResults.isEmpty {
-                    resultSection("Inventory", icon: "archivebox.fill", color: .brown) {
-                        ForEach(inventoryResults.prefix(8)) { i in
-                            resultRow(i.name,
-                                      subtitle: [i.brand.isEmpty ? nil : i.brand, i.category].compactMap { $0 }.joined(separator: " · "),
-                                      icon: i.categoryIcon, color: i.categoryColor,
-                                      isLast: i.id == inventoryResults.prefix(8).last?.id) {
-                                selectedInventoryItem = i
-                            }
-                        }
-                    }
-                }
-                if !supplyResults.isEmpty {
-                    resultSection("Supplies", icon: "cart.fill", color: .cyan) {
-                        ForEach(supplyResults.prefix(8)) { s in
-                            resultRow(s.name, subtitle: s.category,
-                                      icon: s.categoryIcon, color: s.categoryColor,
-                                      isLast: s.id == supplyResults.prefix(8).last?.id) {
-                                navigateAway(to: .home) { r in r.showAddSupply = true }
-                            }
-                        }
-                    }
-                }
-                if !plantResults.isEmpty {
-                    resultSection("Plants", icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40)) {
-                        ForEach(plantResults.prefix(8)) { p in
-                            resultRow("\(p.emoji) \(p.name)",
-                                      subtitle: p.needsWatering ? "Needs watering" : p.wateringLabel,
-                                      icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40),
-                                      isLast: p.id == plantResults.prefix(8).last?.id) {
-                                selectedPlant = p
-                            }
-                        }
-                    }
-                }
-                if !deliveryResults.isEmpty {
-                    resultSection("Deliveries", icon: "shippingbox.fill", color: .orange) {
-                        ForEach(deliveryResults.prefix(8)) { d in
-                            resultRow(d.description, subtitle: "\(d.carrier) · \(d.statusLabel)",
-                                      icon: d.statusIcon, color: d.statusColor,
-                                      isLast: d.id == deliveryResults.prefix(8).last?.id) {
-                                selectedDelivery = d
-                            }
-                        }
-                    }
-                }
+                peopleSectionView
+                tasksSectionView
+                documentsSectionView
+                appliancesSectionView
+                elementsSectionView
+                financesSectionView
+                inventorySectionView
+                suppliesSectionView
+                plantsSectionView
+                deliveriesSectionView
                 Spacer(minLength: 60)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
         }
+    }
+
+    // MARK: - Individual section views
+
+    @ViewBuilder private var peopleSectionView: some View {
+        if !peopleResults.isEmpty {
+            resultSection("People", icon: "person.2.fill", color: .purple) {
+                ForEach(peopleResults.prefix(8)) { m in
+                    resultRow(m.name, subtitle: m.roleLabel,
+                              icon: "person.fill", color: .purple,
+                              isLast: m.id == peopleResults.prefix(8).last?.id) {
+                        selectedMember = m
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var tasksSectionView: some View {
+        if !taskResults.isEmpty {
+            resultSection("Tasks", icon: "checklist", color: .blue) {
+                ForEach(taskResults.prefix(8)) { t in
+                    resultRow(t.title, subtitle: t.dueDateDisplay,
+                              icon: "checklist", color: .blue,
+                              isLast: t.id == taskResults.prefix(8).last?.id) {
+                        navigateAway(to: .tasks) { r in r.deepLinkTaskId = t.id }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var documentsSectionView: some View {
+        if !docResults.isEmpty {
+            resultSection("Documents", icon: "doc.fill", color: .orange) {
+                ForEach(docResults.prefix(8)) { d in
+                    resultRow(d.name, subtitle: d.expiresDisplay ?? "No expiry",
+                              icon: "doc.fill", color: .orange,
+                              isLast: d.id == docResults.prefix(8).last?.id) {
+                        navigateAway(to: .digitalTwin)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var appliancesSectionView: some View {
+        if !applianceResults.isEmpty {
+            resultSection("Appliances", icon: "washer.fill", color: .teal) {
+                ForEach(applianceResults.prefix(8)) { a in
+                    resultRow(a.name,
+                              subtitle: applianceSubtitle(a),
+                              icon: a.categoryIcon, color: a.categoryColor,
+                              isLast: a.id == applianceResults.prefix(8).last?.id) {
+                        selectedAppliance = a
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var elementsSectionView: some View {
+        if !elementResults.isEmpty {
+            resultSection("Property Elements", icon: "house.fill", color: .indigo) {
+                ForEach(elementResults.prefix(8)) { e in
+                    resultRow(e.name,
+                              subtitle: elementSubtitle(e),
+                              icon: "square.grid.2x2.fill", color: .indigo,
+                              isLast: e.id == elementResults.prefix(8).last?.id) {
+                        selectedElement = e
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var financesSectionView: some View {
+        if !financialResults.isEmpty {
+            let green = Color(red: 0.20, green: 0.78, blue: 0.35)
+            resultSection("Finances", icon: "creditcard.fill", color: green) {
+                ForEach(financialResults.prefix(8)) { f in
+                    resultRow(f.title, subtitle: f.category,
+                              icon: "creditcard.fill", color: green,
+                              isLast: f.id == financialResults.prefix(8).last?.id) {
+                        navigateAway(to: .home)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var inventorySectionView: some View {
+        if !inventoryResults.isEmpty {
+            resultSection("Inventory", icon: "archivebox.fill", color: .brown) {
+                ForEach(inventoryResults.prefix(8)) { i in
+                    resultRow(i.name,
+                              subtitle: inventorySubtitle(i),
+                              icon: i.categoryIcon, color: i.categoryColor,
+                              isLast: i.id == inventoryResults.prefix(8).last?.id) {
+                        selectedInventoryItem = i
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var suppliesSectionView: some View {
+        if !supplyResults.isEmpty {
+            resultSection("Supplies", icon: "cart.fill", color: .cyan) {
+                ForEach(supplyResults.prefix(8)) { s in
+                    resultRow(s.name, subtitle: s.category,
+                              icon: s.categoryIcon, color: s.categoryColor,
+                              isLast: s.id == supplyResults.prefix(8).last?.id) {
+                        navigateAway(to: .home) { r in r.showAddSupply = true }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var plantsSectionView: some View {
+        if !plantResults.isEmpty {
+            let plantGreen = Color(red: 0.15, green: 0.80, blue: 0.40)
+            resultSection("Plants", icon: "leaf.fill", color: plantGreen) {
+                ForEach(plantResults.prefix(8)) { p in
+                    resultRow("\(p.emoji) \(p.name)",
+                              subtitle: p.needsWatering ? "Needs watering" : p.wateringLabel,
+                              icon: "leaf.fill", color: plantGreen,
+                              isLast: p.id == plantResults.prefix(8).last?.id) {
+                        selectedPlant = p
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var deliveriesSectionView: some View {
+        if !deliveryResults.isEmpty {
+            resultSection("Deliveries", icon: "shippingbox.fill", color: .orange) {
+                ForEach(deliveryResults.prefix(8)) { d in
+                    resultRow(d.description, subtitle: "\(d.carrier) · \(d.statusLabel)",
+                              icon: d.statusIcon, color: d.statusColor,
+                              isLast: d.id == deliveryResults.prefix(8).last?.id) {
+                        selectedDelivery = d
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Subtitle helpers (extracted to avoid type-checker timeout)
+
+    private func applianceSubtitle(_ a: Appliance) -> String {
+        let parts: [String?] = [a.brand, a.category.displayName]
+        return parts.compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private func elementSubtitle(_ e: PropertyElement) -> String {
+        let parts: [String?] = [e.brand, e.description]
+        return parts.compactMap { $0 }.first ?? e.category
+    }
+
+    private func inventorySubtitle(_ i: InventoryItem) -> String {
+        let brandPart: String? = i.brand.isEmpty ? nil : i.brand
+        let parts: [String?] = [brandPart, i.category]
+        return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
     // MARK: - Navigation helper

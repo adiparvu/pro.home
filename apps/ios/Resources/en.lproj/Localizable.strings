@@ -32,6 +32,7 @@
 "language_select" = "SELECT LANGUAGE";
 "language_current" = "Current language";
 "language_ios_tip" = "You can also set a per-app language in iOS Settings → PRVIO → Language.";
+"language_restart_notice" = "Restart the app to fully apply all language changes.";
 
 /* ── Common actions ── */
 "Cancel" = "Cancel";

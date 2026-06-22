@@ -1,0 +1,130 @@
+/* ── Tabs ── */
+"Home" = "Start";
+"Hartă" = "Kaart";
+"Tasks" = "Taken";
+"Analytics" = "Analyses";
+"Settings" = "Instellingen";
+
+/* ── Settings rows ── */
+"Language" = "Taal";
+"Appearance" = "Weergave";
+"Floating Buttons" = "Zwevende knoppen";
+"Integrations" = "Integraties";
+"Emergency Contacts" = "Noodcontacten";
+"Help & FAQ" = "Hulp & FAQ";
+"Rate App" = "Beoordeel app";
+"Sign Out" = "Uitloggen";
+
+/* ── Settings sections ── */
+"APP" = "APP";
+"SUPPORT" = "ONDERSTEUNING";
+"PROPERTY" = "EIGENDOM";
+"FAMILY" = "FAMILIE";
+"My Property" = "Mijn eigendom";
+"Family Members" = "Familieleden";
+"Trusted Contacts" = "Vertrouwde contacten";
+
+/* ── Language screen ── */
+"language_title" = "Taal";
+"language_subtitle" = "VOORKEUREN";
+"language_follow_ios" = "iOS-taal volgen";
+"language_follow_ios_desc" = "De app past zich automatisch aan aan de taal ingesteld in iOS-instellingen.";
+"language_select" = "TAAL SELECTEREN";
+"language_current" = "Huidige taal";
+"language_ios_tip" = "U kunt ook een taal per app instellen via iOS-instellingen → PRVIO → Taal.";
+"language_restart_notice" = "Start de app opnieuw op om alle taalwijzigingen toe te passen.";
+
+/* ── Common actions ── */
+"Cancel" = "Annuleren";
+"Save" = "Opslaan";
+"Delete" = "Verwijderen";
+"Edit" = "Bewerken";
+"Add" = "Toevoegen";
+"Done" = "Gereed";
+"Close" = "Sluiten";
+"OK" = "OK";
+"Back" = "Terug";
+"Next" = "Volgende";
+"Retry" = "Opnieuw";
+"Loading" = "Laden…";
+"Error" = "Fout";
+"Success" = "Geslaagd";
+"Confirm" = "Bevestigen";
+
+/* ── Property ── */
+"My Home" = "Mijn huis";
+"Add Property" = "Eigendom toevoegen";
+"Edit Property" = "Eigendom bewerken";
+"Property name" = "Naam eigendom";
+"Address" = "Adres";
+"City" = "Stad";
+"Country" = "Land";
+"Area (m²)" = "Oppervlakte (m²)";
+"Rooms" = "Kamers";
+"Adresă" = "Adres";
+"Țară" = "Land";
+"Suprafață" = "Oppervlakte";
+"Camere" = "Kamers";
+"An construit" = "Bouwjaar";
+"Scor sănătate" = "Gezondheidsscore";
+"Coordonate" = "Coördinaten";
+"Poveste" = "Verhaal";
+"Renovări" = "Renovaties";
+"Proprietari" = "Eigenaren";
+"Planuri proprietate" = "Eigendomsplannen";
+"No property found" = "Geen eigendom gevonden";
+
+/* ── Tasks ── */
+"No tasks yet" = "Nog geen taken";
+"Add your first task" = "Voeg uw eerste taak toe";
+"No open tasks" = "Geen openstaande taken";
+"No overdue tasks" = "Geen achterstallige taken";
+"No done tasks" = "Geen voltooide taken";
+
+/* ── Inventory ── */
+"No inventory yet" = "Inventaris leeg";
+"Add first item" = "Eerste item toevoegen";
+
+/* ── Documents ── */
+"No documents yet" = "Nog geen documenten";
+"No results found" = "Geen resultaten gevonden";
+"Tap + to add your first document" = "Tik op + om uw eerste document toe te voegen";
+
+/* ── Finances ── */
+"Income" = "Inkomsten";
+"Expenses" = "Uitgaven";
+"Balance" = "Saldo";
+
+/* ── Security ── */
+"Securitate" = "Beveiliging";
+"Siguranță și securitate" = "Veiligheid & beveiliging";
+"Aspect" = "Weergave";
+"Notificări" = "Meldingen";
+"Ajutor & FAQ" = "Hulp & FAQ";
+"Contacte de urgență" = "Noodcontacten";
+"Urgențe" = "Noodgevallen";
+
+/* ── Report ── */
+"Raport" = "Rapport";
+"PROPRIETATE" = "EIGENDOM";
+"Generează PDF" = "PDF genereren";
+"INCLUDE ÎN RAPORT" = "OPNEMEN IN RAPPORT";
+"Sarcini & Mentenanță" = "Taken & Onderhoud";
+"Rezumat financiar" = "Financieel overzicht";
+"Documente" = "Documenten";
+"Digital Twin & Zone" = "Digitale tweeling & Zones";
+
+/* ── Map / Digital Twin ── */
+"Hartă" = "Kaart";
+"Zone" = "Zones";
+"Obiecte" = "Objecten";
+
+/* ── Profile ── */
+"Profile" = "Profiel";
+"Display Name" = "Weergavenaam";
+"Edit Profile" = "Profiel bewerken";
+
+/* ── Empty / errors ── */
+"Something went wrong" = "Er is iets misgegaan";
+"Please try again" = "Probeer opnieuw";
+"No data available" = "Geen gegevens beschikbaar";

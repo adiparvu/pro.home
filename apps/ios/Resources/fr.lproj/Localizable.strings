@@ -1,0 +1,130 @@
+/* ── Tabs ── */
+"Home" = "Accueil";
+"Hartă" = "Carte";
+"Tasks" = "Tâches";
+"Analytics" = "Analyses";
+"Settings" = "Paramètres";
+
+/* ── Settings rows ── */
+"Language" = "Langue";
+"Appearance" = "Apparence";
+"Floating Buttons" = "Boutons flottants";
+"Integrations" = "Intégrations";
+"Emergency Contacts" = "Contacts d'urgence";
+"Help & FAQ" = "Aide & FAQ";
+"Rate App" = "Évaluer l'app";
+"Sign Out" = "Déconnexion";
+
+/* ── Settings sections ── */
+"APP" = "APP";
+"SUPPORT" = "SUPPORT";
+"PROPERTY" = "PROPRIÉTÉ";
+"FAMILY" = "FAMILLE";
+"My Property" = "Ma propriété";
+"Family Members" = "Membres de la famille";
+"Trusted Contacts" = "Contacts de confiance";
+
+/* ── Language screen ── */
+"language_title" = "Langue";
+"language_subtitle" = "PRÉFÉRENCES";
+"language_follow_ios" = "Suivre la langue iOS";
+"language_follow_ios_desc" = "L'application s'adapte automatiquement à la langue définie dans les réglages iOS.";
+"language_select" = "SÉLECTIONNER LA LANGUE";
+"language_current" = "Langue actuelle";
+"language_ios_tip" = "Vous pouvez également définir une langue par application dans Réglages iOS → PRVIO → Langue.";
+"language_restart_notice" = "Redémarrez l'application pour appliquer tous les changements de langue.";
+
+/* ── Common actions ── */
+"Cancel" = "Annuler";
+"Save" = "Enregistrer";
+"Delete" = "Supprimer";
+"Edit" = "Modifier";
+"Add" = "Ajouter";
+"Done" = "Terminé";
+"Close" = "Fermer";
+"OK" = "OK";
+"Back" = "Retour";
+"Next" = "Suivant";
+"Retry" = "Réessayer";
+"Loading" = "Chargement…";
+"Error" = "Erreur";
+"Success" = "Succès";
+"Confirm" = "Confirmer";
+
+/* ── Property ── */
+"My Home" = "Ma maison";
+"Add Property" = "Ajouter une propriété";
+"Edit Property" = "Modifier la propriété";
+"Property name" = "Nom de la propriété";
+"Address" = "Adresse";
+"City" = "Ville";
+"Country" = "Pays";
+"Area (m²)" = "Superficie (m²)";
+"Rooms" = "Pièces";
+"Adresă" = "Adresse";
+"Țară" = "Pays";
+"Suprafață" = "Superficie";
+"Camere" = "Pièces";
+"An construit" = "Année de construction";
+"Scor sănătate" = "Score de santé";
+"Coordonate" = "Coordonnées";
+"Poveste" = "Histoire";
+"Renovări" = "Rénovations";
+"Proprietari" = "Propriétaires";
+"Planuri proprietate" = "Plans de propriété";
+"No property found" = "Aucune propriété trouvée";
+
+/* ── Tasks ── */
+"No tasks yet" = "Aucune tâche";
+"Add your first task" = "Ajoutez votre première tâche";
+"No open tasks" = "Aucune tâche ouverte";
+"No overdue tasks" = "Aucune tâche en retard";
+"No done tasks" = "Aucune tâche terminée";
+
+/* ── Inventory ── */
+"No inventory yet" = "Inventaire vide";
+"Add first item" = "Ajouter un article";
+
+/* ── Documents ── */
+"No documents yet" = "Aucun document";
+"No results found" = "Aucun résultat";
+"Tap + to add your first document" = "Appuyez sur + pour ajouter votre premier document";
+
+/* ── Finances ── */
+"Income" = "Revenus";
+"Expenses" = "Dépenses";
+"Balance" = "Solde";
+
+/* ── Security ── */
+"Securitate" = "Sécurité";
+"Siguranță și securitate" = "Sûreté et sécurité";
+"Aspect" = "Apparence";
+"Notificări" = "Notifications";
+"Ajutor & FAQ" = "Aide & FAQ";
+"Contacte de urgență" = "Contacts d'urgence";
+"Urgențe" = "Urgences";
+
+/* ── Report ── */
+"Raport" = "Rapport";
+"PROPRIETATE" = "PROPRIÉTÉ";
+"Generează PDF" = "Générer PDF";
+"INCLUDE ÎN RAPORT" = "INCLURE DANS LE RAPPORT";
+"Sarcini & Mentenanță" = "Tâches & Maintenance";
+"Rezumat financiar" = "Résumé financier";
+"Documente" = "Documents";
+"Digital Twin & Zone" = "Jumeau numérique & Zones";
+
+/* ── Map / Digital Twin ── */
+"Hartă" = "Carte";
+"Zone" = "Zones";
+"Obiecte" = "Objets";
+
+/* ── Profile ── */
+"Profile" = "Profil";
+"Display Name" = "Nom affiché";
+"Edit Profile" = "Modifier le profil";
+
+/* ── Empty / errors ── */
+"Something went wrong" = "Une erreur s'est produite";
+"Please try again" = "Veuillez réessayer";
+"No data available" = "Aucune donnée disponible";
