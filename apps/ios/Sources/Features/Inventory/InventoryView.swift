@@ -8,7 +8,7 @@ struct InventoryView: View {
     var autoAdd: Bool = false
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var router: AppRouter
-    @StateObject private var service = InventoryService()
+    @EnvironmentObject private var service: InventoryService
     @State private var filter: InvFilter = .all
     @State private var showAdd = false
     @State private var showScanner = false
@@ -68,11 +68,11 @@ struct InventoryView: View {
                                 InventoryRow(item: item)
                                     .onTapGesture { selectedItem = item }
                                     .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) { HapticFeedback.warning(); service.delete(item) } label: { Label("Delete", systemImage: "trash") }
+                                        Button(role: .destructive) { HapticFeedback.warning(); Task { await service.delete(item) } } label: { Label("Delete", systemImage: "trash") }
                                     }
                                     .swipeActions(edge: .leading) {
                                         if item.isLoaned {
-                                            Button { HapticFeedback.success(); service.markReturned(item) } label: { Label("Returned", systemImage: "checkmark.circle") }
+                                            Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: { Label("Returned", systemImage: "checkmark.circle") }
                                                 .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
                                         } else {
                                             Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
@@ -121,7 +121,7 @@ struct InventoryView: View {
                 }
             }
         }
-        .sheet(isPresented: $showAdd) { AddInventorySheet { service.add($0) } }
+        .sheet(isPresented: $showAdd) { AddInventorySheet { item in Task { await service.add(item) } } }
         .sheet(isPresented: $showScanner) {
             QRScannerSheet { qrValue in
                 showScanner = false

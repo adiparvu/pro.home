@@ -4,38 +4,92 @@ import UserNotifications
 @MainActor
 final class InventoryService: ObservableObject {
     @Published var items: [InventoryItem] = []
-    private let key = "prvio.inventory.v2"
+    @Published var isLoading = false
+    @Published var error: String?
 
-    init() { load() }
+    private(set) var currentPropertyId: UUID?
+    private(set) var currentUserId: UUID?
 
-    func load() {
-        if let d = UserDefaults.standard.data(forKey: key),
-           let decoded = try? JSONDecoder().decode([InventoryItem].self, from: d) {
-            items = decoded
+    init() {}
+
+    func load(propertyId: UUID) async {
+        currentPropertyId = propertyId
+        currentUserId = supabase.auth.currentSession?.user.id
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let records: [DBInventoryRecord] = try await supabase
+                .from("inventory_items")
+                .select()
+                .eq("property_id", value: propertyId.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            items = records.map { $0.toInventoryItem() }
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 
-    func add(_ item: InventoryItem) { items.insert(item, at: 0); save() }
+    func add(_ item: InventoryItem) async {
+        guard let propertyId = currentPropertyId else { return }
+        do {
+            let new = item.toNew(propertyId: propertyId, addedBy: currentUserId)
+            let record: DBInventoryRecord = try await supabase
+                .from("inventory_items")
+                .insert(new)
+                .select()
+                .single()
+                .execute()
+                .value
+            items.insert(record.toInventoryItem(), at: 0)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 
-    func delete(_ item: InventoryItem) {
+    func update(_ item: InventoryItem) async {
+        do {
+            let record: DBInventoryRecord = try await supabase
+                .from("inventory_items")
+                .update(item.toUpdatePayload())
+                .eq("id", value: item.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+            let updated = record.toInventoryItem()
+            if let i = items.firstIndex(where: { $0.id == item.id }) {
+                items[i] = updated
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func delete(_ item: InventoryItem) async {
         cancelLoanNotifications(for: item)
-        items.removeAll { $0.id == item.id }
-        save()
+        do {
+            try await supabase
+                .from("inventory_items")
+                .delete()
+                .eq("id", value: item.id.uuidString)
+                .execute()
+            items.removeAll { $0.id == item.id }
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
-    func update(_ item: InventoryItem) {
-        if let i = items.firstIndex(where: { $0.id == item.id }) { items[i] = item; save() }
-    }
-
-    func loanOut(_ item: InventoryItem, to borrower: String, expectedReturn: Date?) {
+    func loanOut(_ item: InventoryItem, to borrower: String, expectedReturn: Date?) async {
         var updated = item
         let record = LoanRecord(borrowerName: borrower, loanedAt: Date(), expectedReturnDate: expectedReturn)
         updated.currentLoan = record
-        update(updated)
+        await update(updated)
         scheduleLoanReminders(for: updated, loan: record)
     }
 
-    func markReturned(_ item: InventoryItem) {
+    func markReturned(_ item: InventoryItem) async {
         var updated = item
         if var loan = updated.currentLoan {
             loan.returnedAt = Date()
@@ -43,7 +97,7 @@ final class InventoryService: ObservableObject {
             updated.currentLoan = nil
         }
         cancelLoanNotifications(for: item)
-        update(updated)
+        await update(updated)
     }
 
     func itemByQR(_ qrString: String) -> InventoryItem? {
@@ -85,10 +139,6 @@ final class InventoryService: ObservableObject {
     var expiringWarrantyCount: Int { items.filter { $0.warrantyStatus == .expiringSoon }.count }
 
     // MARK: - Private
-
-    private func save() {
-        if let d = try? JSONEncoder().encode(items) { UserDefaults.standard.set(d, forKey: key) }
-    }
 
     private func scheduleLoanReminders(for item: InventoryItem, loan: LoanRecord) {
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.inventoryLoans) else { return }

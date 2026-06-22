@@ -40,19 +40,21 @@ struct ItemDetailView: View {
             }
         }
         .sheet(isPresented: $showLocationPicker) {
-            ItemLocationSheet(item: live) { updated in service.update(updated) }
+            ItemLocationSheet(item: live) { updated in Task { await service.update(updated) } }
         }
         .sheet(isPresented: $showPublicContact) {
             PublicContactSheet(item: live) { updated in
-                service.update(updated)
-                Task { await service.syncPublicProfile(for: updated) }
+                Task {
+                    await service.update(updated)
+                    await service.syncPublicProfile(for: updated)
+                }
             }
         }
         .sheet(isPresented: $showLoan) {
-            LoanItemSheet { borrower, returnDate in service.loanOut(live, to: borrower, expectedReturn: returnDate) }
+            LoanItemSheet { borrower, returnDate in Task { await service.loanOut(live, to: borrower, expectedReturn: returnDate) } }
         }
         .confirmationDialog("Mark as Returned?", isPresented: $showReturnConfirm, titleVisibility: .visible) {
-            Button("Yes, mark returned") { HapticFeedback.success(); service.markReturned(live) }
+            Button("Yes, mark returned") { HapticFeedback.success(); Task { await service.markReturned(live) } }
             Button("Cancel", role: .cancel) {}
         } message: {
             if let loan = live.currentLoan {
