@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - AddApplianceSheet
 
@@ -12,6 +13,8 @@ struct AddApplianceSheet: View {
     @State private var category: ApplianceCategory = .other
     @State private var modelNumber = ""
     @State private var serialNumber = ""
+    @State private var scanPickerItem: PhotosPickerItem? = nil
+    @State private var isScanning = false
     @State private var location = ""
     @State private var hasPurchaseDate = false
     @State private var purchaseDate = Date()
@@ -30,7 +33,38 @@ struct AddApplianceSheet: View {
                         formSection("Basic Info") {
                             fieldRow("tag.fill", "Name (required)", $name)
                             divider
-                            fieldRow("building.2.fill", "Brand", $brand)
+                            HStack {
+                                fieldRow("building.2.fill", "Brand", $brand)
+                                Spacer()
+                                PhotosPicker(selection: $scanPickerItem, matching: .images) {
+                                    HStack(spacing: 4) {
+                                        if isScanning { ProgressView().scaleEffect(0.7) }
+                                        else { Image(systemName: "camera.viewfinder") }
+                                        Text("Scan").font(.caption.weight(.semibold))
+                                    }
+                                    .foregroundStyle(.accentColor)
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                }
+                                .onChange(of: scanPickerItem) { _, item in
+                                    guard let item else { return }
+                                    isScanning = true
+                                    Task {
+                                        defer { isScanning = false; scanPickerItem = nil }
+                                        guard let data = try? await item.loadTransferable(type: Data.self),
+                                              let uiImage = UIImage(data: data) else { return }
+                                        let lines = await VisionCaptureService.recognizeText(in: uiImage)
+                                        let parsed = VisionCaptureService.parseProduct(from: lines)
+                                        await MainActor.run {
+                                            if !parsed.brand.isEmpty { brand = parsed.brand }
+                                            if !parsed.model.isEmpty { modelNumber = parsed.model }
+                                            if !parsed.serialNumber.isEmpty { serialNumber = parsed.serialNumber }
+                                            if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
+                                            HapticFeedback.success()
+                                        }
+                                    }
+                                }
+                            }
                             divider
                             categoryPicker
                             divider
