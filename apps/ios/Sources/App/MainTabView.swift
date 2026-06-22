@@ -144,6 +144,7 @@ struct MainTabView: View {
                 await paintColorService.load(propertyId: propId)
                 await propertyValueService.load(propertyId: propId)
                 await inventoryService.load(propertyId: propId)
+                await budgetService.load(propertyId: propId)
             }
             writeWidgetSnapshot()
             updateDynamicShortcuts()
@@ -161,6 +162,7 @@ struct MainTabView: View {
                 await paintColorService.load(propertyId: newPropId)
                 await propertyValueService.load(propertyId: newPropId)
                 await inventoryService.load(propertyId: newPropId)
+                await budgetService.load(propertyId: newPropId)
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()
                 await indexSpotlight()
@@ -199,6 +201,7 @@ struct MainTabView: View {
                     await paintColorService.load(propertyId: propId)
                     await propertyValueService.load(propertyId: propId)
                     await inventoryService.load(propertyId: propId)
+                    await budgetService.load(propertyId: propId)
                 }
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()

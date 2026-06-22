@@ -5,14 +5,22 @@ final class BudgetService: ObservableObject {
     @Published var budgets: [String: Double] = [:]
 
     static let categories = ["rent", "utilities", "maintenance", "insurance", "taxes", "mortgage", "supplies", "other"]
-    private let key = "prvio.budgets"
 
-    init() { load() }
+    private var currentPropertyId: UUID?
 
-    func load() {
-        if let data = UserDefaults.standard.data(forKey: key),
-           let decoded = try? JSONDecoder().decode([String: Double].self, from: data) {
-            budgets = decoded
+    func load(propertyId: UUID) async {
+        currentPropertyId = propertyId
+        do {
+            struct Row: Codable { let category: String; let amount: Double }
+            let rows: [Row] = try await supabase
+                .from("property_budgets")
+                .select("category,amount")
+                .eq("property_id", value: propertyId.uuidString)
+                .execute()
+                .value
+            budgets = Dictionary(uniqueKeysWithValues: rows.map { ($0.category, $0.amount) })
+        } catch {
+            // ignore — budgets are optional data
         }
     }
 
@@ -22,11 +30,10 @@ final class BudgetService: ObservableObject {
         } else {
             budgets[category] = amount
         }
-        save()
+        Task { await persist(category: category, amount: amount) }
     }
 
     func budget(for category: String) -> Double { budgets[category] ?? 0 }
-
     func totalBudget() -> Double { budgets.values.reduce(0, +) }
 
     func spendingProgress(for category: String, spent: Double) -> Double {
@@ -35,9 +42,28 @@ final class BudgetService: ObservableObject {
         return min(spent / b, 1.0)
     }
 
-    private func save() {
-        if let data = try? JSONEncoder().encode(budgets) {
-            UserDefaults.standard.set(data, forKey: key)
+    // MARK: - Private
+
+    private func persist(category: String, amount: Double) async {
+        guard let propertyId = currentPropertyId else { return }
+        if amount <= 0 {
+            try? await supabase
+                .from("property_budgets")
+                .delete()
+                .eq("property_id", value: propertyId.uuidString)
+                .eq("category", value: category)
+                .execute()
+        } else {
+            struct Payload: Encodable {
+                let property_id: String
+                let category: String
+                let amount: Double
+            }
+            try? await supabase
+                .from("property_budgets")
+                .upsert(Payload(property_id: propertyId.uuidString, category: category, amount: amount),
+                        onConflict: "property_id,category")
+                .execute()
         }
     }
 }
