@@ -218,10 +218,10 @@ private struct ContractorRow: View {
                     Text(contractor.specialty.capitalized).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                 }
                 Spacer()
-                if !contractor.phone.isEmpty {
+                if let phone = contractor.phone, !phone.isEmpty {
                     Button {
                         HapticFeedback.impact(.light)
-                        if let url = URL(string: "tel://\(contractor.phone.filter { $0.isNumber })") {
+                        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
                             UIApplication.shared.open(url)
                         }
                     } label: {
