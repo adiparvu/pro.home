@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - GuestModeView
 
@@ -9,9 +10,6 @@ struct GuestModeView: View {
     @AppStorage("prvio.guest.wifi_pass") private var wifiPass = ""
     @AppStorage("prvio.guest.rules") private var houseRules = ""
     @AppStorage("prvio.guest.notes") private var guestNotes = ""
-
-    @State private var showShare = false
-    @State private var shareItems: [Any] = []
 
     private var propertyName: String {
         propertyService.primary?.name ?? "My Home"
@@ -45,10 +43,6 @@ struct GuestModeView: View {
                         .foregroundStyle(.primary)
                 }
             }
-        }
-        .sheet(isPresented: $showShare) {
-            ShareSheet(activityItems: shareItems)
-                .ignoresSafeArea()
         }
     }
 
@@ -218,22 +212,23 @@ struct GuestModeView: View {
 
     private func shareGuestInfo() {
         var text = "Welcome to \(propertyName)!\n\n"
-
         text += "📶 WiFi\n"
         if !wifiName.isEmpty { text += "Network: \(wifiName)\n" }
         if !wifiPass.isEmpty { text += "Password: \(wifiPass)\n" }
         text += "\n"
+        if !houseRules.isEmpty { text += "🏠 House Rules\n\(houseRules)\n\n" }
+        if !guestNotes.isEmpty { text += "📝 Notes\n\(guestNotes)\n" }
 
-        if !houseRules.isEmpty {
-            text += "🏠 House Rules\n\(houseRules)\n\n"
-        }
+        let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
 
-        if !guestNotes.isEmpty {
-            text += "📝 Notes\n\(guestNotes)\n"
-        }
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.keyWindow,
+              let rootVC = window.rootViewController else { return }
 
-        shareItems = [text]
-        showShare = true
+        let presenter = rootVC.presentedViewController ?? rootVC
+        activityVC.popoverPresentationController?.sourceView = window
+        presenter.present(activityVC, animated: true)
+
         HapticFeedback.impact(.medium)
     }
 }
