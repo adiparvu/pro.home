@@ -4,10 +4,10 @@ struct MapStylePickerSheet: View {
     @Binding var selected: String
     @Environment(\.dismiss) private var dismiss
 
-    private let styles: [(id: String, title: String, subtitle: String, icon: String)] = [
-        ("hybrid",   "Hybrid",    "Satellite + Roads",  "airplane"),
-        ("standard", "Standard",  "Street Map",         "map"),
-        ("satellite","Satellite", "Imagery Only",       "globe"),
+    private let styles: [(id: String, title: String, subtitle: String)] = [
+        ("hybrid",    "Hybrid",    "Satellite + Roads"),
+        ("standard",  "Standard",  "Street Map"),
+        ("satellite", "Satellite", "Imagery Only"),
     ]
 
     var body: some View {
@@ -29,7 +29,6 @@ struct MapStylePickerSheet: View {
                         id: style.id,
                         title: style.title,
                         subtitle: style.subtitle,
-                        icon: style.icon,
                         isSelected: selected == style.id
                     ) {
                         selected = style.id
@@ -54,7 +53,6 @@ private struct StyleCard: View {
     let id: String
     let title: String
     let subtitle: String
-    let icon: String
     let isSelected: Bool
     let action: () -> Void
 
@@ -64,12 +62,9 @@ private struct StyleCard: View {
                 ZStack {
                     Canvas { ctx, size in
                         switch id {
-                        case "standard":
-                            drawStandardPreview(ctx: ctx, size: size)
-                        case "satellite":
-                            drawSatellitePreview(ctx: ctx, size: size)
-                        default:
-                            drawHybridPreview(ctx: ctx, size: size)
+                        case "standard":  drawStandard(&ctx, size)
+                        case "satellite": drawSatellite(&ctx, size)
+                        default:          drawHybrid(&ctx, size)
                         }
                     }
                     .frame(height: 96)
@@ -108,88 +103,88 @@ private struct StyleCard: View {
         .buttonStyle(.plain)
     }
 
-    private func drawHybridPreview(ctx: GraphicsContext, size: CGSize) {
-        // Dark satellite background with road overlay
-        ctx.fill(Path(CGRect(origin: .zero, size: size)),
-                 with: .linearGradient(
-                    Gradient(colors: [
-                        Color(red: 0.17, green: 0.24, blue: 0.19),
-                        Color(red: 0.13, green: 0.20, blue: 0.22)
-                    ]),
-                    startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)))
+    // MARK: - Canvas draw helpers (ctx must be inout so mutating calls compile)
 
-        // Greenish patches (vegetation)
-        for patch in [
-            CGRect(x: 4, y: 6, width: 28, height: 22),
+    private func drawHybrid(_ ctx: inout GraphicsContext, _ size: CGSize) {
+        ctx.fill(
+            Path(CGRect(origin: .zero, size: size)),
+            with: .linearGradient(
+                Gradient(colors: [
+                    Color(red: 0.17, green: 0.24, blue: 0.19),
+                    Color(red: 0.13, green: 0.20, blue: 0.22)
+                ]),
+                startPoint: .zero,
+                endPoint: CGPoint(x: size.width, y: size.height)
+            )
+        )
+        for rect in [
+            CGRect(x: 4,  y: 6,  width: 28, height: 22),
             CGRect(x: 58, y: 14, width: 40, height: 28),
             CGRect(x: 14, y: 54, width: 22, height: 30),
             CGRect(x: 80, y: 52, width: 30, height: 26),
         ] {
             ctx.fill(
-                Path(roundedRect: patch, cornerRadius: 4),
+                Path(roundedRect: rect, cornerRadius: 4),
                 with: .color(Color(red: 0.20, green: 0.38, blue: 0.22).opacity(0.75))
             )
         }
-        // Roads
-        drawRoads(ctx: ctx, size: size, color: Color(red: 0.85, green: 0.78, blue: 0.60))
+        drawRoads(&ctx, size, Color(red: 0.85, green: 0.78, blue: 0.60))
     }
 
-    private func drawStandardPreview(ctx: GraphicsContext, size: CGSize) {
-        // Light street map background
-        ctx.fill(Path(CGRect(origin: .zero, size: size)),
-                 with: .color(Color(red: 0.94, green: 0.93, blue: 0.90)))
-
-        // Block fills
-        for block in [
-            CGRect(x: 6, y: 8, width: 30, height: 24),
-            CGRect(x: 54, y: 6, width: 38, height: 20),
-            CGRect(x: 6, y: 52, width: 24, height: 30),
+    private func drawStandard(_ ctx: inout GraphicsContext, _ size: CGSize) {
+        ctx.fill(
+            Path(CGRect(origin: .zero, size: size)),
+            with: .color(Color(red: 0.94, green: 0.93, blue: 0.90))
+        )
+        for rect in [
+            CGRect(x: 6,  y: 8,  width: 30, height: 24),
+            CGRect(x: 54, y: 6,  width: 38, height: 20),
+            CGRect(x: 6,  y: 52, width: 24, height: 30),
             CGRect(x: 76, y: 44, width: 34, height: 36),
             CGRect(x: 40, y: 38, width: 28, height: 38),
         ] {
             ctx.fill(
-                Path(roundedRect: block, cornerRadius: 2),
+                Path(roundedRect: rect, cornerRadius: 2),
                 with: .color(Color(red: 0.84, green: 0.83, blue: 0.79))
             )
         }
-        // Park
         ctx.fill(
             Path(roundedRect: CGRect(x: 54, y: 48, width: 18, height: 18), cornerRadius: 3),
             with: .color(Color(red: 0.75, green: 0.88, blue: 0.72).opacity(0.8))
         )
-        drawRoads(ctx: ctx, size: size, color: .white)
+        drawRoads(&ctx, size, .white)
     }
 
-    private func drawSatellitePreview(ctx: GraphicsContext, size: CGSize) {
-        // Deep satellite gradient
-        ctx.fill(Path(CGRect(origin: .zero, size: size)),
-                 with: .linearGradient(
-                    Gradient(colors: [
-                        Color(red: 0.10, green: 0.18, blue: 0.13),
-                        Color(red: 0.15, green: 0.25, blue: 0.28)
-                    ]),
-                    startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)))
-
-        // Vegetation patches
+    private func drawSatellite(_ ctx: inout GraphicsContext, _ size: CGSize) {
+        ctx.fill(
+            Path(CGRect(origin: .zero, size: size)),
+            with: .linearGradient(
+                Gradient(colors: [
+                    Color(red: 0.10, green: 0.18, blue: 0.13),
+                    Color(red: 0.15, green: 0.25, blue: 0.28)
+                ]),
+                startPoint: .zero,
+                endPoint: CGPoint(x: size.width, y: size.height)
+            )
+        )
         for (rect, opacity) in [
-            (CGRect(x: 2, y: 4, width: 36, height: 28), 0.65),
+            (CGRect(x: 2,  y: 4,  width: 36, height: 28), 0.65),
             (CGRect(x: 60, y: 10, width: 44, height: 32), 0.55),
             (CGRect(x: 10, y: 50, width: 28, height: 36), 0.60),
             (CGRect(x: 78, y: 54, width: 32, height: 28), 0.50),
-        ] {
+        ] as [(CGRect, Double)] {
             ctx.fill(
                 Path(roundedRect: rect, cornerRadius: 5),
                 with: .color(Color(red: 0.18, green: 0.40, blue: 0.20).opacity(opacity))
             )
         }
-        // Water patch
         ctx.fill(
             Path(roundedRect: CGRect(x: 34, y: 32, width: 26, height: 20), cornerRadius: 6),
             with: .color(Color(red: 0.15, green: 0.35, blue: 0.58).opacity(0.7))
         )
     }
 
-    private func drawRoads(ctx: GraphicsContext, size: CGSize, color: Color) {
+    private func drawRoads(_ ctx: inout GraphicsContext, _ size: CGSize, _ color: Color) {
         var h = Path()
         h.move(to: CGPoint(x: 0, y: size.height * 0.42))
         h.addLine(to: CGPoint(x: size.width, y: size.height * 0.42))
@@ -200,10 +195,10 @@ private struct StyleCard: View {
         v.addLine(to: CGPoint(x: size.width * 0.50, y: size.height))
         ctx.stroke(v, with: .color(color.opacity(0.9)), lineWidth: 2.5)
 
-        var d = Path()
-        d.move(to: CGPoint(x: 0, y: size.height * 0.22))
-        d.addLine(to: CGPoint(x: size.width, y: size.height * 0.22))
-        ctx.stroke(d, with: .color(color.opacity(0.55)), lineWidth: 1.5)
+        var d1 = Path()
+        d1.move(to: CGPoint(x: 0, y: size.height * 0.22))
+        d1.addLine(to: CGPoint(x: size.width, y: size.height * 0.22))
+        ctx.stroke(d1, with: .color(color.opacity(0.55)), lineWidth: 1.5)
 
         var d2 = Path()
         d2.move(to: CGPoint(x: size.width * 0.28, y: 0))
