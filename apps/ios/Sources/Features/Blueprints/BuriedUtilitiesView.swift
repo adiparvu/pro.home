@@ -66,7 +66,7 @@ struct BuriedUtilitiesView: View {
 
     private var mapCard: some View {
         Map(coordinateRegion: .constant(region), annotationItems: mapped) { u in
-            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: u.latitude!, longitude: u.longitude!)) {
+            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0)) {
                 ZStack {
                     Circle().fill(u.swiftColor).frame(width: 28, height: 28)
                         .overlay(Circle().strokeBorder(.white, lineWidth: 2))

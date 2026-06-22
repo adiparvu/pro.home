@@ -75,7 +75,7 @@ struct ObjectLocationPicker: View {
 
     private var hint: some View {
         Text(picked == nil ? "Tap the map to place the object" :
-                (pickedZone != nil ? "In zone: \(pickedZone!.name)" : "Outside all zones"))
+                (pickedZone.map { "In zone: \($0.name)" } ?? "Outside all zones"))
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)

@@ -74,10 +74,10 @@ struct BuriedUtilityDetailSheet: View {
                         }
                         if utility.hasLocation {
                             Map(coordinateRegion: .constant(MKCoordinateRegion(
-                                center: CLLocationCoordinate2D(latitude: utility.latitude!, longitude: utility.longitude!),
+                                center: CLLocationCoordinate2D(latitude: utility.latitude ?? 0, longitude: utility.longitude ?? 0),
                                 span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
                             )), annotationItems: [utility]) { u in
-                                MapMarker(coordinate: CLLocationCoordinate2D(latitude: u.latitude!, longitude: u.longitude!), tint: u.swiftColor)
+                                MapMarker(coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0), tint: u.swiftColor)
                             }
                             .frame(height: 200)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -108,7 +108,7 @@ struct BuriedUtilityDetailSheet: View {
                         }
                         if utility.hasLocation {
                             Button {
-                                let coord = "\(utility.latitude!),\(utility.longitude!)"
+                                let coord = "\(utility.latitude ?? 0),\(utility.longitude ?? 0)"
                                 if let url = URL(string: "maps://?q=\(coord)&ll=\(coord)") {
                                     UIApplication.shared.open(url)
                                 }
