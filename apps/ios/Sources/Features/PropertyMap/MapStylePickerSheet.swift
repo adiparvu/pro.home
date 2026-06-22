@@ -90,7 +90,7 @@ private struct StyleCard: View {
                 VStack(spacing: 2) {
                     Text(title)
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(isSelected ? .accentColor : .primary)
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     Text(subtitle)
                         .font(.system(size: 10))
                         .foregroundStyle(Color.primary.opacity(0.45))
