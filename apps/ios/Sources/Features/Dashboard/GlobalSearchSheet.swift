@@ -412,7 +412,7 @@ struct GlobalSearchSheet: View {
 
     private func elementSubtitle(_ e: PropertyElement) -> String {
         let parts: [String?] = [e.brand, e.description]
-        return parts.compactMap { $0 }.first ?? e.category
+        return parts.compactMap { $0 }.first ?? e.elementType.displayName
     }
 
     private func inventorySubtitle(_ i: InventoryItem) -> String {
