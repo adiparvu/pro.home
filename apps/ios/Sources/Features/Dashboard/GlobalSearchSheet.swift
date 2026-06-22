@@ -106,10 +106,10 @@ struct GlobalSearchSheet: View {
     }
 
     private var hasResults: Bool {
-        !taskResults.isEmpty || !docResults.isEmpty || !plantResults.isEmpty ||
-        !deliveryResults.isEmpty || !peopleResults.isEmpty || !financialResults.isEmpty ||
-        !elementResults.isEmpty || !applianceResults.isEmpty || !supplyResults.isEmpty ||
-        !inventoryResults.isEmpty
+        !shortcutResults.isEmpty || !taskResults.isEmpty || !docResults.isEmpty ||
+        !plantResults.isEmpty || !deliveryResults.isEmpty || !peopleResults.isEmpty ||
+        !financialResults.isEmpty || !elementResults.isEmpty || !applianceResults.isEmpty ||
+        !supplyResults.isEmpty || !inventoryResults.isEmpty
     }
 
     var body: some View {
@@ -203,10 +203,10 @@ struct GlobalSearchSheet: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
-            Text("Search across the entire app")
+            Text("Search the entire app")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
-            Text("People · Tasks · Documents · Appliances · Finances · Plants · Supplies · Inventory · Deliveries")
+            Text("Tasks · Settings · ARIA · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
@@ -238,6 +238,7 @@ struct GlobalSearchSheet: View {
     private var resultsView: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                shortcutsSectionView
                 peopleSectionView
                 tasksSectionView
                 documentsSectionView
@@ -252,6 +253,101 @@ struct GlobalSearchSheet: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
+        }
+    }
+
+    // MARK: - Navigation shortcuts
+
+    private struct AppShortcut: Identifiable {
+        let id = UUID()
+        let name: String
+        let subtitle: String
+        let synonyms: [String]
+        let icon: String
+        let color: Color
+        let tab: AppTab
+        let extra: ((AppRouter) -> Void)?
+    }
+
+    private static let appSections: [AppShortcut] = [
+        AppShortcut(name: "Tasks", subtitle: "All maintenance tasks",
+                    synonyms: ["task", "sarcini", "sarcina", "checklist", "maintenance", "mentenanta"],
+                    icon: "checklist", color: .blue, tab: .tasks, extra: nil),
+        AppShortcut(name: "Add Task", subtitle: "Create a new task",
+                    synonyms: ["add task", "new task", "adauga sarcina", "adaugă sarcina"],
+                    icon: "plus.circle.fill", color: .blue, tab: .tasks,
+                    extra: { r in r.showAddTask = true }),
+        AppShortcut(name: "Settings", subtitle: "App preferences",
+                    synonyms: ["settings", "setari", "setări", "preferences", "config", "configurare"],
+                    icon: "gearshape.fill", color: Color(.systemGray), tab: .settings, extra: nil),
+        AppShortcut(name: "Language", subtitle: "Change app language",
+                    synonyms: ["language", "limba", "limbă", "english", "romana", "română", "french", "dutch", "franceza", "olandeza"],
+                    icon: "globe", color: .blue, tab: .settings, extra: nil),
+        AppShortcut(name: "Appearance", subtitle: "Theme & display",
+                    synonyms: ["appearance", "aspect", "theme", "dark mode", "mod intunecat", "culoare"],
+                    icon: "paintbrush.fill", color: .pink, tab: .settings, extra: nil),
+        AppShortcut(name: "ARIA", subtitle: "AI assistant",
+                    synonyms: ["aria", "chat", "ai", "assistant", "asistent", "gpt", "sparkles"],
+                    icon: "sparkles", color: Color(red: 0.45, green: 0.30, blue: 0.95), tab: .chat, extra: nil),
+        AppShortcut(name: "Digital Twin", subtitle: "Property map & zones",
+                    synonyms: ["map", "harta", "hartă", "twin", "digital twin", "zone", "zones", "proprietate"],
+                    icon: "map.fill", color: .teal, tab: .digitalTwin, extra: nil),
+        AppShortcut(name: "Blueprints", subtitle: "Floor plans & 3D scans",
+                    synonyms: ["blueprint", "blueprints", "plan", "floor plan", "scan", "lidar", "3d", "room"],
+                    icon: "square.3.layers.3d", color: .indigo, tab: .digitalTwin, extra: nil),
+        AppShortcut(name: "Plants", subtitle: "Manage your plants",
+                    synonyms: ["plant", "plants", "plante", "planta", "watering", "udare", "flori"],
+                    icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), tab: .home,
+                    extra: { r in r.showWaterPlant = true }),
+        AppShortcut(name: "Supplies", subtitle: "Shopping & supply lists",
+                    synonyms: ["supply", "supplies", "shopping", "lista", "cumparaturi", "cumpărături", "cart"],
+                    icon: "cart.fill", color: .cyan, tab: .home,
+                    extra: { r in r.showAddSupply = true }),
+        AppShortcut(name: "Documents", subtitle: "All your documents",
+                    synonyms: ["document", "documents", "documente", "pdf", "file", "fisier", "fișier"],
+                    icon: "doc.fill", color: .orange, tab: .digitalTwin, extra: nil),
+        AppShortcut(name: "Appliances", subtitle: "Household appliances",
+                    synonyms: ["appliance", "appliances", "electrocasnice", "washer", "fridge", "frigider"],
+                    icon: "washer.fill", color: .teal, tab: .digitalTwin, extra: nil),
+        AppShortcut(name: "Finances", subtitle: "Income, expenses & budget",
+                    synonyms: ["finance", "finances", "finante", "finanțe", "budget", "buget", "cheltuieli", "venituri", "income", "expenses"],
+                    icon: "creditcard.fill", color: Color(red: 0.20, green: 0.78, blue: 0.35), tab: .home, extra: nil),
+        AppShortcut(name: "Inventory", subtitle: "Home inventory",
+                    synonyms: ["inventory", "inventar", "items", "obiecte", "stoc"],
+                    icon: "archivebox.fill", color: .brown, tab: .home, extra: nil),
+        AppShortcut(name: "Family", subtitle: "Family members & contacts",
+                    synonyms: ["family", "familie", "members", "contact", "contacts", "persoane"],
+                    icon: "person.2.fill", color: .purple, tab: .settings, extra: nil),
+        AppShortcut(name: "Deliveries", subtitle: "Package tracking",
+                    synonyms: ["delivery", "deliveries", "livrare", "livrari", "parcel", "package", "tracking", "colet"],
+                    icon: "shippingbox.fill", color: .orange, tab: .home, extra: nil),
+        AppShortcut(name: "Analytics", subtitle: "Stats & property insights",
+                    synonyms: ["analytics", "analiza", "analiză", "stats", "statistics", "raport", "report", "insights"],
+                    icon: "chart.bar.fill", color: Color(red: 0.40, green: 0.60, blue: 1.0), tab: .home, extra: nil),
+        AppShortcut(name: "Emergency Contacts", subtitle: "Emergency contact list",
+                    synonyms: ["emergency", "urgenta", "urgență", "contact", "contacts", "sos"],
+                    icon: "phone.fill", color: .red, tab: .settings, extra: nil),
+    ]
+
+    private var shortcutResults: [AppShortcut] {
+        guard active else { return [] }
+        return Self.appSections.filter { s in
+            s.name.lowercased().contains(q) ||
+            s.synonyms.contains { $0.contains(q) }
+        }
+    }
+
+    @ViewBuilder private var shortcutsSectionView: some View {
+        if !shortcutResults.isEmpty {
+            resultSection("Navigate to", icon: "arrow.right.circle.fill", color: .accentColor) {
+                ForEach(Array(shortcutResults.enumerated()), id: \.element.id) { idx, s in
+                    resultRow(s.name, subtitle: s.subtitle,
+                              icon: s.icon, color: s.color,
+                              isLast: idx == shortcutResults.count - 1) {
+                        navigateAway(to: s.tab, action: s.extra)
+                    }
+                }
+            }
         }
     }
 

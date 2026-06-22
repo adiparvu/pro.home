@@ -329,12 +329,12 @@ struct InsightRow: View {
         .padding(.vertical, 12)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.regularMaterial)
+                .fill(Color(.secondarySystemBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                 )
         }
-        .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 1)
     }
 }
