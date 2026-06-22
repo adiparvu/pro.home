@@ -68,6 +68,7 @@ struct MainTabView: View {
                     .environmentObject(propertyService)
                     .environmentObject(familyService)
                     .environmentObject(profileService)
+                    .environmentObject(taskService)
             }
         }
         .sheet(isPresented: $router.showAddTask) { AddTaskView() }

@@ -7,7 +7,8 @@ struct DirectMessageView: View {
     let member: FamilyMember
 
     @EnvironmentObject private var profileService: ProfileService
-    @State private var messages: [DMMessage] = []
+    @EnvironmentObject private var propertyService: PropertyService
+    @State private var messages: [DirectMessage] = []
     @State private var input = ""
     @State private var isLoading = false
     @FocusState private var focused: Bool
@@ -49,6 +50,7 @@ struct DirectMessageView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
+            .scrollDismissesKeyboard(.immediately)
             .onChange(of: messages.count) { _, _ in
                 if let last = messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -124,14 +126,15 @@ struct DirectMessageView: View {
         defer { isLoading = false }
         // Graceful degradation — if table doesn't exist, just show empty state
         do {
-            let rows: [DMMessageRow] = try await supabase
+            // Correct bidirectional filter: sender=me AND recipient=them, OR sender=them AND recipient=me
+            messages = try await supabase
                 .from("direct_messages")
                 .select()
-                .or("sender_name.eq.\(myName),sender_name.eq.\(member.name)")
-                .order("created_at")
+                .or("and(sender_name.eq.\(myName),recipient_name.eq.\(member.name)),and(sender_name.eq.\(member.name),recipient_name.eq.\(myName))")
+                .order("created_at", ascending: true)
+                .limit(200)
                 .execute()
                 .value
-            messages = rows.map { DMMessage(id: $0.id, senderName: $0.senderName, content: $0.content, timestamp: Date()) }
         } catch {
             messages = []
         }
@@ -141,13 +144,31 @@ struct DirectMessageView: View {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         input = ""
-        let msg = DMMessage(id: UUID(), senderName: myName, content: text, timestamp: Date())
-        messages.append(msg)
+
+        struct DirectMessagePayload: Encodable {
+            let sender_name: String
+            let recipient_name: String
+            let body: String
+            let property_id: String?
+        }
+
+        let payload = DirectMessagePayload(
+            sender_name: myName,
+            recipient_name: member.name,
+            body: text,
+            property_id: propertyService.primary?.id.uuidString
+        )
+
         do {
-            try await supabase
+            let sent: DirectMessage = try await supabase
                 .from("direct_messages")
-                .insert(["sender_name": myName, "recipient_name": member.name, "content": text])
+                .insert(payload)
+                .select()
+                .single()
                 .execute()
+                .value
+            messages.append(sent)
+            HapticFeedback.impact(.light)
         } catch { }
     }
 }
@@ -155,13 +176,13 @@ struct DirectMessageView: View {
 // MARK: - DM Bubble
 
 private struct DMBubble: View {
-    let message: DMMessage
+    let message: DirectMessage
     let isOwn: Bool
 
     var body: some View {
         HStack {
             if isOwn { Spacer(minLength: 60) }
-            Text(message.content)
+            Text(message.body)
                 .font(.system(size: 15))
                 .foregroundStyle(isOwn ? .white : .primary)
                 .padding(.horizontal, 14).padding(.vertical, 9)
@@ -172,22 +193,30 @@ private struct DMBubble: View {
     }
 }
 
-// MARK: - Models
+// MARK: - Model
 
-struct DMMessage: Identifiable {
+struct DirectMessage: Identifiable, Codable {
     let id: UUID
     let senderName: String
-    let content: String
-    let timestamp: Date
-}
-
-private struct DMMessageRow: Decodable {
-    let id: UUID
-    let senderName: String
-    let content: String
+    let recipientName: String
+    let body: String
+    let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, content
-        case senderName = "sender_name"
+        case id, body
+        case senderName    = "sender_name"
+        case recipientName = "recipient_name"
+        case createdAt     = "created_at"
+    }
+
+    var timeDisplay: String {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter()
+        f2.formatOptions = [.withInternetDateTime]
+        let d = f.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
+        let out = DateFormatter()
+        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        return out.string(from: d)
     }
 }

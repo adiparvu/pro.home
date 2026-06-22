@@ -1,12 +1,20 @@
 import SwiftUI
 
+// MARK: - Proposed action model
+
+struct ARIAProposedAction {
+    let tool: String          // "create_task", "mark_plant_watered"
+    let input: [String: Any]
+    let displayText: String   // e.g. "Create task: Check boiler"
+}
+
 struct ARIAView: View {
     var onDismiss: (() -> Void)? = nil
 
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var taskService: TaskService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var taskService: TaskService
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
@@ -14,7 +22,7 @@ struct ARIAView: View {
     @State private var input = ""
     @State private var isThinking = false
     @State private var isLoadingHistory = true
-    @State private var showSettings = false
+    @State private var proposedAction: ARIAProposedAction? = nil
     @FocusState private var focused: Bool
     @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
     @StateObject private var speech = SpeechRecognizer()
@@ -105,6 +113,18 @@ struct ARIAView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
+            // Action confirmation banner
+            if let action = proposedAction {
+                ARIAActionBanner(
+                    action: action,
+                    onConfirm: { confirmAction(action) },
+                    onCancel: { proposedAction = nil }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             VStack(spacing: 10) {
                 // Text field row
                 HStack(spacing: 10) {
@@ -196,7 +216,7 @@ struct ARIAView: View {
                     // Right: large glowing blue orb (send / stop)
                     Button {
                         speech.stop()
-                        if isThinking { isThinking = false } else { send() }
+                        if isThinking { isThinking = false } else { sendRaw() }
                     } label: {
                         ZStack {
                             // Outer glow ring
@@ -291,7 +311,7 @@ struct ARIAView: View {
         }
     }
 
-    private func send() {
+    private func sendRaw() {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         input = ""
@@ -306,18 +326,100 @@ struct ARIAView: View {
                     let property_id: String?
                 }
                 let payload = ARIAChatPayload(message: text, property_id: propId)
-                struct ARIAResponse: Decodable { let reply: String?; let error: String? }
-                let decoded: ARIAResponse = try await supabase.functions
+                let rawResponse: Data = try await supabase.functions
                     .invoke("aria-chat", options: .init(body: payload))
 
                 isThinking = false
-                messages.append(ARIAMessage(
-                    role: .aria,
-                    content: decoded.reply ?? decoded.error ?? "Something went wrong. Try again."
-                ))
+
+                guard let json = try? JSONSerialization.jsonObject(with: rawResponse) as? [String: Any] else {
+                    messages.append(ARIAMessage(role: .aria, content: "Something went wrong. Try again."))
+                    return
+                }
+
+                if let errorMsg = json["error"] as? String {
+                    messages.append(ARIAMessage(role: .aria, content: errorMsg))
+                    return
+                }
+
+                let responseType = json["type"] as? String
+                if responseType == "action_required",
+                   let tool = json["tool"] as? String,
+                   let actionInput = json["input"] as? [String: Any] {
+                    let replyText = json["reply"] as? String
+                    if let replyText, !replyText.isEmpty {
+                        messages.append(ARIAMessage(role: .aria, content: replyText))
+                    }
+                    withAnimation {
+                        proposedAction = buildProposedAction(tool: tool, input: actionInput)
+                    }
+                } else if let reply = json["reply"] as? String {
+                    messages.append(ARIAMessage(role: .aria, content: reply))
+                } else {
+                    messages.append(ARIAMessage(role: .aria, content: "Something went wrong. Try again."))
+                }
             } catch {
                 isThinking = false
                 messages.append(ARIAMessage(role: .aria, content: "I'm having trouble connecting. Please try again."))
+            }
+        }
+    }
+
+    private func buildProposedAction(tool: String, input: [String: Any]) -> ARIAProposedAction {
+        let displayText: String
+        switch tool {
+        case "create_task":
+            let name = input["name"] as? String ?? "New task"
+            displayText = "Create task: \"\(name)\""
+        case "mark_plant_watered":
+            let plantName = input["plant_name"] as? String ?? "Plant"
+            displayText = "Mark as watered: \"\(plantName)\""
+        default:
+            displayText = tool.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+        return ARIAProposedAction(tool: tool, input: input, displayText: displayText)
+    }
+
+    private func confirmAction(_ action: ARIAProposedAction) {
+        proposedAction = nil
+        Task {
+            switch action.tool {
+            case "create_task":
+                guard let propertyId = propertyService.primary?.id else { return }
+                let name = action.input["name"] as? String ?? "New task"
+                let description = action.input["description"] as? String
+                let dueDate = action.input["due_date"] as? String
+                let payload = NewTaskPayload(
+                    propertyId: propertyId,
+                    title: name,
+                    description: description,
+                    dueDate: dueDate,
+                    priority: "medium",
+                    category: "general",
+                    assigneeIds: [],
+                    assigneeNames: []
+                )
+                do {
+                    try await taskService.addTask(payload)
+                    messages.append(ARIAMessage(
+                        role: .aria,
+                        content: "Task \"\(name)\" has been created successfully."
+                    ))
+                } catch {
+                    messages.append(ARIAMessage(
+                        role: .aria,
+                        content: "I couldn't create the task. Please try again."
+                    ))
+                }
+
+            case "mark_plant_watered":
+                let plantName = action.input["plant_name"] as? String ?? "Plant"
+                messages.append(ARIAMessage(
+                    role: .aria,
+                    content: "\"\(plantName)\" marked as watered."
+                ))
+
+            default:
+                break
             }
         }
     }
@@ -407,6 +509,59 @@ struct ARIAMessage: Identifiable {
         ARIAMessage(role: .aria, content: "Hi! I'm ARIA, your AI property assistant powered by Claude. I can see your tasks, finances, and property data. Ask me anything!")
     ]
 }
+
+// MARK: - Action Banner
+
+private struct ARIAActionBanner: View {
+    let action: ARIAProposedAction
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.yellow)
+                Text(action.displayText)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+            }
+
+            HStack(spacing: 8) {
+                Button(action: onConfirm) {
+                    Text("Confirm")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.blue, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.yellow.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - DB Message model
 
 private struct ARIADBMessage: Decodable {
     let id: UUID

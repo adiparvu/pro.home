@@ -6,6 +6,55 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
+// Tool definitions for Claude
+const tools = [
+  {
+    name: "create_task",
+    description: "Create a new maintenance task for the property. Use when the user wants to add, schedule, or track a maintenance job.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "The title or name of the task",
+        },
+        description: {
+          type: "string",
+          description: "Optional detailed description of the task",
+        },
+        due_date: {
+          type: "string",
+          description: "Optional due date in YYYY-MM-DD format",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "mark_plant_watered",
+    description: "Mark a plant as watered. Use when the user mentions watering a plant or updating a plant's care status.",
+    input_schema: {
+      type: "object",
+      properties: {
+        plant_name: {
+          type: "string",
+          description: "The name of the plant to mark as watered",
+        },
+      },
+      required: ["plant_name"],
+    },
+  },
+  {
+    name: "query_twin_health",
+    description: "Get a summary of the property's digital twin health score and status. Use when the user asks about property health, condition, or overall status.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+]
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors })
 
@@ -80,6 +129,7 @@ serve(async (req) => {
 You help the owner manage their property with practical, specific, and concise advice.
 Always respond in the same language the user writes in.
 Keep responses under 200 words unless a detailed breakdown is requested.
+You have access to tools to create tasks, mark plants as watered, and query property health. Use them when the user's intent clearly matches.
 
 ${propCtx ? `PROPERTY:\n${propCtx}\n` : ""}
 OPEN TASKS (last 5):
@@ -88,7 +138,7 @@ ${taskCtx}
 FINANCES (last 30 days):
 ${finCtx}`
 
-    const claudeMessages = [
+    const claudeMessages: Array<{ role: string; content: unknown }> = [
       ...(history ?? []).reverse().map((m: { role: string; content: string }) => ({
         role: m.role === "assistant" ? "assistant" : "user",
         content: m.content,
@@ -99,34 +149,129 @@ ${finCtx}`
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY")
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured")
 
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 512,
-        system: systemPrompt,
-        messages: claudeMessages,
-      }),
-    })
+    // Tool-use loop — run until end_turn or a client-side action is needed
+    let reply = ""
+    let pendingAction: { type: "action_required"; tool: string; input: Record<string, unknown> } | null = null
 
-    if (!claudeRes.ok) {
-      const err = await claudeRes.text()
-      throw new Error(`Claude API ${claudeRes.status}: ${err}`)
+    while (true) {
+      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 512,
+          system: systemPrompt,
+          messages: claudeMessages,
+          tools,
+        }),
+      })
+
+      if (!claudeRes.ok) {
+        const err = await claudeRes.text()
+        throw new Error(`Claude API ${claudeRes.status}: ${err}`)
+      }
+
+      const claudeData = await claudeRes.json()
+      const stopReason: string = claudeData.stop_reason ?? "end_turn"
+
+      if (stopReason === "end_turn") {
+        // Extract text reply from content blocks
+        const textBlock = claudeData.content?.find((b: { type: string }) => b.type === "text")
+        reply = textBlock?.text ?? "I couldn't generate a response."
+        break
+      }
+
+      if (stopReason === "tool_use") {
+        // Find all tool_use blocks
+        const toolUseBlocks: Array<{ type: string; id: string; name: string; input: Record<string, unknown> }> =
+          (claudeData.content ?? []).filter((b: { type: string }) => b.type === "tool_use")
+
+        if (toolUseBlocks.length === 0) {
+          // No tool calls found despite stop_reason — treat as end_turn
+          const textBlock = claudeData.content?.find((b: { type: string }) => b.type === "text")
+          reply = textBlock?.text ?? "I couldn't generate a response."
+          break
+        }
+
+        // Append Claude's assistant turn (with tool_use) to the message history
+        claudeMessages.push({ role: "assistant", content: claudeData.content })
+
+        const toolResults: Array<{ type: string; tool_use_id: string; content: string }> = []
+
+        for (const toolUse of toolUseBlocks) {
+          if (toolUse.name === "query_twin_health") {
+            // Server-side tool: query health_scores table
+            const { data: healthData } = await supabase
+              .from("health_scores")
+              .select("score, category, computed_at")
+              .order("computed_at", { ascending: false })
+              .limit(5)
+
+            let healthSummary: string
+            if (!healthData || healthData.length === 0) {
+              healthSummary = "No health score data available for this property."
+            } else {
+              const latest = healthData[0]
+              const avg = healthData.reduce((s: number, h: { score: number }) => s + Number(h.score), 0) / healthData.length
+              healthSummary = `Overall health score: ${latest.score}/100 (computed ${latest.computed_at}).\n` +
+                `Average across ${healthData.length} categories: ${avg.toFixed(0)}/100.\n` +
+                healthData.map((h: { score: number; category: string }) => `• ${h.category}: ${h.score}/100`).join("\n")
+            }
+
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: healthSummary,
+            })
+          } else if (toolUse.name === "create_task" || toolUse.name === "mark_plant_watered") {
+            // Client-side action — return immediately to iOS for confirmation
+            pendingAction = {
+              type: "action_required",
+              tool: toolUse.name,
+              input: toolUse.input,
+            }
+            // Get the text context Claude provided alongside the tool call (if any)
+            const textBlock = claudeData.content?.find((b: { type: string }) => b.type === "text")
+            reply = textBlock?.text ?? ""
+            break
+          }
+        }
+
+        // If a pending client-side action was found, stop the loop immediately
+        if (pendingAction !== null) {
+          break
+        }
+
+        // Append tool results and continue the loop
+        claudeMessages.push({ role: "user", content: toolResults })
+        continue
+      }
+
+      // Unknown stop_reason — treat as end_turn
+      const textBlock = claudeData.content?.find((b: { type: string }) => b.type === "text")
+      reply = textBlock?.text ?? "I couldn't generate a response."
+      break
     }
 
-    const claudeData = await claudeRes.json()
-    const reply = claudeData.content[0]?.text ?? "I couldn't generate a response."
-
-    // Persist both turns
-    await supabase.from("aria_messages").insert([
+    // Persist user message; persist assistant reply only if we have one (not when action required with empty reply)
+    const persistRows: Array<{ user_id: string; property_id: string | null; role: string; content: string }> = [
       { user_id: user.id, property_id: propertyId ?? null, role: "user", content: message },
-      { user_id: user.id, property_id: propertyId ?? null, role: "assistant", content: reply },
-    ])
+    ]
+    if (reply) {
+      persistRows.push({ user_id: user.id, property_id: propertyId ?? null, role: "assistant", content: reply })
+    }
+    await supabase.from("aria_messages").insert(persistRows)
+
+    if (pendingAction) {
+      return new Response(
+        JSON.stringify({ reply: reply || undefined, ...pendingAction }),
+        { headers: { ...cors, "Content-Type": "application/json" } }
+      )
+    }
 
     return new Response(
       JSON.stringify({ reply }),
