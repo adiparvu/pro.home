@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     @AppStorage("prvio.onboarding.done") private var onboardingDone = false
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var zoneService: PropertyZoneService
     @EnvironmentObject private var auth: AuthService
 
     @State private var step = 0
@@ -133,6 +134,27 @@ struct OnboardingView: View {
                 ))
                 .execute()
             await propertyService.load()
+
+            // Generate default zones for the new property's type
+            if let propertyId = propertyService.primary?.id {
+                let now = ISO8601DateFormatter().string(from: Date())
+                let templates = PropertyTypeZones.templates(for: propertyType)
+                for (index, template) in templates.enumerated() {
+                    let payload = NewPropertyZone(
+                        propertyId: propertyId,
+                        name: template.name,
+                        icon: template.icon,
+                        colorHex: template.colorHex,
+                        layer: PropertyLayer.property.rawValue,
+                        healthScore: 100,
+                        polygon: [],
+                        sortOrder: index,
+                        createdAt: now,
+                        updatedAt: now
+                    )
+                    await zoneService.add(payload)
+                }
+            }
         }
 
         HapticFeedback.success()
