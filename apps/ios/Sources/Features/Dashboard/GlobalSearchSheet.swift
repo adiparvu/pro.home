@@ -435,14 +435,15 @@ struct GlobalSearchSheet: View {
 
     private func resultSection<C: View>(_ title: String, icon: String, color: Color,
                                          @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let body = content()
+        return VStack(alignment: .leading, spacing: 8) {
             Label(title, systemImage: icon)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(color)
                 .tracking(0.5)
                 .padding(.leading, 4)
             GlassCard(padding: 0) {
-                VStack(spacing: 0) { content() }
+                VStack(spacing: 0) { body }
             }
         }
     }
