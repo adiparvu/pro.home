@@ -28,7 +28,7 @@ struct LanguageSettingsView: View {
 
     private var deviceLanguageCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "lang_system_section"))
+            Text("lang_system_section")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
@@ -42,10 +42,10 @@ struct LanguageSettingsView: View {
                 } label: {
                     HStack(spacing: 14) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(String(localized: "lang_use_device"))
+                            Text("lang_use_device")
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(.primary)
-                            Text(String(localized: "lang_follows_ios"))
+                            Text("lang_follows_ios")
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                         }
@@ -69,7 +69,7 @@ struct LanguageSettingsView: View {
 
     private var languageListCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "lang_select_section"))
+            Text("lang_select_section")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
@@ -132,7 +132,7 @@ struct LanguageSettingsView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .padding(.top, 1)
-                Text(String(localized: "lang_instant_rebuild"))
+                Text("lang_instant_rebuild")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

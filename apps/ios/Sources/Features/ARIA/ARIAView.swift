@@ -132,7 +132,7 @@ struct ARIAView: View {
             VStack(spacing: 10) {
                 // Text field row
                 HStack(spacing: 10) {
-                    TextField(String(localized: "aria_placeholder"), text: $input, axis: .vertical)
+                    TextField("aria_placeholder", text: $input, axis: .vertical)
                         .font(.system(size: 15))
                         .lineLimit(1...5)
                         .focused($focused)
