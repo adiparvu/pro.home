@@ -307,7 +307,7 @@ struct ARIASettingsView: View {
                     if !useCustomModel {
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
                 .padding(.horizontal, 14)
