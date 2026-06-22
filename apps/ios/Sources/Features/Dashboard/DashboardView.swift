@@ -114,6 +114,10 @@ struct DashboardView: View {
                 .environmentObject(documentService)
                 .environmentObject(plantService)
                 .environmentObject(deliveryService)
+                .environmentObject(familyService)
+                .environmentObject(financialService)
+                .environmentObject(elementService)
+                .environmentObject(router)
         }
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()
