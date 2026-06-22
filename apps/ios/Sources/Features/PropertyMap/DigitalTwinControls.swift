@@ -97,23 +97,14 @@ extension DigitalTwinView {
                 ))
             }
 
-            Button {
+            controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: .primary) {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                     controlsExpanded.toggle()
                 }
                 HapticFeedback.impact(.medium)
-            } label: {
-                Image(systemName: controlsExpanded ? "xmark" : "ellipsis")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 48, height: 48)
-                    .rotationEffect(.degrees(controlsExpanded ? 45 : 0))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: controlsExpanded)
             }
-            .buttonStyle(.plain)
-            .glassCircle()
-            .shadow(color: Color.black.opacity(0.25), radius: 12, y: 4)
         }
+        .contentShape(Rectangle())
         .padding(.trailing, 16)
         .padding(.bottom, 36)
     }
