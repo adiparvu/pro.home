@@ -50,10 +50,10 @@ struct TasksView: View {
             let cal = Calendar.current
             switch self {
             case .today:   return cal.startOfDay(for: Date())
-            case .week:    return cal.date(byAdding: .day,   value: -7,  to: Date())!
-            case .month:   return cal.date(byAdding: .day,   value: -30, to: Date())!
-            case .quarter: return cal.date(byAdding: .month, value: -3,  to: Date())!
-            case .year:    return cal.date(byAdding: .year,  value: -1,  to: Date())!
+            case .week:    return cal.date(byAdding: .day,   value: -7,  to: Date()) ?? Date()
+            case .month:   return cal.date(byAdding: .day,   value: -30, to: Date()) ?? Date()
+            case .quarter: return cal.date(byAdding: .month, value: -3,  to: Date()) ?? Date()
+            case .year:    return cal.date(byAdding: .year,  value: -1,  to: Date()) ?? Date()
             case .all:     return Date.distantPast
             }
         }

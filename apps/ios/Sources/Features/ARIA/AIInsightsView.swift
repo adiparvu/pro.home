@@ -230,9 +230,7 @@ struct AIInsightsView: View {
         }
 
         // Elements with low health
-        let lowHealth = elementService.elements.filter { $0.healthScore < 50 }
-        if !lowHealth.isEmpty {
-            let first = lowHealth[0]
+        if let first = elementService.elements.first(where: { $0.healthScore < 50 }) {
             result.append(.init(
                 icon: "wrench.and.screwdriver.fill",
                 iconColor: .orange,
@@ -243,12 +241,12 @@ struct AIInsightsView: View {
 
         // Plants needing water
         let needsWater = plantService.plantsNeedingWater
-        if !needsWater.isEmpty {
+        if let firstPlant = needsWater.first {
             result.append(.init(
                 icon: "drop.fill",
                 iconColor: Color(red: 0.25, green: 0.65, blue: 1.0),
                 title: needsWater.count == 1
-                    ? "\(needsWater[0].name) needs watering"
+                    ? "\(firstPlant.name) needs watering"
                     : "\(needsWater.count) plants need watering",
                 elapsed: "Today"
             ))
@@ -266,15 +264,14 @@ struct AIInsightsView: View {
         }
 
         // Expiring warranties
-        let expiring = elementService.elements.filter {
+        if let expiring = elementService.elements.first(where: {
             if case .expiringSoon = $0.warrantyStatus { return true }
             return false
-        }
-        if !expiring.isEmpty {
+        }) {
             result.append(.init(
                 icon: "shield.slash.fill",
                 iconColor: Color(red: 0.95, green: 0.70, blue: 0.20),
-                title: "Warranty expiring soon: \(expiring[0].name)",
+                title: "Warranty expiring soon: \(expiring.name)",
                 elapsed: "Soon"
             ))
         }

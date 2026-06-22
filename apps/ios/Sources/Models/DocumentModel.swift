@@ -61,6 +61,6 @@ struct DocumentModel: Identifiable, Codable {
         guard let ds = expiresAt else { return false }
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         guard let d = iso.date(from: ds) else { return false }
-        return d < Calendar.current.date(byAdding: .day, value: 30, to: Date())!
+        return d < (Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date())
     }
 }

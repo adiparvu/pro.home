@@ -13,7 +13,7 @@ final class TaskService: ObservableObject {
         tasks.filter { $0.isOverdue || $0.status == "overdue" }.count
     }
     var completedThisWeek: Int {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return tasks.filter { t in
             guard t.isCompleted else { return false }

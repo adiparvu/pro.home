@@ -49,7 +49,7 @@ final class AppRouter: ObservableObject {
                 deepLinkPlantId = id
             }
         case "shopping", "supplies":
-            break
+            showAddSupply = true
         case "chat":
             selectedTab = .chat
         case "scan":

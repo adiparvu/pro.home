@@ -94,7 +94,7 @@ struct ActivityFeedView: View {
             .map { day in
                 formatter.dateFormat = cal.isDateInToday(day) ? "'Today'" :
                     cal.isDateInYesterday(day) ? "'Yesterday'" : "d MMMM"
-                return (formatter.string(from: day), grouped[day]!.sorted { $0.date > $1.date })
+                return (formatter.string(from: day), (grouped[day] ?? []).sorted { $0.date > $1.date })
             }
     }
 

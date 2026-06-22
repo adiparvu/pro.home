@@ -48,7 +48,7 @@ struct FinancesView: View {
     var groupedRecords: [(date: String, records: [FinancialRecord])] {
         var grouped: [String: [FinancialRecord]] = [:]
         for r in filteredRecords { grouped[r.date, default: []].append(r) }
-        return grouped.keys.sorted(by: >).map { (date: $0, records: grouped[$0]!) }
+        return grouped.keys.sorted(by: >).map { (date: $0, records: grouped[$0] ?? []) }
     }
 
     var isCurrentMonth: Bool {
