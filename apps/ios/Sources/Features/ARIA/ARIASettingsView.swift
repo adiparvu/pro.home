@@ -476,7 +476,7 @@ struct ARIASettingsView: View {
             try await supabase
                 .from("aria_messages")
                 .delete()
-                .neq("id", value: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+                .neq("id", value: UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID())
                 .execute()
         } catch {
             // ignore — table may already be empty

@@ -50,8 +50,8 @@ struct GlobalSearchSheet: View {
         guard active else { return [] }
         return deliveryService.deliveries.filter {
             $0.description.lowercased().contains(q) ||
-            $0.carrier.lowercased().contains(q) ||
-            $0.trackingNumber.lowercased().contains(q)
+            ($0.carrier?.lowercased().contains(q) ?? false) ||
+            ($0.trackingNumber?.lowercased().contains(q) ?? false)
         }
     }
     private var peopleResults: [FamilyMember] {
@@ -553,7 +553,7 @@ struct GlobalSearchSheet: View {
         if !deliveryResults.isEmpty {
             resultSection("Deliveries", icon: "shippingbox.fill", color: .orange) {
                 ForEach(deliveryResults.prefix(8)) { d in
-                    resultRow(d.description, subtitle: "\(d.carrier) · \(d.statusLabel)",
+                    resultRow(d.description, subtitle: "\(d.carrier ?? "") · \(d.statusLabel)",
                               icon: d.statusIcon, color: d.statusColor,
                               isLast: d.id == deliveryResults.prefix(8).last?.id) {
                         selectedDelivery = d

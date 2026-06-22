@@ -37,8 +37,8 @@ struct SearchView: View {
             },
             deliveries: deliveryService.deliveries.filter {
                 $0.description.lowercased().contains(q) ||
-                $0.carrier.lowercased().contains(q) ||
-                $0.trackingNumber.lowercased().contains(q) ||
+                ($0.carrier?.lowercased().contains(q) ?? false) ||
+                ($0.trackingNumber?.lowercased().contains(q) ?? false) ||
                 ($0.notes?.lowercased().contains(q) ?? false)
             }
         )
@@ -215,7 +215,7 @@ struct SearchView: View {
                                 icon: delivery.statusIcon,
                                 color: delivery.statusColor,
                                 title: delivery.description,
-                                subtitle: "\(delivery.carrier) · \(delivery.statusLabel)",
+                                subtitle: "\(delivery.carrier ?? "") · \(delivery.statusLabel)",
                                 badge: delivery.isActive ? "Active" : nil,
                                 badgeColor: .orange
                             )
