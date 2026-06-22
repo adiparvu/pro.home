@@ -2,6 +2,21 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+enum ZoneDisplayStyle: String, CaseIterable {
+    case filled, outlined, transparent
+    var icon: String {
+        switch self {
+        case .filled:      return "square.fill"
+        case .outlined:    return "square"
+        case .transparent: return "square.dashed"
+        }
+    }
+    var next: ZoneDisplayStyle {
+        let all = ZoneDisplayStyle.allCases
+        return all[(all.firstIndex(of: self)! + 1) % all.count]
+    }
+}
+
 struct DigitalTwinView: View {
     @EnvironmentObject var propertyService: PropertyService
     @EnvironmentObject var elementService: PropertyElementService
@@ -33,6 +48,8 @@ struct DigitalTwinView: View {
     @State var didCenter = false
     @State var isAerial = false
     @State var showStylePicker = false
+    @State var controlsExpanded = false
+    @State var zoneStyle: ZoneDisplayStyle = .filled
     @AppStorage("prvio.mapStyle") var savedMapStyle: String = "hybrid"
 
     var currentMapStyle: MapStyle {

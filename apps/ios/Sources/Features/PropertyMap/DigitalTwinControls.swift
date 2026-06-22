@@ -44,47 +44,75 @@ extension DigitalTwinView {
     // MARK: - Side Controls
 
     var sideControls: some View {
-        VStack(spacing: 12) {
-            controlButton(icon: isAerial ? "map.fill" : "airplane",
-                          tint: isAerial ? .accentColor : .primary) {
-                withAnimation(.spring(response: 0.4)) { isAerial.toggle() }
-                HapticFeedback.selection()
-            }
-            if !isAerial {
-                controlButton(icon: "square.3.layers.3d", tint: .primary) {
-                    showStylePicker = true
-                    HapticFeedback.impact(.light)
+        VStack(spacing: 10) {
+            if controlsExpanded {
+                VStack(spacing: 10) {
+                    controlButton(icon: "scope", tint: .primary) { recenter() }
+                    controlButton(icon: "plus.viewfinder", tint: .primary) {
+                        withAnimation(.spring(response: 0.3)) { controlsExpanded = false }
+                        startDrawing()
+                    }
+                    controlButton(icon: "cube.box.fill", tint: .primary) {
+                        showAddObject = true
+                        HapticFeedback.impact(.light)
+                    }
+                    controlButton(icon: "heart.text.square.fill", tint: .pink) {
+                        showHealth = true
+                    }
+                    controlButton(icon: showLabels ? "tag.fill" : "tag",
+                                  tint: showLabels ? .accentColor : .primary) {
+                        withAnimation(.spring(response: 0.3)) { showLabels.toggle() }
+                    }
+                    controlButton(icon: heatmap ? "flame.fill" : "flame",
+                                  tint: heatmap ? .orange : .primary) {
+                        withAnimation(.spring(response: 0.3)) { heatmap.toggle() }
+                    }
+                    controlButton(icon: is3D ? "rotate.3d.fill" : "rotate.3d",
+                                  tint: is3D ? .accentColor : .primary) { toggle3D() }
+                    controlButton(icon: zoneStyle.icon,
+                                  tint: zoneStyle == .filled ? .primary : .accentColor) {
+                        withAnimation(.spring(response: 0.25)) { zoneStyle = zoneStyle.next }
+                        HapticFeedback.selection()
+                    }
+                    if !isAerial {
+                        controlButton(icon: "square.3.layers.3d", tint: .primary) {
+                            showStylePicker = true
+                            HapticFeedback.impact(.light)
+                        }
+                    }
+                    controlButton(icon: "sparkles",
+                                  tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
+                        showInsights = true
+                        HapticFeedback.impact(.light)
+                    }
+                    controlButton(icon: isAerial ? "map.fill" : "airplane",
+                                  tint: isAerial ? .accentColor : .primary) {
+                        withAnimation(.spring(response: 0.4)) { isAerial.toggle() }
+                        HapticFeedback.selection()
+                    }
                 }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)),
+                    removal:   .opacity.combined(with: .move(edge: .bottom))
+                ))
             }
-            controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
-                showInsights = true
-                HapticFeedback.impact(.light)
+
+            Button {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
+                    controlsExpanded.toggle()
+                }
+                HapticFeedback.impact(.medium)
+            } label: {
+                Image(systemName: controlsExpanded ? "xmark" : "ellipsis")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 48, height: 48)
+                    .rotationEffect(.degrees(controlsExpanded ? 45 : 0))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: controlsExpanded)
             }
-            controlButton(icon: is3D ? "rotate.3d.fill" : "rotate.3d",
-                          tint: is3D ? .accentColor : .primary) {
-                toggle3D()
-            }
-            controlButton(icon: heatmap ? "flame.fill" : "flame",
-                          tint: heatmap ? .orange : .primary) {
-                withAnimation(.spring(response: 0.3)) { heatmap.toggle() }
-            }
-            controlButton(icon: showLabels ? "tag.fill" : "tag",
-                          tint: showLabels ? .accentColor : .primary) {
-                withAnimation(.spring(response: 0.3)) { showLabels.toggle() }
-            }
-            controlButton(icon: "heart.text.square.fill", tint: .pink) {
-                showHealth = true
-            }
-            controlButton(icon: "cube.box.fill", tint: .primary) {
-                showAddObject = true
-                HapticFeedback.impact(.light)
-            }
-            controlButton(icon: "plus.viewfinder", tint: .primary) {
-                startDrawing()
-            }
-            controlButton(icon: "scope", tint: .primary) {
-                recenter()
-            }
+            .buttonStyle(.plain)
+            .glassCircle()
+            .shadow(color: Color.black.opacity(0.25), radius: 12, y: 4)
         }
         .padding(.trailing, 16)
         .padding(.bottom, 36)

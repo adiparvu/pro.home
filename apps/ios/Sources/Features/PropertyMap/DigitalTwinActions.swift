@@ -6,15 +6,25 @@ extension DigitalTwinView {
 
     // MARK: - Styling
 
-    func zoneFill(_ zone: PropertyZone) -> some ShapeStyle {
-        let base = heatmap ? zone.healthColor : zone.tint
-        let opacity: Double = zone.id == dragTargetZoneId ? 0.55
-            : (selectedZone?.id == zone.id ? 0.45 : 0.26)
-        return base.opacity(opacity)
+    func zoneFill(_ zone: PropertyZone) -> Color {
+        switch zoneStyle {
+        case .transparent:
+            return .clear
+        case .outlined:
+            let base = heatmap ? zone.healthColor : zone.tint
+            return base.opacity(zone.id == dragTargetZoneId ? 0.14 : 0.06)
+        case .filled:
+            let base = heatmap ? zone.healthColor : zone.tint
+            let opacity: Double = zone.id == dragTargetZoneId ? 0.55
+                : (selectedZone?.id == zone.id ? 0.45 : 0.26)
+            return base.opacity(opacity)
+        }
     }
 
-    func zoneStroke(_ zone: PropertyZone) -> some ShapeStyle {
-        (heatmap ? zone.healthColor : zone.tint).opacity(0.9)
+    func zoneStroke(_ zone: PropertyZone) -> Color {
+        guard zoneStyle != .transparent else { return .clear }
+        let strokeOpacity: Double = zoneStyle == .outlined ? 0.95 : 0.9
+        return (heatmap ? zone.healthColor : zone.tint).opacity(strokeOpacity)
     }
 
     // MARK: - Tap & Selection
