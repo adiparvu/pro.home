@@ -584,10 +584,12 @@ struct GlobalSearchSheet: View {
     // MARK: - Navigation helper
 
     private func navigateAway(to tab: AppTab, action: ((AppRouter) -> Void)? = nil) {
+        // Capture router strongly BEFORE dismiss — EnvironmentObject becomes inaccessible once the view is torn down
+        let r = router
         dismiss()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            router.selectedTab = tab
-            action?(router)
+            r.selectedTab = tab
+            action?(r)
         }
     }
 
