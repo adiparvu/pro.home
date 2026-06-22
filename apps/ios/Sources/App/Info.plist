@@ -146,6 +146,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.prvio.spotlight.refresh</string>
+		<string>com.prvio.app.proactive</string>
 	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>

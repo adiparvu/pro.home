@@ -28,6 +28,7 @@ struct MainTabView: View {
     @StateObject private var paintColorService = PaintColorService()
     @StateObject private var propertyValueService = PropertyValueService()
     @StateObject private var contractorService = ContractorService()
+    @StateObject private var proactiveEngine = ProactiveEngine()
     @StateObject private var tabBarVis = TabBarVisibility()
     @EnvironmentObject private var router: AppRouter
 
@@ -113,6 +114,7 @@ struct MainTabView: View {
         .environmentObject(paintColorService)
         .environmentObject(propertyValueService)
         .environmentObject(contractorService)
+        .environmentObject(proactiveEngine)
         .task {
             await currencyService.refresh()
             await propertyService.load()
@@ -150,6 +152,7 @@ struct MainTabView: View {
             updateDynamicShortcuts()
             await indexSpotlight()
             await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+            proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
