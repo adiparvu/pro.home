@@ -14,10 +14,11 @@ struct ObjectLocationPicker: View {
     @State private var camera: MapCameraPosition
     @State private var picked: CLLocationCoordinate2D?
 
-    init(element: PropertyElement) {
+    init(element: PropertyElement, propertyCenter: CLLocationCoordinate2D? = nil) {
         self.element = element
         _picked = State(initialValue: element.coordinate)
         let center = element.coordinate
+            ?? propertyCenter
             ?? CLLocationCoordinate2D(latitude: 44.4268, longitude: 26.1025)
         _camera = State(initialValue: .region(MKCoordinateRegion(
             center: center,

@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import CoreLocation
 import Supabase
 
 struct PropertyElementDetailView: View {
@@ -10,6 +11,7 @@ struct PropertyElementDetailView: View {
     @EnvironmentObject var appSettings: AppSettings
     @EnvironmentObject var documentService: DocumentService
     @EnvironmentObject var taskService: TaskService
+    @EnvironmentObject var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info
@@ -115,7 +117,14 @@ struct PropertyElementDetailView: View {
             }
         }
         .sheet(isPresented: $showLocationPicker) {
-            ObjectLocationPicker(element: localElement)
+            ObjectLocationPicker(
+                element: localElement,
+                propertyCenter: propertyService.primary.flatMap {
+                    guard let lat = $0.latitude, let lon = $0.longitude
+                    else { return nil }
+                    return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                }
+            )
         }
         .sheet(isPresented: $showLinkDocument) {
             DocumentLinkPicker(elementId: localElement.id)
