@@ -53,6 +53,58 @@ const tools = [
       required: [],
     },
   },
+  {
+    name: "add_appliance",
+    description: "Add a new appliance or home equipment record to the property. Use when the user mentions a specific appliance, device, or equipment (boiler, fridge, washing machine, air conditioner, etc.) they want to register or track.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Name of the appliance or equipment",
+        },
+        brand: {
+          type: "string",
+          description: "Optional brand or manufacturer name",
+        },
+        category: {
+          type: "string",
+          description: "Category: hvac, kitchen, laundry, bathroom, security, entertainment, or other",
+        },
+        location: {
+          type: "string",
+          description: "Optional location in the property (e.g. 'kitchen', 'basement')",
+        },
+        notes: {
+          type: "string",
+          description: "Optional notes about the appliance",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "schedule_maintenance",
+    description: "Schedule a maintenance task for a specific property element or appliance. Use when the user wants to plan or set a reminder for a maintenance job with a specific timeframe.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Short title of the maintenance task",
+        },
+        description: {
+          type: "string",
+          description: "Detailed description of what needs to be done",
+        },
+        due_date: {
+          type: "string",
+          description: "Optional due date in YYYY-MM-DD format",
+        },
+      },
+      required: ["name"],
+    },
+  },
 ]
 
 serve(async (req) => {
@@ -237,7 +289,8 @@ ${finCtx}`
               tool_use_id: toolUse.id,
               content: healthSummary,
             })
-          } else if (toolUse.name === "create_task" || toolUse.name === "mark_plant_watered") {
+          } else if (toolUse.name === "create_task" || toolUse.name === "mark_plant_watered" ||
+                     toolUse.name === "add_appliance" || toolUse.name === "schedule_maintenance") {
             // Client-side action — return immediately to iOS for confirmation
             pendingAction = {
               type: "action_required",

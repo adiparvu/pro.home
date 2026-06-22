@@ -167,6 +167,13 @@
 "aria_plant_watered" = "\"%@\" marquée comme arrosée.";
 "aria_create_task_display" = "Créer la tâche : \"%@\"";
 "aria_water_plant_display" = "Marquer comme arrosée : \"%@\"";
+"aria_add_appliance_display" = "Ajouter un appareil : \"%@\"";
+"aria_schedule_maintenance_display" = "Planifier la maintenance : \"%@\"";
+"aria_appliance_added" = "L'appareil \"%@\" a été ajouté.";
+"aria_appliance_error" = "Impossible d'ajouter l'appareil. Réessayez.";
+"aria_maintenance_scheduled" = "Maintenance \"%@\" planifiée.";
+"aria_maintenance_error" = "Impossible de planifier la maintenance. Réessayez.";
+"ai_insights_water_all" = "Tout arroser";
 
 /* ── AI Insights ── */
 "ai_insights_title" = "Perspectives IA";

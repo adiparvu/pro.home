@@ -242,13 +242,20 @@ struct AIInsightsView: View {
         // Plants needing water
         let needsWater = plantService.plantsNeedingWater
         if let firstPlant = needsWater.first {
+            let plantsToWater = needsWater
             result.append(.init(
                 icon: "drop.fill",
                 iconColor: Color(red: 0.25, green: 0.65, blue: 1.0),
                 title: needsWater.count == 1
                     ? "\(firstPlant.name) needs watering"
                     : "\(needsWater.count) plants need watering",
-                elapsed: "Today"
+                elapsed: "Today",
+                actionLabel: String(localized: "ai_insights_water_all"),
+                action: { [plantService] in
+                    for plant in plantsToWater {
+                        await plantService.markWatered(plant)
+                    }
+                }
             ))
         }
 
@@ -299,6 +306,8 @@ struct AIInsight: Identifiable {
     let iconColor: Color
     let title: String
     let elapsed: String
+    var actionLabel: String? = nil
+    var action: (() async -> Void)? = nil
 }
 
 // MARK: - AIInsightRow
@@ -306,6 +315,7 @@ struct AIInsight: Identifiable {
 struct AIInsightRow: View {
     let insight: AIInsight
     var isLast: Bool = false
+    @State private var isActing = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -326,9 +336,35 @@ struct AIInsightRow: View {
 
                 Spacer()
 
-                Text(insight.elapsed)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                if let actionLabel = insight.actionLabel, let action = insight.action {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        isActing = true
+                        Task {
+                            await action()
+                            isActing = false
+                        }
+                    } label: {
+                        if isActing {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .frame(width: 52, height: 24)
+                        } else {
+                            Text(actionLabel)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 5)
+                                .background(insight.iconColor, in: Capsule())
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isActing)
+                } else {
+                    Text(insight.elapsed)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.35))
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 13)

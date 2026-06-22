@@ -167,6 +167,13 @@
 "aria_plant_watered" = "\"%@\" als gegossen markiert.";
 "aria_create_task_display" = "Aufgabe erstellen: \"%@\"";
 "aria_water_plant_display" = "Als gegossen markieren: \"%@\"";
+"aria_add_appliance_display" = "Gerät hinzufügen: \"%@\"";
+"aria_schedule_maintenance_display" = "Wartung planen: \"%@\"";
+"aria_appliance_added" = "Gerät \"%@\" hinzugefügt.";
+"aria_appliance_error" = "Gerät konnte nicht hinzugefügt werden. Erneut versuchen.";
+"aria_maintenance_scheduled" = "Wartung \"%@\" geplant.";
+"aria_maintenance_error" = "Wartung konnte nicht geplant werden. Erneut versuchen.";
+"ai_insights_water_all" = "Alle gießen";
 
 /* ── AI Insights ── */
 "ai_insights_title" = "KI-Einblicke";

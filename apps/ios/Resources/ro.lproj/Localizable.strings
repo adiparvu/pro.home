@@ -167,6 +167,13 @@
 "aria_plant_watered" = "\"%@\" marcată ca udată.";
 "aria_create_task_display" = "Creează sarcina: \"%@\"";
 "aria_water_plant_display" = "Marchează ca udată: \"%@\"";
+"aria_add_appliance_display" = "Adaugă aparat: \"%@\"";
+"aria_schedule_maintenance_display" = "Planifică mentenanță: \"%@\"";
+"aria_appliance_added" = "Aparatul \"%@\" a fost adăugat.";
+"aria_appliance_error" = "Nu s-a putut adăuga aparatul. Încearcă din nou.";
+"aria_maintenance_scheduled" = "Mentenanța \"%@\" a fost planificată.";
+"aria_maintenance_error" = "Nu s-a putut planifica mentenanța. Încearcă din nou.";
+"ai_insights_water_all" = "Udă tot";
 
 /* ── AI Insights ── */
 "ai_insights_title" = "Perspective AI";

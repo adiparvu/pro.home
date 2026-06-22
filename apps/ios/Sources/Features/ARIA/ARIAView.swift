@@ -13,6 +13,8 @@ struct ARIAView: View {
 
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var taskService: TaskService
+    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject private var applianceService: ApplianceService
     @EnvironmentObject private var familyService: FamilyService
     @EnvironmentObject private var profileService: ProfileService
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
@@ -382,6 +384,12 @@ struct ARIAView: View {
         case "mark_plant_watered":
             let plantName = input["plant_name"] as? String ?? String(localized: "Plants")
             displayText = String(format: String(localized: "aria_water_plant_display"), plantName)
+        case "add_appliance":
+            let name = input["name"] as? String ?? "Appliance"
+            displayText = String(format: String(localized: "aria_add_appliance_display"), name)
+        case "schedule_maintenance":
+            let name = input["name"] as? String ?? "Maintenance"
+            displayText = String(format: String(localized: "aria_schedule_maintenance_display"), name)
         default:
             displayText = tool.replacingOccurrences(of: "_", with: " ").capitalized
         }
@@ -422,10 +430,66 @@ struct ARIAView: View {
 
             case "mark_plant_watered":
                 let plantName = action.input["plant_name"] as? String ?? String(localized: "Plants")
+                if let plant = plantService.plants.first(where: {
+                    $0.name.lowercased().contains(plantName.lowercased())
+                }) {
+                    await plantService.markWatered(plant)
+                }
                 messages.append(ARIAMessage(
                     role: .aria,
                     content: String(format: String(localized: "aria_plant_watered"), plantName)
                 ))
+
+            case "add_appliance":
+                guard let propertyId = propertyService.primary?.id,
+                      let ownerId = profileService.profile?.id else { return }
+                let applianceName = action.input["name"] as? String ?? "Appliance"
+                let brand = action.input["brand"] as? String
+                let category = action.input["category"] as? String ?? "other"
+                let location = action.input["location"] as? String
+                let notes = action.input["notes"] as? String
+                let now = ISO8601DateFormatter().string(from: Date())
+                let appliancePayload = NewAppliancePayload(
+                    propertyId: propertyId, ownerId: ownerId,
+                    name: applianceName, brand: brand,
+                    modelNumber: nil, serialNumber: nil,
+                    location: location, category: category,
+                    purchaseDate: nil, warrantyUntil: nil, purchasePrice: nil,
+                    notes: notes, photoUrl: nil, createdAt: now, updatedAt: now
+                )
+                await applianceService.add(appliancePayload)
+                messages.append(ARIAMessage(
+                    role: .aria,
+                    content: String(format: String(localized: "aria_appliance_added"), applianceName)
+                ))
+
+            case "schedule_maintenance":
+                guard let propertyId = propertyService.primary?.id else { return }
+                let maintName = action.input["name"] as? String ?? "Maintenance"
+                let maintDesc = action.input["description"] as? String
+                let maintDate = action.input["due_date"] as? String
+                let maintPayload = NewTaskPayload(
+                    propertyId: propertyId,
+                    title: maintName,
+                    description: maintDesc,
+                    dueDate: maintDate,
+                    priority: "medium",
+                    category: "maintenance",
+                    assigneeIds: [],
+                    assigneeNames: []
+                )
+                do {
+                    try await taskService.addTask(maintPayload)
+                    messages.append(ARIAMessage(
+                        role: .aria,
+                        content: String(format: String(localized: "aria_maintenance_scheduled"), maintName)
+                    ))
+                } catch {
+                    messages.append(ARIAMessage(
+                        role: .aria,
+                        content: String(localized: "aria_maintenance_error")
+                    ))
+                }
 
             default:
                 break
