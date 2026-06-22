@@ -248,14 +248,16 @@ struct DeliveryRow: View {
                         .lineLimit(1)
 
                     HStack(spacing: 4) {
-                        Text(delivery.carrier)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                        if let carrier = delivery.carrier, !carrier.isEmpty {
+                            Text(carrier)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
 
-                        if !delivery.trackingNumber.isEmpty {
+                        if let tn = delivery.trackingNumber, !tn.isEmpty {
                             Text("·")
                                 .foregroundStyle(Color.primary.opacity(0.3))
-                            Text(delivery.trackingNumber)
+                            Text(tn)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.primary.opacity(0.45))
                                 .lineLimit(1)
@@ -295,7 +297,7 @@ struct DeliveryRow: View {
             if delivery.isActive {
                 Button {
                     HapticFeedback.success()
-                    deliveryService.markDelivered(delivery)
+                    Task { await deliveryService.markDelivered(delivery) }
                 } label: {
                     Label("Delivered", systemImage: "checkmark.seal.fill")
                 }
@@ -305,7 +307,7 @@ struct DeliveryRow: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 HapticFeedback.warning()
-                deliveryService.delete(delivery)
+                Task { await deliveryService.delete(delivery) }
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -322,7 +324,7 @@ struct DeliveryRow: View {
             if delivery.isActive {
                 Button {
                     HapticFeedback.success()
-                    deliveryService.markDelivered(delivery)
+                    Task { await deliveryService.markDelivered(delivery) }
                 } label: {
                     Label("Mark as delivered", systemImage: "checkmark.seal.fill")
                 }
@@ -335,18 +337,20 @@ struct DeliveryRow: View {
                 Label("Edit", systemImage: "pencil")
             }
 
-            Button {
-                UIPasteboard.general.string = delivery.trackingNumber
-                HapticFeedback.selection()
-            } label: {
-                Label("Copy tracking", systemImage: "doc.on.doc")
+            if let tn = delivery.trackingNumber, !tn.isEmpty {
+                Button {
+                    UIPasteboard.general.string = tn
+                    HapticFeedback.selection()
+                } label: {
+                    Label("Copy tracking", systemImage: "doc.on.doc")
+                }
             }
 
             Divider()
 
             Button(role: .destructive) {
                 HapticFeedback.warning()
-                deliveryService.delete(delivery)
+                Task { await deliveryService.delete(delivery) }
             } label: {
                 Label("Delete", systemImage: "trash")
             }

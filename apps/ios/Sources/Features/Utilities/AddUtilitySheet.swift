@@ -6,7 +6,8 @@ import PhotosUI
 
 struct AddUtilitySheet: View {
     let defaultType: String
-    let onSave: (UtilityEntry) -> Void
+    let propertyId: UUID?
+    let onSave: (NewUtilityEntry) -> Void
     @Environment(\.dismiss) private var dismiss
 
     @State private var type: String
@@ -23,8 +24,10 @@ struct AddUtilitySheet: View {
     private let types = ["electricity", "water", "gas", "internet", "other"]
     private let units = ["electricity": "kWh", "water": "m³", "gas": "m³", "internet": "Mbps", "other": "units"]
 
-    init(defaultType: String, onSave: @escaping (UtilityEntry) -> Void) {
-        self.defaultType = defaultType; self.onSave = onSave
+    init(defaultType: String, propertyId: UUID?, onSave: @escaping (NewUtilityEntry) -> Void) {
+        self.defaultType = defaultType
+        self.propertyId = propertyId
+        self.onSave = onSave
         _type = State(initialValue: defaultType)
     }
 
@@ -86,13 +89,18 @@ struct AddUtilitySheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let f = DateFormatter(); f.dateFormat = "yyyy-MM"
-                        let entry = UtilityEntry(
-                            type: type,
-                            amount: Double(amount.replacingOccurrences(of: ",", with: ".")) ?? 0,
-                            month: f.string(from: month),
-                            unit: units[type] ?? "units",
-                            consumption: Double(consumption.replacingOccurrences(of: ",", with: ".")) ?? 0
+                        guard let pid = propertyId else { dismiss(); return }
+                        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+                        let readingDate = f.string(from: month)
+                        let appUnit = units[type] ?? "other"
+                        let entry = NewUtilityEntry(
+                            propertyId: pid,
+                            appCategory: type,
+                            meterType: UtilityService.meterType(for: type),
+                            readingDate: readingDate,
+                            readingValue: Double(consumption.replacingOccurrences(of: ",", with: ".")) ?? 0,
+                            unit: UtilityService.dbUnit(for: appUnit),
+                            cost: Double(amount.replacingOccurrences(of: ",", with: "."))
                         )
                         onSave(entry); HapticFeedback.success(); dismiss()
                     }

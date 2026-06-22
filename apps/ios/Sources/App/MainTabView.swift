@@ -136,6 +136,7 @@ struct MainTabView: View {
             }
             await contractorService.load()
             if let propId = propertyService.primary?.id {
+                await deliveryService.load(propertyId: propId)
                 await supplyService.load(propertyId: propId)
                 await plantService.load(propertyId: propId)
                 await applianceService.load(propertyId: propId)
@@ -151,6 +152,7 @@ struct MainTabView: View {
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
             Task {
+                await deliveryService.load(propertyId: newPropId)
                 await supplyService.load(propertyId: newPropId)
                 await plantService.load(propertyId: newPropId)
                 await applianceService.load(propertyId: newPropId)
@@ -187,6 +189,7 @@ struct MainTabView: View {
                     await messageService.load(propertyId: propId)
                 }
                 if let propId = propertyService.primary?.id {
+                    await deliveryService.load(propertyId: propId)
                     await supplyService.load(propertyId: propId)
                     await plantService.load(propertyId: propId)
                     await applianceService.load(propertyId: propId)

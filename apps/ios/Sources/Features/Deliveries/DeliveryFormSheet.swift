@@ -28,8 +28,8 @@ struct DeliveryFormSheet: View {
 
         if let d = editingDelivery {
             _description    = State(initialValue: d.description)
-            _carrier        = State(initialValue: d.carrier)
-            _trackingNumber = State(initialValue: d.trackingNumber)
+            _carrier        = State(initialValue: d.carrier ?? Delivery.carrierOptions.first ?? "DHL")
+            _trackingNumber = State(initialValue: d.trackingNumber ?? "")
             _status         = State(initialValue: d.status)
             _notes          = State(initialValue: d.notes ?? "")
 
@@ -45,7 +45,7 @@ struct DeliveryFormSheet: View {
             _description    = State(initialValue: "")
             _carrier        = State(initialValue: Delivery.carrierOptions.first ?? "DHL")
             _trackingNumber = State(initialValue: "")
-            _status         = State(initialValue: "ordered")
+            _status         = State(initialValue: "expected")
             _hasExpectedDate = State(initialValue: false)
             _expectedDate   = State(initialValue: Date())
             _notes          = State(initialValue: "")
@@ -211,20 +211,22 @@ struct DeliveryFormSheet: View {
 
     private func statusColor(for id: String) -> Color {
         switch id {
-        case "ordered":          return .gray
-        case "in_transit":       return .blue
+        case "expected":         return .blue
         case "out_for_delivery": return .orange
         case "delivered":        return Color(red: 0.2, green: 0.80, blue: 0.4)
+        case "missed":           return .red
+        case "returned":         return .gray
         default:                 return .gray
         }
     }
 
     private func statusIcon(for id: String) -> String {
         switch id {
-        case "ordered":          return "shippingbox.fill"
-        case "in_transit":       return "airplane"
+        case "expected":         return "shippingbox.fill"
         case "out_for_delivery": return "bicycle"
         case "delivered":        return "checkmark.seal.fill"
+        case "missed":           return "exclamationmark.triangle.fill"
+        case "returned":         return "arrow.uturn.left.circle.fill"
         default:                 return "shippingbox"
         }
     }
@@ -270,7 +272,7 @@ struct DeliveryFormSheet: View {
     // MARK: Save button
 
     private var saveButton: some View {
-        Button { save() } label: {
+        Button { Task { await save() } } label: {
             Group {
                 if isSaving {
                     ProgressView().tint(.white)
@@ -314,41 +316,38 @@ struct DeliveryFormSheet: View {
         return fmt.string(from: expectedDate)
     }
 
-    private func save() {
+    private func save() async {
         let trimmedDesc = description.trimmingCharacters(in: .whitespaces)
         guard !trimmedDesc.isEmpty else { return }
         isSaving = true
+        defer { isSaving = false }
 
-        let now = ISO8601DateFormatter().string(from: Date())
+        let trimmedTracking = trackingNumber.trimmingCharacters(in: .whitespaces)
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 
         if var existing = editingDelivery {
-            existing.description     = trimmedDesc
-            existing.carrier         = carrier
-            existing.trackingNumber  = trackingNumber.trimmingCharacters(in: .whitespaces)
-            existing.status          = status
-            existing.expectedDate    = expectedDateString()
-            existing.notes           = notes.trimmingCharacters(in: .whitespaces).isEmpty
-                                          ? nil
-                                          : notes.trimmingCharacters(in: .whitespaces)
-            deliveryService.update(existing)
+            existing.description    = trimmedDesc
+            existing.carrier        = carrier
+            existing.trackingNumber = trimmedTracking.isEmpty ? nil : trimmedTracking
+            existing.status         = status
+            existing.expectedDate   = expectedDateString()
+            existing.notes          = trimmedNotes.isEmpty ? nil : trimmedNotes
+            await deliveryService.update(existing)
         } else {
-            let delivery = Delivery(
-                id: UUID(),
-                carrier: carrier,
-                trackingNumber: trackingNumber.trimmingCharacters(in: .whitespaces),
+            guard let propertyId = deliveryService.currentPropertyId else { return }
+            let new = NewDelivery(
+                propertyId: propertyId,
                 description: trimmedDesc,
+                carrier: carrier,
+                trackingNumber: trimmedTracking.isEmpty ? nil : trimmedTracking,
                 status: status,
                 expectedDate: expectedDateString(),
-                notes: notes.trimmingCharacters(in: .whitespaces).isEmpty
-                          ? nil
-                          : notes.trimmingCharacters(in: .whitespaces),
-                createdAt: now
+                notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
-            deliveryService.add(delivery)
+            await deliveryService.add(new)
         }
 
         HapticFeedback.success()
-        isSaving = false
         dismiss()
     }
 }

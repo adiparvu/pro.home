@@ -2,43 +2,130 @@ import SwiftUI
 import Charts
 
 struct UtilityEntry: Identifiable, Codable {
-    var id = UUID()
-    var type: String      // "electricity" | "water" | "gas" | "internet" | "other"
-    var amount: Double
-    var month: String     // "yyyy-MM"
-    var unit: String      // "kWh", "m³", "€"
-    var consumption: Double
+    var id: UUID
+    var appCategory: String   // "electricity" | "water" | "gas" | "internet" | "other"
+    var meterType: String     // DB enum: electricity / gas / water / solar / district_heating / other
+    var cost: Double?
+    var readingDate: String   // "yyyy-MM-dd" (stored as first of month)
+    var readingValue: Double
+    var unit: String          // "kWh", "m3", etc.
+
+    enum CodingKeys: String, CodingKey {
+        case id, unit, cost
+        case appCategory  = "app_category"
+        case meterType    = "meter_type"
+        case readingDate  = "reading_date"
+        case readingValue = "reading_value"
+    }
+
+    // Derived helpers matching the old API surface
+    var type: String { appCategory }
+    var amount: Double { cost ?? 0 }
+    var month: String { String(readingDate.prefix(7)) }    // "yyyy-MM"
+    var consumption: Double { readingValue }
+}
+
+struct NewUtilityEntry: Encodable {
+    let propertyId: UUID
+    let appCategory: String
+    let meterType: String
+    let readingDate: String
+    let readingValue: Double
+    let unit: String
+    let cost: Double?
+    enum CodingKeys: String, CodingKey {
+        case unit, cost
+        case propertyId   = "property_id"
+        case appCategory  = "app_category"
+        case meterType    = "meter_type"
+        case readingDate  = "reading_date"
+        case readingValue = "reading_value"
+    }
 }
 
 @MainActor
 final class UtilityService: ObservableObject {
     @Published var entries: [UtilityEntry] = []
-    private let key = "prvio.utilities"
+    private(set) var currentPropertyId: UUID?
 
-    init() { load() }
+    // MARK: Derived helpers
 
-    func load() {
-        if let d = UserDefaults.standard.data(forKey: key),
-           let decoded = try? JSONDecoder().decode([UtilityEntry].self, from: d) {
-            entries = decoded.sorted { $0.month > $1.month }
-        }
+    func entriesFor(_ type: String) -> [UtilityEntry] {
+        entries.filter { $0.appCategory == type }.sorted { $0.readingDate < $1.readingDate }
     }
-
-    func add(_ e: UtilityEntry) { entries.insert(e, at: 0); entries.sort { $0.month > $1.month }; save() }
-    func delete(_ e: UtilityEntry) { entries.removeAll { $0.id == e.id }; save() }
-
-    func entriesFor(_ type: String) -> [UtilityEntry] { entries.filter { $0.type == type }.sorted { $0.month < $1.month } }
     func lastSixMonths(_ type: String) -> [UtilityEntry] { Array(entriesFor(type).suffix(6)) }
-
-    func totalFor(_ type: String) -> Double { entriesFor(type).map(\.amount).reduce(0, +) }
     func currentMonthEntry(_ type: String) -> UtilityEntry? {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM"
         let current = f.string(from: Date())
         return entriesFor(type).first { $0.month == current }
     }
 
-    private func save() {
-        if let d = try? JSONEncoder().encode(entries) { UserDefaults.standard.set(d, forKey: key) }
+    // MARK: Supabase CRUD
+
+    func load(propertyId: UUID) async {
+        currentPropertyId = propertyId
+        do {
+            entries = try await supabase
+                .from("energy_readings")
+                .select()
+                .eq("property_id", value: propertyId.uuidString)
+                .order("reading_date", ascending: false)
+                .execute()
+                .value
+        } catch {
+            print("UtilityService.load error:", error)
+        }
+    }
+
+    func add(_ new: NewUtilityEntry) async {
+        do {
+            let result: UtilityEntry = try await supabase
+                .from("energy_readings")
+                .insert(new)
+                .select()
+                .single()
+                .execute()
+                .value
+            entries.insert(result, at: 0)
+            entries.sort { $0.readingDate > $1.readingDate }
+        } catch {
+            print("UtilityService.add error:", error)
+        }
+    }
+
+    func delete(_ e: UtilityEntry) async {
+        do {
+            try await supabase
+                .from("energy_readings")
+                .delete()
+                .eq("id", value: e.id.uuidString)
+                .execute()
+            entries.removeAll { $0.id == e.id }
+        } catch {
+            print("UtilityService.delete error:", error)
+        }
+    }
+
+    // Maps app type string to DB meter_type enum value
+    static func meterType(for appType: String) -> String {
+        switch appType {
+        case "electricity": return "electricity"
+        case "water":       return "water"
+        case "gas":         return "gas"
+        case "solar":       return "solar"
+        default:            return "other"
+        }
+    }
+
+    // Maps app unit string to DB energy_unit enum value
+    static func dbUnit(for appUnit: String) -> String {
+        switch appUnit {
+        case "kWh":  return "kWh"
+        case "m³", "m3": return "m3"
+        case "L":    return "L"
+        case "GJ":   return "GJ"
+        default:     return "other"
+        }
     }
 }
 
@@ -46,6 +133,7 @@ final class UtilityService: ObservableObject {
 
 struct UtilityView: View {
     @StateObject private var service = UtilityService()
+    @EnvironmentObject private var propertyService: PropertyService
     @State private var showAdd = false
     @State private var selectedType = "electricity"
 
@@ -99,7 +187,7 @@ struct UtilityView: View {
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
-                                            service.delete(entry)
+                                            Task { await service.delete(entry) }
                                         } label: { Label("Delete", systemImage: "trash") }
                                     }
                             }
@@ -112,6 +200,11 @@ struct UtilityView: View {
         .navigationTitle("Utilities")
         .navigationBarTitleDisplayMode(.large)
         .floatingSpeedDial(.utilities)
+        .task(id: propertyService.primary?.id) {
+            if let pid = propertyService.primary?.id {
+                await service.load(propertyId: pid)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -125,7 +218,9 @@ struct UtilityView: View {
             }
         }
         .sheet(isPresented: $showAdd) {
-            AddUtilitySheet(defaultType: selectedType) { entry in service.add(entry) }
+            AddUtilitySheet(defaultType: selectedType, propertyId: service.currentPropertyId) { entry in
+                Task { await service.add(entry) }
+            }
         }
     }
 
