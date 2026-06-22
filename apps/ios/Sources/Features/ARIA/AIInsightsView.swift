@@ -25,7 +25,7 @@ struct AIInsightsView: View {
                     .padding(.bottom, 24)
 
                 // Recommendations section
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Proactive Recommendations")
                             .font(.system(size: 16, weight: .bold))
@@ -39,12 +39,18 @@ struct AIInsightsView: View {
                                 .background(Color.accentColor, in: Capsule())
                         }
                     }
+                    .padding(.horizontal, 16)
 
-                    ForEach(insights) { insight in
-                        InsightRow(insight: insight)
+                    GlassCard(padding: 0) {
+                        VStack(spacing: 0) {
+                            ForEach(Array(insights.enumerated()), id: \.element.id) { idx, insight in
+                                InsightRow(insight: insight,
+                                           isLast: idx == insights.count - 1)
+                            }
+                        }
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
 
                 Spacer().frame(height: 28)
 
@@ -302,39 +308,40 @@ struct ProactiveInsight: Identifiable {
 
 struct InsightRow: View {
     let insight: ProactiveInsight
+    var isLast: Bool = false
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(insight.iconColor.opacity(0.15))
-                    .frame(width: 42, height: 42)
-                Image(systemName: insight.icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(insight.iconColor)
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(insight.iconColor.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: insight.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(insight.iconColor)
+                }
+
+                Text(insight.title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer()
+
+                Text(insight.elapsed)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.35))
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
 
-            Text(insight.title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer()
-
-            Text(insight.elapsed)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.35))
+            if !isLast {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.05))
+                    .frame(height: 0.5)
+                    .padding(.leading, 66)
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                )
-        }
-        .shadow(color: .black.opacity(0.06), radius: 4, y: 1)
     }
 }
