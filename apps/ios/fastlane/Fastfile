@@ -10,16 +10,26 @@ platform :ios do
     issuer_id   = ENV["ASC_ISSUER_ID"]
     key_content = ENV["ASC_KEY_CONTENT"]
 
-    key_pem  = Base64.decode64(key_content)
+    # Support both raw PEM (-----BEGIN PRIVATE KEY-----) and base64-encoded PEM
     key_path = "/tmp/asc_key.p8"
-    File.write(key_path, key_pem)
-
-    api_key = app_store_connect_api_key(
-      key_id:                 key_id,
-      issuer_id:              issuer_id,
-      key_content:            key_content,
-      is_key_content_base64:  true
-    )
+    if key_content.strip.start_with?("-----BEGIN")
+      File.write(key_path, key_content)
+      api_key = app_store_connect_api_key(
+        key_id:                key_id,
+        issuer_id:             issuer_id,
+        key_filepath:          key_path,
+        is_key_content_base64: false
+      )
+    else
+      key_pem = Base64.decode64(key_content)
+      File.write(key_path, key_pem)
+      api_key = app_store_connect_api_key(
+        key_id:                key_id,
+        issuer_id:             issuer_id,
+        key_content:           key_content,
+        is_key_content_base64: true
+      )
+    end
 
     project_dir = File.expand_path("..")
 
