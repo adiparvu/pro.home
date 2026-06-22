@@ -19,6 +19,8 @@ struct DashboardView: View {
     @EnvironmentObject private var deliveryService: DeliveryService
     @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @EnvironmentObject private var inventoryService: InventoryService
+    @EnvironmentObject private var contractorService: ContractorService
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(

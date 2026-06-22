@@ -56,6 +56,8 @@ struct ZonesListView: View {
                                     .environmentObject(currencyService)
                                     .environmentObject(appSettings)
                                     .environmentObject(documentService)
+                                    .environmentObject(router)
+                                    .environmentObject(zoneService)
                             } label: {
                                 ZoneListRow(
                                     zone: zone,

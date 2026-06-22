@@ -80,7 +80,7 @@ struct NewContractor: Encodable {
 }
 
 struct ContractorsView: View {
-    @StateObject private var service = ContractorService()
+    @EnvironmentObject private var service: ContractorService
     @EnvironmentObject private var auth: AuthService
     @State private var showAdd = false
     @State private var search = ""

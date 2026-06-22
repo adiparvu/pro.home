@@ -27,6 +27,7 @@ struct MainTabView: View {
     @StateObject private var photoJournalService = PhotoJournalService()
     @StateObject private var paintColorService = PaintColorService()
     @StateObject private var propertyValueService = PropertyValueService()
+    @StateObject private var contractorService = ContractorService()
     @StateObject private var tabBarVis = TabBarVisibility()
     @EnvironmentObject private var router: AppRouter
 
@@ -111,6 +112,7 @@ struct MainTabView: View {
         .environmentObject(photoJournalService)
         .environmentObject(paintColorService)
         .environmentObject(propertyValueService)
+        .environmentObject(contractorService)
         .task {
             await currencyService.refresh()
             await propertyService.load()
@@ -132,6 +134,7 @@ struct MainTabView: View {
             if let propId = propertyService.primary?.id {
                 await messageService.load(propertyId: propId)
             }
+            await contractorService.load()
             if let propId = propertyService.primary?.id {
                 await supplyService.load(propertyId: propId)
                 await plantService.load(propertyId: propId)

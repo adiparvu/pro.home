@@ -55,10 +55,20 @@ struct ZoneDetailView: View {
     @EnvironmentObject var currencyService: CurrencyService
     @EnvironmentObject var appSettings: AppSettings
     @EnvironmentObject var documentService: DocumentService
+    @EnvironmentObject var router: AppRouter
+    @EnvironmentObject var zoneService: PropertyZoneService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var editingZone: PropertyZone? = nil
+    @State private var showDeleteConfirm = false
 
     private var zoneType: ZoneType { ZoneType.detect(from: zone) }
     private var elements: [PropertyElement] { elementService.elements(inZone: zone.id) }
     private var openTasks: [MaintenanceTask] { taskService.tasks.filter { !$0.isCompleted } }
+
+    private var shareText: String {
+        "Zone: \(zone.name)\nHealth: \(zone.healthScore)%\nObjects: \(elements.count)\nOpen Tasks: \(openTasks.count)"
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -81,17 +91,45 @@ struct ZoneDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {
-                    Button {} label: {
+                    ShareLink(item: shareText, preview: SharePreview(zone.name)) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 15))
+                            .foregroundStyle(.primary)
                     }
-                    Button {} label: {
+                    Menu {
+                        Button { editingZone = zone } label: {
+                            Label("Edit Zone", systemImage: "pencil")
+                        }
+                        Button(role: .destructive) { showDeleteConfirm = true } label: {
+                            Label("Delete Zone", systemImage: "trash")
+                        }
+                    } label: {
                         Image(systemName: "ellipsis.circle")
                             .font(.system(size: 15))
+                            .foregroundStyle(.primary)
                     }
                 }
-                .foregroundStyle(.primary)
             }
+        }
+        .sheet(item: $editingZone) { z in
+            ZoneEditSheet(zone: z) { updated in
+                Task { await zoneService.update(updated) }
+            } onDelete: {
+                Task {
+                    await zoneService.delete(zone)
+                    dismiss()
+                }
+            }
+        }
+        .confirmationDialog("Delete \(zone.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Zone", role: .destructive) {
+                Task {
+                    await zoneService.delete(zone)
+                    dismiss()
+                }
+            }
+        } message: {
+            Text("This will permanently remove the zone and all its associated data.")
         }
     }
 
@@ -396,20 +434,40 @@ struct ZoneDetailView: View {
         }
     }
 
-    private func actionButton(label: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: 48, height: 48)
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(color)
-            }
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+    private func handleActionButton(_ label: String) {
+        HapticFeedback.impact(.medium)
+        switch label {
+        case "Tasks":
+            router.selectedTab = .tasks
+        case "Edit":
+            editingZone = zone
+        case "Delete":
+            showDeleteConfirm = true
+        case "Records":
+            router.selectedTab = .settings
+        default:
+            // Zone-specific actions (Water, Refill, Irrigate, etc.) → open Add Task prefilled
+            router.showAddTask = true
         }
+    }
+
+    private func actionButton(label: String, icon: String, color: Color) -> some View {
+        Button { handleActionButton(label) } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: icon)
+                        .font(.system(size: 18))
+                        .foregroundStyle(color)
+                }
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Elements Section

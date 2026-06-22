@@ -71,15 +71,15 @@ extension DashboardView {
                 title: "Health",
                 value: propertyService.primary?.healthScore.map { "\($0)" } ?? "–",
                 subtitle: "property score"
-            ) { }
+            ) { router.selectedTab = .chat }
 
         case .inventory:
             HomeWidget(
                 icon: "shippingbox.fill",
                 iconColor: .orange,
                 title: "Inventory",
-                value: "–",
-                subtitle: "items"
+                value: "\(inventoryService.items.count)",
+                subtitle: inventoryService.items.count == 1 ? "item" : "items"
             ) { router.selectedTab = .settings }
 
         case .contractors:
@@ -87,8 +87,8 @@ extension DashboardView {
                 icon: "hammer.fill",
                 iconColor: Color(red: 0.9, green: 0.65, blue: 0.2),
                 title: "Contractors",
-                value: "–",
-                subtitle: "active"
+                value: "\(contractorService.contractors.count)",
+                subtitle: contractorService.contractors.count == 1 ? "contact" : "contacts"
             ) { router.selectedTab = .settings }
 
         case .calendar:
@@ -98,7 +98,11 @@ extension DashboardView {
                 title: "Calendar",
                 value: "\(Calendar.current.component(.day, from: Date()))",
                 subtitle: monthName
-            ) { }
+            ) {
+                if let url = URL(string: "calshow://") {
+                    UIApplication.shared.open(url)
+                }
+            }
         }
     }
 
