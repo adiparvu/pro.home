@@ -4,7 +4,7 @@ import SwiftUI
 final class AppSettings: ObservableObject {
     @AppStorage("prvio.theme")              var theme:                 String = "dark"
     @AppStorage("prvio.locale")             var locale:                String = "ro"
-    @AppStorage("prvio.followSystemLang")   var followSystemLanguage:  Bool   = true
+    @AppStorage("prvio.followSystemLang")   var followSystemLanguage:  Bool   = false
     @AppStorage("prvio.currency")           var preferredCurrency:     String = "EUR"
     @AppStorage("prvio.accentColor")        var accentColor:           String = "blue"
     @AppStorage("prvio.accentOn")           var accentEnabled:         Bool   = true
@@ -14,8 +14,8 @@ final class AppSettings: ObservableObject {
     init() {
         // Restore language on every launch so the bundle swizzle is always active.
         // Use object(forKey:) so a missing key → true (follow system), not false.
-        let savedLocale = UserDefaults.standard.string(forKey: "prvio.locale") ?? "en"
-        let followSystem = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? true
+        let savedLocale = UserDefaults.standard.string(forKey: "prvio.locale") ?? "ro"
+        let followSystem = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? false
         if followSystem {
             LanguageManager.applySystemLanguage()
         } else {
