@@ -1586,3 +1586,15 @@
 "Weatherproofing check" = "Weerbestendigheidscontrole";
 "Pipe freeze prevention" = "Leidingbevriering preventie";
 "Irrigation system check" = "Controle irrigatiesysteem";
+
+// MARK: - Widgets
+"PLANTS" = "PLANTEN";
+"TASKS" = "TAKEN";
+"SHOPPING" = "BOODSCHAPPEN";
+"Updated" = "Bijgewerkt";
+"Scan Receipt" = "Bon scannen";
+"All plants are watered!" = "Alle planten zijn water gegeven!";
+"All tasks are complete!" = "Alle taken zijn voltooid!";
+"All clear — no urgent alerts" = "Alles goed — geen urgente meldingen";
+"Completă! 🎉" = "Klaar! 🎉";
+"Udare plante" = "Planten water geven";

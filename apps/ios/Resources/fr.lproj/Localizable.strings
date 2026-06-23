@@ -1586,3 +1586,15 @@
 "Weatherproofing check" = "Vérification de l'étanchéité";
 "Pipe freeze prevention" = "Prévention du gel des conduites";
 "Irrigation system check" = "Vérification du système d'irrigation";
+
+// MARK: - Widgets
+"PLANTS" = "PLANTES";
+"TASKS" = "TÂCHES";
+"SHOPPING" = "COURSES";
+"Updated" = "Mis à jour";
+"Scan Receipt" = "Scanner reçu";
+"All plants are watered!" = "Toutes les plantes sont arrosées !";
+"All tasks are complete!" = "Toutes les tâches sont terminées !";
+"All clear — no urgent alerts" = "Tout va bien — aucune alerte urgente";
+"Completă! 🎉" = "Terminé ! 🎉";
+"Udare plante" = "Arroser les plantes";

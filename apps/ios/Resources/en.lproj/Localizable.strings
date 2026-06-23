@@ -1604,3 +1604,15 @@
 "Weatherproofing check" = "Weatherproofing check";
 "Pipe freeze prevention" = "Pipe freeze prevention";
 "Irrigation system check" = "Irrigation system check";
+
+// MARK: - Widgets
+"PLANTS" = "PLANTS";
+"TASKS" = "TASKS";
+"SHOPPING" = "SHOPPING";
+"Updated" = "Updated";
+"Scan Receipt" = "Scan Receipt";
+"All plants are watered!" = "All plants are watered!";
+"All tasks are complete!" = "All tasks are complete!";
+"All clear — no urgent alerts" = "All clear — no urgent alerts";
+"Completă! 🎉" = "Complete! 🎉";
+"Udare plante" = "Water Plants";
