@@ -51,6 +51,7 @@ final class PropertyZoneService: ObservableObject {
             layer: zone.layer.rawValue,
             healthScore: zone.healthScore,
             polygon: zone.polygon,
+            photoUrl: zone.photoUrl,
             sortOrder: zone.sortOrder,
             createdAt: zone.createdAt,
             updatedAt: ISO8601DateFormatter().string(from: Date())

@@ -25,6 +25,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     var healthScore: Int
     var polygon: [GeoPoint]
     var notes: String?
+    var photoUrl: String?
     var sortOrder: Int
     let createdAt: String
     var updatedAt: String
@@ -34,6 +35,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
         case propertyId  = "property_id"
         case colorHex    = "color_hex"
         case healthScore = "health_score"
+        case photoUrl    = "photo_url"
         case sortOrder   = "sort_order"
         case createdAt   = "created_at"
         case updatedAt   = "updated_at"
@@ -130,6 +132,7 @@ struct NewPropertyZone: Encodable {
     var layer: String
     var healthScore: Int
     var polygon: [GeoPoint]
+    var photoUrl: String?
     var sortOrder: Int
     let createdAt: String
     let updatedAt: String
@@ -139,6 +142,7 @@ struct NewPropertyZone: Encodable {
         case propertyId  = "property_id"
         case colorHex    = "color_hex"
         case healthScore = "health_score"
+        case photoUrl    = "photo_url"
         case sortOrder   = "sort_order"
         case createdAt   = "created_at"
         case updatedAt   = "updated_at"

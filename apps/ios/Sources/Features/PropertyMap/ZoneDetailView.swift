@@ -138,20 +138,17 @@ struct ZoneDetailView: View {
     @ViewBuilder
     private var heroSection: some View {
         ZStack(alignment: .bottom) {
-            Group {
-                if zoneType == .generic {
-                    LinearGradient(
-                        colors: [zone.tint.opacity(0.6), zone.tint.opacity(0.3)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                } else {
-                    LinearGradient(
-                        colors: zoneType.gradientColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+            // Background: drone/cover photo if available, else type gradient
+            if let urlStr = zone.photoUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    heroGradient
                 }
+                // Dim photo so text/overlay remain readable
+                .overlay(Color.black.opacity(0.35))
+            } else {
+                heroGradient
             }
 
             if zoneType == .water {
@@ -213,6 +210,18 @@ struct ZoneDetailView: View {
         .shadow(color: .black.opacity(0.3), radius: 16, y: 6)
     }
 
+    private var heroGradient: some View {
+        Group {
+            if zoneType == .generic {
+                LinearGradient(colors: [zone.tint.opacity(0.6), zone.tint.opacity(0.3)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+            } else {
+                LinearGradient(colors: zoneType.gradientColors,
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+            }
+        }
+    }
+
     // MARK: - Health Stats Row
 
     private var healthStatsRow: some View {
@@ -241,11 +250,20 @@ struct ZoneDetailView: View {
 
     private var metricsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("METRICS")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .tracking(1.2)
-                .padding(.leading, 4)
+            HStack(spacing: 8) {
+                Text("METRICS")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .tracking(1.2)
+                if zoneType != .generic {
+                    Text("Estimated")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Color.primary.opacity(0.07), in: Capsule())
+                }
+            }
+            .padding(.leading, 4)
 
             let metrics = metricsForZone
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {

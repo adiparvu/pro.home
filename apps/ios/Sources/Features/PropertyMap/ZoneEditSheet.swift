@@ -1,7 +1,7 @@
 import SwiftUI
+import PhotosUI
 
-/// Edit a zone's metadata — name, colour, icon and layer. Native form,
-/// Liquid Glass styling. Used both after drawing a new zone and to edit one.
+/// Edit a zone's metadata — name, colour, icon, layer and cover photo.
 struct ZoneEditSheet: View {
     let zone: PropertyZone
     var onSave: (PropertyZone) -> Void
@@ -12,16 +12,21 @@ struct ZoneEditSheet: View {
     @State private var colorHex: String
     @State private var icon: String
     @State private var layer: PropertyLayer
+    @State private var photoUrl: String?
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var pendingPhotoData: Data? = nil
+    @State private var isSaving = false
     @State private var showDeleteConfirm = false
 
     init(zone: PropertyZone, onSave: @escaping (PropertyZone) -> Void, onDelete: @escaping () -> Void) {
         self.zone = zone
         self.onSave = onSave
         self.onDelete = onDelete
-        _name = State(initialValue: zone.name)
+        _name     = State(initialValue: zone.name)
         _colorHex = State(initialValue: zone.colorHex)
-        _icon = State(initialValue: zone.icon)
-        _layer = State(initialValue: zone.layer)
+        _icon     = State(initialValue: zone.icon)
+        _layer    = State(initialValue: zone.layer)
+        _photoUrl = State(initialValue: zone.photoUrl)
     }
 
     private static let palette = [
@@ -47,6 +52,7 @@ struct ZoneEditSheet: View {
                             .padding(14)
                             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
+                    field("PHOTO") { photoPickerSection }
                     field("COLOR") { paletteRow }
                     field("ICON") { iconGrid }
                     field("LAYER") { layerRow }
@@ -67,14 +73,27 @@ struct ZoneEditSheet: View {
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Edit zone")
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: selectedPhotoItem) { _, item in
+                Task {
+                    if let data = try? await item?.loadTransferable(type: Data.self) {
+                        pendingPhotoData = data
+                        photoUrl = nil
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .fontWeight(.semibold)
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    if isSaving {
+                        ProgressView().scaleEffect(0.8)
+                    } else {
+                        Button("Save") { Task { await save() } }
+                            .fontWeight(.semibold)
+                            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
                 }
             }
             .confirmationDialog("Delete this zone?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -85,6 +104,53 @@ struct ZoneEditSheet: View {
     }
 
     // MARK: - Sections
+
+    // MARK: - Photo picker
+
+    @ViewBuilder
+    private var photoPickerSection: some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let data = pendingPhotoData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                } else if let urlStr = photoUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { img in img.resizable().scaledToFill() }
+                        placeholder: { Color.primary.opacity(0.06) }
+                } else {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo.badge.plus")
+                                .font(.system(size: 26, weight: .light))
+                            Text("Add cover photo")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 90)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: pendingPhotoData != nil || photoUrl != nil ? 110 : 90)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            if pendingPhotoData != nil || photoUrl != nil {
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(7)
+                        .background(.regularMaterial, in: Circle())
+                }
+                .padding(8)
+            }
+        }
+    }
+
+    // MARK: - Preview
 
     private var preview: some View {
         HStack(spacing: 14) {
@@ -175,12 +241,35 @@ struct ZoneEditSheet: View {
         }
     }
 
-    private func save() {
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
         var updated = zone
         updated.name = name.trimmingCharacters(in: .whitespaces)
         updated.colorHex = colorHex
         updated.icon = icon
         updated.layer = layer
+        updated.photoUrl = photoUrl
+
+        if let data = pendingPhotoData {
+            let path = "zones/\(zone.id.uuidString)/cover.jpg"
+            let compressed = UIImage(data: data).flatMap { $0.jpegData(compressionQuality: 0.82) } ?? data
+            do {
+                try await supabase.storage
+                    .from("photos")
+                    .upload(path, data: compressed,
+                            options: FileOptions(contentType: "image/jpeg", upsert: true))
+                updated.photoUrl = try supabase.storage
+                    .from("photos")
+                    .getPublicURL(path: path)
+                    .absoluteString
+            } catch {
+                #if DEBUG
+                print("[ZoneEditSheet] photo upload error: \(error)")
+                #endif
+            }
+        }
+
         onSave(updated)
         dismiss()
     }

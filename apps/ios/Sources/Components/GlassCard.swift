@@ -76,6 +76,7 @@ struct GlassCard<Content: View>: View {
     var body: some View {
         content()
             .padding(padding)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .liquidGlass(cornerRadius: cornerRadius)
     }
 }
@@ -90,6 +91,7 @@ struct HeavyGlassCard<Content: View>: View {
     var body: some View {
         content()
             .padding(padding)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .liquidGlass(cornerRadius: cornerRadius, thick: true)
     }
 }

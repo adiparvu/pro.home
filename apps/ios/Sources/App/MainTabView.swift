@@ -6,6 +6,7 @@ import WidgetKit
 struct MainTabView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var appSettings: AppSettings
+    @Environment(\.appLanguage) private var appLanguage
     @StateObject private var taskService = TaskService()
     @StateObject private var propertyService = PropertyService()
     @StateObject private var profileService = ProfileService()
@@ -64,6 +65,7 @@ struct MainTabView: View {
                 .tabItem { Image(systemName: "person.crop.circle.fill") }
                 .tag(AppTab.settings)
         }
+        .id(appLanguage)
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
