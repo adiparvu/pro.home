@@ -80,7 +80,7 @@ struct ReceiptScannerView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .scaleEffect(1.2)
-                        .tint(.accentColor)
+                        .tint(Color.accentColor)
                     Text(String(localized: "scanner_processing"))
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)

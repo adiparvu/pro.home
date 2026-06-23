@@ -314,7 +314,7 @@ struct ExpenseDashboardView: View {
                     Button { showBudgets = true } label: {
                         Text(String(localized: "expense_edit_budgets"))
                             .font(.system(size: 12))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                 }
@@ -371,8 +371,10 @@ struct ExpenseDashboardView: View {
 
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
-                        ForEach(Array(recent.prefix(10).enumerated()), id: \.element.id) { idx, receipt in
-                            receiptRow(receipt, isLast: idx == min(recent.count, 10) - 1)
+                        let recentSlice = Array(recent.prefix(10).enumerated())
+                        let lastIdx = min(recent.count, 10) - 1
+                        ForEach(recentSlice, id: \.element.id) { idx, receipt in
+                            receiptRow(receipt, isLast: idx == lastIdx)
                                 .onTapGesture {
                                     selectedReceipt = receipt
                                     HapticFeedback.selection()
@@ -385,7 +387,7 @@ struct ExpenseDashboardView: View {
                     Button { showReports = true } label: {
                         Text(String(format: String(localized: "expense_see_all"), recent.count))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                     }
@@ -452,7 +454,7 @@ struct ExpenseDashboardView: View {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                                         .fill(Color.accentColor.opacity(0.12)).frame(width: 36, height: 36)
                                     Image(systemName: "arrow.triangle.2.circlepath")
-                                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.accentColor)
+                                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.accentColor)
                                 }
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)

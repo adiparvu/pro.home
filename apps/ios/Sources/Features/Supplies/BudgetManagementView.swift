@@ -45,7 +45,7 @@ struct BudgetManagementView: View {
         GlassCard(padding: 16) {
             VStack(spacing: 10) {
                 HStack {
-                    Image(systemName: "target").font(.system(size: 18)).foregroundStyle(.accentColor)
+                    Image(systemName: "target").font(.system(size: 18)).foregroundStyle(Color.accentColor)
                     Text(receiptService.monthDisplayName(currentMonth))
                         .font(.system(size: 15, weight: .semibold))
                     Spacer()

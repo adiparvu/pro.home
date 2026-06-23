@@ -101,7 +101,7 @@ struct AddReceiptSheet: View {
                     HapticFeedback.selection()
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 16)).foregroundStyle(.accentColor)
+                        .font(.system(size: 16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             }
@@ -119,7 +119,7 @@ struct AddReceiptSheet: View {
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 70)
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                 Button {
                                     items.removeAll { $0.id == item.id }
                                 } label: {
@@ -141,7 +141,7 @@ struct AddReceiptSheet: View {
                     } label: {
                         Text(String(format: String(localized: "add_receipt_use_computed"), Receipt.format(computed)))
                             .font(.system(size: 12))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, 4)
