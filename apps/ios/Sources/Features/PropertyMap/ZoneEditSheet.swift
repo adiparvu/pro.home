@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 
 /// Edit a zone's metadata — name, colour, icon, layer and cover photo.
 struct ZoneEditSheet: View {

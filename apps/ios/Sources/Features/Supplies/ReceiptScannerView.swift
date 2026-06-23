@@ -20,9 +20,9 @@ struct ReceiptScannerView: View {
                 appBackground.ignoresSafeArea()
 
                 if let parsed {
-                    ReceiptReviewView(parsed: parsed) {
-                        Task { await saveReceipt($0) }
-                    }
+                    ReceiptReviewView(parsed: parsed, onSave: { p in
+                        Task { await saveReceipt(p) }
+                    })
                     .environmentObject(receiptService)
                     .environmentObject(propertyService)
                 } else {

@@ -38,8 +38,8 @@ final class ReceiptService: ObservableObject {
         guard let date = monthFormatter.date(from: key),
               let next = Calendar.current.date(byAdding: .month, value: 1, to: date)
         else { return key }
-        let next = monthFormatter.string(from: next)
-        return next <= currentMonthKey ? next : key
+        let nextKey = monthFormatter.string(from: next)
+        return nextKey <= currentMonthKey ? nextKey : key
     }
 
     func monthDisplayName(_ key: String) -> String {
