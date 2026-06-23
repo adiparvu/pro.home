@@ -971,3 +971,68 @@
 "Save changes" = "Salvează modificările";
 "Search appliances…" = "Caută electrocasnice…";
 "Skip" = "Omite";
+
+/* Build 278 — audit complet (55 chei confirmate în 3 treceri) */
+/* Butoane / acțiuni */
+"Clear History" = "Șterge istoricul";
+"Delete photo" = "Șterge fotografia";
+"Disable" = "Dezactivează";
+"Report" = "Raportează";
+"Add to list" = "Adaugă la listă";
+"Edit your profile" = "Editează profilul";
+/* Setări — secțiuni / rânduri */
+"Activity" = "Activitate";
+"App Icon" = "Iconiță aplicație";
+"Data & Privacy" = "Date & Confidențialitate";
+"Family & Chat" = "Familie & Chat";
+"Security & Privacy" = "Securitate & Confidențialitate";
+"Smart Home" = "Casă inteligentă";
+"Spotlight Search" = "Căutare Spotlight";
+"Supervision" = "Supraveghere";
+"Theme" = "Temă";
+"Visual Theme" = "Temă vizuală";
+"WiFi" = "WiFi";
+"Support" = "Suport";
+"House Rules" = "Regulile casei";
+"Periodic review" = "Revizuire periodică";
+"Pest Control" = "Control dăunători";
+"Bills" = "Facturi";
+"HVAC" = "HVAC";
+"Security" = "Securitate";
+/* Titluri pagini / vizualizări */
+"Map" = "Hartă";
+"Property Elements" = "Elemente proprietate";
+/* Etichete stare */
+"HEALTHY" = "SĂNĂTOS";
+"NEEDS WATER" = "NECESITĂ APĂ";
+"All Time" = "Tot timpul";
+"This Year" = "Anul acesta";
+"Completed ✓" = "Finalizat ✓";
+"Overdue task" = "Sarcină întârziată";
+"Next task" = "Următoarea sarcină";
+"Task" = "Sarcină";
+/* Antete ALL-CAPS (PageHeader subtitle) */
+"HOME" = "ACASĂ";
+"PERSONALIZATION" = "PERSONALIZARE";
+"SUPERVISION" = "SUPRAVEGHERE";
+"SUPPLIES" = "CONSUMABILE";
+/* Etichete câmpuri / placeholder */
+"E-mail" = "E-mail";
+"Latitude" = "Latitudine";
+"Longitude" = "Longitudine";
+"Password" = "Parolă";
+"Phone" = "Telefon";
+"What should ARIA call you?" = "Cum să te numească ARIA?";
+/* Chei românești ca LocalizedStringKey */
+"Adresă email" = "Adresă email";
+"Aprobare recuperare" = "Aprobare recuperare";
+"Nume complet" = "Nume complet";
+/* Texte descriptive */
+"Add a property first to start chatting." = "Adaugă mai întâi o proprietate pentru a începe conversația.";
+"Mortgage calculator" = "Calculator ipotecă";
+"Property photo diary" = "Jurnal foto proprietate";
+"Service providers" = "Furnizori de servicii";
+"Trusted people for property" = "Persoane de încredere pentru proprietate";
+"Weekly summary" = "Rezumat săptămânal";
+"This device" = "Acest dispozitiv";
+"Family chat" = "Chat familie";
