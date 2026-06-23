@@ -20,6 +20,7 @@ struct MainTabView: View {
     @StateObject private var elementService = PropertyElementService()
     @StateObject private var zoneService = PropertyZoneService()
     @StateObject private var supplyService = SupplyService()
+    @StateObject private var receiptService = ReceiptService()
     @StateObject private var stickerService = StickerService()
     @StateObject private var plantService = PlantService()
     @StateObject private var deliveryService = DeliveryService()
@@ -107,6 +108,7 @@ struct MainTabView: View {
         .environmentObject(elementService)
         .environmentObject(zoneService)
         .environmentObject(supplyService)
+        .environmentObject(receiptService)
         .environmentObject(stickerService)
         .environmentObject(plantService)
         .environmentObject(deliveryService)
@@ -142,6 +144,7 @@ struct MainTabView: View {
             if let propId = propertyService.primary?.id {
                 await deliveryService.load(propertyId: propId)
                 await supplyService.load(propertyId: propId)
+                await receiptService.load(propertyId: propId)
                 await plantService.load(propertyId: propId)
                 await applianceService.load(propertyId: propId)
                 await photoJournalService.load(propertyId: propId)
@@ -161,6 +164,7 @@ struct MainTabView: View {
             Task {
                 await deliveryService.load(propertyId: newPropId)
                 await supplyService.load(propertyId: newPropId)
+                await receiptService.load(propertyId: newPropId)
                 await plantService.load(propertyId: newPropId)
                 await applianceService.load(propertyId: newPropId)
                 await photoJournalService.load(propertyId: newPropId)
@@ -200,6 +204,7 @@ struct MainTabView: View {
                 if let propId = propertyService.primary?.id {
                     await deliveryService.load(propertyId: propId)
                     await supplyService.load(propertyId: propId)
+                    await receiptService.load(propertyId: propId)
                     await plantService.load(propertyId: propId)
                     await applianceService.load(propertyId: propId)
                     await photoJournalService.load(propertyId: propId)

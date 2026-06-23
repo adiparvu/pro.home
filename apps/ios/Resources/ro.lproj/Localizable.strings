@@ -283,3 +283,107 @@
 "Add financial records to see the forecast" = "Adaugă înregistrări financiare pentru a vedea prognoza";
 "Monthly evolution" = "Evoluție lunară";
 "Add transactions to see the chart" = "Adaugă tranzacții pentru a vedea graficul";
+
+/* ── Expense Hub ── */
+"expense_title" = "Cheltuieli";
+"expense_subtitle" = "GOSPODĂRIE";
+"expense_lists_title" = "Liste de cumpărături";
+"expense_tab_overview" = "Rezumat";
+"expense_tab_lists" = "Liste";
+"expense_receipts" = "chitanțe";
+"expense_no_receipts_month" = "Nicio chitanță în această lună.\nApasă + pentru a adăuga.";
+"expense_section_daily" = "CHELTUIELI ZILNICE";
+"expense_section_categories" = "CATEGORII";
+"expense_section_budgets" = "BUGETE";
+"expense_section_recent" = "CHITANȚE RECENTE";
+"expense_section_recurring" = "CUMPĂRĂTURI RECURENTE";
+"expense_edit_budgets" = "Gestionează";
+"expense_more_categories" = "+ alte categorii";
+"expense_see_all" = "Vezi toate cele %d chitanțe";
+"expense_unknown_store" = "Magazin necunoscut";
+"expense_recurring_times" = "Cumpărat de %d ori";
+"expense_scan_receipt" = "Scanează chitanță";
+"expense_add_manual" = "Adaugă manual";
+"expense_manage_budgets" = "Gestionează bugetele";
+"expense_reports" = "Rapoarte";
+"expense_scan" = "Scanează";
+"expense_add" = "Adaugă";
+"expense_budgets" = "Bugete";
+"expense_reports_short" = "Rapoarte";
+
+/* ── Receipt categories ── */
+"expense_cat_food" = "Alimente";
+"expense_cat_cleaning" = "Curățenie";
+"expense_cat_bathroom" = "Baie";
+"expense_cat_garden" = "Grădină";
+"expense_cat_diy" = "Bricolaj";
+"expense_cat_electronics" = "Electronice";
+"expense_cat_clothing" = "Îmbrăcăminte";
+"expense_cat_health" = "Sănătate";
+"expense_cat_dining" = "Restaurant";
+"expense_cat_transport" = "Transport";
+"expense_cat_other" = "Altele";
+
+/* ── Receipt Scanner ── */
+"scanner_title" = "Scanează chitanță";
+"scanner_headline" = "Scanează o chitanță";
+"scanner_body" = "Fă o poză sau alege din galerie pentru a extrage automat articolele și totalul.";
+"scanner_processing" = "Se analizează chitanța…";
+"scanner_choose_photo" = "Alege fotografie";
+"scanner_tip" = "Funcționează cel mai bine cu fotografii clare ale chitanțelor întinse";
+"scanner_rescan" = "Rescaneaza";
+"scanner_store_placeholder" = "Numele magazinului";
+"scanner_save" = "Salvează chitanța";
+
+/* ── Add Receipt ── */
+"add_receipt_title" = "Chitanță nouă";
+"add_receipt_store_placeholder" = "Magazin sau comerciant";
+"add_receipt_item_name" = "Numele produsului";
+"add_receipt_use_computed" = "Folosește totalul calculat: %@";
+"add_receipt_notes_placeholder" = "Note suplimentare…";
+"add_receipt_save" = "Salvează chitanța";
+
+/* ── Receipt Detail ── */
+"receipt_delete_confirm" = "Ștergi această chitanță?";
+"receipt_total_label" = "Total";
+"receipt_items_section" = "ARTICOLE";
+"receipt_delete" = "Șterge chitanța";
+
+/* ── Spending Reports ── */
+"report_title" = "Rapoarte cheltuieli";
+"report_period_daily" = "Zilnic";
+"report_period_weekly" = "Săptămânal";
+"report_period_monthly" = "Lunar";
+"report_period_yearly" = "Anual";
+"report_last_30" = "ULTIMELE 30 ZILE";
+"report_weekly_breakdown" = "DEFALCARE SĂPTĂMÂNALĂ";
+"report_last_12" = "ULTIMELE 12 LUNI";
+"report_year_spending" = "CHELTUIELI %d";
+"report_total_spent" = "Total cheltuit";
+"report_days" = "zile cu cheltuieli";
+"report_weeks" = "săptămâni";
+"report_no_data" = "Nicio dată pentru această perioadă";
+
+/* ── Budgets ── */
+"budget_title" = "Bugete";
+"budget_description" = "Setează limite lunare pe categorii pentru a urmări cheltuielile gospodăriei.";
+"budget_categories_section" = "CATEGORII";
+"budget_total_label" = "buget total";
+"budget_set_for" = "Buget pentru %@";
+"budget_monthly_limit" = "LIMITĂ LUNARĂ";
+"budget_already_spent" = "Deja cheltuit luna aceasta: %@";
+"budget_save" = "Setează bugetul";
+"budget_remove" = "Elimină bugetul";
+"budget_no_budget_set" = "Niciun buget setat";
+"budget_spent_no_limit" = "Cheltuit: %@";
+
+/* ── Supply lists ── */
+"supply_lists_count" = "Liste";
+"supply_to_buy" = "De cumpărat";
+"supply_completed" = "Finalizate";
+"supply_section_lists" = "LISTE";
+"supply_all_done" = "Totul cumpărat";
+"supply_to_buy_short" = "de cumpărat";
+"supply_empty_title" = "Nicio listă de cumpărături";
+"supply_empty_body" = "Creează prima ta listă pentru alimente,\ncurățenie, grădină și altele.";
+"supply_add_first" = "Adaugă prima listă";

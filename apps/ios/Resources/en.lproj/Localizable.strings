@@ -283,3 +283,107 @@
 "Add financial records to see the forecast" = "Add financial records to see the forecast";
 "Monthly evolution" = "Monthly evolution";
 "Add transactions to see the chart" = "Add transactions to see the chart";
+
+/* ── Expense Hub ── */
+"expense_title" = "Expenses";
+"expense_subtitle" = "HOUSEHOLD";
+"expense_lists_title" = "Shopping Lists";
+"expense_tab_overview" = "Overview";
+"expense_tab_lists" = "Lists";
+"expense_receipts" = "receipts";
+"expense_no_receipts_month" = "No receipts this month.\nTap + to add one.";
+"expense_section_daily" = "DAILY SPENDING";
+"expense_section_categories" = "CATEGORIES";
+"expense_section_budgets" = "BUDGETS";
+"expense_section_recent" = "RECENT RECEIPTS";
+"expense_section_recurring" = "RECURRING PURCHASES";
+"expense_edit_budgets" = "Manage";
+"expense_more_categories" = "+ more categories";
+"expense_see_all" = "See all %d receipts";
+"expense_unknown_store" = "Unknown Store";
+"expense_recurring_times" = "Purchased %d times";
+"expense_scan_receipt" = "Scan Receipt";
+"expense_add_manual" = "Add Manually";
+"expense_manage_budgets" = "Manage Budgets";
+"expense_reports" = "Reports";
+"expense_scan" = "Scan";
+"expense_add" = "Add";
+"expense_budgets" = "Budgets";
+"expense_reports_short" = "Reports";
+
+/* ── Receipt categories ── */
+"expense_cat_food" = "Food";
+"expense_cat_cleaning" = "Cleaning";
+"expense_cat_bathroom" = "Bathroom";
+"expense_cat_garden" = "Garden";
+"expense_cat_diy" = "DIY";
+"expense_cat_electronics" = "Electronics";
+"expense_cat_clothing" = "Clothing";
+"expense_cat_health" = "Health";
+"expense_cat_dining" = "Dining";
+"expense_cat_transport" = "Transport";
+"expense_cat_other" = "Other";
+
+/* ── Receipt Scanner ── */
+"scanner_title" = "Scan Receipt";
+"scanner_headline" = "Scan a receipt";
+"scanner_body" = "Take a photo or choose from your library to extract items and total automatically.";
+"scanner_processing" = "Analyzing receipt…";
+"scanner_choose_photo" = "Choose Photo";
+"scanner_tip" = "Works best with clear, well-lit photos of flat receipts";
+"scanner_rescan" = "Rescan";
+"scanner_store_placeholder" = "Store name";
+"scanner_save" = "Save Receipt";
+
+/* ── Add Receipt ── */
+"add_receipt_title" = "New Receipt";
+"add_receipt_store_placeholder" = "Store or merchant name";
+"add_receipt_item_name" = "Item name";
+"add_receipt_use_computed" = "Use computed total: %@";
+"add_receipt_notes_placeholder" = "Additional notes…";
+"add_receipt_save" = "Save Receipt";
+
+/* ── Receipt Detail ── */
+"receipt_delete_confirm" = "Delete this receipt?";
+"receipt_total_label" = "Total";
+"receipt_items_section" = "ITEMS";
+"receipt_delete" = "Delete Receipt";
+
+/* ── Spending Reports ── */
+"report_title" = "Spending Reports";
+"report_period_daily" = "Daily";
+"report_period_weekly" = "Weekly";
+"report_period_monthly" = "Monthly";
+"report_period_yearly" = "Yearly";
+"report_last_30" = "LAST 30 DAYS";
+"report_weekly_breakdown" = "WEEKLY BREAKDOWN";
+"report_last_12" = "LAST 12 MONTHS";
+"report_year_spending" = "%d SPENDING";
+"report_total_spent" = "Total spent";
+"report_days" = "days with expenses";
+"report_weeks" = "weeks";
+"report_no_data" = "No data for this period";
+
+/* ── Budgets ── */
+"budget_title" = "Budgets";
+"budget_description" = "Set monthly limits per category to keep your household spending on track.";
+"budget_categories_section" = "CATEGORIES";
+"budget_total_label" = "total budget";
+"budget_set_for" = "Budget for %@";
+"budget_monthly_limit" = "MONTHLY LIMIT";
+"budget_already_spent" = "Already spent this month: %@";
+"budget_save" = "Set Budget";
+"budget_remove" = "Remove Budget";
+"budget_no_budget_set" = "No budget set";
+"budget_spent_no_limit" = "Spent: %@";
+
+/* ── Supply lists ── */
+"supply_lists_count" = "Lists";
+"supply_to_buy" = "To buy";
+"supply_completed" = "Completed";
+"supply_section_lists" = "LISTS";
+"supply_all_done" = "All done";
+"supply_to_buy_short" = "to buy";
+"supply_empty_title" = "No shopping lists";
+"supply_empty_body" = "Create your first list for food,\ncleaning, garden, and more.";
+"supply_add_first" = "Add first list";
