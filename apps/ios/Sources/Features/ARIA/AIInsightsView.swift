@@ -27,7 +27,7 @@ struct AIInsightsView: View {
                 // Recommendations section
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("ai_insights_recommendations")
+                        Text(String(localized: "ai_insights_recommendations"))
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.primary)
                         Spacer()
@@ -62,7 +62,7 @@ struct AIInsightsView: View {
                     HStack(spacing: 10) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 15, weight: .semibold))
-                        Text("ai_insights_ask_aria")
+                        Text(String(localized: "ai_insights_ask_aria"))
                             .font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundStyle(.white)
@@ -90,7 +90,7 @@ struct AIInsightsView: View {
                         .environmentObject(elementService)
                         .environmentObject(tabBarVis)
                 } label: {
-                    Text("ai_insights_timeline")
+                    Text(String(localized: "ai_insights_timeline"))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
                         .frame(maxWidth: .infinity)
@@ -109,7 +109,7 @@ struct AIInsightsView: View {
                 NavigationLink {
                     AutomationBuilderView()
                 } label: {
-                    Text("ai_insights_automation")
+                    Text(String(localized: "ai_insights_automation"))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
                         .frame(maxWidth: .infinity)
@@ -127,7 +127,7 @@ struct AIInsightsView: View {
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle("ai_insights_title")
+        .navigationTitle(String(localized: "ai_insights_title"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { orbPulse = true } }
     }
@@ -187,7 +187,7 @@ struct AIInsightsView: View {
                 Text("ARIA")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
-                Text("ai_insights_property_intelligence")
+                Text(String(localized: "ai_insights_property_intelligence"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.45))
             }
@@ -202,10 +202,10 @@ struct AIInsightsView: View {
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(Color(red: 0.20, green: 0.82, blue: 0.48).opacity(0.6))
                 .padding(.top, 20)
-            Text("ai_insights_all_good")
+            Text(String(localized: "ai_insights_all_good"))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.55))
-            Text("ai_insights_healthy")
+            Text(String(localized: "ai_insights_healthy"))
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
