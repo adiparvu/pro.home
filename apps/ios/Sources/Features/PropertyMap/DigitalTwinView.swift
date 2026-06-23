@@ -94,11 +94,23 @@ struct DigitalTwinView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
         if isAerial {
-            AerialPropertyView(
-                property: propertyService.primary,
-                zones: zoneService.zones,
-                elements: elementService.elements
-            )
+            Group {
+                if let prop = propertyService.primary,
+                   let urlStr = prop.photoUrl, !urlStr.isEmpty {
+                    AerialCanvasView(
+                        property: prop,
+                        zones: zoneService.zones,
+                        elements: elementService.elements,
+                        onElementTap: { selectedElement = $0 }
+                    )
+                } else {
+                    AerialPropertyView(
+                        property: propertyService.primary,
+                        zones: zoneService.zones,
+                        elements: elementService.elements
+                    )
+                }
+            }
             .ignoresSafeArea()
             .overlay(alignment: .top) { if !drawMode { layerBar } }
             .overlay(alignment: .bottomTrailing) {
