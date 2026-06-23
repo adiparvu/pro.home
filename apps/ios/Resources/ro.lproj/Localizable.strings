@@ -1036,3 +1036,563 @@
 "Weekly summary" = "Rezumat săptămânal";
 "This device" = "Acest dispozitiv";
 "Family chat" = "Chat familie";
+
+/* Build 279 — audit complet (300+ chei rămase) */
+
+/* Dashboard */
+"Good morning" = "Bună dimineața";
+"Good afternoon" = "Bună ziua";
+"Good evening" = "Bună seara";
+"Good night" = "Noapte bună";
+"Alerts" = "Alerte";
+"Loading…" = "Se încarcă…";
+"Everything looks on track." = "Totul pare în regulă.";
+"Some tasks need attention." = "Unele sarcini necesită atenție.";
+"Projects" = "Proiecte";
+"Maintenance" = "Întreținere";
+"Health Score" = "Scor sănătate";
+
+/* Settings — navigare */
+"Settings" = "Setări";
+"App" = "Aplicație";
+"Version" = "Versiune";
+"Voice Input in Chat" = "Input vocal în chat";
+"Siri & Shortcuts" = "Siri & Comenzi rapide";
+"Tenants" = "Chiriași";
+"Manage tenant profiles, leases, and communications." = "Gestionează profiluri chiriași, contracte și comunicări.";
+
+/* Profil */
+"Full Name" = "Nume complet";
+"Account ID" = "ID cont";
+"Member since" = "Membru din";
+"Edit profile" = "Editează profilul";
+"Change email" = "Schimbă e-mailul";
+"Change password" = "Schimbă parola";
+"Safety and security" = "Siguranță și securitate";
+"Trusted contact" = "Contact de încredere";
+"Avatar updated" = "Avatar actualizat";
+"Password updated successfully" = "Parola actualizată cu succes";
+"First Name" = "Prenume";
+"First name" = "Prenume";
+"Last Name" = "Nume de familie";
+"Last name" = "Nume de familie";
+"New email address" = "Adresă email nouă";
+"Confirm new email" = "Confirmă noul email";
+"New password" = "Parolă nouă";
+"Confirm password" = "Confirmă parola";
+
+/* Securitate */
+"Multi-factor authentication (MFA)" = "Autentificare multi-factor (MFA)";
+"Text messages" = "Mesaje text";
+"Sessions" = "Sesiuni";
+"Advanced security" = "Securitate avansată";
+"Require Face ID" = "Necesită Face ID";
+"Require Touch ID" = "Necesită Touch ID";
+"30 sec" = "30 sec";
+"1 min" = "1 min";
+"Locks every time the app backgrounds" = "Se blochează la fiecare trecere în fundal";
+"Locks after 30 seconds of inactivity" = "Se blochează după 30 secunde de inactivitate";
+"Never auto-locks" = "Nu se blochează automat";
+"Locks after 1 hour of inactivity" = "Se blochează după 1 oră de inactivitate";
+"Could not disable. Please try again." = "Nu s-a putut dezactiva. Încearcă din nou.";
+"Could not send the email. Please try again." = "Nu s-a putut trimite emailul. Încearcă din nou.";
+"Current session · active now" = "Sesiune curentă · activă acum";
+"Invalid or expired code. Please try again." = "Cod invalid sau expirat. Încearcă din nou.";
+
+/* Aspect / Appearance */
+"Aspect" = "Aspect";
+"General" = "General";
+"Dezactivat" = "Dezactivat";
+"Personalizat" = "Personalizat";
+
+/* App Icon */
+"Classic" = "Clasic";
+"Midnight" = "Midnight";
+"Sunset" = "Apus";
+"Forest" = "Pădure";
+"Lavender" = "Lavandă";
+"Rose Gold" = "Rose Gold";
+"Arctic" = "Arctic";
+"Carbon" = "Carbon";
+"Crimson" = "Roșu aprins";
+"Emerald" = "Smarald";
+
+/* ARIA */
+"IDENTITY" = "IDENTITATE";
+"PERSONALITY" = "PERSONALITATE";
+"AI MODEL" = "MODEL AI";
+"CONVERSATIONS" = "CONVERSAȚII";
+"Not set" = "Nesetat";
+"Configured" = "Configurat";
+"Balanced" = "Echilibrat";
+"Professional" = "Profesional";
+"Friendly" = "Prietenos";
+"Concise" = "Concis";
+"Clear Conversation History" = "Șterge istoricul conversației";
+"Ask ARIA" = "Întreabă ARIA";
+
+/* Finanțe */
+"Current month balance" = "Balanța lunii curente";
+"Savings" = "Economii";
+"Budget" = "Buget";
+"Today" = "Azi";
+"Yesterday" = "Ieri";
+"Setup" = "Configurare";
+"Principal" = "Principal";
+"Total Interest" = "Dobândă totală";
+"Total Cost" = "Cost total";
+"Your Equity" = "Valoarea ta";
+"Owed" = "Datorat";
+"Principal repayment" = "Rambursare principal";
+"Interest charges" = "Taxe dobândă";
+"Loan Amount" = "Suma împrumutului";
+"Interest Rate (%)" = "Rata dobânzii (%)";
+"Term (years)" = "Termen (ani)";
+"Property Value (optional)" = "Valoarea proprietății (opțional)";
+"Projected income" = "Venit proiectat";
+"Projected expenses" = "Cheltuieli proiectate";
+"Estimated net profit" = "Profit net estimat";
+"Forecast" = "Prognoză";
+"Net" = "Net";
+"1 Day" = "1 Zi";
+"1 Week" = "1 Săptămână";
+"1 Month" = "1 Lună";
+"3 Months" = "3 Luni";
+"6 Months" = "6 Luni";
+"1 Year" = "1 An";
+"Custom…" = "Personalizat…";
+"No property found." = "Proprietate negăsită.";
+"Invalid amount." = "Sumă invalidă.";
+
+/* Sarcini */
+"Edit Task" = "Editează sarcina";
+"Added to Apple Calendar" = "Adăugat în Apple Calendar";
+"Add to Apple Calendar" = "Adaugă în Apple Calendar";
+"Open" = "Deschis";
+"7 days" = "7 zile";
+"30 days" = "30 zile";
+"3 months" = "3 luni";
+"1 year" = "1 an";
+"All time" = "Tot timpul";
+"Reopen" = "Redeschide";
+"Mark as Done" = "Marchează ca finalizat";
+"Mo" = "Lu";
+"Tu" = "Ma";
+"We" = "Mi";
+"Th" = "Jo";
+"Fr" = "Vi";
+"Sa" = "Sâ";
+"Su" = "Du";
+"today" = "azi";
+"tomorrow" = "mâine";
+"yesterday" = "ieri";
+"5m" = "5m";
+"30m" = "30m";
+"24h" = "24h";
+"In Progress" = "În desfășurare";
+"Cancelled" = "Anulat";
+"Pending" = "În așteptare";
+"No date" = "Fără dată";
+
+/* Electrocasnice */
+"Brand" = "Marcă";
+"Model" = "Model";
+"Serial" = "Serie";
+"Location" = "Locație";
+"Purchased" = "Achiziționat";
+"Purchase Price" = "Preț achiziție";
+"Name (required)" = "Nume (obligatoriu)";
+"Model Number" = "Număr model";
+"Serial Number" = "Număr serie";
+"Location (e.g. Kitchen)" = "Locație (ex. Bucătărie)";
+"Kitchen" = "Bucătărie";
+"Laundry" = "Spălătorie";
+"Bathroom" = "Baie";
+"Entertainment" = "Divertisment";
+"No Warranty" = "Fără garanție";
+"Expiring Soon" = "Expiră curând";
+
+/* Inventar */
+"Loaned" = "Împrumutat";
+"Tools" = "Unelte";
+"Outdoor" = "Exterior";
+"Electronics" = "Electronice";
+"Other" = "Altele";
+"Items" = "Obiecte";
+"Item Detail" = "Detalii obiect";
+"Warranty" = "Garanție";
+"None" = "Niciunul";
+"Expired" = "Expirat";
+"Loan History" = "Istoric împrumut";
+"Borrower" = "Împrumutat";
+"Days out" = "Zile afară";
+"Has Warranty" = "Are garanție";
+"Value (€)" = "Valoare (€)";
+"Your name" = "Numele tău";
+"Phone number" = "Număr de telefon";
+"Home address" = "Adresă acasă";
+"AirTag" = "AirTag";
+
+/* Plante */
+"Last watered" = "Ultima udare";
+"Watering interval" = "Interval udare";
+"Watering status" = "Stare udare";
+"Water today" = "Udă azi";
+"Water tomorrow" = "Udă mâine";
+"Never" = "Niciodată";
+"Needs watering" = "Necesită udare";
+"My Plants" = "Plantele mele";
+"All watered" = "Toate udate";
+"Needs water" = "Necesită apă";
+
+/* Digital Twin / Hartă */
+"Undo" = "Anulează";
+"Outside zones" = "În afara zonelor";
+"Hybrid" = "Hibrid";
+"Satellite + Roads" = "Satelit + Drumuri";
+"Standard" = "Standard";
+"Street Map" = "Hartă stradală";
+"Satellite" = "Satelit";
+"Imagery Only" = "Doar imagini";
+"Buildings" = "Clădiri";
+"History" = "Istoric";
+"Summary" = "Sumar";
+"Total records" = "Total înregistrări";
+"Total costs" = "Costuri totale";
+"Last record" = "Ultima înregistrare";
+"Not placed" = "Neplasat";
+"Placed on map" = "Plasat pe hartă";
+"Place" = "Plasează";
+"Change" = "Schimbă";
+"Elements" = "Elemente";
+"Critical" = "Critic";
+"Attention" = "Atenție";
+"on map" = "pe hartă";
+"estimated" = "estimat";
+"needs inspection" = "necesită inspecție";
+"excellent" = "excelent";
+"good" = "bun";
+"satisfactory" = "satisfăcător";
+"poor" = "slab";
+"critical" = "critic";
+"Average health" = "Sănătate medie";
+"Total value" = "Valoare totală";
+"Re-analyze" = "Re-analizează";
+"Could not generate an analysis right now." = "Nu s-a putut genera o analiză acum.";
+"Could not reach ARIA. Please try again." = "Nu s-a putut contacta ARIA. Încearcă din nou.";
+"Outside all zones" = "În afara tuturor zonelor";
+"Tap the map to place the object" = "Atinge harta pentru a plasa obiectul";
+"NAME" = "NUME";
+"PHOTO" = "FOTOGRAFIE";
+"COLOR" = "CULOARE";
+"LAYER" = "STRAT";
+"General" = "General";
+"Excellent" = "Excelent";
+"Good" = "Bun";
+"Fair" = "Acceptabil";
+"Poor" = "Slab";
+"Water Quality" = "Calitate apă";
+"pH Level" = "Nivel pH";
+"Fish Count" = "Număr pești";
+"Trees" = "Copaci";
+"Temperature" = "Temperatură";
+"Humidity" = "Umiditate";
+"Yield" = "Randament";
+"Irrigation" = "Irigație";
+"Light" = "Lumină";
+"Lights" = "Lumini";
+"Energy" = "Energie";
+"Soil Moisture" = "Umiditate sol";
+"Last Watered" = "Ultima udare";
+"Vehicles" = "Vehicule";
+"Storage" = "Depozitare";
+"Layer" = "Strat";
+"Active" = "Activ";
+"Irrigate" = "Irigă";
+"Survey" = "Inspecție";
+"Ventilate" = "Ventilează";
+"Sensors" = "Senzori";
+"Control" = "Control";
+"Fertilize" = "Fertilizează";
+"Access" = "Acces";
+
+/* Modele PropertyElement */
+"House" = "Casă";
+"Garage" = "Garaj";
+"Gazebo" = "Foișor";
+"Pool" = "Piscină";
+"Yard" = "Curte";
+"Lawn" = "Gazon";
+"Tree" = "Copac";
+"Fence" = "Gard";
+"Gate" = "Poartă";
+"Security camera" = "Cameră de securitate";
+"Irrigation system" = "Sistem irigație";
+"Solar panels" = "Panouri solare";
+"Boiler" = "Cazan";
+"Electrical panel" = "Tablou electric";
+"Shed" = "Magazie";
+"Pet" = "Animal de companie";
+"Note" = "Notă";
+"Work" = "Lucrare";
+"Cost" = "Cost";
+"Inspection" = "Inspecție";
+"Reminder" = "Reminder";
+"Property" = "Proprietate";
+"Financial" = "Financiar";
+
+/* Familie */
+"First name *" = "Prenume *";
+"Date of birth" = "Data nașterii";
+"FaceTime" = "FaceTime";
+"WhatsApp" = "WhatsApp";
+"Telegram" = "Telegram";
+"Instagram" = "Instagram";
+"Facebook" = "Facebook";
+"LinkedIn" = "LinkedIn";
+"TikTok" = "TikTok";
+"X (Twitter)" = "X (Twitter)";
+"Owner" = "Proprietar";
+"Partner" = "Partener";
+"Child" = "Copil";
+"Tenant" = "Chiriaș";
+"Guest" = "Oaspete";
+"Member" = "Membru";
+"No favorites yet" = "Niciun favorit încă";
+"Remove from favorites" = "Elimină din favorite";
+"Add to favorites" = "Adaugă la favorite";
+"Message" = "Mesaj";
+"Video Call" = "Apel video";
+"Location access denied. Enable in Settings." = "Acces locație refuzat. Activează din Setări.";
+"Getting your location…" = "Se obține locația…";
+
+/* Antreprenori */
+"Add Maintenance Task" = "Adaugă sarcină de întreținere";
+"Send Email" = "Trimite email";
+"Specialty" = "Specialitate";
+"No contractors yet" = "Niciun contractor încă";
+"Specialty (e.g. Plumber)" = "Specialitate (ex. Instalator)";
+"Email (optional)" = "Email (opțional)";
+
+/* Livrări */
+"Edit delivery" = "Editează livrarea";
+"New delivery" = "Livrare nouă";
+"Active Deliveries" = "Livrări active";
+
+/* Documente */
+"Document name" = "Nume document";
+"Has expiry date" = "Are dată de expirare";
+"Critical document" = "Document critic";
+"Attach file" = "Atașează fișier";
+"Could not read the selected file." = "Nu s-a putut citi fișierul selectat.";
+"Please set up your property first in Settings." = "Configurează mai întâi proprietatea în Setări.";
+"No expiry" = "Fără expirare";
+
+/* Notificări */
+"Overdue Task" = "Sarcină întârziată";
+"Task Due Today" = "Sarcină scadentă azi";
+"Task Due in 3 Days" = "Sarcină scadentă în 3 zile";
+"Document Expiring Soon" = "Document expiră curând";
+"Document Expiring in 7 Days" = "Document expiră în 7 zile";
+"PRVIO Weekly Digest" = "Digest săptămânal PRVIO";
+"Review your property tasks, finances, and documents for the week." = "Revizuiește sarcinile, finanțele și documentele pentru această săptămână.";
+"Time to water the plants! 💧" = "E timpul să uzi plantele! 💧";
+"Remind me tomorrow" = "Amintește-mi mâine";
+"Watered 💧" = "Udat 💧";
+"Remind me in 2h" = "Amintește-mi în 2h";
+"TASKS & DOCUMENTS" = "SARCINI & DOCUMENTE";
+"PROPERTY & FINANCES" = "PROPRIETATE & FINANȚE";
+"COMMUNICATION" = "COMUNICARE";
+"AUTOMATIONS" = "AUTOMATIZĂRI";
+"SUMMARY" = "REZUMAT";
+"Task reminders" = "Remindere sarcini";
+"Document expiry" = "Expirare documente";
+"Object warranties" = "Garanții obiecte";
+"Inventory & loans" = "Inventar & împrumuturi";
+"Financial alerts" = "Alerte financiare";
+"Mentions" = "Mențiuni";
+"Automations" = "Automatizări";
+"Due today, 3 days ahead and overdue" = "Scadente azi, în 3 zile și întârziate";
+"Alerts 30 and 7 days before expiry" = "Alerte la 30 și 7 zile înainte de expirare";
+"Expiring warranties for objects in the twin" = "Garanții care expiră pentru obiecte din Twin";
+"Reminder to return borrowed items" = "Reminder returnare obiecte împrumutate";
+"Upcoming rents & large transactions" = "Chirii și tranzacții mari";
+"New messages in the family chat" = "Mesaje noi în chat-ul familiei";
+"When you are mentioned with @" = "Când ești menționat cu @";
+"Alerts from property automations" = "Alerte din automatizări proprietate";
+"Every Monday at 9:00" = "În fiecare luni la 9:00";
+
+/* Consumabile */
+"Mark as incomplete" = "Marchează ca nefinalizat";
+"Mark as complete" = "Marchează ca finalizat";
+"Complete" = "Finalizează";
+"Edit Item" = "Editează obiect";
+"Add item" = "Adaugă obiect";
+"Food" = "Alimente";
+"Cleaning" = "Curățenie";
+"DIY" = "Bricolaj";
+"Pets" = "Animale";
+"Low" = "Scăzut";
+"Medium" = "Mediu";
+"High" = "Ridicat";
+"List name" = "Nume listă";
+
+/* Blueprint */
+"Floor Plan" = "Plan etaj";
+"Blueprint" = "Plan tehnic";
+"Site / Yard" = "Teren / Curte";
+"PDF" = "PDF";
+"Depth" = "Adâncime";
+"Length" = "Lungime";
+"Installed" = "Instalat";
+"Add reference photo" = "Adaugă fotografie de referință";
+"Change photo" = "Schimbă fotografia";
+"Location denied — enable in Settings." = "Locație refuzată — activează din Setări.";
+"Getting location…" = "Se obține locația…";
+"Move slowly around the room to capture walls, doors and windows." = "Mișcă-te lent în jurul camerei pentru a capta pereți, uși și ferestre.";
+"Finish Scan" = "Finalizează scanarea";
+"Processing 3D model…" = "Se procesează modelul 3D…";
+
+/* Culori vopsea */
+"Room Name (e.g. Living Room)" = "Nume cameră (ex. Living)";
+"Color Name (required)" = "Nume culoare (obligatoriu)";
+"Color Code" = "Cod culoare";
+"Room Name" = "Nume cameră";
+
+/* Jurnal foto */
+"Title (required)" = "Titlu (obligatoriu)";
+"Tags (comma-separated)" = "Etichete (separate prin virgulă)";
+
+/* Valoare proprietate */
+"Optional notes…" = "Note opționale…";
+"Manual estimate" = "Estimare manuală";
+"Bank appraisal" = "Evaluare bancară";
+"Real estate agent" = "Agent imobiliar";
+"Online estimate" = "Estimare online";
+"Official valuation" = "Evaluare oficială";
+
+/* Mod oaspete */
+"Network name" = "Nume rețea";
+"Important Notes" = "Note importante";
+"House Rules" = "Regulile casei";
+
+/* Contacte urgență */
+"QUICK DIAL" = "APEL RAPID";
+"MY CONTACTS" = "CONTACTELE MELE";
+"Police / Fire / Ambulance" = "Poliție / Pompieri / Ambulanță";
+"Non-emergency" = "Non-urgență";
+"Gas Emergency" = "Urgență gaz";
+"Gas leak & emergencies" = "Scurgeri gaz & urgențe";
+"Name (e.g. Electrician)" = "Nume (ex. Electrician)";
+"Role / Company" = "Rol / Companie";
+
+/* Siri / Shortcuts */
+"AVAILABLE COMMANDS" = "COMENZI DISPONIBILE";
+"Water plant" = "Udă plantă";
+"Open shopping" = "Deschide cumpărături";
+"Commands activated!" = "Comenzi activate!";
+"Activate Siri Commands" = "Activează comenzi Siri";
+"Open Plants" = "Deschide Plante";
+"Shopping" = "Cumpărături";
+"Open PRVIO" = "Deschide PRVIO";
+"Open Dashboard" = "Deschide tabloul de bord";
+"Ask ARIA" = "Întreabă ARIA";
+"Water plants" = "Udă plantele";
+"Open family chat in PRVIO" = "Deschide chat-ul familiei în PRVIO";
+"Opens the PRVIO home dashboard" = "Deschide tabloul de bord PRVIO";
+"Opens the PRVIO AI assistant" = "Deschide asistentul AI PRVIO";
+"New task" = "Sarcină nouă";
+"Opens PRVIO to create a new task" = "Deschide PRVIO pentru a crea o sarcină";
+"Complete task" = "Finalizează sarcina";
+"Mark a task as completed" = "Marchează o sarcină ca finalizată";
+"The task to complete" = "Sarcina de finalizat";
+"Mark a plant as watered without opening the app" = "Marchează o plantă ca udată fără a deschide aplicația";
+"The plant to water" = "Planta de udat";
+"Open the Plants section in PRVIO" = "Deschide secțiunea Plante în PRVIO";
+"Open shopping list" = "Deschide lista de cumpărături";
+"Open the shopping list in PRVIO" = "Deschide lista de cumpărături în PRVIO";
+
+/* Blocare / autentificare */
+"Authentication failed. Try again." = "Autentificare eșuată. Încearcă din nou.";
+"Authenticate to continue" = "Autentifică-te pentru a continua";
+"Use passcode" = "Folosește codul de acces";
+"Unlock PRVIO" = "Deblochează PRVIO";
+
+/* Onboarding */
+"Get Started" = "Începe";
+"Continue" = "Continuă";
+"Property name (e.g. Main Apartment)" = "Nume proprietate (ex. Apartament principal)";
+"Address (optional)" = "Adresă (opțional)";
+"Task Manager" = "Manager sarcini";
+"Track maintenance and repairs" = "Urmărește întreținerea și reparațiile";
+"ARIA Assistant" = "Asistent ARIA";
+"AI powered property advisor" = "Consilier proprietate bazat pe AI";
+
+/* Zone templates (onboarding) */
+"Living Room" = "Living";
+"Bedroom" = "Dormitor";
+"Hallway" = "Hol";
+"Master Bedroom" = "Dormitor principal";
+"Guest Bedroom" = "Dormitor oaspeți";
+"Main Room" = "Camera principală";
+"Kitchen Corner" = "Colț bucătărie";
+
+/* Spotlight / căutare */
+"Plant" = "Plantă";
+"Complete list" = "Listă completă";
+"Overdue" = "Întârziat";
+"Watering" = "Udare";
+"Expiring" = "Expiră";
+
+/* Sezonalitate */
+"Spring" = "Primăvară";
+"Summer" = "Vară";
+"Fall" = "Toamnă";
+"Winter" = "Iarnă";
+"Replace HVAC filters" = "Înlocuiește filtrele HVAC";
+"Service AC before summer" = "Verifică AC înainte de vară";
+"Clean gutters and downspouts" = "Curăță jgheaburile și burlanele";
+
+/* Permisiuni trusted */
+"Urgență" = "Urgență";
+"Recuperare" = "Recuperare";
+"Transfer" = "Transfer";
+"Acces de urgență" = "Acces de urgență";
+"Poate solicita acces în situații de urgență" = "Poate solicita acces în situații de urgență";
+"Poate aproba recuperarea contului tău" = "Poate aproba recuperarea contului tău";
+"Transfer proprietate" = "Transfer proprietate";
+"Poate prelua proprietatea contului" = "Poate prelua proprietatea contului";
+
+/* Global Search subtitles */
+"All maintenance tasks" = "Toate sarcinile de întreținere";
+"Create a new task" = "Creează o sarcină nouă";
+"AI assistant" = "Asistent AI";
+"Property map & zones" = "Harta proprietății & zone";
+"Manage your plants" = "Gestionează plantele";
+"Income, expenses & budget" = "Venituri, cheltuieli & buget";
+"Budget planner" = "Planificator buget";
+"Shopping & supply lists" = "Liste cumpărături & consumabile";
+"Home inventory" = "Inventarul casei";
+"Package tracking" = "Urmărire colete";
+"Stats & property insights" = "Statistici & insight-uri proprietate";
+"Saved paint colors" = "Culori vopsea salvate";
+"Property valuation" = "Evaluare proprietate";
+"All your documents" = "Toate documentele";
+"Household appliances" = "Electrocasnice";
+"Floor plans & 3D scans" = "Planuri & scanări 3D";
+"Bills & utility readings" = "Facturi & citiri utilități";
+"Rooms & outdoor zones" = "Camere & zone exterioare";
+"Doors, windows, structures" = "Uși, ferestre, structuri";
+"All app preferences" = "Toate preferințele aplicației";
+"Change app language" = "Schimbă limba aplicației";
+"Theme, dark mode & accent color" = "Temă, mod întunecat & culoare accent";
+"Push notification settings" = "Setări notificări push";
+"Customize quick-action buttons" = "Personalizează butoanele de acțiune rapidă";
+"Google Calendar & more" = "Google Calendar & altele";
+"Manage family & housemates" = "Gestionează familia & colocatarii";
+"Emergency contact list" = "Lista contacte urgență";
+"Edit your profile" = "Editează profilul";
+"Property details & info" = "Detalii & informații proprietate";
+"Help center and FAQ" = "Centru ajutor & FAQ";
+"Log out of your account" = "Deconectează-te din cont";
+"Could not switch account. Please sign in again." = "Nu s-a putut schimba contul. Conectează-te din nou.";
