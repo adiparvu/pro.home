@@ -11,10 +11,42 @@ enum LanguageManager {
     private static var _isSwizzled = false
 
     static func apply(_ code: String) {
-        let path = Bundle.main.path(forResource: code, ofType: "lproj")
-                ?? Bundle.main.path(forResource: String(code.prefix(2)), ofType: "lproj")
-        _currentBundle = path.flatMap { Bundle(path: $0) }
+        let shortCode = String(code.prefix(2))
+        _currentBundle = findLprojBundle(code) ?? findLprojBundle(shortCode)
         ensureSwizzled()
+    }
+
+    // Locates and returns a Bundle for the given language code's .lproj directory.
+    // Tries the Bundle resource index first; falls back to URL construction so it
+    // works even when XcodeGen generated the project with folder references instead
+    // of proper localization variant groups.
+    private static func findLprojBundle(_ code: String) -> Bundle? {
+        // Path via Bundle's resource index (standard way)
+        if let p = Bundle.main.path(forResource: code, ofType: "lproj"),
+           let b = Bundle(path: p),
+           b.path(forResource: "Localizable", ofType: "strings") != nil {
+            return b
+        }
+        // Direct URL construction — works when lproj dirs are folder references
+        let url = Bundle.main.bundleURL.appendingPathComponent("\(code).lproj")
+        if let b = Bundle(url: url),
+           b.path(forResource: "Localizable", ofType: "strings") != nil {
+            return b
+        }
+        return nil
+    }
+
+    /// Apply the best matching supported language from the device's preferred language list.
+    /// Call this when followSystemLanguage = true so the swizzle infrastructure is always active.
+    static func applySystemLanguage() {
+        let supported = ["en", "ro", "fr", "nl", "de"]
+        let code = Locale.preferredLanguages
+            .compactMap { tag -> String? in
+                let c = String(tag.prefix(2))
+                return supported.contains(c) ? c : nil
+            }
+            .first ?? "en"
+        apply(code)
     }
 
     static func reset() {

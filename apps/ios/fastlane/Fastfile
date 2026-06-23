@@ -400,6 +400,22 @@ platform :ios do
       UI.success("Merged actool partial plist into bundle Info.plist")
     end
 
+    # Ensure localised string files are present in the archive — XcodeGen may add
+    # .lproj directories as plain folder references whose .strings contents are not
+    # compiled by ibtool. Copy them explicitly so every language is guaranteed.
+    %w[en ro fr nl de].each do |lang|
+      lproj_dir = File.join(archive_app, "#{lang}.lproj")
+      FileUtils.mkdir_p(lproj_dir)
+      src = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
+      dst = File.join(lproj_dir, "Localizable.strings")
+      if File.exist?(src)
+        FileUtils.cp(src, dst)
+        UI.success("Copied #{lang}.lproj/Localizable.strings into archive")
+      else
+        UI.error("Source not found: #{src}")
+      end
+    end
+
     export_options_path = "/tmp/ExportOptions.plist"
     File.write(export_options_path, <<~PLIST)
       <?xml version="1.0" encoding="UTF-8"?>

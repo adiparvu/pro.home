@@ -12,11 +12,13 @@ final class AppSettings: ObservableObject {
     @AppStorage("prvio.voiceInput")         var voiceInputEnabled:     Bool   = true
 
     init() {
-        // Restore language override immediately on every launch.
+        // Restore language on every launch so the bundle swizzle is always active.
         // Use object(forKey:) so a missing key → true (follow system), not false.
         let savedLocale = UserDefaults.standard.string(forKey: "prvio.locale") ?? "en"
         let followSystem = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? true
-        if !followSystem {
+        if followSystem {
+            LanguageManager.applySystemLanguage()
+        } else {
             LanguageManager.apply(savedLocale)
         }
     }

@@ -6,6 +6,7 @@ options:
   xcodeVersion: "26.0"
   swift: "5.10"
   createIntermediateGroups: true
+  developmentLanguage: en
 
 packages:
   Supabase:
@@ -20,11 +21,11 @@ targets:
       - path: Sources
     resources:
       - path: Resources/Assets.xcassets
-      - path: Resources/en.lproj
-      - path: Resources/ro.lproj
-      - path: Resources/fr.lproj
-      - path: Resources/nl.lproj
-      - path: Resources/de.lproj
+      - path: Resources/en.lproj/Localizable.strings
+      - path: Resources/ro.lproj/Localizable.strings
+      - path: Resources/fr.lproj/Localizable.strings
+      - path: Resources/nl.lproj/Localizable.strings
+      - path: Resources/de.lproj/Localizable.strings
     dependencies:
       - package: Supabase
         product: Supabase
@@ -63,10 +64,11 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "267"
+        CURRENT_PROJECT_VERSION: "268"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
@@ -86,11 +88,11 @@ targets:
       - path: Sources/Intents/PlantIntents.swift
       - path: Sources/LiveActivities/PRVIOLiveActivities.swift
     resources:
-      - path: Resources/en.lproj
-      - path: Resources/ro.lproj
-      - path: Resources/fr.lproj
-      - path: Resources/nl.lproj
-      - path: Resources/de.lproj
+      - path: Resources/en.lproj/Localizable.strings
+      - path: Resources/ro.lproj/Localizable.strings
+      - path: Resources/fr.lproj/Localizable.strings
+      - path: Resources/nl.lproj/Localizable.strings
+      - path: Resources/de.lproj/Localizable.strings
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: AppIntents.framework
@@ -110,7 +112,8 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "267"
+        CURRENT_PROJECT_VERSION: "268"
+        STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
