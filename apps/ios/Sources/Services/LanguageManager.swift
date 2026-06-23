@@ -4,40 +4,51 @@ import ObjectiveC
 // MARK: - LanguageManager
 // Uses class-level method swizzle (method_exchangeImplementations) so the override
 // affects all Bundle.main lookups regardless of how the instance was created.
+// Strings are loaded directly via PropertyListSerialization into a plain dictionary
+// to avoid the Bundle(url: lprojDir) resource-index issue with .lproj folder references.
 
 enum LanguageManager {
-    static var currentBundle: Bundle? { _currentBundle }
-    private(set) static var _currentBundle: Bundle? = nil
+    static var currentBundle: Bundle? { _strings != nil ? Bundle.main : nil }
+    private(set) static var _strings: [String: String]? = nil
     private static var _isSwizzled = false
 
     static func apply(_ code: String) {
         let shortCode = String(code.prefix(2))
-        _currentBundle = findLprojBundle(code) ?? findLprojBundle(shortCode)
+        _strings = loadStrings(code: code) ?? loadStrings(code: shortCode)
         ensureSwizzled()
     }
 
-    // Locates and returns a Bundle for the given language code's .lproj directory.
-    // Tries the Bundle resource index first; falls back to URL construction so it
-    // works even when XcodeGen generated the project with folder references instead
-    // of proper localization variant groups.
-    private static func findLprojBundle(_ code: String) -> Bundle? {
-        // Path via Bundle's resource index (standard way)
-        if let p = Bundle.main.path(forResource: code, ofType: "lproj"),
-           let b = Bundle(path: p),
-           b.path(forResource: "Localizable", ofType: "strings") != nil {
-            return b
+    // Loads Localizable.strings for the given language code directly from the app bundle.
+    // Two strategies: Bundle resource index (proper variant groups) and direct URL
+    // construction (Fastfile belt-and-suspenders copies).
+    private static func loadStrings(code: String) -> [String: String]? {
+        // Strategy 1: Bundle resource index with lproj subdirectory
+        if let path = Bundle.main.path(forResource: "Localizable", ofType: "strings",
+                                       inDirectory: "\(code).lproj"),
+           let dict = readStringsFile(at: path) {
+            return dict
         }
-        // Direct URL construction — works when lproj dirs are folder references
-        let url = Bundle.main.bundleURL.appendingPathComponent("\(code).lproj")
-        if let b = Bundle(url: url),
-           b.path(forResource: "Localizable", ofType: "strings") != nil {
-            return b
+        // Strategy 2: Direct URL under app bundle
+        let url = Bundle.main.bundleURL
+            .appendingPathComponent("\(code).lproj")
+            .appendingPathComponent("Localizable.strings")
+        return readStringsFile(at: url.path)
+    }
+
+    private static func readStringsFile(at path: String) -> [String: String]? {
+        guard FileManager.default.fileExists(atPath: path),
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
+        // PropertyListSerialization handles both binary plist and text .strings formats.
+        if let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+           let dict = plist as? [String: String],
+           !dict.isEmpty {
+            return dict
         }
-        return nil
+        // Fallback: NSDictionary for old-style OpenStep text plist
+        return NSDictionary(contentsOfFile: path) as? [String: String]
     }
 
     /// Apply the best matching supported language from the device's preferred language list.
-    /// Call this when followSystemLanguage = true so the swizzle infrastructure is always active.
     static func applySystemLanguage() {
         let supported = ["en", "ro", "fr", "nl", "de"]
         let code = Locale.preferredLanguages
@@ -50,7 +61,7 @@ enum LanguageManager {
     }
 
     static func reset() {
-        _currentBundle = nil
+        _strings = nil
         ensureSwizzled()
     }
 
@@ -69,24 +80,21 @@ extension Bundle {
     @objc(prvio_localizedStringForKey:value:table:)
     func prvio_localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
         // After swizzle: calling self.prvio_localizedString actually calls the original IMP.
-        guard self === Bundle.main, let override = LanguageManager._currentBundle else {
+        guard self === Bundle.main, let strings = LanguageManager._strings else {
             return prvio_localizedString(forKey: key, value: value, table: tableName)
         }
-        let result = override.prvio_localizedString(forKey: key, value: value, table: tableName)
-        // Fall back to main bundle if key not found in override.
-        // A missing key causes the system to return either the key itself or the `value`
-        // parameter (when non-nil/non-empty), so we treat both as "not found".
-        let notFound = result == key || (!result.isEmpty && result == (value ?? ""))
-        if notFound {
-            let fallback = prvio_localizedString(forKey: key, value: value, table: tableName)
-#if DEBUG
-            // Warn if the key is unresolved in both the override bundle and the fallback bundle.
-            if fallback == key || (!fallback.isEmpty && fallback == (value ?? "")) {
-                print("[LanguageManager] ⚠️ Missing localization key '\(key)' in override bundle and fallback bundle (table: \(tableName ?? "Localizable"))")
-            }
-#endif
-            return fallback
+        if let result = strings[key] {
+            // A missing key causes the system to return either the key itself or the `value`
+            // parameter (when non-nil/non-empty), so we treat both as "not found".
+            let notFound = result == key || (!result.isEmpty && result == (value ?? ""))
+            if !notFound { return result }
         }
-        return result
+        let fallback = prvio_localizedString(forKey: key, value: value, table: tableName)
+#if DEBUG
+        if fallback == key || (!fallback.isEmpty && fallback == (value ?? "")) {
+            print("[LanguageManager] ⚠️ Missing key '\(key)' in override dict and fallback bundle (table: \(tableName ?? "Localizable"))")
+        }
+#endif
+        return fallback
     }
 }
