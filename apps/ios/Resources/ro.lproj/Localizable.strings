@@ -218,3 +218,68 @@
 "notif_water_body" = "%d plante necesită udare astăzi.";
 "notif_warranty_title" = "Garanție expiră curând";
 "notif_warranty_body" = "Garanția pentru %@ expiră curând.";
+
+/* ── Inventory extended ── */
+"No items in this category" = "Niciun articol în această categorie";
+"This QR code doesn't match any item in your inventory." = "Acest cod QR nu corespunde niciunui articol din inventar.";
+"Camera scanner not available on this device" = "Scanerul camera nu este disponibil pe acest dispozitiv";
+"Point at an item's QR code" = "Îndreaptă camera spre codul QR al articolului";
+"Show on public QR page" = "Afișează pe pagina QR publică";
+"This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with." = "Aceste informații vor fi vizibile oricui scanează codul QR al articolului. Distribuie doar ce ești confortabil să împărtășești.";
+"Expected return" = "Returnare estimată";
+"You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned." = "Vei primi memento-uri după 1, 3, 7, 14, 30 și 90 de zile dacă articolul nu este returnat.";
+"TRACKER TYPE" = "TIP TRACKER";
+"Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking." = "Localizarea live AirTag necesită aplicația Găsire (API privat Apple). Salvează numele aici ca referință, apoi deschide Găsire pentru tracking live.";
+"Anyone who scans the QR code will see a web page with your contact details so they can return the item." = "Oricine scanează codul QR va vedea o pagină web cu datele tale de contact pentru returnarea articolului.";
+
+/* ── Property value ── */
+"Current Value" = "Valoare curentă";
+"since first entry" = "de la prima înregistrare";
+"Value Over Time" = "Evoluția valorii";
+"HISTORY" = "ISTORIC";
+"Track your property value" = "Urmărește valoarea proprietății";
+"Log manual estimates and bank appraisals to see how your property value changes over time." = "Înregistrează estimări manuale și evaluări bancare pentru a vedea cum evoluează valoarea proprietății tale.";
+
+/* ── Deliveries ── */
+"No deliveries tracked" = "Nicio livrare urmărită";
+"Add packages to track\nyour deliveries." = "Adaugă pachete pentru a urmări\nlivrările tale.";
+"Set estimated date" = "Setează data estimată";
+
+/* ── Tasks extended ── */
+"Add team members…" = "Adaugă membrii echipei…";
+"Set a due date to enable" = "Setează o dată scadentă pentru a activa";
+"FAMILY MEMBERS" = "MEMBRII FAMILIEI";
+"SOMEONE ELSE" = "ALTCINEVA";
+"Add someone else…" = "Adaugă altcineva…";
+"Nothing scheduled" = "Nimic planificat";
+"Tap a day to see events" = "Apasă pe o zi pentru a vedea evenimentele";
+"No events" = "Niciun eveniment";
+"No activity in this time range" = "Nicio activitate în această perioadă";
+"Title" = "Titlu";
+"Description (optional)" = "Descriere (opțional)";
+"Priority" = "Prioritate";
+"Category" = "Categorie";
+"Due Date" = "Dată scadentă";
+"Assign To" = "Asignează la";
+
+/* ── Family extended ── */
+"No members" = "Niciun membru";
+"Add family members to collaborate on tasks and chat." = "Adaugă membrii familiei pentru a colabora la sarcini și chat.";
+"ROLE" = "ROL";
+"Limited access — tasks and chat" = "Acces limitat — sarcini și chat";
+"SOCIAL NETWORKS" = "REȚELE SOCIALE";
+"INVITATION" = "INVITAȚIE";
+"Send invitation" = "Trimite invitație";
+"The person will receive an invitation email" = "Persoana va primi un e-mail de invitație";
+"Add social network" = "Adaugă rețea socială";
+
+/* ── Analytics ── */
+"current month" = "luna curentă";
+"Expenses by category" = "Cheltuieli pe categorie";
+"Completion rate" = "Rată de finalizare";
+"By priority" = "Pe prioritate";
+"12-month projection" = "Proiecție pe 12 luni";
+"Expense trend" = "Trend cheltuieli";
+"Add financial records to see the forecast" = "Adaugă înregistrări financiare pentru a vedea prognoza";
+"Monthly evolution" = "Evoluție lunară";
+"Add transactions to see the chart" = "Adaugă tranzacții pentru a vedea graficul";

@@ -218,3 +218,68 @@
 "notif_water_body" = "%d plant(en) heeft/hebben vandaag water nodig.";
 "notif_warranty_title" = "Garantie verloopt binnenkort";
 "notif_warranty_body" = "De garantie voor %@ verloopt binnenkort.";
+
+/* ── Inventory extended ── */
+"No items in this category" = "Geen artikelen in deze categorie";
+"This QR code doesn't match any item in your inventory." = "Deze QR-code komt niet overeen met een artikel in uw inventaris.";
+"Camera scanner not available on this device" = "Camerascanner niet beschikbaar op dit apparaat";
+"Point at an item's QR code" = "Richt op de QR-code van een artikel";
+"Show on public QR page" = "Weergeven op openbare QR-pagina";
+"This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with." = "Deze informatie is zichtbaar voor iedereen die de QR-code van dit artikel scant. Deel alleen wat u prettig vindt.";
+"Expected return" = "Verwachte retour";
+"You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned." = "U ontvangt herinneringen na 1, 3, 7, 14, 30 en 90 dagen als het artikel niet is geretourneerd.";
+"TRACKER TYPE" = "TRACKER TYPE";
+"Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking." = "Live locatie via AirTag vereist de Zoek mijn-app (privé Apple API). Sla de naam hier op als referentie en open Zoek mijn voor live tracking.";
+"Anyone who scans the QR code will see a web page with your contact details so they can return the item." = "Iedereen die de QR-code scant, ziet een webpagina met uw contactgegevens zodat ze het artikel kunnen retourneren.";
+
+/* ── Property value ── */
+"Current Value" = "Huidige waarde";
+"since first entry" = "sinds eerste invoer";
+"Value Over Time" = "Waarde in de tijd";
+"HISTORY" = "GESCHIEDENIS";
+"Track your property value" = "Volg de waarde van uw woning";
+"Log manual estimates and bank appraisals to see how your property value changes over time." = "Registreer handmatige schattingen en banktaxaties om te zien hoe de waarde van uw woning in de loop van de tijd verandert.";
+
+/* ── Deliveries ── */
+"No deliveries tracked" = "Geen leveringen gevolgd";
+"Add packages to track\nyour deliveries." = "Voeg pakketten toe om\nuw leveringen te volgen.";
+"Set estimated date" = "Stel geschatte datum in";
+
+/* ── Tasks extended ── */
+"Add team members…" = "Teamleden toevoegen…";
+"Set a due date to enable" = "Stel een vervaldatum in om te activeren";
+"FAMILY MEMBERS" = "GEZINSLEDEN";
+"SOMEONE ELSE" = "IEMAND ANDERS";
+"Add someone else…" = "Iemand anders toevoegen…";
+"Nothing scheduled" = "Niets gepland";
+"Tap a day to see events" = "Tik op een dag om evenementen te zien";
+"No events" = "Geen evenementen";
+"No activity in this time range" = "Geen activiteit in dit tijdsbereik";
+"Title" = "Titel";
+"Description (optional)" = "Beschrijving (optioneel)";
+"Priority" = "Prioriteit";
+"Category" = "Categorie";
+"Due Date" = "Vervaldatum";
+"Assign To" = "Toewijzen aan";
+
+/* ── Family extended ── */
+"No members" = "Geen leden";
+"Add family members to collaborate on tasks and chat." = "Voeg gezinsleden toe om samen te werken aan taken en te chatten.";
+"ROLE" = "ROL";
+"Limited access — tasks and chat" = "Beperkte toegang — taken en chat";
+"SOCIAL NETWORKS" = "SOCIALE NETWERKEN";
+"INVITATION" = "UITNODIGING";
+"Send invitation" = "Uitnodiging verzenden";
+"The person will receive an invitation email" = "De persoon ontvangt een uitnodigingse-mail";
+"Add social network" = "Sociaal netwerk toevoegen";
+
+/* ── Analytics ── */
+"current month" = "huidige maand";
+"Expenses by category" = "Uitgaven per categorie";
+"Completion rate" = "Voltooiingspercentage";
+"By priority" = "Op prioriteit";
+"12-month projection" = "12-maandenprognose";
+"Expense trend" = "Uitgaventrend";
+"Add financial records to see the forecast" = "Voeg financiële records toe om de prognose te zien";
+"Monthly evolution" = "Maandelijkse evolutie";
+"Add transactions to see the chart" = "Voeg transacties toe om het diagram te zien";

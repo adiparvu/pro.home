@@ -12,6 +12,7 @@ struct OnboardingView: View {
     @State private var propertyAddress = ""
     @State private var propertyType = "apartment"
     @State private var isSaving = false
+    @State private var saveError: String? = nil
 
     private let types = ["apartment", "house", "villa", "studio", "commercial"]
 
@@ -42,6 +43,11 @@ struct OnboardingView: View {
                     .padding(.horizontal, 32)
                     .padding(.bottom, 44)
             }
+        }
+        .alert("Something went wrong", isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
+            Button("OK") { saveError = nil }
+        } message: {
+            if let err = saveError { Text(err) }
         }
     }
 
@@ -142,7 +148,12 @@ struct OnboardingView: View {
                     .single()
                     .execute()
                 newPropertyId = resp.value.id
-            } catch {}
+            } catch {
+                #if DEBUG
+                print("[Onboarding] property insert error: \(error)")
+                #endif
+                saveError = error.localizedDescription
+            }
             await propertyService.load()
 
             // Generate default zones for the new property's type

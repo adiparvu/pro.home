@@ -378,8 +378,8 @@ struct AddTaskView: View {
 
     // MARK: - Helpers
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.5))
+    private func fieldLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.5))
     }
 
     private func priorityColor(_ p: String) -> Color {

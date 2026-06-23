@@ -218,3 +218,68 @@
 "notif_water_body" = "%d plant(s) need watering today.";
 "notif_warranty_title" = "Warranty Expiring Soon";
 "notif_warranty_body" = "The warranty for %@ is expiring soon.";
+
+/* ── Inventory extended ── */
+"No items in this category" = "No items in this category";
+"This QR code doesn't match any item in your inventory." = "This QR code doesn't match any item in your inventory.";
+"Camera scanner not available on this device" = "Camera scanner not available on this device";
+"Point at an item's QR code" = "Point at an item's QR code";
+"Show on public QR page" = "Show on public QR page";
+"This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with." = "This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.";
+"Expected return" = "Expected return";
+"You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned." = "You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.";
+"TRACKER TYPE" = "TRACKER TYPE";
+"Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking." = "Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking.";
+"Anyone who scans the QR code will see a web page with your contact details so they can return the item." = "Anyone who scans the QR code will see a web page with your contact details so they can return the item.";
+
+/* ── Property value ── */
+"Current Value" = "Current Value";
+"since first entry" = "since first entry";
+"Value Over Time" = "Value Over Time";
+"HISTORY" = "HISTORY";
+"Track your property value" = "Track your property value";
+"Log manual estimates and bank appraisals to see how your property value changes over time." = "Log manual estimates and bank appraisals to see how your property value changes over time.";
+
+/* ── Deliveries ── */
+"No deliveries tracked" = "No deliveries tracked";
+"Add packages to track\nyour deliveries." = "Add packages to track\nyour deliveries.";
+"Set estimated date" = "Set estimated date";
+
+/* ── Tasks extended ── */
+"Add team members…" = "Add team members…";
+"Set a due date to enable" = "Set a due date to enable";
+"FAMILY MEMBERS" = "FAMILY MEMBERS";
+"SOMEONE ELSE" = "SOMEONE ELSE";
+"Add someone else…" = "Add someone else…";
+"Nothing scheduled" = "Nothing scheduled";
+"Tap a day to see events" = "Tap a day to see events";
+"No events" = "No events";
+"No activity in this time range" = "No activity in this time range";
+"Title" = "Title";
+"Description (optional)" = "Description (optional)";
+"Priority" = "Priority";
+"Category" = "Category";
+"Due Date" = "Due Date";
+"Assign To" = "Assign To";
+
+/* ── Family extended ── */
+"No members" = "No members";
+"Add family members to collaborate on tasks and chat." = "Add family members to collaborate on tasks and chat.";
+"ROLE" = "ROLE";
+"Limited access — tasks and chat" = "Limited access — tasks and chat";
+"SOCIAL NETWORKS" = "SOCIAL NETWORKS";
+"INVITATION" = "INVITATION";
+"Send invitation" = "Send invitation";
+"The person will receive an invitation email" = "The person will receive an invitation email";
+"Add social network" = "Add social network";
+
+/* ── Analytics ── */
+"current month" = "current month";
+"Expenses by category" = "Expenses by category";
+"Completion rate" = "Completion rate";
+"By priority" = "By priority";
+"12-month projection" = "12-month projection";
+"Expense trend" = "Expense trend";
+"Add financial records to see the forecast" = "Add financial records to see the forecast";
+"Monthly evolution" = "Monthly evolution";
+"Add transactions to see the chart" = "Add transactions to see the chart";

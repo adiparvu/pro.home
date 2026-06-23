@@ -218,3 +218,68 @@
 "notif_water_body" = "%d Pflanze(n) braucht/brauchen heute Wasser.";
 "notif_warranty_title" = "Garantie läuft bald ab";
 "notif_warranty_body" = "Die Garantie für %@ läuft bald ab.";
+
+/* ── Inventory extended ── */
+"No items in this category" = "Keine Artikel in dieser Kategorie";
+"This QR code doesn't match any item in your inventory." = "Dieser QR-Code stimmt mit keinem Artikel in Ihrem Inventar überein.";
+"Camera scanner not available on this device" = "Kamerascanner auf diesem Gerät nicht verfügbar";
+"Point at an item's QR code" = "Richten Sie die Kamera auf den QR-Code des Artikels";
+"Show on public QR page" = "Auf öffentlicher QR-Seite anzeigen";
+"This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with." = "Diese Informationen sind für jeden sichtbar, der den QR-Code dieses Artikels scannt. Teilen Sie nur, womit Sie sich wohl fühlen.";
+"Expected return" = "Erwartete Rückgabe";
+"You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned." = "Sie erhalten Erinnerungen nach 1, 3, 7, 14, 30 und 90 Tagen, wenn der Artikel nicht zurückgegeben wurde.";
+"TRACKER TYPE" = "TRACKER-TYP";
+"Apple AirTag live location requires the Find My app (private Apple API). Save the name here as a reference, then open Find My for live tracking." = "Der AirTag-Live-Standort erfordert die App „Wo ist?" (privates Apple API). Speichern Sie den Namen hier als Referenz und öffnen Sie dann „Wo ist?" für Live-Tracking.";
+"Anyone who scans the QR code will see a web page with your contact details so they can return the item." = "Jeder, der den QR-Code scannt, sieht eine Webseite mit Ihren Kontaktdaten, damit er den Artikel zurückgeben kann.";
+
+/* ── Property value ── */
+"Current Value" = "Aktueller Wert";
+"since first entry" = "seit dem ersten Eintrag";
+"Value Over Time" = "Wertentwicklung";
+"HISTORY" = "VERLAUF";
+"Track your property value" = "Verfolgen Sie den Wert Ihrer Immobilie";
+"Log manual estimates and bank appraisals to see how your property value changes over time." = "Erfassen Sie manuelle Schätzungen und Bankgutachten, um zu sehen, wie sich der Wert Ihrer Immobilie im Laufe der Zeit verändert.";
+
+/* ── Deliveries ── */
+"No deliveries tracked" = "Keine Lieferungen verfolgt";
+"Add packages to track\nyour deliveries." = "Fügen Sie Pakete hinzu, um\nIhre Lieferungen zu verfolgen.";
+"Set estimated date" = "Geschätztes Datum festlegen";
+
+/* ── Tasks extended ── */
+"Add team members…" = "Teammitglieder hinzufügen…";
+"Set a due date to enable" = "Fälligkeitsdatum festlegen, um zu aktivieren";
+"FAMILY MEMBERS" = "FAMILIENMITGLIEDER";
+"SOMEONE ELSE" = "JEMAND ANDERES";
+"Add someone else…" = "Jemanden anderen hinzufügen…";
+"Nothing scheduled" = "Nichts geplant";
+"Tap a day to see events" = "Tippen Sie auf einen Tag, um Ereignisse zu sehen";
+"No events" = "Keine Ereignisse";
+"No activity in this time range" = "Keine Aktivität in diesem Zeitraum";
+"Title" = "Titel";
+"Description (optional)" = "Beschreibung (optional)";
+"Priority" = "Priorität";
+"Category" = "Kategorie";
+"Due Date" = "Fälligkeitsdatum";
+"Assign To" = "Zuweisen an";
+
+/* ── Family extended ── */
+"No members" = "Keine Mitglieder";
+"Add family members to collaborate on tasks and chat." = "Fügen Sie Familienmitglieder hinzu, um bei Aufgaben und im Chat zusammenzuarbeiten.";
+"ROLE" = "ROLLE";
+"Limited access — tasks and chat" = "Eingeschränkter Zugang — Aufgaben und Chat";
+"SOCIAL NETWORKS" = "SOZIALE NETZWERKE";
+"INVITATION" = "EINLADUNG";
+"Send invitation" = "Einladung senden";
+"The person will receive an invitation email" = "Die Person erhält eine Einladungs-E-Mail";
+"Add social network" = "Soziales Netzwerk hinzufügen";
+
+/* ── Analytics ── */
+"current month" = "aktueller Monat";
+"Expenses by category" = "Ausgaben nach Kategorie";
+"Completion rate" = "Abschlussrate";
+"By priority" = "Nach Priorität";
+"12-month projection" = "12-Monats-Prognose";
+"Expense trend" = "Ausgabentrend";
+"Add financial records to see the forecast" = "Fügen Sie Finanzdaten hinzu, um die Prognose zu sehen";
+"Monthly evolution" = "Monatliche Entwicklung";
+"Add transactions to see the chart" = "Fügen Sie Transaktionen hinzu, um das Diagramm zu sehen";
