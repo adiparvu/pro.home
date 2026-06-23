@@ -1598,3 +1598,45 @@
 "All clear — no urgent alerts" = "Alles gut — keine dringenden Warnungen";
 "Completă! 🎉" = "Fertig! 🎉";
 "Udare plante" = "Pflanzen gießen";
+
+
+// MARK: - Build 282 format strings
+
+"AI" = "KI";
+"/ 100" = "/ 100";
+"All messages with %@ will be permanently deleted." = "Alle Nachrichten mit %@ werden dauerhaft gelöscht.";
+"WHAT %@ CAN SEE" = "WAS %@ SEHEN KANN";
+"Disable to prevent %@ from accessing this data type in conversations" = "Deaktivieren, um %@ den Zugriff auf diesen Datentyp zu verweigern";
+"Based on the last %lld months" = "Basierend auf den letzten %lld Monaten";
+"Seen %@" = "Gesehen %@";
+"Seen by %lld" = "Gesehen von %lld";
+"@%@" = "@%@";
+"Message %@" = "Nachricht an %@";
+"Message %@…" = "Nachricht an %@…";
+"+%lld" = "+%lld";
+"IN PROGRESS · %lld" = "IN BEARBEITUNG · %lld";
+"DELIVERED · %lld" = "GELIEFERT · %lld";
+"Expires %@" = "Läuft ab %@";
+"All  (%lld)" = "Alle  (%lld)";
+"€%lld" = "€%lld";
+"Loaned to %@ · %lldd" = "An %@ verliehen · %lld T";
+"Tracker: %@" = "Tracker: %@";
+"#%@" = "#%@";
+"· %@" = "· %@";
+"−%@ %@" = "−%@ %@";
+"(%lld)" = "(%lld)";
+"No results for \"%@\"" = "Keine Ergebnisse für \"%@\"";
+"Your %@ checklist is complete." = "Ihre %@ Checkliste ist vollständig.";
+"BNR rates · Updated %@" = "BNR-Kurse · Aktualisiert %@";
+"Restrictions apply at the device level. %@ will only see the enabled sections. Assigned tasks will automatically send them a notification." = "Einschränkungen gelten auf Geräteebene. %@ sieht nur die aktivierten Abschnitte. Zugewiesene Aufgaben senden automatisch eine Benachrichtigung.";
+"Generated · %@" = "Generiert · %@";
+"Information about %@ will be deleted." = "Informationen über %@ werden gelöscht.";
+"~%@" = "~%@";
+"W%lld" = "KW%lld";
+"COMPLETED · %lld" = "ABGESCHLOSSEN · %lld";
+"Last %lld months" = "Letzte %lld Monate";
+"ETA: %@" = "ETA: %@";
+"Health %lld%%" = "Gesundheit %lld%%";
+"🎂 %lld/%lld" = "🎂 %lld/%lld";
+"Estimat: %@" = "Geschätzt: %@";
+"Ultima udată: %@" = "Zuletzt gegossen: %@";

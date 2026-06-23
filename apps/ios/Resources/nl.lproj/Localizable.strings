@@ -1598,3 +1598,45 @@
 "All clear — no urgent alerts" = "Alles goed — geen urgente meldingen";
 "Completă! 🎉" = "Klaar! 🎉";
 "Udare plante" = "Planten water geven";
+
+
+// MARK: - Build 282 format strings
+
+"AI" = "AI";
+"/ 100" = "/ 100";
+"All messages with %@ will be permanently deleted." = "Alle berichten met %@ worden permanent verwijderd.";
+"WHAT %@ CAN SEE" = "WAT %@ KAN ZIEN";
+"Disable to prevent %@ from accessing this data type in conversations" = "Uitschakelen om te voorkomen dat %@ toegang heeft tot dit gegevenstype";
+"Based on the last %lld months" = "Gebaseerd op de laatste %lld maanden";
+"Seen %@" = "Gezien %@";
+"Seen by %lld" = "Gezien door %lld";
+"@%@" = "@%@";
+"Message %@" = "Bericht aan %@";
+"Message %@…" = "Bericht aan %@…";
+"+%lld" = "+%lld";
+"IN PROGRESS · %lld" = "BEZIG · %lld";
+"DELIVERED · %lld" = "BEZORGD · %lld";
+"Expires %@" = "Verloopt %@";
+"All  (%lld)" = "Alle  (%lld)";
+"€%lld" = "€%lld";
+"Loaned to %@ · %lldd" = "Uitgeleend aan %@ · %lld d";
+"Tracker: %@" = "Tracker: %@";
+"#%@" = "#%@";
+"· %@" = "· %@";
+"−%@ %@" = "−%@ %@";
+"(%lld)" = "(%lld)";
+"No results for \"%@\"" = "Geen resultaten voor \"%@\"";
+"Your %@ checklist is complete." = "Uw %@ checklist is voltooid.";
+"BNR rates · Updated %@" = "BNR-koersen · Bijgewerkt %@";
+"Restrictions apply at the device level. %@ will only see the enabled sections. Assigned tasks will automatically send them a notification." = "Beperkingen gelden op apparaatniveau. %@ ziet alleen de ingeschakelde secties. Toegewezen taken sturen automatisch een melding.";
+"Generated · %@" = "Gegenereerd · %@";
+"Information about %@ will be deleted." = "Informatie over %@ wordt verwijderd.";
+"~%@" = "~%@";
+"W%lld" = "W%lld";
+"COMPLETED · %lld" = "VOLTOOID · %lld";
+"Last %lld months" = "Laatste %lld maanden";
+"ETA: %@" = "ETA: %@";
+"Health %lld%%" = "Gezondheid %lld%%";
+"🎂 %lld/%lld" = "🎂 %lld/%lld";
+"Estimat: %@" = "Geschat: %@";
+"Ultima udată: %@" = "Laatste keer gegoten: %@";
