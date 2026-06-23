@@ -169,7 +169,11 @@ struct DirectMessageView: View {
                 .value
             messages.append(sent)
             HapticFeedback.impact(.light)
-        } catch { }
+        } catch {
+            #if DEBUG
+            print("[DirectMessageView] send error: \(error)")
+            #endif
+        }
     }
 }
 

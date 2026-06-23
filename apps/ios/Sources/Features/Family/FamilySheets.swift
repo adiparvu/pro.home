@@ -295,7 +295,11 @@ struct AddFamilyMemberSheet: View {
             if sendInvite, !email.isEmpty {
                 sendInviteEmail(to: email, name: name)
             }
-        } catch {}
+        } catch {
+            #if DEBUG
+            print("[FamilySheets] save error: \(error)")
+            #endif
+        }
         HapticFeedback.success()
         dismiss()
     }

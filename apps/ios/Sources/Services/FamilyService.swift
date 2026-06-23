@@ -103,7 +103,11 @@ final class FamilyService: ObservableObject {
                 try await store.requestAccess(to: .event)
             }
             createBirthdayEvent(store: store, name: name, birthday: birthday)
-        } catch {}
+        } catch {
+            #if DEBUG
+            print("[FamilyService] calendar access error: \(error)")
+            #endif
+        }
     }
 
     private nonisolated func createBirthdayEvent(store: EKEventStore, name: String, birthday: Date) {
