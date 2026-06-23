@@ -5,8 +5,8 @@ struct LanguageSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(titleKey: "language_title",
-                       subtitleKey: "language_subtitle")
+            PageHeader(title: String(localized: "language_title"),
+                       subtitle: String(localized: "language_subtitle"))
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -28,7 +28,7 @@ struct LanguageSettingsView: View {
 
     private var deviceLanguageCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("lang_system_section")
+            Text(String(localized: "lang_system_section"))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
@@ -42,10 +42,10 @@ struct LanguageSettingsView: View {
                 } label: {
                     HStack(spacing: 14) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("lang_use_device")
+                            Text(String(localized: "lang_use_device"))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(.primary)
-                            Text("lang_follows_ios")
+                            Text(String(localized: "lang_follows_ios"))
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                         }
@@ -69,7 +69,7 @@ struct LanguageSettingsView: View {
 
     private var languageListCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("lang_select_section")
+            Text(String(localized: "lang_select_section"))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
@@ -92,7 +92,7 @@ struct LanguageSettingsView: View {
                                     Text(lang.nativeName)
                                         .font(.system(size: 15, weight: .medium))
                                         .foregroundStyle(.primary)
-                                    Text(lang.localizedNameKey)
+                                    Text(lang.localizedName)
                                         .font(.system(size: 12))
                                         .foregroundStyle(.secondary)
                                 }
@@ -132,7 +132,7 @@ struct LanguageSettingsView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .padding(.top, 1)
-                Text("lang_instant_rebuild")
+                Text(String(localized: "lang_instant_rebuild"))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
