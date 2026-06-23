@@ -20,9 +20,9 @@ final class AppRouter: ObservableObject {
     func perform(_ action: DashboardQuickAction) {
         switch action {
         case .aria:       showARIA = true
-        case .finances:   DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .settings }
+        case .finances:   Task { try? await Task.sleep(for: .milliseconds(250)); self.selectedTab = .settings }
         case .newTask:    showAddTask = true
-        case .chat:       DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.selectedTab = .chat }
+        case .chat:       Task { try? await Task.sleep(for: .milliseconds(250)); self.selectedTab = .chat }
         case .addExpense: showAddExpense = true
         case .scan:       showInventoryScan = true
         case .addItem:    showInventoryAdd = true

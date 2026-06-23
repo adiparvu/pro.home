@@ -27,9 +27,7 @@ struct AccountSwitcherSheet: View {
                 Section {
                     Button {
                         dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showAddAccount = true
-                        }
+                        Task { try? await Task.sleep(for: .milliseconds(350)); showAddAccount = true }
                     } label: {
                         Label("Add account", systemImage: "plus.circle.fill")
                             .foregroundStyle(Color.accentColor)

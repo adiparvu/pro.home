@@ -169,12 +169,12 @@ struct TrustedContactView: View {
         savedName = name.trimmingCharacters(in: .whitespaces)
         savedPhone = phone.trimmingCharacters(in: .whitespaces)
         savedRelationship = relationship.trimmingCharacters(in: .whitespaces)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(400))
             isSaving = false
             withAnimation { saved = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                withAnimation { saved = false }
-            }
+            try? await Task.sleep(for: .milliseconds(2500))
+            withAnimation { saved = false }
         }
     }
 

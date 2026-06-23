@@ -304,9 +304,7 @@ struct ProfileView: View {
     private func showToast(_ message: String, isError: Bool = false) {
         toastIsError = isError
         withAnimation { toast = message }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-            withAnimation { toast = nil }
-        }
+        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation { toast = nil } }
     }
 
     private func toastView(_ message: String, isError: Bool) -> some View {

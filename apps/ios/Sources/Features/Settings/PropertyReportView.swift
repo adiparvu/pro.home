@@ -220,10 +220,17 @@ struct PropertyReportView: View {
             return MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002))
         }
         let lats = pts.map(\.lat), lons = pts.map(\.lon)
-        let center = CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2,
-                                            longitude: (lons.min()! + lons.max()!) / 2)
-        let span = MKCoordinateSpan(latitudeDelta: max((lats.max()! - lats.min()!) * 1.5, 0.001),
-                                    longitudeDelta: max((lons.max()! - lons.min()!) * 1.5, 0.001))
+        guard let minLat = lats.min(), let maxLat = lats.max(),
+              let minLon = lons.min(), let maxLon = lons.max() else {
+            let fallbackCenter = CLLocationCoordinate2D(
+                latitude: propertyService.primary?.latitude ?? 44.4268,
+                longitude: propertyService.primary?.longitude ?? 26.1025)
+            return MKCoordinateRegion(center: fallbackCenter, span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002))
+        }
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2,
+                                            longitude: (minLon + maxLon) / 2)
+        let span = MKCoordinateSpan(latitudeDelta: max((maxLat - minLat) * 1.5, 0.001),
+                                    longitudeDelta: max((maxLon - minLon) * 1.5, 0.001))
         return MKCoordinateRegion(center: center, span: span)
     }
 

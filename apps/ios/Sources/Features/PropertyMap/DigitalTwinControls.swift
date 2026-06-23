@@ -197,7 +197,7 @@ extension DigitalTwinView {
         return HStack(spacing: 6) {
             Image(systemName: targetName != nil ? "arrow.down.to.line" : "mappin.slash")
                 .font(.system(size: 12, weight: .bold))
-            Text(targetName != nil ? "→ \(targetName!)" : "Outside zones")
+            Text(targetName.map { "→ \($0)" } ?? "Outside zones")
                 .font(.system(size: 13, weight: .semibold))
         }
         .foregroundStyle(targetName != nil ? Color(red: 0.2, green: 0.75, blue: 0.4) : .secondary)

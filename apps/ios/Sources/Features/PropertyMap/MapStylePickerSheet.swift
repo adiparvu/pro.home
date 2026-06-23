@@ -33,7 +33,7 @@ struct MapStylePickerSheet: View {
                     ) {
                         selected = style.id
                         HapticFeedback.selection()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { dismiss() }
+                        Task { try? await Task.sleep(for: .milliseconds(200)); dismiss() }
                     }
                 }
             }

@@ -202,9 +202,7 @@ struct BackupCodesView: View {
         UIPasteboard.general.string = text
         HapticFeedback.success()
         withAnimation { showCopyConfirm = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            withAnimation { showCopyConfirm = false }
-        }
+        Task { try? await Task.sleep(for: .milliseconds(2000)); withAnimation { showCopyConfirm = false } }
     }
 
     private func shareAll() {

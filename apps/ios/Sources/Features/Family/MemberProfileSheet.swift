@@ -86,8 +86,9 @@ struct MemberProfileSheet: View {
                 if let tg = resolvedMember.socialLinks?.first(where: { $0.platform == "telegram" }) {
                     let handle = tg.handle.replacingOccurrences(of: "@", with: "")
                     profileActionBtn(icon: "paperplane.fill", label: "Telegram", color: Color(red: 0.13, green: 0.60, blue: 0.87)) {
-                        let url = URL(string: "tg://resolve?domain=\(handle)") ?? URL(string: "https://t.me/\(handle)")!
-                        UIApplication.shared.open(url)
+                        if let url = URL(string: "tg://resolve?domain=\(handle)") ?? URL(string: "https://t.me/\(handle)") {
+                            UIApplication.shared.open(url)
+                        }
                     }
                 }
             }

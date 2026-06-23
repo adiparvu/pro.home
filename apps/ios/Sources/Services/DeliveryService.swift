@@ -27,7 +27,9 @@ final class DeliveryService: ObservableObject {
                 .execute()
                 .value
         } catch {
+            #if DEBUG
             print("DeliveryService.load error:", error)
+            #endif
         }
     }
 
@@ -42,7 +44,9 @@ final class DeliveryService: ObservableObject {
                 .value
             deliveries.insert(result, at: 0)
         } catch {
+            #if DEBUG
             print("DeliveryService.add error:", error)
+            #endif
         }
     }
 
@@ -67,7 +71,9 @@ final class DeliveryService: ObservableObject {
                 deliveries[i] = result
             }
         } catch {
+            #if DEBUG
             print("DeliveryService.update error:", error)
+            #endif
         }
     }
 
@@ -80,7 +86,9 @@ final class DeliveryService: ObservableObject {
                 .execute()
             deliveries.removeAll { $0.id == delivery.id }
         } catch {
+            #if DEBUG
             print("DeliveryService.delete error:", error)
+            #endif
         }
     }
 

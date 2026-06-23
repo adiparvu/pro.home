@@ -311,7 +311,7 @@ struct ActivityFeedView: View {
 
     private func memberAvatar(name: String, size: CGFloat) -> some View {
         let member = familyService.members.first { $0.name == name }
-        let color: Color = member != nil ? colorFromHex(member!.color) : .blue
+        let color: Color = member.map { colorFromHex($0.color) } ?? .blue
         return ZStack {
             Circle().fill(color.opacity(0.2))
             Text(String(name.prefix(1)).uppercased())

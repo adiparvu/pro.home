@@ -176,7 +176,7 @@ final class IntegrationsViewModel: ObservableObject {
             event.calendar = cal
             event.isAllDay = true
 
-            if let _ = try? store.save(event, span: .thisEvent) {
+            if (try? store.save(event, span: .thisEvent)) != nil {
                 synced.append(key)
             }
         }
@@ -234,7 +234,7 @@ final class IntegrationsViewModel: ObservableObject {
                 reminder.dueDateComponents = comps
             }
 
-            if let _ = try? store.save(reminder, commit: false) {
+            if (try? store.save(reminder, commit: false)) != nil {
                 synced.append(key)
             }
         }

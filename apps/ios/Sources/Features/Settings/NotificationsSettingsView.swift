@@ -235,7 +235,9 @@ struct NotificationsSettingsView: View {
             authStatus = granted ? .authorized : .denied
             if granted { reschedule() }
         } catch {
+            #if DEBUG
             print("[Notifications] permission error: \(error)")
+            #endif
         }
     }
 

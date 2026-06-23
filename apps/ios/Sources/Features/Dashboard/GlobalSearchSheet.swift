@@ -587,10 +587,7 @@ struct GlobalSearchSheet: View {
         // Capture router strongly BEFORE dismiss — EnvironmentObject becomes inaccessible once the view is torn down
         let r = router
         dismiss()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            r.selectedTab = tab
-            action?(r)
-        }
+        Task { try? await Task.sleep(for: .milliseconds(350)); r.selectedTab = tab; action?(r) }
     }
 
     // MARK: - Helpers

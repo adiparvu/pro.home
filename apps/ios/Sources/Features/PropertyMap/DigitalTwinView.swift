@@ -13,7 +13,8 @@ enum ZoneDisplayStyle: String, CaseIterable {
     }
     var next: ZoneDisplayStyle {
         let all = ZoneDisplayStyle.allCases
-        return all[(all.firstIndex(of: self)! + 1) % all.count]
+        guard let idx = all.firstIndex(of: self) else { return .filled }
+        return all[(idx + 1) % all.count]
     }
 }
 
@@ -244,7 +245,7 @@ struct DigitalTwinView: View {
                 zone: zone,
                 onEdit: {
                     selectedZone = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { editingZone = zone }
+                    Task { try? await Task.sleep(for: .milliseconds(150)); editingZone = zone }
                 },
                 onReshape: {
                     selectedZone = nil
@@ -252,7 +253,7 @@ struct DigitalTwinView: View {
                 },
                 onAddObject: {
                     selectedZone = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { addingToZone = zone }
+                    Task { try? await Task.sleep(for: .milliseconds(150)); addingToZone = zone }
                 },
                 onDelete: { Task { await zoneService.delete(zone); selectedZone = nil } },
                 onFocus: { focus(on: zone) }

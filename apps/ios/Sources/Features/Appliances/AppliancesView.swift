@@ -14,7 +14,7 @@ struct AppliancesView: View {
     private var filtered: [Appliance] {
         var list = selectedCategory == nil
             ? applianceService.appliances
-            : applianceService.byCategory[selectedCategory!] ?? []
+            : selectedCategory.flatMap { applianceService.byCategory[$0] } ?? []
         if !search.isEmpty {
             list = list.filter {
                 $0.name.localizedCaseInsensitiveContains(search) ||

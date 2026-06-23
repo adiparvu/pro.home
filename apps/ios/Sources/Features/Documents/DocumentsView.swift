@@ -129,9 +129,7 @@ struct DocumentsView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 110)
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                            withAnimation { errorToast = nil }
-                        }
+                        Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation { errorToast = nil } }
                     }
             }
         }
@@ -223,7 +221,7 @@ struct DocumentsView: View {
         } label: {
             Image(systemName: selectedCategory == nil
                   ? "line.3.horizontal.decrease"
-                  : categoryIcon(for: selectedCategory!))
+                  : selectedCategory.map { categoryIcon(for: $0) } ?? "line.3.horizontal.decrease")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.primary)
         }

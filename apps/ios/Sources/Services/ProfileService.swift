@@ -21,7 +21,9 @@ final class ProfileService: ObservableObject {
                 .execute()
                 .value
         } catch {
+            #if DEBUG
             print("[ProfileService] load error: \(error)")
+            #endif
         }
     }
 

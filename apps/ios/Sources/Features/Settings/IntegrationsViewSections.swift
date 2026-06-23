@@ -29,9 +29,11 @@ extension IntegrationsView {
                     if let lat = vm.property?.latitude, let lon = vm.property?.longitude {
                         let coords = "\(lat),\(lon)"
                         let name = (vm.property?.addressLine1 ?? "My Property").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                        UIApplication.shared.open(URL(string: "maps://?ll=\(coords)&q=\(name)")!)
-                    } else {
-                        UIApplication.shared.open(URL(string: "maps://")!)
+                        if let url = URL(string: "maps://?ll=\(coords)&q=\(name)") {
+                            UIApplication.shared.open(url)
+                        }
+                    } else if let url = URL(string: "maps://") {
+                        UIApplication.shared.open(url)
                     }
                 })
 
@@ -47,8 +49,8 @@ extension IntegrationsView {
                 description: "PRVIO notifications respect your iOS Focus settings automatically.",
                 status: .active("Automatic"),
                 action: {
-                    UIApplication.shared.open(URL(string: "App-Prefs:FOCUS")
-                        ?? URL(string: UIApplication.openSettingsURLString)!)
+                    let url = URL(string: "App-Prefs:FOCUS") ?? URL(string: UIApplication.openSettingsURLString)
+                    if let url { UIApplication.shared.open(url) }
                 })
 
             IntegrationRow(icon: "icloud.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95),
@@ -95,17 +97,17 @@ extension IntegrationsView {
                 title: "Apple HomeKit",
                 description: "Control smart home devices linked to your property.",
                 status: .deepLink("Open Home"),
-                action: { UIApplication.shared.open(URL(string: "homeapp://")!) })
+                action: { if let url = URL(string: "homeapp://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
                 title: "Home Assistant",
                 description: "Connect to your local Home Assistant for full smart home control.",
-                status: UIApplication.shared.canOpenURL(URL(string: "homeassistant://")!) ? .deepLink("Open") : .comingSoon,
-                action: { UIApplication.shared.open(URL(string: "homeassistant://navigate/lovelace/0")!) })
+                status: URL(string: "homeassistant://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                action: { if let url = URL(string: "homeassistant://navigate/lovelace/0") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lightbulb.fill", color: .yellow,
                 title: "Philips Hue",
                 description: "Control lights and scenes across all rooms.",
-                status: UIApplication.shared.canOpenURL(URL(string: "hue://")!) ? .deepLink("Open") : .comingSoon,
-                action: { UIApplication.shared.open(URL(string: "hue://")!) })
+                status: URL(string: "hue://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                action: { if let url = URL(string: "hue://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "thermometer.medium", color: .orange,
                 title: "Nest / Google Home",
                 description: "Monitor and adjust temperature remotely.",
@@ -113,13 +115,13 @@ extension IntegrationsView {
             IntegrationRow(icon: "speaker.wave.2.fill", color: Color(red: 0.0, green: 0.45, blue: 1.0),
                 title: "Sonos",
                 description: "Manage whole-home audio from your property dashboard.",
-                status: UIApplication.shared.canOpenURL(URL(string: "sonos://")!) ? .deepLink("Open") : .comingSoon,
-                action: { UIApplication.shared.open(URL(string: "sonos://")!) })
+                status: URL(string: "sonos://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                action: { if let url = URL(string: "sonos://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lock.shield.fill", color: Color(red: 0.3, green: 0.65, blue: 0.95),
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
-                status: UIApplication.shared.canOpenURL(URL(string: "august-connects://")!) ? .deepLink("Open") : .comingSoon,
-                action: { UIApplication.shared.open(URL(string: "august-connects://")!) })
+                status: URL(string: "august-connects://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                action: { if let url = URL(string: "august-connects://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lightswitch.on.fill", color: Color(red: 0.0, green: 0.65, blue: 0.55),
                 title: "IKEA TRÅDFRI",
                 description: "Control IKEA smart lighting and blinds.",
@@ -140,8 +142,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "Ring Doorbell",
                 description: "See who's at the door and get motion alerts.",
-                status: UIApplication.shared.canOpenURL(URL(string: "ring://")!) ? .deepLink("Open") : .comingSoon,
-                action: { UIApplication.shared.open(URL(string: "ring://")!) })
+                status: URL(string: "ring://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                action: { if let url = URL(string: "ring://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "sensor.tag.radiowaves.forward.fill", color: .purple,
                 title: "Arlo / Eufy",
                 description: "Integrate wireless security cameras and sensors.",

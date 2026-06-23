@@ -29,7 +29,7 @@ final class CurrencyService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            let url = URL(string: "https://api.frankfurter.app/latest?from=EUR&to=RON,USD,GBP,CHF")!
+            guard let url = URL(string: "https://api.frankfurter.app/latest?from=EUR&to=RON,USD,GBP,CHF") else { return }
             let (data, response) = try await URLSession.shared.data(from: url)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 throw URLError(.badServerResponse)

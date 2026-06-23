@@ -73,7 +73,9 @@ final class UtilityService: ObservableObject {
                 .execute()
                 .value
         } catch {
+            #if DEBUG
             print("UtilityService.load error:", error)
+            #endif
         }
     }
 
@@ -89,7 +91,9 @@ final class UtilityService: ObservableObject {
             entries.insert(result, at: 0)
             entries.sort { $0.readingDate > $1.readingDate }
         } catch {
+            #if DEBUG
             print("UtilityService.add error:", error)
+            #endif
         }
     }
 
@@ -102,7 +106,9 @@ final class UtilityService: ObservableObject {
                 .execute()
             entries.removeAll { $0.id == e.id }
         } catch {
+            #if DEBUG
             print("UtilityService.delete error:", error)
+            #endif
         }
     }
 
