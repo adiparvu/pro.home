@@ -37,8 +37,8 @@ struct DashboardView: View {
     @State private var showSearch = false
     @State private var showWidgetPicker = false
     @State private var showHealthDetail = false
-    @State private var isEditingWidgets = false
-    @State private var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
+    @State var isEditingWidgets = false
+    @State var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
 
     private let sections = PropertySection.all
 
