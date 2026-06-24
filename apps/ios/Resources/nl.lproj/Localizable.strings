@@ -1645,3 +1645,22 @@
 "Expected" = "Verwacht";
 "Out for delivery" = "Onderweg";
 "Missed" = "Gemist";
+
+// MARK: - Build 284 i18n completions
+"Area" = "Oppervlakte";
+"Year built" = "Bouwjaar";
+"Coordinates" = "Coördinaten";
+"You" = "Jij";
+"AI" = "AI";
+"Needs Attention" = "Aandacht vereist";
+"No warranty" = "Geen garantie";
+"Under warranty" = "Onder garantie";
+"Expiring soon" = "Verloopt binnenkort";
+"Warranty expired" = "Garantie verlopen";
+"Matte" = "Mat";
+"Satin" = "Satijn";
+"Eggshell" = "Eierschaal";
+"Semi-Gloss" = "Semi-glanzend";
+"Gloss" = "Glanzend";
+"Everything looks on track." = "Alles ziet er goed uit.";
+"Some tasks need attention." = "Sommige taken vereisen aandacht.";

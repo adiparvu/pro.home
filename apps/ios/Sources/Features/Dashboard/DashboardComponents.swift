@@ -221,7 +221,7 @@ struct HealthScoreCard: View {
             : Color.red
     }
     private var label: String {
-        score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention"
+        score >= 80 ? String(localized: "Excellent") : score >= 60 ? String(localized: "Good") : score >= 40 ? String(localized: "Fair") : String(localized: "Needs Attention")
     }
 
     var body: some View {

@@ -9,11 +9,11 @@ enum PaintFinish: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .matte:     return "Matte"
-        case .satin:     return "Satin"
-        case .eggshell:  return "Eggshell"
-        case .semiGloss: return "Semi-Gloss"
-        case .gloss:     return "Gloss"
+        case .matte:     return String(localized: "Matte")
+        case .satin:     return String(localized: "Satin")
+        case .eggshell:  return String(localized: "Eggshell")
+        case .semiGloss: return String(localized: "Semi-Gloss")
+        case .gloss:     return String(localized: "Gloss")
         }
     }
 }

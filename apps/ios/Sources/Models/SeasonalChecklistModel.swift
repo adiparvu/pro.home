@@ -8,10 +8,10 @@ enum Season: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .spring: return "Spring"
-        case .summer: return "Summer"
-        case .fall:   return "Fall"
-        case .winter: return "Winter"
+        case .spring: return String(localized: "Spring")
+        case .summer: return String(localized: "Summer")
+        case .fall:   return String(localized: "Fall")
+        case .winter: return String(localized: "Winter")
         }
     }
 

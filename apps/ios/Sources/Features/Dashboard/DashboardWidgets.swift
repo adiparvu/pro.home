@@ -122,7 +122,7 @@ extension DashboardView {
     var monthName: String {
         let f = DateFormatter()
         f.dateFormat = "MMMM"
-        f.locale = Locale(identifier: "en_US")
+        f.locale = .current
         return f.string(from: Date())
     }
 

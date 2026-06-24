@@ -46,11 +46,11 @@ enum AppTab: String, CaseIterable {
 
     var label: String {
         switch self {
-        case .home:        return "Home"
-        case .digitalTwin: return "Property"
-        case .tasks:       return "Tasks"
-        case .chat:        return "AI"
-        case .settings:    return "You"
+        case .home:        return String(localized: "Home")
+        case .digitalTwin: return String(localized: "Property")
+        case .tasks:       return String(localized: "Tasks")
+        case .chat:        return String(localized: "AI")
+        case .settings:    return String(localized: "You")
         }
     }
 }

@@ -94,10 +94,10 @@ enum WarrantyStatus {
     }
     var label: String {
         switch self {
-        case .none:         return "No warranty"
-        case .valid:        return "Under warranty"
-        case .expiringSoon: return "Expiring soon"
-        case .expired:      return "Warranty expired"
+        case .none:         return String(localized: "No warranty")
+        case .valid:        return String(localized: "Under warranty")
+        case .expiringSoon: return String(localized: "Expiring soon")
+        case .expired:      return String(localized: "Warranty expired")
         }
     }
 }
@@ -125,23 +125,23 @@ enum PropertyElementType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .house:           return "House"
-        case .garage:          return "Garage"
-        case .gazebo:          return "Gazebo"
-        case .pool:            return "Pool"
-        case .yard:            return "Yard"
-        case .lawn:            return "Lawn"
-        case .tree:            return "Tree"
-        case .fence:           return "Fence"
-        case .gate:            return "Gate"
-        case .camera:          return "Security camera"
-        case .irrigation:      return "Irrigation system"
-        case .solar:           return "Solar panels"
-        case .boiler:          return "Boiler"
-        case .electricalPanel: return "Electrical panel"
-        case .shed:            return "Shed"
-        case .pet:             return "Pet"
-        case .other:           return "Other"
+        case .house:           return String(localized: "House")
+        case .garage:          return String(localized: "Garage")
+        case .gazebo:          return String(localized: "Gazebo")
+        case .pool:            return String(localized: "Pool")
+        case .yard:            return String(localized: "Yard")
+        case .lawn:            return String(localized: "Lawn")
+        case .tree:            return String(localized: "Tree")
+        case .fence:           return String(localized: "Fence")
+        case .gate:            return String(localized: "Gate")
+        case .camera:          return String(localized: "Security camera")
+        case .irrigation:      return String(localized: "Irrigation system")
+        case .solar:           return String(localized: "Solar panels")
+        case .boiler:          return String(localized: "Boiler")
+        case .electricalPanel: return String(localized: "Electrical panel")
+        case .shed:            return String(localized: "Shed")
+        case .pet:             return String(localized: "Pet")
+        case .other:           return String(localized: "Other")
         }
     }
 
@@ -206,11 +206,11 @@ enum TechnicalCondition: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .excellent: return "Excellent"
-        case .good:      return "Good"
-        case .fair:      return "Fair"
-        case .poor:      return "Poor"
-        case .critical:  return "Critical"
+        case .excellent: return String(localized: "Excellent")
+        case .good:      return String(localized: "Good")
+        case .fair:      return String(localized: "Fair")
+        case .poor:      return String(localized: "Poor")
+        case .critical:  return String(localized: "Critical")
         }
     }
 
@@ -246,11 +246,11 @@ enum PropertyLayer: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .property:    return "Property"
-        case .maintenance: return "Maintenance"
-        case .utility:     return "Utilities"
-        case .financial:   return "Financial"
-        case .smartHome:   return "Smart Home"
+        case .property:    return String(localized: "Property")
+        case .maintenance: return String(localized: "Maintenance")
+        case .utility:     return String(localized: "Utilities")
+        case .financial:   return String(localized: "Financial")
+        case .smartHome:   return String(localized: "Smart Home")
         }
     }
 

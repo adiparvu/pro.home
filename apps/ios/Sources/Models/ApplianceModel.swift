@@ -11,13 +11,13 @@ enum ApplianceCategory: String, CaseIterable, Codable {
 
     var displayName: String {
         switch self {
-        case .hvac:          return "HVAC"
-        case .kitchen:       return "Kitchen"
-        case .laundry:       return "Laundry"
-        case .bathroom:      return "Bathroom"
-        case .security:      return "Security"
-        case .entertainment: return "Entertainment"
-        case .other:         return "Other"
+        case .hvac:          return String(localized: "HVAC")
+        case .kitchen:       return String(localized: "Kitchen")
+        case .laundry:       return String(localized: "Laundry")
+        case .bathroom:      return String(localized: "Bathroom")
+        case .security:      return String(localized: "Security")
+        case .entertainment: return String(localized: "Entertainment")
+        case .other:         return String(localized: "Other")
         }
     }
 
@@ -102,20 +102,19 @@ struct Appliance: Identifiable, Codable, Equatable {
     }
 
     var warrantyStatus: String {
-        guard let d = parseDate(warrantyUntil) else { return "No Warranty" }
-        if d < Date() { return "Expired" }
+        guard let d = parseDate(warrantyUntil) else { return String(localized: "No Warranty") }
+        if d < Date() { return String(localized: "Expired") }
         let threshold = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-        if d <= threshold { return "Expiring Soon" }
-        return "Active"
+        if d <= threshold { return String(localized: "Expiring Soon") }
+        return String(localized: "Active")
     }
 
     var warrantyColor: Color {
-        switch warrantyStatus {
-        case "Active":        return Color(red: 0.15, green: 0.80, blue: 0.4)
-        case "Expiring Soon": return Color(red: 1.0,  green: 0.62, blue: 0.1)
-        case "Expired":       return .red
-        default:              return .secondary
-        }
+        guard let d = parseDate(warrantyUntil) else { return .secondary }
+        if d < Date() { return .red }
+        let threshold = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+        if d <= threshold { return Color(red: 1.0, green: 0.62, blue: 0.1) }
+        return Color(red: 0.15, green: 0.80, blue: 0.4)
     }
 
     var categoryIcon: String { category.icon }

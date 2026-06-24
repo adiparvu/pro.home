@@ -1645,3 +1645,22 @@
 "Expected" = "Attendu";
 "Out for delivery" = "En cours de livraison";
 "Missed" = "Manqué";
+
+// MARK: - Build 284 i18n completions
+"Area" = "Superficie";
+"Year built" = "Année de construction";
+"Coordinates" = "Coordonnées";
+"You" = "Vous";
+"AI" = "IA";
+"Needs Attention" = "Attention requise";
+"No warranty" = "Sans garantie";
+"Under warranty" = "Sous garantie";
+"Expiring soon" = "Expire bientôt";
+"Warranty expired" = "Garantie expirée";
+"Matte" = "Mat";
+"Satin" = "Satin";
+"Eggshell" = "Coquille d'œuf";
+"Semi-Gloss" = "Semi-brillant";
+"Gloss" = "Brillant";
+"Everything looks on track." = "Tout est en ordre.";
+"Some tasks need attention." = "Certaines tâches nécessitent attention.";

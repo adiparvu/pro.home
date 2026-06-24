@@ -1809,3 +1809,22 @@
 "Expected" = "Așteptat";
 "Out for delivery" = "În livrare";
 "Missed" = "Ratat";
+
+// MARK: - Build 284 i18n completions
+"Area" = "Suprafață";
+"Year built" = "An construcție";
+"Coordinates" = "Coordonate";
+"You" = "Tu";
+"AI" = "AI";
+"Needs Attention" = "Necesită atenție";
+"No warranty" = "Fără garanție";
+"Under warranty" = "Sub garanție";
+"Expiring soon" = "Expiră curând";
+"Warranty expired" = "Garanție expirată";
+"Matte" = "Mat";
+"Satin" = "Satin";
+"Eggshell" = "Coajă de ou";
+"Semi-Gloss" = "Semi-lucios";
+"Gloss" = "Lucios";
+"Everything looks on track." = "Totul merge bine.";
+"Some tasks need attention." = "Unele sarcini necesită atenție.";

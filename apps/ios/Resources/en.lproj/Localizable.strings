@@ -1663,3 +1663,22 @@
 "Expected" = "Expected";
 "Out for delivery" = "Out for delivery";
 "Missed" = "Missed";
+
+// MARK: - Build 284 i18n completions
+"Area" = "Area";
+"Year built" = "Year built";
+"Coordinates" = "Coordinates";
+"You" = "You";
+"AI" = "AI";
+"Needs Attention" = "Needs Attention";
+"No warranty" = "No warranty";
+"Under warranty" = "Under warranty";
+"Expiring soon" = "Expiring soon";
+"Warranty expired" = "Warranty expired";
+"Matte" = "Matte";
+"Satin" = "Satin";
+"Eggshell" = "Eggshell";
+"Semi-Gloss" = "Semi-Gloss";
+"Gloss" = "Gloss";
+"Everything looks on track." = "Everything looks on track.";
+"Some tasks need attention." = "Some tasks need attention.";
