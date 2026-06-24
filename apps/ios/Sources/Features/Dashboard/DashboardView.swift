@@ -36,6 +36,7 @@ struct DashboardView: View {
     @State private var showEditProfile = false
     @State private var showSearch = false
     @State private var showWidgetPicker = false
+    @State private var showHealthDetail = false
 
     private let sections = PropertySection.all
 
@@ -55,8 +56,14 @@ struct DashboardView: View {
                 Spacer().frame(height: 14)
 
                 // ── Property Health Card ─────────────────────────────────
-                propertyHealthCard
-                    .padding(.horizontal, 16)
+                Button {
+                    HapticFeedback.impact(.light)
+                    showHealthDetail = true
+                } label: {
+                    propertyHealthCard
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
 
                 // ── Proactive Insights ───────────────────────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
@@ -132,6 +139,19 @@ struct DashboardView: View {
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()
                 .environmentObject(appSettings)
+        }
+        .sheet(isPresented: $showHealthDetail) {
+            let score = propertyService.primary?.healthScore ?? 87
+            NavigationStack {
+                PropertyHealthDetailView(
+                    score: score,
+                    maintenancePct: min(100, max(0, score - 10)),
+                    utilitiesPct: min(100, max(0, score + 5)),
+                    securityPct: min(100, max(0, score - 3)),
+                    tasksPct: taskService.tasks.isEmpty ? 0 :
+                        Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
+                )
+            }
         }
     }
 

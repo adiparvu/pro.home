@@ -3,9 +3,14 @@ import SwiftUI
 // MARK: - Widget type catalogue
 
 enum HomeWidgetType: String, CaseIterable, Identifiable {
-    case tasks, finances, documents, family, healthScore, inventory, contractors, calendar
+    case tasks, finances, documents, family, healthScore, inventory,
+         contractors, weather, plants, calendar
 
     var id: String { rawValue }
+
+    var isFullWidth: Bool {
+        self == .weather || self == .calendar
+    }
 
     var title: String {
         switch self {
@@ -16,6 +21,8 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .healthScore: return String(localized: "Health Score")
         case .inventory:   return String(localized: "Inventory")
         case .contractors: return String(localized: "Contractors")
+        case .weather:     return String(localized: "Weather")
+        case .plants:      return String(localized: "Plants")
         case .calendar:    return String(localized: "Calendar")
         }
     }
@@ -29,6 +36,8 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .healthScore: return "heart.fill"
         case .inventory:   return "shippingbox.fill"
         case .contractors: return "hammer.fill"
+        case .weather:     return "cloud.sun.fill"
+        case .plants:      return "leaf.fill"
         case .calendar:    return "calendar"
         }
     }
@@ -42,6 +51,8 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
         case .healthScore: return .red
         case .inventory:   return .orange
         case .contractors: return Color(red: 0.9, green: 0.65, blue: 0.2)
+        case .weather:     return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .plants:      return Color(red: 0.25, green: 0.78, blue: 0.45)
         case .calendar:    return .teal
         }
     }
@@ -65,80 +76,67 @@ struct WidgetPickerSheet: View {
     @EnvironmentObject private var appSettings: AppSettings
     @Environment(\.dismiss) private var dismiss
 
-    @State private var enabled: Set<HomeWidgetType> = Set(HomeWidgetType.load())
+    @State private var active: [HomeWidgetType] = HomeWidgetType.load()
+
+    private var inactive: [HomeWidgetType] {
+        HomeWidgetType.allCases.filter { !active.contains($0) }
+    }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                PageHeader(titleKey: "Widgets", subtitleKey: "HOME")
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        Text("Choose which widgets appear on the home screen. Drag to reorder.")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 4)
-
-                        GlassCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(HomeWidgetType.allCases.enumerated()), id: \.element.id) { idx, type in
-                                    Button {
-                                        HapticFeedback.selection()
-                                        if enabled.contains(type) {
-                                            if enabled.count > 1 { enabled.remove(type) }
-                                        } else {
-                                            enabled.insert(type)
-                                        }
-                                    } label: {
-                                        HStack(spacing: 14) {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                                    .fill(type.color.opacity(0.16))
-                                                    .frame(width: 36, height: 36)
-                                                Image(systemName: type.icon)
-                                                    .font(.system(size: 15, weight: .semibold))
-                                                    .foregroundStyle(type.color)
-                                            }
-                                            Text(LocalizedStringKey(type.title))
-                                                .font(.system(size: 15))
-                                                .foregroundStyle(.primary)
-                                            Spacer()
-                                            Image(systemName: enabled.contains(type)
-                                                  ? "checkmark.circle.fill"
-                                                  : "circle")
-                                                .font(.system(size: 22))
-                                                .foregroundStyle(enabled.contains(type)
-                                                                 ? Color.accentColor
-                                                                 : Color.primary.opacity(0.22))
-                                        }
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 13)
-                                    }
-                                    .buttonStyle(.plain)
-                                    if idx < HomeWidgetType.allCases.count - 1 {
-                                        Rectangle()
-                                            .fill(Color.primary.opacity(0.05))
-                                            .frame(height: 0.5)
-                                            .padding(.leading, 66)
-                                    }
-                                }
-                            }
+            List {
+                if !active.isEmpty {
+                    Section {
+                        ForEach(active) { type in
+                            widgetRow(type, isActive: true)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
-
-                        Spacer(minLength: 80)
+                        .onMove { from, to in
+                            active.move(fromOffsets: from, toOffset: to)
+                        }
+                        .onDelete { offsets in
+                            guard active.count - offsets.count >= 1 else { return }
+                            active.remove(atOffsets: offsets)
+                        }
+                    } header: {
+                        Text("Active — trage pentru reordonare")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                }
+
+                if !inactive.isEmpty {
+                    Section {
+                        ForEach(inactive) { type in
+                            Button {
+                                HapticFeedback.selection()
+                                withAnimation(.spring(response: 0.35)) {
+                                    active.append(type)
+                                }
+                            } label: {
+                                widgetRow(type, isActive: false)
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                        }
+                    } header: {
+                        Text("Disponibile")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                    }
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Widgeturi")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        HomeWidgetType.save(Array(enabled))
+                    Button("Gata") {
+                        HomeWidgetType.save(active)
                         appSettings.objectWillChange.send()
                         HapticFeedback.success()
                         dismiss()
@@ -148,5 +146,43 @@ struct WidgetPickerSheet: View {
                 }
             }
         }
+    }
+
+    private func widgetRow(_ type: HomeWidgetType, isActive: Bool) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(type.color.opacity(0.18))
+                    .frame(width: 40, height: 40)
+                Image(systemName: type.icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(type.color)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(type.title)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.primary)
+                if type.isFullWidth {
+                    Text("Lățime completă")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.4))
+                }
+            }
+
+            Spacer()
+
+            if isActive {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.accentColor)
+            } else {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
     }
 }

@@ -8,13 +8,47 @@ extension DashboardView {
 
     var enabledWidgets: [HomeWidgetType] { HomeWidgetType.load() }
 
+    // Groups widgets into rows: full-width widgets get their own row,
+    // half-width widgets are paired left-right.
+    var widgetRows: [[HomeWidgetType]] {
+        var rows: [[HomeWidgetType]] = []
+        var halfPending: HomeWidgetType? = nil
+        for widget in enabledWidgets {
+            if widget.isFullWidth {
+                if let pending = halfPending {
+                    rows.append([pending])
+                    halfPending = nil
+                }
+                rows.append([widget])
+            } else {
+                if let pending = halfPending {
+                    rows.append([pending, widget])
+                    halfPending = nil
+                } else {
+                    halfPending = widget
+                }
+            }
+        }
+        if let pending = halfPending { rows.append([pending]) }
+        return rows
+    }
+
     var widgetGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-            spacing: 12
-        ) {
-            ForEach(enabledWidgets) { type in
-                widgetView(for: type)
+        VStack(spacing: 12) {
+            ForEach(Array(widgetRows.enumerated()), id: \.offset) { _, row in
+                if row.count == 1 && row[0].isFullWidth {
+                    widgetView(for: row[0])
+                } else {
+                    HStack(spacing: 12) {
+                        ForEach(row) { type in
+                            widgetView(for: type)
+                                .frame(maxWidth: .infinity)
+                        }
+                        if row.count == 1 {
+                            Color.clear.frame(maxWidth: .infinity)
+                        }
+                    }
+                }
             }
         }
     }
@@ -91,14 +125,29 @@ extension DashboardView {
                 subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
             ) { router.selectedTab = .settings }
 
-        case .calendar:
+        case .weather:
+            WeatherWidget(cityName: propertyService.primary?.city ?? "") {
+                if let url = URL(string: "weather://") {
+                    UIApplication.shared.open(url)
+                }
+            }
+
+        case .plants:
             HomeWidget(
-                icon: "calendar",
-                iconColor: .teal,
-                title: "Calendar",
-                value: "\(Calendar.current.component(.day, from: Date()))",
-                subtitle: monthName
-            ) {
+                icon: "leaf.fill",
+                iconColor: plantService.plantsNeedingWater.isEmpty
+                    ? Color(red: 0.25, green: 0.78, blue: 0.45)
+                    : .orange,
+                title: "Plants",
+                value: "\(plantService.plants.count)",
+                subtitle: plantService.plantsNeedingWater.isEmpty
+                    ? String(localized: "all good")
+                    : "\(plantService.plantsNeedingWater.count) need water",
+                badge: plantService.plantsNeedingWater.count
+            ) { router.selectedTab = .settings }
+
+        case .calendar:
+            CalendarLargeWidget {
                 if let url = URL(string: "calshow://") {
                     UIApplication.shared.open(url)
                 }
