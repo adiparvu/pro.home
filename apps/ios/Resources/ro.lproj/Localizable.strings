@@ -1912,3 +1912,20 @@
 "Inactive" = "Inactiv";
 "Add Task" = "Adaugă sarcină";
 "1 item" = "1 articol";
+
+/* Build 293 — missing format strings (%@/%lld) */
+"Delete \"%@\"?" = "Șterge \"%@\"?";
+"Delete %@?" = "Șterge %@?";
+"Remove %@?" = "Elimină %@?";
+"\"%@\" loaned to %@ will be marked as returned." = "\"%@\" împrumutat lui %@ va fi marcat ca returnat.";
+"%lld of %lld done" = "%lld din %lld finalizate";
+"%lld active" = "%lld active";
+"%lld warranty expiring soon" = "%lld garanții expiră curând";
+"%lld overdue" = "%lld întârziate";
+"%lld plants" = "%lld plante";
+"%lld today" = "%lld azi";
+"%lld delivered" = "%lld livrate";
+"%@ maintenance checklist" = "lista de verificare %@";
+"%lld din %lld articole" = "%lld din %lld articole";
+"%lld din %lld plante udate" = "%lld din %lld plante udate";
+"%@ · %@" = "%@ · %@";

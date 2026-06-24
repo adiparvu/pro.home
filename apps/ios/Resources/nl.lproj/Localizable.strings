@@ -1805,3 +1805,20 @@
 "Inactive" = "Inactief";
 "Add Task" = "Taak toevoegen";
 "1 item" = "1 item";
+
+/* Build 293 — missing format strings (%@/%lld) */
+"Delete \"%@\"?" = "Verwijder \"%@\"?";
+"Delete %@?" = "Verwijder %@?";
+"Remove %@?" = "Verwijder %@?";
+"\"%@\" loaned to %@ will be marked as returned." = "\"%@\" uitgeleend aan %@ wordt gemarkeerd als teruggegeven.";
+"%lld of %lld done" = "%lld van %lld gedaan";
+"%lld active" = "%lld actief";
+"%lld warranty expiring soon" = "%lld garantie(s) verlopen binnenkort";
+"%lld overdue" = "%lld te laat";
+"%lld plants" = "%lld planten";
+"%lld today" = "%lld vandaag";
+"%lld delivered" = "%lld bezorgd";
+"%@ maintenance checklist" = "%@ onderhoudslijst";
+"%lld din %lld articole" = "%lld van %lld artikelen";
+"%lld din %lld plante udate" = "%lld van %lld planten bewaterd";
+"%@ · %@" = "%@ · %@";

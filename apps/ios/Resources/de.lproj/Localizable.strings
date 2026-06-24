@@ -1805,3 +1805,20 @@
 "Inactive" = "Inaktiv";
 "Add Task" = "Aufgabe hinzufügen";
 "1 item" = "1 Element";
+
+/* Build 293 — missing format strings (%@/%lld) */
+"Delete \"%@\"?" = "Löschen \"%@\"?";
+"Delete %@?" = "Löschen %@?";
+"Remove %@?" = "Entfernen %@?";
+"\"%@\" loaned to %@ will be marked as returned." = "\"%@\" ausgeliehen an %@ wird als zurückgegeben markiert.";
+"%lld of %lld done" = "%lld von %lld erledigt";
+"%lld active" = "%lld aktiv";
+"%lld warranty expiring soon" = "%lld Garantie(n) läuft bald ab";
+"%lld overdue" = "%lld überfällig";
+"%lld plants" = "%lld Pflanzen";
+"%lld today" = "%lld heute";
+"%lld delivered" = "%lld geliefert";
+"%@ maintenance checklist" = "%@ Wartungsliste";
+"%lld din %lld articole" = "%lld von %lld Artikeln";
+"%lld din %lld plante udate" = "%lld von %lld Pflanzen bewässert";
+"%@ · %@" = "%@ · %@";
