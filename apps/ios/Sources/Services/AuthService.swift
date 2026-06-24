@@ -48,11 +48,11 @@ final class AuthService: ObservableObject {
     func signIn(email: String, password: String) async throws {
         let session = try await supabase.auth.signIn(email: email, password: password)
         self.session = session
-        AuditLogService.AuditEvent.record("login", "Signed in with email")
+        AuditLogService.AuditEvent.record("login", String(localized: "Signed in with email"))
     }
 
     func signOut() async throws {
-        AuditLogService.AuditEvent.record("logout", "Signed out")
+        AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
         try await supabase.auth.signOut()
         session = nil
     }

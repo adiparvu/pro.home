@@ -174,7 +174,7 @@ struct BackupCodesView: View {
     private func generateNewCodes() {
         codes = (0..<8).map { _ in makeCode() }
         saveHashes()
-        AuditLogService.AuditEvent.record("backup_codes_generated", "Coduri de rezervă generate")
+        AuditLogService.AuditEvent.record("backup_codes_generated", String(localized: "Coduri de rezervă generate"))
     }
 
     private func makeCode() -> String {

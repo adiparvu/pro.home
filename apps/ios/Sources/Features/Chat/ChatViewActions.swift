@@ -76,7 +76,7 @@ extension ChatView {
         defer { isSending = false }
         try? await messageService.send(
             propertyId: pid, senderName: senderName,
-            body: "📍 Shared a location",
+            body: String(localized: "📍 Shared a location"),
             attachmentType: "location", latitude: lat, longitude: lon,
             mentionedIds: mentionedIds
         )

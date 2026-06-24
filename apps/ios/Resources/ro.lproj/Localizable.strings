@@ -2101,3 +2101,7 @@
 "Enable Face ID for PRVIO" = "Activează Face ID pentru PRVIO";
 "Enable Touch ID for PRVIO" = "Activează Touch ID pentru PRVIO";
 "Upload failed: %@" = "Încărcare eșuată: %@";
+"📍 Shared a location" = "📍 Locație partajată";
+"Signed in with email" = "Autentificat cu email";
+"Signed out" = "Deconectat";
+"Coduri de rezervă generate" = "Coduri de rezervă generate";

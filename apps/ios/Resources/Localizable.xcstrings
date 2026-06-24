@@ -12921,6 +12921,41 @@
         }
       }
     },
+    "Coduri de rezervă generate": {
+      "comment": "Audit log description when backup codes are generated",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicherungscodes generiert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup codes generated"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codes de sauvegarde générés"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reservecodes gegenereerd"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coduri de rezervă generate"
+          }
+        }
+      }
+    },
     "Codurile existente vor fi invalidate imediat.": {
       "localizations": {
         "de": {
@@ -46690,6 +46725,76 @@
         }
       }
     },
+    "Signed in with email": {
+      "comment": "Audit log description for email login event",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit E-Mail angemeldet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in with email"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion avec e-mail"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aangemeld met e-mail"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autentificat cu email"
+          }
+        }
+      }
+    },
+    "Signed out": {
+      "comment": "Audit log description for sign out event",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgemeldet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed out"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnexion"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgemeld"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deconectat"
+          }
+        }
+      }
+    },
     "Siguranță și securitate": {
       "localizations": {
         "de": {
@@ -62940,6 +63045,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "🎂 %lld/%lld"
+          }
+        }
+      }
+    },
+    "📍 Shared a location": {
+      "comment": "Chat message body when a user shares their location",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📍 Standort geteilt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📍 Shared a location"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📍 Emplacement partagé"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📍 Locatie gedeeld"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📍 Locație partajată"
           }
         }
       }

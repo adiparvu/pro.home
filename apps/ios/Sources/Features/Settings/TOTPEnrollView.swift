@@ -174,7 +174,7 @@ struct TOTPEnrollView: View {
             onEnrolled()
             dismiss()
         } catch {
-            self.error = "Invalid or expired code. Please try again."
+            self.error = String(localized: "Invalid or expired code. Please try again.")
             HapticFeedback.error()
         }
     }

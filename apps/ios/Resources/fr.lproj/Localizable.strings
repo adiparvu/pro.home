@@ -1994,3 +1994,7 @@
 "Enable Face ID for PRVIO" = "Activer Face ID pour PRVIO";
 "Enable Touch ID for PRVIO" = "Activer Touch ID pour PRVIO";
 "Upload failed: %@" = "Échec du téléversement : %@";
+"📍 Shared a location" = "📍 Emplacement partagé";
+"Signed in with email" = "Connexion avec e-mail";
+"Signed out" = "Déconnexion";
+"Coduri de rezervă generate" = "Codes de sauvegarde générés";

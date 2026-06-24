@@ -2012,3 +2012,7 @@
 "Enable Face ID for PRVIO" = "Enable Face ID for PRVIO";
 "Enable Touch ID for PRVIO" = "Enable Touch ID for PRVIO";
 "Upload failed: %@" = "Upload failed: %@";
+"📍 Shared a location" = "📍 Shared a location";
+"Signed in with email" = "Signed in with email";
+"Signed out" = "Signed out";
+"Coduri de rezervă generate" = "Backup codes generated";
