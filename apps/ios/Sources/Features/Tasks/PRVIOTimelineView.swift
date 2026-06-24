@@ -57,7 +57,7 @@ struct PRVIOTimelineView: View {
                         .padding(.top, 60)
                 } else {
                     ForEach(groupedEvents, id: \.0) { group, events in
-                        sectionHeader(group)
+                        sectionHeader(LocalizedStringKey(group))
                             .padding(.horizontal, 16)
                             .padding(.top, 18)
                             .padding(.bottom, 8)
