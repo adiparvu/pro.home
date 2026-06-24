@@ -280,6 +280,15 @@ struct SettingsView: View {
                     .environmentObject(propertyService)
                     .environmentObject(familyService)
             }
+            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color(red: 0.35, green: 0.55, blue: 1.0), label: "Perspectives") {
+                PropertyPerspectivesView()
+                    .environmentObject(propertyService)
+                    .environmentObject(taskService)
+                    .environmentObject(documentService)
+                    .environmentObject(financialService)
+                    .environmentObject(familyService)
+                    .environmentObject(applianceService)
+            }
         }
     }
 

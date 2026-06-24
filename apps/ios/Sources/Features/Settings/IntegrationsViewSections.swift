@@ -68,14 +68,15 @@ extension IntegrationsView {
                     }
                 })
 
-            IntegrationRow(icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
-                title: "NFC Tags",
-                description: "Scanează tag-uri NFC pe echipamente sau camere pentru acces instant în Digital Twin.",
-                status: NFCScanService.isSupported ? .active("Disponibil") : .notConnected,
-                action: {
-                    guard NFCScanService.isSupported else { return }
-                    NFCScanService.shared.scan(prompt: "Apropie iPhone-ul de tag-ul NFC") { _ in }
-                })
+            NavigationLink {
+                NFCWalletView()
+            } label: {
+                IntegrationRowContent(
+                    icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
+                    title: "NFC Keys",
+                    description: "Scanează și gestionează tag-uri NFC pentru camere și echipamente — acces instant în Digital Twin.",
+                    status: NFCScanService.isSupported ? .active("Disponibil") : .notConnected)
+            }
         }
     }
 
