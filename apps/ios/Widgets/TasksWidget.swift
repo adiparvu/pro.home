@@ -89,7 +89,7 @@ struct TasksMediumView: View {
                 }
                 Spacer()
                 if entry.snapshot.overdueTaskCount > 0 {
-                    Text("\(entry.snapshot.overdueTaskCount) overdue")
+                    Text(String(format: String(localized: "%d overdue"), entry.snapshot.overdueTaskCount))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.red)
                         .padding(.horizontal, 8)

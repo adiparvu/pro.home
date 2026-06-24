@@ -145,10 +145,10 @@ struct LockScreenDashboardView: View {
     private var inlineText: String {
         var parts: [String] = []
         if entry.snapshot.overdueTaskCount > 0 {
-            parts.append("\(entry.snapshot.overdueTaskCount) tasks")
+            parts.append(String(format: String(localized: "%d tasks"), entry.snapshot.overdueTaskCount))
         }
         if entry.snapshot.plantsNeedingWater > 0 {
-            parts.append("\(entry.snapshot.plantsNeedingWater) plants")
+            parts.append(String(format: String(localized: "%d plants"), entry.snapshot.plantsNeedingWater))
         }
         return parts.isEmpty ? "PRVIO ✓" : parts.joined(separator: " · ")
     }

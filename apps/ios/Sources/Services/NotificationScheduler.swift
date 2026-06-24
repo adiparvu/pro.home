@@ -87,8 +87,8 @@ final class NotificationScheduler: ObservableObject {
 
         for plant in plants where plant.needsWatering || plant.daysUntilWatering <= 1 {
             let content = UNMutableNotificationContent()
-            content.title = "Time to water the plants! 💧"
-            content.body  = "\(plant.emoji) \(plant.name) needs water"
+            content.title = String(localized: "Time to water the plants!")
+            content.body  = String(format: String(localized: "%@ %@ needs water"), plant.emoji, plant.name)
             content.sound = .default
             content.categoryIdentifier = "PLANT"
             content.userInfo = ["plantId": plant.id.uuidString]
@@ -154,8 +154,8 @@ final class NotificationScheduler: ObservableObject {
             // Overdue — fire once, 1 minute from now if already overdue
             if dueDate < cal.startOfDay(for: now) {
                 let content = UNMutableNotificationContent()
-                content.title = "Overdue Task"
-                content.body  = "\(task.title) was due \(task.dueDateDisplay)"
+                content.title = String(localized: "Overdue Task")
+                content.body  = String(format: String(localized: "%@ was due %@"), task.title, task.dueDateDisplay)
                 content.sound = .default
                 content.badge = NSNumber(value: 1)
                 content.categoryIdentifier = "TASK"
@@ -175,7 +175,7 @@ final class NotificationScheduler: ObservableObject {
                 components.minute = 0
 
                 let content = UNMutableNotificationContent()
-                content.title = "Task Due Today"
+                content.title = String(localized: "Task Due Today")
                 content.body  = task.title
                 content.sound = .default
                 content.categoryIdentifier = "TASK"
@@ -198,7 +198,7 @@ final class NotificationScheduler: ObservableObject {
                     reminderComponents.minute = 0
 
                     let reminderContent = UNMutableNotificationContent()
-                    reminderContent.title = "Task Due in 3 Days"
+                    reminderContent.title = String(localized: "Task Due in 3 Days")
                     reminderContent.body  = task.title
                     reminderContent.sound = .default
                     reminderContent.categoryIdentifier = "TASK"
@@ -234,8 +234,8 @@ final class NotificationScheduler: ObservableObject {
                 components.hour = 9; components.minute = 0
 
                 let content = UNMutableNotificationContent()
-                content.title = "Document Expiring Soon"
-                content.body  = "\(doc.name) expires in 30 days"
+                content.title = String(localized: "Document Expiring Soon")
+                content.body  = String(format: String(localized: "%@ expires in 30 days"), doc.name)
                 content.sound = .default
                 content.categoryIdentifier = "DOCUMENT"
                 content.userInfo = ["docId": doc.id.uuidString]
@@ -254,8 +254,8 @@ final class NotificationScheduler: ObservableObject {
                 components.hour = 9; components.minute = 0
 
                 let content = UNMutableNotificationContent()
-                content.title = "Document Expiring in 7 Days"
-                content.body  = "\(doc.name) – renew before \(doc.expiresDisplay ?? ds)"
+                content.title = String(localized: "Document Expiring in 7 Days")
+                content.body  = String(format: String(localized: "%@ – renew before %@"), doc.name, doc.expiresDisplay ?? ds)
                 content.sound = .default
                 content.categoryIdentifier = "DOCUMENT"
 
@@ -274,8 +274,8 @@ final class NotificationScheduler: ObservableObject {
 
     private func weeklyDigestNotification() -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
-        content.title = "PRVIO Weekly Digest"
-        content.body  = "Review your property tasks, finances, and documents for the week."
+        content.title = String(localized: "PRVIO Weekly Digest")
+        content.body  = String(localized: "Review your property tasks, finances, and documents for the week.")
         content.sound = .default
 
         var components = DateComponents()

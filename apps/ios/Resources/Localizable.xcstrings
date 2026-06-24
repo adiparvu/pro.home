@@ -69,6 +69,74 @@
         }
       }
     },
+    "%@ %@ needs water": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ braucht Wasser"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ needs water"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ a besoin d'eau"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ heeft water nodig"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ are nevoie de apă"
+          }
+        }
+      }
+    },
+    "%@ expires in 30 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ läuft in 30 Tagen ab"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expires in 30 days"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expire dans 30 jours"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ verloopt over 30 dagen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expiră în 30 de zile"
+          }
+        }
+      }
+    },
     "%@ maintenance checklist": {
       "localizations": {
         "de": {
@@ -137,6 +205,74 @@
         }
       }
     },
+    "%@ mentioned %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hat %@ erwähnt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mentioned %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ a mentionné %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ noemde %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ te-a menționat pe %@"
+          }
+        }
+      }
+    },
+    "%@ was due %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ war fällig am %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ was due %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ était dû le %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ was verschuldigd op %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ a fost scadent %@"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "localizations": {
         "de": {
@@ -171,6 +307,142 @@
         }
       }
     },
+    "%@ – renew before %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – erneuern vor %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – renew before %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – renouvelez avant le %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – vernieuwen vóór %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ – reînnoiți înainte de %@"
+          }
+        }
+      }
+    },
+    "%@, you have a new task: \"%@\"": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, Sie haben eine neue Aufgabe: \"%@\""
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, you have a new task: \"%@\""
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, vous avez une nouvelle tâche : \"%@\""
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, u heeft een nieuwe taak: \"%@\""
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, ai o sarcină nouă: \"%@\""
+          }
+        }
+      }
+    },
+    "%@, you have a new task: \"%@\" · Due: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, Sie haben eine neue Aufgabe: \"%@\" · Fällig: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, you have a new task: \"%@\" · Due: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, vous avez une nouvelle tâche : \"%@\" · Dû : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, u heeft een nieuwe taak: \"%@\" · Verschuldigd: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, ai o sarcină nouă: \"%@\" · Scadentă: %@"
+          }
+        }
+      }
+    },
+    "%d alerts": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Alarme"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d alerts"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d alertes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d meldingen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d alerte"
+          }
+        }
+      }
+    },
     "%d need water": {
       "localizations": {
         "de": {
@@ -201,6 +473,176 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d necesită apă"
+          }
+        }
+      }
+    },
+    "%d of %d items": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d von %d Artikeln"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d of %d items"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sur %d articles"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d van %d artikelen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d din %d articole"
+          }
+        }
+      }
+    },
+    "%d of %d plants watered": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d von %d Pflanzen gegossen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d of %d plants watered"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sur %d plantes arrosées"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d van %d planten gegoten"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d din %d plante udate"
+          }
+        }
+      }
+    },
+    "%d overdue": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d überfällig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d overdue"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d en retard"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d achterstallig"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d restante"
+          }
+        }
+      }
+    },
+    "%d plants": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Pflanzen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d plants"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d plantes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d planten"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d plante"
+          }
+        }
+      }
+    },
+    "%d tasks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Aufgaben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tasks"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tâches"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d taken"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sarcini"
           }
         }
       }
@@ -919,6 +1361,40 @@
         }
       }
     },
+    "1 alert": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Alarm"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 alert"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 alerte"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 melding"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 alertă"
+          }
+        }
+      }
+    },
     "1 hour": {
       "localizations": {
         "de": {
@@ -1055,6 +1531,74 @@
         }
       }
     },
+    "1 month! Ask %@ about \"%@\".": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Monat! Fragen Sie %@ nach \"%@\"."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 month! Ask %@ about \"%@\"."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 mois ! Demandez à %@ à propos de \"%@\"."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 maand! Vraag %@ naar \"%@\"."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 lună! Întreabă-l pe %@ despre \"%@\"."
+          }
+        }
+      }
+    },
+    "1 week since \"%@\" was loaned to %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Woche seit \"%@\" an %@ verliehen wurde."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 week since \"%@\" was loaned to %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 semaine depuis que \"%@\" a été prêté à %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 week geleden dat \"%@\" werd uitgeleend aan %@."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 săptămână de când \"%@\" a fost împrumutat lui %@."
+          }
+        }
+      }
+    },
     "1 year": {
       "localizations": {
         "de": {
@@ -1157,6 +1701,40 @@
         }
       }
     },
+    "2 weeks — \"%@\" still with %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 Wochen — \"%@\" noch bei %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 weeks — \"%@\" still with %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 semaines — \"%@\" toujours avec %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 weken — \"%@\" nog steeds bij %@."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 săptămâni — \"%@\" încă la %@."
+          }
+        }
+      }
+    },
     "24h": {
       "localizations": {
         "de": {
@@ -1225,6 +1803,40 @@
         }
       }
     },
+    "3 days — \"%@\" not yet returned by %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Tage — \"%@\" noch nicht zurückgegeben von %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 days — \"%@\" not yet returned by %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 jours — \"%@\" pas encore rendu par %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 dagen — \"%@\" nog niet teruggegeven door %@."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 zile — \"%@\" nu a fost returnat de %@."
+          }
+        }
+      }
+    },
     "3 months": {
       "localizations": {
         "de": {
@@ -1255,6 +1867,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "3 luni"
+          }
+        }
+      }
+    },
+    "3 months! \"%@\" loaned to %@ — still waiting?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Monate! \"%@\" an %@ verliehen — noch warten?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 months! \"%@\" loaned to %@ — still waiting?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 mois ! \"%@\" prêté à %@ — toujours en attente ?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 maanden! \"%@\" uitgeleend aan %@ — nog wachten?"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 luni! \"%@\" împrumutat lui %@ — mai așteptați?"
           }
         }
       }
@@ -12071,6 +12717,40 @@
         }
       }
     },
+    "Complete! 🎉": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig! 🎉"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete! 🎉"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminé ! 🎉"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klaar! 🎉"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completă! 🎉"
+          }
+        }
+      }
+    },
     "Completed ✓": {
       "localizations": {
         "de": {
@@ -15664,13 +16344,13 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Document vervalt binnenkort"
+            "value": "Document verloopt binnenkort"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Document expiră curând"
+            "value": "Document expiră în curând"
           }
         }
       }
@@ -15698,7 +16378,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Document vervalt over 7 dagen"
+            "value": "Document verloopt over 7 dagen"
           }
         },
         "ro": {
@@ -18017,6 +18697,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Valoare estimată"
+          }
+        }
+      }
+    },
+    "Estimated: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschätzt: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimé : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschat: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimat: %@"
           }
         }
       }
@@ -21931,6 +22645,40 @@
         }
       }
     },
+    "Health %d%%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesundheit %d%%"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Health %d%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Santé %d%%"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conditie %d%%"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sănătate %d%%"
+          }
+        }
+      }
+    },
     "Health %lld%%": {
       "localizations": {
         "de": {
@@ -24923,6 +25671,40 @@
         }
       }
     },
+    "Item Not Returned": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegenstand nicht zurückgegeben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item Not Returned"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objet non rendu"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artikel niet teruggegeven"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obiect nereturniat"
+          }
+        }
+      }
+    },
     "Item not found": {
       "localizations": {
         "de": {
@@ -25463,6 +26245,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ultima udare"
+          }
+        }
+      }
+    },
+    "Last watered: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt gegossen: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last watered: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dernière arrosée : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laatste keer gegoten: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultima udată: %@"
           }
         }
       }
@@ -34506,7 +35322,7 @@
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sarcină întârziată"
+            "value": "Sarcină depășită"
           }
         }
       }
@@ -35123,6 +35939,74 @@
         }
       }
     },
+    "PRVIO (Lock Screen)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO (Sperrbildschirm)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO (Lock Screen)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO (Écran verrouillé)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO (Vergrendelscherm)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO (Ecran blocat)"
+          }
+        }
+      }
+    },
+    "PRVIO Alerts": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO-Benachrichtigungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Alerts"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertes PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO-meldingen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerte PRVIO"
+          }
+        }
+      }
+    },
     "PRVIO Intelligence": {
       "localizations": {
         "de": {
@@ -35208,19 +36092,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Digest hebdomadaire PRVIO"
+            "value": "Récapitulatif hebdomadaire PRVIO"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "PRVIO Wekelijks Overzicht"
+            "value": "PRVIO Weekoverzicht"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Digest săptămânal PRVIO"
+            "value": "Rezumat săptămânal PRVIO"
           }
         }
       }
@@ -35697,6 +36581,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "În așteptare"
+          }
+        }
+      }
+    },
+    "Pending tasks count.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anzahl ausstehender Aufgaben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending tasks count."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre de tâches en attente."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aantal lopende taken."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numărul sarcinilor în așteptare."
           }
         }
       }
@@ -36619,6 +37537,40 @@
         }
       }
     },
+    "Plant watering": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pflanzen gießen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plant watering"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrosage des plantes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planten water geven"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udare plante"
+          }
+        }
+      }
+    },
     "Plants": {
       "localizations": {
         "de": {
@@ -36649,6 +37601,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plante"
+          }
+        }
+      }
+    },
+    "Plants (Lock Screen)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pflanzen (Sperrbildschirm)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plants (Lock Screen)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plantes (Écran verrouillé)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planten (Vergrendelscherm)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plante (Ecran blocat)"
+          }
+        }
+      }
+    },
+    "Plants that need watering.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pflanzen, die gegossen werden müssen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plants that need watering."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plantes à arroser."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planten die water nodig hebben."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plante care au nevoie de udare."
           }
         }
       }
@@ -37843,6 +38863,40 @@
         }
       }
     },
+    "Property health and urgent alerts.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebäudezustand und dringende Alarme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Property health and urgent alerts."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "État de la propriété et alertes urgentes."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woningconditie en dringende meldingen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sănătatea proprietății și alertele urgente."
+          }
+        }
+      }
+    },
     "Property in excellent condition": {
       "localizations": {
         "de": {
@@ -38625,6 +39679,40 @@
         }
       }
     },
+    "Quick PRVIO overview on the lock screen.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnelle PRVIO-Übersicht auf dem Sperrbildschirm."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick PRVIO overview on the lock screen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aperçu rapide de PRVIO sur l'écran verrouillé."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snel PRVIO-overzicht op het vergrendelscherm."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezentare rapidă PRVIO pe ecranul blocat."
+          }
+        }
+      }
+    },
     "RENOVATIONS": {
       "localizations": {
         "de": {
@@ -39403,6 +40491,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reminder returnare obiecte împrumutate"
+          }
+        }
+      }
+    },
+    "Reminder: %@ still has your \"%@\".": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerung: %@ hat noch Ihr \"%@\"."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminder: %@ still has your \"%@\"."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rappel : %@ a toujours votre \"%@\"."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herinnering: %@ heeft uw \"%@\" nog steeds."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminder: %@ încă are \"%@\" al tău."
           }
         }
       }
@@ -40568,7 +41690,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Überprüfen Sie Ihre Aufgaben, Finanzen und Dokumente für die Woche."
+            "value": "Überprüfen Sie Ihre Immobilienaufgaben, Finanzen und Dokumente für die Woche."
           }
         },
         "en": {
@@ -40580,19 +41702,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Passez en revue vos tâches, finances et documents de la semaine."
+            "value": "Passez en revue les tâches, finances et documents de votre propriété pour la semaine."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bekijk uw taken, financiën en documenten voor de week."
+            "value": "Bekijk uw eigendomstaken, financiën en documenten voor de week."
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Revizuiește sarcinile, finanțele și documentele pentru această săptămână."
+            "value": "Revizuiți sarcinile, finanțele și documentele proprietății pentru săptămâna aceasta."
           }
         }
       }
@@ -46774,7 +47896,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Taak vervalt vandaag"
+            "value": "Taak vandaag verschuldigd"
           }
         },
         "ro": {
@@ -46808,7 +47930,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Taak vervalt over 3 dagen"
+            "value": "Taak over 3 dagen verschuldigd"
           }
         },
         "ro": {
@@ -46849,6 +47971,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Manager sarcini"
+          }
+        }
+      }
+    },
+    "Task assigned": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgabe zugewiesen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task assigned"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tâche attribuée"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taak toegewezen"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcină atribuită"
           }
         }
       }
@@ -46985,6 +48141,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sarcini & Mentenanță"
+          }
+        }
+      }
+    },
+    "Tasks (Lock Screen)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgaben (Sperrbildschirm)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks (Lock Screen)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tâches (Écran verrouillé)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken (Vergrendelscherm)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcini (Ecran blocat)"
           }
         }
       }
@@ -48379,6 +49569,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tile"
+          }
+        }
+      }
+    },
+    "Time to water the plants!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit, die Pflanzen zu gießen!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time to water the plants!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "C'est l'heure d'arroser les plantes !"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tijd om de planten water te geven!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E timpul să udați plantele!"
           }
         }
       }

@@ -144,16 +144,16 @@ final class InventoryService: ObservableObject {
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.inventoryLoans) else { return }
         let center = UNUserNotificationCenter.current()
         let intervals: [(Int, String)] = [
-            (1,  "Reminder: \(loan.borrowerName) still has your \"\(item.name)\"."),
-            (3,  "3 days — \"\(item.name)\" not yet returned by \(loan.borrowerName)."),
-            (7,  "1 week since \"\(item.name)\" was loaned to \(loan.borrowerName)."),
-            (14, "2 weeks — \"\(item.name)\" still with \(loan.borrowerName)."),
-            (30, "1 month! Ask \(loan.borrowerName) about \"\(item.name)\"."),
-            (90, "3 months! \"\(item.name)\" loaned to \(loan.borrowerName) — still waiting?")
+            (1,  String(format: String(localized: "Reminder: %@ still has your \"%@\"."), loan.borrowerName, item.name)),
+            (3,  String(format: String(localized: "3 days — \"%@\" not yet returned by %@."), item.name, loan.borrowerName)),
+            (7,  String(format: String(localized: "1 week since \"%@\" was loaned to %@."), item.name, loan.borrowerName)),
+            (14, String(format: String(localized: "2 weeks — \"%@\" still with %@."), item.name, loan.borrowerName)),
+            (30, String(format: String(localized: "1 month! Ask %@ about \"%@\"."), loan.borrowerName, item.name)),
+            (90, String(format: String(localized: "3 months! \"%@\" loaned to %@ — still waiting?"), item.name, loan.borrowerName)),
         ]
         for (days, body) in intervals {
             let content = UNMutableNotificationContent()
-            content.title = "Item Not Returned"
+            content.title = String(localized: "Item Not Returned")
             content.body = body
             content.sound = .default
             let request = UNNotificationRequest(

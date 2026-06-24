@@ -11,8 +11,8 @@ struct NotificationCenterWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOAlertsProvider()) { entry in
             NotificationCenterWidgetView(entry: entry)
         }
-        .configurationDisplayName("PRVIO Alerts")
-        .description("Property health and urgent alerts.")
+        .configurationDisplayName(LocalizedStringKey("PRVIO Alerts"))
+        .description(LocalizedStringKey("Property health and urgent alerts."))
         .supportedFamilies([.systemSmall, .accessoryRectangular])
         .contentMarginsDisabled()
     }
@@ -114,7 +114,7 @@ struct NotificationCenterSmallView: View {
                         Image(systemName: statusIcon)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(statusColor)
-                        Text("\(alertCount) alert\(alertCount == 1 ? "" : "s")")
+                        Text(alertCount == 1 ? String(localized: "1 alert") : String(format: String(localized: "%d alerts"), alertCount))
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(statusColor)
                     }
@@ -162,7 +162,7 @@ struct NotificationCenterRectangularView: View {
                 Text("PRVIO")
                     .font(.system(size: 11, weight: .bold))
                 Spacer()
-                Text("Health \(healthScore)%")
+                Text(String(format: String(localized: "Health %d%%"), healthScore))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
             }
@@ -170,12 +170,12 @@ struct NotificationCenterRectangularView: View {
             if alertCount > 0 {
                 HStack(spacing: 8) {
                     if entry.snapshot.overdueTaskCount > 0 {
-                        Label("\(entry.snapshot.overdueTaskCount) overdue", systemImage: "checklist")
+                        Label(String(format: String(localized: "%d overdue"), entry.snapshot.overdueTaskCount), systemImage: "checklist")
                             .font(.system(size: 10))
                             .foregroundStyle(.red)
                     }
                     if entry.snapshot.plantsNeedingWater > 0 {
-                        Label("\(entry.snapshot.plantsNeedingWater) plants", systemImage: "drop.fill")
+                        Label(String(format: String(localized: "%d plants"), entry.snapshot.plantsNeedingWater), systemImage: "drop.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(.orange)
                     }

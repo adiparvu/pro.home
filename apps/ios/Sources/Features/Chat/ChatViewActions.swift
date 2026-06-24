@@ -90,7 +90,7 @@ extension ChatView {
         let center = UNUserNotificationCenter.current()
         for name in mentionedNames {
             let content = UNMutableNotificationContent()
-            content.title = "\(senderName) mentioned \(name)"
+            content.title = String(format: String(localized: "%@ mentioned %@"), senderName, name)
             content.body = body
             content.sound = .default
             let req = UNNotificationRequest(

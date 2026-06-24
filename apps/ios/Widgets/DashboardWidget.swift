@@ -173,7 +173,7 @@ struct DashboardLargeView: View {
         .widgetURL(URL(string: "prvio://"))
     }
 
-    private func largeStat(icon: String, value: String, label: String, color: Color) -> some View {
+    private func largeStat(icon: String, value: String, label: LocalizedStringKey, color: Color) -> some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))

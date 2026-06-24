@@ -27,12 +27,12 @@ struct ShoppingLiveActivity: Widget {
                                      : 0)
                         .tint(.blue)
                         HStack {
-                            Text("\(context.state.itemsBought) din \(context.state.totalItems) articole")
+                            Text(String(format: String(localized: "%d of %d items"), context.state.itemsBought, context.state.totalItems))
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                             Spacer()
                             if context.state.itemsBought == context.state.totalItems {
-                                Text("Completă! 🎉")
+                                Text("Complete! 🎉")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundStyle(.green)
                             }
@@ -79,7 +79,7 @@ struct ShoppingLockScreenView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                 ProgressView(value: progress).tint(.blue)
-                Text("\(context.state.itemsBought) din \(context.state.totalItems) articole")
+                Text(String(format: String(localized: "%d of %d items"), context.state.itemsBought, context.state.totalItems))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -246,7 +246,7 @@ struct DeliveryLockScreenView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                 if let eta = context.state.eta {
-                    Text("Estimat: \(eta)")
+                    Text(String(format: String(localized: "Estimated: %@"), eta))
                         .font(.system(size: 11))
                         .foregroundStyle(.orange)
                 }
@@ -268,7 +268,7 @@ struct PlantCareLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("Udare plante", systemImage: "drop.fill")
+                    Label("Plant watering", systemImage: "drop.fill")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.blue)
                 }
@@ -284,7 +284,7 @@ struct PlantCareLiveActivity: Widget {
                                      : 0)
                         .tint(.blue)
                         if let name = context.state.lastWateredName {
-                            Text("Ultima udată: \(name)")
+                            Text(String(format: String(localized: "Last watered: %@"), name))
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                         }
@@ -326,11 +326,11 @@ struct PlantCareLockScreenView: View {
                     .foregroundStyle(.blue)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text("Udare plante")
+                Text("Plant watering")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                 ProgressView(value: progress).tint(.blue)
-                Text("\(context.state.wateredCount) din \(context.state.totalCount) plante udate")
+                Text(String(format: String(localized: "%d of %d plants watered"), context.state.wateredCount, context.state.totalCount))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
