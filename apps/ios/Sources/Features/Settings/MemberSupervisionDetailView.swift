@@ -24,7 +24,7 @@ struct MemberSupervisionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: member.name, subtitle: "SUPERVISION")
+            PageHeader(title: member.name, subtitleKey: "SUPERVISION")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {

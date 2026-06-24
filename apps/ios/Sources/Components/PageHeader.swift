@@ -30,6 +30,17 @@ struct PageHeader: View {
         self._subtitleKey = subtitleKey
     }
 
+    // Mixed init — dynamic title (user data) + localized subtitle key.
+    init(title: String, subtitleKey: LocalizedStringKey,
+         leading: AnyView? = nil, trailing: AnyView? = nil) {
+        self.title    = title
+        self.subtitle = nil
+        self.leading  = leading
+        self.trailing = trailing
+        self._titleKey    = nil
+        self._subtitleKey = subtitleKey
+    }
+
     var body: some View {
         HStack(alignment: .bottom) {
             if let leading { leading }

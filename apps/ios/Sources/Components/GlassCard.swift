@@ -99,7 +99,7 @@ struct HeavyGlassCard<Content: View>: View {
 // MARK: - StatRow
 
 struct StatRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var valueColor: Color = .primary
 

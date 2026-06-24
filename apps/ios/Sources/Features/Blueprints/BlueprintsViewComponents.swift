@@ -6,8 +6,8 @@ import UniformTypeIdentifiers
 
 struct QuickActionButton: View {
     let icon: String
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let colors: [Color]
     let action: () -> Void
 

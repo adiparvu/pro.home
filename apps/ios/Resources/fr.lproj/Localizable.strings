@@ -1721,3 +1721,9 @@
 "Red" = "Rouge";
 "Teal" = "Turquoise";
 "TO BUY · %lld" = "À ACHETER · %lld";
+"Purchase date" = "Date d'achat";
+"Warranty until" = "Garantie jusqu'au";
+"Scan 3D" = "Scan 3D";
+"LiDAR room scan" = "Scan pièce LiDAR";
+"Needs LiDAR" = "Nécessite LiDAR";
+"Photo · PDF" = "Photo · PDF";

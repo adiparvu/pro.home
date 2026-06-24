@@ -339,7 +339,7 @@ private struct TypeChip: View {
 // MARK: - DateToggleRow
 
 private struct DateToggleRow: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var isShown: Bool
     @Binding var date: Date
     @Binding var stringValue: String

@@ -71,8 +71,8 @@ struct ElementRecordRow: View {
 // MARK: - SectionHeader
 
 struct SectionHeader: View {
-    let title: String
-    init(_ title: String) { self.title = title }
+    let title: LocalizedStringKey
+    init(_ title: LocalizedStringKey) { self.title = title }
     var body: some View {
         HStack {
             Text(title)

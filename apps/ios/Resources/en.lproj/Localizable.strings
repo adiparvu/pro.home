@@ -1739,3 +1739,9 @@
 "Red" = "Red";
 "Teal" = "Teal";
 "TO BUY · %lld" = "TO BUY · %lld";
+"Purchase date" = "Purchase date";
+"Warranty until" = "Warranty until";
+"Scan 3D" = "Scan 3D";
+"LiDAR room scan" = "LiDAR room scan";
+"Needs LiDAR" = "Needs LiDAR";
+"Photo · PDF" = "Photo · PDF";

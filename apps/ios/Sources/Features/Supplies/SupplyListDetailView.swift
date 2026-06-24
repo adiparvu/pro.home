@@ -26,7 +26,7 @@ struct SupplyListDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: list.name, subtitle: "SUPPLIES")
+            PageHeader(title: list.name, subtitleKey: "SUPPLIES")
 
             searchBar
                 .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)

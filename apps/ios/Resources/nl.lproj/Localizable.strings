@@ -1721,3 +1721,9 @@
 "Red" = "Rood";
 "Teal" = "Turquoise";
 "TO BUY · %lld" = "TE KOPEN · %lld";
+"Purchase date" = "Aankoopdatum";
+"Warranty until" = "Garantie tot";
+"Scan 3D" = "3D-scan";
+"LiDAR room scan" = "LiDAR kamer scan";
+"Needs LiDAR" = "Vereist LiDAR";
+"Photo · PDF" = "Foto · PDF";

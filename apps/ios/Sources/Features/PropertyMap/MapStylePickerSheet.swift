@@ -4,7 +4,7 @@ struct MapStylePickerSheet: View {
     @Binding var selected: String
     @Environment(\.dismiss) private var dismiss
 
-    private let styles: [(id: String, title: String, subtitle: String)] = [
+    private let styles: [(id: String, title: LocalizedStringKey, subtitle: LocalizedStringKey)] = [
         ("hybrid",    "Hybrid",    "Satellite + Roads"),
         ("standard",  "Standard",  "Street Map"),
         ("satellite", "Satellite", "Imagery Only"),
@@ -51,8 +51,8 @@ struct MapStylePickerSheet: View {
 
 private struct StyleCard: View {
     let id: String
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let isSelected: Bool
     let action: () -> Void
 

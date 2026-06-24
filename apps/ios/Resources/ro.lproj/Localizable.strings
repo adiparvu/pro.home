@@ -1897,3 +1897,9 @@
 "Red" = "Roșu";
 "Teal" = "Turcoaz";
 "TO BUY · %lld" = "DE CUMPĂRAT · %lld";
+"Purchase date" = "Data achiziției";
+"Warranty until" = "Garanție până la";
+"Scan 3D" = "Scanare 3D";
+"LiDAR room scan" = "Scanare cameră LiDAR";
+"Needs LiDAR" = "Necesită LiDAR";
+"Photo · PDF" = "Fotografie · PDF";

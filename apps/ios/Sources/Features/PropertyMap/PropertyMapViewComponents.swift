@@ -24,7 +24,7 @@ extension PropertyMapView {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 LayerChip(
-                    label: "All",
+                    label: String(localized: "All"),
                     icon: "square.grid.2x2",
                     count: elementService.elements.count,
                     isSelected: selectedLayer == nil
