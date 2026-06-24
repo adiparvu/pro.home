@@ -1933,3 +1933,12 @@
 /* Build 295 — tracker types */
 "GPS" = "GPS";
 "Tile" = "Tile";
+
+/* Build 296 — automation node labels */
+"When" = "Când";
+"And" = "Și";
+"Then" = "Atunci";
+"Notify" = "Notifică";
+"User" = "Utilizator";
+"Test" = "Test";
+"+ Node" = "+ Nod";

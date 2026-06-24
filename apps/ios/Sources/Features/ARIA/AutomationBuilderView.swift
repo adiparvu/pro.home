@@ -309,7 +309,7 @@ struct AutomationBuilderView: View {
                 Image(systemName: icon)
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.9))
-                Text(headerLabel)
+                Text(LocalizedStringKey(headerLabel))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white.opacity(0.9))
                 Spacer()
@@ -319,7 +319,7 @@ struct AutomationBuilderView: View {
             .background(color)
 
             // Body
-            Text(bodyText)
+            Text(LocalizedStringKey(bodyText))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
@@ -365,7 +365,7 @@ struct AutomationBuilderView: View {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 12, weight: .semibold))
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(color)

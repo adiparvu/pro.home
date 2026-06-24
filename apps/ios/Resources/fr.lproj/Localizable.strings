@@ -1826,3 +1826,12 @@
 /* Build 295 — tracker types */
 "GPS" = "GPS";
 "Tile" = "Tile";
+
+/* Build 296 — automation node labels */
+"When" = "Quand";
+"And" = "Et";
+"Then" = "Alors";
+"Notify" = "Notifier";
+"User" = "Utilisateur";
+"Test" = "Tester";
+"+ Node" = "+ Nœud";

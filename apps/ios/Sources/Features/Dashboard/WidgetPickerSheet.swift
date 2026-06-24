@@ -100,7 +100,7 @@ struct WidgetPickerSheet: View {
                                                     .font(.system(size: 15, weight: .semibold))
                                                     .foregroundStyle(type.color)
                                             }
-                                            Text(type.title)
+                                            Text(LocalizedStringKey(type.title))
                                                 .font(.system(size: 15))
                                                 .foregroundStyle(.primary)
                                             Spacer()
