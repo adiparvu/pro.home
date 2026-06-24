@@ -333,7 +333,7 @@ struct ARIASettingsView: View {
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
-                    Text(customApiKey.isEmpty ? "Not set" : "Configured")
+                    Text(LocalizedStringKey(customApiKey.isEmpty ? "Not set" : "Configured"))
                         .font(.system(size: 13))
                         .foregroundStyle(customApiKey.isEmpty
                             ? Color.primary.opacity(0.35)

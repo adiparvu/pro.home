@@ -159,7 +159,7 @@ struct SiriShortcutsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
                         .font(.system(size: 16, weight: .semibold))
-                    Text(donated ? "Commands activated!" : "Activate Siri Commands")
+                    Text(LocalizedStringKey(donated ? "Commands activated!" : "Activate Siri Commands"))
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .foregroundStyle(.white)

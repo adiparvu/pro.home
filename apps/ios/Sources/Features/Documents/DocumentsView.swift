@@ -271,7 +271,7 @@ struct DocumentsView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
             VStack(spacing: 8) {
-                Text(search.isEmpty ? "No documents yet" : "No results found")
+                Text(LocalizedStringKey(search.isEmpty ? "No documents yet" : "No results found"))
                     .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
                 if search.isEmpty {
                     Text("Tap + to add your first document")
@@ -315,7 +315,7 @@ struct DocumentRow: View {
                             }
                         }
                         HStack(spacing: 8) {
-                            Text(doc.category.capitalized)
+                            Text(LocalizedStringKey(doc.category.capitalized))
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(categoryColor.opacity(0.8))
                                 .padding(.horizontal, 6).padding(.vertical, 2)

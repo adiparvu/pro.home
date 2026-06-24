@@ -67,7 +67,7 @@ struct PropertySettingsView: View {
                         .foregroundStyle(Color.primary.opacity(0.55))
                         .lineLimit(1)
                     HStack(spacing: 8) {
-                        Text(p.propertyType.capitalized)
+                        Text(LocalizedStringKey(p.propertyType.capitalized))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.blue.opacity(0.8))
                             .padding(.horizontal, 8).padding(.vertical, 3)

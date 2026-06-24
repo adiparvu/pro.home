@@ -139,12 +139,12 @@ extension PropertyElementDetailView {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Map location").font(.subheadline.weight(.medium))
-                    Text(localElement.coordinate == nil ? "Not placed" : "Placed on map")
+                    Text(LocalizedStringKey(localElement.coordinate == nil ? "Not placed" : "Placed on map"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button { showLocationPicker = true } label: {
-                    Text(localElement.coordinate == nil ? "Place" : "Change")
+                    Text(LocalizedStringKey(localElement.coordinate == nil ? "Place" : "Change"))
                         .font(.caption.weight(.semibold)).foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 7)
                         .background(Capsule().fill(Color.accentColor))

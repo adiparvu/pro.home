@@ -170,7 +170,7 @@ struct AddPropertySheet: View {
                             HStack(spacing: 8) {
                                 ForEach(propertyTypes, id: \.self) { type in
                                     Button { propertyType = type } label: {
-                                        Text(type.capitalized)
+                                        Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
                                             .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(0.7))
                                             .padding(.horizontal, 14).padding(.vertical, 8)

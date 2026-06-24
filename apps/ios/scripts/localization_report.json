@@ -1,0 +1,315 @@
+{
+  "missing_keys": {
+    "en": {},
+    "fr": {},
+    "nl": {},
+    "de": {}
+  },
+  "swift_issues": [
+    {
+      "file": "Sources/Components/PageHeader.swift",
+      "line": 55,
+      "pattern": ".uppercased() in Text()",
+      "code": "Text(subtitle.uppercased())",
+      "fix": "Use Text(subtitle).textCase(.uppercase)"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/ZonesListView.swift",
+      "line": 171,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(elementCount == 1 ? \"1 item\" : \"\\(elementCount) items\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/TwinInsightsSheet.swift",
+      "line": 149,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(aiReply == nil ? \"Ask ARIA\" : \"Re-analyze\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/PropertyElementDetailTabs.swift",
+      "line": 142,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(localElement.coordinate == nil ? \"Not placed\" : \"Placed on map\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/PropertyElementDetailTabs.swift",
+      "line": 147,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(localElement.coordinate == nil ? \"Place\" : \"Change\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/PropertyElementDetailSheets.swift",
+      "line": 54,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(doc.category.capitalized).font(.caption).foregroundStyle(.secondary)",
+      "fix": "Use Text(LocalizedStringKey(doc.category)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/PropertyMap/PropertyElementDetailSheets.swift",
+      "line": 105,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(doc.category.capitalized).font(.caption).foregroundStyle(.secondary)",
+      "fix": "Use Text(LocalizedStringKey(doc.category)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Blueprints/BuriedUtilitySheets.swift",
+      "line": 281,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(locMgr.denied ? \"Location denied — enable in Settings.\" : \"Getting location…\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Documents/DocumentsView.swift",
+      "line": 274,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(search.isEmpty ? \"No documents yet\" : \"No results found\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Documents/DocumentsView.swift",
+      "line": 318,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(doc.category.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(doc.category)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Documents/AddDocumentSheet.swift",
+      "line": 50,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(c.capitalized).tag(c)",
+      "fix": "Use Text(LocalizedStringKey(c)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/PaintColors/AddPaintColorSheet.swift",
+      "line": 159,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(s.capitalized).tag(s)",
+      "fix": "Use Text(LocalizedStringKey(s)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/PaintColors/AddPaintColorSheet.swift",
+      "line": 177,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(f.rawValue.capitalized).tag(f)",
+      "fix": "Use Text(LocalizedStringKey(f.rawValue)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/ARIA/ARIASettingsView.swift",
+      "line": 336,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(customApiKey.isEmpty ? \"Not set\" : \"Configured\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Auth/OnboardingView.swift",
+      "line": 252,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(t.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(t)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Settings/QuickActionsSettingsView.swift",
+      "line": 60,
+      "pattern": ".uppercased() in Text()",
+      "code": "Text(host.title.uppercased())",
+      "fix": "Use Text(host.title).textCase(.uppercase)"
+    },
+    {
+      "file": "Sources/Features/Settings/SupervisionView.swift",
+      "line": 198,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(member.role.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(member.role)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Settings/SupervisionView.swift",
+      "line": 206,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(supervised ? \"Active\" : \"Inactive\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Settings/SiriShortcutsView.swift",
+      "line": 162,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(donated ? \"Commands activated!\" : \"Activate Siri Commands\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Settings/PropertySettingsView.swift",
+      "line": 70,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(p.propertyType.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(p.propertyType)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Settings/AuditLogView.swift",
+      "line": 72,
+      "pattern": ".uppercased() in Text()",
+      "code": "Text(day.uppercased())",
+      "fix": "Use Text(day).textCase(.uppercase)"
+    },
+    {
+      "file": "Sources/Features/Settings/PropertyFormSheets.swift",
+      "line": 173,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(type.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(type)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Settings/EditPropertySheet.swift",
+      "line": 124,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(type.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(type)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Chat/ChatLocationComponents.swift",
+      "line": 80,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(locMgr.denied ? \"Location access denied. Enable in Settings.\" : \"Getting your location…\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Supplies/AddSupplyItemSheet.swift",
+      "line": 189,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(editingItem == nil ? \"Add item\" : \"Save changes\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Dashboard/DashboardComponents.swift",
+      "line": 242,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(isLoading ? \"–\" : \"\\(score)\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Contractors/ContractorDetailSheet.swift",
+      "line": 92,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(currentContractor.specialty.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(currentContractor.specialty)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Contractors/ContractorsView.swift",
+      "line": 153,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(service.contractors.isEmpty ? \"No contractors yet\" : \"No results\").font(.system(size: 17)).foregroundStyle(Color.pr",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Contractors/ContractorsView.swift",
+      "line": 218,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(contractor.specialty.capitalized).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))",
+      "fix": "Use Text(LocalizedStringKey(contractor.specialty)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Finances/FinancesViewComponents.swift",
+      "line": 70,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(isCurrentMonth ? \"Current month balance\" : \"Balance\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Finances/FinancesViewComponents.swift",
+      "line": 287,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(record.category.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(record.category)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Finances/BudgetView.swift",
+      "line": 114,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(cat.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(cat)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Finances/AddFinancialView.swift",
+      "line": 83,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(t.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(t)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Finances/AddFinancialView.swift",
+      "line": 152,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(cat.capitalized).tag(cat)",
+      "fix": "Use Text(LocalizedStringKey(cat)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Tasks/AddTaskView.swift",
+      "line": 125,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(p.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(p)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Tasks/AddTaskView.swift",
+      "line": 144,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(cat.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(cat)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Tasks/AddTaskView.swift",
+      "line": 232,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(calendarAdded ? \"Added to Apple Calendar\" : \"Add to Apple Calendar\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Tasks/AddTaskView.swift",
+      "line": 262,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(editing != nil ? \"Save Changes\" : \"Add Task\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Tasks/TasksView.swift",
+      "line": 334,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(task.category.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(task.category)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Deliveries/DeliveryFormSheet.swift",
+      "line": 280,
+      "pattern": "Ternary String in Text()",
+      "code": "Text(isEditing ? \"Save changes\" : \"Add delivery\")",
+      "fix": "Wrap: Text(LocalizedStringKey(cond ? \"A\" : \"B\")) or use computed LocalizedStringKey property"
+    },
+    {
+      "file": "Sources/Features/Inventory/ItemDetailView.swift",
+      "line": 74,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(live.location.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(live.location)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Inventory/ItemDetailView.swift",
+      "line": 86,
+      "pattern": ".capitalized in Text()",
+      "code": "return Text(live.condition.capitalized)",
+      "fix": "Use Text(LocalizedStringKey(live.condition)) or add key to .strings"
+    },
+    {
+      "file": "Sources/Features/Inventory/InventoryViewComponents.swift",
+      "line": 20,
+      "pattern": ".capitalized in Text()",
+      "code": "Text(item.location.capitalized).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))",
+      "fix": "Use Text(LocalizedStringKey(item.location)) or add key to .strings"
+    }
+  ],
+  "stats": {
+    "total_missing_keys": 0,
+    "total_swift_issues": 43
+  }
+}

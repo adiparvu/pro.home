@@ -146,7 +146,7 @@ struct TwinInsightsSheet: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                        Text(aiReply == nil ? "Ask ARIA" : "Re-analyze")
+                        Text(LocalizedStringKey(aiReply == nil ? "Ask ARIA" : "Re-analyze"))
                     }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)

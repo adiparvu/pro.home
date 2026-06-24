@@ -80,7 +80,7 @@ struct AddFinancialView: View {
                         HStack(spacing: 6) {
                             Image(systemName: t == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                                 .font(.system(size: 14))
-                            Text(t.capitalized)
+                            Text(LocalizedStringKey(t.capitalized))
                                 .font(.system(size: 14, weight: .semibold))
                         }
                         .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.5))
@@ -149,7 +149,7 @@ struct AddFinancialView: View {
                 Spacer()
                 Picker("", selection: $category) {
                     ForEach(categories, id: \.self) { cat in
-                        Text(cat.capitalized).tag(cat)
+                        Text(LocalizedStringKey(cat.capitalized)).tag(cat)
                     }
                 }
                 .tint(Color.primary.opacity(0.5))

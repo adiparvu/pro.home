@@ -71,7 +71,7 @@ struct ItemDetailView: View {
             Text(live.name).font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
             HStack(spacing: 8) {
                 conditionBadge
-                Text(live.location.capitalized)
+                Text(LocalizedStringKey(live.location.capitalized))
                     .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(Color.primary.opacity(0.08), in: Capsule())
@@ -83,7 +83,7 @@ struct ItemDetailView: View {
     private var conditionBadge: some View {
         let map: [String: Color] = ["excellent": Color(red: 0.2, green: 0.8, blue: 0.3), "good": Color.accentColor, "fair": .orange, "poor": Color.red]
         let color = map[live.condition] ?? .gray
-        return Text(live.condition.capitalized)
+        return Text(LocalizedStringKey(live.condition.capitalized))
             .font(.system(size: 12, weight: .medium)).foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(color.opacity(0.15), in: Capsule())

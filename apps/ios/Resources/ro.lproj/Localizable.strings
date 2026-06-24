@@ -1907,3 +1907,8 @@
 "Member has full access" = "Membrul are acces complet";
 "Rentals & Hospitality" = "Închirieri & Ospitalitate";
 "Energy & Environment" = "Energie & Mediu";
+
+/* Build 292 — additional missing keys */
+"Inactive" = "Inactiv";
+"Add Task" = "Adaugă sarcină";
+"1 item" = "1 articol";

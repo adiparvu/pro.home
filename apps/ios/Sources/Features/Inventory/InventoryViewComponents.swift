@@ -17,7 +17,7 @@ struct InventoryRow: View {
                             Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                         }
-                        Text(item.location.capitalized).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                        Text(LocalizedStringKey(item.location.capitalized)).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     if item.isLoaned, let loan = item.currentLoan {
                         Label("Loaned to \(loan.borrowerName) · \(loan.daysOut)d", systemImage: "person.fill")

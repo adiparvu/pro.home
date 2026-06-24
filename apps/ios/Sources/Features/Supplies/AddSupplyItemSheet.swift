@@ -186,7 +186,7 @@ struct AddSupplyItemSheet: View {
             Group {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
-                    Text(editingItem == nil ? "Add item" : "Save changes")
+                    Text(LocalizedStringKey(editingItem == nil ? "Add item" : "Save changes"))
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

@@ -111,7 +111,7 @@ struct BudgetView: View {
                             VStack(spacing: 10) {
                                 HStack {
                                     ColoredIconBadge(icon: categoryIcon(cat), color: categoryColor(cat), size: 32)
-                                    Text(cat.capitalized)
+                                    Text(LocalizedStringKey(cat.capitalized))
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundStyle(.primary)
                                     Spacer()

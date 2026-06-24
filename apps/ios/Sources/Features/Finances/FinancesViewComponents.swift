@@ -67,7 +67,7 @@ extension FinancesView {
             .padding(.top, 8)
 
             VStack(spacing: 4) {
-                Text(isCurrentMonth ? "Current month balance" : "Balance")
+                Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(0.45))
 
@@ -284,7 +284,7 @@ struct FinancialRecordRow: View {
                 Text(record.title)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.primary)
-                Text(record.category.capitalized)
+                Text(LocalizedStringKey(record.category.capitalized))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }

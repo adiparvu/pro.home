@@ -195,7 +195,7 @@ struct SupervisionView: View {
                         Text(member.name)
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(.primary)
-                        Text(member.role.capitalized)
+                        Text(LocalizedStringKey(member.role.capitalized))
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
@@ -203,7 +203,7 @@ struct SupervisionView: View {
                     Spacer()
 
                     let supervised = SupervisionSettings.isSupervised(member.id)
-                    Text(supervised ? "Active" : "Inactive")
+                    Text(LocalizedStringKey(supervised ? "Active" : "Inactive"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
                         .padding(.horizontal, 10).padding(.vertical, 4)

@@ -57,7 +57,8 @@ struct QuickActionsSettingsView: View {
     private func hostSection(_ host: FloatingButtonHost) -> some View {
         let visible = appSettings.fabVisible(host)
         return VStack(alignment: .leading, spacing: 8) {
-            Text(host.title.uppercased())
+            Text(host.title)
+                .textCase(.uppercase)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)

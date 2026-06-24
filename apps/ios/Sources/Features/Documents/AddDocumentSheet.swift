@@ -47,7 +47,7 @@ struct AddDocumentSheet: View {
                                 Spacer()
                                 Picker("", selection: $category) {
                                     ForEach(categories, id: \.self) { c in
-                                        Text(c.capitalized).tag(c)
+                                        Text(LocalizedStringKey(c.capitalized)).tag(c)
                                     }
                                 }
                                 .tint(Color.primary.opacity(0.7))

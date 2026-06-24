@@ -122,7 +122,7 @@ struct AddTaskView: View {
             HStack(spacing: 8) {
                 ForEach(priorities, id: \.self) { p in
                     Button { priority = p } label: {
-                        Text(p.capitalized)
+                        Text(LocalizedStringKey(p.capitalized))
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
                             .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 13).padding(.vertical, 8)
@@ -141,7 +141,7 @@ struct AddTaskView: View {
                 HStack(spacing: 8) {
                     ForEach(categories, id: \.self) { cat in
                         Button { category = cat } label: {
-                            Text(cat.capitalized)
+                            Text(LocalizedStringKey(cat.capitalized))
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
                                 .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 13).padding(.vertical, 8)
@@ -229,7 +229,7 @@ struct AddTaskView: View {
                     .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar")
+                    Text(LocalizedStringKey(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar"))
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     if !hasDueDate {
@@ -259,7 +259,7 @@ struct AddTaskView: View {
                 if isSaving {
                     ProgressView().tint(.black)
                 } else {
-                    Text(editing != nil ? "Save Changes" : "Add Task")
+                    Text(LocalizedStringKey(editing != nil ? "Save Changes" : "Add Task"))
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

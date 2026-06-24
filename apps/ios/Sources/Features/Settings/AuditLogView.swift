@@ -69,7 +69,8 @@ struct AuditLogView: View {
 
     private func daySection(day: String, events: [AuditLogService.AuditEvent]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(day.uppercased())
+            Text(day)
+                .textCase(.uppercase)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 8)

@@ -278,7 +278,7 @@ struct AddBuriedUtilitySheet: View {
                             .font(.system(size: 12)).foregroundStyle(.green)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
-                        Text(locMgr.denied ? "Location denied — enable in Settings." : "Getting location…")
+                        Text(LocalizedStringKey(locMgr.denied ? "Location denied — enable in Settings." : "Getting location…"))
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

@@ -51,7 +51,7 @@ struct LinkedDocumentRow: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(doc.name).font(.subheadline.weight(.medium)).lineLimit(1)
-                    Text(doc.category.capitalized).font(.caption).foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(doc.category.capitalized)).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button(action: onOpen) {
@@ -102,7 +102,7 @@ struct DocumentLinkPicker: View {
                                                 .font(.system(size: 15)).foregroundStyle(Color.accentColor).frame(width: 28)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(doc.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1)
-                                                Text(doc.category.capitalized).font(.caption).foregroundStyle(.secondary)
+                                                Text(LocalizedStringKey(doc.category.capitalized)).font(.caption).foregroundStyle(.secondary)
                                             }
                                             Spacer()
                                             Image(systemName: "plus.circle.fill").foregroundStyle(Color.accentColor)

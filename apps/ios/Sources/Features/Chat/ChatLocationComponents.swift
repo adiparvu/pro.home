@@ -77,7 +77,7 @@ struct LocationShareSheet: View {
                     } else {
                         Spacer()
                         ProgressView().tint(.white)
-                        Text(locMgr.denied ? "Location access denied. Enable in Settings." : "Getting your location…")
+                        Text(LocalizedStringKey(locMgr.denied ? "Location access denied. Enable in Settings." : "Getting your location…"))
                             .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
                         Spacer()
                     }

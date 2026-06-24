@@ -150,7 +150,7 @@ struct ContractorsView: View {
                     VStack(spacing: 14) {
                         Spacer()
                         Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-                        Text(service.contractors.isEmpty ? "No contractors yet" : "No results").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+                        Text(LocalizedStringKey(service.contractors.isEmpty ? "No contractors yet" : "No results")).font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
                         if service.contractors.isEmpty {
                             Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         }
@@ -215,7 +215,7 @@ private struct ContractorRow: View {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(contractor.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                    Text(contractor.specialty.capitalized).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                 }
                 Spacer()
                 if let phone = contractor.phone, !phone.isEmpty {

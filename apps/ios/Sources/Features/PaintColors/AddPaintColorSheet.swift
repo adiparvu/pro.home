@@ -156,7 +156,7 @@ struct AddPaintColorSheet: View {
                 .frame(width: 28)
             Picker("Surface", selection: $surface) {
                 ForEach(surfaces, id: \.self) { s in
-                    Text(s.capitalized).tag(s)
+                    Text(LocalizedStringKey(s.capitalized)).tag(s)
                 }
             }
             .tint(.accentColor)
@@ -174,7 +174,7 @@ struct AddPaintColorSheet: View {
                 .frame(width: 28)
             Picker("Finish", selection: $finish) {
                 ForEach(PaintFinish.allCases, id: \.self) { f in
-                    Text(f.rawValue.capitalized).tag(f)
+                    Text(LocalizedStringKey(f.rawValue.capitalized)).tag(f)
                 }
             }
             .tint(.accentColor)

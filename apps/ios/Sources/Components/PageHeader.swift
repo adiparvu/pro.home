@@ -52,10 +52,11 @@ struct PageHeader: View {
                         .tracking(1.4)
                         .textCase(.uppercase)
                 } else if let subtitle {
-                    Text(subtitle.uppercased())
+                    Text(LocalizedStringKey(subtitle))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .tracking(1.4)
+                        .textCase(.uppercase)
                 }
                 if let titleKey = _titleKey {
                     Text(titleKey)

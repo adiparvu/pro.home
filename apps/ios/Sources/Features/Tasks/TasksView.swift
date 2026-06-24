@@ -331,7 +331,7 @@ struct TaskRowView: View {
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
-                    Text(task.category.capitalized)
+                    Text(LocalizedStringKey(task.category.capitalized))
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     if task.dueDate != nil {

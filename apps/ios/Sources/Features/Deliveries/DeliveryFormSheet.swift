@@ -277,7 +277,7 @@ struct DeliveryFormSheet: View {
                 if isSaving {
                     ProgressView().tint(.white)
                 } else {
-                    Text(isEditing ? "Save changes" : "Add delivery")
+                    Text(LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"))
                         .font(.system(size: 16, weight: .semibold))
                 }
             }

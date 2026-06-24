@@ -249,7 +249,7 @@ private struct PropertyStep: View {
                             HapticFeedback.selection()
                             type = t
                         } label: {
-                            Text(t.capitalized)
+                            Text(LocalizedStringKey(t.capitalized))
                                 .font(.system(size: 13, weight: type == t ? .semibold : .regular))
                                 .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 16)

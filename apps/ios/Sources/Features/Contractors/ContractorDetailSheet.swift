@@ -89,7 +89,7 @@ struct ContractorDetailSheet: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.primary)
 
-                Text(currentContractor.specialty.capitalized)
+                Text(LocalizedStringKey(currentContractor.specialty.capitalized))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
