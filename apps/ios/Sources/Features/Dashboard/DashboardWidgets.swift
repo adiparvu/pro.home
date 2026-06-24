@@ -34,6 +34,16 @@ extension DashboardView {
     }
 
     var widgetGrid: some View {
+        Group {
+            if isEditingWidgets {
+                widgetReorderList
+            } else {
+                widgetNormalGrid
+            }
+        }
+    }
+
+    private var widgetNormalGrid: some View {
         VStack(spacing: 12) {
             ForEach(Array(widgetRows.enumerated()), id: \.offset) { _, row in
                 if row.count == 1 && row[0].isFullWidth {
@@ -51,6 +61,40 @@ extension DashboardView {
                 }
             }
         }
+    }
+
+    private var widgetReorderList: some View {
+        List {
+            ForEach(editableWidgets) { type in
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(type.color.opacity(0.15))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: type.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(type.color)
+                    }
+                    Text(type.title)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparatorTint(Color.primary.opacity(0.07))
+            }
+            .onMove { from, to in
+                editableWidgets.move(fromOffsets: from, toOffset: to)
+            }
+        }
+        .listStyle(.plain)
+        .environment(\.editMode, .constant(.active))
+        .frame(height: max(120, CGFloat(editableWidgets.count) * 56))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+        )
     }
 
     @ViewBuilder

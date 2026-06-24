@@ -140,6 +140,36 @@ struct AddSupplyListSheet: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                // Custom hex color picker
+                ZStack {
+                    Circle()
+                        .fill(
+                            AngularGradient(
+                                colors: [.red, .orange, .yellow, .green, .blue, .purple, .red],
+                                center: .center
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                    if !SupplyList.colorOptions.map(\.hex).contains(selectedColor) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    ColorPicker("", selection: Binding(
+                        get: { Color(hex: selectedColor) ?? .blue },
+                        set: { newColor in
+                            selectedColor = newColor.hexString()
+                            HapticFeedback.selection()
+                        }
+                    ), supportsOpacity: false)
+                    .labelsHidden()
+                    .opacity(0.015)
+                    .scaleEffect(2.2)
+                }
+                .frame(width: 32, height: 32)
+                .clipShape(Circle())
+
                 Spacer()
             }
         }

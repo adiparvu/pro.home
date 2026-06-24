@@ -34,14 +34,19 @@ struct SuppliesView: View {
     @State private var showBudgets = false
     @State private var showReports = false
 
-    enum ExpenseTab: Hashable { case overview, lists }
+    enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
 
     var body: some View {
         VStack(spacing: 0) {
             PageHeader(
-                title: activeTab == .overview
-                    ? String(localized: "expense_title")
-                    : String(localized: "expense_lists_title"),
+                title: {
+                    switch activeTab {
+                    case .overview:   return String(localized: "expense_title")
+                    case .lists:      return String(localized: "expense_lists_title")
+                    case .toBuy:      return String(localized: "De cumpărat")
+                    case .completed:  return String(localized: "Finalizate")
+                    }
+                }(),
                 subtitle: String(localized: "expense_subtitle")
             )
 
@@ -51,7 +56,8 @@ struct SuppliesView: View {
 
             Divider().opacity(0.2)
 
-            if activeTab == .overview {
+            switch activeTab {
+            case .overview:
                 ExpenseDashboardView(
                     showScanner: $showScanner,
                     showAddReceipt: $showAddReceipt,
@@ -60,8 +66,12 @@ struct SuppliesView: View {
                 )
                 .environmentObject(receiptService)
                 .environmentObject(propertyService)
-            } else {
+            case .lists:
                 shoppingListsContent
+            case .toBuy:
+                toBuyContent
+            case .completed:
+                completedContent
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -126,23 +136,26 @@ struct SuppliesView: View {
     // MARK: - Tab bar
 
     private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach([ExpenseTab.overview, ExpenseTab.lists], id: \.self) { tab in
+        let tabs: [(ExpenseTab, String, String)] = [
+            (.overview,  "chart.bar.fill",   String(localized: "expense_tab_overview")),
+            (.lists,     "list.bullet",       String(localized: "expense_tab_lists")),
+            (.toBuy,     "cart.fill",         String(localized: "De cumpărat")),
+            (.completed, "checkmark.circle.fill", String(localized: "Finalizate")),
+        ]
+        return HStack(spacing: 0) {
+            ForEach(tabs, id: \.0) { tab, icon, label in
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) { activeTab = tab }
                     HapticFeedback.selection()
                 } label: {
                     VStack(spacing: 5) {
-                        HStack(spacing: 6) {
-                            Image(systemName: tab == .overview ? "chart.bar.fill" : "list.bullet")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text(tab == .overview
-                                 ? String(localized: "expense_tab_overview")
-                                 : String(localized: "expense_tab_lists"))
-                                .font(.system(size: 13, weight: activeTab == tab ? .semibold : .regular))
+                        HStack(spacing: 5) {
+                            Image(systemName: icon)
+                                .font(.system(size: 10, weight: .semibold))
+                            Text(label)
+                                .font(.system(size: 12, weight: activeTab == tab ? .semibold : .regular))
                         }
                         .foregroundStyle(activeTab == tab ? Color.accentColor : Color.primary.opacity(0.4))
-
                         Rectangle()
                             .fill(activeTab == tab ? Color.accentColor : Color.clear)
                             .frame(height: 2).clipShape(Capsule())
@@ -267,6 +280,84 @@ struct SuppliesView: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
             if !isLast { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 54) }
+        }
+    }
+
+    // MARK: - To Buy / Completed tabs
+
+    private var toBuyContent: some View {
+        let pending = supplyService.items.filter { !$0.isCompleted }
+        return Group {
+            if pending.isEmpty {
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(systemName: "cart.badge.checkmark")
+                        .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
+                    Text(String(localized: "supply_all_done"))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        GlassCard(padding: 0) {
+                            VStack(spacing: 0) {
+                                ForEach(Array(pending.enumerated()), id: \.element.id) { idx, item in
+                                    SupplyItemRow(
+                                        item: item,
+                                        isLast: idx == pending.count - 1,
+                                        onToggle: { Task { await supplyService.toggleComplete(item) } },
+                                        onEdit: {},
+                                        onDelete: { Task { await supplyService.deleteItem(item) } }
+                                    )
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        Spacer(minLength: 110)
+                    }
+                    .padding(.top, 16)
+                }
+            }
+        }
+    }
+
+    private var completedContent: some View {
+        let done = supplyService.items.filter { $0.isCompleted }
+        return Group {
+            if done.isEmpty {
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(systemName: "tray")
+                        .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
+                    Text(String(localized: "supply_empty_title"))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        GlassCard(padding: 0) {
+                            VStack(spacing: 0) {
+                                ForEach(Array(done.enumerated()), id: \.element.id) { idx, item in
+                                    SupplyItemRow(
+                                        item: item,
+                                        isLast: idx == done.count - 1,
+                                        onToggle: { Task { await supplyService.toggleComplete(item) } },
+                                        onEdit: {},
+                                        onDelete: { Task { await supplyService.deleteItem(item) } }
+                                    )
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        Spacer(minLength: 110)
+                    }
+                    .padding(.top, 16)
+                }
+            }
         }
     }
 

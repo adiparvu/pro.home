@@ -37,6 +37,8 @@ struct DashboardView: View {
     @State private var showSearch = false
     @State private var showWidgetPicker = false
     @State private var showHealthDetail = false
+    @State private var isEditingWidgets = false
+    @State private var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
 
     private let sections = PropertySection.all
 
@@ -342,17 +344,51 @@ struct DashboardView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.35))
             Spacer()
-            Button {
-                HapticFeedback.impact(.light)
-                showWidgetPicker = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 32, height: 32)
+            if isEditingWidgets {
+                Button {
+                    HapticFeedback.impact(.light)
+                    HomeWidgetType.save(editableWidgets)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        isEditingWidgets = false
+                    }
+                } label: {
+                    Text("Done")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.accentColor.opacity(0.1), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                HStack(spacing: 8) {
+                    Button {
+                        HapticFeedback.impact(.light)
+                        editableWidgets = HomeWidgetType.load()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isEditingWidgets = true
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .glassCircle()
+
+                    Button {
+                        HapticFeedback.impact(.light)
+                        showWidgetPicker = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .glassCircle()
+                }
             }
-            .buttonStyle(.plain)
-            .glassCircle()
         }
     }
 
