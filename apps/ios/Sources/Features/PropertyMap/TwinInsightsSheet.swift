@@ -181,9 +181,9 @@ struct TwinInsightsSheet: View {
             let payload = ARIAChatPayload(message: prompt, property_id: propertyService.primary?.id.uuidString)
             let decoded: ARIAResponse = try await supabase.functions
                 .invoke("aria-chat", options: .init(body: payload))
-            aiReply = decoded.reply ?? decoded.error ?? "Could not generate an analysis right now."
+            aiReply = decoded.reply ?? decoded.error ?? String(localized: "Could not generate an analysis right now.")
         } catch {
-            aiReply = "Could not reach ARIA. Please try again."
+            aiReply = String(localized: "Could not reach ARIA. Please try again.")
         }
     }
 }

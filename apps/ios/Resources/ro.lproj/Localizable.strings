@@ -2120,3 +2120,5 @@
 "In transit" = "În tranzit";
 "Appliance" = "Electrocasnic";
 "🎂 %@" = "🎂 %@";
+"The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "Pictograma \"%@\" nu este disponibilă încă. Vă vom notifica când toate variantele sunt gata.\n\n(%@)";
+"[%@] %@" = "[%@] %@";

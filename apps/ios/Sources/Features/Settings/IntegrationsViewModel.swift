@@ -226,7 +226,7 @@ final class IntegrationsViewModel: ObservableObject {
 
             let reminder = EKReminder(eventStore: store)
             let priorityLabel = task.priority == "high" ? String(localized: "High") : task.priority == "medium" ? String(localized: "Medium") : String(localized: "Low")
-            reminder.title = "[\(priorityLabel)] \(task.title)"
+            reminder.title = String(format: String(localized: "[%@] %@"), priorityLabel, task.title)
             reminder.notes = task.description
             reminder.calendar = list
 

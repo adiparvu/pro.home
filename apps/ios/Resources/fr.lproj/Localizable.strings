@@ -2013,3 +2013,5 @@
 "In transit" = "En transit";
 "Appliance" = "Appareil";
 "🎂 %@" = "🎂 %@";
+"The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "L'icône \"%@\" n'est pas encore disponible. Nous vous informerons quand toutes les variantes seront prêtes.\n\n(%@)";
+"[%@] %@" = "[%@] %@";

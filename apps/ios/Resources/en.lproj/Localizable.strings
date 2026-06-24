@@ -2031,3 +2031,5 @@
 "In transit" = "In transit";
 "Appliance" = "Appliance";
 "🎂 %@" = "🎂 %@";
+"The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)" = "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)";
+"[%@] %@" = "[%@] %@";

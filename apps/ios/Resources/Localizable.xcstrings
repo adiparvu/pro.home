@@ -50679,6 +50679,40 @@
         }
       }
     },
+    "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Symbol \"%@\" ist noch nicht verfügbar. Wir benachrichtigen Sie, wenn alle Varianten bereit sind.\n\n(%@)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'icône \"%@\" n'est pas encore disponible. Nous vous informerons quand toutes les variantes seront prêtes.\n\n(%@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het pictogram \"%@\" is nog niet beschikbaar. We laten u weten wanneer alle varianten klaar zijn.\n\n(%@)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pictograma \"%@\" nu este disponibilă încă. Vă vom notifica când toate variantele sunt gata.\n\n(%@)"
+          }
+        }
+      }
+    },
     "The person will receive an invitation email": {
       "localizations": {
         "de": {
@@ -63602,6 +63636,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "📶 WiFi"
+          }
+        }
+      }
+    },
+    "[%@] %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@] %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@] %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@] %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@] %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "[%@] %@"
           }
         }
       }

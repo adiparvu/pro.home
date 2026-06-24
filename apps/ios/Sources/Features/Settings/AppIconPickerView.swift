@@ -198,7 +198,7 @@ struct AppIconPickerView: View {
         let name: String? = option.id == "default" ? nil : option.id
         UIApplication.shared.setAlternateIconName(name) { error in
             if let error = error {
-                errorMsg = "The icon \"\(option.name)\" is not available yet. We will notify you when all variants are ready.\n\n(\(error.localizedDescription))"
+                errorMsg = String(format: String(localized: "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)"), option.name, error.localizedDescription)
                 showError = true
             } else {
                 withAnimation { selectedIconId = option.id }
