@@ -65,7 +65,7 @@ final class CloudKitSyncService: ObservableObject {
         let share = CKShare(rootRecord: record)
         share[CKShare.SystemFieldKey.title] = title as CKRecordValue
         share.publicPermission = .readOnly
-        let (saved, _, _) = try await privateDB.modifyRecords(saving: [record, share], deleting: [])
-        return saved.compactMap { $0.value as? CKShare }.first ?? share
+        let result = try await privateDB.modifyRecords(saving: [record, share], deleting: [])
+        return result.saveResults.values.compactMap { try? $0.get() as? CKShare }.first ?? share
     }
 }

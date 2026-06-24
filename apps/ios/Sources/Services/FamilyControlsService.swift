@@ -8,7 +8,7 @@ final class FamilyControlsService: ObservableObject {
     static let shared = FamilyControlsService()
 
     @Published var isAuthorized = false
-    @Published var authorizationStatus: AuthorizationStatus = .notDetermined
+    @Published var authorizationStatus: FamilyControls.AuthorizationStatus = .notDetermined
 
     private let center = AuthorizationCenter.shared
     private let store = ManagedSettingsStore()
@@ -16,10 +16,6 @@ final class FamilyControlsService: ObservableObject {
     private init() {
         authorizationStatus = center.authorizationStatus
         isAuthorized = center.authorizationStatus == .approved
-    }
-
-    enum AuthorizationStatus {
-        case notDetermined, approved, denied
     }
 
     // Request Family Controls authorization (requires device with managed child account)
