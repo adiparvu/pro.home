@@ -77,12 +77,14 @@ struct BudgetView: View {
                 .frame(height: 8)
 
                 HStack {
-                    Label(remaining >= 0 ? "\(financialService.currencySymbol)\(Int(abs(remaining))) remaining" : "\(financialService.currencySymbol)\(Int(abs(remaining))) over budget",
+                    Label(remaining >= 0
+                          ? String(format: String(localized: "%@%lld remaining"), financialService.currencySymbol, Int(abs(remaining)))
+                          : String(format: String(localized: "%@%lld over budget"), financialService.currencySymbol, Int(abs(remaining))),
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(remaining >= 0 ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                     Spacer()
-                    Text(String(format: "%.0f%%", progress * 100) + " used")
+                    Text(String(format: String(localized: "%.0f%% used"), progress * 100))
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }

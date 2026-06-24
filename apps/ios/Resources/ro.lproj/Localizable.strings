@@ -2080,3 +2080,6 @@
 "Set Location & Tracker" = "Setează locație & tracker";
 "Set Up Contact Info" = "Configurează informații de contact";
 "Edit Contact Info" = "Editează informații de contact";
+"%@%lld remaining" = "%@%lld rămași";
+"%@%lld over budget" = "%@%lld peste buget";
+"%.0f%% used" = "%.0f%% utilizat";

@@ -1973,3 +1973,6 @@
 "Set Location & Tracker" = "Standort & Tracker setzen";
 "Set Up Contact Info" = "Kontaktinformationen einrichten";
 "Edit Contact Info" = "Kontaktinformationen bearbeiten";
+"%@%lld remaining" = "%@%lld verbleibend";
+"%@%lld over budget" = "%@%lld über Budget";
+"%.0f%% used" = "%.0f%% genutzt";

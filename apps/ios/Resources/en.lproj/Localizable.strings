@@ -1991,3 +1991,6 @@
 "Set Location & Tracker" = "Set Location & Tracker";
 "Set Up Contact Info" = "Set Up Contact Info";
 "Edit Contact Info" = "Edit Contact Info";
+"%@%lld remaining" = "%@%lld remaining";
+"%@%lld over budget" = "%@%lld over budget";
+"%.0f%% used" = "%.0f%% used";
