@@ -37,6 +37,8 @@ final class AppRouter: ObservableObject {
         let host = url.host ?? ""
         let pathComponents = url.pathComponents.filter { $0 != "/" }
         switch host {
+        case "", "home", "dashboard":
+            selectedTab = .home
         case "tasks":
             selectedTab = .tasks
             if pathComponents.first == "new" {
@@ -45,11 +47,13 @@ final class AppRouter: ObservableObject {
                 deepLinkTaskId = id
             }
         case "plants":
+            selectedTab = .home
             showWaterPlant = true
             if let idStr = pathComponents.first, let id = UUID(uuidString: idStr) {
                 deepLinkPlantId = id
             }
         case "shopping", "supplies":
+            selectedTab = .home
             showAddSupply = true
         case "chat":
             selectedTab = .chat
@@ -57,6 +61,14 @@ final class AppRouter: ObservableObject {
             showInventoryScan = true
         case "receipts":
             showAddExpense = true
+        case "alerts", "notifications":
+            selectedTab = .home
+        case "aria", "ai":
+            showARIA = true
+        case "twin", "map":
+            selectedTab = .digitalTwin
+        case "settings":
+            selectedTab = .settings
         default:
             break
         }

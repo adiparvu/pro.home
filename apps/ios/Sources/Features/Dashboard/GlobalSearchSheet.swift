@@ -16,6 +16,7 @@ struct GlobalSearchSheet: View {
 
     @State private var query = ""
     @FocusState private var focused: Bool
+    @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     // Detail sheet selection state
     @State private var selectedMember: FamilyMember?
@@ -206,7 +207,7 @@ struct GlobalSearchSheet: View {
             Text("Search the entire app")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.5))
-            Text("Tasks · Settings · ARIA · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
+            Text("Tasks · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)

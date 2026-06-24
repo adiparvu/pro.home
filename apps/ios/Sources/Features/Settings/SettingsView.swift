@@ -258,7 +258,7 @@ struct SettingsView: View {
                     .environmentObject(photoJournalService)
                     .environmentObject(propertyService)
             }
-            NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklist") {
+            NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
                 SeasonalChecklistView()
             }
             NavSettingsRow(icon: "paintpalette.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15), label: "Paint Colors") {

@@ -12,6 +12,7 @@ struct TwinInsightsSheet: View {
 
     @State private var aiReply: String?
     @State private var isThinking = false
+    @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     private var zones: [PropertyZone] { zoneService.zones }
     private var objects: [PropertyElement] { elementService.elements }
@@ -133,7 +134,7 @@ struct TwinInsightsSheet: View {
                 } else if isThinking {
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text("ARIA is analyzing your property…")
+                        Text("\(assistantName) is analyzing your property…")
                             .font(.system(size: 14)).foregroundStyle(.secondary)
                     }
                 } else {
@@ -146,7 +147,7 @@ struct TwinInsightsSheet: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                        Text(LocalizedStringKey(aiReply == nil ? "Ask ARIA" : "Re-analyze"))
+                        Text(aiReply == nil ? String(localized: "Ask") + " \(assistantName)" : String(localized: "Re-analyze"))
                     }
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)

@@ -84,21 +84,18 @@ struct FloatingSpeedDial: View {
                     .allowsHitTesting(false)
                     .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
-                Image(systemName: action.icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
+                ZStack {
+                    Circle()
+                        .fill(action.color.opacity(0.18))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: action.icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(action.color)
+                }
+                .shadow(color: action.color.opacity(0.25), radius: 8, y: 3)
             }
         }
         .buttonStyle(.plain)
-        .background(alignment: .trailing) {
-            Circle()
-                .frame(width: 44, height: 44)
-                .glassCircle()
-                .shadow(color: Color.primary.opacity(0.1), radius: 8, y: 2)
-                .allowsHitTesting(false)
-        }
     }
 
     private func collapse() {

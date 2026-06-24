@@ -5,6 +5,7 @@ struct PropertyHealthDashboardView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var appSettings: AppSettings
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     var body: some View {
         NavigationStack {
@@ -210,7 +211,7 @@ struct PropertyHealthDashboardView: View {
                     )
                 }
 
-                Text("Full AI functionality — ARIA integration coming in next version")
+                Text("Full AI functionality — \(assistantName) integration coming in next version")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
