@@ -137,6 +137,40 @@
         }
       }
     },
+    "%@ %@ has been watered!": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ a fost udat!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ has been watered!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ a été arrosée !"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ is water gegeven!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ wurde gegossen!"
+          }
+        }
+      }
+    },
     "%@ %@ needs water": {
       "localizations": {
         "de": {
@@ -201,6 +235,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ %@ total"
+          }
+        }
+      }
+    },
+    "%@ added": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ adăugat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ added"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ajouté"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ toegevoegd"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hinzugefügt"
           }
         }
       }
@@ -1119,6 +1187,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld obiecte"
+          }
+        }
+      }
+    },
+    "%lld items remaining": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld articole rămase"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items remaining"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld articles restants"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items resterend"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Artikel verbleibend"
           }
         }
       }
@@ -11561,6 +11663,40 @@
         }
       }
     },
+    "Chat familie — PRVIO": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat familie — PRVIO"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family Chat — PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat famille — PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familieschat — PRVIO"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familien-Chat — PRVIO"
+          }
+        }
+      }
+    },
     "Check attic insulation": {
       "localizations": {
         "de": {
@@ -17511,6 +17647,41 @@
         }
       }
     },
+    "Each code can be used only once. Keep them safe.": {
+      "comment": "Footer for share sheet when exporting backup codes",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeder Code kann nur einmal verwendet werden. Bewahren Sie sie sicher auf."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each code can be used only once. Keep them safe."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chaque code ne peut être utilisé qu'une seule fois. Conservez-les en lieu sûr."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke code kan maar één keer worden gebruikt. Bewaar ze veilig."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiecare cod poate fi folosit o singură dată. Păstrează-le în siguranță."
+          }
+        }
+      }
+    },
     "Edit": {
       "localizations": {
         "de": {
@@ -18561,6 +18732,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lista contacte urgență"
+          }
+        }
+      }
+    },
+    "Empty list": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listă goală"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty list"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste vide"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege lijst"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leere Liste"
           }
         }
       }
@@ -36721,6 +36926,41 @@
         }
       }
     },
+    "PRVIO Backup Codes": {
+      "comment": "Header for share sheet when exporting backup codes",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Sicherungscodes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Backup Codes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codes de sauvegarde PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Reservecodes"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coduri de rezervă PRVIO"
+          }
+        }
+      }
+    },
     "PRVIO Intelligence": {
       "localizations": {
         "de": {
@@ -38383,6 +38623,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plante care au nevoie de udare."
+          }
+        }
+      }
+    },
+    "Plants — PRVIO": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plante — PRVIO"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plants — PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plantes — PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planten — PRVIO"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pflanzen — PRVIO"
           }
         }
       }
@@ -45969,6 +46243,40 @@
         }
       }
     },
+    "Shopping — PRVIO": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cumpărături — PRVIO"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping — PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achats — PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Winkelen — PRVIO"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einkaufen — PRVIO"
+          }
+        }
+      }
+    },
     "Show button": {
       "localizations": {
         "de": {
@@ -48655,6 +48963,40 @@
         }
       }
     },
+    "Task \"%@\" has been completed.": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcina \"%@\" a fost finalizată."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task \"%@\" has been completed."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tâche \"%@\" a été complétée."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taak \"%@\" is voltooid."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgabe \"%@\" wurde abgeschlossen."
+          }
+        }
+      }
+    },
     "Task Due Today": {
       "localizations": {
         "de": {
@@ -48991,6 +49333,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sarcini · Setări · ARIA · Hartă · Plante · Documente · Finanțe · Electrocasnice · Inventar · Consumabile · Persoane · Livrări"
+          }
+        }
+      }
+    },
+    "Tasks — PRVIO": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcini — PRVIO"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks — PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tâches — PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken — PRVIO"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgaben — PRVIO"
           }
         }
       }
@@ -62319,312 +62695,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "🎂 %lld/%lld"
-          }
-        }
-      }
-    },
-    "%@ added": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ adăugat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ added"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ ajouté"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ toegevoegd"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ hinzugefügt"
-          }
-        }
-      }
-    },
-    "%lld items remaining": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld articole rămase"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld items remaining"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld articles restants"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld items resterend"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Artikel verbleibend"
-          }
-        }
-      }
-    },
-    "Tasks — PRVIO": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sarcini — PRVIO"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tasks — PRVIO"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâches — PRVIO"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Taken — PRVIO"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgaben — PRVIO"
-          }
-        }
-      }
-    },
-    "Plants — PRVIO": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plante — PRVIO"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plants — PRVIO"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plantes — PRVIO"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Planten — PRVIO"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pflanzen — PRVIO"
-          }
-        }
-      }
-    },
-    "Shopping — PRVIO": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cumpărături — PRVIO"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shopping — PRVIO"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Achats — PRVIO"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Winkelen — PRVIO"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einkaufen — PRVIO"
-          }
-        }
-      }
-    },
-    "Chat familie — PRVIO": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat familie — PRVIO"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Family Chat — PRVIO"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat famille — PRVIO"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familieschat — PRVIO"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familien-Chat — PRVIO"
-          }
-        }
-      }
-    },
-    "Empty list": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listă goală"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty list"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liste vide"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lege lijst"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leere Liste"
-          }
-        }
-      }
-    },
-    "Task \"%@\" has been completed.": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sarcina \"%@\" a fost finalizată."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Task \"%@\" has been completed."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La tâche \"%@\" a été complétée."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Taak \"%@\" is voltooid."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe \"%@\" wurde abgeschlossen."
-          }
-        }
-      }
-    },
-    "%@ %@ has been watered!": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ a fost udat!"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ has been watered!"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ a été arrosée !"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ is water gegeven!"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ wurde gegossen!"
           }
         }
       }

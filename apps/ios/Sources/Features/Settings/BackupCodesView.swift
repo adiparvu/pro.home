@@ -206,9 +206,10 @@ struct BackupCodesView: View {
     }
 
     private func shareAll() {
-        let text = "Coduri de rezervă PRVIO\n\n" +
-            codes.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n") +
-            "\n\nFiecare cod poate fi folosit o singură dată. Păstrează-le în siguranță."
+        let header = String(localized: "PRVIO Backup Codes")
+        let footer = String(localized: "Each code can be used only once. Keep them safe.")
+        let codeLines = codes.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        let text = "\(header)\n\n\(codeLines)\n\n\(footer)"
         let av = UIActivityViewController(activityItems: [text], applicationActivities: nil)
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let root = scene.windows.first?.rootViewController {

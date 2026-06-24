@@ -225,7 +225,8 @@ final class IntegrationsViewModel: ObservableObject {
             guard !synced.contains(key) else { continue }
 
             let reminder = EKReminder(eventStore: store)
-            reminder.title = "[\(task.priority.capitalized)] \(task.title)"
+            let priorityLabel = task.priority == "high" ? String(localized: "High") : task.priority == "medium" ? String(localized: "Medium") : String(localized: "Low")
+            reminder.title = "[\(priorityLabel)] \(task.title)"
             reminder.notes = task.description
             reminder.calendar = list
 

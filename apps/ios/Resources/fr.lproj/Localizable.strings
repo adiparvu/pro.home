@@ -1985,3 +1985,5 @@
 "Empty list" = "Liste vide";
 "Task \"%@\" has been completed." = "La tâche \"%@\" a été complétée.";
 "%@ %@ has been watered!" = "%@ %@ a été arrosée !";
+"PRVIO Backup Codes" = "Codes de sauvegarde PRVIO";
+"Each code can be used only once. Keep them safe." = "Chaque code ne peut être utilisé qu'une seule fois. Conservez-les en lieu sûr.";

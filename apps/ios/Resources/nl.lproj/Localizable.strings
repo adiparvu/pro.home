@@ -1985,3 +1985,5 @@
 "Empty list" = "Lege lijst";
 "Task \"%@\" has been completed." = "Taak \"%@\" is voltooid.";
 "%@ %@ has been watered!" = "%@ %@ is water gegeven!";
+"PRVIO Backup Codes" = "PRVIO Reservecodes";
+"Each code can be used only once. Keep them safe." = "Elke code kan maar één keer worden gebruikt. Bewaar ze veilig.";

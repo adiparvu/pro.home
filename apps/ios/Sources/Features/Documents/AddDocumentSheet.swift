@@ -139,7 +139,7 @@ struct AddDocumentSheet: View {
             guard url.startAccessingSecurityScopedResource() else { return }
             defer { url.stopAccessingSecurityScopedResource() }
             guard let data = try? Data(contentsOf: url) else {
-                error = "Could not read the selected file."
+                error = String(localized: "Could not read the selected file.")
                 return
             }
             pickedFileData = data

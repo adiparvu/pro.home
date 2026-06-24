@@ -2092,3 +2092,5 @@
 "Empty list" = "Listă goală";
 "Task \"%@\" has been completed." = "Sarcina \"%@\" a fost finalizată.";
 "%@ %@ has been watered!" = "%@ %@ a fost udat!";
+"PRVIO Backup Codes" = "Coduri de rezervă PRVIO";
+"Each code can be used only once. Keep them safe." = "Fiecare cod poate fi folosit o singură dată. Păstrează-le în siguranță.";
