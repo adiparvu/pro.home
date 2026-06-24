@@ -91,7 +91,7 @@ final class AppLockManager: ObservableObject {
         // Reuse context within the same lock session so failure count persists.
         if authContext == nil {
             let ctx = LAContext()
-            ctx.localizedFallbackTitle = "Use passcode"
+            ctx.localizedFallbackTitle = String(localized: "Use passcode")
             authContext = ctx
         }
 
@@ -99,7 +99,7 @@ final class AppLockManager: ObservableObject {
             guard let ctx = authContext else { isAuthenticating = false; return }
             let ok = try await ctx.evaluatePolicy(
                 .deviceOwnerAuthentication,
-                localizedReason: "Unlock PRVIO"
+                localizedReason: String(localized: "Unlock PRVIO")
             )
             if ok {
                 // Set lastUnlockedAt BEFORE clearing isLocked so that the

@@ -2016,3 +2016,5 @@
 "Signed in with email" = "Signed in with email";
 "Signed out" = "Signed out";
 "Coduri de rezervă generate" = "Backup codes generated";
+"Could not extract data automatically — please fill in manually." = "Could not extract data automatically — please fill in manually.";
+"Detected: %@" = "Detected: %@";

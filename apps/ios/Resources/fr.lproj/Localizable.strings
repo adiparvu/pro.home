@@ -1998,3 +1998,5 @@
 "Signed in with email" = "Connexion avec e-mail";
 "Signed out" = "Déconnexion";
 "Coduri de rezervă generate" = "Codes de sauvegarde générés";
+"Could not extract data automatically — please fill in manually." = "Impossible d'extraire les données automatiquement — veuillez les saisir manuellement.";
+"Detected: %@" = "Détecté : %@";

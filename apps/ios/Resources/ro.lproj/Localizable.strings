@@ -2105,3 +2105,5 @@
 "Signed in with email" = "Autentificat cu email";
 "Signed out" = "Deconectat";
 "Coduri de rezervă generate" = "Coduri de rezervă generate";
+"Could not extract data automatically — please fill in manually." = "Nu s-au putut extrage datele automat — completează manual.";
+"Detected: %@" = "Detectat: %@";

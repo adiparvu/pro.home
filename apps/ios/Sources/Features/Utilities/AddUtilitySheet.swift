@@ -302,9 +302,9 @@ struct AddUtilitySheet: View {
         }
 
         if !found.isEmpty {
-            scanResult = "Detected: \(found.joined(separator: " · "))"
+            scanResult = String(format: String(localized: "Detected: %@"), found.joined(separator: " · "))
         } else {
-            scanResult = "Could not extract data automatically — please fill in manually."
+            scanResult = String(localized: "Could not extract data automatically — please fill in manually.")
         }
     }
 }

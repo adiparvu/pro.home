@@ -1998,3 +1998,5 @@
 "Signed in with email" = "Aangemeld met e-mail";
 "Signed out" = "Afgemeld";
 "Coduri de rezervă generate" = "Reservecodes gegenereerd";
+"Could not extract data automatically — please fill in manually." = "Gegevens konden niet automatisch worden uitgelezen — vul ze handmatig in.";
+"Detected: %@" = "Gedetecteerd: %@";

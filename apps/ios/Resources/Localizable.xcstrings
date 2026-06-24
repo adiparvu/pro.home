@@ -14520,6 +14520,41 @@
         }
       }
     },
+    "Could not extract data automatically — please fill in manually.": {
+      "comment": "Shown in banner when Vision OCR cannot extract utility bill data",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daten konnten nicht automatisch extrahiert werden — bitte manuell eingeben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not extract data automatically — please fill in manually."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d'extraire les données automatiquement — veuillez les saisir manuellement."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gegevens konden niet automatisch worden uitgelezen — vul ze handmatig in."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu s-au putut extrage datele automat — completează manual."
+          }
+        }
+      }
+    },
     "Could not generate an analysis right now.": {
       "localizations": {
         "de": {
@@ -16624,6 +16659,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Detalii"
+          }
+        }
+      }
+    },
+    "Detected: %@": {
+      "comment": "Banner showing OCR-detected utility bill data items (joined with · separator)",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkannt: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détecté : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedetecteerd: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectat: %@"
           }
         }
       }
