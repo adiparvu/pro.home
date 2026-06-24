@@ -171,11 +171,12 @@ struct ApplianceDetailSheet: View {
         .buttonStyle(.plain)
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title.uppercased())
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
+        Text(title)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)
             .padding(.leading, 6)
+            .textCase(.uppercase)
     }
 
     private func infoRow(icon: String, label: String, value: String, valueColor: Color = .primary) -> some View {

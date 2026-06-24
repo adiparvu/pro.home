@@ -71,7 +71,7 @@ struct EmergencyContactsView: View {
         .buttonStyle(.plain)
     }
 
-    private func sectionHeader(_ t: String) -> some View {
+    private func sectionHeader(_ t: LocalizedStringKey) -> some View {
         Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
     }
 

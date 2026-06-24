@@ -1709,3 +1709,15 @@
 "contacts" = "contacten";
 "property score" = "eigendomsscore";
 "%d need water" = "%d hebben water nodig";
+"System" = "Systeem";
+"Accent Color" = "Accentkleur";
+"Custom" = "Aangepast";
+"Blue" = "Blauw";
+"Purple" = "Paars";
+"Green" = "Groen";
+"Orange" = "Oranje";
+"Pink" = "Roze";
+"Gold" = "Goud";
+"Red" = "Rood";
+"Teal" = "Turquoise";
+"TO BUY · %lld" = "TE KOPEN · %lld";

@@ -317,12 +317,13 @@ struct SecurityView: View {
 
     // MARK: - Helpers
 
-    private func secGroup<Content: View>(title: String, footer: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func secGroup<Content: View>(title: LocalizedStringKey, footer: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
+            Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
+                .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
                 .liquidGlass(cornerRadius: 20)

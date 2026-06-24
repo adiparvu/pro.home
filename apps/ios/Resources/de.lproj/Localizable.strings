@@ -1709,3 +1709,15 @@
 "contacts" = "Kontakte";
 "property score" = "Immobilienwert";
 "%d need water" = "%d brauchen Wasser";
+"System" = "System";
+"Accent Color" = "Akzentfarbe";
+"Custom" = "Benutzerdefiniert";
+"Blue" = "Blau";
+"Purple" = "Lila";
+"Green" = "Grün";
+"Orange" = "Orange";
+"Pink" = "Pink";
+"Gold" = "Gold";
+"Red" = "Rot";
+"Teal" = "Blaugrün";
+"TO BUY · %lld" = "ZU KAUFEN · %lld";

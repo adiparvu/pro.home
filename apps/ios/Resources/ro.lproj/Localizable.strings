@@ -1885,3 +1885,15 @@
 "contacts" = "contacte";
 "property score" = "scor proprietate";
 "%d need water" = "%d necesită apă";
+"System" = "Sistem";
+"Accent Color" = "Culoare de accent";
+"Custom" = "Personalizat";
+"Blue" = "Albastru";
+"Purple" = "Violet";
+"Green" = "Verde";
+"Orange" = "Portocaliu";
+"Pink" = "Roz";
+"Gold" = "Auriu";
+"Red" = "Roșu";
+"Teal" = "Turcoaz";
+"TO BUY · %lld" = "DE CUMPĂRAT · %lld";

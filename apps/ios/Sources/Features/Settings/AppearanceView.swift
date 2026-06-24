@@ -5,20 +5,24 @@ struct AppearanceView: View {
     @EnvironmentObject private var currencyService: CurrencyService
     @EnvironmentObject private var auth: AuthService
 
-    private let accentOptions: [(name: String, color: Color, label: String)] = [
-        ("blue",   .blue,                                              "Albastru"),
-        ("purple", .purple,                                            "Violet"),
-        ("green",  Color(red: 0.25, green: 0.82, blue: 0.45),         "Verde"),
-        ("orange", .orange,                                            "Portocaliu"),
-        ("pink",   .pink,                                              "Roz"),
-        ("gold",   Color(red: 0.9,  green: 0.7,  blue: 0.15),         "Auriu"),
+    private let accentOptions: [(name: String, color: Color, labelKey: LocalizedStringKey)] = [
+        ("blue",   .blue,                                              "Blue"),
+        ("purple", .purple,                                            "Purple"),
+        ("green",  Color(red: 0.25, green: 0.82, blue: 0.45),         "Green"),
+        ("orange", .orange,                                            "Orange"),
+        ("pink",   .pink,                                              "Pink"),
+        ("gold",   Color(red: 0.9,  green: 0.7,  blue: 0.15),         "Gold"),
         ("red",    .red,                                               "Red"),
-        ("teal",   .teal,                                              "Turcoaz"),
+        ("teal",   .teal,                                              "Teal"),
     ]
 
-    private var currentLabel: String {
-        if appSettings.accentColor.hasPrefix("#") { return "Personalizat" }
-        return accentOptions.first(where: { $0.name == appSettings.accentColor })?.label ?? "Albastru"
+    private var currentAccentLabel: LocalizedStringKey {
+        if appSettings.accentColor.hasPrefix("#") { return "Custom" }
+        return accentOptions.first(where: { $0.name == appSettings.accentColor })?.labelKey ?? "Blue"
+    }
+
+    private var accentSubtitle: LocalizedStringKey {
+        appSettings.accentEnabled ? currentAccentLabel : "Disabled"
     }
     // Resolved accent color — respects the enabled/disabled toggle.
     // Use accentPreviewColor where you always want the raw selected color
@@ -66,7 +70,7 @@ struct AppearanceView: View {
             ForEach(AppSettings.themes, id: \.code) { theme in
                 ThemeOptionRow(
                     icon: theme.icon,
-                    title: theme.label,
+                    title: LocalizedStringKey(theme.label),
                     isSelected: appSettings.theme == theme.code,
                     accentColor: currentColor
                 ) {
@@ -184,9 +188,9 @@ struct AppearanceView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "paintpalette.fill", color: appSettings.accentEnabled ? currentColor : Color.primary.opacity(0.4))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Culoare de accent")
+                        Text("Accent Color")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text(appSettings.accentEnabled ? currentLabel : "Dezactivat")
+                        Text(accentSubtitle)
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()
@@ -278,11 +282,12 @@ struct AppearanceView: View {
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title.uppercased())
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
+        Text(title)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color.primary.opacity(0.35))
             .padding(.leading, 4)
+            .textCase(.uppercase)
     }
 }
 
@@ -290,7 +295,7 @@ struct AppearanceView: View {
 
 private struct ThemeOptionRow: View {
     let icon: String
-    let title: String
+    let title: LocalizedStringKey
     let isSelected: Bool
     var accentColor: Color = .blue
     let action: () -> Void

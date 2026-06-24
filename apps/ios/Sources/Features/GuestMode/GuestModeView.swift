@@ -174,15 +174,16 @@ struct GuestModeView: View {
 
     // MARK: - Helpers
 
-    private func sectionHeader(icon: String, title: String) -> some View {
+    private func sectionHeader(icon: String, title: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
-            Text(title.uppercased())
+            Text(title)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
+                .textCase(.uppercase)
         }
         .padding(.leading, 6)
     }

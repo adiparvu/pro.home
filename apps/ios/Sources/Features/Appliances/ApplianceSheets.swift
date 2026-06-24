@@ -176,13 +176,14 @@ struct AddApplianceSheet: View {
         }
     }
 
-    private func formSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title.uppercased())
+            Text(title)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
                 .padding(.bottom, 6)
+                .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }

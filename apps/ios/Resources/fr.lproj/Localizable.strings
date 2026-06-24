@@ -1709,3 +1709,15 @@
 "contacts" = "contacts";
 "property score" = "score propriété";
 "%d need water" = "%d ont besoin d'eau";
+"System" = "Système";
+"Accent Color" = "Couleur d'accent";
+"Custom" = "Personnalisé";
+"Blue" = "Bleu";
+"Purple" = "Violet";
+"Green" = "Vert";
+"Orange" = "Orange";
+"Pink" = "Rose";
+"Gold" = "Or";
+"Red" = "Rouge";
+"Teal" = "Turquoise";
+"TO BUY · %lld" = "À ACHETER · %lld";

@@ -189,7 +189,7 @@ struct SiriShortcutsView: View {
 
     // MARK: Helpers
 
-    private func sectionHeader(_ text: String) -> some View {
+    private func sectionHeader(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)

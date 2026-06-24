@@ -207,7 +207,7 @@ struct SupplyListDetailView: View {
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         HStack {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
