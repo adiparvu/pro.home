@@ -124,7 +124,7 @@ struct SeasonalChecklistView: View {
                     Text("All done!")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text("Your \(selectedSeason.displayName.lowercased()) checklist is complete.")
+                    Text("Your \(selectedSeason.displayName) checklist is complete.")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.55))
                 }
@@ -149,7 +149,8 @@ struct SeasonalChecklistView: View {
 
     private func categorySection(category: String, items: [SeasonalCheckItem]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(category.uppercased())
+            Text(category)
+                .textCase(.uppercase)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 6)

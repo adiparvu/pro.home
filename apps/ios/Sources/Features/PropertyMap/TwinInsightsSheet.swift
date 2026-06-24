@@ -86,7 +86,7 @@ struct TwinInsightsSheet: View {
         return "\(sym)\(Int(totalValue))"
     }
 
-    private func tile(_ value: String, _ label: String, _ icon: String, _ color: Color) -> some View {
+    private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundStyle(color)
             Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary)

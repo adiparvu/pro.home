@@ -123,7 +123,7 @@ struct ZoneBottomSheet: View {
         return "\(sym)\(Int(totalValue))"
     }
 
-    private func statTile(value: String, label: String, icon: String, color: Color) -> some View {
+    private func statTile(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
         VStack(spacing: 5) {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(color)
             Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(.primary)
@@ -145,7 +145,7 @@ struct ZoneBottomSheet: View {
         }
     }
 
-    private func actionButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func actionButton(_ title: LocalizedStringKey, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button {
             HapticFeedback.impact(.light)
             action()

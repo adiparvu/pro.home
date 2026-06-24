@@ -10,7 +10,7 @@ extension DigitalTwinView {
             HStack(spacing: 8) {
                 layerChip(nil, label: "All", icon: "square.stack.3d.up.fill")
                 ForEach(PropertyLayer.allCases, id: \.self) { layer in
-                    layerChip(layer, label: layer.displayName, icon: layer.icon)
+                    layerChip(layer, label: LocalizedStringKey(layer.displayName), icon: layer.icon)
                 }
             }
             .padding(.horizontal, 16)
@@ -19,7 +19,7 @@ extension DigitalTwinView {
         .background(.clear)
     }
 
-    private func layerChip(_ layer: PropertyLayer?, label: String, icon: String) -> some View {
+    private func layerChip(_ layer: PropertyLayer?, label: LocalizedStringKey, icon: String) -> some View {
         let active = activeLayer == layer
         return Button {
             withAnimation(.spring(response: 0.3)) { activeLayer = layer }
@@ -238,7 +238,7 @@ extension DigitalTwinView {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    private func drawButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func drawButton(_ title: LocalizedStringKey, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon).font(.system(size: 13, weight: .bold))

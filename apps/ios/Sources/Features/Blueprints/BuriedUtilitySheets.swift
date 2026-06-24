@@ -134,7 +134,7 @@ struct BuriedUtilityDetailSheet: View {
         }
     }
 
-    private func detailRow(_ label: String, _ value: String, color: Color = .white) -> some View {
+    private func detailRow(_ label: LocalizedStringKey, _ value: String, color: Color = .white) -> some View {
         HStack {
             Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()

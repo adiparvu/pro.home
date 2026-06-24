@@ -242,13 +242,17 @@ struct TasksView: View {
 
     // MARK: - Empty state
 
+    private var emptyTitle: LocalizedStringKey {
+        filter == .all ? "No tasks yet" : LocalizedStringKey("No \(filter.rawValue.lowercased()) tasks")
+    }
+
     private var emptyState: some View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "checklist")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.18))
-            Text(filter == .all ? "No tasks yet" : "No \(filter.rawValue.lowercased()) tasks")
+            Text(emptyTitle)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.55))
             if filter == .all {

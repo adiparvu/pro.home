@@ -224,7 +224,7 @@ struct ActivityFeedView: View {
                         }
                         .padding(.horizontal, 20)
                     } header: {
-                        dayHeader(group.label)
+                        dayHeader(LocalizedStringKey(group.label))
                     }
                 }
                 Spacer(minLength: 100)
@@ -233,9 +233,9 @@ struct ActivityFeedView: View {
         }
     }
 
-    private func dayHeader(_ label: String) -> some View {
+    private func dayHeader(_ label: LocalizedStringKey) -> some View {
         HStack {
-            Text(label.uppercased())
+            Text(label).textCase(.uppercase)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
