@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 import Supabase
 
 struct AddPhotoJournalSheet: View {
@@ -14,6 +15,9 @@ struct AddPhotoJournalSheet: View {
     @State private var tagsText = ""
     @State private var isUploading = false
     @State private var uploadError: String? = nil
+    @State private var showCamera = false
+    @State private var showFileImporter = false
+    @State private var showPhotoSourceMenu = false
 
     var body: some View {
         NavigationStack {
@@ -81,7 +85,7 @@ struct AddPhotoJournalSheet: View {
     // MARK: - Photo Picker
 
     private var photoPicker: some View {
-        PhotosPicker(selection: $selectedItem, matching: .images) {
+        VStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.primary.opacity(0.06))
@@ -111,12 +115,64 @@ struct AddPhotoJournalSheet: View {
                     }
                 }
             }
+            .onTapGesture { showPhotoSourceMenu = true }
+
+            HStack(spacing: 10) {
+                Button {
+                    showCamera = true
+                } label: {
+                    Label("Camera", systemImage: "camera.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    Label("Library", systemImage: "photo.on.rectangle")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .foregroundStyle(.primary)
+                }
+
+                Button {
+                    showFileImporter = true
+                } label: {
+                    Label("Files", systemImage: "folder.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .onChange(of: selectedItem) { _, newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self) {
                     selectedImageData = data
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraCapture { image in
+                selectedImageData = image.jpegData(compressionQuality: 0.9)
+            }
+            .ignoresSafeArea()
+        }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.image, .jpeg, .png, .heic, .pdf]
+        ) { result in
+            if case .success(let url) = result {
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                selectedImageData = try? Data(contentsOf: url)
             }
         }
     }

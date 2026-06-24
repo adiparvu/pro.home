@@ -1,5 +1,7 @@
 import SwiftUI
 import VisionKit
+import PhotosUI
+import UniformTypeIdentifiers
 
 // MARK: - Row
 
@@ -9,7 +11,14 @@ struct InventoryRow: View {
     var body: some View {
         GlassCard {
             HStack(spacing: 12) {
-                ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
+                if let img = InventoryImageStore.load(for: item.id) {
+                    Image(uiImage: img)
+                        .resizable().scaledToFill()
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                } else {
+                    ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
                     HStack(spacing: 5) {
@@ -63,6 +72,11 @@ struct AddInventorySheet: View {
     @State private var hasWarranty = false
     @State private var warrantyDate = Calendar.current.date(byAdding: .year, value: 2, to: Date()) ?? Date()
     @State private var notes = ""
+    @State private var selectedImageData: Data?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showCamera = false
+    @State private var showFileImporter = false
+    @State private var isSaving = false
 
     private let categories = ["tools","garden","outdoor","appliances","electronics","furniture","vehicles","sports","security","other"]
     private let locations = ["garage","garden","basement","attic","shed","balcony","kitchen","living room","bedroom","storage"]
@@ -116,6 +130,7 @@ struct AddInventorySheet: View {
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, 16).padding(.vertical, 13)
                         }
+                        photoSection
                         Spacer(minLength: 60)
                     }
                     .padding(.horizontal, 20).padding(.top, 8)
@@ -123,23 +138,98 @@ struct AddInventorySheet: View {
             }
             .navigationTitle("Add Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        var item = InventoryItem(name: name)
-                        item.category = category; item.location = location; item.brand = brand
-                        item.serialNumber = serial; item.condition = condition
-                        item.purchaseDate = hasPurchaseDate ? purchaseDate : nil
-                        item.purchasePrice = Double(price.replacingOccurrences(of: ",", with: ".")) ?? 0
-                        item.warrantyExpiresAt = hasWarranty ? warrantyDate : nil
-                        item.notes = notes
-                        onSave(item); HapticFeedback.success(); dismiss()
+                    Button("Save") { Task { await save() } }
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraCapture { image in
+                    selectedImageData = image.jpegData(compressionQuality: 0.85)
+                }
+                .ignoresSafeArea()
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [.image, .jpeg, .png, .heic]
+            ) { result in
+                if case .success(let url) = result {
+                    let accessed = url.startAccessingSecurityScopedResource()
+                    defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                    selectedImageData = try? Data(contentsOf: url)
+                }
+            }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        selectedImageData = data
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }
+    }
+
+    private var photoSection: some View {
+        VStack(spacing: 8) {
+            if let data = selectedImageData, let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
+                    .resizable().scaledToFill()
+                    .frame(height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.accentColor.opacity(0.4), lineWidth: 1)
+                    )
+                    .onTapGesture { selectedImageData = nil }
+            }
+            HStack(spacing: 10) {
+                Button { showCamera = true } label: {
+                    Label("Camera", systemImage: "camera.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Label("Library", systemImage: "photo.on.rectangle")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                        .foregroundStyle(.primary)
+                }
+
+                Button { showFileImporter = true } label: {
+                    Label("Files", systemImage: "folder.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                        .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        var item = InventoryItem(name: name)
+        item.category = category; item.location = location; item.brand = brand
+        item.serialNumber = serial; item.condition = condition
+        item.purchaseDate = hasPurchaseDate ? purchaseDate : nil
+        item.purchasePrice = Double(price.replacingOccurrences(of: ",", with: ".")) ?? 0
+        item.warrantyExpiresAt = hasWarranty ? warrantyDate : nil
+        item.notes = notes
+        if let data = selectedImageData {
+            InventoryImageStore.save(data, for: item.id)
+        }
+        onSave(item)
+        HapticFeedback.success()
+        dismiss()
     }
 
     private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -245,5 +335,33 @@ struct DataScannerRepresentable: UIViewControllerRepresentable {
                 }
             }
         }
+    }
+}
+
+// MARK: - Local image store for inventory items
+
+enum InventoryImageStore {
+    private static func url(for id: UUID) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inventory_\(id.uuidString).jpg")
+    }
+
+    static func save(_ data: Data, for id: UUID) {
+        let compressed: Data
+        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
+            compressed = jpg
+        } else {
+            compressed = data
+        }
+        try? compressed.write(to: url(for: id))
+    }
+
+    static func load(for id: UUID) -> UIImage? {
+        guard let data = try? Data(contentsOf: url(for: id)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func delete(for id: UUID) {
+        try? FileManager.default.removeItem(at: url(for: id))
     }
 }

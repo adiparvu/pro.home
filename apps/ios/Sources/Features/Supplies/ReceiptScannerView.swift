@@ -1,6 +1,7 @@
 import SwiftUI
 import Vision
 import PhotosUI
+import UniformTypeIdentifiers
 
 // MARK: - Receipt Scanner (OCR)
 
@@ -13,6 +14,8 @@ struct ReceiptScannerView: View {
     @State private var sourceImage: UIImage? = nil
     @State private var isProcessing = false
     @State private var parsed: ParsedReceipt? = nil
+    @State private var showCamera = false
+    @State private var showFileImporter = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +48,37 @@ struct ReceiptScannerView: View {
             }
             .onChange(of: selectedPhotoItem) { _, item in
                 Task { await loadAndProcess(item) }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraCapture { image in
+                    showCamera = false
+                    isProcessing = true
+                    Task {
+                        isProcessing = true
+                        defer { isProcessing = false }
+                        let parsed = await performOCR(on: image)
+                        withAnimation { self.parsed = parsed }
+                    }
+                }
+                .ignoresSafeArea()
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [.image, .jpeg, .png, .heic, .pdf],
+                allowsMultipleSelection: false
+            ) { result in
+                if let url = try? result.get().first,
+                   url.startAccessingSecurityScopedResource(),
+                   let data = try? Data(contentsOf: url),
+                   let image = UIImage(data: data) {
+                    url.stopAccessingSecurityScopedResource()
+                    isProcessing = true
+                    Task {
+                        defer { isProcessing = false }
+                        let parsed = await performOCR(on: image)
+                        withAnimation { self.parsed = parsed }
+                    }
+                }
             }
         }
     }
@@ -87,8 +121,10 @@ struct ReceiptScannerView: View {
                 }
             } else {
                 VStack(spacing: 12) {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        Label(String(localized: "scanner_choose_photo"), systemImage: "photo.on.rectangle")
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Label(String(localized: "Fotografiază bon"), systemImage: "camera.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -96,6 +132,30 @@ struct ReceiptScannerView: View {
                             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     .buttonStyle(.plain)
+
+                    HStack(spacing: 12) {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            Label(String(localized: "scanner_choose_photo"), systemImage: "photo.on.rectangle")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 46)
+                                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            showFileImporter = true
+                        } label: {
+                            Label(String(localized: "Din fișiere"), systemImage: "doc.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.7))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 46)
+                                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
 
                     Text(String(localized: "scanner_tip"))
                         .font(.system(size: 12))
