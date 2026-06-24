@@ -136,8 +136,9 @@ struct PRVIOTimelineView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func sectionHeader(_ label: String) -> some View {
-        Text(label.uppercased())
+    private func sectionHeader(_ label: LocalizedStringKey) -> some View {
+        Text(label)
+            .textCase(.uppercase)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Color.primary.opacity(0.35))
             .kerning(0.8)

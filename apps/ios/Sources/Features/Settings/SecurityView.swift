@@ -238,7 +238,7 @@ struct SecurityView: View {
                         color: Color(red: 0.3, green: 0.82, blue: 0.45)
                     )
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(biometricType == .faceID ? "Require Face ID" : "Require Touch ID")
+                        Text(LocalizedStringKey(biometricType == .faceID ? "Require Face ID" : "Require Touch ID"))
                             .font(.system(size: 15)).foregroundStyle(.primary)
                         Text("Face ID or passcode to access PRVIO")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))

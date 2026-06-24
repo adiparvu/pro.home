@@ -52,7 +52,7 @@ struct MemberSupervisionDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Enable supervision")
                         .font(.system(size: 15, weight: .medium))
-                    Text(supervised ? "Restrictions are active" : "Member has full access")
+                    Text(LocalizedStringKey(supervised ? "Restrictions are active" : "Member has full access"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }

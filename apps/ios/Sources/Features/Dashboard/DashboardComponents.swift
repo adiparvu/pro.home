@@ -220,8 +220,11 @@ struct HealthScoreCard: View {
             : score >= 55 ? Color.orange
             : Color.red
     }
-    private var label: String {
-        score >= 80 ? String(localized: "Excellent") : score >= 60 ? String(localized: "Good") : score >= 40 ? String(localized: "Fair") : String(localized: "Needs Attention")
+    private var label: LocalizedStringKey {
+        score >= 80 ? "Excellent" : score >= 60 ? "Good" : score >= 40 ? "Fair" : "Needs Attention"
+    }
+    private var healthMessage: LocalizedStringKey {
+        score >= 80 ? "Everything looks on track." : "Some tasks need attention."
     }
 
     var body: some View {
@@ -253,9 +256,7 @@ struct HealthScoreCard: View {
                     Text(isLoading ? "Loading…" : label)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(color)
-                    Text(isLoading ? " " : score >= 80
-                         ? "Everything looks on track."
-                         : "Some tasks need attention.")
+                    Text(isLoading ? " " : healthMessage)
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.45))
                         .lineLimit(2)
@@ -370,7 +371,7 @@ struct FinancesSnapshotCard: View {
 }
 
 private struct FinStat: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     let color: Color
 
@@ -579,7 +580,7 @@ struct PropertyHealthDashCard: View {
         .shadow(color: .black.opacity(0.25), radius: 16, y: 4)
     }
 
-    private func metricRow(_ icon: String, label: String, pct: Int, color: Color) -> some View {
+    private func metricRow(_ icon: String, label: LocalizedStringKey, pct: Int, color: Color) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .semibold))
@@ -608,7 +609,7 @@ struct PropertyHealthDashCard: View {
 // MARK: - DashStatsStrip (bottom stats strip on Dashboard)
 
 struct DashStatsStrip: View {
-    struct StatItem { let value: String; let label: String }
+    struct StatItem { let value: String; let label: LocalizedStringKey }
     let items: [StatItem]
 
     var body: some View {

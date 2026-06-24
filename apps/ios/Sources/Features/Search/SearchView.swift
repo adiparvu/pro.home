@@ -277,7 +277,7 @@ private struct SearchResults {
 // MARK: - Components
 
 private struct SearchSection<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     let count: Int
     @ViewBuilder let content: Content
@@ -288,7 +288,8 @@ private struct SearchSection<Content: View>: View {
                 Image(systemName: icon)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.primary.opacity(0.35))
-                Text(title.uppercased())
+                Text(title)
+                    .textCase(.uppercase)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.primary.opacity(0.35))
                 Text("(\(count))")
