@@ -199,7 +199,7 @@ struct MemberProfileSheet: View {
     private func formatted(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "d MMMM"
-        fmt.locale = Locale(identifier: "en_US")
+        fmt.locale = .current
         return fmt.string(from: date)
     }
 }

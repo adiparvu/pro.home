@@ -44,7 +44,7 @@ struct CategoryStat: Identifiable {
 // MARK: - TrendKPICard
 
 struct TrendKPICard: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     let icon: String
     let trendPct: Double?

@@ -237,8 +237,8 @@ extension FinancesView {
     private var monthLabel: String {
         let f = DateFormatter()
         f.dateFormat = "MMMM yyyy"
-        f.locale = Locale(identifier: "en_US")
-        return isCurrentMonth ? "Current month" : f.string(from: displayedMonth).capitalized
+        f.locale = .current
+        return isCurrentMonth ? String(localized: "Current month") : f.string(from: displayedMonth).capitalized
     }
 
     private func groupDateLabel(_ dateStr: String) -> String {
@@ -246,7 +246,7 @@ extension FinancesView {
         guard let d = iso.date(from: dateStr) else { return dateStr }
         if Calendar.current.isDateInToday(d) { return "Today" }
         if Calendar.current.isDateInYesterday(d) { return "Yesterday" }
-        let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = Locale(identifier: "en_US")
+        let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = .current
         return out.string(from: d)
     }
 

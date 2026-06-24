@@ -1828,3 +1828,36 @@
 "Gloss" = "Lucios";
 "Everything looks on track." = "Totul merge bine.";
 "Some tasks need attention." = "Unele sarcini necesită atenție.";
+
+// MARK: - Build 285 i18n completions
+/* Utility types */
+"Electricity" = "Electricitate";
+"Water" = "Apă";
+"Gas" = "Gaz";
+"Internet" = "Internet";
+"No %@ bills yet" = "Nicio factură de %@ înregistrată";
+
+/* Analytics tabs */
+"Finances" = "Finanțe";
+
+/* TrendKPI labels */
+"Open" = "Deschise";
+"Overdue" = "Restante";
+"Done/7d" = "Finalizate/7z";
+"Current month" = "Luna curentă";
+
+/* PropertyReport stat labels */
+"open" = "deschise";
+"this month" = "luna aceasta";
+"total" = "total";
+"overdue" = "restante";
+"expiring" = "expiră";
+
+/* PropertyReport toggles */
+"Tasks & Maintenance" = "Sarcini & Mentenanță";
+"Financial summary" = "Rezumat financiar";
+"Digital Twin & Zones" = "Digital Twin & Zone";
+
+/* PropertyReport header */
+"Raport" = "Raport";
+"PROPERTY" = "PROPRIETATE";

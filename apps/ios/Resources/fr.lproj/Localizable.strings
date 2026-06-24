@@ -1664,3 +1664,24 @@
 "Gloss" = "Brillant";
 "Everything looks on track." = "Tout est en ordre.";
 "Some tasks need attention." = "Certaines tâches nécessitent attention.";
+
+// MARK: - Build 285 i18n completions
+"Electricity" = "Électricité";
+"Water" = "Eau";
+"Gas" = "Gaz";
+"Internet" = "Internet";
+"No %@ bills yet" = "Aucune facture %@ enregistrée";
+"Open" = "Ouvertes";
+"Overdue" = "En retard";
+"Done/7d" = "Fait/7j";
+"Current month" = "Mois en cours";
+"open" = "ouvertes";
+"this month" = "ce mois";
+"total" = "total";
+"overdue" = "en retard";
+"expiring" = "expirent";
+"Tasks & Maintenance" = "Tâches & Entretien";
+"Financial summary" = "Résumé financier";
+"Digital Twin & Zones" = "Jumeau numérique & Zones";
+"Raport" = "Rapport";
+"PROPERTY" = "PROPRIÉTÉ";

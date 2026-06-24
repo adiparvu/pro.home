@@ -12,6 +12,14 @@ struct AnalyticsView: View {
         case finances = "Finances"
         case tasks    = "Tasks"
         case forecast = "Forecast"
+
+        var displayName: String {
+            switch self {
+            case .finances: return String(localized: "Finances")
+            case .tasks:    return String(localized: "Tasks")
+            case .forecast: return String(localized: "Forecast")
+            }
+        }
     }
 
     var body: some View {
@@ -24,7 +32,7 @@ struct AnalyticsView: View {
                         Button {
                             withAnimation(.spring(response: 0.3)) { selectedTab = tab }
                         } label: {
-                            Text(tab.rawValue)
+                            Text(tab.displayName)
                                 .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
                                 .foregroundStyle(selectedTab == tab ? Color.black : Color.primary.opacity(0.55))
                                 .padding(.horizontal, 16)

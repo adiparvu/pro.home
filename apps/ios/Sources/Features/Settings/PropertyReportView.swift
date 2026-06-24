@@ -21,7 +21,7 @@ struct PropertyReportView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(title: "Report", subtitle: "PROPERTY")
+                PageHeader(titleKey: "Raport", subtitleKey: "PROPERTY")
                 heroCard
                 sectionToggles
                 generateButton
@@ -80,17 +80,21 @@ struct PropertyReportView: View {
             HStack(spacing: 0) {
                 statCell(icon: "checklist",
                          value: "\(taskService.openCount)",
-                         label: taskService.overdueCount > 0 ? "\(taskService.overdueCount) overdue" : "open",
+                         label: taskService.overdueCount > 0
+                             ? "\(taskService.overdueCount) \(String(localized: "overdue"))"
+                             : String(localized: "open"),
                          color: taskService.overdueCount > 0 ? .red : .blue)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "banknote",
                          value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
-                         label: "this month",
+                         label: String(localized: "this month"),
                          color: Color(red: 0.25, green: 0.82, blue: 0.5))
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "doc.fill",
                          value: "\(documentService.documents.count)",
-                         label: documentService.expiringDocs.isEmpty ? "total" : "\(documentService.expiringDocs.count) expiring",
+                         label: documentService.expiringDocs.isEmpty
+                             ? String(localized: "total")
+                             : "\(documentService.expiringDocs.count) \(String(localized: "expiring"))",
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
             }
             .padding(.vertical, 14)
@@ -141,7 +145,7 @@ struct PropertyReportView: View {
         }
     }
 
-    private func toggleRow(_ icon: String, _ color: Color, _ label: String, _ binding: Binding<Bool>) -> some View {
+    private func toggleRow(_ icon: String, _ color: Color, _ label: LocalizedStringKey, _ binding: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
@@ -191,7 +195,7 @@ struct PropertyReportView: View {
     private var formattedToday: String {
         let f = DateFormatter()
         f.dateFormat = "d MMMM yyyy"
-        f.locale = Locale(identifier: "en_US")
+        f.locale = .current
         return f.string(from: Date())
     }
 

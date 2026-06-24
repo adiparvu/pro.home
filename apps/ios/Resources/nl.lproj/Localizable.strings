@@ -1664,3 +1664,24 @@
 "Gloss" = "Glanzend";
 "Everything looks on track." = "Alles ziet er goed uit.";
 "Some tasks need attention." = "Sommige taken vereisen aandacht.";
+
+// MARK: - Build 285 i18n completions
+"Electricity" = "Elektriciteit";
+"Water" = "Water";
+"Gas" = "Gas";
+"Internet" = "Internet";
+"No %@ bills yet" = "Geen %@ rekeningen gevonden";
+"Open" = "Open";
+"Overdue" = "Achterstallig";
+"Done/7d" = "Gedaan/7d";
+"Current month" = "Huidige maand";
+"open" = "open";
+"this month" = "deze maand";
+"total" = "totaal";
+"overdue" = "achterstallig";
+"expiring" = "verlopen";
+"Tasks & Maintenance" = "Taken & Onderhoud";
+"Financial summary" = "Financieel overzicht";
+"Digital Twin & Zones" = "Digitale Tweeling & Zones";
+"Raport" = "Rapport";
+"PROPERTY" = "EIGENDOM";

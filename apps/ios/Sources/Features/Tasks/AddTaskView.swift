@@ -359,7 +359,7 @@ struct AddTaskView: View {
         let center = UNUserNotificationCenter.current()
         let taskTitle = title.trimmingCharacters(in: .whitespaces)
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let display = DateFormatter(); display.locale = Locale(identifier: "en_US"); display.dateStyle = .medium
+        let display = DateFormatter(); display.locale = .current; display.dateStyle = .medium
         let dateStr = hasDueDate ? display.string(from: dueDate) : ""
         for name in assigneeNames {
             let content = UNMutableNotificationContent()

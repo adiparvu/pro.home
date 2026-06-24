@@ -85,7 +85,7 @@ struct ActivityFeedView: View {
 
     private var groupedByDay: [(label: String, events: [ActivityEvent])] {
         let cal = Calendar.current
-        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US")
+        let formatter = DateFormatter(); formatter.locale = .current
         let grouped = Dictionary(grouping: filteredEvents) {
             cal.startOfDay(for: $0.date)
         }

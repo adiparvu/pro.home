@@ -144,10 +144,10 @@ struct UtilityView: View {
     @State private var selectedType = "electricity"
 
     let types: [(id: String, icon: String, color: Color, label: String, unit: String)] = [
-        ("electricity", "bolt.fill",      .yellow,                                  "Electricity", "kWh"),
-        ("water",       "drop.fill",      .blue,                                    "Water",       "m³"),
-        ("gas",         "flame.fill",     .orange,                                  "Gas",         "m³"),
-        ("internet",    "wifi",           Color(red: 0.3, green: 0.85, blue: 0.5), "Internet",    "Mbps"),
+        ("electricity", "bolt.fill",      .yellow,                                  String(localized: "Electricity"), "kWh"),
+        ("water",       "drop.fill",      .blue,                                    String(localized: "Water"),       "m³"),
+        ("gas",         "flame.fill",     .orange,                                  String(localized: "Gas"),         "m³"),
+        ("internet",    "wifi",           Color(red: 0.3, green: 0.85, blue: 0.5), String(localized: "Internet"),    "Mbps"),
     ]
 
     var body: some View {
@@ -299,7 +299,7 @@ struct UtilityView: View {
             Spacer(minLength: 40)
             Image(systemName: type?.icon ?? "bolt.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-            Text("No \(type?.label ?? "") bills yet")
+            Text(String(format: String(localized: "No %@ bills yet"), type?.label ?? ""))
                 .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.45))
             Text("Tap + to add manually or scan an invoice to extract data automatically.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
