@@ -50,7 +50,7 @@ extension PlantDetailSheet {
                         icon: plant.healthIcon,
                         iconColor: plant.healthColor,
                         label: "Health",
-                        value: Plant.healthOptions.first { $0.id == plant.healthStatus }?.label ?? plant.healthStatus
+                        value: plant.localizedHealthLabel
                     )
                     rowDivider
                     detailRow(
@@ -240,7 +240,7 @@ extension PlantDetailSheet {
                             editedPlant.healthStatus = opt.id
                             HapticFeedback.selection()
                         } label: {
-                            Text(opt.label)
+                            Text(LocalizedStringKey(opt.label))
                                 .font(.system(size: 12, weight: editedPlant.healthStatus == opt.id ? .semibold : .regular))
                                 .foregroundStyle(
                                     editedPlant.healthStatus == opt.id ? .white : Color.primary.opacity(0.65)

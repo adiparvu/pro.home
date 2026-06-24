@@ -110,7 +110,7 @@ struct AppearanceView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(cur.code) — \(cur.name)")
+                                Text(verbatim: "\(cur.code) — ") + Text(LocalizedStringKey(cur.name))
                                     .font(.system(size: 15))
                                     .foregroundStyle(.primary)
                                 if isSelected {

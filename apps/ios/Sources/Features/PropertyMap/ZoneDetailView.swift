@@ -67,7 +67,8 @@ struct ZoneDetailView: View {
     private var openTasks: [MaintenanceTask] { taskService.tasks.filter { !$0.isCompleted } }
 
     private var shareText: String {
-        "Zone: \(zone.name)\nHealth: \(zone.healthScore)%\nObjects: \(elements.count)\nOpen Tasks: \(openTasks.count)"
+        String(format: String(localized: "Zone: %@\nHealth: %d%%\nObjects: %d\nOpen Tasks: %d"),
+               zone.name, zone.healthScore, elements.count, openTasks.count)
     }
 
     var body: some View {

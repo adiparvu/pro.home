@@ -55,6 +55,6 @@ struct OwnerRecord: Codable, Identifiable, Hashable {
 
     var yearRange: String {
         if let to = yearTo { return "\(yearFrom)–\(to)" }
-        return "\(yearFrom)–prezent"
+        return "\(yearFrom)–\(String(localized: "present"))"
     }
 }

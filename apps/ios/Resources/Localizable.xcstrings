@@ -103,6 +103,40 @@
         }
       }
     },
+    "%@ may need replacement": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ muss möglicherweise ersetzt werden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ may need replacement"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ peut nécessiter un remplacement"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ heeft mogelijk vervanging nodig"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ar putea necesita înlocuire"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "localizations": {
         "de": {
@@ -167,6 +201,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d necesită apă"
+          }
+        }
+      }
+    },
+    "%d years old — may be less efficient and more prone to failure. Consider inspection.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Jahre alt — möglicherweise weniger effizient und störungsanfälliger. Inspektion empfohlen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d years old — may be less efficient and more prone to failure. Consider inspection."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ans — peut être moins efficace et plus sujet aux pannes. Envisagez une inspection."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d jaar oud — mogelijk minder efficiënt en storingsgevoeliger. Overweeg een inspectie."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ani vechime — poate fi mai puțin eficient și mai predispus la defecțiuni. Luați în considerare o inspecție."
           }
         }
       }
@@ -9011,6 +9079,40 @@
         }
       }
     },
+    "British Pound": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Britisches Pfund"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "British Pound"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Livre sterling"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brits pond"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liră sterlină"
+          }
+        }
+      }
+    },
     "Budget": {
       "localizations": {
         "de": {
@@ -11489,6 +11591,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Curăță jgheaburile pentru a preveni barajele de gheață iarna."
+          }
+        }
+      }
+    },
+    "Clear winter debris from gutters and downspouts to prevent water damage.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Winterrückstände aus Regenrinnen entfernen, um Wasserschäden zu verhindern."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear winter debris from gutters and downspouts to prevent water damage."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nettoyez les débris d'hiver des gouttières pour éviter les dégâts des eaux."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder winterafval uit dakgoten om waterschade te voorkomen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curățați resturile de iarnă din jgheaburi și burlane pentru a preveni deteriorarea."
           }
         }
       }
@@ -15947,6 +16083,40 @@
         }
       }
     },
+    "Due %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fällig %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dû %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verschuldigd %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scadent %@"
+          }
+        }
+      }
+    },
     "Due Date": {
       "localizations": {
         "de": {
@@ -17847,6 +18017,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Valoare estimată"
+          }
+        }
+      }
+    },
+    "Euro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euro"
           }
         }
       }
@@ -21290,7 +21494,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dachrinnenreinigungssaison"
+            "value": "Regenrinnenreinigung fällig"
           }
         },
         "en": {
@@ -21308,13 +21512,13 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dakgootschoonmaakseizoen"
+            "value": "Dakgoot schoonmaakseizoen"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sezonul de curățare a jgheaburilor"
+            "value": "Sezon de curățat jgheaburi"
           }
         }
       }
@@ -21834,7 +22038,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Heizungsüberprüfung"
+            "value": "Heizungscheck fällig"
           }
         },
         "en": {
@@ -21846,19 +22050,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Révision du système de chauffage"
+            "value": "Contrôle du système de chauffage"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Controle verwarmingssysteem"
+            "value": "Verwarmingssysteem controle"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Revizie sistem de încălzire"
+            "value": "Verificare sistem de încălzire"
           }
         }
       }
@@ -23665,6 +23869,40 @@
         }
       }
     },
+    "Inspect door/window seals and insulation before temperatures drop.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür-/Fensterdichtungen und Dämmung vor dem Temperaturabfall prüfen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect door/window seals and insulation before temperatures drop."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspectez les joints de portes/fenêtres et l'isolation avant les basses températures."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspecteer deur-/raamsealen en isolatie voor de temperaturen dalen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspectați garniturile ușilor/ferestrelor și izolarea înainte de scăderea temperaturilor."
+          }
+        }
+      }
+    },
     "Inspect for signs of ants, termites, or rodents.": {
       "localizations": {
         "de": {
@@ -23831,6 +24069,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inspectează capetele sprinklerelor și ajustează acoperirea după necesitate."
+          }
+        }
+      }
+    },
+    "Inspect sprinklers and drip lines for leaks before peak watering season.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprinkler und Tropfleitungen vor der Hauptbewässerungssaison auf Lecks prüfen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect sprinklers and drip lines for leaks before peak watering season."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspectez les arroseurs et les lignes goutte-à-goutte avant la saison d'arrosage intense."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleer sproeiers en druppelslangen op lekken voor het piekseizoen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspectați sprinklerele și liniile de picurare pentru scurgeri înainte de sezonul de udare."
           }
         }
       }
@@ -24069,6 +24341,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Izolează conductele expuse și ține ușile dulapurilor deschise pe vreme geroasă."
+          }
+        }
+      }
+    },
+    "Insulate exposed pipes in unheated spaces to prevent burst pipes.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freiliegende Rohre in unbeheizten Räumen isolieren, um Rohrbrüche zu verhindern."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insulate exposed pipes in unheated spaces to prevent burst pipes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isolez les tuyaux exposés dans les espaces non chauffés pour éviter qu'ils éclatent."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isoleer blootgestelde leidingen in onverwarmde ruimten om barsten te voorkomen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Izolați conductele expuse din spațiile neîncălzite pentru a preveni spargerea."
           }
         }
       }
@@ -24520,7 +24826,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bewässerungssystemprüfung"
+            "value": "Bewässerungssystem-Check"
           }
         },
         "en": {
@@ -24532,19 +24838,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérification du système d'irrigation"
+            "value": "Contrôle du système d'irrigation"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Controle irrigatiesysteem"
+            "value": "Irrigatiesysteem controle"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verificare sistem de irigații"
+            "value": "Verificare sistem irigații"
           }
         }
       }
@@ -25327,6 +25633,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Strat"
+          }
+        }
+      }
+    },
+    "Lei": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lei"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lei"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lei"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lei"
           }
         }
       }
@@ -36012,7 +36352,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rohreinfrierungsvorbeugung"
+            "value": "Rohre vor dem Einfrieren schützen"
           }
         },
         "en": {
@@ -36024,19 +36364,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prévention du gel des conduites"
+            "value": "Prévention du gel des tuyaux"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Leidingbevriering preventie"
+            "value": "Bevriezing leidingen voorkomen"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prevenire înghețare conducte"
+            "value": "Prevenire îngheț conducte"
           }
         }
       }
@@ -42025,6 +42365,40 @@
         }
       }
     },
+    "Schedule AC service before the warm season to ensure peak efficiency.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AC-Service vor der Wärmesaison planen für maximale Effizienz."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule AC service before the warm season to ensure peak efficiency."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planifiez l'entretien de la clim avant la saison chaude pour une efficacité optimale."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan AC-service voor het warme seizoen voor optimale efficiëntie."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programați service-ul AC înainte de sezonul cald pentru eficiență maximă."
+          }
+        }
+      }
+    },
     "Schedule a professional chimney sweep before first fire.": {
       "localizations": {
         "de": {
@@ -43075,6 +43449,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Furnizori de servicii"
+          }
+        }
+      }
+    },
+    "Service your boiler or furnace before winter to avoid cold-weather breakdowns.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kessel/Ofen vor dem Winter warten, um Kälteausfälle zu vermeiden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service your boiler or furnace before winter to avoid cold-weather breakdowns."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entretenez votre chaudière avant l'hiver pour éviter les pannes par temps froid."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderhoud uw ketel voor de winter om storingen in de kou te voorkomen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efectuați service-ul cazanului sau centralei înainte de iarnă pentru a evita defecțiunile."
           }
         }
       }
@@ -44614,7 +45022,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Frühjahrs-HVAC-Überprüfung fällig"
+            "value": "Frühjahrs-HVAC-Check fällig"
           }
         },
         "en": {
@@ -44626,19 +45034,19 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Révision HVAC de printemps due"
+            "value": "Contrôle HVAC de printemps"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lente HVAC-controle verschuldigd"
+            "value": "HVAC-controle lente"
           }
         },
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Revizie HVAC de primăvară scadentă"
+            "value": "Verificare HVAC de primăvară"
           }
         }
       }
@@ -45387,6 +45795,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schimbă filtrele după sezonul de încălzire de iarnă."
+          }
+        }
+      }
+    },
+    "Swiss Franc": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schweizer Franken"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swiss Franc"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Franc suisse"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwitserse frank"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Franc elvețian"
           }
         }
       }
@@ -49131,6 +49573,40 @@
         }
       }
     },
+    "US Dollar": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US-Dollar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US Dollar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dollar américain"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "US dollar"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dolar american"
+          }
+        }
+      }
+    },
     "Udare plante": {
       "localizations": {
         "de": {
@@ -50695,6 +51171,108 @@
         }
       }
     },
+    "Warranty expires in %d days. Check if extension is available.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie läuft in %d Tagen ab. Prüfen Sie, ob eine Verlängerung möglich ist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warranty expires in %d days. Check if extension is available."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La garantie expire dans %d jours. Vérifiez si une extension est disponible."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie verloopt over %d dagen. Controleer of verlenging mogelijk is."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garanția expiră în %d zile. Verificați dacă se poate prelungi."
+          }
+        }
+      }
+    },
+    "Warranty expires in 1 day. Check if extension is available.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie läuft in 1 Tag ab. Prüfen Sie, ob eine Verlängerung möglich ist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warranty expires in 1 day. Check if extension is available."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La garantie expire dans 1 jour. Vérifiez si une extension est disponible."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie verloopt over 1 dag. Controleer of verlenging mogelijk is."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garanția expiră în 1 zi. Verificați dacă se poate prelungi."
+          }
+        }
+      }
+    },
+    "Warranty expiring: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie läuft ab: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warranty expiring: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie expirant : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garantie verloopt: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garanție expiră: %@"
+          }
+        }
+      }
+    },
     "Warranty until": {
       "localizations": {
         "de": {
@@ -51176,7 +51754,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wetterschutzprüfung"
+            "value": "Wetterschutz-Check"
           }
         },
         "en": {
@@ -51188,7 +51766,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérification de l'étanchéité"
+            "value": "Contrôle d'étanchéité"
           }
         },
         "nl": {
@@ -52867,6 +53445,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nume zonă"
+          }
+        }
+      }
+    },
+    "Zone: %@\nHealth: %d%%\nObjects: %d\nOpen Tasks: %d": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereich: %@\nZustand: %d%%\nObjekte: %d\nOffene Aufgaben: %d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zone: %@\nHealth: %d%%\nObjects: %d\nOpen Tasks: %d"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zone : %@\nSanté : %d%%\nObjets : %d\nTâches ouvertes : %d"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zone: %@\nGezondheid: %d%%\nObjecten: %d\nOpen taken: %d"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonă: %@\nSănătate: %d%%\nObiect: %d\nSarcini deschise: %d"
           }
         }
       }
@@ -57223,6 +57835,40 @@
         }
       }
     },
+    "now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "jetzt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "now"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "maintenant"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nu"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "acum"
+          }
+        }
+      }
+    },
     "on map": {
       "localizations": {
         "de": {
@@ -57389,6 +58035,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "slab"
+          }
+        }
+      }
+    },
+    "present": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "heute"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "present"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "présent"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "heden"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "prezent"
           }
         }
       }

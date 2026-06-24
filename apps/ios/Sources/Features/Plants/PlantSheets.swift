@@ -168,7 +168,7 @@ struct AddPlantSheet: View {
                         healthStatus = opt.id
                         HapticFeedback.selection()
                     } label: {
-                        Text(opt.label)
+                        Text(LocalizedStringKey(opt.label))
                             .font(.system(size: 13, weight: healthStatus == opt.id ? .semibold : .regular))
                             .foregroundStyle(
                                 healthStatus == opt.id ? .white : Color.primary.opacity(0.65)

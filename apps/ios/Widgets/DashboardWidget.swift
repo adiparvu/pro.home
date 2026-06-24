@@ -192,7 +192,7 @@ struct DashboardLargeView: View {
 
     private var relativeTime: String {
         let diff = Date().timeIntervalSince(entry.snapshot.updatedAt)
-        if diff < 60 { return "now" }
+        if diff < 60 { return String(localized: "now") }
         if diff < 3600 { return "\(Int(diff/60))m" }
         return "\(Int(diff/3600))h"
     }

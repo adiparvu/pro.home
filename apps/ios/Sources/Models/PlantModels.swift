@@ -104,6 +104,16 @@ struct Plant: Identifiable, Codable, Hashable {
         ("needs_water", "Needs water"),
         ("critical",    "Critical"),
     ]
+
+    var localizedHealthLabel: String {
+        switch healthStatus {
+        case "great":       return String(localized: "Excellent")
+        case "good":        return String(localized: "Good")
+        case "needs_water": return String(localized: "Needs water")
+        case "critical":    return String(localized: "Critical")
+        default:            return healthStatus
+        }
+    }
 }
 
 // MARK: - Payloads

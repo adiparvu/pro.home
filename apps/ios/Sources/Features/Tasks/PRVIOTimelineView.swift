@@ -171,7 +171,7 @@ struct PRVIOTimelineView: View {
                 icon: isOverdue ? "exclamationmark.circle.fill" : "clock.fill",
                 color: isOverdue ? .red : .orange,
                 title: task.title,
-                subtitle: isOverdue ? String(localized: "Overdue") : "Due " + relativeDate(date),
+                subtitle: isOverdue ? String(localized: "Overdue") : String(format: String(localized: "Due %@"), relativeDate(date)),
                 date: date
             ))
         }
@@ -203,9 +203,9 @@ struct PRVIOTimelineView: View {
 
     private func relativeDate(_ date: Date) -> String {
         let cal = Calendar.current
-        if cal.isDateInToday(date)    { return "today" }
-        if cal.isDateInTomorrow(date) { return "tomorrow" }
-        if cal.isDateInYesterday(date) { return "yesterday" }
+        if cal.isDateInToday(date)     { return String(localized: "today") }
+        if cal.isDateInTomorrow(date)  { return String(localized: "tomorrow") }
+        if cal.isDateInYesterday(date) { return String(localized: "yesterday") }
         let df = DateFormatter()
         df.dateStyle = .medium
         return df.string(from: date)

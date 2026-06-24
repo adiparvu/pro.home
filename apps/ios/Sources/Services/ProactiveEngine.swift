@@ -55,8 +55,11 @@ final class ProactiveEngine: ObservableObject {
             let days = daysUntil(a.warrantyUntil)
             fresh.append(ProactiveInsight(
                 id: deterministicID("warranty-\(a.id)"),
-                title: "Warranty expiring: \(a.name)",
-                body: "Warranty expires in \(days) day\(days == 1 ? "" : "s"). Check if extension is available.",
+                title: String(format: String(localized: "Warranty expiring: %@"), a.name),
+                body: String(format: days == 1
+                    ? String(localized: "Warranty expires in 1 day. Check if extension is available.")
+                    : String(localized: "Warranty expires in %d days. Check if extension is available."),
+                    days),
                 category: .warranty,
                 createdAt: Date(),
                 isDismissed: false
@@ -64,15 +67,15 @@ final class ProactiveEngine: ObservableObject {
         }
 
         // Old appliances by type (age thresholds)
-        let ageRules: [(keyword: String, maxYears: Int, label: String)] = [
-            ("boiler",   10, "Boilers older than 10 years"),
-            ("furnace",  15, "Furnaces older than 15 years"),
-            ("roof",     20, "Roofs older than 20 years"),
-            ("hvac",     12, "HVAC units older than 12 years"),
-            ("water heater", 8, "Water heaters older than 8 years"),
-            ("fridge",   12, "Refrigerators older than 12 years"),
-            ("washer",   10, "Washers older than 10 years"),
-            ("dishwasher", 10, "Dishwashers older than 10 years"),
+        let ageRules: [(keyword: String, maxYears: Int)] = [
+            ("boiler",       10),
+            ("furnace",      15),
+            ("roof",         20),
+            ("hvac",         12),
+            ("water heater",  8),
+            ("fridge",       12),
+            ("washer",       10),
+            ("dishwasher",   10),
         ]
         for appliance in appliances {
             guard let purchase = parseDateStr(appliance.purchaseDate) else { continue }
@@ -82,8 +85,8 @@ final class ProactiveEngine: ObservableObject {
                 if years >= rule.maxYears {
                     fresh.append(ProactiveInsight(
                         id: deterministicID("age-\(appliance.id)"),
-                        title: "\(appliance.name) may need replacement",
-                        body: "\(rule.label) may be less efficient and more prone to failure. Consider inspection.",
+                        title: String(format: String(localized: "%@ may need replacement"), appliance.name),
+                        body: String(format: String(localized: "%d years old — may be less efficient and more prone to failure. Consider inspection."), years),
                         category: .age,
                         createdAt: Date(),
                         isDismissed: false
@@ -240,21 +243,33 @@ final class ProactiveEngine: ObservableObject {
         switch month {
         case 3, 4:  // Spring
             return [
-                SeasonalHint(title: "Spring HVAC checkup due", body: "Schedule AC service before the warm season to ensure peak efficiency."),
-                SeasonalHint(title: "Gutter cleaning season", body: "Clear winter debris from gutters and downspouts to prevent water damage."),
+                SeasonalHint(
+                    title: String(localized: "Spring HVAC checkup due"),
+                    body: String(localized: "Schedule AC service before the warm season to ensure peak efficiency.")),
+                SeasonalHint(
+                    title: String(localized: "Gutter cleaning season"),
+                    body: String(localized: "Clear winter debris from gutters and downspouts to prevent water damage.")),
             ]
         case 9, 10: // Autumn
             return [
-                SeasonalHint(title: "Heating system checkup", body: "Service your boiler or furnace before winter to avoid cold-weather breakdowns."),
-                SeasonalHint(title: "Weatherproofing check", body: "Inspect door/window seals and insulation before temperatures drop."),
+                SeasonalHint(
+                    title: String(localized: "Heating system checkup"),
+                    body: String(localized: "Service your boiler or furnace before winter to avoid cold-weather breakdowns.")),
+                SeasonalHint(
+                    title: String(localized: "Weatherproofing check"),
+                    body: String(localized: "Inspect door/window seals and insulation before temperatures drop.")),
             ]
         case 11, 12: // Winter
             return [
-                SeasonalHint(title: "Pipe freeze prevention", body: "Insulate exposed pipes in unheated spaces to prevent burst pipes."),
+                SeasonalHint(
+                    title: String(localized: "Pipe freeze prevention"),
+                    body: String(localized: "Insulate exposed pipes in unheated spaces to prevent burst pipes.")),
             ]
         case 6, 7, 8: // Summer
             return [
-                SeasonalHint(title: "Irrigation system check", body: "Inspect sprinklers and drip lines for leaks before peak watering season."),
+                SeasonalHint(
+                    title: String(localized: "Irrigation system check"),
+                    body: String(localized: "Inspect sprinklers and drip lines for leaks before peak watering season.")),
             ]
         default:
             return []
