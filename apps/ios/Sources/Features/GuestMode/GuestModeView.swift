@@ -212,13 +212,13 @@ struct GuestModeView: View {
     }
 
     private func shareGuestInfo() {
-        var text = "Welcome to \(propertyName)!\n\n"
-        text += "📶 WiFi\n"
-        if !wifiName.isEmpty { text += "Network: \(wifiName)\n" }
-        if !wifiPass.isEmpty { text += "Password: \(wifiPass)\n" }
+        var text = String(format: String(localized: "Welcome to %@!"), propertyName) + "\n\n"
+        text += String(localized: "📶 WiFi") + "\n"
+        if !wifiName.isEmpty { text += String(format: String(localized: "Network: %@"), wifiName) + "\n" }
+        if !wifiPass.isEmpty { text += String(format: String(localized: "Password: %@"), wifiPass) + "\n" }
         text += "\n"
-        if !houseRules.isEmpty { text += "🏠 House Rules\n\(houseRules)\n\n" }
-        if !guestNotes.isEmpty { text += "📝 Notes\n\(guestNotes)\n" }
+        if !houseRules.isEmpty { text += String(localized: "🏠 House Rules") + "\n\(houseRules)\n\n" }
+        if !guestNotes.isEmpty { text += String(localized: "📝 Notes") + "\n\(guestNotes)\n" }
 
         let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
 

@@ -76,7 +76,7 @@ struct AddAccountSheet: View {
             try await auth.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password)
             dismiss()
         } catch {
-            errorMessage = "Incorrect email or password."
+            errorMessage = String(localized: "Incorrect email or password.")
         }
         isLoading = false
     }

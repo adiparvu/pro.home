@@ -25542,6 +25542,41 @@
         }
       }
     },
+    "Incorrect email or password.": {
+      "comment": "Login error when credentials are wrong",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falsche E-Mail oder falsches Passwort."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrect email or password."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail ou mot de passe incorrect."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onjuist e-mailadres of wachtwoord."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email sau parolă incorectă."
+          }
+        }
+      }
+    },
     "Info": {
       "localizations": {
         "de": {
@@ -31968,6 +32003,41 @@
         }
       }
     },
+    "Network: %@": {
+      "comment": "Guest info WiFi network name line",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netzwerk: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réseau : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netwerk: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rețea: %@"
+          }
+        }
+      }
+    },
     "Never": {
       "localizations": {
         "de": {
@@ -33936,6 +34006,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Proprietate negăsită."
+          }
+        }
+      }
+    },
+    "No property found. Please set up your property first.": {
+      "comment": "Error when creating a task but no property is set up",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Immobilie gefunden. Bitte richte zuerst deine Immobilie ein."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No property found. Please set up your property first."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune propriété trouvée. Veuillez d'abord configurer votre propriété."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen woning gevonden. Stel eerst je woning in."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio proprietate găsită. Configurează mai întâi proprietatea."
           }
         }
       }
@@ -37678,6 +37783,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Parola actualizată cu succes"
+          }
+        }
+      }
+    },
+    "Password: %@": {
+      "comment": "Guest info WiFi password line",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passwort: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mot de passe : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachtwoord: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parolă: %@"
           }
         }
       }
@@ -54584,6 +54724,41 @@
         }
       }
     },
+    "Welcome to %@!": {
+      "comment": "Guest info share text header with property name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei %@!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to %@!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenue à %@ !"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welkom bij %@!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bun venit la %@!"
+          }
+        }
+      }
+    },
     "Welcome to PRVIO": {
       "localizations": {
         "de": {
@@ -63119,6 +63294,41 @@
         }
       }
     },
+    "🏠 House Rules": {
+      "comment": "Guest info house rules section header",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 Hausordnung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 House Rules"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 Règles de la maison"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 Huisregels"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 Reguli casă"
+          }
+        }
+      }
+    },
     "📍 Shared a location": {
       "comment": "Chat message body when a user shares their location",
       "localizations": {
@@ -63150,6 +63360,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "📍 Locație partajată"
+          }
+        }
+      }
+    },
+    "📝 Notes": {
+      "comment": "Guest info notes section header",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📝 Notizen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📝 Notes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📝 Notes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📝 Notities"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📝 Note"
+          }
+        }
+      }
+    },
+    "📶 WiFi": {
+      "comment": "Guest info WiFi section header",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📶 WLAN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📶 WiFi"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📶 WiFi"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📶 WiFi"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📶 WiFi"
           }
         }
       }

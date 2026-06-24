@@ -2018,3 +2018,11 @@
 "Coduri de rezervă generate" = "Backup codes generated";
 "Could not extract data automatically — please fill in manually." = "Could not extract data automatically — please fill in manually.";
 "Detected: %@" = "Detected: %@";
+"Incorrect email or password." = "Incorrect email or password.";
+"No property found. Please set up your property first." = "No property found. Please set up your property first.";
+"Welcome to %@!" = "Welcome to %@!";
+"📶 WiFi" = "📶 WiFi";
+"Network: %@" = "Network: %@";
+"Password: %@" = "Password: %@";
+"🏠 House Rules" = "🏠 House Rules";
+"📝 Notes" = "📝 Notes";

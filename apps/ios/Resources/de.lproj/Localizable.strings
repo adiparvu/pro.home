@@ -2000,3 +2000,11 @@
 "Coduri de rezervă generate" = "Sicherungscodes generiert";
 "Could not extract data automatically — please fill in manually." = "Daten konnten nicht automatisch extrahiert werden — bitte manuell eingeben.";
 "Detected: %@" = "Erkannt: %@";
+"Incorrect email or password." = "Falsche E-Mail oder falsches Passwort.";
+"No property found. Please set up your property first." = "Keine Immobilie gefunden. Bitte richte zuerst deine Immobilie ein.";
+"Welcome to %@!" = "Willkommen bei %@!";
+"📶 WiFi" = "📶 WLAN";
+"Network: %@" = "Netzwerk: %@";
+"Password: %@" = "Passwort: %@";
+"🏠 House Rules" = "🏠 Hausordnung";
+"📝 Notes" = "📝 Notizen";

@@ -300,7 +300,7 @@ struct AddTaskView: View {
                     )
                 } else {
                     guard let propId = propertyService.primary?.id else {
-                        errorMsg = "No property found. Please set up your property first."
+                        errorMsg = String(localized: "No property found. Please set up your property first.")
                         isSaving = false
                         return
                     }

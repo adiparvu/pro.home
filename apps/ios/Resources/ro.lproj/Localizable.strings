@@ -2107,3 +2107,11 @@
 "Coduri de rezervă generate" = "Coduri de rezervă generate";
 "Could not extract data automatically — please fill in manually." = "Nu s-au putut extrage datele automat — completează manual.";
 "Detected: %@" = "Detectat: %@";
+"Incorrect email or password." = "Email sau parolă incorectă.";
+"No property found. Please set up your property first." = "Nicio proprietate găsită. Configurează mai întâi proprietatea.";
+"Welcome to %@!" = "Bun venit la %@!";
+"📶 WiFi" = "📶 WiFi";
+"Network: %@" = "Rețea: %@";
+"Password: %@" = "Parolă: %@";
+"🏠 House Rules" = "🏠 Reguli casă";
+"📝 Notes" = "📝 Note";

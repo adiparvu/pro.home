@@ -89,7 +89,7 @@ final class RoomScanController: UIViewController, RoomCaptureViewDelegate {
 
     private func setupOverlay() {
         // Hint
-        hintLabel.text = "Move slowly around the room to capture walls, doors and windows."
+        hintLabel.text = String(localized: "Move slowly around the room to capture walls, doors and windows.")
         hintLabel.font = .systemFont(ofSize: 14, weight: .medium)
         hintLabel.textColor = .white
         hintLabel.numberOfLines = 0
@@ -157,7 +157,7 @@ final class RoomScanController: UIViewController, RoomCaptureViewDelegate {
         isFinishing = true
         finishButton.isHidden = true
         cancelButton.isHidden = true
-        hintLabel.text = "Processing 3D model…"
+        hintLabel.text = String(localized: "Processing 3D model…")
         spinner.startAnimating()
         roomCaptureView.captureSession.stop()
     }

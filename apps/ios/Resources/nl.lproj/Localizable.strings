@@ -2000,3 +2000,11 @@
 "Coduri de rezervă generate" = "Reservecodes gegenereerd";
 "Could not extract data automatically — please fill in manually." = "Gegevens konden niet automatisch worden uitgelezen — vul ze handmatig in.";
 "Detected: %@" = "Gedetecteerd: %@";
+"Incorrect email or password." = "Onjuist e-mailadres of wachtwoord.";
+"No property found. Please set up your property first." = "Geen woning gevonden. Stel eerst je woning in.";
+"Welcome to %@!" = "Welkom bij %@!";
+"📶 WiFi" = "📶 WiFi";
+"Network: %@" = "Netwerk: %@";
+"Password: %@" = "Wachtwoord: %@";
+"🏠 House Rules" = "🏠 Huisregels";
+"📝 Notes" = "📝 Notities";
