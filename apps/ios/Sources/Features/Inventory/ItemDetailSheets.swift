@@ -206,7 +206,7 @@ struct ItemLocationSheet: View {
                                 HStack(spacing: 8) {
                                     ForEach(trackerTypes, id: \.self) { t in
                                         Button { trackerType = t } label: {
-                                            Text(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : t.capitalized))
+                                            Text(LocalizedStringKey(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : (t == "gps" ? "GPS" : t.capitalized))))
                                                 .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
                                                 .foregroundStyle(trackerType == t ? Color.black : Color.primary.opacity(0.7))
                                                 .padding(.horizontal, 14).padding(.vertical, 8)

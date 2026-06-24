@@ -154,7 +154,7 @@ struct AddFamilyMemberSheet: View {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(kRoleLabels[role] ?? role.capitalized)
+                    Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
@@ -164,7 +164,7 @@ struct AddFamilyMemberSheet: View {
                 Spacer()
                 Picker("Role", selection: $role) {
                     ForEach(kRoles, id: \.self) { r in
-                        Label(kRoleLabels[r] ?? r.capitalized, systemImage: kRoleIcons[r] ?? "person.fill").tag(r)
+                        Label(LocalizedStringKey(kRoleLabels[r] ?? r.capitalized), systemImage: kRoleIcons[r] ?? "person.fill").tag(r)
                     }
                 }
                 .pickerStyle(.menu)

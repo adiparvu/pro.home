@@ -1929,3 +1929,7 @@
 "%lld din %lld articole" = "%lld din %lld articole";
 "%lld din %lld plante udate" = "%lld din %lld plante udate";
 "%@ · %@" = "%@ · %@";
+
+/* Build 295 — tracker types */
+"GPS" = "GPS";
+"Tile" = "Tile";

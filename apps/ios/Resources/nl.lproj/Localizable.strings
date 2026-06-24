@@ -1822,3 +1822,7 @@
 "%lld din %lld articole" = "%lld van %lld artikelen";
 "%lld din %lld plante udate" = "%lld van %lld planten bewaterd";
 "%@ · %@" = "%@ · %@";
+
+/* Build 295 — tracker types */
+"GPS" = "GPS";
+"Tile" = "Tile";

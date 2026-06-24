@@ -48,7 +48,7 @@ struct AddUtilitySheet: View {
                                 Text("Type").font(.system(size: 15)).foregroundStyle(.primary)
                                 Spacer()
                                 Picker("", selection: $type) {
-                                    ForEach(types, id: \.self) { Text($0.capitalized).tag($0) }
+                                    ForEach(types, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
                                 }.tint(Color.primary.opacity(0.5))
                             }
                         }

@@ -241,7 +241,8 @@ struct ARIASettingsView: View {
 
     private var contextSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("WHAT \(assistantName.uppercased()) CAN SEE")
+            Text("WHAT \(assistantName) CAN SEE")
+                .textCase(.uppercase)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)

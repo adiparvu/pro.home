@@ -158,7 +158,7 @@ struct AddInventorySheet: View {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text($0.capitalized).tag($0) } }.tint(Color.primary.opacity(0.5))
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(0.5))
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: String, _ b: Binding<Bool>) -> some View {

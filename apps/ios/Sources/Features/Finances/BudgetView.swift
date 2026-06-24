@@ -226,7 +226,7 @@ private struct EditBudgetSheet: View {
                 }
                 .padding(.top, 8)
             }
-            .navigationTitle(category.capitalized)
+            .navigationTitle(LocalizedStringKey(category.capitalized))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -1840,3 +1840,7 @@
 "%lld din %lld articole" = "%lld of %lld items";
 "%lld din %lld plante udate" = "%lld of %lld plants watered";
 "%@ · %@" = "%@ · %@";
+
+/* Build 295 — tracker types */
+"GPS" = "GPS";
+"Tile" = "Tile";
