@@ -1,53 +1,11 @@
 import SwiftUI
 
-// MARK: - Icon definition
-
-struct AppIconOption: Identifiable {
-    let id: String          // alternateIconName; "default" → nil
-    let name: String
-    let lightColors: [Color]
-    let darkColors: [Color]
-
-    static let all: [AppIconOption] = [
-        AppIconOption(id: "default",        name: "Classic",
-                      lightColors: [Color(red:0.18,green:0.51,blue:1.0), Color(red:0.08,green:0.38,blue:0.9)],
-                      darkColors:  [Color(red:0.1,green:0.28,blue:0.9),  Color(red:0.05,green:0.15,blue:0.7)]),
-        AppIconOption(id: "AppIconMidnight", name: "Midnight",
-                      lightColors: [Color(red:0.06,green:0.08,blue:0.2),  Color(red:0.02,green:0.04,blue:0.14)],
-                      darkColors:  [Color(red:0.04,green:0.06,blue:0.18), Color(red:0.01,green:0.02,blue:0.1)]),
-        AppIconOption(id: "AppIconSunset",   name: "Sunset",
-                      lightColors: [Color(red:1.0,green:0.55,blue:0.15), Color(red:0.9,green:0.2,blue:0.2)],
-                      darkColors:  [Color(red:0.85,green:0.35,blue:0.05), Color(red:0.7,green:0.1,blue:0.1)]),
-        AppIconOption(id: "AppIconForest",   name: "Forest",
-                      lightColors: [Color(red:0.12,green:0.52,blue:0.28), Color(red:0.06,green:0.32,blue:0.16)],
-                      darkColors:  [Color(red:0.08,green:0.38,blue:0.2),  Color(red:0.04,green:0.22,blue:0.1)]),
-        AppIconOption(id: "AppIconLavender", name: "Lavender",
-                      lightColors: [Color(red:0.6,green:0.38,blue:0.95), Color(red:0.45,green:0.2,blue:0.85)],
-                      darkColors:  [Color(red:0.5,green:0.28,blue:0.88), Color(red:0.35,green:0.12,blue:0.75)]),
-        AppIconOption(id: "AppIconRoseGold", name: "Rose Gold",
-                      lightColors: [Color(red:0.95,green:0.58,blue:0.68), Color(red:0.82,green:0.62,blue:0.28)],
-                      darkColors:  [Color(red:0.82,green:0.42,blue:0.55), Color(red:0.68,green:0.48,blue:0.18)]),
-        AppIconOption(id: "AppIconArctic",   name: "Arctic",
-                      lightColors: [Color(red:0.62,green:0.88,blue:0.98), Color(red:0.38,green:0.72,blue:0.92)],
-                      darkColors:  [Color(red:0.42,green:0.68,blue:0.88), Color(red:0.22,green:0.52,blue:0.78)]),
-        AppIconOption(id: "AppIconCarbon",   name: "Carbon",
-                      lightColors: [Color(red:0.2,green:0.2,blue:0.22),  Color(red:0.1,green:0.1,blue:0.12)],
-                      darkColors:  [Color(red:0.14,green:0.14,blue:0.16), Color(red:0.06,green:0.06,blue:0.08)]),
-        AppIconOption(id: "AppIconCrimson",  name: "Crimson",
-                      lightColors: [Color(red:0.82,green:0.08,blue:0.14), Color(red:0.62,green:0.04,blue:0.08)],
-                      darkColors:  [Color(red:0.68,green:0.04,blue:0.1),  Color(red:0.48,green:0.02,blue:0.06)]),
-        AppIconOption(id: "AppIconEmerald",  name: "Emerald",
-                      lightColors: [Color(red:0.05,green:0.72,blue:0.62), Color(red:0.02,green:0.52,blue:0.44)],
-                      darkColors:  [Color(red:0.02,green:0.58,blue:0.48), Color(red:0.01,green:0.38,blue:0.32)]),
-    ]
-}
-
-// MARK: - Picker view
+// MARK: - App Icon Picker
 
 struct AppIconPickerView: View {
+    @EnvironmentObject private var iconManager: IconManager
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("prvio.selectedIcon") private var selectedIconId: String = "default"
-    @State private var pendingChange: String? = nil
+
     @State private var showError = false
     @State private var errorMsg = ""
 
@@ -60,22 +18,9 @@ struct AppIconPickerView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     currentIconPreview
-
-                    Text("Choose one of the 10 available icons.\nEach has variants for light and dark mode.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(AppIconOption.all) { option in
-                            iconCell(option)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-
+                    autoSwitchToggle
+                    iconGrid
                     noticeCard
-
                     Spacer(minLength: 110)
                 }
                 .padding(.top, 16)
@@ -91,45 +36,89 @@ struct AppIconPickerView: View {
         }
     }
 
-    // MARK: Current preview
+    // MARK: - Current preview
 
     private var currentIconPreview: some View {
-        let option = AppIconOption.all.first { $0.id == selectedIconId } ?? AppIconOption.all[0]
+        let group = iconManager.selectedGroup
         return VStack(spacing: 10) {
             HStack(spacing: 20) {
-                iconSquare(option, scheme: .light, size: 68)
-                iconSquare(option, scheme: .dark, size: 68)
+                iconSquare(group, scheme: .light, size: 68)
+                if group.hasPair {
+                    iconSquare(group, scheme: .dark, size: 68)
+                }
             }
-            Text(LocalizedStringKey(option.name))
+            Text(LocalizedStringKey(group.displayName))
                 .font(.system(size: 14, weight: .semibold))
-            HStack(spacing: 4) {
-                Image(systemName: "sun.min")
-                    .font(.system(size: 10))
-                Text("Light")
+            if group.hasPair {
+                HStack(spacing: 4) {
+                    Image(systemName: "sun.min").font(.system(size: 10))
+                    Text("Light").font(.system(size: 11))
+                    Spacer().frame(width: 12)
+                    Image(systemName: "moon").font(.system(size: 10))
+                    Text("Dark").font(.system(size: 11))
+                }
+                .foregroundStyle(.secondary)
+            } else {
+                Text("Standalone — same in both modes")
                     .font(.system(size: 11))
-                Spacer().frame(width: 12)
-                Image(systemName: "moon")
-                    .font(.system(size: 10))
-                Text("Dark")
-                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: Icon cell
+    // MARK: - Auto-switch toggle
 
-    private func iconCell(_ option: AppIconOption) -> some View {
-        let isSelected = selectedIconId == option.id
-        return Button { applyIcon(option) } label: {
+    private var autoSwitchToggle: some View {
+        GlassCard(padding: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().fill(Color.purple.opacity(0.15)).frame(width: 36, height: 36)
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.purple)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto Dark/Light Switch")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Icon changes automatically with system theme")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $iconManager.autoSwitch)
+                    .tint(.purple)
+                    .labelsHidden()
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Grid
+
+    private var iconGrid: some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(AppIconThemeGroup.allCases) { group in
+                iconCell(group)
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func iconCell(_ group: AppIconThemeGroup) -> some View {
+        let isSelected = iconManager.selectedGroup == group
+        return Button {
+            applyGroup(group)
+        } label: {
             GlassCard(padding: 16) {
                 VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        iconSquare(option, scheme: .light, size: 52)
-                        iconSquare(option, scheme: .dark, size: 52)
+                    HStack(spacing: group.hasPair ? 12 : 0) {
+                        iconSquare(group, scheme: .light, size: 52)
+                        if group.hasPair {
+                            iconSquare(group, scheme: .dark, size: 52)
+                        }
                     }
                     HStack {
-                        Text(LocalizedStringKey(option.name))
+                        Text(LocalizedStringKey(group.displayName))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.primary)
                         Spacer()
@@ -139,6 +128,18 @@ struct AppIconPickerView: View {
                                 .font(.system(size: 18))
                                 .transition(.scale.combined(with: .opacity))
                         }
+                    }
+                    if group.hasPair {
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 9))
+                            Text("Auto L/D")
+                                .font(.system(size: 10))
+                        }
+                        .foregroundStyle(Color.accentColor.opacity(0.8))
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.1), in: Capsule())
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
             }
@@ -151,11 +152,10 @@ struct AppIconPickerView: View {
         .animation(.spring(response: 0.3), value: isSelected)
     }
 
-    // MARK: Icon square preview
+    // MARK: - Icon square preview
 
-    private func iconSquare(_ option: AppIconOption, scheme: ColorScheme, size: CGFloat) -> some View {
-        let colors = scheme == .light ? option.lightColors : option.darkColors
-        let bg = scheme == .light ? Color.white.opacity(0.08) : Color.black.opacity(0.12)
+    private func iconSquare(_ group: AppIconThemeGroup, scheme: ColorScheme, size: CGFloat) -> some View {
+        let colors = scheme == .light ? group.lightColors : group.darkColors
         return ZStack {
             RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
                 .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -168,10 +168,10 @@ struct AppIconPickerView: View {
             RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
-        .shadow(color: colors.first?.opacity(0.4) ?? .clear, radius: 8, y: 4)
+        .shadow(color: colors.first?.opacity(0.35) ?? .clear, radius: 8, y: 4)
     }
 
-    // MARK: Notice
+    // MARK: - Notice
 
     private var noticeCard: some View {
         GlassCard(padding: 16) {
@@ -182,7 +182,7 @@ struct AppIconPickerView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Icons in progress")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("The final icon designs are being worked on. The change will be active once they are published.")
+                    Text("Final icon designs are being finalized. Changes activate once the app assets are published.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -191,19 +191,10 @@ struct AppIconPickerView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: Apply
+    // MARK: - Apply
 
-    private func applyIcon(_ option: AppIconOption) {
+    private func applyGroup(_ group: AppIconThemeGroup) {
         HapticFeedback.selection()
-        let name: String? = option.id == "default" ? nil : option.id
-        UIApplication.shared.setAlternateIconName(name) { error in
-            if let error = error {
-                errorMsg = String(format: String(localized: "The icon \"%@\" is not available yet. We will notify you when all variants are ready.\n\n(%@)"), option.name, error.localizedDescription)
-                showError = true
-            } else {
-                withAnimation { selectedIconId = option.id }
-                HapticFeedback.success()
-            }
-        }
+        iconManager.select(group, isDark: colorScheme == .dark)
     }
 }

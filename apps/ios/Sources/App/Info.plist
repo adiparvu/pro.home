@@ -105,6 +105,42 @@
 			<array><string>AppIconEmerald</string></array>
 			<key>UIPrerenderedIcon</key><false/>
 		</dict>
+		<key>AppIconClassicDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconClassicDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconForestDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconForestDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconEmeraldDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconEmeraldDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconRoseGoldDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconRoseGoldDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconArcticDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconArcticDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
+		<key>AppIconCarbonDark</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array><string>AppIconCarbonDark</string></array>
+			<key>UIPrerenderedIcon</key><false/>
+		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to scan documents and capture property photos.</string>

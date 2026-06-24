@@ -7,6 +7,7 @@ struct PRVIOApp: App {
     @StateObject private var appSettings = AppSettings()
     @StateObject private var lock        = AppLockManager()
     @StateObject private var router      = AppRouter()
+    @StateObject private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -23,6 +24,7 @@ struct PRVIOApp: App {
                         MainTabView()
                             .environmentObject(appSettings)
                             .environmentObject(router)
+                            .environmentObject(iconManager)
                             .environment(\.appLanguage, appSettings.currentLanguage)
                     } else {
                         LoginView()
@@ -48,6 +50,7 @@ struct PRVIOApp: App {
             }
             .animation(.easeInOut(duration: 0.2), value: lock.isLocked)
             .onAppear { lock.appDidLaunch() }
+            .background(IconColorSchemeWatcher(iconManager: iconManager))
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:
