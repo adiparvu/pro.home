@@ -329,7 +329,7 @@ struct AIInsightRow: View {
                         .foregroundStyle(insight.iconColor)
                 }
 
-                Text(insight.title)
+                Text(LocalizedStringKey(insight.title))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -361,7 +361,7 @@ struct AIInsightRow: View {
                     .buttonStyle(.plain)
                     .disabled(isActing)
                 } else {
-                    Text(insight.elapsed)
+                    Text(LocalizedStringKey(insight.elapsed))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }

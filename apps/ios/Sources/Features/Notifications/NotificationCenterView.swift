@@ -205,7 +205,7 @@ private struct NotificationRow: View {
                         .foregroundStyle(Color.primary)
                         .lineLimit(2)
                     Spacer()
-                    Text(notification.timeDisplay)
+                    Text(LocalizedStringKey(notification.timeDisplay))
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                 }

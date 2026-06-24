@@ -47,7 +47,7 @@ struct PropertySettingsView: View {
         )) {
             Button("OK") { propertyService.error = nil }
         } message: {
-            Text(propertyService.error ?? "")
+            Text(LocalizedStringKey(propertyService.error ?? ""))
         }
         .task { await propertyService.load() }
     }

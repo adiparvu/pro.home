@@ -46,7 +46,7 @@ struct BudgetManagementView: View {
             VStack(spacing: 10) {
                 HStack {
                     Image(systemName: "target").font(.system(size: 18)).foregroundStyle(Color.accentColor)
-                    Text(receiptService.monthDisplayName(currentMonth))
+                    Text(LocalizedStringKey(receiptService.monthDisplayName(currentMonth)))
                         .font(.system(size: 15, weight: .semibold))
                     Spacer()
                     let totalBudget = receiptService.budgets.filter { $0.month == currentMonth }.reduce(0) { $0 + $1.monthlyLimit }
@@ -121,7 +121,7 @@ struct BudgetManagementView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                    Text(LocalizedStringKey(label)).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
                     if let budget, budget.monthlyLimit > 0 {
                         let pct = min(spent / budget.monthlyLimit * 100, 100)
                         Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit)) · \(Int(pct))%")
@@ -176,7 +176,7 @@ struct BudgetManagementView: View {
                                 .font(.system(size: 30, weight: .semibold))
                                 .foregroundStyle(ReceiptCategory.color(for: category))
                         }
-                        Text(label)
+                        Text(LocalizedStringKey(label))
                             .font(.system(size: 20, weight: .bold))
                     }
                     .padding(.top, 20)

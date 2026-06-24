@@ -153,7 +153,7 @@ struct AddInventorySheet: View {
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
         }.padding(.horizontal, 16).padding(.vertical, 13)
     }
-    private func picker(_ icon: String, _ label: String, _ b: Binding<String>, _ opts: [String]) -> some View {
+    private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
@@ -161,7 +161,7 @@ struct AddInventorySheet: View {
             Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(0.5))
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
-    private func toggle(_ icon: String, _ label: String, _ b: Binding<Bool>) -> some View {
+    private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)

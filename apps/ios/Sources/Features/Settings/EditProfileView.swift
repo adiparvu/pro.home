@@ -37,7 +37,7 @@ struct EditProfileView: View {
                         notesField
 
                         if let error {
-                            Text(error)
+                            Text(LocalizedStringKey(error))
                                 .font(.system(size: 13))
                                 .foregroundStyle(.red)
                                 .multilineTextAlignment(.center)
@@ -58,7 +58,7 @@ struct EditProfileView: View {
 
     // MARK: - Fields
 
-    private func field(_ label: String, placeholder: String, text: Binding<String>) -> some View {
+    private func field(_ label: LocalizedStringKey, placeholder: LocalizedStringKey, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             fieldLabel(label)
             TextField(placeholder, text: text)
@@ -69,7 +69,7 @@ struct EditProfileView: View {
         }
     }
 
-    private func fieldLabel(_ label: String) -> some View {
+    private func fieldLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Color.primary.opacity(0.5))

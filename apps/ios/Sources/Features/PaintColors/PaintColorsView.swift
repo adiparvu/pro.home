@@ -99,7 +99,7 @@ struct PaintColorsView: View {
                     selectedRoom = nil
                 }
                 ForEach(paintColorService.roomNames, id: \.self) { room in
-                    filterChip(label: room, isSelected: selectedRoom == room) {
+                    filterChip(label: LocalizedStringKey(room), isSelected: selectedRoom == room) {
                         selectedRoom = selectedRoom == room ? nil : room
                     }
                 }
@@ -108,7 +108,7 @@ struct PaintColorsView: View {
         }
     }
 
-    private func filterChip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func filterChip(label: LocalizedStringKey, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: {
             action()
             HapticFeedback.impact(.light)
@@ -228,7 +228,7 @@ private struct PaintSwatch: View {
                     .frame(width: 70)
             }
 
-            Text(paintColor.finishDisplay)
+            Text(LocalizedStringKey(paintColor.finishDisplay))
                 .font(.system(size: 10))
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .frame(width: 70)

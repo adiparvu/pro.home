@@ -157,9 +157,9 @@ extension DigitalTwinView {
     // MARK: - Draw Mode UI
 
     var drawBanner: some View {
-        Text(draftPoints.count < 3
+        Text(LocalizedStringKey(draftPoints.count < 3
              ? "Tap the map to add corners (\(draftPoints.count)/3)"
-             : "\(draftPoints.count) corners · tap to add more")
+             : "\(draftPoints.count) corners · tap to add more"))
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
@@ -197,8 +197,13 @@ extension DigitalTwinView {
         return HStack(spacing: 6) {
             Image(systemName: targetName != nil ? "arrow.down.to.line" : "mappin.slash")
                 .font(.system(size: 12, weight: .bold))
-            Text(targetName.map { "→ \($0)" } ?? "Outside zones")
-                .font(.system(size: 13, weight: .semibold))
+            if let name = targetName {
+                Text("→ \(name)")
+                    .font(.system(size: 13, weight: .semibold))
+            } else {
+                Text("Outside zones")
+                    .font(.system(size: 13, weight: .semibold))
+            }
         }
         .foregroundStyle(targetName != nil ? Color(red: 0.2, green: 0.75, blue: 0.4) : .secondary)
         .padding(.horizontal, 16).padding(.vertical, 10)

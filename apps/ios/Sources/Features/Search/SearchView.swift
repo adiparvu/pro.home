@@ -320,7 +320,7 @@ private struct SearchRow: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 if !subtitle.isEmpty {
-                    Text(subtitle)
+                    Text(LocalizedStringKey(subtitle))
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }

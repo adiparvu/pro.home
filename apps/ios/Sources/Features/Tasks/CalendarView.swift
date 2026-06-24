@@ -39,7 +39,7 @@ struct CalendarView: View {
                     .background(Color.primary.opacity(0.07), in: Circle())
             }
             Spacer()
-            Text(monthTitle)
+            Text(LocalizedStringKey(monthTitle))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
             Spacer()
@@ -256,7 +256,7 @@ private struct CalendarEventRow: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }

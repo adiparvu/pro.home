@@ -29,7 +29,7 @@ struct AddReceiptSheet: View {
                         totalField
                         notesField
                         if let error {
-                            Text(error).font(.caption).foregroundStyle(.red).padding(.horizontal)
+                            Text(LocalizedStringKey(error)).font(.caption).foregroundStyle(.red).padding(.horizontal)
                         }
                         saveButton
                         Spacer(minLength: 40)
@@ -75,7 +75,7 @@ struct AddReceiptSheet: View {
                         Button { category = cat.id; HapticFeedback.selection() } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
-                                Text(cat.label).font(.system(size: 13))
+                                Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
                             }
                             .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.7))
                             .padding(.horizontal, 12).padding(.vertical, 7)
@@ -195,7 +195,7 @@ struct AddReceiptSheet: View {
 
     private func formField<C: View>(_ label: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(label)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             content()
         }
     }

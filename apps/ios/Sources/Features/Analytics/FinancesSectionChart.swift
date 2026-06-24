@@ -81,7 +81,7 @@ extension FinancesSection {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = r }
                         }
                     } label: {
-                        Text(r.rawValue)
+                        Text(LocalizedStringKey(r.rawValue))
                             .font(.system(size: 12, weight: chartRange == r ? .semibold : .regular))
                             .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
                             .padding(.horizontal, 11)
@@ -224,7 +224,7 @@ extension FinancesSection {
         .frame(maxWidth: .infinity, minHeight: 100)
     }
 
-    func legendItem(color: Color, label: String, solid: Bool) -> some View {
+    func legendItem(color: Color, label: LocalizedStringKey, solid: Bool) -> some View {
         HStack(spacing: 6) {
             if solid {
                 Circle().fill(color).frame(width: 8, height: 8)

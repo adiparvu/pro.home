@@ -34,7 +34,7 @@ struct TOTPEnrollView: View {
                             qrCard
                             secretCard
                             codeEntry
-                            if let error { Text(error).font(.system(size: 13)).foregroundStyle(.red).multilineTextAlignment(.center) }
+                            if let error { Text(LocalizedStringKey(error)).font(.system(size: 13)).foregroundStyle(.red).multilineTextAlignment(.center) }
                             verifyButton
                         }
                     }
@@ -136,7 +136,7 @@ struct TOTPEnrollView: View {
             Image(systemName: "exclamationmark.shield.fill").font(.system(size: 40)).foregroundStyle(.orange)
             Text("Could not start enrollment")
                 .font(.system(size: 16, weight: .semibold))
-            Text(message)
+            Text(LocalizedStringKey(message))
                 .font(.system(size: 13)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }

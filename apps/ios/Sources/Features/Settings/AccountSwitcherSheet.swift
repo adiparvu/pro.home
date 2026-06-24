@@ -36,7 +36,7 @@ struct AccountSwitcherSheet: View {
 
                 if let err = switchError {
                     Section {
-                        Text(err)
+                        Text(LocalizedStringKey(err))
                             .font(.footnote)
                             .foregroundStyle(.red)
                     }

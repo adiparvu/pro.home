@@ -74,9 +74,17 @@ struct ObjectLocationPicker: View {
         }
     }
 
+    @ViewBuilder
     private var hint: some View {
-        Text(picked == nil ? "Tap the map to place the object" :
-                (pickedZone.map { "In zone: \($0.name)" } ?? "Outside all zones"))
+        Group {
+            if picked == nil {
+                Text("Tap the map to place the object")
+            } else if let zone = pickedZone {
+                Text("In zone: \(zone.name)")
+            } else {
+                Text("Outside all zones")
+            }
+        }
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)

@@ -69,7 +69,7 @@ struct FamilyView: View {
             set: { if !$0 { familyService.error = nil } }
         )) {
             Button("OK") { familyService.error = nil }
-        } message: { Text(familyService.error ?? "") }
+        } message: { Text(LocalizedStringKey(familyService.error ?? "")) }
     }
 
     private var emptyState: some View {
@@ -99,7 +99,7 @@ struct FamilyMemberRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                     HStack(spacing: 6) {
-                        Text(member.roleLabel)
+                        Text(LocalizedStringKey(member.roleLabel))
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.45))
                         if let bd = member.birthdayDate {

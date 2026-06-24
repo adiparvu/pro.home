@@ -62,7 +62,7 @@ extension PropertyMapView {
                 icon: "heart.fill",
                 label: "Health",
                 value: "\(elementService.overallHealthScore)%",
-                sub: healthLabel(elementService.overallHealthScore),
+                sub: LocalizedStringKey(healthLabel(elementService.overallHealthScore)),
                 color: healthColor(elementService.overallHealthScore)
             )
             statTile(
@@ -82,7 +82,7 @@ extension PropertyMapView {
         }
     }
 
-    private func statTile(icon: String, label: String, value: String, sub: String, color: Color) -> some View {
+    private func statTile(icon: String, label: LocalizedStringKey, value: String, sub: LocalizedStringKey, color: Color) -> some View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {

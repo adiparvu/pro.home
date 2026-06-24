@@ -114,7 +114,7 @@ struct FinancesView: View {
             set: { if !$0 { financialService.error = nil } }
         )) {
             Button("OK") { financialService.error = nil }
-        } message: { Text(financialService.error ?? "") }
+        } message: { Text(LocalizedStringKey(financialService.error ?? "")) }
         .task { await financialService.load() }
     }
 

@@ -301,7 +301,7 @@ private struct ReceiptReviewView: View {
     }
 
     private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        Text(LocalizedStringKey(text)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
     }
 }
 

@@ -88,7 +88,7 @@ struct FinancesSection: View {
             Spacer()
 
             VStack(spacing: 1) {
-                Text(monthLabel)
+                Text(LocalizedStringKey(monthLabel))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
@@ -182,7 +182,7 @@ struct FinancesSection: View {
                     }
                 }
                 .frame(height: 8)
-                Text(savingsInsight)
+                Text(LocalizedStringKey(savingsInsight))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }

@@ -181,7 +181,7 @@ struct DeliveryFormSheet: View {
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(statusColor(for: opt.id))
                             }
-                            Text(opt.label)
+                            Text(LocalizedStringKey(opt.label))
                                 .font(.system(size: 15))
                                 .foregroundStyle(.primary)
                             Spacer()
@@ -297,7 +297,7 @@ struct DeliveryFormSheet: View {
 
     // MARK: Helpers
 
-    private func fieldLabel(_ text: String) -> some View {
+    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)

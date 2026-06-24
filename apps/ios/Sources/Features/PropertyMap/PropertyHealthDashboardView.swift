@@ -77,7 +77,7 @@ struct PropertyHealthDashboardView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Property Health Score")
                         .font(.subheadline.weight(.semibold))
-                    Text(scoreLabel(elementService.overallHealthScore))
+                    Text(LocalizedStringKey(scoreLabel(elementService.overallHealthScore)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 16) {
@@ -219,14 +219,14 @@ struct PropertyHealthDashboardView: View {
 
     // MARK: - Helpers
 
-    private func miniStat(label: String, value: String, color: Color = .secondary) -> some View {
+    private func miniStat(label: LocalizedStringKey, value: String, color: Color = .secondary) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.subheadline.weight(.bold)).foregroundStyle(color)
             Text(label).font(.caption2).foregroundStyle(.tertiary)
         }
     }
 
-    private func aiTip(icon: String, title: String, desc: String, color: Color) -> some View {
+    private func aiTip(icon: String, title: LocalizedStringKey, desc: LocalizedStringKey, color: Color) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))

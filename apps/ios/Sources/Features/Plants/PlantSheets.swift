@@ -242,7 +242,7 @@ struct AddPlantSheet: View {
 
     // MARK: Helpers
 
-    private func fieldLabel(_ text: String) -> some View {
+    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)

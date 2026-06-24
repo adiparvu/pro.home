@@ -134,7 +134,7 @@ struct TrustedPersonsView: View {
     }
 
     private func permTag(_ label: String, color: Color) -> some View {
-        Text(label)
+        Text(LocalizedStringKey(label))
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(color)
             .padding(.horizontal, 6)
@@ -323,10 +323,10 @@ private struct AddTrustedPersonSheet: View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 15))
                     .foregroundStyle(.primary)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }

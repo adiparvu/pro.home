@@ -94,7 +94,7 @@ struct ObjectsListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ObjectFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
+                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
                     }
                 }

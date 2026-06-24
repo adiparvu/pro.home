@@ -449,7 +449,7 @@ struct GlobalSearchSheet: View {
         if !docResults.isEmpty {
             resultSection("Documents", icon: "doc.fill", color: .orange) {
                 ForEach(docResults.prefix(8)) { d in
-                    resultRow(d.name, subtitle: d.expiresDisplay ?? "No expiry",
+                    resultRow(d.name, subtitle: d.expiresDisplay ?? String(localized: "No expiry"),
                               icon: "doc.fill", color: .orange,
                               isLast: d.id == docResults.prefix(8).last?.id) {
                         navigateAway(to: .digitalTwin)
@@ -539,7 +539,7 @@ struct GlobalSearchSheet: View {
             resultSection("Plants", icon: "leaf.fill", color: plantGreen) {
                 ForEach(plantResults.prefix(8)) { p in
                     resultRow("\(p.emoji) \(p.name)",
-                              subtitle: p.needsWatering ? "Needs watering" : p.wateringLabel,
+                              subtitle: p.needsWatering ? String(localized: "Needs watering") : p.wateringLabel,
                               icon: "leaf.fill", color: plantGreen,
                               isLast: p.id == plantResults.prefix(8).last?.id) {
                         selectedPlant = p
@@ -596,7 +596,7 @@ struct GlobalSearchSheet: View {
                                          @ViewBuilder content: () -> C) -> some View {
         let body = content()
         return VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(color)
                 .tracking(0.5)
@@ -627,7 +627,7 @@ struct GlobalSearchSheet: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         if !subtitle.isEmpty {
-                            Text(subtitle)
+                            Text(LocalizedStringKey(subtitle))
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)

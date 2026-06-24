@@ -125,7 +125,7 @@ struct ItemDetailView: View {
     }
 
     @ViewBuilder
-    private func dRow(_ icon: String, _ label: String, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
+    private func dRow(_ icon: String, _ label: LocalizedStringKey, _ value: String, color: Color = Color.primary.opacity(0.55)) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 28)
             Text(label).font(.system(size: 14)).foregroundStyle(.primary)
@@ -205,7 +205,7 @@ struct ItemDetailView: View {
         }
     }
 
-    private func loanRow(_ label: String, _ value: String, highlight: Bool = false) -> some View {
+    private func loanRow(_ label: LocalizedStringKey, _ value: String, highlight: Bool = false) -> some View {
         HStack {
             Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
             Spacer()
@@ -253,7 +253,7 @@ struct ItemDetailView: View {
                     Spacer()
                     if live.hasLocation { Text("📍").font(.system(size: 14)) }
                     if !live.trackerType.isEmpty {
-                        Text(live.trackerType == "airtag" ? "🏷 AirTag" : live.trackerType.capitalized)
+                        Text(LocalizedStringKey(live.trackerType == "airtag" ? "AirTag" : live.trackerType.capitalized))
                             .font(.system(size: 11, weight: .semibold)).foregroundStyle(.orange)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(.orange.opacity(0.15), in: Capsule())

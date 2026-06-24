@@ -157,7 +157,7 @@ struct InventoryView: View {
         }
     }
 
-    private func infoTile(_ value: String, _ label: String, highlight: Bool = false) -> some View {
+    private func infoTile(_ value: String, _ label: LocalizedStringKey, highlight: Bool = false) -> some View {
         GlassCard(padding: 10) {
             VStack(spacing: 3) {
                 Text(value).font(.system(size: 14, weight: .bold)).foregroundStyle(highlight ? .orange : .white).lineLimit(1).minimumScaleFactor(0.7)

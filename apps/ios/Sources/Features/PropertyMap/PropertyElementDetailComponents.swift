@@ -20,7 +20,7 @@ struct ElementRecordRow: View {
                         .font(.subheadline.weight(.medium))
                         .lineLimit(1)
                     HStack(spacing: 8) {
-                        Text(record.recordType.displayName)
+                        Text(LocalizedStringKey(record.recordType.displayName))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         if let by = record.performedBy {

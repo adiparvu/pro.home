@@ -118,7 +118,7 @@ struct SupplyListDetailView: View {
             HapticFeedback.selection()
         } label: {
             HStack(spacing: 5) {
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                 if count > 0 && !isSelected {
                     Text("\(count)")

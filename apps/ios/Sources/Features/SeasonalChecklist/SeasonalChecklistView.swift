@@ -62,7 +62,7 @@ struct SeasonalChecklistView: View {
                         VStack(spacing: 4) {
                             Image(systemName: season.icon)
                                 .font(.system(size: 20))
-                            Text(season.displayName)
+                            Text(LocalizedStringKey(season.displayName))
                                 .font(.system(size: 11, weight: selectedSeason == season ? .semibold : .regular))
                                 .foregroundStyle(selectedSeason == season ? .white : Color.primary.opacity(0.6))
                         }
@@ -149,7 +149,7 @@ struct SeasonalChecklistView: View {
 
     private func categorySection(category: String, items: [SeasonalCheckItem]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(category)
+            Text(LocalizedStringKey(category))
                 .textCase(.uppercase)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)

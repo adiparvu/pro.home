@@ -145,7 +145,7 @@ struct ARIASettingsView: View {
 
     private struct AvatarOption {
         let icon: String
-        let label: String
+        let label: LocalizedStringKey
     }
 
     private var avatarOptions: [AvatarOption] {
@@ -199,7 +199,7 @@ struct ARIASettingsView: View {
 
     private struct PersonalityOption {
         let id: String
-        let label: String
+        let label: LocalizedStringKey
         let icon: String
     }
 
@@ -212,7 +212,7 @@ struct ARIASettingsView: View {
         ]
     }
 
-    private func personalityChip(id: String, label: String, icon: String) -> some View {
+    private func personalityChip(id: String, label: LocalizedStringKey, icon: String) -> some View {
         let isActive = personality == id
         return Button {
             HapticFeedback.selection()
@@ -275,7 +275,7 @@ struct ARIASettingsView: View {
         }
     }
 
-    private func contextToggleRow(icon: String, color: Color, label: String, value: Binding<Bool>) -> some View {
+    private func contextToggleRow(icon: String, color: Color, label: LocalizedStringKey, value: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             Text(label)
@@ -419,7 +419,7 @@ struct ARIASettingsView: View {
 
     // MARK: - Layout Helpers
 
-    private func settingsGroup<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func settingsGroup<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))

@@ -138,7 +138,7 @@ struct ActivityFeedView: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) { period = p }
                 } label: {
-                    Text(p.rawValue)
+                    Text(LocalizedStringKey(p.rawValue))
                         .font(.system(size: 12, weight: period == p ? .semibold : .regular))
                         .foregroundStyle(period == p ? .white : Color.primary.opacity(0.6))
                         .padding(.horizontal, 13).padding(.vertical, 6)
@@ -259,7 +259,7 @@ struct ActivityFeedView: View {
                         .symbolRenderingMode(.hierarchical)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(event.title)
+                    Text(LocalizedStringKey(event.title))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.primary)
                     Text(event.subtitle)

@@ -152,7 +152,7 @@ struct ContractorDetailSheet: View {
         }
     }
 
-    private func contactRow(icon: String, label: String, value: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func contactRow(icon: String, label: LocalizedStringKey, value: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: { HapticFeedback.impact(.light); action() }) {
             HStack(spacing: 14) {
                 ZStack {
@@ -231,7 +231,7 @@ struct ContractorDetailSheet: View {
         }
     }
 
-    private func actionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func actionButton(icon: String, label: LocalizedStringKey, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: { HapticFeedback.impact(.medium); action() }) {
             HStack(spacing: 12) {
                 ZStack {

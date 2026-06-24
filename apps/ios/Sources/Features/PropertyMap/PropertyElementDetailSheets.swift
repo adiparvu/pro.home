@@ -14,7 +14,7 @@ struct DetailTabBar: View {
                     VStack(spacing: 3) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 14, weight: selected == tab ? .semibold : .regular))
-                        Text(tab.rawValue)
+                        Text(LocalizedStringKey(tab.rawValue))
                             .font(.system(size: 11, weight: selected == tab ? .semibold : .regular))
                     }
                     .foregroundStyle(selected == tab ? Color.white : Color.secondary)

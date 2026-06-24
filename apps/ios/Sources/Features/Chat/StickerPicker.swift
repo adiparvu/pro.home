@@ -153,12 +153,17 @@ struct StickerPicker: View {
                   : selectedCategoryId == "recent" ? "clock.fill" : "face.smiling")
                 .font(.system(size: 44))
                 .foregroundStyle(Color.primary.opacity(0.14))
-            Text(selectedCategoryId == "favorites" ? "No favorites yet"
-                 : selectedCategoryId == "recent"   ? "No stickers used yet"
-                 : selectedCategoryId == "mostused" ? "No stickers"
-                 : "No stickers")
-                .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(0.38))
+            Group {
+                if selectedCategoryId == "favorites" {
+                    Text("No favorites yet")
+                } else if selectedCategoryId == "recent" {
+                    Text("No stickers used yet")
+                } else {
+                    Text("No stickers")
+                }
+            }
+            .font(.system(size: 15))
+            .foregroundStyle(Color.primary.opacity(0.38))
             Spacer()
         }
         .frame(height: 200)
@@ -196,7 +201,7 @@ struct StickerCell: View {
                     }
                 }
 
-                Text(sticker.label)
+                Text(LocalizedStringKey(sticker.label))
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .lineLimit(1)
@@ -240,7 +245,7 @@ struct StickerBubble: View {
                 .scaleEffect(appeared ? 1.0 : 0.6)
                 .opacity(appeared ? 1.0 : 0.0)
             if let label = sticker?.label {
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .opacity(appeared ? 1.0 : 0.0)

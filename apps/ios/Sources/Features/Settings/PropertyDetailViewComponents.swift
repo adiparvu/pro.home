@@ -14,7 +14,7 @@ extension PropertyDetailView {
                 VStack(spacing: 16) {
                     PageHeader(
                         title: property.name,
-                        subtitle: property.propertyType.uppercased()
+                        subtitle: property.propertyType
                     )
 
                     basicCard(property)

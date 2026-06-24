@@ -70,7 +70,7 @@ private struct FAQRow: View {
                 }
             } label: {
                 HStack(spacing: 12) {
-                    Text(item.question)
+                    Text(LocalizedStringKey(item.question))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
@@ -85,7 +85,7 @@ private struct FAQRow: View {
             .buttonStyle(.plain)
 
             if item.isExpanded {
-                Text(item.answer)
+                Text(LocalizedStringKey(item.answer))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.65))
                     .multilineTextAlignment(.leading)

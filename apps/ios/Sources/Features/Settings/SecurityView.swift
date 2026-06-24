@@ -261,7 +261,7 @@ struct SecurityView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-lock")
                             .font(.system(size: 15)).foregroundStyle(.primary)
-                        Text(autoLockDescription)
+                        Text(LocalizedStringKey(autoLockDescription))
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                     }
                     Spacer()

@@ -92,7 +92,7 @@ struct MemberSupervisionDetailView: View {
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(section.color)
                                 }
-                                Text(section.label)
+                                Text(LocalizedStringKey(section.label))
                                     .font(.system(size: 15))
                                     .foregroundStyle(.primary)
                                 Spacer()

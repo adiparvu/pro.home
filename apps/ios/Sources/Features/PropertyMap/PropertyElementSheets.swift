@@ -102,7 +102,7 @@ struct AddElementRecordView: View {
                                     Spacer()
                                     Picker("", selection: $recordType) {
                                         ForEach(ElementRecordType.allCases, id: \.self) { t in
-                                            Label(t.displayName, systemImage: t.icon).tag(t)
+                                            Label(LocalizedStringKey(t.displayName), systemImage: t.icon).tag(t)
                                         }
                                     }.pickerStyle(.menu)
                                 }

@@ -179,7 +179,7 @@ struct ApplianceDetailSheet: View {
             .textCase(.uppercase)
     }
 
-    private func infoRow(icon: String, label: String, value: String, valueColor: Color = .primary) -> some View {
+    private func infoRow(icon: String, label: LocalizedStringKey, value: String, valueColor: Color = .primary) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 13))

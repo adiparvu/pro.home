@@ -16,12 +16,17 @@ struct LockScreenView: View {
                     Text("PRVIO is locked")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text(manager.authFailed
-                         ? "Authentication failed. Try again."
-                         : "Authenticate to continue")
-                        .font(.system(size: 14))
-                        .foregroundStyle(manager.authFailed ? .red : Color.primary.opacity(0.5))
-                        .multilineTextAlignment(.center)
+                    if manager.authFailed {
+                        Text("Authentication failed. Try again.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.red)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        Text("Authenticate to continue")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 Spacer()
                 Button {

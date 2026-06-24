@@ -62,7 +62,7 @@ struct PropertyTabView: View {
                     HStack(spacing: 6) {
                         Image(systemName: seg.icon)
                             .font(.system(size: 12, weight: .semibold))
-                        Text(seg.rawValue)
+                        Text(LocalizedStringKey(seg.rawValue))
                             .font(.system(size: 13, weight: segment == seg ? .semibold : .medium))
                     }
                     .foregroundStyle(segment == seg ? .primary : Color.primary.opacity(0.45))

@@ -282,7 +282,7 @@ struct UtilityView: View {
         }
     }
 
-    private func statCell(title: String, value: String, color: Color) -> some View {
+    private func statCell(title: LocalizedStringKey, value: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Text(value).font(.system(size: 16, weight: .bold)).foregroundStyle(color)
             Text(title).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))

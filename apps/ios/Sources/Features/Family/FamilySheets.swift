@@ -184,7 +184,7 @@ struct AddFamilyMemberSheet: View {
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(link.platformLabel).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(link.platformLabel)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
                             TextField("@\(link.handle)", text: Binding(
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
@@ -355,7 +355,7 @@ struct AddSocialLinkSheet: View {
                                             RoundedRectangle(cornerRadius: 14, style: .continuous)
                                                 .strokeBorder(platform == p ? sl.platformColor : .clear, lineWidth: 2)
                                         )
-                                    Text(sl.platformLabel)
+                                    Text(LocalizedStringKey(sl.platformLabel))
                                         .font(.system(size: 9, weight: .medium))
                                         .foregroundStyle(platform == p ? sl.platformColor : Color.primary.opacity(0.4))
                                 }

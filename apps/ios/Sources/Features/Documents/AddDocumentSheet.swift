@@ -85,7 +85,7 @@ struct AddDocumentSheet: View {
                         fieldGroup {
                             Button { showFilePicker = true } label: {
                                 HStack(spacing: 12) {
-                                    iconLabel("paperclip", color: .blue, text: pickedFileName.isEmpty ? "Attach file" : pickedFileName)
+                                    iconLabel("paperclip", color: .blue, text: pickedFileName.isEmpty ? LocalizedStringKey("Attach file") : LocalizedStringKey(pickedFileName))
                                     Spacer()
                                     Image(systemName: pickedFileData != nil ? "checkmark.circle.fill" : "chevron.right")
                                         .font(.system(size: 14))
@@ -186,16 +186,16 @@ struct AddDocumentSheet: View {
 
     private func rowField<Content: View>(_ icon: String, _ placeholder: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: 12) {
-            iconLabel(icon, color: .blue, text: "")
+            iconLabel(icon, color: .blue)
             content()
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
     }
 
-    private func iconLabel(_ icon: String, color: Color, text: String) -> some View {
+    private func iconLabel(_ icon: String, color: Color, text: LocalizedStringKey? = nil) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 22)
-            if !text.isEmpty {
+            if let text {
                 Text(text).font(.system(size: 15)).foregroundStyle(.primary).lineLimit(1)
             }
         }

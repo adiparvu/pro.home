@@ -172,7 +172,7 @@ struct DocumentsView: View {
     }
 
     private func toastView(_ message: String) -> some View {
-        Text(message)
+        Text(LocalizedStringKey(message))
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)

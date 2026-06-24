@@ -222,7 +222,7 @@ struct TasksView: View {
                         withAnimation(.spring(response: 0.28)) { historyPeriod = period }
                         HapticFeedback.selection()
                     } label: {
-                        Text(period.rawValue)
+                        Text(LocalizedStringKey(period.rawValue))
                             .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
                             .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(0.7))
                             .padding(.horizontal, 12)
@@ -269,7 +269,7 @@ struct TasksView: View {
 // MARK: - Filter Chip
 
 struct FilterChip: View {
-    let label: String
+    let label: LocalizedStringKey
     let count: Int
     let isSelected: Bool
     let action: () -> Void
@@ -337,7 +337,7 @@ struct TaskRowView: View {
                     if task.dueDate != nil {
                         Text("·")
                             .foregroundStyle(Color.primary.opacity(0.22))
-                        Text(task.dueDateDisplay)
+                        Text(LocalizedStringKey(task.dueDateDisplay))
                             .font(.system(size: 11))
                             .foregroundStyle(task.isOverdue ? .red.opacity(0.8) : Color.primary.opacity(0.38))
                     }

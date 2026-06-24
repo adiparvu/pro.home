@@ -109,9 +109,15 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Property")
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
-                            Text(propertyService.primary?.name ?? "No property")
-                                .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
-                                .lineLimit(1)
+                            if let name = propertyService.primary?.name {
+                                Text(name)
+                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .lineLimit(1)
+                            } else {
+                                Text("No property")
+                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .lineLimit(1)
+                            }
                         }
                         Spacer()
                         Image(systemName: "arrow.2.squarepath")

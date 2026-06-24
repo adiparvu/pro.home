@@ -229,7 +229,7 @@ struct ProfileView: View {
         }
     }
 
-    private func infoRow(_ label: String, _ value: String) -> some View {
+    private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
             Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
@@ -308,7 +308,7 @@ struct ProfileView: View {
     }
 
     private func toastView(_ message: String, isError: Bool) -> some View {
-        Text(message)
+        Text(LocalizedStringKey(message))
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)

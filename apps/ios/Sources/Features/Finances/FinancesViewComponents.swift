@@ -101,7 +101,7 @@ extension FinancesView {
         .padding(.horizontal, 20)
     }
 
-    private func kpiCell(label: String, value: String, color: Color, icon: String) -> some View {
+    private func kpiCell(label: LocalizedStringKey, value: String, color: Color, icon: String) -> some View {
         VStack(spacing: 5) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
@@ -140,7 +140,7 @@ extension FinancesView {
         }
     }
 
-    private func actionTile(icon: String, label: String, color: Color) -> some View {
+    private func actionTile(icon: String, label: LocalizedStringKey, color: Color) -> some View {
         HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)

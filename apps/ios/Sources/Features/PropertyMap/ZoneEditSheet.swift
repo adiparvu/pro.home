@@ -161,10 +161,16 @@ struct ZoneEditSheet: View {
                 .frame(width: 54, height: 54)
                 .background(tint, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text(name.isEmpty ? "Zone name" : name)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.4) : .primary)
-                Text(layer.displayName)
+                Group {
+                    if name.isEmpty {
+                        Text(LocalizedStringKey("Zone name"))
+                    } else {
+                        Text(LocalizedStringKey(name))
+                    }
+                }
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.4) : .primary)
+                Text(LocalizedStringKey(layer.displayName))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
@@ -175,7 +181,7 @@ struct ZoneEditSheet: View {
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    private func field<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func field<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
             content()
@@ -227,7 +233,7 @@ struct ZoneEditSheet: View {
                     let active = layer == l
                     HStack(spacing: 5) {
                         Image(systemName: l.icon).font(.system(size: 11, weight: .semibold))
-                        Text(l.displayName).font(.system(size: 13, weight: .semibold))
+                        Text(LocalizedStringKey(l.displayName)).font(.system(size: 13, weight: .semibold))
                     }
                     .foregroundStyle(active ? .white : .primary)
                     .padding(.horizontal, 12).padding(.vertical, 8)

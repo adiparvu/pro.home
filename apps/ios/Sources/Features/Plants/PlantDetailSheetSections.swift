@@ -103,7 +103,7 @@ extension PlantDetailSheet {
         }
     }
 
-    private func detailRow(icon: String, iconColor: Color, label: String, value: String) -> some View {
+    private func detailRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -290,7 +290,7 @@ extension PlantDetailSheet {
         }
     }
 
-    private func fieldLabel(_ text: String) -> some View {
+    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)

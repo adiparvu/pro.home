@@ -117,7 +117,7 @@ struct BuriedUtilitiesView: View {
                 ForEach(BuriedUtilityKind.all.filter { used.contains($0) }, id: \.self) { t in
                     HStack(spacing: 5) {
                         Circle().fill(BuriedUtilityKind.color(t)).frame(width: 8, height: 8)
-                        Text(BuriedUtilityKind.label(t))
+                        Text(LocalizedStringKey(BuriedUtilityKind.label(t)))
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.5))
                     }
                 }

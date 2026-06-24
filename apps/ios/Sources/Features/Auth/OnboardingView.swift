@@ -96,7 +96,7 @@ struct OnboardingView: View {
                         .padding(.vertical, 15)
                         .background(.blue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 } else {
-                    Text(step == 3 ? "Get Started" : (step == 1 && propertyName.isEmpty ? "Skip" : "Continue"))
+                    Text(LocalizedStringKey(step == 3 ? "Get Started" : (step == 1 && propertyName.isEmpty ? "Skip" : "Continue")))
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
@@ -309,8 +309,8 @@ private struct FeaturesStep: View {
                     HStack(spacing: 14) {
                         ColoredIconBadge(icon: f.icon, color: f.color, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(f.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                            Text(f.desc).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                            Text(LocalizedStringKey(f.title)).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                         }
                         Spacer()
                     }

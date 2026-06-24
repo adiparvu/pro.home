@@ -63,7 +63,7 @@ struct AddFinancialView: View {
             .alert("Error", isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text(errorMessage)
+                Text(LocalizedStringKey(errorMessage))
             }
         }
     }

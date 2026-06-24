@@ -104,7 +104,7 @@ struct SiriShortcutsView: View {
         }
     }
 
-    private func shortcutRow(icon: String, color: Color, title: String, phrases: [String]) -> some View {
+    private func shortcutRow(icon: String, color: Color, title: LocalizedStringKey, phrases: [String]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
@@ -130,7 +130,7 @@ struct SiriShortcutsView: View {
                         Image(systemName: "quote.bubble.fill")
                             .font(.system(size: 9))
                             .foregroundStyle(Color.primary.opacity(0.3))
-                        Text(phrase)
+                        Text(LocalizedStringKey(phrase))
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .italic()

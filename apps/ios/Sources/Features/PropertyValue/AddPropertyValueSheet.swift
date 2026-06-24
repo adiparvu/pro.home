@@ -129,7 +129,7 @@ struct AddPropertyValueSheet: View {
                                 source = s
                                 HapticFeedback.impact(.light)
                             } label: {
-                                Text(s)
+                                Text(LocalizedStringKey(s))
                                     .font(.system(size: 12))
                                     .foregroundStyle(Color.primary.opacity(0.7))
                                     .padding(.horizontal, 10)

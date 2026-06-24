@@ -234,8 +234,8 @@ struct IntegrationGroup<Content: View>: View {
 struct IntegrationRow: View {
     let icon: String
     let color: Color
-    let title: String
-    let description: String
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
     let status: IntegrationStatus
     let action: (() -> Void)?
 
@@ -324,8 +324,8 @@ struct IntegrationRow: View {
 struct IntegrationRowContent: View {
     let icon: String
     let color: Color
-    let title: String
-    let description: String
+    let title: LocalizedStringKey
+    let description: LocalizedStringKey
     let status: IntegrationStatus
 
     var body: some View {

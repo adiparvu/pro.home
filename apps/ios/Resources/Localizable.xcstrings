@@ -851,40 +851,6 @@
         }
       }
     },
-    "1 year": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 an"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 year"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 an"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 jaar"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 Jahr"
-          }
-        }
-      }
-    },
     "1 Year": {
       "localizations": {
         "ro": {
@@ -909,6 +875,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 Jaar"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Jahr"
+          }
+        }
+      }
+    },
+    "1 year": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 an"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 year"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 an"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 jaar"
           }
         },
         "de": {
@@ -1021,40 +1021,6 @@
         }
       }
     },
-    "3 Months": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Luni"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Months"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Mois"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Maanden"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Monate"
-          }
-        }
-      }
-    },
     "3 months": {
       "localizations": {
         "ro": {
@@ -1079,6 +1045,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "3 maanden"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Monate"
+          }
+        }
+      }
+    },
+    "3 Months": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Luni"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Months"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Mois"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Maanden"
           }
         },
         "de": {
@@ -3129,40 +3129,6 @@
         }
       }
     },
-    "Add item": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adaugă obiect"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add item"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter un article"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Object toevoegen"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objekt hinzufügen"
-          }
-        }
-      }
-    },
     "Add Item": {
       "localizations": {
         "ro": {
@@ -3193,6 +3159,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Element hinzufügen"
+          }
+        }
+      }
+    },
+    "Add item": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă obiect"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add item"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter un article"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Object toevoegen"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objekt hinzufügen"
           }
         }
       }
@@ -6223,7 +6223,7 @@
         }
       }
     },
-    "All time": {
+    "All Time": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -6234,7 +6234,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All time"
+            "value": "All Time"
           }
         },
         "fr": {
@@ -6257,7 +6257,7 @@
         }
       }
     },
-    "All Time": {
+    "All time": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -6268,7 +6268,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "All Time"
+            "value": "All time"
           }
         },
         "fr": {
@@ -6699,40 +6699,6 @@
         }
       }
     },
-    "App": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aplicație"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Application"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App"
-          }
-        }
-      }
-    },
     "APP": {
       "localizations": {
         "ro": {
@@ -6763,6 +6729,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "APP"
+          }
+        }
+      }
+    },
+    "App": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplicație"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
           }
         }
       }
@@ -8297,40 +8297,6 @@
         }
       }
     },
-    "Assistant Name": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nume asistent"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistant Name"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nom de l'assistant"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Naam assistent"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistentenname"
-          }
-        }
-      }
-    },
     "Assistant name": {
       "localizations": {
         "ro": {
@@ -8361,6 +8327,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Assistentname"
+          }
+        }
+      }
+    },
+    "Assistant Name": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nume asistent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistant Name"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom de l'assistant"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam assistent"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistentenname"
           }
         }
       }
@@ -8807,40 +8807,6 @@
         }
       }
     },
-    "AUTOMATIONS": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTOMATIZĂRI"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTOMATIONS"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTOMATISATIONS"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTOMATISERINGEN"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AUTOMATISIERUNGEN"
-          }
-        }
-      }
-    },
     "Automations": {
       "localizations": {
         "ro": {
@@ -8871,6 +8837,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Automatisierungen"
+          }
+        }
+      }
+    },
+    "AUTOMATIONS": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATIZĂRI"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATIONS"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATISATIONS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATISERINGEN"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUTOMATISIERUNGEN"
           }
         }
       }
@@ -11051,18 +11051,18 @@
         }
       }
     },
-    "Change email": {
+    "Change Email": {
       "localizations": {
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schimbă e-mailul"
+            "value": "Schimbă e-mail"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Change email"
+            "value": "Change Email"
           }
         },
         "fr": {
@@ -11085,18 +11085,18 @@
         }
       }
     },
-    "Change Email": {
+    "Change email": {
       "localizations": {
         "ro": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schimbă e-mail"
+            "value": "Schimbă e-mailul"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Change Email"
+            "value": "Change email"
           }
         },
         "fr": {
@@ -11187,7 +11187,7 @@
         }
       }
     },
-    "Change password": {
+    "Change Password": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -11198,7 +11198,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Change password"
+            "value": "Change Password"
           }
         },
         "fr": {
@@ -11221,7 +11221,7 @@
         }
       }
     },
-    "Change Password": {
+    "Change password": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -11232,7 +11232,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Change Password"
+            "value": "Change password"
           }
         },
         "fr": {
@@ -12479,40 +12479,6 @@
         }
       }
     },
-    "Coduri de rezervă": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coduri de rezervă"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Backup Codes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Codes de secours"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Back-upcodes"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Backup-Codes"
-          }
-        }
-      }
-    },
     "CODURI DE REZERVĂ": {
       "localizations": {
         "ro": {
@@ -12543,6 +12509,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "SICHERUNGSCODES"
+          }
+        }
+      }
+    },
+    "Coduri de rezervă": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coduri de rezervă"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup Codes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codes de secours"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back-upcodes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup-Codes"
           }
         }
       }
@@ -13465,40 +13465,6 @@
         }
       }
     },
-    "CONTACT": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONTACT"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONTACT"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONTACT"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONTACT"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "KONTAKT"
-          }
-        }
-      }
-    },
     "contact": {
       "localizations": {
         "ro": {
@@ -13529,6 +13495,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontakt"
+          }
+        }
+      }
+    },
+    "CONTACT": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTACT"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTACT"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTACT"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONTACT"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KONTAKT"
           }
         }
       }
@@ -15267,40 +15267,6 @@
         }
       }
     },
-    "Date": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dată"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Datum"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Datum"
-          }
-        }
-      }
-    },
     "DATE": {
       "localizations": {
         "ro": {
@@ -15331,6 +15297,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "DATUM"
+          }
+        }
+      }
+    },
+    "Date": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dată"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datum"
           }
         }
       }
@@ -15539,7 +15539,7 @@
         }
       }
     },
-    "Delete account": {
+    "Delete Account": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -15550,7 +15550,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete account"
+            "value": "Delete Account"
           }
         },
         "fr": {
@@ -15573,7 +15573,7 @@
         }
       }
     },
-    "Delete Account": {
+    "Delete account": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -15584,7 +15584,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Account"
+            "value": "Delete account"
           }
         },
         "fr": {
@@ -15743,7 +15743,7 @@
         }
       }
     },
-    "Delete permanently": {
+    "Delete Permanently": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -15754,7 +15754,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete permanently"
+            "value": "Delete Permanently"
           }
         },
         "fr": {
@@ -15777,7 +15777,7 @@
         }
       }
     },
-    "Delete Permanently": {
+    "Delete permanently": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -15788,7 +15788,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete Permanently"
+            "value": "Delete permanently"
           }
         },
         "fr": {
@@ -19517,40 +19517,6 @@
         }
       }
     },
-    "Excellent": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excelent"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excellent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excellent"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uitstekend"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ausgezeichnet"
-          }
-        }
-      }
-    },
     "excellent": {
       "localizations": {
         "ro": {
@@ -19581,6 +19547,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "ausgezeichnet"
+          }
+        }
+      }
+    },
+    "Excellent": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excelent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excellent"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excellent"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitstekend"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgezeichnet"
           }
         }
       }
@@ -21115,40 +21115,6 @@
         }
       }
     },
-    "Expiring soon": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expiră curând"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expiring soon"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expire bientôt"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verloopt binnenkort"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Läuft bald ab"
-          }
-        }
-      }
-    },
     "Expiring Soon": {
       "localizations": {
         "ro": {
@@ -21213,6 +21179,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "läuft bald ab"
+          }
+        }
+      }
+    },
+    "Expiring soon": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiră curând"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiring soon"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expire bientôt"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verloopt binnenkort"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läuft bald ab"
           }
         }
       }
@@ -21693,40 +21693,6 @@
         }
       }
     },
-    "Family Members": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Membrii familiei"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Family Members"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Membres de la famille"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familieleden"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Familienmitglieder"
-          }
-        }
-      }
-    },
     "FAMILY MEMBERS": {
       "localizations": {
         "ro": {
@@ -21757,6 +21723,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "FAMILIENMITGLIEDER"
+          }
+        }
+      }
+    },
+    "Family Members": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membrii familiei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family Members"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membres de la famille"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familieleden"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familienmitglieder"
           }
         }
       }
@@ -23529,40 +23529,6 @@
         }
       }
     },
-    "good": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "bun"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "good"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "bon"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "goed"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "gut"
-          }
-        }
-      }
-    },
     "Good": {
       "localizations": {
         "ro": {
@@ -23593,6 +23559,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gut"
+          }
+        }
+      }
+    },
+    "good": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bun"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "good"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "goed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gut"
           }
         }
       }
@@ -24243,40 +24243,6 @@
         }
       }
     },
-    "HEALTH": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SĂNĂTATE"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HEALTH"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SANTÉ"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GEZONDHEID"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GESUNDHEIT"
-          }
-        }
-      }
-    },
     "Health": {
       "localizations": {
         "ro": {
@@ -24307,6 +24273,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gesundheit"
+          }
+        }
+      }
+    },
+    "HEALTH": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SĂNĂTATE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEALTH"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SANTÉ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GEZONDHEID"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GESUNDHEIT"
           }
         }
       }
@@ -24345,40 +24345,6 @@
         }
       }
     },
-    "Health score": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scor de sănătate"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Health score"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Score de santé"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gezondheidsscore"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gesundheitspunktzahl"
-          }
-        }
-      }
-    },
     "Health Score": {
       "localizations": {
         "ro": {
@@ -24409,6 +24375,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gesundheitsbewertung"
+          }
+        }
+      }
+    },
+    "Health score": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scor de sănătate"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Health score"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Score de santé"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezondheidsscore"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesundheitspunktzahl"
           }
         }
       }
@@ -24651,40 +24651,6 @@
         }
       }
     },
-    "History": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Istoric"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "History"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Historique"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geschiedenis"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verlauf"
-          }
-        }
-      }
-    },
     "HISTORY": {
       "localizations": {
         "ro": {
@@ -24715,6 +24681,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "VERLAUF"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Istoric"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historique"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschiedenis"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlauf"
           }
         }
       }
@@ -24753,40 +24753,6 @@
         }
       }
     },
-    "HOME": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ACASĂ"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HOME"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ACCUEIL"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "THUIS"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ZUHAUSE"
-          }
-        }
-      }
-    },
     "Home": {
       "localizations": {
         "ro": {
@@ -24817,6 +24783,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Start"
+          }
+        }
+      }
+    },
+    "HOME": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACASĂ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HOME"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACCUEIL"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "THUIS"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZUHAUSE"
           }
         }
       }
@@ -27303,40 +27303,6 @@
         }
       }
     },
-    "Items": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obiecte"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Items"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objets"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objecten"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objekte"
-          }
-        }
-      }
-    },
     "items": {
       "localizations": {
         "ro": {
@@ -27401,6 +27367,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "ARTIKEL"
+          }
+        }
+      }
+    },
+    "Items": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obiecte"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objets"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objecten"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objekte"
           }
         }
       }
@@ -28187,7 +28187,7 @@
         }
       }
     },
-    "Last Name": {
+    "Last name": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -28198,7 +28198,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last Name"
+            "value": "Last name"
           }
         },
         "fr": {
@@ -28221,7 +28221,7 @@
         }
       }
     },
-    "Last name": {
+    "Last Name": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -28232,7 +28232,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Last name"
+            "value": "Last Name"
           }
         },
         "fr": {
@@ -28493,40 +28493,6 @@
         }
       }
     },
-    "Layer": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Strat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Layer"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couche"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Laag"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ebene"
-          }
-        }
-      }
-    },
     "LAYER": {
       "localizations": {
         "ro": {
@@ -28557,6 +28523,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "EBENE"
+          }
+        }
+      }
+    },
+    "Layer": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couche"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laag"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ebene"
           }
         }
       }
@@ -31213,40 +31213,6 @@
         }
       }
     },
-    "members": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "membri"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "members"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "membres"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "leden"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mitglieder"
-          }
-        }
-      }
-    },
     "MEMBERS": {
       "localizations": {
         "ro": {
@@ -31277,6 +31243,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "MITGLIEDER"
+          }
+        }
+      }
+    },
+    "members": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "membri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "members"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "membres"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "leden"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitglieder"
           }
         }
       }
@@ -31859,40 +31859,6 @@
         }
       }
     },
-    "Monthly Budget": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buget lunar"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Monthly Budget"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Budget mensuel"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maandbudget"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Monatsbudget"
-          }
-        }
-      }
-    },
     "MONTHLY BUDGET": {
       "localizations": {
         "ro": {
@@ -31923,6 +31889,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "MONATLICHES BUDGET"
+          }
+        }
+      }
+    },
+    "Monthly Budget": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buget lunar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly Budget"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budget mensuel"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maandbudget"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monatsbudget"
           }
         }
       }
@@ -33287,7 +33287,7 @@
         }
       }
     },
-    "New Task": {
+    "New task": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -33298,7 +33298,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New Task"
+            "value": "New task"
           }
         },
         "fr": {
@@ -33321,7 +33321,7 @@
         }
       }
     },
-    "New task": {
+    "New Task": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -33332,7 +33332,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New task"
+            "value": "New Task"
           }
         },
         "fr": {
@@ -35123,7 +35123,7 @@
         }
       }
     },
-    "No Warranty": {
+    "No warranty": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -35134,7 +35134,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Warranty"
+            "value": "No warranty"
           }
         },
         "fr": {
@@ -35157,7 +35157,7 @@
         }
       }
     },
-    "No warranty": {
+    "No Warranty": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -35168,7 +35168,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No warranty"
+            "value": "No Warranty"
           }
         },
         "fr": {
@@ -35531,40 +35531,6 @@
         }
       }
     },
-    "Notes (optional)": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Note (opțional)"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes (optional)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes (optionnel)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notities (optioneel)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notizen (optional)"
-          }
-        }
-      }
-    },
     "NOTES (OPTIONAL)": {
       "localizations": {
         "ro": {
@@ -35595,6 +35561,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "NOTIZEN (OPTIONAL)"
+          }
+        }
+      }
+    },
+    "Notes (optional)": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note (opțional)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes (optional)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes (optionnel)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notities (optioneel)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notizen (optional)"
           }
         }
       }
@@ -36619,40 +36619,6 @@
         }
       }
     },
-    "open": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "deschise"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "open"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ouvertes"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "open"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "offen"
-          }
-        }
-      }
-    },
     "Open": {
       "localizations": {
         "ro": {
@@ -36683,6 +36649,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offen"
+          }
+        }
+      }
+    },
+    "open": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "deschise"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ouvertes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "offen"
           }
         }
       }
@@ -37537,40 +37537,6 @@
         }
       }
     },
-    "Overdue": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restante"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Overdue"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En retard"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Achterstallig"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Überfällig"
-          }
-        }
-      }
-    },
     "overdue": {
       "localizations": {
         "ro": {
@@ -37601,6 +37567,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "überfällig"
+          }
+        }
+      }
+    },
+    "Overdue": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restante"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En retard"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achterstallig"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überfällig"
           }
         }
       }
@@ -39373,40 +39373,6 @@
         }
       }
     },
-    "PLANTS": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PLANTE"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PLANTS"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PLANTES"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PLANTEN"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PFLANZEN"
-          }
-        }
-      }
-    },
     "Plants": {
       "localizations": {
         "ro": {
@@ -39437,6 +39403,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pflanzen"
+          }
+        }
+      }
+    },
+    "PLANTS": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTS"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTES"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLANTEN"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PFLANZEN"
           }
         }
       }
@@ -39781,40 +39781,6 @@
         }
       }
     },
-    "Poor": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slab"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poor"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Médiocre"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slecht"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schlecht"
-          }
-        }
-      }
-    },
     "poor": {
       "localizations": {
         "ro": {
@@ -39845,6 +39811,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "schlecht"
+          }
+        }
+      }
+    },
+    "Poor": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slab"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Médiocre"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slecht"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlecht"
           }
         }
       }
@@ -40053,40 +40053,6 @@
         }
       }
     },
-    "Priority": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prioritate"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Priority"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Priorité"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prioriteit"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Priorität"
-          }
-        }
-      }
-    },
     "PRIORITY": {
       "localizations": {
         "ro": {
@@ -40117,6 +40083,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "PRIORITÄT"
+          }
+        }
+      }
+    },
+    "Priority": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioritate"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorité"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioriteit"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorität"
           }
         }
       }
@@ -40359,40 +40359,6 @@
         }
       }
     },
-    "PROPERTY": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PROPRIETATE"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PROPERTY"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PROPRIÉTÉ"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "EIGENDOM"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IMMOBILIE"
-          }
-        }
-      }
-    },
     "Property": {
       "localizations": {
         "ro": {
@@ -40423,6 +40389,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Immobilie"
+          }
+        }
+      }
+    },
+    "PROPERTY": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROPRIETATE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROPERTY"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROPRIÉTÉ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EIGENDOM"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IMMOBILIE"
           }
         }
       }
@@ -41379,7 +41379,7 @@
         }
       }
     },
-    "Purchase date": {
+    "Purchase Date": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -41390,7 +41390,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Purchase date"
+            "value": "Purchase Date"
           }
         },
         "fr": {
@@ -41413,7 +41413,7 @@
         }
       }
     },
-    "Purchase Date": {
+    "Purchase date": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -41424,7 +41424,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Purchase Date"
+            "value": "Purchase date"
           }
         },
         "fr": {
@@ -42875,40 +42875,6 @@
         }
       }
     },
-    "RENOVATIONS": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RENOVĂRI"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RENOVATIONS"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RÉNOVATIONS"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RENOVATIES"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RENOVIERUNGEN"
-          }
-        }
-      }
-    },
     "Renovations": {
       "localizations": {
         "ro": {
@@ -42939,6 +42905,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Renovierungen"
+          }
+        }
+      }
+    },
+    "RENOVATIONS": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RENOVĂRI"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RENOVATIONS"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RÉNOVATIONS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RENOVATIES"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RENOVIERUNGEN"
           }
         }
       }
@@ -44269,40 +44269,6 @@
         }
       }
     },
-    "ROLE": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ROL"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ROLE"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RÔLE"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ROL"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ROLLE"
-          }
-        }
-      }
-    },
     "Role": {
       "localizations": {
         "ro": {
@@ -44333,6 +44299,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rolle"
+          }
+        }
+      }
+    },
+    "ROLE": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ROL"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ROLE"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RÔLE"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ROL"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ROLLE"
           }
         }
       }
@@ -44915,7 +44915,7 @@
         }
       }
     },
-    "Save changes": {
+    "Save Changes": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -44926,7 +44926,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save changes"
+            "value": "Save Changes"
           }
         },
         "fr": {
@@ -44949,7 +44949,7 @@
         }
       }
     },
-    "Save Changes": {
+    "Save changes": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -44960,7 +44960,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Changes"
+            "value": "Save changes"
           }
         },
         "fr": {
@@ -48995,40 +48995,6 @@
         }
       }
     },
-    "Story": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poveste"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Story"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Histoire"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verhaal"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geschichte"
-          }
-        }
-      }
-    },
     "STORY": {
       "localizations": {
         "ro": {
@@ -49059,6 +49025,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "GESCHICHTE"
+          }
+        }
+      }
+    },
+    "Story": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poveste"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Histoire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verhaal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschichte"
           }
         }
       }
@@ -49165,40 +49165,6 @@
         }
       }
     },
-    "Summary": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sumar"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Summary"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Résumé"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Samenvatting"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zusammenfassung"
-          }
-        }
-      }
-    },
     "SUMMARY": {
       "localizations": {
         "ro": {
@@ -49229,6 +49195,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "ZUSAMMENFASSUNG"
+          }
+        }
+      }
+    },
+    "Summary": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Résumé"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenvatting"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusammenfassung"
           }
         }
       }
@@ -49369,40 +49369,6 @@
         }
       }
     },
-    "Supplies": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Consumabile"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supplies"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fournitures"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Benodigdheden"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorräte"
-          }
-        }
-      }
-    },
     "SUPPLIES": {
       "localizations": {
         "ro": {
@@ -49433,6 +49399,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "VORRÄTE"
+          }
+        }
+      }
+    },
+    "Supplies": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consumabile"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supplies"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fournitures"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benodigdheden"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorräte"
           }
         }
       }
@@ -49743,40 +49743,6 @@
         }
       }
     },
-    "Support": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suport"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Support"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistance"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ondersteuning"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Support"
-          }
-        }
-      }
-    },
     "SUPPORT": {
       "localizations": {
         "ro": {
@@ -49807,6 +49773,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "SUPPORT"
+          }
+        }
+      }
+    },
+    "Support": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suport"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistance"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondersteuning"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support"
           }
         }
       }
@@ -52565,40 +52565,6 @@
         }
       }
     },
-    "Today": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Azi"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aujourd'hui"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vandaag"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute"
-          }
-        }
-      }
-    },
     "today": {
       "localizations": {
         "ro": {
@@ -52629,6 +52595,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "heute"
+          }
+        }
+      }
+    },
+    "Today": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aujourd'hui"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandaag"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute"
           }
         }
       }
@@ -52701,40 +52701,6 @@
         }
       }
     },
-    "total": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "total"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "total"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "total"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "totaal"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "gesamt"
-          }
-        }
-      }
-    },
     "TOTAL": {
       "localizations": {
         "ro": {
@@ -52765,6 +52731,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "GESAMT"
+          }
+        }
+      }
+    },
+    "total": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "total"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "totaal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gesamt"
           }
         }
       }
@@ -53449,7 +53449,7 @@
         }
       }
     },
-    "Trusted Contact": {
+    "Trusted contact": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -53460,7 +53460,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trusted Contact"
+            "value": "Trusted contact"
           }
         },
         "fr": {
@@ -53483,7 +53483,7 @@
         }
       }
     },
-    "Trusted contact": {
+    "Trusted Contact": {
       "localizations": {
         "ro": {
           "stringUnit": {
@@ -53494,7 +53494,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trusted contact"
+            "value": "Trusted Contact"
           }
         },
         "fr": {
@@ -53653,40 +53653,6 @@
         }
       }
     },
-    "TYPE": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TIP"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TYPE"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TYPE"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TYPE"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TYP"
-          }
-        }
-      }
-    },
     "Type": {
       "localizations": {
         "ro": {
@@ -53717,6 +53683,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Typ"
+          }
+        }
+      }
+    },
+    "TYPE": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TIP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TYPE"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TYPE"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TYPE"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TYP"
           }
         }
       }
@@ -54197,40 +54197,6 @@
         }
       }
     },
-    "urgent": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "urgent"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "urgent"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "urgent"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "urgent"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "dringend"
-          }
-        }
-      }
-    },
     "URGENT": {
       "localizations": {
         "ro": {
@@ -54261,6 +54227,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "DRINGEND"
+          }
+        }
+      }
+    },
+    "urgent": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "urgent"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "urgent"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "urgent"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "urgent"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dringend"
           }
         }
       }
@@ -55557,40 +55557,6 @@
         }
       }
     },
-    "Watering interval": {
-      "localizations": {
-        "ro": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Interval udare"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Watering interval"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intervalle d'arrosage"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bewateringsinterval"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bewässerungsintervall"
-          }
-        }
-      }
-    },
     "WATERING INTERVAL": {
       "localizations": {
         "ro": {
@@ -55621,6 +55587,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "BEWÄSSERUNGSINTERVALL"
+          }
+        }
+      }
+    },
+    "Watering interval": {
+      "localizations": {
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interval udare"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watering interval"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervalle d'arrosage"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewateringsinterval"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewässerungsintervall"
           }
         }
       }

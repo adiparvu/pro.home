@@ -51,7 +51,7 @@ struct ActiveSessionsSheet: View {
         }
     }
 
-    private func sessionRow(icon: String, title: String, subtitle: String, color: Color, isCurrent: Bool) -> some View {
+    private func sessionRow(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey, color: Color, isCurrent: Bool) -> some View {
         HStack(spacing: 12) {
             ColoredIconBadge(icon: icon, color: color)
             VStack(alignment: .leading, spacing: 2) {

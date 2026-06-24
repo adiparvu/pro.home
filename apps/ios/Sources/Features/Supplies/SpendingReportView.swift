@@ -182,7 +182,7 @@ struct SpendingReportView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text(receiptService.monthDisplayName(selectedMonth)).font(.system(size: 15, weight: .semibold))
+            Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(.system(size: 15, weight: .semibold))
             Spacer()
             Button {
                 let next = receiptService.nextMonthKey(from: selectedMonth)

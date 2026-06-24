@@ -130,7 +130,7 @@ private struct MemberCallRow: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)
                             .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                        Text(member.roleLabel)
+                        Text(LocalizedStringKey(member.roleLabel))
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                 }

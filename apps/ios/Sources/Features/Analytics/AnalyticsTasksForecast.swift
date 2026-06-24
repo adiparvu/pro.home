@@ -211,9 +211,9 @@ struct ForecastSection: View {
 // MARK: - ForecastRow
 
 struct ForecastRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
-    let sub: String
+    let sub: LocalizedStringKey
     let positive: Bool
 
     var body: some View {

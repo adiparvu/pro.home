@@ -143,7 +143,7 @@ struct AppliancesView: View {
         }
     }
 
-    private func chip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func chip(label: LocalizedStringKey, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))

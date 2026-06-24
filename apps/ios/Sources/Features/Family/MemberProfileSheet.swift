@@ -62,7 +62,7 @@ struct MemberProfileSheet: View {
             Text(resolvedMember.name)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.primary)
-            Text(resolvedMember.roleLabel)
+            Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(resolvedMember.swiftColor)

@@ -385,15 +385,16 @@ struct ZoneDetailView: View {
 
     private var actionButtonsRow: some View {
         HStack(spacing: 0) {
-            ForEach(actionButtonItems, id: \.label) { item in
-                actionButton(label: item.label, icon: item.icon, color: item.color)
+            ForEach(actionButtonItems, id: \.actionKey) { item in
+                actionButton(label: item.label, actionKey: item.actionKey, icon: item.icon, color: item.color)
                     .frame(maxWidth: .infinity)
             }
         }
     }
 
     private struct ActionButtonItem {
-        let label: String
+        let label: LocalizedStringKey
+        let actionKey: String
         let icon: String
         let color: Color
     }
@@ -402,52 +403,52 @@ struct ZoneDetailView: View {
         switch zoneType {
         case .water:
             return [
-                ActionButtonItem(label: "Refill", icon: "drop.fill", color: .blue),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Balance", icon: "scale.3d", color: .cyan),
+                ActionButtonItem(label: "Refill", actionKey: "Refill", icon: "drop.fill", color: .blue),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Balance", actionKey: "Balance", icon: "scale.3d", color: .cyan),
             ]
         case .forest, .orchard:
             return [
-                ActionButtonItem(label: "Irrigate", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Survey", icon: "location", color: .green),
+                ActionButtonItem(label: "Irrigate", actionKey: "Irrigate", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Survey", actionKey: "Survey", icon: "location", color: .green),
             ]
         case .greenhouse:
             return [
-                ActionButtonItem(label: "Ventilate", icon: "wind", color: .green),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Sensors", icon: "antenna.radiowaves.left.and.right", color: .cyan),
+                ActionButtonItem(label: "Ventilate", actionKey: "Ventilate", icon: "wind", color: .green),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Sensors", actionKey: "Sensors", icon: "antenna.radiowaves.left.and.right", color: .cyan),
             ]
         case .smartHome:
             return [
-                ActionButtonItem(label: "Control", icon: "house.fill", color: Color(red: 0.4, green: 0.5, blue: 0.9)),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Security", icon: "shield", color: .green),
+                ActionButtonItem(label: "Control", actionKey: "Control", icon: "house.fill", color: Color(red: 0.4, green: 0.5, blue: 0.9)),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Security", actionKey: "Security", icon: "shield", color: .green),
             ]
         case .garden:
             return [
-                ActionButtonItem(label: "Water", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Fertilize", icon: "leaf", color: .green),
+                ActionButtonItem(label: "Water", actionKey: "Water", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Fertilize", actionKey: "Fertilize", icon: "leaf", color: .green),
             ]
         case .garage:
             return [
-                ActionButtonItem(label: "Access", icon: "key.fill", color: Color(red: 0.9, green: 0.7, blue: 0.2)),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Security", icon: "lock.fill", color: .green),
+                ActionButtonItem(label: "Access", actionKey: "Access", icon: "key.fill", color: Color(red: 0.9, green: 0.7, blue: 0.2)),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Security", actionKey: "Security", icon: "lock.fill", color: .green),
             ]
         case .generic:
             return [
-                ActionButtonItem(label: "Edit", icon: "pencil", color: .blue),
-                ActionButtonItem(label: "Tasks", icon: "checklist", color: .orange),
-                ActionButtonItem(label: "Records", icon: "doc.text", color: .secondary),
-                ActionButtonItem(label: "Delete", icon: "trash", color: .red),
+                ActionButtonItem(label: "Edit", actionKey: "Edit", icon: "pencil", color: .blue),
+                ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
+                ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
+                ActionButtonItem(label: "Delete", actionKey: "Delete", icon: "trash", color: .red),
             ]
         }
     }
@@ -469,8 +470,8 @@ struct ZoneDetailView: View {
         }
     }
 
-    private func actionButton(label: String, icon: String, color: Color) -> some View {
-        Button { handleActionButton(label) } label: {
+    private func actionButton(label: LocalizedStringKey, actionKey: String, icon: String, color: Color) -> some View {
+        Button { handleActionButton(actionKey) } label: {
             VStack(spacing: 6) {
                 ZStack {
                     Circle()

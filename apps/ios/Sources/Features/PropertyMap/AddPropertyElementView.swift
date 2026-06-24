@@ -287,7 +287,7 @@ struct AddPropertyElementView: View {
     }
 
     @ViewBuilder
-    private func fieldRow(label: String, placeholder: String, text: Binding<String>) -> some View {
+    private func fieldRow(label: LocalizedStringKey, placeholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.caption).foregroundStyle(.secondary)
             TextField(placeholder, text: text)
@@ -315,7 +315,7 @@ private struct TypeChip: View {
                     .background(
                         Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(0.06))
                     )
-                Text(type.displayName)
+                Text(LocalizedStringKey(type.displayName))
                     .font(.system(size: 10))
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .lineLimit(2)

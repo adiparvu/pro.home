@@ -186,7 +186,7 @@ extension MortgageView {
 // MARK: - Sub-views
 
 struct MortgageStat: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var body: some View {
         VStack(spacing: 3) {
@@ -206,7 +206,7 @@ struct MortgageStat: View {
 }
 
 struct BreakdownRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let percent: Double
     let color: Color
     var body: some View {

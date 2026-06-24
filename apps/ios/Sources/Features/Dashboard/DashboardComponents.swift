@@ -165,7 +165,7 @@ struct ThumbnailCard: View {
                         .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
                 }
-                Text(section.name)
+                Text(LocalizedStringKey(section.name))
                     .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
                     .lineLimit(1)
@@ -271,7 +271,7 @@ struct HealthScoreCard: View {
 
 struct DashStatCard: View {
     let value: String
-    let label: String
+    let label: LocalizedStringKey
     let color: Color
 
     var body: some View {
@@ -459,7 +459,7 @@ struct PropertyHealthGauge: View {
 
 struct StatChip: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var color: Color = .primary
     var action: (() -> Void)? = nil
@@ -491,7 +491,7 @@ struct StatChip: View {
 // MARK: - CategoryFilterChip (used across Zones, Objects screens)
 
 struct CategoryFilterChip: View {
-    let label: String
+    let label: LocalizedStringKey
     var isActive: Bool
     var action: () -> Void
 

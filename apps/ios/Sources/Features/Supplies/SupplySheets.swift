@@ -60,7 +60,7 @@ struct AddSupplyListSheet: View {
                         .foregroundStyle(.white.opacity(0.92))
                         .padding(14)
                 }
-                Text(name.isEmpty ? "List name" : name)
+                if name.isEmpty { Text("List name") } else { Text(name) }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .primary)
                     .padding(.horizontal, 12).padding(.vertical, 10)

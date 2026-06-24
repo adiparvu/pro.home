@@ -69,7 +69,7 @@ struct ScanCard: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(scan.kindLabel)
+                Text(LocalizedStringKey(scan.kindLabel))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(scan.accent)
             }
@@ -254,7 +254,7 @@ struct AddPlanSheet: View {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in
                         Button { kind = k } label: {
-                            Text(kindLabel(k))
+                            Text(LocalizedStringKey(kindLabel(k)))
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
                                 .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(0.7))
                                 .padding(.horizontal, 14).padding(.vertical, 8)

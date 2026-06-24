@@ -282,7 +282,7 @@ struct DeliveryRow: View {
 
                 Spacer()
 
-                Text(delivery.statusLabel)
+                Text(LocalizedStringKey(delivery.statusLabel))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(delivery.statusColor)
                     .padding(.horizontal, 9)

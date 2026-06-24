@@ -109,7 +109,7 @@ struct ZonesListView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ZoneFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
+                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
                     }
                 }
@@ -176,7 +176,7 @@ struct ZoneListRow: View {
             Spacer()
 
             // Health badge
-            Text(healthLabel)
+            Text(LocalizedStringKey(healthLabel))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)

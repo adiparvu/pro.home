@@ -87,7 +87,7 @@ struct AppIconPickerView: View {
         .alert("Icon not available", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(errorMsg)
+            Text(LocalizedStringKey(errorMsg))
         }
     }
 
@@ -100,7 +100,7 @@ struct AppIconPickerView: View {
                 iconSquare(option, scheme: .light, size: 68)
                 iconSquare(option, scheme: .dark, size: 68)
             }
-            Text(option.name)
+            Text(LocalizedStringKey(option.name))
                 .font(.system(size: 14, weight: .semibold))
             HStack(spacing: 4) {
                 Image(systemName: "sun.min")
@@ -129,7 +129,7 @@ struct AppIconPickerView: View {
                         iconSquare(option, scheme: .dark, size: 52)
                     }
                     HStack {
-                        Text(option.name)
+                        Text(LocalizedStringKey(option.name))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.primary)
                         Spacer()

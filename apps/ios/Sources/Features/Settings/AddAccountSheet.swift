@@ -31,7 +31,7 @@ struct AddAccountSheet: View {
 
                 if let err = errorMessage {
                     Section {
-                        Text(err)
+                        Text(LocalizedStringKey(err))
                             .font(.footnote)
                             .foregroundStyle(.red)
                     }

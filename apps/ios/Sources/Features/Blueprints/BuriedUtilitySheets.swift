@@ -26,15 +26,15 @@ struct BuriedUtilityRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                     HStack(spacing: 8) {
-                        Text(utility.typeLabel)
+                        Text(LocalizedStringKey(utility.typeLabel))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(utility.swiftColor)
                         Text("·").foregroundStyle(Color.primary.opacity(0.3))
-                        Text(utility.depthDisplay)
+                        Text(LocalizedStringKey(utility.depthDisplay))
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                         if utility.lengthM > 0 {
                             Text("·").foregroundStyle(Color.primary.opacity(0.3))
-                            Text(utility.lengthDisplay)
+                            Text(LocalizedStringKey(utility.lengthDisplay))
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                         }
                     }
@@ -138,7 +138,7 @@ struct BuriedUtilityDetailSheet: View {
         HStack {
             Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
-            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(color)
+            Text(LocalizedStringKey(value)).font(.system(size: 14, weight: .semibold)).foregroundStyle(color)
         }
         .padding(.vertical, 10)
     }
@@ -219,7 +219,7 @@ struct AddBuriedUtilitySheet: View {
                         Button { type = t } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: BuriedUtilityKind.icon(t)).font(.system(size: 11))
-                                Text(BuriedUtilityKind.label(t)).font(.system(size: 13, weight: type == t ? .semibold : .regular))
+                                Text(LocalizedStringKey(BuriedUtilityKind.label(t))).font(.system(size: 13, weight: type == t ? .semibold : .regular))
                             }
                             .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.7))
                             .padding(.horizontal, 14).padding(.vertical, 8)

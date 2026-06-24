@@ -54,7 +54,7 @@ struct PlantsView: View {
         )) {
             Button("OK") { plantService.error = nil }
         } message: {
-            Text(plantService.error ?? "")
+            Text(LocalizedStringKey(plantService.error ?? ""))
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -130,7 +130,7 @@ struct PlantsView: View {
         }
     }
 
-    private func statCell(value: String, label: String, color: Color) -> some View {
+    private func statCell(value: String, label: LocalizedStringKey, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.system(size: 22, weight: .bold))
@@ -168,7 +168,7 @@ struct PlantsView: View {
         }
     }
 
-    private func sectionBlock(title: String, icon: String, iconColor: Color, plants: [Plant]) -> some View {
+    private func sectionBlock(title: LocalizedStringKey, icon: String, iconColor: Color, plants: [Plant]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
@@ -293,7 +293,7 @@ struct PlantCard: View {
                                 .lineLimit(1)
                         }
 
-                        Text(plant.wateringLabel)
+                        Text(LocalizedStringKey(plant.wateringLabel))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(
                                 plant.needsWatering
@@ -306,7 +306,7 @@ struct PlantCard: View {
                             Image(systemName: "drop.fill")
                                 .font(.system(size: 9))
                                 .foregroundStyle(Color.primary.opacity(0.3))
-                            Text(plant.lastWateredDisplay)
+                            Text(LocalizedStringKey(plant.lastWateredDisplay))
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
                         }

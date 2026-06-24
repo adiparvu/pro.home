@@ -112,7 +112,7 @@ struct PRVIOTimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(TimeFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: f.rawValue, isActive: filter == f) {
+                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
                     }
                 }
@@ -171,7 +171,7 @@ struct PRVIOTimelineView: View {
                 icon: isOverdue ? "exclamationmark.circle.fill" : "clock.fill",
                 color: isOverdue ? .red : .orange,
                 title: task.title,
-                subtitle: isOverdue ? "Overdue" : "Due " + relativeDate(date),
+                subtitle: isOverdue ? String(localized: "Overdue") : "Due " + relativeDate(date),
                 date: date
             ))
         }
@@ -263,7 +263,7 @@ struct TimelineEventCard: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
-                Text(event.subtitle)
+                Text(LocalizedStringKey(event.subtitle))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.45))
             }
