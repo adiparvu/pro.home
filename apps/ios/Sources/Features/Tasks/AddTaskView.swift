@@ -56,7 +56,7 @@ struct AddTaskView: View {
                     .padding(.top, 16)
                 }
             }
-            .navigationTitle(editing != nil ? "Edit Task" : "New Task")
+            .navigationTitle(editing != nil ? String(localized: "Edit Task") : String(localized: "New Task"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

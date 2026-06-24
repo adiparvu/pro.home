@@ -1685,3 +1685,16 @@
 "Digital Twin & Zones" = "Digitale Tweeling & Zones";
 "Raport" = "Rapport";
 "PROPERTY" = "EIGENDOM";
+
+/* Build 286 — Dashboard widget subtitles */
+"urgent" = "urgent";
+"active" = "actief";
+"expiring soon" = "verloopt binnenkort";
+"member" = "lid";
+"members" = "leden";
+"item" = "artikel";
+"items" = "artikelen";
+"contact" = "contact";
+"contacts" = "contacten";
+"property score" = "eigendomsscore";
+"%d need water" = "%d hebben water nodig";

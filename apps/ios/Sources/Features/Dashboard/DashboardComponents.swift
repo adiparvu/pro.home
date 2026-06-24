@@ -16,7 +16,7 @@ var appBackground: Color {
 struct HomeWidget: View {
     let icon: String
     let iconColor: Color
-    let title: String
+    let title: LocalizedStringKey
     let value: String
     let subtitle: String
     var badge: Int = 0

@@ -45,8 +45,8 @@ struct PlantsSmallView: View {
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.plantsNeedingWater > 0
-                     ? "Needs water"
-                     : "All watered")
+                     ? LocalizedStringKey("Needs water")
+                     : LocalizedStringKey("All watered"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
             }
@@ -86,7 +86,7 @@ struct PlantsMediumView: View {
                 }
                 Spacer()
                 if entry.snapshot.plantsNeedingWater > 0 {
-                    Text("\(entry.snapshot.plantsNeedingWater) need water")
+                    Text(String(format: String(localized: "%d need water"), entry.snapshot.plantsNeedingWater))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Color(red: 1.0, green: 0.62, blue: 0.1))
                         .padding(.horizontal, 8)

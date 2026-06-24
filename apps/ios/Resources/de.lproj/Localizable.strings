@@ -1685,3 +1685,16 @@
 "Digital Twin & Zones" = "Digitaler Zwilling & Zonen";
 "Raport" = "Bericht";
 "PROPERTY" = "IMMOBILIE";
+
+/* Build 286 — Dashboard widget subtitles */
+"urgent" = "dringend";
+"active" = "aktiv";
+"expiring soon" = "läuft bald ab";
+"member" = "Mitglied";
+"members" = "Mitglieder";
+"item" = "Artikel";
+"items" = "Artikel";
+"contact" = "Kontakt";
+"contacts" = "Kontakte";
+"property score" = "Immobilienwert";
+"%d need water" = "%d brauchen Wasser";

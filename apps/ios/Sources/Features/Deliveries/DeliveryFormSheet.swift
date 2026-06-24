@@ -71,7 +71,7 @@ struct DeliveryFormSheet: View {
                     .padding(.top, 16)
                 }
             }
-            .navigationTitle(isEditing ? "Edit delivery" : "New delivery")
+            .navigationTitle(isEditing ? String(localized: "Edit delivery") : String(localized: "New delivery"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

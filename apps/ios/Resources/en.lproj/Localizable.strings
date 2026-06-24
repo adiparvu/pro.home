@@ -1703,3 +1703,16 @@
 "Digital Twin & Zones" = "Digital Twin & Zones";
 "Raport" = "Report";
 "PROPERTY" = "PROPERTY";
+
+/* Build 286 — Dashboard widget subtitles */
+"urgent" = "urgent";
+"active" = "active";
+"expiring soon" = "expiring soon";
+"member" = "member";
+"members" = "members";
+"item" = "item";
+"items" = "items";
+"contact" = "contact";
+"contacts" = "contacts";
+"property score" = "property score";
+"%d need water" = "%d need water";

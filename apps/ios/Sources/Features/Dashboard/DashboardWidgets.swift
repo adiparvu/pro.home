@@ -28,7 +28,7 @@ extension DashboardView {
                 iconColor: taskService.overdueCount > 0 ? .red : Color(red: 0.35, green: 0.65, blue: 1.0),
                 title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
-                subtitle: taskService.overdueCount > 0 ? "urgent" : "active",
+                subtitle: taskService.overdueCount > 0 ? String(localized: "urgent") : String(localized: "active"),
                 badge: taskService.overdueCount
             ) { router.selectedTab = .tasks }
 
@@ -39,7 +39,7 @@ extension DashboardView {
                     ? Color(red: 0.3, green: 0.85, blue: 0.45) : .orange,
                 title: "Finances",
                 value: netFormatted,
-                subtitle: "this month"
+                subtitle: String(localized: "this month")
             ) { router.selectedTab = .settings }
 
         case .documents:
@@ -51,7 +51,7 @@ extension DashboardView {
                 value: documentService.expiringDocs.isEmpty
                     ? "\(documentService.documents.count)"
                     : "\(documentService.expiringDocs.count)",
-                subtitle: documentService.expiringDocs.isEmpty ? "total" : "expiring soon",
+                subtitle: documentService.expiringDocs.isEmpty ? String(localized: "total") : String(localized: "expiring soon"),
                 badge: documentService.expiringDocs.count
             ) { router.selectedTab = .settings }
 
@@ -61,7 +61,7 @@ extension DashboardView {
                 iconColor: Color(red: 0.7, green: 0.45, blue: 0.95),
                 title: "Family",
                 value: "\(familyService.members.count)",
-                subtitle: familyService.members.count == 1 ? "member" : "members"
+                subtitle: familyService.members.count == 1 ? String(localized: "member") : String(localized: "members")
             ) { router.selectedTab = .settings }
 
         case .healthScore:
@@ -70,7 +70,7 @@ extension DashboardView {
                 iconColor: .red,
                 title: "Health",
                 value: propertyService.primary?.healthScore.map { "\($0)" } ?? "–",
-                subtitle: "property score"
+                subtitle: String(localized: "property score")
             ) { router.selectedTab = .chat }
 
         case .inventory:
@@ -79,7 +79,7 @@ extension DashboardView {
                 iconColor: .orange,
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
-                subtitle: inventoryService.items.count == 1 ? "item" : "items"
+                subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
             ) { router.selectedTab = .settings }
 
         case .contractors:
@@ -88,7 +88,7 @@ extension DashboardView {
                 iconColor: Color(red: 0.9, green: 0.65, blue: 0.2),
                 title: "Contractors",
                 value: "\(contractorService.contractors.count)",
-                subtitle: contractorService.contractors.count == 1 ? "contact" : "contacts"
+                subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
             ) { router.selectedTab = .settings }
 
         case .calendar:

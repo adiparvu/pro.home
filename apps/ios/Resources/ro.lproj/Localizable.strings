@@ -1861,3 +1861,16 @@
 /* PropertyReport header */
 "Raport" = "Raport";
 "PROPERTY" = "PROPRIETATE";
+
+/* Build 286 — Dashboard widget subtitles */
+"urgent" = "urgent";
+"active" = "active";
+"expiring soon" = "expiră curând";
+"member" = "membru";
+"members" = "membri";
+"item" = "articol";
+"items" = "articole";
+"contact" = "contact";
+"contacts" = "contacte";
+"property score" = "scor proprietate";
+"%d need water" = "%d necesită apă";

@@ -57,7 +57,7 @@ struct AddSupplyItemSheet: View {
                     .padding(.horizontal, 20).padding(.top, 16)
                 }
             }
-            .navigationTitle(editingItem == nil ? "New Item" : "Edit Item")
+            .navigationTitle(editingItem == nil ? String(localized: "New Item") : String(localized: "Edit Item"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -1685,3 +1685,16 @@
 "Digital Twin & Zones" = "Jumeau numérique & Zones";
 "Raport" = "Rapport";
 "PROPERTY" = "PROPRIÉTÉ";
+
+/* Build 286 — Dashboard widget subtitles */
+"urgent" = "urgent";
+"active" = "actif";
+"expiring soon" = "expire bientôt";
+"member" = "membre";
+"members" = "membres";
+"item" = "article";
+"items" = "articles";
+"contact" = "contact";
+"contacts" = "contacts";
+"property score" = "score propriété";
+"%d need water" = "%d ont besoin d'eau";
