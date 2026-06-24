@@ -1987,3 +1987,10 @@
 "%@ %@ has been watered!" = "%@ %@ is water gegeven!";
 "PRVIO Backup Codes" = "PRVIO Reservecodes";
 "Each code can be used only once. Keep them safe." = "Elke code kan maar één keer worden gebruikt. Bewaar ze veilig.";
+"PRVIO Family" = "PRVIO Familie";
+"document" = "document";
+"Reset email sent to %@. Check your inbox." = "Reset-e-mail verzonden naar %@. Controleer je inbox.";
+"Export failed: %@" = "Export mislukt: %@";
+"Enable Face ID for PRVIO" = "Face ID inschakelen voor PRVIO";
+"Enable Touch ID for PRVIO" = "Touch ID inschakelen voor PRVIO";
+"Upload failed: %@" = "Upload mislukt: %@";

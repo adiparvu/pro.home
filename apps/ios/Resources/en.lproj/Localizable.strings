@@ -2005,3 +2005,10 @@
 "%@ %@ has been watered!" = "%@ %@ has been watered!";
 "PRVIO Backup Codes" = "PRVIO Backup Codes";
 "Each code can be used only once. Keep them safe." = "Each code can be used only once. Keep them safe.";
+"PRVIO Family" = "PRVIO Family";
+"document" = "document";
+"Reset email sent to %@. Check your inbox." = "Reset email sent to %@. Check your inbox.";
+"Export failed: %@" = "Export failed: %@";
+"Enable Face ID for PRVIO" = "Enable Face ID for PRVIO";
+"Enable Touch ID for PRVIO" = "Enable Touch ID for PRVIO";
+"Upload failed: %@" = "Upload failed: %@";

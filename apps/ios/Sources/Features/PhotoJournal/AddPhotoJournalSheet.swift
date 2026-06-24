@@ -229,7 +229,7 @@ struct AddPhotoJournalSheet: View {
             HapticFeedback.success()
             dismiss()
         } catch {
-            uploadError = "Upload failed: \(error.localizedDescription)"
+            uploadError = String(format: String(localized: "Upload failed: %@"), error.localizedDescription)
             HapticFeedback.warning()
         }
     }

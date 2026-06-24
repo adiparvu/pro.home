@@ -2094,3 +2094,10 @@
 "%@ %@ has been watered!" = "%@ %@ a fost udat!";
 "PRVIO Backup Codes" = "Coduri de rezervă PRVIO";
 "Each code can be used only once. Keep them safe." = "Fiecare cod poate fi folosit o singură dată. Păstrează-le în siguranță.";
+"PRVIO Family" = "Familie PRVIO";
+"document" = "document";
+"Reset email sent to %@. Check your inbox." = "Email de resetare trimis la %@. Verifică-ți căsuța poștală.";
+"Export failed: %@" = "Export eșuat: %@";
+"Enable Face ID for PRVIO" = "Activează Face ID pentru PRVIO";
+"Enable Touch ID for PRVIO" = "Activează Touch ID pentru PRVIO";
+"Upload failed: %@" = "Încărcare eșuată: %@";

@@ -118,7 +118,7 @@ final class IntegrationsViewModel: ObservableObject {
             if let phone = member.phone {
                 contact.phoneNumbers = [CNLabeledValue(label: CNLabelPhoneNumberMain, value: CNPhoneNumber(stringValue: phone))]
             }
-            contact.organizationName = "PRVIO Family"
+            contact.organizationName = String(localized: "PRVIO Family")
             saveRequest.add(contact, toContainerWithIdentifier: nil)
         }
 

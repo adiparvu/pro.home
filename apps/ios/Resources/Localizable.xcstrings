@@ -18770,6 +18770,41 @@
         }
       }
     },
+    "Enable Face ID for PRVIO": {
+      "comment": "Biometric authentication reason shown in Face ID prompt",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID für PRVIO aktivieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Face ID for PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer Face ID pour PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID inschakelen voor PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează Face ID pentru PRVIO"
+          }
+        }
+      }
+    },
     "Enable Notifications": {
       "localizations": {
         "de": {
@@ -18800,6 +18835,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Activează notificările"
+          }
+        }
+      }
+    },
+    "Enable Touch ID for PRVIO": {
+      "comment": "Biometric authentication reason shown in Touch ID prompt",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID für PRVIO aktivieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Touch ID for PRVIO"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer Touch ID pour PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch ID inschakelen voor PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează Touch ID pentru PRVIO"
           }
         }
       }
@@ -20228,6 +20298,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Exportă istoricul conversației"
+          }
+        }
+      }
+    },
+    "Export failed: %@": {
+      "comment": "Alert message when data export fails",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export fehlgeschlagen: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export failed: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec de l'exportation : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export mislukt: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export eșuat: %@"
           }
         }
       }
@@ -36961,6 +37066,41 @@
         }
       }
     },
+    "PRVIO Family": {
+      "comment": "Organization name set on contacts synced from PRVIO family members",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO-Familie"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Family"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Famille PRVIO"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Familie"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie PRVIO"
+          }
+        }
+      }
+    },
     "PRVIO Intelligence": {
       "localizations": {
         "de": {
@@ -42431,6 +42571,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Necesită atenție urgentă"
+          }
+        }
+      }
+    },
+    "Reset email sent to %@. Check your inbox.": {
+      "comment": "Alert message when password reset email was sent successfully",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset-E-Mail an %@ gesendet. Prüfe deinen Posteingang."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset email sent to %@. Check your inbox."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-mail de réinitialisation envoyé à %@. Vérifiez votre boîte de réception."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset-e-mail verzonden naar %@. Controleer je inbox."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email de resetare trimis la %@. Verifică-ți căsuța poștală."
           }
         }
       }
@@ -52465,6 +52640,41 @@
         }
       }
     },
+    "Upload failed: %@": {
+      "comment": "Error shown when a photo upload fails",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload fehlgeschlagen: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload failed: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec du téléversement : %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload mislukt: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încărcare eșuată: %@"
+          }
+        }
+      }
+    },
     "Uploading photo…": {
       "localizations": {
         "de": {
@@ -57459,6 +57669,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "luna curentă"
+          }
+        }
+      }
+    },
+    "document": {
+      "comment": "Generic fallback label when a document name is not available",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "document"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "document"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "document"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "document"
           }
         }
       }

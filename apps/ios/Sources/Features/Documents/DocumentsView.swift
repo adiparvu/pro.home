@@ -105,7 +105,7 @@ struct DocumentsView: View {
                     .environmentObject(documentService)
             }
         }
-        .confirmationDialog("Delete \"\(docToDelete?.name ?? "document")\"?",
+        .confirmationDialog("Delete \"\(docToDelete?.name ?? String(localized: "document"))\"?",
                             isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 if let doc = docToDelete {

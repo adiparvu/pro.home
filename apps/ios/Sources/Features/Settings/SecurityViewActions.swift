@@ -22,7 +22,7 @@ extension SecurityView {
             totpFactorId = nil
             HapticFeedback.success()
         } catch {
-            alertMessage = "Could not disable. Please try again."
+            alertMessage = String(localized: "Could not disable. Please try again.")
             showPasswordAlert = true
         }
     }
@@ -38,7 +38,7 @@ extension SecurityView {
 
     func authenticateBiometric() async {
         let ctx = LAContext()
-        let reason = biometricType == .faceID ? "Enable Face ID for PRVIO" : "Enable Touch ID for PRVIO"
+        let reason = biometricType == .faceID ? String(localized: "Enable Face ID for PRVIO") : String(localized: "Enable Touch ID for PRVIO")
         do {
             let ok = try await ctx.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason)
             if !ok { biometricsEnabled = false }
@@ -52,10 +52,10 @@ extension SecurityView {
         do {
             try await supabase.auth.resetPasswordForEmail(email)
             passwordResetSent = true
-            alertMessage = "Reset email sent to \(email). Check your inbox."
+            alertMessage = String(format: String(localized: "Reset email sent to %@. Check your inbox."), email)
             showPasswordAlert = true
         } catch {
-            alertMessage = "Could not send the email. Please try again."
+            alertMessage = String(localized: "Could not send the email. Please try again.")
             showPasswordAlert = true
         }
     }
@@ -86,7 +86,7 @@ extension SecurityView {
             } catch {
                 await MainActor.run {
                     isExporting = false
-                    alertMessage = "Export failed: \(error.localizedDescription)"
+                    alertMessage = String(format: String(localized: "Export failed: %@"), error.localizedDescription)
                     showPasswordAlert = true
                 }
             }
