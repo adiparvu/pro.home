@@ -2008,3 +2008,6 @@
 "Password: %@" = "Mot de passe : %@";
 "🏠 House Rules" = "🏠 Règles de la maison";
 "📝 Notes" = "📝 Notes";
+"1 RON = 1 lei" = "1 RON = 1 lei";
+"1 %@ = %.4f lei" = "1 %@ = %.4f lei";
+"In transit" = "En transit";

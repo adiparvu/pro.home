@@ -1701,6 +1701,41 @@
         }
       }
     },
+    "1 %@ = %.4f lei": {
+      "comment": "Exchange rate display format: currency code and rate in lei",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 %@ = %.4f Lei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 %@ = %.4f lei"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 %@ = %.4f lei"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 %@ = %.4f lei"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 %@ = %.4f lei"
+          }
+        }
+      }
+    },
     "1 Day": {
       "localizations": {
         "de": {
@@ -1765,6 +1800,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 Lună"
+          }
+        }
+      }
+    },
+    "1 RON = 1 lei": {
+      "comment": "Exchange rate display when the selected currency is RON (base currency)",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 RON = 1 lei"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 RON = 1 lei"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 RON = 1 lei"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 RON = 1 lei"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 RON = 1 leu"
           }
         }
       }
@@ -25402,6 +25472,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "În zona: %@"
+          }
+        }
+      }
+    },
+    "In transit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Transit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In transit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En transit"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderweg"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În tranzit"
           }
         }
       }

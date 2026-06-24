@@ -76,8 +76,8 @@ final class CurrencyService: ObservableObject {
     }
 
     func rateDisplay(for code: String) -> String {
-        guard code != "RON", let rate = rates[code] else { return "1 RON = 1 lei" }
-        return String(format: "1 %@ = %.4f lei", code, rate)
+        guard code != "RON", let rate = rates[code] else { return String(localized: "1 RON = 1 lei") }
+        return String(format: String(localized: "1 %@ = %.4f lei"), code, rate)
     }
 
     var lastUpdatedDisplay: String {

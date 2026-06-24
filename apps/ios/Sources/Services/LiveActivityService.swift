@@ -74,7 +74,7 @@ final class LiveActivityService: ObservableObject {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         guard deliveryActivities[deliveryId] == nil else { return }
         let attrs = DeliveryActivityAttributes(trackingNumber: trackingNumber, carrier: carrier, description: description)
-        let state = DeliveryActivityAttributes.ContentState(status: "in_transit", statusLabel: "În tranzit", eta: nil)
+        let state = DeliveryActivityAttributes.ContentState(status: "in_transit", statusLabel: String(localized: "In transit"), eta: nil)
         deliveryActivities[deliveryId] = try? Activity.request(
             attributes: attrs,
             content: .init(state: state, staleDate: nil),
@@ -90,7 +90,7 @@ final class LiveActivityService: ObservableObject {
 
     func endDeliveryActivity(deliveryId: UUID) {
         guard let activity = deliveryActivities[deliveryId] else { return }
-        let state = DeliveryActivityAttributes.ContentState(status: "delivered", statusLabel: "Livrat", eta: nil)
+        let state = DeliveryActivityAttributes.ContentState(status: "delivered", statusLabel: String(localized: "Delivered"), eta: nil)
         Task {
             await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(6)))
         }

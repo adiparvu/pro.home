@@ -2026,3 +2026,6 @@
 "Password: %@" = "Password: %@";
 "🏠 House Rules" = "🏠 House Rules";
 "📝 Notes" = "📝 Notes";
+"1 RON = 1 lei" = "1 RON = 1 lei";
+"1 %@ = %.4f lei" = "1 %@ = %.4f lei";
+"In transit" = "In transit";
