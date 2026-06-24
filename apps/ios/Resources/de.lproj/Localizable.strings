@@ -1976,3 +1976,9 @@
 "%@%lld remaining" = "%@%lld verbleibend";
 "%@%lld over budget" = "%@%lld über Budget";
 "%.0f%% used" = "%.0f%% genutzt";
+"%@ added" = "%@ hinzugefügt";
+"%lld items remaining" = "%lld Artikel verbleibend";
+"Tasks — PRVIO" = "Aufgaben — PRVIO";
+"Plants — PRVIO" = "Pflanzen — PRVIO";
+"Shopping — PRVIO" = "Einkaufen — PRVIO";
+"Chat familie — PRVIO" = "Familien-Chat — PRVIO";

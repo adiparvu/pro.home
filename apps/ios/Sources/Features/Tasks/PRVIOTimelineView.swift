@@ -183,7 +183,7 @@ struct PRVIOTimelineView: View {
                 id: element.id,
                 icon: element.elementType.icon,
                 color: element.layer.color,
-                title: element.name + " added",
+                title: String(format: String(localized: "%@ added"), element.name),
                 subtitle: element.elementType.displayName,
                 date: date
             ))

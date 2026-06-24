@@ -150,7 +150,7 @@ struct TasksView: View {
         }
         .refreshable { await taskService.load() }
         .userActivity("com.prvio.task") { activity in
-            activity.title = "Tasks — PRVIO"
+            activity.title = String(localized: "Tasks — PRVIO")
             activity.userInfo = ["tab": "tasks"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true

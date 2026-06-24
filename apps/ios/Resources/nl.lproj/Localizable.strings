@@ -1976,3 +1976,9 @@
 "%@%lld remaining" = "%@%lld resterend";
 "%@%lld over budget" = "%@%lld boven budget";
 "%.0f%% used" = "%.0f%% gebruikt";
+"%@ added" = "%@ toegevoegd";
+"%lld items remaining" = "%lld items resterend";
+"Tasks — PRVIO" = "Taken — PRVIO";
+"Plants — PRVIO" = "Planten — PRVIO";
+"Shopping — PRVIO" = "Winkelen — PRVIO";
+"Chat familie — PRVIO" = "Familieschat — PRVIO";

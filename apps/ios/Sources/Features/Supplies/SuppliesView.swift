@@ -116,7 +116,7 @@ struct SuppliesView: View {
             }
         }
         .userActivity("com.prvio.shopping") { activity in
-            activity.title = "Shopping — PRVIO"
+            activity.title = String(localized: "Shopping — PRVIO")
             activity.userInfo = ["tab": "shopping"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true

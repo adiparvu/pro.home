@@ -180,7 +180,7 @@ struct ChatView: View {
             }
         }
         .userActivity("com.prvio.chat") { activity in
-            activity.title = "Chat familie — PRVIO"
+            activity.title = String(localized: "Chat familie — PRVIO")
             activity.userInfo = ["tab": "chat"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = false

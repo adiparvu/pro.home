@@ -1994,3 +1994,9 @@
 "%@%lld remaining" = "%@%lld remaining";
 "%@%lld over budget" = "%@%lld over budget";
 "%.0f%% used" = "%.0f%% used";
+"%@ added" = "%@ added";
+"%lld items remaining" = "%lld items remaining";
+"Tasks — PRVIO" = "Tasks — PRVIO";
+"Plants — PRVIO" = "Plants — PRVIO";
+"Shopping — PRVIO" = "Shopping — PRVIO";
+"Chat familie — PRVIO" = "Family Chat — PRVIO";

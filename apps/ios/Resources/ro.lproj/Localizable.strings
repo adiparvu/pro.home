@@ -2083,3 +2083,9 @@
 "%@%lld remaining" = "%@%lld rămași";
 "%@%lld over budget" = "%@%lld peste buget";
 "%.0f%% used" = "%.0f%% utilizat";
+"%@ added" = "%@ adăugat";
+"%lld items remaining" = "%lld articole rămase";
+"Tasks — PRVIO" = "Sarcini — PRVIO";
+"Plants — PRVIO" = "Plante — PRVIO";
+"Shopping — PRVIO" = "Cumpărături — PRVIO";
+"Chat familie — PRVIO" = "Chat familie — PRVIO";
