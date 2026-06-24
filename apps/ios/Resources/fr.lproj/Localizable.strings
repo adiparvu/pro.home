@@ -1880,3 +1880,6 @@
 "I'm your local property assistant. Ask me about tasks, finances or documents." = "Je suis votre assistant local. Posez des questions sur les tâches, finances ou documents.";
 "You must be signed in to upload documents." = "Vous devez être connecté pour télécharger des documents.";
 "Please set up your property first." = "Veuillez d'abord configurer votre propriété.";
+"ARIA Chat" = "ARIA Chat";
+"Property Zones" = "Zones de propriété";
+"Face ID, app lock, password" = "Face ID, verrouillage d'app, mot de passe";

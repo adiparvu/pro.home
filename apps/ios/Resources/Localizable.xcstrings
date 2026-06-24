@@ -2177,6 +2177,40 @@
         }
       }
     },
+    "ARIA Chat": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA Chat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA Chat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA Chat"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA Chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARIA Chat"
+          }
+        }
+      }
+    },
     "ARIA Insights": {
       "localizations": {
         "de": {
@@ -18629,6 +18663,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Face ID sau cod de acces pentru a accesa PRVIO"
+          }
+        }
+      }
+    },
+    "Face ID, app lock, password": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID, App-Sperre, Passwort"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID, app lock, password"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID, verrouillage d'app, mot de passe"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID, app-vergrendeling, wachtwoord"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face ID, blocare app, parolă"
           }
         }
       }
@@ -37363,6 +37431,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Valoarea proprietății (opțional)"
+          }
+        }
+      }
+    },
+    "Property Zones": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grundstückszonen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Property Zones"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zones de propriété"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eigendomszones"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zone proprietate"
           }
         }
       }
