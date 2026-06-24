@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import UniformTypeIdentifiers
 
 // MARK: - Add Document Sheet
@@ -21,6 +22,9 @@ struct AddDocumentSheet: View {
     @State private var pickedMimeType = "application/octet-stream"
     @State private var error: String?
     @State private var isSaving = false
+    @State private var showScanCamera = false
+    @State private var isScanning = false
+    @State private var scanPickerItem: PhotosPickerItem? = nil
 
     private let categories = ["contract", "warranty", "insurance", "certificate",
                                "manual", "invoice", "photo", "other"]
@@ -34,10 +38,40 @@ struct AddDocumentSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         fieldGroup {
-                            rowField("doc.text.fill", "Document name") {
-                                TextField("e.g. Home Insurance 2025", text: $name)
-                                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                    .autocorrectionDisabled()
+                            HStack(spacing: 0) {
+                                rowField("doc.text.fill", "Document name") {
+                                    TextField("e.g. Home Insurance 2025", text: $name)
+                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                                        .autocorrectionDisabled()
+                                }
+                                Menu {
+                                    Button { showScanCamera = true } label: {
+                                        Label("Camera", systemImage: "camera.fill")
+                                    }
+                                    PhotosPicker(selection: $scanPickerItem, matching: .images) {
+                                        Label("Photo Library", systemImage: "photo.on.rectangle")
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        if isScanning { ProgressView().scaleEffect(0.7) }
+                                        else { Image(systemName: "camera.viewfinder") }
+                                        Text("Scan").font(.caption.weight(.semibold))
+                                    }
+                                    .foregroundStyle(Color.accentColor)
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                }
+                                .onChange(of: scanPickerItem) { _, item in
+                                    guard let item else { return }
+                                    isScanning = true
+                                    Task {
+                                        defer { isScanning = false; scanPickerItem = nil }
+                                        guard let data = try? await item.loadTransferable(type: Data.self),
+                                              let uiImage = UIImage(data: data) else { return }
+                                        await runOCR(on: uiImage)
+                                    }
+                                }
+                                .padding(.trailing, 16)
                             }
                         }
 
@@ -129,7 +163,25 @@ struct AddDocumentSheet: View {
             ) { result in
                 handleFilePick(result)
             }
+            .fullScreenCover(isPresented: $showScanCamera) {
+                CameraCapture { image in
+                    isScanning = true
+                    Task {
+                        defer { isScanning = false }
+                        await runOCR(on: image)
+                    }
+                }
+                .ignoresSafeArea()
+            }
         }
+    }
+
+    private func runOCR(on image: UIImage) async {
+        let lines = await VisionCaptureService.recognizeText(in: image)
+        let parsed = VisionCaptureService.parseProduct(from: lines)
+        if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
+        if !parsed.brand.isEmpty && name.isEmpty { name = parsed.brand + " " + parsed.model }
+        HapticFeedback.success()
     }
 
     private func handleFilePick(_ result: Result<[URL], Error>) {

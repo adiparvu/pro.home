@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 // MARK: - AddApplianceSheet
 
@@ -15,6 +16,7 @@ struct AddApplianceSheet: View {
     @State private var serialNumber = ""
     @State private var scanPickerItem: PhotosPickerItem? = nil
     @State private var isScanning = false
+    @State private var showScanCamera = false
     @State private var location = ""
     @State private var hasPurchaseDate = false
     @State private var purchaseDate = Date()
@@ -36,7 +38,16 @@ struct AddApplianceSheet: View {
                             HStack {
                                 fieldRow("building.2.fill", "Brand", $brand)
                                 Spacer()
-                                PhotosPicker(selection: $scanPickerItem, matching: .images) {
+                                Menu {
+                                    Button {
+                                        showScanCamera = true
+                                    } label: {
+                                        Label("Camera", systemImage: "camera.fill")
+                                    }
+                                    PhotosPicker(selection: $scanPickerItem, matching: .images) {
+                                        Label("Photo Library", systemImage: "photo.on.rectangle")
+                                    }
+                                } label: {
                                     HStack(spacing: 4) {
                                         if isScanning { ProgressView().scaleEffect(0.7) }
                                         else { Image(systemName: "camera.viewfinder") }
@@ -53,15 +64,7 @@ struct AddApplianceSheet: View {
                                         defer { isScanning = false; scanPickerItem = nil }
                                         guard let data = try? await item.loadTransferable(type: Data.self),
                                               let uiImage = UIImage(data: data) else { return }
-                                        let lines = await VisionCaptureService.recognizeText(in: uiImage)
-                                        let parsed = VisionCaptureService.parseProduct(from: lines)
-                                        await MainActor.run {
-                                            if !parsed.brand.isEmpty { brand = parsed.brand }
-                                            if !parsed.model.isEmpty { modelNumber = parsed.model }
-                                            if !parsed.serialNumber.isEmpty { serialNumber = parsed.serialNumber }
-                                            if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
-                                            HapticFeedback.success()
-                                        }
+                                        await runOCR(on: uiImage)
                                     }
                                 }
                             }
@@ -157,6 +160,16 @@ struct AddApplianceSheet: View {
             }
             .navigationTitle("Add Appliance")
             .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: $showScanCamera) {
+                CameraCapture { image in
+                    isScanning = true
+                    Task {
+                        defer { isScanning = false }
+                        await runOCR(on: image)
+                    }
+                }
+                .ignoresSafeArea()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -231,6 +244,16 @@ struct AddApplianceSheet: View {
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
             .padding(.leading, 52)
+    }
+
+    private func runOCR(on image: UIImage) async {
+        let lines = await VisionCaptureService.recognizeText(in: image)
+        let parsed = VisionCaptureService.parseProduct(from: lines)
+        if !parsed.brand.isEmpty { brand = parsed.brand }
+        if !parsed.model.isEmpty { modelNumber = parsed.model }
+        if !parsed.serialNumber.isEmpty { serialNumber = parsed.serialNumber }
+        if !parsed.name.isEmpty && name.isEmpty { name = parsed.name }
+        HapticFeedback.success()
     }
 
     private func save() async {
