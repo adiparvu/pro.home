@@ -128,6 +128,24 @@
 	<string>Used to sync family members to your iPhone Contacts.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Used to add tasks, water plants, and open PRVIO with your voice.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Used to scan NFC tags on appliances and rooms to open them instantly in PRVIO.</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>Used to read and control HomeKit smart devices connected to your property.</string>
+	<key>NSGroupActivitiesUsageDescription</key>
+	<string>Used to share the Digital Twin with family members during a FaceTime call.</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.com.prvio.app</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>PRVIO</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>

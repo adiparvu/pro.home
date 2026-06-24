@@ -1,11 +1,14 @@
 import SwiftUI
+import CoreLocation
 
-// MARK: - Weather Widget (full-width, Revolut-style gradient)
+// MARK: - Weather Widget (full-width, Revolut-style gradient + WeatherKit)
 
 struct WeatherWidget: View {
     var cityName: String
+    var coordinate: CLLocationCoordinate2D?
     var action: () -> Void
 
+    @StateObject private var weatherService = WeatherKitService.shared
     @State private var shimmer = false
 
     var body: some View {
@@ -25,7 +28,9 @@ struct WeatherWidget: View {
 
                     HStack(spacing: 0) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Image(systemName: weatherIcon(for: ctx.date))
+                            Image(systemName: weatherService.currentWeather != nil
+                                  ? weatherService.conditionSymbol
+                                  : weatherIcon(for: ctx.date))
                                 .font(.system(size: 44, weight: .light))
                                 .foregroundStyle(.white)
                                 .symbolEffect(.pulse, options: .repeating)
@@ -36,9 +41,15 @@ struct WeatherWidget: View {
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
-                                Text("Apasă pentru prognoză")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.white.opacity(0.65))
+                                if let w = weatherService.currentWeather {
+                                    Text(w.condition.description)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white.opacity(0.65))
+                                } else {
+                                    Text("Apasă pentru prognoză")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white.opacity(0.65))
+                                }
                             }
                         }
                         .padding(.leading, 20)
@@ -46,13 +57,26 @@ struct WeatherWidget: View {
                         Spacer()
 
                         VStack(alignment: .trailing, spacing: 4) {
-                            Text(timeString(ctx.date))
-                                .font(.system(size: 38, weight: .thin, design: .rounded))
-                                .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.2), radius: 4)
-                            Text(dateString(ctx.date))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.80))
+                            if weatherService.currentWeather != nil {
+                                Text(weatherService.temperatureString)
+                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .shadow(color: .black.opacity(0.2), radius: 4)
+                                Text(weatherService.feelsLikeString)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white.opacity(0.70))
+                                Text(weatherService.humidityString)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white.opacity(0.70))
+                            } else {
+                                Text(timeString(ctx.date))
+                                    .font(.system(size: 38, weight: .thin, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .shadow(color: .black.opacity(0.2), radius: 4)
+                                Text(dateString(ctx.date))
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.80))
+                            }
                         }
                         .padding(.trailing, 20)
                     }
@@ -70,6 +94,9 @@ struct WeatherWidget: View {
         .onAppear {
             withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
                 shimmer = true
+            }
+            if let coord = coordinate {
+                Task { await WeatherKitService.shared.fetch(for: coord) }
             }
         }
     }

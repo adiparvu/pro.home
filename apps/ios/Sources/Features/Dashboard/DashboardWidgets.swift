@@ -126,7 +126,13 @@ extension DashboardView {
             ) { router.selectedTab = .settings }
 
         case .weather:
-            WeatherWidget(cityName: propertyService.primary?.city ?? "") {
+            WeatherWidget(
+                cityName: propertyService.primary?.city ?? "",
+                coordinate: propertyService.primary.flatMap {
+                    guard let lat = $0.latitude, let lon = $0.longitude else { return nil }
+                    return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                }
+            ) {
                 if let url = URL(string: "weather://") {
                     UIApplication.shared.open(url)
                 }

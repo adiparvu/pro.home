@@ -6,5 +6,68 @@
 	<array>
 		<string>group.com.prvio.app</string>
 	</array>
+
+	<!-- WeatherKit -->
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
+
+	<!-- NFC Tag Reading -->
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>NDEF</string>
+		<string>TAG</string>
+	</array>
+
+	<!-- HomeKit -->
+	<key>com.apple.developer.homekit</key>
+	<true/>
+
+	<!-- iCloud + CloudKit -->
+	<key>com.apple.developer.icloud-containers</key>
+	<true/>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.prvio.app</string>
+	</array>
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)com.prvio.app</string>
+
+	<!-- iCloud Extended Share Access (CloudKit Sharing) -->
+	<key>com.apple.developer.icloud-container-access-level</key>
+	<string>application</string>
+
+	<!-- Wallet -->
+	<key>com.apple.developer.pass-type-identifiers</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)*</string>
+	</array>
+
+	<!-- Siri -->
+	<key>com.apple.developer.siri</key>
+	<true/>
+
+	<!-- AutoFill Credential Provider -->
+	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
+	<true/>
+
+	<!-- Family Controls -->
+	<key>com.apple.developer.family-controls</key>
+	<true/>
+
+	<!-- Apple Pay -->
+	<key>com.apple.developer.in-app-payments</key>
+	<array>
+		<string>merchant.com.prvio.app</string>
+	</array>
+
+	<!-- Data Protection (Complete Protection) -->
+	<key>com.apple.developer.default-data-protection</key>
+	<string>NSFileProtectionComplete</string>
+
+	<!-- Sign In with Apple -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

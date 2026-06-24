@@ -99,6 +99,22 @@ struct MainTabView: View {
                     .environmentObject(messageService)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
+            router.showAddTask = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .actionButtonWaterPlants)) { _ in
+            router.showWaterPlant = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenARIA)) { _ in
+            router.showARIA = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenDigitalTwin)) { _ in
+            router.selectedTab = .digitalTwin
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .actionButtonScanNFC)) { _ in
+            guard NFCScanService.isSupported else { return }
+            NFCScanService.shared.scan(prompt: "Apropie iPhone-ul de tag-ul NFC") { _ in }
+        }
         .environmentObject(router)
         .environmentObject(tabBarVis)
         .environmentObject(taskService)

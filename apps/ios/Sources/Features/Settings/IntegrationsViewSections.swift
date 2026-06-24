@@ -57,6 +57,55 @@ extension IntegrationsView {
                 title: "iCloud Backup",
                 description: "App data is included in your iPhone iCloud backup automatically.",
                 status: .active("Automatic"), action: nil)
+
+            IntegrationRow(icon: "cloud.fill", color: Color(red: 0.15, green: 0.45, blue: 0.95),
+                title: "iCloud Sync",
+                description: "Sincronizează documente și date între iPhone, iPad și Mac prin CloudKit.",
+                status: CloudKitSyncService.shared.isAvailable ? .active("Activ") : .notConnected,
+                action: {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                })
+
+            IntegrationRow(icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
+                title: "NFC Tags",
+                description: "Scanează tag-uri NFC pe echipamente sau camere pentru acces instant în Digital Twin.",
+                status: NFCScanService.isSupported ? .active("Disponibil") : .notConnected,
+                action: {
+                    guard NFCScanService.isSupported else { return }
+                    NFCScanService.shared.scan(prompt: "Apropie iPhone-ul de tag-ul NFC") { _ in }
+                })
+        }
+    }
+
+    var paymentsSection: some View {
+        IntegrationGroup(title: "Plăți & Acces") {
+            IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.05, green: 0.05, blue: 0.05),
+                title: "Apple Pay",
+                description: "Plătești contractori și furnizori direct din aplicație cu Apple Pay.",
+                status: ApplePayService.shared.isAvailable ? .active("Disponibil") : .notConnected,
+                action: nil)
+
+            IntegrationRow(icon: "wallet.pass.fill", color: Color(red: 0.05, green: 0.45, blue: 0.95),
+                title: "Wallet — Pașapoarte Acces",
+                description: "Generează passes Wallet pentru contractori și oaspeți cu cod QR și dată de expirare.",
+                status: .deepLink("Configurează"),
+                action: {
+                    if let url = URL(string: "shoebox://") ?? URL(string: "https://www.apple.com/wallet/") {
+                        UIApplication.shared.open(url)
+                    }
+                })
+
+            IntegrationRow(icon: "key.fill", color: Color(red: 0.55, green: 0.35, blue: 0.85),
+                title: "AutoFill Credențiale",
+                description: "Stochează parolele router, camere IP, panou solar — iOS AutoFill le sugerează automat.",
+                status: .deepLink("Gestionează"),
+                action: {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                })
         }
     }
 
@@ -97,11 +146,14 @@ extension IntegrationsView {
 
     var smartHomeSection: some View {
         IntegrationGroup(title: "Smart Home") {
-            IntegrationRow(icon: "homekit", color: Color(red: 0.98, green: 0.4, blue: 0.4),
+            IntegrationRow(icon: "homekit", color: Color(red: 0.35, green: 0.82, blue: 0.58),
                 title: "Apple HomeKit",
-                description: "Control smart home devices linked to your property.",
-                status: .deepLink("Open Home"),
-                action: { if let url = URL(string: "homeapp://") { UIApplication.shared.open(url) } })
+                description: "Controlează becuri, prize și termostate smart din PRVIO fără să deschizi Casa.",
+                status: HomeKitService.shared.isAuthorized ? .active("Conectat") : .deepLink("Conectează"),
+                action: {
+                    HomeKitService.shared.requestAccess()
+                    if let url = URL(string: "homeapp://") { UIApplication.shared.open(url) }
+                })
             IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
                 title: "Home Assistant",
                 description: "Connect to your local Home Assistant for full smart home control.",

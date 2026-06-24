@@ -12,6 +12,7 @@ struct IntegrationsView: View {
                 appleEcosystemSection
                 productivitySection
                 smartHomeSection
+                paymentsSection
                 securitySection
                 financeSection
                 rentalsSection
