@@ -13,12 +13,12 @@ struct HomeScan: Identifiable, Codable, Hashable {
 
     var kindLabel: String {
         switch kind {
-        case "room3d":    return "3D Room Scan"
-        case "site3d":    return "3D Site Scan"
-        case "floorplan": return "Floor Plan"
-        case "blueprint": return "Blueprint"
-        case "photo":     return "Photo"
-        default:          return "Plan"
+        case "room3d":    return String(localized: "3D Room Scan")
+        case "site3d":    return String(localized: "3D Site Scan")
+        case "floorplan": return String(localized: "Floor Plan")
+        case "blueprint": return String(localized: "Blueprint")
+        case "photo":     return String(localized: "Photo")
+        default:          return String(localized: "Plan")
         }
     }
 
@@ -81,14 +81,14 @@ enum BuriedUtilityKind {
 
     static func label(_ t: String) -> String {
         switch t {
-        case "electrical": return "Electrical"
-        case "water":      return "Water"
-        case "gas":        return "Gas"
-        case "sewage":     return "Sewage"
-        case "internet":   return "Internet / Data"
-        case "irrigation": return "Irrigation"
-        case "drainage":   return "Drainage"
-        default:           return "Other"
+        case "electrical": return String(localized: "Electrical")
+        case "water":      return String(localized: "Water")
+        case "gas":        return String(localized: "Gas")
+        case "sewage":     return String(localized: "Sewage")
+        case "internet":   return String(localized: "Internet / Data")
+        case "irrigation": return String(localized: "Irrigation")
+        case "drainage":   return String(localized: "Drainage")
+        default:           return String(localized: "Other")
         }
     }
 

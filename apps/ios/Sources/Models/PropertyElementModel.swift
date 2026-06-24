@@ -312,11 +312,11 @@ enum ElementRecordType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .note:        return "Note"
-        case .maintenance: return "Work"
-        case .cost:        return "Cost"
-        case .inspection:  return "Inspection"
-        case .reminder:    return "Reminder"
+        case .note:        return String(localized: "Note")
+        case .maintenance: return String(localized: "Work")
+        case .cost:        return String(localized: "Cost")
+        case .inspection:  return String(localized: "Inspection")
+        case .reminder:    return String(localized: "Reminder")
         }
     }
 

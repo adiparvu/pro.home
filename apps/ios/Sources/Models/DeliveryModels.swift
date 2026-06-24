@@ -62,8 +62,8 @@ struct Delivery: Identifiable, Codable, Hashable {
         let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
         guard let d = fmt.date(from: ds) else { return ds }
         let out = DateFormatter()
-        if Calendar.current.isDateInToday(d) { return "Today" }
-        if Calendar.current.isDateInTomorrow(d) { return "Tomorrow" }
+        if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
+        if Calendar.current.isDateInTomorrow(d) { return String(localized: "Tomorrow") }
         out.dateFormat = "d MMM"
         return out.string(from: d)
     }

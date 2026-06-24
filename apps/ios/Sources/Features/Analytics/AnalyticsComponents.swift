@@ -190,10 +190,10 @@ struct FinancesSection: View {
     }
 
     private var savingsInsight: String {
-        if savingsRate >= 30 { return "Excellent! You're saving more than 30% of your income." }
-        if savingsRate >= 20 { return "Good! You're saving \(Int(savingsRate))% of your income." }
-        if savingsRate >= 0  { return "You can save more by reducing expenses." }
-        return "Expenses exceed income this month."
+        if savingsRate >= 30 { return String(localized: "Excellent! You're saving more than 30% of your income.") }
+        if savingsRate >= 20 { return String(localized: "Good! You're saving \(Int(savingsRate))% of your income.") }
+        if savingsRate >= 0  { return String(localized: "You can save more by reducing expenses.") }
+        return String(localized: "Expenses exceed income this month.")
     }
 
     // MARK: - Category Donut Chart

@@ -81,7 +81,7 @@ final class CurrencyService: ObservableObject {
     }
 
     var lastUpdatedDisplay: String {
-        guard let date = lastUpdated else { return "Never" }
+        guard let date = lastUpdated else { return String(localized: "Never") }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())

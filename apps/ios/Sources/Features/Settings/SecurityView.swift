@@ -356,22 +356,22 @@ struct SecurityView: View {
 
     private var autoLockLabel: String {
         switch autoLockMinutes {
-        case -1: return "Immediately"
-        case -2: return "30 sec"
-        case 0:  return "Never"
-        case 1:  return "1 min"
-        case 60: return "1 hour"
-        default: return "\(autoLockMinutes) min"
+        case -1: return String(localized: "Immediately")
+        case -2: return String(localized: "30 sec")
+        case 0:  return String(localized: "Never")
+        case 1:  return String(localized: "1 min")
+        case 60: return String(localized: "1 hour")
+        default: return String(localized: "\(autoLockMinutes) min")
         }
     }
 
     private var autoLockDescription: String {
         switch autoLockMinutes {
-        case -1: return "Locks every time the app backgrounds"
-        case -2: return "Locks after 30 seconds of inactivity"
-        case 0:  return "Never auto-locks"
-        case 60: return "Locks after 1 hour of inactivity"
-        default: return "Locks after \(autoLockMinutes) min of inactivity"
+        case -1: return String(localized: "Locks every time the app backgrounds")
+        case -2: return String(localized: "Locks after 30 seconds of inactivity")
+        case 0:  return String(localized: "Never auto-locks")
+        case 60: return String(localized: "Locks after 1 hour of inactivity")
+        default: return String(localized: "Locks after \(autoLockMinutes) min of inactivity")
         }
     }
 }

@@ -13,12 +13,12 @@ struct SupervisionSettings {
 
         var label: String {
             switch self {
-            case .tasks:       return "Tasks"
-            case .finances:    return "Finances"
-            case .documents:   return "Documents"
-            case .inventory:   return "Inventory"
-            case .contractors: return "Contractors"
-            case .analytics:   return "Analytics"
+            case .tasks:       return String(localized: "Tasks")
+            case .finances:    return String(localized: "Finances")
+            case .documents:   return String(localized: "Documents")
+            case .inventory:   return String(localized: "Inventory")
+            case .contractors: return String(localized: "Contractors")
+            case .analytics:   return String(localized: "Analytics")
             }
         }
 

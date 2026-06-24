@@ -80,18 +80,18 @@ struct Plant: Identifiable, Codable, Hashable {
     }
 
     var wateringLabel: String {
-        if needsWatering { return "Needs water" }
+        if needsWatering { return String(localized: "Needs water") }
         let d = daysUntilWatering
-        if d == 0 { return "Water today" }
-        if d == 1 { return "Water tomorrow" }
-        return "In \(d) days"
+        if d == 0 { return String(localized: "Water today") }
+        if d == 1 { return String(localized: "Water tomorrow") }
+        return String(localized: "In \(d) days")
     }
 
     var lastWateredDisplay: String {
-        guard let d = parseDate(lastWateredAt) else { return "Never" }
+        guard let d = parseDate(lastWateredAt) else { return String(localized: "Never") }
         let cal = Calendar.current
-        if cal.isDateInToday(d) { return "Today" }
-        if cal.isDateInYesterday(d) { return "Yesterday" }
+        if cal.isDateInToday(d) { return String(localized: "Today") }
+        if cal.isDateInYesterday(d) { return String(localized: "Yesterday") }
         let fmt = DateFormatter(); fmt.dateFormat = "d MMM"
         return fmt.string(from: d)
     }

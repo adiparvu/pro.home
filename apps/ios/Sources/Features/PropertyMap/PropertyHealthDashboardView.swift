@@ -252,11 +252,11 @@ struct PropertyHealthDashboardView: View {
 
     private func scoreLabel(_ score: Int) -> String {
         switch score {
-        case 90...100: return "Property in excellent condition"
-        case 70..<90:  return "Property in good condition"
-        case 50..<70:  return "Some elements need attention"
-        case 25..<50:  return "Multiple issues identified"
-        default:       return "Urgent intervention required"
+        case 90...100: return String(localized: "Property in excellent condition")
+        case 70..<90:  return String(localized: "Property in good condition")
+        case 50..<70:  return String(localized: "Some elements need attention")
+        case 25..<50:  return String(localized: "Multiple issues identified")
+        default:       return String(localized: "Urgent intervention required")
         }
     }
 }

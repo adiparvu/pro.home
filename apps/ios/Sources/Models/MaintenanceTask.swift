@@ -64,7 +64,7 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     }
 
     var dueDateDisplay: String {
-        guard let ds = dueDate else { return "No date" }
+        guard let ds = dueDate else { return String(localized: "No date") }
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         guard let d = iso.date(from: ds) else { return ds }
         let out = DateFormatter(); out.dateFormat = "MMM d"
@@ -82,11 +82,11 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
 
     var statusDisplay: String {
         switch status {
-        case "in_progress": return "In Progress"
-        case "completed":   return "Done"
-        case "cancelled":   return "Cancelled"
-        case "overdue":     return "Overdue"
-        default:            return "Pending"
+        case "in_progress": return String(localized: "In Progress")
+        case "completed":   return String(localized: "Done")
+        case "cancelled":   return String(localized: "Cancelled")
+        case "overdue":     return String(localized: "Overdue")
+        default:            return String(localized: "Pending")
         }
     }
 }

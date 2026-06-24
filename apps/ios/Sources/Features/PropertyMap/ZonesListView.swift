@@ -145,10 +145,10 @@ struct ZoneListRow: View {
 
     private var healthLabel: String {
         switch zone.healthScore {
-        case 90...100: return "Excellent"
-        case 70..<90:  return "Good"
-        case 50..<70:  return "Fair"
-        default:       return "Poor"
+        case 90...100: return String(localized: "Excellent")
+        case 70..<90:  return String(localized: "Good")
+        case 50..<70:  return String(localized: "Fair")
+        default:       return String(localized: "Poor")
         }
     }
 

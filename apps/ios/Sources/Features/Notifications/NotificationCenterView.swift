@@ -46,9 +46,9 @@ struct AppNotification: Identifiable, Codable {
         f2.formatOptions = [.withInternetDateTime]
         guard let date = f1.date(from: createdAt) ?? f2.date(from: createdAt) else { return "" }
         let diff = Date().timeIntervalSince(date)
-        if diff < 60 { return "Just now" }
-        if diff < 3600 { return "\(Int(diff / 60))m ago" }
-        if diff < 86400 { return "\(Int(diff / 3600))h ago" }
+        if diff < 60 { return String(localized: "Just now") }
+        if diff < 3600 { return String(localized: "\(Int(diff / 60))m ago") }
+        if diff < 86400 { return String(localized: "\(Int(diff / 3600))h ago") }
         let df = DateFormatter(); df.dateStyle = .short; df.timeStyle = .none
         return df.string(from: date)
     }

@@ -103,10 +103,10 @@ struct AddPlanSheet: View {
     private let kinds = ["floorplan", "blueprint", "site3d", "photo"]
     private func kindLabel(_ k: String) -> String {
         switch k {
-        case "floorplan": return "Floor Plan"
-        case "blueprint": return "Blueprint"
-        case "site3d":    return "Site / Yard"
-        case "photo":     return "Photo"
+        case "floorplan": return String(localized: "Floor Plan")
+        case "blueprint": return String(localized: "Blueprint")
+        case "site3d":    return String(localized: "Site / Yard")
+        case "photo":     return String(localized: "Photo")
         default:          return k.capitalized
         }
     }

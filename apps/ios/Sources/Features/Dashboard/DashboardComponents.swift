@@ -404,9 +404,9 @@ struct PropertyHealthGauge: View {
 
     private var label: String {
         switch score {
-        case 80...: return "Good"
-        case 55..<80: return "Fair"
-        default: return "Poor"
+        case 80...: return String(localized: "Good")
+        case 55..<80: return String(localized: "Fair")
+        default: return String(localized: "Poor")
         }
     }
 

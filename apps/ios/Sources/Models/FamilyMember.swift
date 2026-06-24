@@ -95,12 +95,12 @@ struct FamilyMember: Identifiable, Codable, Hashable {
 
     var roleLabel: String {
         switch role {
-        case "owner":   return "Owner"
-        case "partner": return "Partner"
-        case "child":   return "Child"
-        case "tenant":  return "Tenant"
-        case "guest":   return "Guest"
-        default:        return "Member"
+        case "owner":   return String(localized: "Owner")
+        case "partner": return String(localized: "Partner")
+        case "child":   return String(localized: "Child")
+        case "tenant":  return String(localized: "Tenant")
+        case "guest":   return String(localized: "Guest")
+        default:        return String(localized: "Member")
         }
     }
 
