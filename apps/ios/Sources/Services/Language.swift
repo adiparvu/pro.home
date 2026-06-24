@@ -8,7 +8,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
     case romanian = "ro"
     case french   = "fr"
     case dutch    = "nl"
-    case german   = "de"
 
     var id: String { rawValue }
 
@@ -19,7 +18,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         case .romanian: return "Română"
         case .french:   return "Français"
         case .dutch:    return "Nederlands"
-        case .german:   return "Deutsch"
         }
     }
 
@@ -32,7 +30,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         case .romanian: return String(localized: "lang_romanian")
         case .french:   return String(localized: "lang_french")
         case .dutch:    return String(localized: "lang_dutch")
-        case .german:   return String(localized: "lang_german")
         }
     }
 
@@ -44,7 +41,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         case .romanian: return "lang_romanian"
         case .french:   return "lang_french"
         case .dutch:    return "lang_dutch"
-        case .german:   return "lang_german"
         }
     }
 
@@ -54,7 +50,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         case .romanian: return "🇷🇴"
         case .french:   return "🇫🇷"
         case .dutch:    return "🇳🇱"
-        case .german:   return "🇩🇪"
         }
     }
 
