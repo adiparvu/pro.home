@@ -69,6 +69,40 @@
         }
       }
     },
+    "%@  (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  (%lld)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  (%lld)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  (%lld)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  (%lld)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@  (%lld)"
+          }
+        }
+      }
+    },
     "%@ %@ needs water": {
       "localizations": {
         "de": {
@@ -99,6 +133,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ %@ are nevoie de apă"
+          }
+        }
+      }
+    },
+    "%@ %@ total": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ gesamt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ total"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ au total"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ totaal"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ total"
           }
         }
       }
@@ -851,6 +919,40 @@
         }
       }
     },
+    "%lld months": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Monate"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld months"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mois"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld maanden"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld luni"
+          }
+        }
+      }
+    },
     "%lld of %lld done": {
       "localizations": {
         "de": {
@@ -1017,6 +1119,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld garanții expiră curând"
+          }
+        }
+      }
+    },
+    "%lld%% · %lldyr": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% · %lld J."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% · %lldyr"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% · %lld ans"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% · %lld j."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% · %lld ani"
           }
         }
       }
@@ -8909,6 +9045,40 @@
         }
       }
     },
+    "Avg €%@/mo": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ø €%@/Mo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg €%@/mo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moy. €%@/mois"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gem. €%@/mnd"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Med. €%@/lună"
+          }
+        }
+      }
+    },
     "BNR rates · Updated %@": {
       "localizations": {
         "de": {
@@ -13223,6 +13393,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ia în considerare rezolvarea sarcinilor depășite pentru a îmbunătăți scorul."
+          }
+        }
+      }
+    },
+    "Consumption (%@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbrauch (%@)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consumption (%@)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consommation (%@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbruik (%@)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consum (%@)"
           }
         }
       }
@@ -23971,6 +24175,40 @@
         }
       }
     },
+    "ITEMS (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARTIKEL (%lld)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ITEMS (%lld)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARTICLES (%lld)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ITEMS (%lld)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARTICOLE (%lld)"
+          }
+        }
+      }
+    },
     "Icon not available": {
       "localizations": {
         "de": {
@@ -33079,6 +33317,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "Niciun sticker"
+          }
+        }
+      }
+    },
+    "No stickers used yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Sticker verwendet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stickers used yet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun autocollant utilisé"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen stickers gebruikt"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niciun sticker folosit încă"
           }
         }
       }

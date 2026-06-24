@@ -1971,3 +1971,11 @@
 "1 alert" = "1 alert";
 "%d alerts" = "%d alerts";
 "%d overdue" = "%d overdue";
+"%lld months" = "%lld months";
+"%lld%% · %lldyr" = "%lld%% · %lldyr";
+"Avg €%@/mo" = "Avg €%@/mo";
+"Consumption (%@)" = "Consumption (%@)";
+"%@ %@ total" = "%@ %@ total";
+"No stickers used yet" = "No stickers used yet";
+"ITEMS (%lld)" = "ITEMS (%lld)";
+"%@  (%lld)" = "%@  (%lld)";

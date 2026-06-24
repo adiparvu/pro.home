@@ -1953,3 +1953,11 @@
 "1 alert" = "1 Alarm";
 "%d alerts" = "%d Alarme";
 "%d overdue" = "%d überfällig";
+"%lld months" = "%lld Monate";
+"%lld%% · %lldyr" = "%lld%% · %lld J.";
+"Avg €%@/mo" = "Ø €%@/Mo.";
+"Consumption (%@)" = "Verbrauch (%@)";
+"%@ %@ total" = "%@ %@ gesamt";
+"No stickers used yet" = "Noch keine Sticker verwendet";
+"ITEMS (%lld)" = "ARTIKEL (%lld)";
+"%@  (%lld)" = "%@  (%lld)";

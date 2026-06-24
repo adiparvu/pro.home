@@ -1953,3 +1953,11 @@
 "1 alert" = "1 melding";
 "%d alerts" = "%d meldingen";
 "%d overdue" = "%d achterstallig";
+"%lld months" = "%lld maanden";
+"%lld%% · %lldyr" = "%lld%% · %lld j.";
+"Avg €%@/mo" = "Gem. €%@/mnd";
+"Consumption (%@)" = "Verbruik (%@)";
+"%@ %@ total" = "%@ %@ totaal";
+"No stickers used yet" = "Nog geen stickers gebruikt";
+"ITEMS (%lld)" = "ITEMS (%lld)";
+"%@  (%lld)" = "%@  (%lld)";

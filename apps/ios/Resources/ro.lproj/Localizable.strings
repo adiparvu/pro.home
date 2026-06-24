@@ -2060,3 +2060,11 @@
 "1 alert" = "1 alertă";
 "%d alerts" = "%d alerte";
 "%d overdue" = "%d restante";
+"%lld months" = "%lld luni";
+"%lld%% · %lldyr" = "%lld%% · %lld ani";
+"Avg €%@/mo" = "Med. €%@/lună";
+"Consumption (%@)" = "Consum (%@)";
+"%@ %@ total" = "%@ %@ total";
+"No stickers used yet" = "Niciun sticker folosit încă";
+"ITEMS (%lld)" = "ARTICOLE (%lld)";
+"%@  (%lld)" = "%@  (%lld)";
