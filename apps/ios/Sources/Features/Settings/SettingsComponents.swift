@@ -3,12 +3,13 @@ import SwiftUI
 // MARK: - Settings Group (iOS 26/27 liquid glass)
 
 struct SettingsGroup<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
+            Text(title)
+                .textCase(.uppercase)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
@@ -24,7 +25,7 @@ struct SettingsGroup<Content: View>: View {
 struct NavSettingsRow<D: View>: View {
     let icon: String
     let color: Color
-    let label: String
+    let label: LocalizedStringKey
     @ViewBuilder let destination: () -> D
     @State private var iconBounce = false
 
@@ -66,7 +67,7 @@ struct NavSettingsRow<D: View>: View {
 struct TapSettingsRow: View {
     let icon: String
     let color: Color
-    let label: String
+    let label: LocalizedStringKey
     let action: () -> Void
     @State private var iconBounce = false
 
@@ -97,7 +98,7 @@ struct TapSettingsRow: View {
 struct ToggleSettingsRow: View {
     let icon: String
     let color: Color
-    let label: String
+    let label: LocalizedStringKey
     @Binding var value: Bool
 
     var body: some View {
@@ -123,7 +124,7 @@ struct ToggleSettingsRow: View {
 struct InfoSettingsRow: View {
     let icon: String
     let color: Color
-    let label: String
+    let label: LocalizedStringKey
     let value: String
 
     var body: some View {

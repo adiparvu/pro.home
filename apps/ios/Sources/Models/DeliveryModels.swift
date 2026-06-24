@@ -44,11 +44,11 @@ struct Delivery: Identifiable, Codable, Hashable {
 
     var statusLabel: String {
         switch status {
-        case "expected":         return "Expected"
-        case "out_for_delivery": return "Out for delivery"
-        case "delivered":        return "Delivered"
-        case "missed":           return "Missed"
-        case "returned":         return "Returned"
+        case "expected":         return String(localized: "Expected")
+        case "out_for_delivery": return String(localized: "Out for delivery")
+        case "delivered":        return String(localized: "Delivered")
+        case "missed":           return String(localized: "Missed")
+        case "returned":         return String(localized: "Returned")
         default:                 return status
         }
     }
@@ -68,13 +68,13 @@ struct Delivery: Identifiable, Codable, Hashable {
         return out.string(from: d)
     }
 
-    static let statusOptions: [(id: String, label: String)] = [
-        ("expected",         "Expected"),
-        ("out_for_delivery", "Out for delivery"),
-        ("delivered",        "Delivered"),
-        ("missed",           "Missed"),
-        ("returned",         "Returned"),
-    ]
+    static var statusOptions: [(id: String, label: String)] {[
+        ("expected",         String(localized: "Expected")),
+        ("out_for_delivery", String(localized: "Out for delivery")),
+        ("delivered",        String(localized: "Delivered")),
+        ("missed",           String(localized: "Missed")),
+        ("returned",         String(localized: "Returned")),
+    ]}
 
     static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Altul"]
 }

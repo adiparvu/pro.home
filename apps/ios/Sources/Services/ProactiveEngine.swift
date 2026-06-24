@@ -32,11 +32,16 @@ struct ProactiveInsight: Identifiable, Codable {
 final class ProactiveEngine: ObservableObject {
     @Published var insights: [ProactiveInsight] = []
 
+    nonisolated(unsafe) static var shared: ProactiveEngine?
+
     static let bgTaskId = "com.prvio.app.proactive"
-    private static let insightsKey = "prvio.proactive.insights_v1"
+    private static let insightsKey        = "prvio.proactive.insights_v1"
+    private static let appliancesCacheKey = "prvio.proactive.appliances_v1"
+    private static let elementsCacheKey   = "prvio.proactive.elements_v1"
 
     init() {
         load()
+        ProactiveEngine.shared = self
     }
 
     // MARK: - Analysis
@@ -145,11 +150,40 @@ final class ProactiveEngine: ObservableObject {
 
     var activeInsights: [ProactiveInsight] { insights.filter { !$0.isDismissed } }
 
+    // MARK: - Background Cache
+
+    static func cacheForBackground(appliances: [Appliance], elements: [PropertyElement]) {
+        if let data = try? JSONEncoder().encode(appliances) {
+            UserDefaults.standard.set(data, forKey: appliancesCacheKey)
+        }
+        if let data = try? JSONEncoder().encode(elements) {
+            UserDefaults.standard.set(data, forKey: elementsCacheKey)
+        }
+    }
+
+    func runAnalysisFromCache() {
+        let appliances = (try? JSONDecoder().decode(
+            [Appliance].self,
+            from: UserDefaults.standard.data(forKey: Self.appliancesCacheKey) ?? Data()
+        )) ?? []
+        let elements = (try? JSONDecoder().decode(
+            [PropertyElement].self,
+            from: UserDefaults.standard.data(forKey: Self.elementsCacheKey) ?? Data()
+        )) ?? []
+        analyze(appliances: appliances, elements: elements)
+        scheduleNotifications(for: activeInsights)
+    }
+
     // MARK: - Background Task Registration
 
     static func registerBackgroundTask() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: bgTaskId, using: nil) { task in
-            task.setTaskCompleted(success: true)
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: bgTaskId, using: nil) { bgTask in
+            let work = Task { @MainActor in
+                ProactiveEngine.shared?.runAnalysisFromCache()
+                scheduleBackgroundRefresh()
+                bgTask.setTaskCompleted(success: true)
+            }
+            bgTask.expirationHandler = { work.cancel() }
         }
     }
 

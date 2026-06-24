@@ -158,6 +158,7 @@ struct MainTabView: View {
             await indexSpotlight()
             await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
             proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
+            ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }

@@ -1640,3 +1640,8 @@
 "🎂 %lld/%lld" = "🎂 %lld/%lld";
 "Estimat: %@" = "Estimé : %@";
 "Ultima udată: %@" = "Dernièrement arrosé : %@";
+
+// MARK: - Build 283 delivery statuses & i18n fixes
+"Expected" = "Attendu";
+"Out for delivery" = "En cours de livraison";
+"Missed" = "Manqué";
