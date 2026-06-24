@@ -34,8 +34,8 @@ struct ShoppingWidgetView: View {
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
                 Text(entry.snapshot.pendingSupplyCount > 0
-                     ? "\(entry.snapshot.pendingSupplyCount) items"
-                     : "Empty list")
+                     ? LocalizedStringKey("\(entry.snapshot.pendingSupplyCount) items")
+                     : LocalizedStringKey("Empty list"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
             }

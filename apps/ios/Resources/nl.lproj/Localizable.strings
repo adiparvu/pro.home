@@ -1982,3 +1982,6 @@
 "Plants — PRVIO" = "Planten — PRVIO";
 "Shopping — PRVIO" = "Winkelen — PRVIO";
 "Chat familie — PRVIO" = "Familieschat — PRVIO";
+"Empty list" = "Lege lijst";
+"Task \"%@\" has been completed." = "Taak \"%@\" is voltooid.";
+"%@ %@ has been watered!" = "%@ %@ is water gegeven!";

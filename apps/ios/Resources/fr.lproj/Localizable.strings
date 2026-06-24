@@ -1982,3 +1982,6 @@
 "Plants — PRVIO" = "Plantes — PRVIO";
 "Shopping — PRVIO" = "Achats — PRVIO";
 "Chat familie — PRVIO" = "Chat famille — PRVIO";
+"Empty list" = "Liste vide";
+"Task \"%@\" has been completed." = "La tâche \"%@\" a été complétée.";
+"%@ %@ has been watered!" = "%@ %@ a été arrosée !";
