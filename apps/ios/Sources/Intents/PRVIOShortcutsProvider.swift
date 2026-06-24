@@ -4,6 +4,17 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
+            intent: PRVIOActionButtonIntent(),
+            phrases: [
+                "Deschide \(.applicationName)",
+                "Adaugă task în \(.applicationName)",
+                "Udă plantele în \(.applicationName)",
+                "Deschide asistentul \(.applicationName)"
+            ],
+            shortTitle: "PRVIO Quick Action",
+            systemImageName: "house.fill"
+        )
+        AppShortcut(
             intent: CreateTaskIntent(),
             phrases: [
                 "Create task in \(.applicationName)",

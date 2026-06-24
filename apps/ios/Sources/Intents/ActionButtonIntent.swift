@@ -49,33 +49,6 @@ enum ActionButtonActionType: String, AppEnum {
     ]
 }
 
-// MARK: - App Shortcuts (visible in Shortcuts app + Siri)
-
-struct PRVIOAppShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: PRVIOActionButtonIntent(),
-            phrases: [
-                "Deschide PRVIO",
-                "Adaugă task în \(.applicationName)",
-                "Udă plantele în \(.applicationName)",
-                "Deschide asistentul \(.applicationName)"
-            ],
-            shortTitle: "PRVIO Quick Action",
-            systemImageName: "house.fill"
-        )
-        AppShortcut(
-            intent: CreateTaskIntent(),
-            phrases: [
-                "Adaugă un task în \(.applicationName)",
-                "Task nou în \(.applicationName)"
-            ],
-            shortTitle: "Adaugă Task",
-            systemImageName: "plus.circle.fill"
-        )
-    }
-}
-
 // MARK: - Notification names for Action Button routing
 
 extension Notification.Name {
