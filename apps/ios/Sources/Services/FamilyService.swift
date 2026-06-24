@@ -112,7 +112,7 @@ final class FamilyService: ObservableObject {
 
     private nonisolated func createBirthdayEvent(store: EKEventStore, name: String, birthday: Date) {
         let event = EKEvent(eventStore: store)
-        event.title = "🎂 \(name)"
+        event.title = String(format: String(localized: "🎂 %@"), name)
         event.startDate = birthday
         event.endDate = birthday
         event.isAllDay = true

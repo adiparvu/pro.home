@@ -385,10 +385,10 @@ struct ARIAView: View {
             let plantName = input["plant_name"] as? String ?? String(localized: "Plants")
             displayText = String(format: String(localized: "aria_water_plant_display"), plantName)
         case "add_appliance":
-            let name = input["name"] as? String ?? "Appliance"
+            let name = input["name"] as? String ?? String(localized: "Appliance")
             displayText = String(format: String(localized: "aria_add_appliance_display"), name)
         case "schedule_maintenance":
-            let name = input["name"] as? String ?? "Maintenance"
+            let name = input["name"] as? String ?? String(localized: "Maintenance")
             displayText = String(format: String(localized: "aria_schedule_maintenance_display"), name)
         default:
             displayText = tool.replacingOccurrences(of: "_", with: " ").capitalized
@@ -402,7 +402,7 @@ struct ARIAView: View {
             switch action.tool {
             case "create_task":
                 guard let propertyId = propertyService.primary?.id else { return }
-                let name = action.input["name"] as? String ?? "New task"
+                let name = action.input["name"] as? String ?? String(localized: "New Task")
                 let description = action.input["description"] as? String
                 let dueDate = action.input["due_date"] as? String
                 let payload = NewTaskPayload(
@@ -443,7 +443,7 @@ struct ARIAView: View {
             case "add_appliance":
                 guard let propertyId = propertyService.primary?.id,
                       let ownerId = profileService.profile?.id else { return }
-                let applianceName = action.input["name"] as? String ?? "Appliance"
+                let applianceName = action.input["name"] as? String ?? String(localized: "Appliance")
                 let brand = action.input["brand"] as? String
                 let category = action.input["category"] as? String ?? "other"
                 let location = action.input["location"] as? String
@@ -465,7 +465,7 @@ struct ARIAView: View {
 
             case "schedule_maintenance":
                 guard let propertyId = propertyService.primary?.id else { return }
-                let maintName = action.input["name"] as? String ?? "Maintenance"
+                let maintName = action.input["name"] as? String ?? String(localized: "Maintenance")
                 let maintDesc = action.input["description"] as? String
                 let maintDate = action.input["due_date"] as? String
                 let maintPayload = NewTaskPayload(
