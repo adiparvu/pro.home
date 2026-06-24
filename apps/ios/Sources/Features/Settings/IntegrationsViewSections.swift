@@ -75,19 +75,23 @@ extension IntegrationsView {
             IntegrationRow(icon: "calendar.badge.clock", color: Color(red: 0.25, green: 0.7, blue: 1.0),
                 title: "Google Calendar",
                 description: "Sync household schedules with Google Calendar.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://calendar.google.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "doc.richtext.fill", color: Color(red: 0.15, green: 0.15, blue: 0.15),
                 title: "Notion",
                 description: "Export property documents and task lists to Notion.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.notion.so") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "arrow.triangle.2.circlepath", color: Color(red: 0.98, green: 0.55, blue: 0.1),
                 title: "IFTTT",
                 description: "Automate home routines with thousands of app connections.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Connect"),
+                action: { if let url = URL(string: "https://ifttt.com/explore") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "bolt.shield.fill", color: Color(red: 0.35, green: 0.75, blue: 0.55),
                 title: "Zapier",
                 description: "Connect PRVIO to 5,000+ apps without code.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Connect"),
+                action: { if let url = URL(string: "https://zapier.com/apps") { UIApplication.shared.open(url) } })
         }
     }
 
@@ -111,7 +115,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "thermometer.medium", color: .orange,
                 title: "Nest / Google Home",
                 description: "Monitor and adjust temperature remotely.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://home.google.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "speaker.wave.2.fill", color: Color(red: 0.0, green: 0.45, blue: 1.0),
                 title: "Sonos",
                 description: "Manage whole-home audio from your property dashboard.",
@@ -125,7 +130,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "lightswitch.on.fill", color: Color(red: 0.0, green: 0.65, blue: 0.55),
                 title: "IKEA TRÅDFRI",
                 description: "Control IKEA smart lighting and blinds.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.ikea.com/us/en/customer-service/smart-home/") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "atom", color: Color(red: 0.4, green: 0.7, blue: 0.95),
                 title: "Matter & Thread",
                 description: "Compatible Matter devices work automatically via Apple Home.",
@@ -138,7 +144,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "camera.fill", color: .indigo,
                 title: "Security Cameras",
                 description: "View live feeds and motion alerts from your cameras.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Set Up"),
+                action: { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "Ring Doorbell",
                 description: "See who's at the door and get motion alerts.",
@@ -147,7 +154,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "sensor.tag.radiowaves.forward.fill", color: .purple,
                 title: "Arlo / Eufy",
                 description: "Integrate wireless security cameras and sensors.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.arlo.com") { UIApplication.shared.open(url) } })
         }
     }
 
@@ -156,11 +164,13 @@ extension IntegrationsView {
             IntegrationRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.75, blue: 0.45),
                 title: "Revolut / Wise",
                 description: "Auto-import home expenses from your bank transactions.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://app.revolut.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.25, green: 0.5, blue: 0.95),
                 title: "Open Banking",
                 description: "Connect your bank for automatic expense categorization.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Learn More"),
+                action: { if let url = URL(string: "https://www.openbanking.org.uk") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "doc.text.viewfinder", color: .orange,
                 title: "Receipt Scanner",
                 description: "Scan and auto-categorize home improvement receipts.",
@@ -176,15 +186,18 @@ extension IntegrationsView {
             IntegrationRow(icon: "house.and.flag.fill", color: .teal,
                 title: "Booking.com",
                 description: "Manage short-term rental bookings and guest access.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.booking.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "airplane.circle.fill", color: Color(red: 1.0, green: 0.3, blue: 0.3),
                 title: "Airbnb",
                 description: "Sync Airbnb calendar and automate guest check-ins.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.airbnb.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "bed.double.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "VRBO / HomeAway",
                 description: "Connect VRBO listings to track occupancy and revenue.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.vrbo.com") { UIApplication.shared.open(url) } })
         }
     }
 
@@ -193,19 +206,23 @@ extension IntegrationsView {
             IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
                 title: "Energy Provider",
                 description: "Import utility bills automatically from your energy supplier.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Set Up"),
+                action: { if let url = URL(string: "https://www.enel.ro") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "sun.max.circle.fill", color: .yellow,
                 title: "Solar / PV System",
                 description: "Monitor solar panel output and energy savings.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://pvoutput.org") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "car.fill", color: Color(red: 0.35, green: 0.75, blue: 0.35),
                 title: "EV Charging",
                 description: "Track charging sessions and energy costs for your EV.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Open"),
+                action: { if let url = URL(string: "https://www.plugshare.com") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "drop.circle.fill", color: Color(red: 0.2, green: 0.6, blue: 0.9),
                 title: "Smart Water Meter",
                 description: "Monitor water consumption and detect leaks early.",
-                status: .comingSoon, action: nil)
+                status: .deepLink("Set Up"),
+                action: { if let url = URL(string: "https://www.apator.com") { UIApplication.shared.open(url) } })
         }
     }
 }

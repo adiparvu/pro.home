@@ -91,6 +91,14 @@ struct MainTabView: View {
                     .environmentObject(propertyService)
             }
         }
+        .sheet(isPresented: $router.showFamilyChat) {
+            NavigationStack {
+                ChatView()
+                    .environmentObject(familyService)
+                    .environmentObject(propertyService)
+                    .environmentObject(messageService)
+            }
+        }
         .environmentObject(router)
         .environmentObject(tabBarVis)
         .environmentObject(taskService)

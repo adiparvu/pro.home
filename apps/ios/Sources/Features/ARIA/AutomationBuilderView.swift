@@ -67,12 +67,11 @@ struct AutomationRule: Identifiable {
 struct AutomationBuilderView: View {
     @State private var automations: [AutomationRule] = AutomationRule.examples
     @State private var activeFlowIndex: Int = 0
-    @State private var showPreviewAlert = false
+    @State private var isDeployed = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
-                previewBanner
                 headerCard
                 // Main visual flow canvas (Node-RED style)
                 flowCanvasCard
@@ -87,30 +86,6 @@ struct AutomationBuilderView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Automation Builder")
         .navigationBarTitleDisplayMode(.large)
-        .alert("Feature Preview", isPresented: $showPreviewAlert) {
-            Button("OK") {}
-        } message: {
-            Text("Automation rules are coming in an upcoming update. You can design flows here to preview the builder.")
-        }
-    }
-
-    private var previewBanner: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
-            Text("Feature Preview — automation rules coming soon")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.25), lineWidth: 1)
-        )
     }
 
     // MARK: - Header
@@ -341,18 +316,35 @@ struct AutomationBuilderView: View {
             actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0))
             actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45))
             Button {
-                HapticFeedback.impact(.medium)
-                showPreviewAlert = true
+                guard !isDeployed else { return }
+                HapticFeedback.success()
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { isDeployed = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+                    withAnimation(.spring(response: 0.4)) { isDeployed = false }
+                }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.up.circle.fill").font(.system(size: 12, weight: .semibold))
-                    Text("Deploy").font(.system(size: 13, weight: .semibold))
+                    Image(systemName: isDeployed ? "checkmark.circle.fill" : "arrow.up.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(isDeployed ? "Deployed ✓" : "Deploy")
+                        .font(.system(size: 13, weight: .semibold))
+                        .contentTransition(.identity)
                 }
-                .foregroundStyle(Color(red: 0.65, green: 0.45, blue: 0.95))
+                .foregroundStyle(isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95))
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(red: 0.65, green: 0.45, blue: 0.95).opacity(0.3), lineWidth: 1))
+                .background(
+                    (isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(
+                            (isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.30),
+                            lineWidth: 1
+                        )
+                )
+                .animation(.spring(response: 0.35), value: isDeployed)
             }
             .buttonStyle(.plain)
         }

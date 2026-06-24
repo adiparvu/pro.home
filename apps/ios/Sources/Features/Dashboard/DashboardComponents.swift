@@ -609,7 +609,11 @@ struct PropertyHealthDashCard: View {
 // MARK: - DashStatsStrip (bottom stats strip on Dashboard)
 
 struct DashStatsStrip: View {
-    struct StatItem { let value: String; let label: LocalizedStringKey }
+    struct StatItem {
+        let value: String
+        let label: LocalizedStringKey
+        var action: (() -> Void)? = nil
+    }
     let items: [StatItem]
 
     var body: some View {
@@ -620,18 +624,26 @@ struct DashStatsStrip: View {
                         .fill(Color.primary.opacity(0.12))
                         .frame(width: 1, height: 28)
                 }
-                VStack(spacing: 2) {
-                    Text(item.value)
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                    Text(item.label)
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                Button {
+                    HapticFeedback.impact(.light)
+                    item.action?()
+                } label: {
+                    VStack(spacing: 2) {
+                        Text(item.value)
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
+                        Text(item.label)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(Color.primary.opacity(0.45))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.plain)
+                .disabled(item.action == nil)
             }
         }
-        .padding(.vertical, 14)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.regularMaterial)

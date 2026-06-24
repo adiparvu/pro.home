@@ -60,9 +60,9 @@ struct DashboardView: View {
 
                 // ── Proactive Insights ───────────────────────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
+                    Spacer().frame(height: 14)
                     ProactiveInsightsStrip(engine: proactiveEngine)
                         .padding(.horizontal, 16)
-                    Spacer().frame(height: 14)
                 }
 
                 Spacer().frame(height: 14)
@@ -303,10 +303,14 @@ struct DashboardView: View {
 
     private var dashStatsStrip: some View {
         DashStatsStrip(items: [
-            .init(value: "\(zoneService.zones.count)", label: "Zones"),
-            .init(value: "\(elementService.elements.count)", label: "Objects"),
-            .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks"),
-            .init(value: "\(taskService.overdueCount)", label: "Alerts")
+            .init(value: "\(zoneService.zones.count)", label: "Zones",
+                  action: { router.selectedTab = .digitalTwin }),
+            .init(value: "\(elementService.elements.count)", label: "Objects",
+                  action: { router.selectedTab = .digitalTwin }),
+            .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks",
+                  action: { router.selectedTab = .tasks }),
+            .init(value: "\(taskService.overdueCount)", label: "Alerts",
+                  action: { showNotifications = true })
         ])
     }
 

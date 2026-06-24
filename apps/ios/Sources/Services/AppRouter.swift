@@ -7,6 +7,7 @@ final class AppRouter: ObservableObject {
     // Global quick-action presentations (handled at the MainTabView level).
     @Published var showARIA = false
     @Published var showAddTask = false
+    @Published var showFamilyChat = false
     @Published var showAddExpense = false
     @Published var showInventoryScan = false
     @Published var showInventoryAdd = false
@@ -22,7 +23,7 @@ final class AppRouter: ObservableObject {
         case .aria:       showARIA = true
         case .finances:   Task { try? await Task.sleep(for: .milliseconds(250)); self.selectedTab = .settings }
         case .newTask:    showAddTask = true
-        case .chat:       Task { try? await Task.sleep(for: .milliseconds(250)); self.selectedTab = .chat }
+        case .chat:       showFamilyChat = true
         case .addExpense: showAddExpense = true
         case .scan:       showInventoryScan = true
         case .addItem:    showInventoryAdd = true
