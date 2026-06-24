@@ -143,7 +143,7 @@ struct PaintColorsView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
                 Spacer()
-                Text("\(colors.count) color\(colors.count == 1 ? "" : "s")")
+                Text(colors.count == 1 ? "\(colors.count) color" : "\(colors.count) colors")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.4))
             }

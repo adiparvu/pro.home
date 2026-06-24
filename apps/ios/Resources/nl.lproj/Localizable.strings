@@ -1961,3 +1961,15 @@
 "No stickers used yet" = "Nog geen stickers gebruikt";
 "ITEMS (%lld)" = "ITEMS (%lld)";
 "%@  (%lld)" = "%@  (%lld)";
+"In zone: %@" = "In zone: %@";
+"%lld color" = "%lld kleur";
+"%lld colors" = "%lld kleuren";
+"1 document expiring soon" = "1 document verloopt binnenkort";
+"%lld documents expiring soon" = "%lld documenten verlopen binnenkort";
+"Every %lld day" = "Elke %lld dag";
+"Every %lld days" = "Elke %lld dagen";
+"%lld items" = "%lld items";
+"Edit Location & Tracker" = "Locatie & tracker bewerken";
+"Set Location & Tracker" = "Locatie & tracker instellen";
+"Set Up Contact Info" = "Contactgegevens instellen";
+"Edit Contact Info" = "Contactgegevens bewerken";

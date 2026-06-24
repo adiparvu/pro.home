@@ -252,7 +252,7 @@ struct DocumentsView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange).font(.system(size: 18))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(documentService.expiringDocs.count) document\(documentService.expiringDocs.count == 1 ? "" : "s") expiring soon")
+                    Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
                         .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
                     Text("Review and renew before they expire")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))

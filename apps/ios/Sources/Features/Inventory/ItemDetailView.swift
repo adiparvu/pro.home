@@ -292,7 +292,7 @@ struct ItemDetailView: View {
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
                 Button { showLocationPicker = true } label: {
-                    Label(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker",
+                    Label(LocalizedStringKey(live.hasLocation ? "Edit Location & Tracker" : "Set Location & Tracker"),
                           systemImage: live.hasLocation ? "pencil" : "plus.circle.fill")
                         .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
@@ -330,7 +330,7 @@ struct ItemDetailView: View {
                     .padding(10).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                 }
                 Button { HapticFeedback.impact(.medium); showPublicContact = true } label: {
-                    Label(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info",
+                    Label(LocalizedStringKey(live.publicProfile == nil ? "Set Up Contact Info" : "Edit Contact Info"),
                           systemImage: live.publicProfile == nil ? "plus.circle.fill" : "pencil")
                         .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)

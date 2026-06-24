@@ -1979,3 +1979,15 @@
 "No stickers used yet" = "No stickers used yet";
 "ITEMS (%lld)" = "ITEMS (%lld)";
 "%@  (%lld)" = "%@  (%lld)";
+"In zone: %@" = "In zone: %@";
+"%lld color" = "%lld color";
+"%lld colors" = "%lld colors";
+"1 document expiring soon" = "1 document expiring soon";
+"%lld documents expiring soon" = "%lld documents expiring soon";
+"Every %lld day" = "Every %lld day";
+"Every %lld days" = "Every %lld days";
+"%lld items" = "%lld items";
+"Edit Location & Tracker" = "Edit Location & Tracker";
+"Set Location & Tracker" = "Set Location & Tracker";
+"Set Up Contact Info" = "Set Up Contact Info";
+"Edit Contact Info" = "Edit Contact Info";

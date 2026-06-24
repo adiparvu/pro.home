@@ -168,7 +168,7 @@ struct ZoneListRow: View {
                 Text(zone.name)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.primary)
-                Text(LocalizedStringKey(elementCount == 1 ? "1 item" : "\(elementCount) items"))
+                Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.45))
             }

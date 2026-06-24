@@ -195,7 +195,7 @@ struct AddPlantSheet: View {
             fieldLabel("WATERING INTERVAL")
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Every \(wateringIntervalDays) \(wateringIntervalDays == 1 ? "day" : "days")")
+                    Text(wateringIntervalDays == 1 ? "Every \(wateringIntervalDays) day" : "Every \(wateringIntervalDays) days")
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     Text("You'll be notified when it's time to water")

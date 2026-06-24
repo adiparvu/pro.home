@@ -191,7 +191,7 @@ struct TasksView: View {
                                     HapticFeedback.success()
                                     Task { await taskService.toggleComplete(task) }
                                 } label: {
-                                    Label(task.isCompleted ? "Reopen" : "Done",
+                                    Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Done"),
                                           systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
                                 }
                                 .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
@@ -378,7 +378,7 @@ struct TaskRowView: View {
                 HapticFeedback.success()
                 Task { await taskService.toggleComplete(task) }
             } label: {
-                Label(task.isCompleted ? "Reopen" : "Mark as Done",
+                Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Mark as Done"),
                       systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark.circle")
             }
             Divider()

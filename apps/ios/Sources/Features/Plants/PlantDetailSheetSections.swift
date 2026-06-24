@@ -263,7 +263,7 @@ extension PlantDetailSheet {
             VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("WATERING INTERVAL")
                 HStack {
-                    Text("Every \(editedPlant.wateringIntervalDays) \(editedPlant.wateringIntervalDays == 1 ? "day" : "days")")
+                    Text(editedPlant.wateringIntervalDays == 1 ? "Every \(editedPlant.wateringIntervalDays) day" : "Every \(editedPlant.wateringIntervalDays) days")
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     Spacer()

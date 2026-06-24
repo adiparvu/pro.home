@@ -1961,3 +1961,15 @@
 "No stickers used yet" = "Noch keine Sticker verwendet";
 "ITEMS (%lld)" = "ARTIKEL (%lld)";
 "%@  (%lld)" = "%@  (%lld)";
+"In zone: %@" = "In Zone: %@";
+"%lld color" = "%lld Farbe";
+"%lld colors" = "%lld Farben";
+"1 document expiring soon" = "1 Dokument läuft bald ab";
+"%lld documents expiring soon" = "%lld Dokumente laufen bald ab";
+"Every %lld day" = "Alle %lld Tag";
+"Every %lld days" = "Alle %lld Tage";
+"%lld items" = "%lld Objekte";
+"Edit Location & Tracker" = "Standort & Tracker bearbeiten";
+"Set Location & Tracker" = "Standort & Tracker setzen";
+"Set Up Contact Info" = "Kontaktinformationen einrichten";
+"Edit Contact Info" = "Kontaktinformationen bearbeiten";

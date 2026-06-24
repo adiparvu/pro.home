@@ -312,7 +312,7 @@ struct AddBuriedUtilitySheet: View {
                         .frame(maxHeight: 160).clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 Button { showPhotoPicker = true } label: {
-                    Label(photoImage == nil ? "Add reference photo" : "Change photo", systemImage: "photo.badge.plus")
+                    Label(LocalizedStringKey(photoImage == nil ? "Add reference photo" : "Change photo"), systemImage: "photo.badge.plus")
                         .font(.system(size: 14, weight: .medium)).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))

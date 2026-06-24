@@ -380,7 +380,7 @@ struct SupplyItemRow: View {
             .contextMenu {
                 Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
                 Button { onToggle() } label: {
-                    Label(item.isCompleted ? "Mark as incomplete" : "Mark as complete",
+                    Label(LocalizedStringKey(item.isCompleted ? "Mark as incomplete" : "Mark as complete"),
                           systemImage: item.isCompleted ? "circle" : "checkmark.circle")
                 }
                 Divider()
@@ -390,7 +390,7 @@ struct SupplyItemRow: View {
         }
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button { onToggle() } label: {
-                Label(item.isCompleted ? "Undo" : "Complete",
+                Label(LocalizedStringKey(item.isCompleted ? "Undo" : "Complete"),
                       systemImage: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
             }
             .tint(item.isCompleted ? .orange : Color(red: 0.2, green: 0.78, blue: 0.45))

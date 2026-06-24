@@ -2068,3 +2068,15 @@
 "No stickers used yet" = "Niciun sticker folosit încă";
 "ITEMS (%lld)" = "ARTICOLE (%lld)";
 "%@  (%lld)" = "%@  (%lld)";
+"In zone: %@" = "În zona: %@";
+"%lld color" = "%lld culoare";
+"%lld colors" = "%lld culori";
+"1 document expiring soon" = "1 document expiră în curând";
+"%lld documents expiring soon" = "%lld documente expiră în curând";
+"Every %lld day" = "La fiecare %lld zi";
+"Every %lld days" = "La fiecare %lld zile";
+"%lld items" = "%lld obiecte";
+"Edit Location & Tracker" = "Editează locație & tracker";
+"Set Location & Tracker" = "Setează locație & tracker";
+"Set Up Contact Info" = "Configurează informații de contact";
+"Edit Contact Info" = "Editează informații de contact";
