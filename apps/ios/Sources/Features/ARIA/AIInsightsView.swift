@@ -10,6 +10,7 @@ struct AIInsightsView: View {
     @EnvironmentObject var plantService: PlantService
     @EnvironmentObject var propertyService: PropertyService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     @State private var orbPulse = false
     @State private var showTimeline = false
@@ -184,7 +185,7 @@ struct AIInsightsView: View {
             }
 
             VStack(spacing: 4) {
-                Text("ARIA")
+                Text(assistantName)
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(String(localized: "ai_insights_property_intelligence"))

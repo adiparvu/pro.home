@@ -23,6 +23,8 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var showCalendarSuccess = false
     @Published var showContactsSuccess = false
     @Published var showPermissionDenied = false
+    @Published var iCloudAvailable = false
+    @Published var applePayAvailable = false
     var tasks: [MaintenanceTask] = []
     var property: PropertyModel? = nil
     var familyMembers: [FamilyMember] = []
@@ -35,6 +37,8 @@ final class IntegrationsViewModel: ObservableObject {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
         remindersStatus = await checkRemindersAccess() ? .connected : .notConnected
         contactsStatus = checkContactsAccess() ? .connected : .notConnected
+        iCloudAvailable = CloudKitSyncService.shared.isAvailable
+        applePayAvailable = ApplePayService.shared.isAvailable
     }
 
     // MARK: - Calendar

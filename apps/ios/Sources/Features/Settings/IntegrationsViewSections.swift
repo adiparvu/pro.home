@@ -61,7 +61,7 @@ extension IntegrationsView {
             IntegrationRow(icon: "cloud.fill", color: Color(red: 0.15, green: 0.45, blue: 0.95),
                 title: "iCloud Sync",
                 description: "Sincronizează documente și date între iPhone, iPad și Mac prin CloudKit.",
-                status: CloudKitSyncService.shared.isAvailable ? .active("Activ") : .notConnected,
+                status: vm.iCloudAvailable ? .active("Activ") : .notConnected,
                 action: {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -84,7 +84,7 @@ extension IntegrationsView {
             IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.05, green: 0.05, blue: 0.05),
                 title: "Apple Pay",
                 description: "Plătești contractori și furnizori direct din aplicație cu Apple Pay.",
-                status: ApplePayService.shared.isAvailable ? .active("Disponibil") : .notConnected,
+                status: vm.applePayAvailable ? .active("Disponibil") : .notConnected,
                 action: nil)
 
             IntegrationRow(icon: "wallet.pass.fill", color: Color(red: 0.05, green: 0.45, blue: 0.95),

@@ -58,24 +58,24 @@ struct ChatView: View {
                 inputBar
             }
             .background(appBackground.ignoresSafeArea())
-        .navigationTitle("Family Chat")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                HStack(spacing: 6) {
-                    Button {
-                        HapticFeedback.impact(.light)
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            router.selectedTab = .home
-                        }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(Color.primary)
+                Button {
+                    HapticFeedback.impact(.light)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        router.selectedTab = .home
                     }
-                    .buttonStyle(.plain)
-
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 10) {
                     MemberAvatarStack(
                         members: familyService.members,
                         ownerAvatarUrl: profileService.profile?.avatarUrl,
@@ -84,6 +84,8 @@ struct ChatView: View {
                     ) {
                         withAnimation { showMentionPicker.toggle() }
                     }
+                    Text(String(localized: "Chat Familie"))
+                        .font(.system(size: 16, weight: .semibold))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
