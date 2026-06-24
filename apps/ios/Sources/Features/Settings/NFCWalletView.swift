@@ -187,7 +187,7 @@ struct NFCWalletView: View {
     private func rescanTag(_ tag: NFCTag) {
         guard NFCScanService.isSupported else { return }
         HapticFeedback.impact(.light)
-        nfc.scan(prompt: "Hold iPhone near "\(tag.name)" to confirm") { _ in
+        nfc.scan(prompt: "Hold iPhone near \(tag.name) to confirm") { _ in
             if let idx = tags.firstIndex(where: { $0.id == tag.id }) {
                 tags[idx].scannedAt = Date()
                 saveTags()
