@@ -3,6 +3,7 @@ import PhotosUI
 import CoreLocation
 import MapKit
 import UserNotifications
+import UniformTypeIdentifiers
 import Supabase
 
 private let kAvatarRingColorKey = "prvio.avatarRingColorName"
@@ -31,10 +32,12 @@ struct ChatView: View {
     @State var mentionedNames: [String] = []
     @State var isSending = false
     @State private var showPhotoPickerTrigger = false
+    @State private var showFileImporter = false
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
     @StateObject var speech = SpeechRecognizer()
+    @StateObject private var audioRecorder = ChatAudioRecorder()
 
     var propertyId: UUID? { propertyService.primary?.id }
     private var filteredMessages: [Message] {
@@ -181,6 +184,15 @@ struct ChatView: View {
                 Task { await sendCameraPhoto(image) }
             }
         }
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.pdf, .image, .data],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                Task { await sendFile(url: url) }
+            }
+        }
         .userActivity("com.prvio.chat") { activity in
             activity.title = String(localized: "Chat familie — PRVIO")
             activity.userInfo = ["tab": "chat"]
@@ -294,6 +306,7 @@ struct ChatView: View {
                         Button { showCameraSheet = true } label: { Label("Camera", systemImage: "camera.fill") }
                         Button { showPhotoPickerTrigger = true } label: { Label("Photo / Video", systemImage: "photo") }
                         Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
+                        Button { showFileImporter = true } label: { Label("File", systemImage: "doc.fill") }
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 16, weight: .semibold))
@@ -336,6 +349,11 @@ struct ChatView: View {
                             if !t.isEmpty { text = t }
                         }
                     }
+
+                    VoiceRecordButton(recorder: audioRecorder) { url in
+                        Task { await sendAudio(url: url) }
+                    }
+                    .padding(.leading, 2)
 
                     Spacer()
 

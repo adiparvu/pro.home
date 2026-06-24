@@ -84,6 +84,46 @@ extension ChatView {
         mentionedIds = []; mentionedNames = []
     }
 
+    func sendAudio(url: URL) async {
+        guard let pid = propertyId else { return }
+        guard let data = try? Data(contentsOf: url) else { return }
+        isSending = true
+        defer { isSending = false; try? FileManager.default.removeItem(at: url) }
+        let fileName = "\(UUID().uuidString).m4a"
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/audio/\(fileName)"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: "audio/mp4", upsert: false))
+        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: nil,
+            attachmentUrl: remoteURL?.absoluteString, attachmentType: "audio",
+            mentionedIds: []
+        )
+        HapticFeedback.success()
+    }
+
+    func sendFile(url: URL) async {
+        guard let pid = propertyId else { return }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else { return }
+        isSending = true
+        defer { isSending = false }
+        let fileName = "\(UUID().uuidString)_\(url.lastPathComponent)"
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/files/\(fileName)"
+        let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: mime, upsert: false))
+        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName,
+            body: url.lastPathComponent,
+            attachmentUrl: remoteURL?.absoluteString, attachmentType: "file",
+            mentionedIds: []
+        )
+        HapticFeedback.success()
+    }
+
     func scheduleLocalMentionNotifications(body: String) {
         guard !mentionedNames.isEmpty else { return }
         guard NotificationScheduler.prefEnabled(NotificationScheduler.Keys.mentions) else { return }

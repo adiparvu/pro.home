@@ -335,6 +335,32 @@ struct MessageBubble: View {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
+        } else if message.isAudioMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
+            AudioBubble(url: url, duration: 0, isOwn: isOwn)
+        } else if message.isFileMessage {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(isOwn ? .white : Color.accentColor)
+                Text(message.body ?? "File")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(isOwn ? .white : .primary)
+                    .lineLimit(2)
+                if let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
+                    Spacer()
+                    Link(destination: url) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
+                    }
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(
+                isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            )
+            .frame(maxWidth: 240)
         } else if message.isImageMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
             AsyncImage(url: url) { phase in
                 if case .success(let img) = phase {
