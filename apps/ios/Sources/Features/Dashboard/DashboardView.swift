@@ -15,7 +15,7 @@ struct DashboardView: View {
     @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject var router: AppRouter
     @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var plantService: PlantService
+    @EnvironmentObject var plantService: PlantService
     @EnvironmentObject private var deliveryService: DeliveryService
     @EnvironmentObject private var elementService: PropertyElementService
     @EnvironmentObject private var tabBarVis: TabBarVisibility
