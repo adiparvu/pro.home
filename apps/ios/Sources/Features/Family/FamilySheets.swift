@@ -21,6 +21,7 @@ struct AddFamilyMemberSheet: View {
     @Environment(\.dismiss) private var dismiss
     let propertyId: UUID?
     var propertyName: String? = nil
+    var preselectedRole: String? = nil
 
     @State private var firstName = ""
     @State private var lastName = ""
@@ -78,6 +79,9 @@ struct AddFamilyMemberSheet: View {
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
             }
+        }
+        .onAppear {
+            if let preset = preselectedRole { role = preset }
         }
     }
 

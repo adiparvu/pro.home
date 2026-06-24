@@ -246,7 +246,9 @@ struct SettingsView: View {
                     .environmentObject(propertyService)
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
-                SettingsPlaceholder(icon: "person.2.fill", title: "Tenants", description: "Manage tenant profiles, leases, and communications.")
+                TenantManagementView()
+                    .environmentObject(familyService)
+                    .environmentObject(propertyService)
             }
             NavSettingsRow(icon: "washer.fill", color: Color(red: 0.2, green: 0.55, blue: 0.95), label: "Appliances") {
                 AppliancesView()
@@ -324,6 +326,8 @@ struct SettingsView: View {
                     .environmentObject(documentService)
                     .environmentObject(familyService)
                     .environmentObject(appSettings)
+                    .environmentObject(taskService)
+                    .environmentObject(applianceService)
             }
             NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()
