@@ -24,39 +24,56 @@ struct PropertyBotEngine {
     func respond(to input: String) -> String {
         let q = input.lowercased()
         // Tasks
-        if q.contains("task") || q.contains("overdue") || q.contains("todo") {
+        if q.contains("task") || q.contains("overdue") || q.contains("todo")
+            || q.contains("sarcin") || q.contains("depășit") || q.contains("întârziat") {
             let overdue = tasks.filter { $0.isOverdue }.count
             let open = tasks.filter { !$0.isCompleted }.count
-            if overdue > 0 { return "You have \(overdue) overdue task\(overdue == 1 ? "" : "s") and \(open) open in total. The most urgent: \(tasks.filter { $0.isOverdue }.first?.title ?? "—")." }
-            return "You have \(open) open task\(open == 1 ? "" : "s"), none overdue. Great job staying on top of things!"
+            if overdue > 0 {
+                let urgent = tasks.filter { $0.isOverdue }.first?.title ?? "—"
+                return String(format: String(localized: "You have %d overdue tasks and %d open. Most urgent: %@"), overdue, open, urgent)
+            }
+            return String(format: String(localized: "You have %d open tasks, none overdue. Great job!"), open)
         }
         // Finance
-        if q.contains("financ") || q.contains("income") || q.contains("expense") || q.contains("money") || q.contains("spend") {
+        if q.contains("financ") || q.contains("income") || q.contains("expense") || q.contains("money")
+            || q.contains("cheltuial") || q.contains("venit") || q.contains("bani") {
             let net = monthlyIncome - monthlyExpenses
-            return "This month: \(incomeSymbol)\(Int(monthlyIncome)) income, \(incomeSymbol)\(Int(monthlyExpenses)) expenses, net \(net >= 0 ? "+" : "")\(incomeSymbol)\(Int(net))."
+            let sign = net >= 0 ? "+" : ""
+            return String(format: String(localized: "This month: %@%d income, %@%d expenses, net %@%@%d."),
+                          incomeSymbol, Int(monthlyIncome), incomeSymbol, Int(monthlyExpenses),
+                          sign, incomeSymbol, Int(abs(net)))
         }
         // Documents
-        if q.contains("document") || q.contains("expir") || q.contains("warranty") || q.contains("insurance") {
+        if q.contains("document") || q.contains("expir") || q.contains("warranty") || q.contains("insurance")
+            || q.contains("garanți") || q.contains("asigurare") {
             let expiring = documents.filter { $0.isExpiringSoon }.count
-            if expiring > 0 { return "You have \(expiring) document\(expiring == 1 ? "" : "s") expiring within 30 days. Check the Documents section to renew them." }
-            return "All your documents are up to date. No renewals needed soon."
+            if expiring > 0 {
+                return String(format: String(localized: "You have %d documents expiring within 30 days."), expiring)
+            }
+            return String(localized: "All your documents are up to date.")
         }
         // Property
-        if q.contains("property") || q.contains("house") || q.contains("home") || q.contains("hello") || q.contains("hi") || q.contains("hey") {
-            return "I'm your property assistant for \(propertyName.isEmpty ? "your property" : propertyName). Ask me about tasks, finances, or documents!"
+        if q.contains("property") || q.contains("house") || q.contains("home") || q.contains("hello")
+            || q.contains("bună") || q.contains("salut") || q.contains("proprietate") || q.contains("casă") {
+            let name = propertyName.isEmpty ? String(localized: "your property") : propertyName
+            return String(format: String(localized: "I'm your property assistant for %@. Ask about tasks, finances or documents!"), name)
         }
         // Health
-        if q.contains("health") || q.contains("score") || q.contains("status") {
+        if q.contains("health") || q.contains("score") || q.contains("status")
+            || q.contains("sănătate") || q.contains("scor") || q.contains("stare") {
             let overdue = tasks.filter { $0.isOverdue }.count
             let score = max(min(100 - overdue * 12, 100), 0)
-            return "Your property health score is around \(score)/100. \(score >= 80 ? "Everything looks great!" : "Consider addressing the overdue tasks to improve it.")"
+            let comment = score >= 80
+                ? String(localized: "Everything looks great!")
+                : String(localized: "Consider addressing the overdue tasks to improve it.")
+            return String(format: String(localized: "Your property health score is around %d/100. %@"), score, comment)
         }
         // Help
-        if q.contains("help") || q.contains("what can") {
-            return "I can help with:\n• Task status & reminders\n• Financial summaries\n• Document expiry alerts\n• Property health overview\n\nJust ask naturally!"
+        if q.contains("help") || q.contains("what can") || q.contains("ajutor") || q.contains("ce poți") {
+            return String(localized: "I can help with tasks, finances, documents and property health. Just ask naturally!")
         }
         // Default
-        return "I'm your local property assistant. I can answer questions about your tasks, finances, and documents. What would you like to know?"
+        return String(localized: "I'm your local property assistant. Ask me about tasks, finances or documents.")
     }
 }
 

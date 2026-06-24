@@ -192,7 +192,7 @@ struct BlueprintsView: View {
 
     private func defaultScanName() -> String {
         let f = DateFormatter(); f.dateFormat = "MMM d, HH:mm"
-        return "Scan \(f.string(from: Date()))"
+        return "\(String(localized: "Scan")) \(f.string(from: Date()))"
     }
 
     private func saveZoneFromScan() {

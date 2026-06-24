@@ -224,8 +224,8 @@ struct TimelineEvent: Identifiable {
 
     var groupKey: String {
         let cal = Calendar.current
-        if cal.isDateInToday(date)     { return "Today" }
-        if cal.isDateInYesterday(date) { return "Yesterday" }
+        if cal.isDateInToday(date)     { return String(localized: "Today") }
+        if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
         let df = DateFormatter()
         df.dateStyle = .medium
         return df.string(from: date)

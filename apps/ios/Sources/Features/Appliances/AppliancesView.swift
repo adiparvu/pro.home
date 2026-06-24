@@ -128,7 +128,7 @@ struct AppliancesView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(label: "All", isSelected: selectedCategory == nil) {
+                chip(label: String(localized: "All"), isSelected: selectedCategory == nil) {
                     selectedCategory = nil
                     HapticFeedback.impact(.light)
                 }
@@ -143,9 +143,9 @@ struct AppliancesView: View {
         }
     }
 
-    private func chip(label: LocalizedStringKey, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func chip(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
+            Text(verbatim: label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
                 .padding(.horizontal, 14)

@@ -140,8 +140,8 @@ enum DocumentError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notAuthenticated: return "You must be signed in to upload documents."
-        case .noProperty: return "Please set up your property first."
+        case .notAuthenticated: return String(localized: "You must be signed in to upload documents.")
+        case .noProperty: return String(localized: "Please set up your property first.")
         }
     }
 }

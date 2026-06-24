@@ -59,7 +59,7 @@ struct PaintColor: Identifiable, Codable, Equatable {
         return Color(red: r, green: g, blue: b)
     }
 
-    var finishDisplay: String { finish?.displayName ?? "Unknown" }
+    var finishDisplay: String { finish?.displayName ?? String(localized: "Unknown") }
 }
 
 struct NewPaintColorPayload: Encodable {
