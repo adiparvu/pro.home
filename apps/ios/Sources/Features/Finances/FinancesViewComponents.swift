@@ -244,8 +244,8 @@ extension FinancesView {
     private func groupDateLabel(_ dateStr: String) -> String {
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         guard let d = iso.date(from: dateStr) else { return dateStr }
-        if Calendar.current.isDateInToday(d) { return "Today" }
-        if Calendar.current.isDateInYesterday(d) { return "Yesterday" }
+        if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
+        if Calendar.current.isDateInYesterday(d) { return String(localized: "Yesterday") }
         let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = .current
         return out.string(from: d)
     }

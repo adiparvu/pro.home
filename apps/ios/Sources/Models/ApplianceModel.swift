@@ -9,15 +9,15 @@ enum ApplianceCategory: String, CaseIterable, Codable {
     case entertainment
     case other
 
-    var displayName: String {
+    var displayName: LocalizedStringKey {
         switch self {
-        case .hvac:          return String(localized: "HVAC")
-        case .kitchen:       return String(localized: "Kitchen")
-        case .laundry:       return String(localized: "Laundry")
-        case .bathroom:      return String(localized: "Bathroom")
-        case .security:      return String(localized: "Security")
-        case .entertainment: return String(localized: "Entertainment")
-        case .other:         return String(localized: "Other")
+        case .hvac:          return "HVAC"
+        case .kitchen:       return "Kitchen"
+        case .laundry:       return "Laundry"
+        case .bathroom:      return "Bathroom"
+        case .security:      return "Security"
+        case .entertainment: return "Entertainment"
+        case .other:         return "Other"
         }
     }
 

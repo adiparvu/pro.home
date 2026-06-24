@@ -9,14 +9,14 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .tasks:       return "Tasks"
-        case .finances:    return "Finances"
-        case .documents:   return "Documents"
-        case .family:      return "Family"
-        case .healthScore: return "Health Score"
-        case .inventory:   return "Inventory"
-        case .contractors: return "Contractors"
-        case .calendar:    return "Calendar"
+        case .tasks:       return String(localized: "Tasks")
+        case .finances:    return String(localized: "Finances")
+        case .documents:   return String(localized: "Documents")
+        case .family:      return String(localized: "Family")
+        case .healthScore: return String(localized: "Health Score")
+        case .inventory:   return String(localized: "Inventory")
+        case .contractors: return String(localized: "Contractors")
+        case .calendar:    return String(localized: "Calendar")
         }
     }
 

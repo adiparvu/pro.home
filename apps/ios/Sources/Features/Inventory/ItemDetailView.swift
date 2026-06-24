@@ -146,10 +146,10 @@ struct ItemDetailView: View {
         }
     }
     private var warrantyText: String {
-        guard let exp = live.warrantyExpiresAt else { return "None" }
+        guard let exp = live.warrantyExpiresAt else { return String(localized: "None") }
         let days = Calendar.current.dateComponents([.day], from: Date(), to: exp).day ?? 0
-        if days < 0 { return "Expired" }
-        return "Until \(exp.formatted(date: .abbreviated, time: .omitted))"
+        if days < 0 { return String(localized: "Expired") }
+        return String(localized: "Until \(exp.formatted(date: .abbreviated, time: .omitted))")
     }
     private var warrantyColor: Color {
         switch live.warrantyStatus {
