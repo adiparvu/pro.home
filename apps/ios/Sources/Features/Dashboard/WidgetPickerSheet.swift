@@ -70,7 +70,7 @@ struct WidgetPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                PageHeader(title: "Widgets", subtitle: "HOME")
+                PageHeader(titleKey: "Widgets", subtitleKey: "HOME")
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {

@@ -43,7 +43,7 @@ struct AppearanceView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(title: "Aspect")
+                PageHeader(titleKey: "Appearance")
                 themeSection
                 accentSection
                 hapticSection

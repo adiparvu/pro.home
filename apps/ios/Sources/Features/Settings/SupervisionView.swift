@@ -86,7 +86,7 @@ struct SupervisionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Supervision", subtitle: "FAMILY")
+            PageHeader(titleKey: "Supervision", subtitleKey: "FAMILY")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {

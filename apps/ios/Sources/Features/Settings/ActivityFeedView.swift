@@ -108,7 +108,7 @@ struct ActivityFeedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Activity", subtitle: "PROPERTY")
+            PageHeader(titleKey: "Activity", subtitleKey: "PROPERTY")
 
             periodRow
                 .padding(.horizontal, 20)

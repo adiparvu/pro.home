@@ -12,7 +12,7 @@ struct PlantsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Plants", subtitle: "PROPERTY")
+            PageHeader(titleKey: "Plants", subtitleKey: "PROPERTY")
 
             if propertyService.primary == nil {
                 noPropertyState

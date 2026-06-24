@@ -12,7 +12,7 @@ struct DeliveriesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "Deliveries", subtitle: "PROPERTY")
+            PageHeader(titleKey: "Deliveries", subtitleKey: "PROPERTY")
 
             if deliveryService.deliveries.isEmpty {
                 emptyState

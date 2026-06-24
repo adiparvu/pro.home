@@ -55,7 +55,7 @@ struct AppIconPickerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PageHeader(title: "App Icon", subtitle: "PERSONALIZATION")
+            PageHeader(titleKey: "App Icon", subtitleKey: "PERSONALIZATION")
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {

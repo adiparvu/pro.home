@@ -1686,6 +1686,17 @@
 "Raport" = "Rapport";
 "PROPERTY" = "PROPRIÉTÉ";
 
+/* Build 287 — PageHeader + notifications + chat */
+"Widgets" = "Widgets";
+"Call" = "Appel";
+"Notifications Enabled" = "Notifications activées";
+"Notifications Blocked" = "Notifications bloquées";
+"Notifications Off" = "Notifications désactivées";
+"Alerts are scheduled on your device" = "Les alertes sont planifiées sur votre appareil";
+"Enable in iOS Settings to receive alerts" = "Activez dans Réglages iOS pour recevoir des alertes";
+"Tap below to enable alerts" = "Appuyez ci-dessous pour activer les alertes";
+"Notifications are scheduled locally on the device and fire even when the app is closed." = "Les notifications sont planifiées localement sur l'appareil et se déclenchent même quand l'app est fermée.";
+
 /* Build 286 — Dashboard widget subtitles */
 "urgent" = "urgent";
 "active" = "actif";

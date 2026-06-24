@@ -12,7 +12,7 @@ struct NotificationsSettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(title: "Notifications")
+                PageHeader(titleKey: "Notifications")
                 permissionCard
                 if authStatus == .authorized || authStatus == .provisional {
                     preferencesSection
@@ -156,7 +156,7 @@ struct NotificationsSettingsView: View {
         }
     }
 
-    private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func group<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
@@ -205,7 +205,7 @@ struct NotificationsSettingsView: View {
         }
     }
 
-    private var statusTitle: String {
+    private var statusTitle: LocalizedStringKey {
         switch authStatus {
         case .authorized, .provisional: return "Notifications Enabled"
         case .denied: return "Notifications Blocked"
@@ -213,7 +213,7 @@ struct NotificationsSettingsView: View {
         }
     }
 
-    private var statusSubtitle: String {
+    private var statusSubtitle: LocalizedStringKey {
         switch authStatus {
         case .authorized, .provisional: return "Alerts are scheduled on your device"
         case .denied: return "Enable in iOS Settings to receive alerts"
@@ -256,8 +256,8 @@ struct NotificationsSettingsView: View {
 private struct NotifToggleRow: View {
     let icon: String
     let color: Color
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     @Binding var value: Bool
 
     var body: some View {

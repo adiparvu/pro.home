@@ -27,7 +27,7 @@ struct SecurityView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                PageHeader(title: "Security")
+                PageHeader(titleKey: "Security")
                 mfaSection
                 sessionsSection
                 advancedSection

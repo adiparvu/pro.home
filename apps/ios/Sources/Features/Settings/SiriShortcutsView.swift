@@ -7,7 +7,7 @@ struct SiriShortcutsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                PageHeader(title: "Siri & Shortcuts", subtitle: "PRVIO")
+                PageHeader(titleKey: "Siri & Shortcuts", subtitleKey: "PRVIO")
 
                 headerCard
                 shortcutsSection

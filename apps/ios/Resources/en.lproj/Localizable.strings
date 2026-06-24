@@ -1704,6 +1704,17 @@
 "Raport" = "Report";
 "PROPERTY" = "PROPERTY";
 
+/* Build 287 — PageHeader + notifications + chat */
+"Widgets" = "Widgets";
+"Call" = "Call";
+"Notifications Enabled" = "Notifications Enabled";
+"Notifications Blocked" = "Notifications Blocked";
+"Notifications Off" = "Notifications Off";
+"Alerts are scheduled on your device" = "Alerts are scheduled on your device";
+"Enable in iOS Settings to receive alerts" = "Enable in iOS Settings to receive alerts";
+"Tap below to enable alerts" = "Tap below to enable alerts";
+"Notifications are scheduled locally on the device and fire even when the app is closed." = "Notifications are scheduled locally on the device and fire even when the app is closed.";
+
 /* Build 286 — Dashboard widget subtitles */
 "urgent" = "urgent";
 "active" = "active";

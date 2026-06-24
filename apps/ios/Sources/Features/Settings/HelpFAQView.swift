@@ -22,7 +22,7 @@ struct HelpFAQView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
-                PageHeader(title: "Ajutor & FAQ")
+                PageHeader(titleKey: "Help & FAQ")
                     .padding(.bottom, 4)
                 ForEach(items.indices, id: \.self) { i in
                     FAQRow(item: $items[i])

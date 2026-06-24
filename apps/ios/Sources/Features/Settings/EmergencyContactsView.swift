@@ -15,7 +15,7 @@ struct EmergencyContactsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 16) {
-                PageHeader(title: "Emergency Contacts")
+                PageHeader(titleKey: "Emergency Contacts")
                 systemServicesSection
                 if !contacts.isEmpty { customSection }
                 addButton

@@ -17,8 +17,8 @@ struct PropertyMapView: View {
     var body: some View {
         VStack(spacing: 0) {
             PageHeader(
-                title: "Map",
-                subtitle: "PROPERTY",
+                titleKey: "Map",
+                subtitleKey: "PROPERTY",
                 trailing: AnyView(
                     HStack(spacing: 10) {
                         Button {

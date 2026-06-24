@@ -67,7 +67,7 @@ struct CallPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle(isVideo ? "Video Call" : "Call")
+            .navigationTitle(isVideo ? String(localized: "Video Call") : String(localized: "Call"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

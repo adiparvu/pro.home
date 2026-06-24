@@ -1686,6 +1686,17 @@
 "Raport" = "Rapport";
 "PROPERTY" = "EIGENDOM";
 
+/* Build 287 — PageHeader + notifications + chat */
+"Widgets" = "Widgets";
+"Call" = "Oproep";
+"Notifications Enabled" = "Meldingen ingeschakeld";
+"Notifications Blocked" = "Meldingen geblokkeerd";
+"Notifications Off" = "Meldingen uitgeschakeld";
+"Alerts are scheduled on your device" = "Meldingen zijn gepland op uw apparaat";
+"Enable in iOS Settings to receive alerts" = "Schakel in iOS-instellingen in om meldingen te ontvangen";
+"Tap below to enable alerts" = "Tik hieronder om meldingen in te schakelen";
+"Notifications are scheduled locally on the device and fire even when the app is closed." = "Meldingen worden lokaal op het apparaat gepland en worden geactiveerd, zelfs wanneer de app gesloten is.";
+
 /* Build 286 — Dashboard widget subtitles */
 "urgent" = "urgent";
 "active" = "actief";
