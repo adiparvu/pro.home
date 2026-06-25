@@ -142,7 +142,7 @@ private struct AddAutomationSheet: View {
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
-                                ForEach(triggerOptions.indices, id: \.self) { i in
+                                ForEach(0..<triggerOptions.count, id: \.self) { i in
                                     let t = triggerOptions[i]
                                     Button {
                                         triggerType = i
@@ -184,7 +184,7 @@ private struct AddAutomationSheet: View {
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
-                                ForEach(actionOptions.indices, id: \.self) { i in
+                                ForEach(0..<actionOptions.count, id: \.self) { i in
                                     let a = actionOptions[i]
                                     Button {
                                         actionType = i
