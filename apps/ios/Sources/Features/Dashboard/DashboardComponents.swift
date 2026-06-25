@@ -26,14 +26,10 @@ struct HomeWidget: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(iconColor.opacity(0.18))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: icon)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(iconColor)
-                    }
+                    Image(systemName: icon)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                        .frame(width: 36, height: 36)
                     Spacer()
                     if badge > 0 {
                         Text("\(min(badge, 99))")
