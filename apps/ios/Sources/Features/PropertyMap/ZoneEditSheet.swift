@@ -204,6 +204,29 @@ struct ZoneEditSheet: View {
                             HapticFeedback.selection()
                         }
                 }
+                ZStack {
+                    Circle()
+                        .fill(AngularGradient(
+                            colors: [.red, .orange, .yellow, .green, .blue, .purple, .red],
+                            center: .center
+                        ))
+                        .frame(width: 34, height: 34)
+                        .overlay(Circle().strokeBorder(.white, lineWidth: Self.palette.contains(colorHex) ? 0 : 3))
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                    ColorPicker("", selection: Binding(
+                        get: { Color(hex: colorHex) ?? .blue },
+                        set: { newColor in
+                            withAnimation(.spring(response: 0.25)) { colorHex = newColor.hexString() }
+                            HapticFeedback.selection()
+                        }
+                    ), supportsOpacity: false)
+                    .labelsHidden()
+                    .opacity(0.015)
+                    .scaleEffect(2.2)
+                }
+                .frame(width: 34, height: 34)
+                .clipShape(Circle())
+                .scaleEffect(Self.palette.contains(colorHex) ? 1.0 : 1.12)
             }
             .padding(.vertical, 4)
         }

@@ -192,11 +192,11 @@ struct SuppliesView: View {
             VStack(spacing: 20) {
                 GlassCard(padding: 18) {
                     HStack(spacing: 0) {
-                        statCell(value: "\(supplyService.lists.count)", label: String(localized: "supply_lists_count"))
+                        statCell(value: "\(supplyService.lists.count)", label: String(localized: "supply_lists_count"), tab: .lists)
                         Divider().frame(height: 32).opacity(0.3)
-                        statCell(value: "\(supplyService.totalPending)", label: String(localized: "supply_to_buy"))
+                        statCell(value: "\(supplyService.totalPending)", label: String(localized: "supply_to_buy"), tab: .toBuy)
                         Divider().frame(height: 32).opacity(0.3)
-                        statCell(value: "\(supplyService.totalCompleted)", label: String(localized: "supply_completed"))
+                        statCell(value: "\(supplyService.totalCompleted)", label: String(localized: "supply_completed"), tab: .completed)
                     }
                 }
                 listsGrid
@@ -212,12 +212,18 @@ struct SuppliesView: View {
         }
     }
 
-    private func statCell(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.system(size: 22, weight: .bold)).contentTransition(.numericText())
-            Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+    private func statCell(value: String, label: String, tab: ExpenseTab) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) { activeTab = tab }
+            HapticFeedback.selection()
+        } label: {
+            VStack(spacing: 2) {
+                Text(value).font(.system(size: 22, weight: .bold)).contentTransition(.numericText())
+                Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
     }
 
     private var listsGrid: some View {
