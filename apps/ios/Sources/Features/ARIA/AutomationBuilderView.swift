@@ -118,7 +118,7 @@ private struct AutomationPickerRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
@@ -171,7 +171,7 @@ private struct AddAutomationSheet: View {
                                 TextField("e.g. Warranty Alert", text: $name)
                                     .font(.system(size: 15))
                                     .foregroundStyle(.primary)
-                                    .tint(.accentColor)
+                                    .tint(Color.accentColor)
                             }
                         }
                         .padding(.horizontal, 20)
