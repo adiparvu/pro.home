@@ -28,39 +28,38 @@ struct NavSettingsRow<D: View>: View {
     let label: LocalizedStringKey
     @ViewBuilder let destination: () -> D
     @State private var iconBounce = false
+    @State private var isPresented = false
 
     var body: some View {
-        NavigationLink(destination: destination()) {
-            rowInner(chevron: true)
-        }
-        .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture().onEnded { iconBounce.toggle() })
-        rowDivider
-    }
-
-    private func rowInner(chevron: Bool) -> some View {
-        HStack(spacing: 12) {
-            ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
-            Text(label)
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-            Spacer()
-            if chevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.28))
+        VStack(spacing: 0) {
+            Button {
+                iconBounce.toggle()
+                isPresented = true
+            } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
+                    Text(label)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
             }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
-    }
+            .buttonStyle(.plain)
+            .navigationDestination(isPresented: $isPresented) {
+                destination()
+            }
 
-    private var rowDivider: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.06))
-            .frame(height: 0.4)
-            .padding(.leading, 52)
+            Rectangle()
+                .fill(Color.primary.opacity(0.06))
+                .frame(height: 0.4)
+                .padding(.leading, 52)
+        }
     }
 }
 

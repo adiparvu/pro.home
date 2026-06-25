@@ -11,11 +11,17 @@ final class HomeKitService: NSObject, ObservableObject {
     @Published var isAuthorized = false
     @Published var authorizationStatus: HMHomeManagerAuthorizationStatus = .determined
 
-    private lazy var manager: HMHomeManager = HMHomeManager()
+    private lazy var manager: HMHomeManager = {
+        let m = HMHomeManager()
+        m.delegate = self
+        return m
+    }()
 
     private override init() {
         super.init()
-        manager.delegate = self
+        // manager is intentionally NOT accessed here — HMHomeManager must only
+        // be created on explicit user action to avoid a crash when the
+        // provisioning profile lacks the HomeKit entitlement.
     }
 
     var primaryHome: HMHome? { manager.primaryHome }

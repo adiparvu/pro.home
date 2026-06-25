@@ -22,7 +22,6 @@ struct IntegrationsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
-            .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Integrations")

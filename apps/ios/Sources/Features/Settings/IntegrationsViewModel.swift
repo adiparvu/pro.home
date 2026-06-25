@@ -30,7 +30,7 @@ final class IntegrationsViewModel: ObservableObject {
     var property: PropertyModel? = nil
     var familyMembers: [FamilyMember] = []
 
-    private let store = EKEventStore()
+    private lazy var store = EKEventStore()
     private let calendarSyncedKey = "prvio.calendar.synced_ids"
     private let reminderSyncedKey = "prvio.reminders.synced_ids"
 
