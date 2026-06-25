@@ -292,6 +292,7 @@ struct SettingsView: View {
                     .environmentObject(financialService)
                     .environmentObject(familyService)
                     .environmentObject(applianceService)
+                    .environmentObject(router)
             }
         }
     }

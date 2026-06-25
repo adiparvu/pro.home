@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - AutomationRule Model
 
-struct AutomationRule: Identifiable {
+struct AutomationRule: Identifiable, Codable {
     var id = UUID()
     var name: String
     var triggerIcon: String
@@ -12,7 +12,24 @@ struct AutomationRule: Identifiable {
     var actionIcon: String
     var actionLabel: String
     var isActive: Bool
-    var color: Color
+    var colorHex: String
+
+    var color: Color { Color(hex: colorHex) ?? .blue }
+
+    init(name: String, triggerIcon: String, triggerLabel: String,
+         conditionIcon: String, conditionLabel: String,
+         actionIcon: String, actionLabel: String,
+         isActive: Bool, color: Color) {
+        self.name           = name
+        self.triggerIcon    = triggerIcon
+        self.triggerLabel   = triggerLabel
+        self.conditionIcon  = conditionIcon
+        self.conditionLabel = conditionLabel
+        self.actionIcon     = actionIcon
+        self.actionLabel    = actionLabel
+        self.isActive       = isActive
+        self.colorHex       = color.hexString()
+    }
 
     static let prvioTemplates: [AutomationRule] = [
         .init(
@@ -92,6 +109,11 @@ private struct TriggerOption {
     let color: Color
 }
 
+private struct ConditionOption {
+    let label: String
+    let icon: String
+}
+
 private struct ActionOption {
     let label: String
     let icon: String
@@ -133,26 +155,39 @@ private struct AddAutomationSheet: View {
     let onAdd: (AutomationRule) -> Void
 
     @State private var name = ""
-    @State private var selectedTemplate: AutomationRule?
-    @State private var triggerType = 0
-    @State private var actionType  = 0
+    @State private var triggerType    = 0
+    @State private var conditionType  = 0
+    @State private var actionType     = 0
 
     private let triggerOptions: [TriggerOption] = [
-        TriggerOption(label: "Warranty expires",   icon: "shield.lefthalf.filled",       color: Color(red: 0.95, green: 0.45, blue: 0.15)),
-        TriggerOption(label: "Task overdue",        icon: "exclamationmark.circle.fill",   color: .red),
-        TriggerOption(label: "Plant needs water",   icon: "drop.fill",                    color: Color(red: 0.15, green: 0.72, blue: 0.37)),
-        TriggerOption(label: "Document expires",    icon: "doc.badge.clock.fill",          color: .purple),
-        TriggerOption(label: "Time schedule",       icon: "clock.fill",                   color: .blue),
-        TriggerOption(label: "Motion detected",     icon: "camera.fill",                  color: .orange),
+        TriggerOption(label: "Warranty expires",       icon: "shield.lefthalf.filled",       color: Color(red: 0.95, green: 0.45, blue: 0.15)),
+        TriggerOption(label: "Task overdue",            icon: "exclamationmark.circle.fill",   color: .red),
+        TriggerOption(label: "Plant needs water",       icon: "drop.fill",                    color: Color(red: 0.15, green: 0.72, blue: 0.37)),
+        TriggerOption(label: "Document expires",        icon: "doc.badge.clock.fill",          color: .purple),
+        TriggerOption(label: "Time schedule",           icon: "clock.fill",                   color: .blue),
+        TriggerOption(label: "Motion detected",         icon: "camera.fill",                  color: .orange),
+        TriggerOption(label: "Appliance service due",   icon: "wrench.and.screwdriver.fill",  color: Color(red: 0.2, green: 0.72, blue: 0.45)),
+        TriggerOption(label: "Expense exceeds budget",  icon: "banknote.fill",                color: Color(red: 0.62, green: 0.15, blue: 0.92)),
+    ]
+    private let conditionOptions: [ConditionOption] = [
+        ConditionOption(label: "Always",           icon: "checkmark.circle"),
+        ConditionOption(label: "Morning (7–9 AM)", icon: "sunrise.fill"),
+        ConditionOption(label: "Evening (6–9 PM)", icon: "sunset.fill"),
+        ConditionOption(label: "Weekdays only",    icon: "calendar"),
+        ConditionOption(label: "Assigned to me",   icon: "person.fill"),
+        ConditionOption(label: "No rain forecast", icon: "cloud.sun.fill"),
     ]
     private let actionOptions: [ActionOption] = [
         ActionOption(label: "Send notification",   icon: "bell.badge.fill"),
         ActionOption(label: "Create task",         icon: "checkmark.circle.fill"),
         ActionOption(label: "Mark as completed",   icon: "checkmark.seal.fill"),
         ActionOption(label: "Log to activity",     icon: "clock.arrow.circlepath"),
+        ActionOption(label: "Water plant",         icon: "drop.circle.fill"),
+        ActionOption(label: "Add expense note",    icon: "doc.text.fill"),
     ]
 
     private var selectedTrigger: TriggerOption { triggerOptions[triggerType] }
+    private var selectedCondition: ConditionOption { conditionOptions[conditionType] }
     private var selectedAction: ActionOption { actionOptions[actionType] }
 
     var body: some View {
@@ -203,6 +238,33 @@ private struct AddAutomationSheet: View {
                         }
                         .padding(.horizontal, 20)
 
+                        // Condition picker
+                        GlassCard(padding: 0) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text("If (Condition)")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                ForEach(0..<conditionOptions.count, id: \.self) { i in
+                                    AutomationPickerRow(
+                                        icon: conditionOptions[i].icon,
+                                        label: conditionOptions[i].label,
+                                        accentColor: Color(red: 0.2, green: 0.55, blue: 0.95),
+                                        isSelected: conditionType == i
+                                    ) {
+                                        conditionType = i
+                                        HapticFeedback.selection()
+                                    }
+                                    if i < conditionOptions.count - 1 {
+                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
+                                    }
+                                }
+                                .padding(.bottom, 8)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+
                         // Action picker
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
@@ -245,13 +307,14 @@ private struct AddAutomationSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         let t = selectedTrigger
+                        let c = selectedCondition
                         let a = selectedAction
                         let rule = AutomationRule(
                             name: name.trimmingCharacters(in: .whitespaces).isEmpty ? t.label : name,
                             triggerIcon: t.icon,
                             triggerLabel: t.label,
-                            conditionIcon: "checkmark.circle",
-                            conditionLabel: "Always",
+                            conditionIcon: c.icon,
+                            conditionLabel: c.label,
                             actionIcon: a.icon,
                             actionLabel: a.label,
                             isActive: true,
@@ -272,10 +335,25 @@ private struct AddAutomationSheet: View {
 // MARK: - AutomationBuilderView
 
 struct AutomationBuilderView: View {
-    @State private var automations: [AutomationRule] = AutomationRule.prvioTemplates
+    @State private var automations: [AutomationRule] = Self.loadSaved()
     @State private var activeFlowIndex = 0
     @State private var isDeployed      = false
     @State private var showAdd         = false
+
+    private static let udKey = "prvio.automations"
+
+    private static func loadSaved() -> [AutomationRule] {
+        guard let data = UserDefaults.standard.data(forKey: udKey),
+              let rules = try? JSONDecoder().decode([AutomationRule].self, from: data)
+        else { return AutomationRule.prvioTemplates }
+        return rules
+    }
+
+    private func persist() {
+        if let data = try? JSONEncoder().encode(automations) {
+            UserDefaults.standard.set(data, forKey: Self.udKey)
+        }
+    }
 
     private var activeRule: AutomationRule {
         guard automations.indices.contains(activeFlowIndex) else {
@@ -311,6 +389,7 @@ struct AutomationBuilderView: View {
             AddAutomationSheet { rule in
                 automations.insert(rule, at: 0)
                 activeFlowIndex = 0
+                persist()
             }
         }
     }
@@ -537,6 +616,7 @@ struct AutomationBuilderView: View {
                                     activeFlowIndex = max(0, automations.count - 1)
                                 }
                             }
+                            persist()
                         } label: { Label("Delete", systemImage: "trash") }
                     }
             }
@@ -563,7 +643,7 @@ struct AutomationBuilderView: View {
                 .toggleStyle(.switch)
                 .tint(rule.color)
                 .labelsHidden().scaleEffect(0.8)
-                .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection() }
+                .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection(); persist() }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))

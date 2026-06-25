@@ -66,13 +66,21 @@ struct PRVIOApp: App {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.openNewTask")
                         router.showAddTask = true
                     }
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.openARIA") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openARIA")
+                        router.showARIA = true
+                    }
+                    if UserDefaults.standard.bool(forKey: "prvio.intent.openDashboard") {
+                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openDashboard")
+                        router.selectedTab = .home
+                    }
                     if UserDefaults.standard.bool(forKey: "prvio.intent.showPlants") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showPlants")
                         router.showWaterPlant = true
                     }
                     if UserDefaults.standard.bool(forKey: "prvio.intent.showChat") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
-                        router.selectedTab = .chat
+                        router.showFamilyChat = true
                     }
                     if UserDefaults.standard.bool(forKey: "prvio.intent.showShopping") {
                         UserDefaults.standard.removeObject(forKey: "prvio.intent.showShopping")

@@ -18,6 +18,8 @@ private struct PerspectiveHighlight: Identifiable {
     let label: String
     let value: String
     let color: Color
+    var tab: AppTab? = nil
+    var action: (() -> Void)? = nil
 }
 
 // MARK: - PropertyPerspectivesView
@@ -29,6 +31,7 @@ struct PropertyPerspectivesView: View {
     @EnvironmentObject private var financialService: FinancialService
     @EnvironmentObject private var familyService:    FamilyService
     @EnvironmentObject private var applianceService: ApplianceService
+    @EnvironmentObject private var router:           AppRouter
 
     @State private var selectedRole = "owner"
 
@@ -47,12 +50,12 @@ struct PropertyPerspectivesView: View {
                 color: .blue,
                 description: "Full access — property health, finances, tasks, and all zones.",
                 highlights: [
-                    .init(icon: "heart.fill",           label: "Health Score",  value: "—",                        color: .green),
-                    .init(icon: "banknote.fill",         label: "Net Balance",   value: "\(financialService.currencySymbol)\(Int(income - expenses))", color: income >= expenses ? .green : .red),
-                    .init(icon: "checkmark.circle.fill", label: "Open Tasks",    value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange),
-                    .init(icon: "doc.text.fill",         label: "Documents",     value: "\(documentService.documents.count)", color: .purple),
-                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95)),
-                    .init(icon: "person.2.fill",         label: "Family",        value: "\(familyService.members.count)", color: .teal),
+                    .init(icon: "heart.fill",           label: "Health Score",  value: propertyService.primary?.healthScore.map { "\($0)%" } ?? "—", color: .green,   tab: .digitalTwin),
+                    .init(icon: "banknote.fill",         label: "Net Balance",   value: "\(financialService.currencySymbol)\(Int(income - expenses))", color: income >= expenses ? .green : .red, tab: .settings),
+                    .init(icon: "checkmark.circle.fill", label: "Open Tasks",    value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange, tab: .tasks),
+                    .init(icon: "doc.text.fill",         label: "Documents",     value: "\(documentService.documents.count)", color: .purple,  tab: .settings),
+                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "person.2.fill",         label: "Family",        value: "\(familyService.members.count)", color: .teal, tab: .settings),
                 ]
             ),
             Perspective(
@@ -62,9 +65,9 @@ struct PropertyPerspectivesView: View {
                 color: .purple,
                 description: "Tenant-facing view — shared areas, visible tasks, and contact.",
                 highlights: [
-                    .init(icon: "key.fill",              label: "Tenants",       value: "\(tenants.count)",         color: .purple),
-                    .init(icon: "checkmark.circle.fill", label: "Shared Tasks",  value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange),
-                    .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)",         color: overdue.isEmpty ? .green : .red),
+                    .init(icon: "key.fill",              label: "Tenants",       value: "\(tenants.count)",         color: .purple,  tab: .settings),
+                    .init(icon: "checkmark.circle.fill", label: "Shared Tasks",  value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange, tab: .tasks),
+                    .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)",         color: overdue.isEmpty ? .green : .red, tab: .tasks),
                     .init(icon: "person.fill",           label: "Owner Contact", value: propertyService.primary?.name ?? "—", color: .blue),
                 ]
             ),
@@ -77,7 +80,7 @@ struct PropertyPerspectivesView: View {
                 highlights: [
                     .init(icon: "wifi",           label: "Wi-Fi Access",   value: "Enabled",  color: .green),
                     .init(icon: "phone.fill",     label: "Emergency",      value: "Saved",    color: .red),
-                    .init(icon: "map.fill",       label: "Property",       value: propertyService.primary?.addressLine1 ?? "—", color: .blue),
+                    .init(icon: "map.fill",       label: "Property",       value: propertyService.primary?.addressLine1 ?? "—", color: .blue, tab: .digitalTwin),
                     .init(icon: "person.fill",    label: "Host",           value: "Available", color: .teal),
                 ]
             ),
@@ -88,10 +91,10 @@ struct PropertyPerspectivesView: View {
                 color: Color(red: 0.2, green: 0.72, blue: 0.45),
                 description: "Service access — maintenance tasks, systems, and appliances.",
                 highlights: [
-                    .init(icon: "checkmark.circle.fill", label: "Maintenance Tasks", value: "\(tasks.filter { $0.category == "maintenance" && !$0.isCompleted }.count)", color: .orange),
-                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95)),
-                    .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)", color: overdue.isEmpty ? .green : .red),
-                    .init(icon: "shield.lefthalf.filled", label: "Under Warranty", value: "\(applianceService.appliances.filter { $0.warrantyUntil != nil }.count)", color: .teal),
+                    .init(icon: "checkmark.circle.fill", label: "Maintenance Tasks", value: "\(tasks.filter { $0.category == "maintenance" && !$0.isCompleted }.count)", color: .orange, tab: .tasks),
+                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)", color: overdue.isEmpty ? .green : .red, tab: .tasks),
+                    .init(icon: "shield.lefthalf.filled", label: "Under Warranty", value: "\(applianceService.appliances.filter { $0.warrantyUntil != nil }.count)", color: .teal, tab: .settings),
                 ]
             ),
         ]
@@ -171,23 +174,37 @@ struct PropertyPerspectivesView: View {
             // Stats grid
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(p.highlights) { h in
-                    GlassCard(padding: 16) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 8) {
-                                Image(systemName: h.icon)
-                                    .font(.system(size: 14, weight: .semibold))
+                    Button {
+                        if let tab = h.tab {
+                            router.selectedTab = tab
+                        }
+                        h.action?()
+                    } label: {
+                        GlassCard(padding: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: h.icon)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(h.color)
+                                    Text(h.label)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    if h.tab != nil {
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundStyle(Color.primary.opacity(0.25))
+                                    }
+                                }
+                                Text(h.value)
+                                    .font(.system(size: 20, weight: .bold))
                                     .foregroundStyle(h.color)
-                                Text(h.label)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
-                            Text(h.value)
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(h.color)
-                                .lineLimit(1)
                         }
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 20)
