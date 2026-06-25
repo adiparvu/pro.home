@@ -21,6 +21,7 @@ struct SettingsView: View {
     @EnvironmentObject private var photoJournalService: PhotoJournalService
     @EnvironmentObject private var paintColorService: PaintColorService
     @EnvironmentObject private var propertyValueService: PropertyValueService
+    @EnvironmentObject private var router: AppRouter
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
@@ -55,6 +56,9 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Rating will be available once the app launches on the App Store.")
+        }
+        .navigationDestination(isPresented: $router.showSuppliesView) {
+            SuppliesView()
         }
     }
 

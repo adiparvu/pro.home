@@ -13,6 +13,7 @@ final class AppRouter: ObservableObject {
     @Published var showInventoryAdd = false
     @Published var showAddSupply = false
     @Published var showWaterPlant = false
+    @Published var showSuppliesView = false
 
     // Deep link destinations
     @Published var deepLinkTaskId: UUID?
@@ -53,8 +54,8 @@ final class AppRouter: ObservableObject {
                 deepLinkPlantId = id
             }
         case "shopping", "supplies":
-            selectedTab = .home
-            showAddSupply = true
+            selectedTab = .settings
+            showSuppliesView = true
         case "chat":
             selectedTab = .chat
         case "scan":

@@ -23,6 +23,7 @@ private enum ActivityCategory: String, CaseIterable {
     case documents  = "Documents"
     case elements   = "Elements"
     case appliances = "Appliances"
+    case plants     = "Plants"
 
     var icon: String {
         switch self {
@@ -32,6 +33,7 @@ private enum ActivityCategory: String, CaseIterable {
         case .documents:  return "doc.text.fill"
         case .elements:   return "cube.fill"
         case .appliances: return "washer.fill"
+        case .plants:     return "leaf.fill"
         }
     }
 
@@ -43,6 +45,7 @@ private enum ActivityCategory: String, CaseIterable {
         case .documents:  return .orange
         case .elements:   return .purple
         case .appliances: return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .plants:     return Color(red: 0.15, green: 0.75, blue: 0.40)
         }
     }
 }
@@ -68,6 +71,7 @@ struct ActivityFeedView: View {
     @EnvironmentObject private var taskService:       TaskService
     @EnvironmentObject private var elementService:    PropertyElementService
     @EnvironmentObject private var applianceService:  ApplianceService
+    @EnvironmentObject private var plantService:      PlantService
 
     @State private var period:           ActivityPeriod   = .month
     @State private var selectedMember:   String?          = nil
@@ -115,6 +119,7 @@ struct ActivityFeedView: View {
         let isoTask = makeISOParser()
         for task in taskService.tasks {
             let date = isoTask(task.updatedAt) ?? isoTask(task.createdAt) ?? Date()
+            let taskMember = task.assigneeNames.first ?? currentUser
             if task.isCompleted {
                 events.append(ActivityEvent(
                     icon:     "checkmark.circle.fill",
@@ -122,7 +127,7 @@ struct ActivityFeedView: View {
                     title:    "Task completed",
                     subtitle: task.title,
                     date:     date,
-                    member:   currentUser,
+                    member:   taskMember,
                     category: .tasks
                 ))
             } else if let due = task.dueDate, let dueDate = isoTask(due), dueDate < Date() {
@@ -132,7 +137,7 @@ struct ActivityFeedView: View {
                     title:    "Task overdue",
                     subtitle: task.title,
                     date:     dueDate,
-                    member:   currentUser,
+                    member:   taskMember,
                     category: .tasks
                 ))
             } else {
@@ -143,10 +148,35 @@ struct ActivityFeedView: View {
                     title:    "Task added",
                     subtitle: task.title,
                     date:     created,
-                    member:   currentUser,
+                    member:   taskMember,
                     category: .tasks
                 ))
             }
+        }
+
+        // Plants
+        for plant in plantService.plants {
+            if let wateredStr = plant.lastWateredAt, let wateredDate = isoTask(wateredStr) {
+                events.append(ActivityEvent(
+                    icon:     "drop.fill",
+                    color:    Color(red: 0.15, green: 0.75, blue: 0.40),
+                    title:    "Plant watered",
+                    subtitle: plant.name,
+                    date:     wateredDate,
+                    member:   currentUser,
+                    category: .plants
+                ))
+            }
+            let addedDate = isoTask(plant.createdAt) ?? Date()
+            events.append(ActivityEvent(
+                icon:     plant.emoji.isEmpty ? "leaf.fill" : plant.emoji,
+                color:    Color(red: 0.15, green: 0.75, blue: 0.40),
+                title:    "Plant added",
+                subtitle: plant.name,
+                date:     addedDate,
+                member:   currentUser,
+                category: .plants
+            ))
         }
 
         // Property elements
