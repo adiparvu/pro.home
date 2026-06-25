@@ -14,6 +14,10 @@ final class AppRouter: ObservableObject {
     @Published var showAddSupply = false
     @Published var showWaterPlant = false
     @Published var showSuppliesView = false
+    @Published var showDocuments = false
+    @Published var showFamily = false
+    @Published var showContractors = false
+    @Published var showFinances = false
 
     // Deep link destinations
     @Published var deepLinkTaskId: UUID?

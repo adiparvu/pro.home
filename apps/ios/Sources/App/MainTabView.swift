@@ -99,6 +99,42 @@ struct MainTabView: View {
                     .environmentObject(messageService)
             }
         }
+        .sheet(isPresented: $router.showDocuments) {
+            NavigationStack {
+                DocumentsView()
+                    .environmentObject(documentService)
+                    .environmentObject(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showFamily) {
+            NavigationStack {
+                FamilyView()
+                    .environmentObject(familyService)
+                    .environmentObject(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showContractors) {
+            NavigationStack {
+                ContractorsView()
+                    .environmentObject(contractorService)
+                    .environmentObject(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showFinances) {
+            NavigationStack {
+                FinancesView()
+                    .environmentObject(financialService)
+                    .environmentObject(propertyService)
+                    .environmentObject(budgetService)
+                    .environmentObject(currencyService)
+                    .environmentObject(appSettings)
+                    .environmentObject(tabBarVis)
+            }
+            .presentationDragIndicator(.visible)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
             router.showAddTask = true
         }

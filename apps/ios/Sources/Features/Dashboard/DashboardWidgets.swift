@@ -152,7 +152,7 @@ extension DashboardView {
                 title: "Finances",
                 value: netFormatted,
                 subtitle: String(localized: "this month")
-            ) { router.selectedTab = .settings }
+            ) { router.showFinances = true }
 
         case .documents:
             HomeWidget(
@@ -165,7 +165,7 @@ extension DashboardView {
                     : "\(documentService.expiringDocs.count)",
                 subtitle: documentService.expiringDocs.isEmpty ? String(localized: "total") : String(localized: "expiring soon"),
                 badge: documentService.expiringDocs.count
-            ) { router.selectedTab = .settings }
+            ) { router.showDocuments = true }
 
         case .family:
             HomeWidget(
@@ -174,7 +174,7 @@ extension DashboardView {
                 title: "Family",
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? String(localized: "member") : String(localized: "members")
-            ) { router.selectedTab = .settings }
+            ) { router.showFamily = true }
 
         case .healthScore:
             HomeWidget(
@@ -183,7 +183,7 @@ extension DashboardView {
                 title: "Health",
                 value: propertyService.primary?.healthScore.map { "\($0)" } ?? "–",
                 subtitle: String(localized: "property score")
-            ) { router.selectedTab = .chat }
+            ) { router.selectedTab = .digitalTwin }
 
         case .inventory:
             HomeWidget(
@@ -192,7 +192,7 @@ extension DashboardView {
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
                 subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
-            ) { router.selectedTab = .settings }
+            ) { router.selectedTab = .settings; router.showSuppliesView = true }
 
         case .contractors:
             HomeWidget(
@@ -201,7 +201,7 @@ extension DashboardView {
                 title: "Contractors",
                 value: "\(contractorService.contractors.count)",
                 subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
-            ) { router.selectedTab = .settings }
+            ) { router.showContractors = true }
 
         case .weather:
             WeatherWidget(
@@ -228,7 +228,7 @@ extension DashboardView {
                     ? String(localized: "all good")
                     : "\(plantService.plantsNeedingWater.count) need water",
                 badge: plantService.plantsNeedingWater.count
-            ) { router.selectedTab = .settings }
+            ) { router.showWaterPlant = true }
 
         case .calendar:
             CalendarLargeWidget {
