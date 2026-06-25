@@ -43,11 +43,17 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
         timer?.invalidate(); timer = nil
         recorder?.stop()
         recorder = nil
-        try? AVAudioSession.sharedInstance().setActive(false)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isRecording = false
         let url = recordingURL
         recordingURL = nil
+        duration = 0
         return url
+    }
+
+    deinit {
+        timer?.invalidate()
+        recorder?.stop()
     }
 
     var durationText: String {
@@ -182,6 +188,7 @@ struct AudioBubble: View {
                 if secs.isFinite && secs > 0 { loadedDuration = secs }
             }
         }
+        .onDisappear { player.stop() }
     }
 
     private var durationText: String {
@@ -219,6 +226,18 @@ final class AudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         player?.pause()
         isPlaying = false
         timer?.invalidate()
+        timer = nil
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        player?.stop()
+        player = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isPlaying = false
+        progress = 0
+        position = 0
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ p: AVAudioPlayer, successfully _: Bool) {
@@ -227,7 +246,13 @@ final class AudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
             progress = 0
             position = 0
             timer?.invalidate()
+            timer = nil
         }
+    }
+
+    deinit {
+        timer?.invalidate()
+        player?.stop()
     }
 
     var positionText: String {
