@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import CoreMedia
 
 // MARK: - Audio Recorder
 
@@ -127,10 +128,10 @@ struct VoiceRecordButton: View {
 
 struct AudioBubble: View {
     let url: URL?
-    let duration: TimeInterval
     let isOwn: Bool
 
     @StateObject private var player = AudioPlayer()
+    @State private var loadedDuration: TimeInterval = 0
 
     var body: some View {
         HStack(spacing: 10) {
@@ -173,10 +174,18 @@ struct AudioBubble: View {
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
         .frame(minWidth: 180, maxWidth: 240)
+        .task {
+            guard let url, loadedDuration == 0 else { return }
+            let asset = AVURLAsset(url: url)
+            if let cmTime = try? await asset.load(.duration) {
+                let secs = CMTimeGetSeconds(cmTime)
+                if secs.isFinite && secs > 0 { loadedDuration = secs }
+            }
+        }
     }
 
     private var durationText: String {
-        let s = Int(duration)
+        let s = Int(loadedDuration)
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 }

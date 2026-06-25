@@ -367,7 +367,7 @@ struct MessageBubble: View {
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-            AudioBubble(url: url, duration: 0, isOwn: isOwn)
+            AudioBubble(url: url, isOwn: isOwn)
         } else if message.isFileMessage {
             HStack(spacing: 10) {
                 Image(systemName: "doc.fill")

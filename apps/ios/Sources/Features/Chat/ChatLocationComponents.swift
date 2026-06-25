@@ -9,19 +9,13 @@ struct LocationBubble: View {
     let lon: Double
     let isOwn: Bool
 
-    @State private var region: MKCoordinateRegion
-
-    init(lat: Double, lon: Double, isOwn: Bool) {
-        self.lat = lat; self.lon = lon; self.isOwn = isOwn
-        _region = State(initialValue: MKCoordinateRegion(
+    var body: some View {
+        Map(initialPosition: .region(MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        ))
-    }
-
-    var body: some View {
-        Map(coordinateRegion: $region, annotationItems: [MapPin(lat: lat, lon: lon)]) { pin in
-            MapMarker(coordinate: pin.coordinate, tint: .blue)
+        ))) {
+            Marker("", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                .tint(.blue)
         }
         .frame(width: 220, height: 140)
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -30,13 +24,6 @@ struct LocationBubble: View {
             if let url = URL(string: "maps://?q=\(q)&ll=\(q)") { UIApplication.shared.open(url) }
         }
     }
-}
-
-struct MapPin: Identifiable {
-    let id = UUID()
-    let lat: Double
-    let lon: Double
-    var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
 }
 
 // MARK: - Location Share Sheet
@@ -52,11 +39,12 @@ struct LocationShareSheet: View {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 24) {
                     if let loc = locMgr.location {
-                        Map(coordinateRegion: .constant(MKCoordinateRegion(
+                        Map(initialPosition: .region(MKCoordinateRegion(
                             center: loc.coordinate,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )), annotationItems: [MapPin(lat: loc.coordinate.latitude, lon: loc.coordinate.longitude)]) { pin in
-                            MapMarker(coordinate: pin.coordinate, tint: .blue)
+                        ))) {
+                            Marker("", coordinate: loc.coordinate)
+                                .tint(.blue)
                         }
                         .frame(maxWidth: .infinity).frame(height: 300)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
