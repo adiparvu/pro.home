@@ -53,7 +53,7 @@ struct ChatView: View {
         }
     }
     var senderName: String {
-        profileService.profile?.displayName
+        profileService.profile?.preferredName
             ?? profileService.profile?.fullName
             ?? "Me"
     }
@@ -247,7 +247,8 @@ struct ChatView: View {
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
-                            readers: messageService.reads[msg.id] ?? []
+                            readers: messageService.reads[msg.id] ?? [],
+                            onDelete: { Task { await messageService.deleteMessage(id: msg.id) } }
                         )
                         .id(msg.id)
                     }

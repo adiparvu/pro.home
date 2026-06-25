@@ -54,6 +54,21 @@ final class MessageService: ObservableObject {
         }
     }
 
+    func deleteMessage(id: UUID) async {
+        do {
+            try await supabase
+                .from("messages")
+                .delete()
+                .eq("id", value: id.uuidString)
+                .execute()
+            messages.removeAll { $0.id == id }
+        } catch {
+#if DEBUG
+            print("[Chat] delete error: \(error)")
+#endif
+        }
+    }
+
     func send(propertyId: UUID, senderName: String, body: String?,
               attachmentUrl: String? = nil, attachmentType: String? = nil,
               latitude: Double? = nil, longitude: Double? = nil,

@@ -113,6 +113,21 @@ final class DirectMessageService: ObservableObject {
         }
     }
 
+    func deleteMessage(id: UUID) async {
+        do {
+            try await supabase
+                .from("direct_messages")
+                .delete()
+                .eq("id", value: id.uuidString)
+                .execute()
+            dms.removeAll { $0.id == id }
+        } catch {
+#if DEBUG
+            print("[DM] delete error: \(error)")
+#endif
+        }
+    }
+
     // MARK: - Private helpers
 
     private func lastSeenDate(for partner: String) -> Date {

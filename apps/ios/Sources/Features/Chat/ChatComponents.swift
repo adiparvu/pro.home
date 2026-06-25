@@ -207,6 +207,7 @@ struct MessageBubble: View {
     let isOwn: Bool
     let members: [FamilyMember]
     var readers: [MessageRead] = []
+    var onDelete: (() -> Void)? = nil
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
@@ -243,9 +244,9 @@ struct MessageBubble: View {
                         Button { showReactionPicker = true } label: {
                             Label("React", systemImage: "face.smiling")
                         }
-                        if isOwn {
+                        if isOwn, let onDelete {
                             Divider()
-                            Button(role: .destructive) { } label: {
+                            Button(role: .destructive, action: onDelete) {
                                 Label("Delete", systemImage: "trash")
                             }
                         }

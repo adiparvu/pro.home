@@ -95,7 +95,8 @@ struct DirectMessageView: View {
                                 DMBubble(
                                     message: msg,
                                     isOwn: isOwn,
-                                    showSenderBubbleTail: !prevSameSender || showDate
+                                    showSenderBubbleTail: !prevSameSender || showDate,
+                                    onDelete: isOwn ? { Task { await directMessageService.deleteMessage(id: msg.id) } } : nil
                                 )
                                 .id(msg.id)
                             }
@@ -295,6 +296,7 @@ private struct DMBubble: View {
     let message: DirectMessage
     let isOwn: Bool
     let showSenderBubbleTail: Bool
+    var onDelete: (() -> Void)? = nil
 
     private var isImageUrl: Bool {
         let lower = message.body.lowercased()
@@ -306,10 +308,25 @@ private struct DMBubble: View {
             if isOwn { Spacer(minLength: 72) }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
-                if isImageUrl {
-                    imageBubble
-                } else {
-                    textBubble
+                Group {
+                    if isImageUrl {
+                        imageBubble
+                    } else {
+                        textBubble
+                    }
+                }
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = message.body
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    if isOwn, let onDelete {
+                        Divider()
+                        Button(role: .destructive, action: onDelete) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 }
                 Text(message.timeDisplay)
                     .font(.system(size: 10))
