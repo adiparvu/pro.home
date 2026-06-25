@@ -16,8 +16,6 @@ struct ChatView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @EnvironmentObject private var stickerService: StickerService
     @EnvironmentObject private var router: AppRouter
-    @Environment(\.dismiss) private var dismiss
-
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State private var searchText = ""
@@ -35,9 +33,8 @@ struct ChatView: View {
     @State private var showFileImporter = false
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
-    @AppStorage("prvio.voiceInput") private var voiceInputEnabled: Bool = true
-    @StateObject var speech = SpeechRecognizer()
     @StateObject private var audioRecorder = ChatAudioRecorder()
+    @GestureState private var micPressing = false
 
     var propertyId: UUID? { propertyService.primary?.id }
 
@@ -73,17 +70,6 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    HapticFeedback.impact(.light)
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                }
-                .buttonStyle(.plain)
-            }
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 10) {
                     MemberAvatarStack(
@@ -165,6 +151,13 @@ struct ChatView: View {
             if newValue.hasSuffix("@") && !showMentionPicker {
                 text = String(newValue.dropLast())
                 showMentionPicker = true
+            }
+        }
+        .onChange(of: micPressing) { _, pressing in
+            if !pressing && audioRecorder.isRecording {
+                if let url = audioRecorder.stop() {
+                    Task { await sendAudio(url: url) }
+                }
             }
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
@@ -308,97 +301,146 @@ struct ChatView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Message…", text: $text, axis: .vertical)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.primary)
-                    .tint(.accentColor)
-                    .lineLimit(1...5)
-                    .focused($focused)
-
-                HStack(spacing: 0) {
-                    Menu {
-                        Button { showCameraSheet = true } label: { Label("Camera", systemImage: "camera.fill") }
-                        Button { showPhotoPickerTrigger = true } label: { Label("Photo / Video", systemImage: "photo") }
-                        Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
-                        Button { showFileImporter = true } label: { Label("File", systemImage: "doc.fill") }
+            if audioRecorder.isRecording {
+                // Recording bar replaces input
+                HStack(spacing: 10) {
+                    Button {
+                        _ = audioRecorder.stop()
+                        HapticFeedback.warning()
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .frame(width: 30, height: 30)
+                            .background(Circle().fill(Color.primary.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
+
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                            .symbolEffect(.pulse)
+                        Text(audioRecorder.durationText)
+                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text("← Slide to cancel")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .liquidGlass(cornerRadius: 22)
+                    .gesture(
+                        DragGesture(minimumDistance: 40)
+                            .onEnded { val in
+                                if val.translation.width < -40 {
+                                    _ = audioRecorder.stop()
+                                    HapticFeedback.warning()
+                                }
+                            }
+                    )
 
                     Button {
-                        focused = false
-                        showStickerPicker = true
+                        if let url = audioRecorder.stop() {
+                            Task { await sendAudio(url: url) }
+                        }
                     } label: {
-                        Image(systemName: "face.smiling")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.primary.opacity(0.55))
-                            .frame(width: 30, height: 30)
+                        ZStack {
+                            Circle().fill(Color.accentColor).frame(width: 34, height: 34)
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
                     }
                     .buttonStyle(.plain)
-                    .padding(.leading, 2)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Message…", text: $text, axis: .vertical)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(1...5)
+                        .focused($focused)
 
-                    if voiceInputEnabled {
-                        Button {
-                            HapticFeedback.impact(.light)
-                            if speech.isListening {
-                                speech.stop()
-                            } else {
-                                focused = false
-                                Task { await speech.startListening() }
-                            }
+                    HStack(spacing: 0) {
+                        Menu {
+                            Button { showCameraSheet = true } label: { Label("Camera", systemImage: "camera.fill") }
+                            Button { showPhotoPickerTrigger = true } label: { Label("Photo / Video", systemImage: "photo") }
+                            Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
+                            Button { showFileImporter = true } label: { Label("File", systemImage: "doc.fill") }
                         } label: {
-                            Image(systemName: speech.isListening ? "waveform" : "mic")
+                            Image(systemName: "plus")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.55))
-                                .symbolEffect(.pulse, isActive: speech.isListening)
+                                .foregroundStyle(Color.primary.opacity(0.55))
+                                .frame(width: 30, height: 30)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            focused = false
+                            showStickerPicker = true
+                        } label: {
+                            Image(systemName: "face.smiling")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.55))
                                 .frame(width: 30, height: 30)
                         }
                         .buttonStyle(.plain)
                         .padding(.leading, 2)
-                        .onChange(of: speech.transcript) { _, t in
-                            if !t.isEmpty { text = t }
+
+                        Spacer()
+
+                        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            // Mic button — hold to record
+                            ZStack {
+                                Circle()
+                                    .fill(Color.primary.opacity(0.12))
+                                    .frame(width: 30, height: 30)
+                                Image(systemName: "mic.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Color.primary.opacity(0.45))
+                            }
+                            .gesture(
+                                LongPressGesture(minimumDuration: 0.3)
+                                    .updating($micPressing) { value, state, _ in state = value }
+                                    .onEnded { _ in
+                                        Task { @MainActor in audioRecorder.start() }
+                                        HapticFeedback.impact(.medium)
+                                    }
+                            )
+                        } else {
+                            // Send button
+                            Button {
+                                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                                Task { await sendText() }
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.primary)
+                                        .frame(width: 30, height: 30)
+                                    Image(systemName: isSending ? "stop.fill" : "arrow.up")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(Color(UIColor.systemBackground))
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isSending)
                         }
                     }
-
-                    VoiceRecordButton(recorder: audioRecorder) { url in
-                        Task { await sendAudio(url: url) }
-                    }
-                    .padding(.leading, 2)
-
-                    Spacer()
-
-                    Button {
-                        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-                        speech.stop()
-                        Task { await sendText() }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(text.isEmpty ? Color.primary.opacity(0.12) : Color.primary)
-                                .frame(width: 30, height: 30)
-                            Image(systemName: isSending ? "stop.fill" : "arrow.up")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(text.isEmpty
-                                    ? Color.primary.opacity(0.35)
-                                    : Color(UIColor.systemBackground))
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(text.isEmpty || isSending)
                 }
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+                .padding(.bottom, 10)
+                .liquidGlass(cornerRadius: 22)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 10)
-            .liquidGlass(cornerRadius: 22)
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 6)
         }
     }
 }

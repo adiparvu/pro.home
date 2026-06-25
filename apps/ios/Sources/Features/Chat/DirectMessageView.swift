@@ -10,10 +10,12 @@ struct DirectMessageView: View {
     @EnvironmentObject private var directMessageService: DirectMessageService
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var familyService: FamilyService
 
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
+    @State private var showProfile = false
     @FocusState private var focused: Bool
     @State private var isSending = false
 
@@ -38,24 +40,34 @@ struct DirectMessageView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(member.swiftColor.opacity(0.15))
-                            .frame(width: 34, height: 34)
-                        Text(member.initials)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(member.swiftColor)
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(member.name)
-                            .font(.system(size: 16, weight: .semibold))
-                        Text(member.roleLabel)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.primary.opacity(0.4))
+                Button {
+                    showProfile = true
+                } label: {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(member.swiftColor.opacity(0.15))
+                                .frame(width: 34, height: 34)
+                            Text(member.initials)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(member.swiftColor)
+                        }
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(member.name)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+                            Text(member.roleLabel)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.primary.opacity(0.4))
+                        }
                     }
                 }
+                .buttonStyle(.plain)
             }
+        }
+        .sheet(isPresented: $showProfile) {
+            MemberProfileSheet(member: member)
+                .environmentObject(familyService)
         }
         .onAppear { directMessageService.markRead(partner: member.name) }
     }

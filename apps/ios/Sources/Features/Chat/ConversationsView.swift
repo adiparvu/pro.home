@@ -13,6 +13,8 @@ struct ConversationsView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
     @EnvironmentObject private var router: AppRouter
 
+    @State private var showAddMember = false
+
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
@@ -30,9 +32,14 @@ struct ConversationsView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                Button {
+                    showAddMember = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
             }
         }
         .task {
@@ -45,6 +52,11 @@ struct ConversationsView: View {
         }
         .onDisappear {
             Task { await directMessageService.unsubscribe() }
+        }
+        .sheet(isPresented: $showAddMember) {
+            AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
+                                 propertyName: propertyService.primary?.name)
+                .environmentObject(familyService)
         }
     }
 
@@ -64,7 +76,8 @@ struct ConversationsView: View {
                         ConversationRowView(
                             entry: entry,
                             myName: myName,
-                            members: familyService.members
+                            members: familyService.members,
+                            propertyPhotoUrl: propertyService.primary?.photoUrl
                         )
                     }
                     .buttonStyle(.plain)
@@ -224,6 +237,7 @@ private struct ConversationRowView: View {
     let entry: ConversationEntry
     let myName: String
     let members: [FamilyMember]
+    var propertyPhotoUrl: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -271,7 +285,7 @@ private struct ConversationRowView: View {
     @ViewBuilder
     private var avatar: some View {
         if entry.isGroup {
-            GroupChatAvatar(members: members)
+            GroupChatAvatar(members: members, photoUrl: propertyPhotoUrl)
         } else if let member = entry.member {
             MemberCircleAvatar(member: member, size: 52)
         }
@@ -299,26 +313,45 @@ private struct MemberCircleAvatar: View {
 
 private struct GroupChatAvatar: View {
     let members: [FamilyMember]
+    var photoUrl: String? = nil
 
     var body: some View {
         ZStack {
-            if members.count >= 2 {
-                MemberCircleAvatar(member: members[1 % members.count], size: 34)
-                    .frame(width: 34, height: 34)
-                    .offset(x: 8, y: 8)
-                MemberCircleAvatar(member: members[0], size: 34)
-                    .frame(width: 34, height: 34)
-                    .offset(x: -8, y: -8)
-            } else if members.count == 1 {
-                MemberCircleAvatar(member: members[0], size: 52)
+            if let urlStr = photoUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFill()
+                            .frame(width: 52, height: 52)
+                            .clipShape(Circle())
+                    default:
+                        fallbackAvatar
+                    }
+                }
             } else {
-                Circle()
-                    .foregroundStyle(Color.accentColor.opacity(0.15))
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color.accentColor)
+                fallbackAvatar
             }
         }
         .frame(width: 52, height: 52)
+    }
+
+    @ViewBuilder
+    private var fallbackAvatar: some View {
+        if members.count >= 2 {
+            MemberCircleAvatar(member: members[1 % members.count], size: 34)
+                .frame(width: 34, height: 34)
+                .offset(x: 8, y: 8)
+            MemberCircleAvatar(member: members[0], size: 34)
+                .frame(width: 34, height: 34)
+                .offset(x: -8, y: -8)
+        } else if members.count == 1 {
+            MemberCircleAvatar(member: members[0], size: 52)
+        } else {
+            Circle()
+                .foregroundStyle(Color.accentColor.opacity(0.15))
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 22))
+                .foregroundStyle(Color.accentColor)
+        }
     }
 }
