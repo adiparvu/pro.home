@@ -27,6 +27,7 @@ final class InventoryService: ObservableObject {
                 .value
             items = records.map { $0.toInventoryItem() }
         } catch {
+            if error is CancellationError { return }
             self.error = error.localizedDescription
         }
     }

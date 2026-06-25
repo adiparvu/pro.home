@@ -33,6 +33,7 @@ final class TaskService: ObservableObject {
                 .execute()
                 .value
         } catch {
+            if error is CancellationError { return }
             self.error = error.localizedDescription
         }
     }

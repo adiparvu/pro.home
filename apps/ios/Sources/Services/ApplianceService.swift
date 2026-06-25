@@ -25,6 +25,7 @@ final class ApplianceService: ObservableObject {
                 .order("created_at", ascending: true)
                 .execute().value
         } catch {
+            if error is CancellationError { return }
             self.error = error.localizedDescription
         }
     }
