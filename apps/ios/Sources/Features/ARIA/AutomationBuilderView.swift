@@ -97,6 +97,37 @@ private struct ActionOption {
     let icon: String
 }
 
+private struct AutomationPickerRow: View {
+    let icon: String
+    let label: String
+    let accentColor: Color
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(accentColor)
+                    .frame(width: 28)
+                Text(label)
+                    .font(.system(size: 15))
+                    .foregroundStyle(.primary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.accentColor)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .background(isSelected ? Color.accentColor.opacity(0.06) : Color.clear)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct AddAutomationSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onAdd: (AutomationRule) -> Void
@@ -154,30 +185,15 @@ private struct AddAutomationSheet: View {
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
                                 ForEach(0..<triggerOptions.count, id: \.self) { i in
-                                    let opt = triggerOptions[i]
-                                    Button {
+                                    AutomationPickerRow(
+                                        icon: triggerOptions[i].icon,
+                                        label: triggerOptions[i].label,
+                                        accentColor: triggerOptions[i].color,
+                                        isSelected: triggerType == i
+                                    ) {
                                         triggerType = i
                                         HapticFeedback.selection()
-                                    } label: {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: opt.icon)
-                                                .font(.system(size: 14))
-                                                .foregroundStyle(opt.color)
-                                                .frame(width: 28)
-                                            Text(opt.label)
-                                                .font(.system(size: 15))
-                                                .foregroundStyle(.primary)
-                                            Spacer()
-                                            if triggerType == i {
-                                                Image(systemName: "checkmark")
-                                                    .font(.system(size: 12, weight: .semibold))
-                                                    .foregroundStyle(.accentColor)
-                                            }
-                                        }
-                                        .padding(.horizontal, 16).padding(.vertical, 12)
-                                        .background(triggerType == i ? Color.accentColor.opacity(0.06) : Color.clear)
                                     }
-                                    .buttonStyle(.plain)
                                     if i < triggerOptions.count - 1 {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
@@ -196,30 +212,15 @@ private struct AddAutomationSheet: View {
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
                                 ForEach(0..<actionOptions.count, id: \.self) { i in
-                                    let opt = actionOptions[i]
-                                    Button {
+                                    AutomationPickerRow(
+                                        icon: actionOptions[i].icon,
+                                        label: actionOptions[i].label,
+                                        accentColor: .purple,
+                                        isSelected: actionType == i
+                                    ) {
                                         actionType = i
                                         HapticFeedback.selection()
-                                    } label: {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: opt.icon)
-                                                .font(.system(size: 14))
-                                                .foregroundStyle(.purple)
-                                                .frame(width: 28)
-                                            Text(opt.label)
-                                                .font(.system(size: 15))
-                                                .foregroundStyle(.primary)
-                                            Spacer()
-                                            if actionType == i {
-                                                Image(systemName: "checkmark")
-                                                    .font(.system(size: 12, weight: .semibold))
-                                                    .foregroundStyle(.accentColor)
-                                            }
-                                        }
-                                        .padding(.horizontal, 16).padding(.vertical, 12)
-                                        .background(actionType == i ? Color.accentColor.opacity(0.06) : Color.clear)
                                     }
-                                    .buttonStyle(.plain)
                                     if i < actionOptions.count - 1 {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
