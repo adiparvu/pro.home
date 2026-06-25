@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // MARK: - Tenant Management
 
@@ -26,6 +27,7 @@ struct TenantManagementView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 12) {
+                            statsStrip
                             ForEach(tenants) { tenant in
                                 tenantCard(tenant)
                                     .onTapGesture { selectedTenant = tenant }
@@ -73,75 +75,147 @@ struct TenantManagementView: View {
         }
     }
 
+    // MARK: - Stats strip
+
+    private var statsStrip: some View {
+        let waCount = tenants.filter { $0.socialLinks?.contains(where: { $0.platform == "whatsapp" }) == true }.count
+        let phoneCount = tenants.filter { !($0.phone ?? "").isEmpty }.count
+        return HStack(spacing: 12) {
+            statCell(value: "\(tenants.count)", label: tenants.count == 1 ? "Tenant" : "Tenants", icon: "person.fill", color: .purple)
+            if waCount > 0 {
+                statCell(value: "\(waCount)", label: "WhatsApp", icon: "message.fill", color: Color(red: 0.16, green: 0.72, blue: 0.37))
+            }
+            if phoneCount > 0 {
+                statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4))
+            }
+        }
+    }
+
+    private func statCell(value: String, label: String, icon: String, color: Color) -> some View {
+        GlassCard(padding: 12) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(color)
+                Text(value)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.primary)
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
     // MARK: - Tenant card
 
     private func tenantCard(_ tenant: FamilyMember) -> some View {
         GlassCard(padding: 16) {
-            HStack(spacing: 14) {
-                MemberAvatar(member: tenant, size: 52)
+            VStack(spacing: 12) {
+                HStack(spacing: 14) {
+                    MemberAvatar(member: tenant, size: 52)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(tenant.name)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(tenant.name)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
 
-                    HStack(spacing: 6) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(tenant.swiftColor)
-                        Text("Tenant")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(tenant.swiftColor)
+                        HStack(spacing: 6) {
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(tenant.swiftColor)
+                            Text("Tenant")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(tenant.swiftColor)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(tenant.swiftColor.opacity(0.12), in: Capsule())
+
+                        if let email = tenant.email, !email.isEmpty {
+                            Label(email, systemImage: "envelope.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.primary.opacity(0.5))
+                                .lineLimit(1)
+                        }
+
+                        Label(memberSinceLabel(tenant), systemImage: "calendar")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary.opacity(0.35))
                     }
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(tenant.swiftColor.opacity(0.12), in: Capsule())
 
-                    if let email = tenant.email, !email.isEmpty {
-                        Label(email, systemImage: "envelope.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
-                            .lineLimit(1)
+                    Spacer()
+
+                    // Quick action buttons (vertical stack)
+                    VStack(spacing: 6) {
+                        if let phone = tenant.phone, !phone.isEmpty {
+                            quickActionButton(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                                if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                            quickActionButton(icon: "message.fill", color: Color(red: 0.2, green: 0.65, blue: 1.0)) {
+                                if let url = URL(string: "sms:\(phone.filter { $0.isNumber })") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        }
+                        if let email = tenant.email, !email.isEmpty {
+                            quickActionButton(icon: "envelope.fill", color: .blue) {
+                                if let url = URL(string: "mailto:\(email)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        }
                     }
                 }
 
-                Spacer()
-
-                // Quick actions
-                VStack(spacing: 8) {
-                    if let phone = tenant.phone, !phone.isEmpty {
-                        Button {
-                            if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
-                                UIApplication.shared.open(url)
+                // WhatsApp + social links row (if available)
+                if let links = tenant.socialLinks, !links.isEmpty {
+                    Divider().opacity(0.4)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(links) { link in
+                                Button {
+                                    if let url = link.openURL { UIApplication.shared.open(url) }
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: link.platformIcon)
+                                            .font(.system(size: 11, weight: .semibold))
+                                        Text(link.platformLabel)
+                                            .font(.system(size: 12, weight: .medium))
+                                    }
+                                    .foregroundStyle(link.platformColor)
+                                    .padding(.horizontal, 10).padding(.vertical, 5)
+                                    .background(link.platformColor.opacity(0.1), in: Capsule())
+                                }
+                                .buttonStyle(.plain)
                             }
-                        } label: {
-                            Image(systemName: "phone.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
-                                .frame(width: 34, height: 34)
-                                .background(Color(red: 0.2, green: 0.8, blue: 0.4).opacity(0.12),
-                                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .buttonStyle(.plain)
-                    }
-
-                    if let email = tenant.email, !email.isEmpty {
-                        Button {
-                            if let url = URL(string: "mailto:\(email)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Image(systemName: "envelope.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.blue)
-                                .frame(width: 34, height: 34)
-                                .background(Color.blue.opacity(0.12),
-                                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
             }
         }
+    }
+
+    private func quickActionButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(color)
+                .frame(width: 32, height: 32)
+                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func memberSinceLabel(_ tenant: FamilyMember) -> String {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        let d = f.date(from: tenant.createdAt) ?? f2.date(from: tenant.createdAt) ?? Date()
+        let out = DateFormatter(); out.dateStyle = .medium; out.timeStyle = .none
+        return "Since \(out.string(from: d))"
     }
 
     // MARK: - Empty state

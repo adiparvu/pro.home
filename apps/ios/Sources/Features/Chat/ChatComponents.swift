@@ -170,6 +170,36 @@ private struct MemberCallRow: View {
     }
 }
 
+// MARK: - Date Separator
+
+struct ChatDateSeparator: View {
+    let dateStr: String
+
+    private var label: String {
+        let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        let d  = f.date(from: dateStr) ?? f2.date(from: dateStr) ?? Date()
+        let cal = Calendar.current
+        if cal.isDateInToday(d)     { return String(localized: "Today") }
+        if cal.isDateInYesterday(d) { return String(localized: "Yesterday") }
+        let out = DateFormatter(); out.dateFormat = "d MMMM"
+        return out.string(from: d)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(0.35))
+                .fixedSize()
+            Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+    }
+}
+
 // MARK: - Message Bubble
 
 struct MessageBubble: View {

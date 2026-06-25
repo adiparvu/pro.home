@@ -40,6 +40,15 @@ struct ChatView: View {
     @StateObject private var audioRecorder = ChatAudioRecorder()
 
     var propertyId: UUID? { propertyService.primary?.id }
+
+    private func sameDay(_ a: Message, _ b: Message) -> Bool {
+        let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        let dA = f.date(from: a.createdAt) ?? f2.date(from: a.createdAt) ?? Date()
+        let dB = f.date(from: b.createdAt) ?? f2.date(from: b.createdAt) ?? Date()
+        return Calendar.current.isDate(dA, inSameDayAs: dB)
+    }
+
     private var filteredMessages: [Message] {
         guard showSearch && !searchText.isEmpty else { return messageService.messages }
         return messageService.messages.filter {
@@ -67,9 +76,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
                     HapticFeedback.impact(.light)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        router.selectedTab = .home
-                    }
+                    dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 17, weight: .semibold))
@@ -87,8 +94,13 @@ struct ChatView: View {
                     ) {
                         withAnimation { showMentionPicker.toggle() }
                     }
-                    Text(String(localized: "Chat Familie"))
-                        .font(.system(size: 16, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(String(localized: "Family Chat"))
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Group · \(familyService.members.count + 1) members")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary.opacity(0.45))
+                    }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -234,7 +246,10 @@ struct ChatView: View {
 
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 6) {
-                    ForEach(filteredMessages) { msg in
+                    ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
+                        if idx == 0 || !sameDay(filteredMessages[idx - 1], msg) {
+                            ChatDateSeparator(dateStr: msg.createdAt)
+                        }
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,

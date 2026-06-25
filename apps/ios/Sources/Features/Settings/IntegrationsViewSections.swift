@@ -49,8 +49,11 @@ extension IntegrationsView {
                 description: "PRVIO notifications respect your iOS Focus settings automatically.",
                 status: .active("Automatic"),
                 action: {
-                    let url = URL(string: "App-Prefs:FOCUS") ?? URL(string: UIApplication.openSettingsURLString)
-                    if let url { UIApplication.shared.open(url) }
+                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    } else if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
                 })
 
             IntegrationRow(icon: "icloud.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95),
