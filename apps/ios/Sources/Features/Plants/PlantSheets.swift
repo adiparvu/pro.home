@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // MARK: - AddPlantSheet
 
@@ -16,6 +17,12 @@ struct AddPlantSheet: View {
     @State private var notes = ""
     @State private var isSaving = false
     @State private var error: String?
+    @State private var selectedImageData: Data?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showCamera = false
+    @State private var showFileImporter = false
+    @State private var showPhotoMenu = false
+    @State private var showLibrary = false
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
@@ -28,6 +35,7 @@ struct AddPlantSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         emojiPickerSection
+                        plantPhotoSection
                         nameField
                         speciesField
                         locationField
@@ -54,6 +62,30 @@ struct AddPlantSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraCapture { image in
+                    selectedImageData = image.jpegData(compressionQuality: 0.85)
+                }
+                .ignoresSafeArea()
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [.image, .jpeg, .png, .heic]
+            ) { result in
+                if case .success(let url) = result {
+                    let accessed = url.startAccessingSecurityScopedResource()
+                    defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                    selectedImageData = try? Data(contentsOf: url)
+                }
+            }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        selectedImageData = data
+                    }
+                }
+            }
+            .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
         }
     }
 
@@ -90,6 +122,71 @@ struct AddPlantSheet: View {
                     }
                 }
                 .padding(.horizontal, 1)
+            }
+        }
+    }
+
+    // MARK: Plant photo
+
+    private var plantPhotoSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            fieldLabel("FOTOGRAFIE (OPȚIONAL)")
+            Button { showPhotoMenu = true } label: {
+                ZStack {
+                    if let data = selectedImageData, let img = UIImage(data: data) {
+                        Image(uiImage: img)
+                            .resizable().scaledToFill()
+                            .frame(maxWidth: .infinity).frame(height: 150)
+                            .clipped()
+                    } else {
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.04))
+                            .frame(maxWidth: .infinity).frame(height: 150)
+                            .overlay(
+                                VStack(spacing: 8) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(Color.accentColor.opacity(0.7))
+                                    Text("Adaugă fotografie")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                }
+                            )
+                    }
+                    if selectedImageData != nil {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button {
+                                    selectedImageData = nil
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(.white)
+                                        .shadow(radius: 2)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(10)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
+                        lineWidth: selectedImageData != nil ? 1.5 : 0.5
+                    )
+            )
+            .confirmationDialog("Fotografie plantă", isPresented: $showPhotoMenu) {
+                Button("Cameră") { showCamera = true }
+                Button("Bibliotecă") { showLibrary = true }
+                Button("Fișiere") { showFileImporter = true }
+                Button("Anulează", role: .cancel) {}
             }
         }
     }
@@ -281,7 +378,10 @@ struct AddPlantSheet: View {
         )
         Task {
             do {
-                _ = try await plantService.add(payload)
+                let plant = try await plantService.add(payload)
+                if let data = selectedImageData {
+                    PlantImageStore.save(data, for: plant.id)
+                }
                 HapticFeedback.success()
                 dismiss()
             } catch {
@@ -289,5 +389,33 @@ struct AddPlantSheet: View {
             }
             isSaving = false
         }
+    }
+}
+
+// MARK: - Local image store for plants
+
+enum PlantImageStore {
+    private static func url(for id: UUID) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("plant_\(id.uuidString).jpg")
+    }
+
+    static func save(_ data: Data, for id: UUID) {
+        let compressed: Data
+        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.75) {
+            compressed = jpg
+        } else {
+            compressed = data
+        }
+        try? compressed.write(to: url(for: id))
+    }
+
+    static func load(for id: UUID) -> UIImage? {
+        guard let data = try? Data(contentsOf: url(for: id)) else { return nil }
+        return UIImage(data: data)
+    }
+
+    static func delete(for id: UUID) {
+        try? FileManager.default.removeItem(at: url(for: id))
     }
 }

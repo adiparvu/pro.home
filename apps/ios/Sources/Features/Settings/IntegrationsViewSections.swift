@@ -254,6 +254,52 @@ extension IntegrationsView {
         }
     }
 
+    var deliveriesSection: some View {
+        IntegrationGroup(title: "Coletărie & Curierat") {
+            IntegrationRow(
+                icon: "shippingbox.fill", color: Color(red: 0.95, green: 0.55, blue: 0.10),
+                title: "Fan Courier",
+                description: "Conectează contul Fan Courier pentru tracking live și import automat AWB.",
+                status: vm.courierStatus("fancourier"),
+                action: { vm.connectCourier("fancourier", deepLink: "fancourier://") })
+
+            IntegrationRow(
+                icon: "box.truck.fill", color: Color(red: 0.80, green: 0.10, blue: 0.10),
+                title: "Cargus",
+                description: "Import automat colete Cargus din contul tău.",
+                status: vm.courierStatus("cargus"),
+                action: { vm.connectCourier("cargus", deepLink: "https://www.cargus.ro") })
+
+            IntegrationRow(
+                icon: "box.truck.fill", color: Color(red: 0.10, green: 0.45, blue: 0.85),
+                title: "Sameday",
+                description: "Urmărire live colete Sameday, inclusiv eMag.",
+                status: vm.courierStatus("sameday"),
+                action: { vm.connectCourier("sameday", deepLink: "sameday://") })
+
+            IntegrationRow(
+                icon: "shippingbox.fill", color: Color(red: 0.90, green: 0.70, blue: 0.0),
+                title: "DHL",
+                description: "Tracking colete DHL Express și DHL Parcel.",
+                status: vm.courierStatus("dhl"),
+                action: { vm.connectCourier("dhl", deepLink: "dhlexpress://") })
+
+            IntegrationRow(
+                icon: "shippingbox.fill", color: Color(red: 0.45, green: 0.15, blue: 0.55),
+                title: "DPD",
+                description: "Tracking live colete DPD România.",
+                status: vm.courierStatus("dpd"),
+                action: { vm.connectCourier("dpd", deepLink: "https://www.dpd.com/ro") })
+
+            IntegrationRow(
+                icon: "envelope.fill", color: Color(red: 0.15, green: 0.55, blue: 0.85),
+                title: "Import din Email",
+                description: "Conectează Gmail sau Outlook — PRVIO detectează automat AWB-urile din confirmările de comandă.",
+                status: vm.emailImportStatus,
+                action: { vm.activateEmailImport() })
+        }
+    }
+
     var energySection: some View {
         IntegrationGroup(title: "Energy & Environment") {
             IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),

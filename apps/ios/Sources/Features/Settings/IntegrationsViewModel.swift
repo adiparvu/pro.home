@@ -26,6 +26,8 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var showPermissionDenied = false
     @Published var iCloudAvailable = false
     @Published var applePayAvailable = false
+    @Published var connectedCouriers: Set<String> = []
+    @Published var emailImportStatus: IntegrationStatus = .notConnected
     var tasks: [MaintenanceTask] = []
     var property: PropertyModel? = nil
     var familyMembers: [FamilyMember] = []
@@ -33,6 +35,7 @@ final class IntegrationsViewModel: ObservableObject {
     private lazy var store = EKEventStore()
     private let calendarSyncedKey = "prvio.calendar.synced_ids"
     private let reminderSyncedKey = "prvio.reminders.synced_ids"
+    private let couriersKey = "prvio.couriers.connected"
 
     func checkStatuses() async {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
@@ -40,8 +43,43 @@ final class IntegrationsViewModel: ObservableObject {
         contactsStatus = checkContactsAccess() ? .connected : .notConnected
         iCloudAvailable = CloudKitSyncService.shared.isAvailable
         applePayAvailable = ApplePayService.shared.isAvailable
+        loadCourierStatuses()
         // HomeKit checked lazily — do NOT access HMHomeManager here to avoid
         // a crash when the provisioning profile lacks the HomeKit capability.
+    }
+
+    // MARK: - Courier integration
+
+    func courierStatus(_ id: String) -> IntegrationStatus {
+        connectedCouriers.contains(id) ? .active("Conectat") : .deepLink("Conectează")
+    }
+
+    func connectCourier(_ id: String, deepLink: String) {
+        if connectedCouriers.contains(id) {
+            connectedCouriers.remove(id)
+        } else {
+            connectedCouriers.insert(id)
+            if let url = URL(string: deepLink) {
+                UIApplication.shared.open(url)
+            }
+        }
+        persistCourierStatuses()
+    }
+
+    func activateEmailImport() {
+        emailImportStatus = .deepLink("Configurează")
+        if let url = URL(string: "message://") ?? URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func loadCourierStatuses() {
+        let saved = UserDefaults.standard.stringArray(forKey: couriersKey) ?? []
+        connectedCouriers = Set(saved)
+    }
+
+    private func persistCourierStatuses() {
+        UserDefaults.standard.set(Array(connectedCouriers), forKey: couriersKey)
     }
 
     func activateHomeKit() {

@@ -76,6 +76,8 @@ struct AddInventorySheet: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showFileImporter = false
+    @State private var showPhotoMenu = false
+    @State private var showLibrary = false
     @State private var isSaving = false
 
     private let categories = ["tools","garden","outdoor","appliances","electronics","furniture","vehicles","sports","security","other"]
@@ -88,8 +90,9 @@ struct AddInventorySheet: View {
                 appBackground.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
+                        photoSection
                         card {
-                            field("tag.fill", "Item name *", $name)
+                            field("tag.fill", "Nume articol *", $name)
                             div
                             picker("folder.fill", "Category", $category, categories)
                             div
@@ -100,9 +103,9 @@ struct AddInventorySheet: View {
                         card {
                             field("building.2.fill", "Brand", $brand)
                             div
-                            field("number", "Serial Number", $serial)
+                            field("number", "Număr de serie", $serial)
                             div
-                            field("eurosign.circle.fill", "Value (€)", $price, keyboard: .decimalPad)
+                            field("eurosign.circle.fill", "Valoare (€)", $price, keyboard: .decimalPad)
                         }
                         card {
                             toggle("calendar", "Purchase Date", $hasPurchaseDate)
@@ -126,21 +129,20 @@ struct AddInventorySheet: View {
                         card {
                             HStack(spacing: 12) {
                                 Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                                TextField("Notes (optional)", text: $notes, axis: .vertical)
+                                TextField("Note (opțional)", text: $notes, axis: .vertical)
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
                             }.padding(.horizontal, 16).padding(.vertical, 13)
                         }
-                        photoSection
                         Spacer(minLength: 60)
                     }
                     .padding(.horizontal, 20).padding(.top, 8)
                 }
             }
-            .navigationTitle("Add Item").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { Task { await save() } }
+                    Button("Salvează") { Task { await save() } }
                         .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
@@ -172,46 +174,67 @@ struct AddInventorySheet: View {
     }
 
     private var photoSection: some View {
-        VStack(spacing: 8) {
-            if let data = selectedImageData, let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable().scaledToFill()
-                    .frame(height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.accentColor.opacity(0.4), lineWidth: 1)
-                    )
-                    .onTapGesture { selectedImageData = nil }
+        VStack(spacing: 0) {
+            Button { showPhotoMenu = true } label: {
+                ZStack {
+                    if let data = selectedImageData, let img = UIImage(data: data) {
+                        Image(uiImage: img)
+                            .resizable().scaledToFill()
+                            .frame(maxWidth: .infinity).frame(height: 180)
+                            .clipped()
+                    } else {
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.04))
+                            .frame(maxWidth: .infinity).frame(height: 180)
+                            .overlay(
+                                VStack(spacing: 8) {
+                                    Image(systemName: "camera.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(Color.accentColor.opacity(0.7))
+                                    Text("Adaugă fotografie")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                }
+                            )
+                    }
+                    if selectedImageData != nil {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button {
+                                    selectedImageData = nil
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(.white)
+                                        .shadow(radius: 2)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(10)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
             }
-            HStack(spacing: 10) {
-                Button { showCamera = true } label: {
-                    Label("Camera", systemImage: "camera.fill")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-                        .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-
-                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                    Label("Library", systemImage: "photo.on.rectangle")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
-                        .foregroundStyle(.primary)
-                }
-
-                Button { showFileImporter = true } label: {
-                    Label("Files", systemImage: "folder.fill")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
-                        .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
+            .buttonStyle(.plain)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
+                        lineWidth: selectedImageData != nil ? 1.5 : 0.5,
+                        antialiased: true
+                    )
+            )
+            .confirmationDialog("Fotografie articol", isPresented: $showPhotoMenu) {
+                Button("Cameră") { showCamera = true }
+                Button("Bibliotecă") { showLibrary = true }
+                Button("Fișiere") { showFileImporter = true }
+                Button("Anulează", role: .cancel) {}
             }
         }
+        .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
     }
 
     private func save() async {

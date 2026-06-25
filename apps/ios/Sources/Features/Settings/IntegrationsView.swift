@@ -16,6 +16,7 @@ struct IntegrationsView: View {
                 securitySection
                 financeSection
                 rentalsSection
+                deliveriesSection
                 energySection
 
                 Spacer(minLength: 110)

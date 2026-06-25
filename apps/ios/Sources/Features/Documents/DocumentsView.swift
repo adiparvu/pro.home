@@ -214,7 +214,7 @@ struct DocumentsView: View {
                 Button {
                     withAnimation(.spring(response: 0.25)) { selectedCategory = cat }
                 } label: {
-                    Label("\(cat.capitalized)  (\(countFor(cat)))",
+                    Label("\(docCategoryName(cat))  (\(countFor(cat)))",
                           systemImage: selectedCategory == cat ? "checkmark" : categoryIcon(for: cat))
                 }
             }
@@ -242,6 +242,19 @@ struct DocumentsView: View {
 
     private func countFor(_ cat: String) -> Int {
         documentService.documents.filter { $0.category == cat }.count
+    }
+
+    private func docCategoryName(_ cat: String) -> String {
+        switch cat {
+        case "warranty":    return "Garanție"
+        case "contract":    return "Contract"
+        case "insurance":   return "Asigurare"
+        case "certificate": return "Certificat"
+        case "manual":      return "Manual"
+        case "invoice":     return "Factură"
+        case "photo":       return "Fotografie"
+        default:            return "Altele"
+        }
     }
 
     // MARK: - Expiring banner

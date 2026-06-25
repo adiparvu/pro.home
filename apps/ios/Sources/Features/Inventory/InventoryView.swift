@@ -18,8 +18,8 @@ struct InventoryView: View {
     @State private var didAutoAdd = false
 
     enum InvFilter: String, CaseIterable {
-        case all = "All", loaned = "Loaned", tools = "Tools"
-        case garden = "Garden", outdoor = "Outdoor", electronics = "Electronics", other = "Other"
+        case all = "Toate", loaned = "Împrumutate", tools = "Unelte"
+        case garden = "Grădină", outdoor = "Exterior", electronics = "Electronice", other = "Altele"
 
         var icon: String {
             switch self {
