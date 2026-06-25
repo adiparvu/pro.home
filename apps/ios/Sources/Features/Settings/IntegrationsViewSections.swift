@@ -161,12 +161,12 @@ extension IntegrationsView {
             IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
                 title: "Home Assistant",
                 description: "Connect to your local Home Assistant for full smart home control.",
-                status: URL(string: "homeassistant://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                status: .comingSoon,
                 action: { if let url = URL(string: "homeassistant://navigate/lovelace/0") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lightbulb.fill", color: .yellow,
                 title: "Philips Hue",
                 description: "Control lights and scenes across all rooms.",
-                status: URL(string: "hue://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                status: .comingSoon,
                 action: { if let url = URL(string: "hue://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "thermometer.medium", color: .orange,
                 title: "Nest / Google Home",
@@ -176,12 +176,12 @@ extension IntegrationsView {
             IntegrationRow(icon: "speaker.wave.2.fill", color: Color(red: 0.0, green: 0.45, blue: 1.0),
                 title: "Sonos",
                 description: "Manage whole-home audio from your property dashboard.",
-                status: URL(string: "sonos://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                status: .comingSoon,
                 action: { if let url = URL(string: "sonos://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lock.shield.fill", color: Color(red: 0.3, green: 0.65, blue: 0.95),
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
-                status: URL(string: "august-connects://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                status: .comingSoon,
                 action: { if let url = URL(string: "august-connects://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "lightswitch.on.fill", color: Color(red: 0.0, green: 0.65, blue: 0.55),
                 title: "IKEA TRÅDFRI",
@@ -205,7 +205,7 @@ extension IntegrationsView {
             IntegrationRow(icon: "bell.badge.fill", color: Color(red: 0.15, green: 0.45, blue: 0.9),
                 title: "Ring Doorbell",
                 description: "See who's at the door and get motion alerts.",
-                status: URL(string: "ring://").map { UIApplication.shared.canOpenURL($0) } == true ? .deepLink("Open") : .comingSoon,
+                status: .comingSoon,
                 action: { if let url = URL(string: "ring://") { UIApplication.shared.open(url) } })
             IntegrationRow(icon: "sensor.tag.radiowaves.forward.fill", color: .purple,
                 title: "Arlo / Eufy",
