@@ -290,42 +290,45 @@ private struct GroupChatAvatar: View {
     let members: [FamilyMember]
 
     var body: some View {
-        if members.isEmpty {
-            ZStack {
-                Circle().fill(Color.accentColor.opacity(0.15))
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color.accentColor)
+        Group {
+            if members.isEmpty {
+                ZStack {
+                    Circle().fill(Color.accentColor.opacity(0.15))
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color.accentColor)
+                }
+            } else if members.count == 1 {
+                let c = members[0].swiftColor
+                ZStack {
+                    Circle().fill(c.opacity(0.18))
+                    Text(members[0].initials)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(c)
+                }
+            } else {
+                let c0 = members[0].swiftColor
+                let c1 = members[1 % members.count].swiftColor
+                ZStack {
+                    Circle()
+                        .fill(c1.opacity(0.2))
+                        .frame(width: 34, height: 34)
+                        .offset(x: 8, y: 8)
+                    Circle()
+                        .fill(c0.opacity(0.2))
+                        .frame(width: 34, height: 34)
+                        .offset(x: -8, y: -8)
+                    Text(members[1 % members.count].initials)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(c1)
+                        .offset(x: 8, y: 8)
+                    Text(members[0].initials)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(c0)
+                        .offset(x: -8, y: -8)
+                }
+                .frame(width: 52, height: 52)
             }
-        } else if members.count == 1 {
-            ZStack {
-                Circle().fill(Color(hex: members[0].color).opacity(0.15))
-                Text(members[0].initials)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color(hex: members[0].color))
-            }
-        } else {
-            // Two overlapping circles, like iMessage group
-            ZStack {
-                Circle()
-                    .fill(Color(hex: members[1 % members.count].color).opacity(0.2))
-                    .frame(width: 34, height: 34)
-                    .offset(x: 8, y: 8)
-                Circle()
-                    .fill(Color(hex: members[0].color).opacity(0.2))
-                    .frame(width: 34, height: 34)
-                    .offset(x: -8, y: -8)
-
-                Text(members[1 % members.count].initials)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: members[1 % members.count].color))
-                    .offset(x: 8, y: 8)
-                Text(members[0].initials)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: members[0].color))
-                    .offset(x: -8, y: -8)
-            }
-            .frame(width: 52, height: 52)
         }
     }
 }

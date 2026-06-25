@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Supabase
 
 // MARK: - Direct Message View (1-on-1 private chat)
 
@@ -235,8 +236,9 @@ struct DirectMessageView: View {
         guard let propId = propertyService.primary?.id else { return }
 
         do {
-            try await supabase.storage.from("documents").upload(path: filename, file: data, options: FileOptions(contentType: "image/jpeg"))
-            let urlStr = try supabase.storage.from("documents").getPublicURL(path: filename).absoluteString
+            try await supabase.storage.from("documents").upload(filename, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            let urlStr = (try? supabase.storage.from("documents").getPublicURL(path: filename))?.absoluteString ?? ""
+            guard !urlStr.isEmpty else { return }
 
             struct PhotoPayload: Encodable {
                 let sender_name: String
