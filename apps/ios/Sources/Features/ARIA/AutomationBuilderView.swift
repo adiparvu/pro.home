@@ -560,7 +560,8 @@ struct AutomationBuilderView: View {
             }
             Spacer()
             Toggle("", isOn: $automations[index].isActive)
-                .toggleStyle(SwitchToggleStyle(tint: rule.color))
+                .toggleStyle(.switch)
+                .tint(rule.color)
                 .labelsHidden().scaleEffect(0.8)
                 .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection() }
         }
