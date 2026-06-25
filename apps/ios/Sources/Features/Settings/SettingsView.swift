@@ -357,6 +357,9 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 IntegrationsView()
+                    .environmentObject(taskService)
+                    .environmentObject(propertyService)
+                    .environmentObject(familyService)
             }
         }
     }
