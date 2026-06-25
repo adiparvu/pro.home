@@ -11,6 +11,7 @@ struct IntegrationsView: View {
             VStack(spacing: 20) {
                 appleEcosystemSection
                 productivitySection
+                localControllersSection
                 smartHomeSection
                 paymentsSection
                 securitySection

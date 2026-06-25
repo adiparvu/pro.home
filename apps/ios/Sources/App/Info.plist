@@ -164,6 +164,8 @@
 	<string>Used to add tasks, water plants, and open PRVIO with your voice.</string>
 	<key>NFCReaderUsageDescription</key>
 	<string>Used to scan NFC tags on appliances and rooms to open them instantly in PRVIO.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Used to communicate with local IoT controllers (ESP32, Raspberry Pi, RS485 Modbus gateways) on your home network.</string>
 	<key>NSHomeKitUsageDescription</key>
 	<string>Used to read and control HomeKit smart devices connected to your property.</string>
 	<key>NSGroupActivitiesUsageDescription</key>

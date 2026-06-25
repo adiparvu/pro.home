@@ -148,6 +148,38 @@ extension IntegrationsView {
         }
     }
 
+    var localControllersSection: some View {
+        IntegrationGroup(title: "Local Controllers") {
+            NavigationLink {
+                IoTHubView()
+            } label: {
+                IntegrationRowContent(
+                    icon: "cpu.fill", color: Color(red: 0.05, green: 0.75, blue: 0.45),
+                    title: "ESP32",
+                    description: "Connect ESP32 microcontrollers via HTTP REST. Auto-discovers sensors from JSON responses.",
+                    status: IoTService.shared.devices.filter({ $0.type == .esp32 }).isEmpty ? .notConnected : .active("\(IoTService.shared.devices.filter({ $0.type == .esp32 }).count) active"))
+            }
+            NavigationLink {
+                IoTHubView()
+            } label: {
+                IntegrationRowContent(
+                    icon: "server.rack", color: Color(red: 0.85, green: 0.15, blue: 0.35),
+                    title: "Raspberry Pi",
+                    description: "Poll a Raspberry Pi running Flask or FastAPI for sensor data over HTTP.",
+                    status: IoTService.shared.devices.filter({ $0.type == .raspberryPi }).isEmpty ? .notConnected : .active("\(IoTService.shared.devices.filter({ $0.type == .raspberryPi }).count) active"))
+            }
+            NavigationLink {
+                IoTHubView()
+            } label: {
+                IntegrationRowContent(
+                    icon: "cable.connector.horizontal", color: Color(red: 0.35, green: 0.55, blue: 0.95),
+                    title: "RS485 Modbus",
+                    description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
+                    status: IoTService.shared.devices.filter({ $0.type == .rs485Modbus }).isEmpty ? .notConnected : .active("\(IoTService.shared.devices.filter({ $0.type == .rs485Modbus }).count) active"))
+            }
+        }
+    }
+
     var smartHomeSection: some View {
         IntegrationGroup(title: "Smart Home") {
             IntegrationRow(icon: "homekit", color: Color(red: 0.35, green: 0.82, blue: 0.58),
