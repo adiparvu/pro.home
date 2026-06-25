@@ -273,13 +273,24 @@ private struct ConversationRowView: View {
         if entry.isGroup {
             GroupChatAvatar(members: members)
         } else if let member = entry.member {
-            ZStack {
-                Circle()
-                    .fill(member.swiftColor.opacity(0.18))
-                Text(member.initials)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(member.swiftColor)
-            }
+            MemberCircleAvatar(member: member, size: 52)
+        }
+    }
+}
+
+// MARK: - Member circle avatar
+
+private struct MemberCircleAvatar: View {
+    let member: FamilyMember
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .foregroundStyle(member.swiftColor.opacity(0.18))
+            Text(member.initials)
+                .font(.system(size: size * 0.38, weight: .bold))
+                .foregroundStyle(member.swiftColor)
         }
     }
 }
@@ -290,45 +301,24 @@ private struct GroupChatAvatar: View {
     let members: [FamilyMember]
 
     var body: some View {
-        Group {
-            if members.isEmpty {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.15))
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(Color.accentColor)
-                }
+        ZStack {
+            if members.count >= 2 {
+                MemberCircleAvatar(member: members[1 % members.count], size: 34)
+                    .frame(width: 34, height: 34)
+                    .offset(x: 8, y: 8)
+                MemberCircleAvatar(member: members[0], size: 34)
+                    .frame(width: 34, height: 34)
+                    .offset(x: -8, y: -8)
             } else if members.count == 1 {
-                let c = members[0].swiftColor
-                ZStack {
-                    Circle().fill(c.opacity(0.18))
-                    Text(members[0].initials)
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(c)
-                }
+                MemberCircleAvatar(member: members[0], size: 52)
             } else {
-                let c0 = members[0].swiftColor
-                let c1 = members[1 % members.count].swiftColor
-                ZStack {
-                    Circle()
-                        .fill(c1.opacity(0.2))
-                        .frame(width: 34, height: 34)
-                        .offset(x: 8, y: 8)
-                    Circle()
-                        .fill(c0.opacity(0.2))
-                        .frame(width: 34, height: 34)
-                        .offset(x: -8, y: -8)
-                    Text(members[1 % members.count].initials)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(c1)
-                        .offset(x: 8, y: 8)
-                    Text(members[0].initials)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(c0)
-                        .offset(x: -8, y: -8)
-                }
-                .frame(width: 52, height: 52)
+                Circle()
+                    .foregroundStyle(Color.accentColor.opacity(0.15))
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.accentColor)
             }
         }
+        .frame(width: 52, height: 52)
     }
 }
