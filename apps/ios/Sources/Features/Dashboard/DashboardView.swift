@@ -419,7 +419,7 @@ struct DashboardView: View {
     private var quickActionsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 16) {
-                QuickActionButton(
+                DashQuickActionButton(
                     icon: "plus.circle.fill",
                     label: "New Task",
                     color: Color(red: 0.35, green: 0.65, blue: 1.0)
@@ -427,7 +427,7 @@ struct DashboardView: View {
                     HapticFeedback.impact(.medium)
                     router.showAddTask = true
                 }
-                QuickActionButton(
+                DashQuickActionButton(
                     icon: "doc.badge.plus",
                     label: "Add Doc",
                     color: Color(red: 0.55, green: 0.55, blue: 0.95)
@@ -435,7 +435,7 @@ struct DashboardView: View {
                     HapticFeedback.impact(.medium)
                     router.selectedTab = .settings
                 }
-                QuickActionButton(
+                DashQuickActionButton(
                     icon: "creditcard.fill",
                     label: "Expense",
                     color: Color(red: 0.3, green: 0.85, blue: 0.45)
@@ -443,7 +443,7 @@ struct DashboardView: View {
                     HapticFeedback.impact(.medium)
                     router.selectedTab = .settings
                 }
-                QuickActionButton(
+                DashQuickActionButton(
                     icon: "wave.3.right.circle.fill",
                     label: "NFC Tag",
                     color: Color(red: 0.2, green: 0.55, blue: 0.95)
@@ -451,7 +451,7 @@ struct DashboardView: View {
                     HapticFeedback.impact(.medium)
                     router.selectedTab = .settings
                 }
-                QuickActionButton(
+                DashQuickActionButton(
                     icon: "leaf.fill",
                     label: "Log Plant",
                     color: Color(red: 0.25, green: 0.78, blue: 0.45)

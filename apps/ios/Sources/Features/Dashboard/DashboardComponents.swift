@@ -66,9 +66,9 @@ struct HomeWidget: View {
     }
 }
 
-// MARK: - Quick Action Button
+// MARK: - Dash Quick Action Button
 
-struct QuickActionButton: View {
+struct DashQuickActionButton: View {
     let icon: String
     let label: LocalizedStringKey
     let color: Color
