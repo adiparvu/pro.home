@@ -39,6 +39,7 @@ struct DashboardView: View {
     @State private var showHealthDetail = false
     @State var isEditingWidgets = false
     @State var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
+    @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
 
     private let sections = PropertySection.all
 
@@ -55,45 +56,17 @@ struct DashboardView: View {
                 aerialHero
                     .padding(.horizontal, 16)
 
-                Spacer().frame(height: 14)
-
-                // ── Property Health Card ─────────────────────────────────
-                Button {
-                    HapticFeedback.impact(.light)
-                    showHealthDetail = true
-                } label: {
-                    propertyHealthCard
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 16)
-
-                // ── Proactive Insights ───────────────────────────────────
+                // ── Proactive Insights (fixed after hero) ────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
                     Spacer().frame(height: 14)
                     ProactiveInsightsStrip(engine: proactiveEngine)
                         .padding(.horizontal, 16)
                 }
 
-                Spacer().frame(height: 14)
-
-                // ── Stats Strip ──────────────────────────────────────────
-                dashStatsStrip
-                    .padding(.horizontal, 16)
-
-                Spacer().frame(height: 22)
-
-                // ── Quick Actions ────────────────────────────────────────
-                quickActionsBar
-                    .padding(.horizontal, 16)
-
-                Spacer().frame(height: 22)
-
-                // ── Widget section ───────────────────────────────────────
-                widgetSectionHeader
-                    .padding(.horizontal, 16)
-                Spacer().frame(height: 10)
-                widgetGrid
-                    .padding(.horizontal, 16)
+                // ── Reorderable sections ──────────────────────────────────
+                ForEach(sectionOrder) { section in
+                    sectionView(section)
+                }
 
                 Spacer(minLength: 120)
             }
@@ -370,6 +343,7 @@ struct DashboardView: View {
                 Button {
                     HapticFeedback.impact(.light)
                     HomeWidgetType.save(editableWidgets)
+                    HomeSectionType.save(sectionOrder)
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         isEditingWidgets = false
                     }
@@ -414,50 +388,68 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Quick Actions Bar
+    // MARK: - Section view (renders each reorderable section)
+
+    @ViewBuilder
+    private func sectionView(_ section: HomeSectionType) -> some View {
+        switch section {
+        case .healthCard:
+            Group {
+                Spacer().frame(height: 14)
+                Button {
+                    HapticFeedback.impact(.light)
+                    showHealthDetail = true
+                } label: {
+                    propertyHealthCard
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+            }
+
+        case .statsStrip:
+            Group {
+                Spacer().frame(height: 14)
+                dashStatsStrip
+                    .padding(.horizontal, 16)
+            }
+
+        case .quickActions:
+            Group {
+                Spacer().frame(height: 22)
+                quickActionsBar
+                    .padding(.horizontal, 16)
+            }
+
+        case .widgets:
+            Group {
+                Spacer().frame(height: 22)
+                widgetSectionHeader
+                    .padding(.horizontal, 16)
+                Spacer().frame(height: 10)
+                widgetGrid
+                    .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    // MARK: - Quick Actions Bar (dynamic — uses configured FAB actions)
 
     private var quickActionsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        let configured = appSettings.fabActions(.home)
+        let actions = configured.isEmpty
+            ? [DashboardQuickAction.aria, .newTask, .chat, .scan]
+            : configured
+        return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 16) {
-                DashQuickActionButton(
-                    icon: "plus.circle.fill",
-                    label: "New Task",
-                    color: Color(red: 0.35, green: 0.65, blue: 1.0)
-                ) {
-                    HapticFeedback.impact(.medium)
-                    router.showAddTask = true
-                }
-                DashQuickActionButton(
-                    icon: "doc.badge.plus",
-                    label: "Add Doc",
-                    color: Color(red: 0.55, green: 0.55, blue: 0.95)
-                ) {
-                    HapticFeedback.impact(.medium)
-                    router.selectedTab = .settings
-                }
-                DashQuickActionButton(
-                    icon: "creditcard.fill",
-                    label: "Expense",
-                    color: Color(red: 0.3, green: 0.85, blue: 0.45)
-                ) {
-                    HapticFeedback.impact(.medium)
-                    router.selectedTab = .settings
-                }
-                DashQuickActionButton(
-                    icon: "wave.3.right.circle.fill",
-                    label: "NFC Tag",
-                    color: Color(red: 0.2, green: 0.55, blue: 0.95)
-                ) {
-                    HapticFeedback.impact(.medium)
-                    router.selectedTab = .settings
-                }
-                DashQuickActionButton(
-                    icon: "leaf.fill",
-                    label: "Log Plant",
-                    color: Color(red: 0.25, green: 0.78, blue: 0.45)
-                ) {
-                    HapticFeedback.impact(.medium)
-                    router.selectedTab = .settings
+                ForEach(actions) { action in
+                    DashQuickActionButton(
+                        icon: action.icon,
+                        label: LocalizedStringKey(action.title),
+                        color: action.color
+                    ) {
+                        HapticFeedback.impact(.medium)
+                        router.perform(action)
+                    }
                 }
             }
             .padding(.horizontal, 2)

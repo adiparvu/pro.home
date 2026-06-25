@@ -64,31 +64,65 @@ extension DashboardView {
     }
 
     private var widgetReorderList: some View {
-        List {
-            ForEach(editableWidgets) { type in
-                HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(type.color.opacity(0.15))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: type.icon)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(type.color)
+        let sectionCount = sectionOrder.count
+        let widgetCount = editableWidgets.count
+        let totalRows = sectionCount + widgetCount
+        return List {
+            Section {
+                ForEach(sectionOrder) { sec in
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(sec.color.opacity(0.15))
+                                .frame(width: 36, height: 36)
+                            Image(systemName: sec.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(sec.color)
+                        }
+                        Text(sec.title)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.primary)
                     }
-                    Text(type.title)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.primary)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparatorTint(Color.primary.opacity(0.07))
                 }
-                .listRowBackground(Color.clear)
-                .listRowSeparatorTint(Color.primary.opacity(0.07))
+                .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
+            } header: {
+                Text("Sections")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
             }
-            .onMove { from, to in
-                editableWidgets.move(fromOffsets: from, toOffset: to)
+
+            Section {
+                ForEach(editableWidgets) { type in
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(type.color.opacity(0.15))
+                                .frame(width: 36, height: 36)
+                            Image(systemName: type.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(type.color)
+                        }
+                        Text(type.title)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.primary)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparatorTint(Color.primary.opacity(0.07))
+                }
+                .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
+            } header: {
+                Text("Overview Widgets")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
             }
         }
         .listStyle(.plain)
         .environment(\.editMode, .constant(.active))
-        .frame(height: max(120, CGFloat(editableWidgets.count) * 56))
+        .frame(height: max(200, CGFloat(totalRows) * 56 + 80))
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
