@@ -54,6 +54,27 @@ struct NewMessage: Encodable {
     let mentioned_ids: [String]
 }
 
+// MARK: - Emoji reactions
+
+struct MessageReaction: Identifiable, Codable {
+    let id: UUID
+    let messageId: UUID
+    let propertyId: UUID?
+    let userId: UUID
+    let reactorName: String
+    let emoji: String
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, emoji
+        case messageId   = "message_id"
+        case propertyId  = "property_id"
+        case userId      = "user_id"
+        case reactorName = "reactor_name"
+        case createdAt   = "created_at"
+    }
+}
+
 // MARK: - Read receipts
 
 struct MessageRead: Identifiable, Codable, Hashable {

@@ -9,9 +9,12 @@ final class MessageService: ObservableObject {
     @Published var unreadCount = 0
     /// Read receipts grouped by message id (excludes the receipts I created for myself).
     @Published var reads: [UUID: [MessageRead]] = [:]
+    /// Emoji reactions grouped by message id.
+    @Published var reactions: [UUID: [MessageReaction]] = [:]
 
     private var realtimeChannel: RealtimeChannelV2?
     private var readsChannel: RealtimeChannelV2?
+    private var reactionsChannel: RealtimeChannelV2?
 
     func load(propertyId: UUID) async {
         isLoading = true
@@ -165,6 +168,95 @@ final class MessageService: ObservableObject {
         if let ch = readsChannel {
             await supabase.realtimeV2.removeChannel(ch)
             readsChannel = nil
+        }
+    }
+
+    // MARK: - Reactions
+
+    func loadReactions(propertyId: UUID) async {
+        guard let rows: [MessageReaction] = try? await supabase
+            .from("message_reactions")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        else { return }
+        reactions = Dictionary(grouping: rows, by: { $0.messageId })
+    }
+
+    func toggleReaction(messageId: UUID, propertyId: UUID, emoji: String, reactorName: String) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+
+        let existing = reactions[messageId]?.first(where: { $0.userId == uid })
+
+        if existing?.emoji == emoji {
+            // Remove — user tapped their own existing reaction
+            try? await supabase
+                .from("message_reactions")
+                .delete()
+                .eq("message_id", value: messageId.uuidString)
+                .eq("user_id", value: uid.uuidString)
+                .execute()
+            reactions[messageId]?.removeAll { $0.userId == uid }
+            if reactions[messageId]?.isEmpty == true { reactions.removeValue(forKey: messageId) }
+        } else {
+            // Remove old emoji first (if switching)
+            if existing != nil {
+                try? await supabase
+                    .from("message_reactions")
+                    .delete()
+                    .eq("message_id", value: messageId.uuidString)
+                    .eq("user_id", value: uid.uuidString)
+                    .execute()
+                reactions[messageId]?.removeAll { $0.userId == uid }
+            }
+            // Insert new reaction
+            struct ReactPayload: Encodable {
+                let message_id: String
+                let property_id: String
+                let user_id: String
+                let reactor_name: String
+                let emoji: String
+            }
+            let payload = ReactPayload(
+                message_id: messageId.uuidString,
+                property_id: propertyId.uuidString,
+                user_id: uid.uuidString,
+                reactor_name: reactorName,
+                emoji: emoji
+            )
+            if let r: MessageReaction = try? await supabase
+                .from("message_reactions")
+                .insert(payload)
+                .select()
+                .single()
+                .execute()
+                .value {
+                reactions[messageId, default: []].append(r)
+            }
+        }
+    }
+
+    func subscribeReactions(propertyId: UUID) async {
+        let channel = await supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
+        let changes = await channel.postgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: "message_reactions",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        )
+        await channel.subscribe()
+        reactionsChannel = channel
+
+        for await _ in changes {
+            await loadReactions(propertyId: propertyId)
+        }
+    }
+
+    func unsubscribeReactions() async {
+        if let ch = reactionsChannel {
+            await supabase.realtimeV2.removeChannel(ch)
+            reactionsChannel = nil
         }
     }
 }

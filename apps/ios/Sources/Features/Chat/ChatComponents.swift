@@ -208,11 +208,24 @@ struct MessageBubble: View {
     let members: [FamilyMember]
     var readers: [MessageRead] = []
     var onDelete: (() -> Void)? = nil
+    /// Aggregated reaction counts from DB (emoji → count). When provided, overrides local state.
+    var persistedReactions: [String: Int] = [:]
+    /// The current user's persisted reaction, if any.
+    var persistedMyReaction: String? = nil
+    /// Called when user toggles a reaction emoji; nil = use local-only state.
+    var onReact: ((String) -> Void)? = nil
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
-    @State private var myReaction: String? = nil
+    @State private var localMyReaction: String? = nil
     @State private var showReactionPicker = false
+
+    private var displayReactions: [String: Int] {
+        onReact != nil ? persistedReactions : localReactions
+    }
+    private var displayMyReaction: String? {
+        onReact != nil ? persistedMyReaction : localMyReaction
+    }
 
     private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
@@ -244,7 +257,7 @@ struct MessageBubble: View {
                         Button { showReactionPicker = true } label: {
                             Label("React", systemImage: "face.smiling")
                         }
-                        if isOwn, let onDelete {
+                        if isOwn, onDelete != nil {
                             Divider()
                             Button(role: .destructive, action: onDelete) {
                                 Label("Delete", systemImage: "trash")
@@ -255,7 +268,7 @@ struct MessageBubble: View {
                         HapticFeedback.impact(.medium)
                         showReactionPicker = true
                     }
-                if !localReactions.isEmpty {
+                if !displayReactions.isEmpty {
                     reactionPills
                 }
                 statusRow
@@ -267,8 +280,12 @@ struct MessageBubble: View {
             SeenBySheet(readers: readers, members: members)
         }
         .sheet(isPresented: $showReactionPicker) {
-            ReactionPickerView(myReaction: myReaction) { emoji in
-                toggleReaction(emoji)
+            ReactionPickerView(myReaction: displayMyReaction) { emoji in
+                if let onReact {
+                    onReact(emoji)
+                } else {
+                    toggleLocalReaction(emoji)
+                }
             }
             .presentationDetents([.height(100)])
         }
@@ -276,9 +293,13 @@ struct MessageBubble: View {
 
     private var reactionPills: some View {
         HStack(spacing: 4) {
-            ForEach(Array(localReactions.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
+            ForEach(Array(displayReactions.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
                 Button {
-                    toggleReaction(emoji)
+                    if let onReact {
+                        onReact(emoji)
+                    } else {
+                        toggleLocalReaction(emoji)
+                    }
                 } label: {
                     HStack(spacing: 3) {
                         Text(emoji).font(.system(size: 14))
@@ -287,28 +308,28 @@ struct MessageBubble: View {
                         }
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
+                    .background(displayMyReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
                                 in: Capsule())
-                    .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
+                    .overlay(Capsule().strokeBorder(displayMyReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    private func toggleReaction(_ emoji: String) {
-        if myReaction == emoji {
-            myReaction = nil
+    private func toggleLocalReaction(_ emoji: String) {
+        if localMyReaction == emoji {
+            localMyReaction = nil
             if let count = localReactions[emoji] {
                 if count <= 1 { localReactions.removeValue(forKey: emoji) }
                 else { localReactions[emoji] = count - 1 }
             }
         } else {
-            if let old = myReaction, let count = localReactions[old] {
+            if let old = localMyReaction, let count = localReactions[old] {
                 if count <= 1 { localReactions.removeValue(forKey: old) }
                 else { localReactions[old] = count - 1 }
             }
-            myReaction = emoji
+            localMyReaction = emoji
             localReactions[emoji, default: 0] += 1
         }
     }

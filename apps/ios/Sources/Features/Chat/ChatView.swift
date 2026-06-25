@@ -129,6 +129,7 @@ struct ChatView: View {
             await messageService.load(propertyId: pid)
             messageService.resetUnread()
             await messageService.loadReads(propertyId: pid)
+            await messageService.loadReactions(propertyId: pid)
             await messageService.markRead(propertyId: pid, readerName: senderName)
         }
         .task {
@@ -139,12 +140,17 @@ struct ChatView: View {
             guard let pid = propertyId else { return }
             await messageService.subscribeReads(propertyId: pid)
         }
+        .task {
+            guard let pid = propertyId else { return }
+            await messageService.subscribeReactions(propertyId: pid)
+        }
         .onAppear { withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true } }
         .onDisappear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             Task {
                 await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
+                await messageService.unsubscribeReactions()
             }
         }
         .onChange(of: text) { _, newValue in
@@ -248,7 +254,19 @@ struct ChatView: View {
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
                             readers: messageService.reads[msg.id] ?? [],
-                            onDelete: { Task { await messageService.deleteMessage(id: msg.id) } }
+                            onDelete: { Task { await messageService.deleteMessage(id: msg.id) } },
+                            persistedReactions: {
+                                let rows = messageService.reactions[msg.id] ?? []
+                                return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
+                            }(),
+                            persistedMyReaction: messageService.reactions[msg.id]?
+                                .first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
+                            onReact: { emoji in
+                                guard let pid = propertyId else { return }
+                                Task { await messageService.toggleReaction(
+                                    messageId: msg.id, propertyId: pid,
+                                    emoji: emoji, reactorName: senderName) }
+                            }
                         )
                         .id(msg.id)
                     }
