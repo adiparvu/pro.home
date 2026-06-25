@@ -257,7 +257,7 @@ struct MessageBubble: View {
                         Button { showReactionPicker = true } label: {
                             Label("React", systemImage: "face.smiling")
                         }
-                        if isOwn, onDelete != nil {
+                        if isOwn, let onDelete {
                             Divider()
                             Button(role: .destructive, action: onDelete) {
                                 Label("Delete", systemImage: "trash")
