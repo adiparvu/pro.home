@@ -178,10 +178,9 @@ final class IntegrationsViewModel: ObservableObject {
         }
 
         var synced = UserDefaults.standard.stringArray(forKey: calendarSyncedKey) ?? []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
 
         for task in tasks where !task.isCompleted {
-            guard let ds = task.dueDate, let date = iso.date(from: ds) else { continue }
+            guard let ds = task.dueDate, let date = MaintenanceTask.parseDate(ds) else { continue }
             let key = task.id.uuidString
             guard !synced.contains(key) else { continue }
 
@@ -191,7 +190,7 @@ final class IntegrationsViewModel: ObservableObject {
             event.startDate = date
             event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date
             event.calendar = cal
-            event.isAllDay = true
+            event.isAllDay = ds.count <= 10
 
             if (try? store.save(event, span: .thisEvent)) != nil {
                 synced.append(key)
@@ -234,7 +233,6 @@ final class IntegrationsViewModel: ObservableObject {
         }
 
         var synced = UserDefaults.standard.stringArray(forKey: reminderSyncedKey) ?? []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
 
         let overduePending = tasks.filter { $0.isOverdue || ($0.status == "pending" && !$0.isCompleted) }
         for task in overduePending {
@@ -247,7 +245,7 @@ final class IntegrationsViewModel: ObservableObject {
             reminder.notes = task.description
             reminder.calendar = list
 
-            if let ds = task.dueDate, let date = iso.date(from: ds) {
+            if let ds = task.dueDate, let date = MaintenanceTask.parseDate(ds) {
                 let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
                 reminder.dueDateComponents = comps
             }

@@ -16,6 +16,8 @@ struct AddTaskView: View {
     @State private var category = "maintenance"
     @State private var hasDueDate = false
     @State private var dueDate = Date().addingTimeInterval(86400 * 3)
+    @State private var hasDueTime = false
+    @State private var dueTime = Date()
     @State private var isSaving = false
     @State private var errorMsg: String?
     @State private var assigneeIds: [String] = []
@@ -82,11 +84,12 @@ struct AddTaskView: View {
         category = t.category
         assigneeIds = t.assigneeIds
         assigneeNames = t.assigneeNames
-        if let ds = t.dueDate {
-            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-            if let d = f.date(from: ds) {
-                hasDueDate = true
-                dueDate = d
+        if let ds = t.dueDate, let d = MaintenanceTask.parseDate(ds) {
+            hasDueDate = true
+            dueDate = d
+            if ds.count > 10 {
+                hasDueTime = true
+                dueTime = d
             }
         }
     }
@@ -161,10 +164,32 @@ struct AddTaskView: View {
             }
             .tint(.accentColor)
             if hasDueDate {
-                DatePicker("", selection: $dueDate, displayedComponents: .date)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .tint(.accentColor)
+                HStack(spacing: 12) {
+                    DatePicker("", selection: $dueDate, displayedComponents: .date)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .tint(.accentColor)
+                    Spacer()
+                    Button {
+                        withAnimation { hasDueTime.toggle() }
+                    } label: {
+                        Label(hasDueTime ? "Remove time" : "Add time", systemImage: "clock")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(0.45))
+                            .labelStyle(.iconOnly)
+                            .padding(8)
+                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.07),
+                                        in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                if hasDueTime {
+                    DatePicker("", selection: $dueTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .tint(.accentColor)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
     }
@@ -280,10 +305,23 @@ struct AddTaskView: View {
         isSaving = true
         errorMsg = nil
 
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let trimmedDesc = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description
-        let dueDateStr = hasDueDate ? iso.string(from: dueDate) : nil
+        let dueDateStr: String? = {
+            guard hasDueDate else { return nil }
+            if hasDueTime {
+                let cal = Calendar.current
+                var comps = cal.dateComponents([.year, .month, .day], from: dueDate)
+                let timeComps = cal.dateComponents([.hour, .minute], from: dueTime)
+                comps.hour = timeComps.hour; comps.minute = timeComps.minute
+                let combined = cal.date(from: comps) ?? dueDate
+                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd HH:mm"
+                return f.string(from: combined)
+            } else {
+                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+                return f.string(from: dueDate)
+            }
+        }()
 
         Task {
             do {

@@ -58,17 +58,24 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
 
     var isOverdue: Bool {
         guard let ds = dueDate, !isCompleted, status != "cancelled" else { return false }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: ds) else { return false }
+        guard let d = MaintenanceTask.parseDate(ds) else { return false }
         return d < Calendar.current.startOfDay(for: Date())
     }
 
     var dueDateDisplay: String {
         guard let ds = dueDate else { return String(localized: "No date") }
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: ds) else { return ds }
-        let out = DateFormatter(); out.dateFormat = "MMM d"
+        guard let d = MaintenanceTask.parseDate(ds) else { return ds }
+        let out = DateFormatter()
+        out.dateFormat = ds.count > 10 ? "MMM d, HH:mm" : "MMM d"
         return out.string(from: d)
+    }
+
+    static func parseDate(_ ds: String) -> Date? {
+        for fmt in ["yyyy-MM-dd HH:mm", "yyyy-MM-dd"] {
+            let f = DateFormatter(); f.dateFormat = fmt
+            if let d = f.date(from: ds) { return d }
+        }
+        return nil
     }
 
     var priorityColor: Color {
