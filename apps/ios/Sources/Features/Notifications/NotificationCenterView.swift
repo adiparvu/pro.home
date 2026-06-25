@@ -63,25 +63,23 @@ struct NotificationCenterView: View {
     var unreadCount: Int { notifications.filter(\.isUnread).count }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    VStack { Spacer(); ProgressView().tint(.primary); Spacer() }
-                } else if notifications.isEmpty {
-                    emptyState
-                } else {
-                    list
-                }
+        Group {
+            if isLoading {
+                VStack { Spacer(); ProgressView().tint(.primary); Spacer() }
+            } else if notifications.isEmpty {
+                emptyState
+            } else {
+                list
             }
-            .background(appBackground.ignoresSafeArea())
-            .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                if unreadCount > 0 {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Mark all read") { Task { await markAllRead() } }
-                            .font(.system(size: 14))
-                    }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            if unreadCount > 0 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Mark all read") { Task { await markAllRead() } }
+                        .font(.system(size: 14))
                 }
             }
         }

@@ -97,8 +97,11 @@ struct DashboardView: View {
             }
         }
         .sheet(isPresented: $showNotifications) {
-            NotificationCenterView()
-                .environmentObject(auth)
+            NavigationStack {
+                NotificationCenterView()
+                    .environmentObject(auth)
+            }
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
@@ -413,13 +416,6 @@ struct DashboardView: View {
                     .padding(.horizontal, 16)
             }
 
-        case .quickActions:
-            Group {
-                Spacer().frame(height: 22)
-                quickActionsBar
-                    .padding(.horizontal, 16)
-            }
-
         case .widgets:
             Group {
                 Spacer().frame(height: 22)
@@ -429,31 +425,6 @@ struct DashboardView: View {
                 widgetGrid
                     .padding(.horizontal, 16)
             }
-        }
-    }
-
-    // MARK: - Quick Actions Bar (dynamic — uses configured FAB actions)
-
-    private var quickActionsBar: some View {
-        let configured = appSettings.fabActions(.home)
-        let actions = configured.isEmpty
-            ? [DashboardQuickAction.aria, .newTask, .chat, .scan]
-            : configured
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ForEach(actions) { action in
-                    DashQuickActionButton(
-                        icon: action.icon,
-                        label: LocalizedStringKey(action.title),
-                        color: action.color
-                    ) {
-                        HapticFeedback.impact(.medium)
-                        router.perform(action)
-                    }
-                }
-            }
-            .padding(.horizontal, 2)
-            .padding(.vertical, 6)
         }
     }
 

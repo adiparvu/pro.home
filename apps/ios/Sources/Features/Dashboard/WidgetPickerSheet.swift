@@ -3,37 +3,33 @@ import SwiftUI
 // MARK: - Home section order (drag-reorderable page sections)
 
 enum HomeSectionType: String, CaseIterable, Identifiable {
-    case healthCard   = "healthCard"
-    case statsStrip   = "statsStrip"
-    case quickActions = "quickActions"
-    case widgets      = "widgets"
+    case healthCard = "healthCard"
+    case statsStrip = "statsStrip"
+    case widgets    = "widgets"
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .healthCard:   return String(localized: "Health Card")
-        case .statsStrip:   return String(localized: "Stats")
-        case .quickActions: return String(localized: "Quick Actions")
-        case .widgets:      return String(localized: "Overview Widgets")
+        case .healthCard: return String(localized: "Health Card")
+        case .statsStrip: return String(localized: "Stats")
+        case .widgets:    return String(localized: "Overview Widgets")
         }
     }
 
     var icon: String {
         switch self {
-        case .healthCard:   return "heart.fill"
-        case .statsStrip:   return "chart.bar.fill"
-        case .quickActions: return "bolt.fill"
-        case .widgets:      return "square.grid.2x2.fill"
+        case .healthCard: return "heart.fill"
+        case .statsStrip: return "chart.bar.fill"
+        case .widgets:    return "square.grid.2x2.fill"
         }
     }
 
     var color: Color {
         switch self {
-        case .healthCard:   return .red
-        case .statsStrip:   return .blue
-        case .quickActions: return .orange
-        case .widgets:      return .purple
+        case .healthCard: return .red
+        case .statsStrip: return .blue
+        case .widgets:    return .purple
         }
     }
 
