@@ -66,6 +66,34 @@ struct HomeWidget: View {
     }
 }
 
+// MARK: - Quick Action Button
+
+struct QuickActionButton: View {
+    let icon: String
+    let label: LocalizedStringKey
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 7) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.13))
+                        .frame(width: 50, height: 50)
+                    Image(systemName: icon)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(color)
+                }
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.55))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Property Core Marker
 
 struct PropertyCoreMarker: View {

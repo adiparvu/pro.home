@@ -82,6 +82,12 @@ struct DashboardView: View {
 
                 Spacer().frame(height: 22)
 
+                // ── Quick Actions ────────────────────────────────────────
+                quickActionsBar
+                    .padding(.horizontal, 16)
+
+                Spacer().frame(height: 22)
+
                 // ── Widget section ───────────────────────────────────────
                 widgetSectionHeader
                     .padding(.horizontal, 16)
@@ -247,10 +253,18 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Aerial Hero Card
+    // MARK: - Aerial background (drone photo or canvas illustration)
 
-    private var aerialHero: some View {
-        ZStack(alignment: .bottomLeading) {
+    @ViewBuilder private var aerialBackground: some View {
+        if propertyService.primary?.photoUrl != nil {
+            AerialCanvasView(
+                property: propertyService.primary!,
+                zones: zoneService.zones,
+                elements: elementService.elements
+            )
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+        } else {
             AerialPropertyView(
                 property: propertyService.primary,
                 zones: zoneService.zones,
@@ -259,6 +273,14 @@ struct DashboardView: View {
             )
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Aerial Hero Card
+
+    private var aerialHero: some View {
+        ZStack(alignment: .bottomLeading) {
+            aerialBackground
 
             if let score = propertyService.primary?.healthScore {
                 PropertyHealthGauge(score: score, size: 82)
@@ -389,6 +411,57 @@ struct DashboardView: View {
                     .glassCircle()
                 }
             }
+        }
+    }
+
+    // MARK: - Quick Actions Bar
+
+    private var quickActionsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                QuickActionButton(
+                    icon: "plus.circle.fill",
+                    label: "New Task",
+                    color: Color(red: 0.35, green: 0.65, blue: 1.0)
+                ) {
+                    HapticFeedback.impact(.medium)
+                    router.showAddTask = true
+                }
+                QuickActionButton(
+                    icon: "doc.badge.plus",
+                    label: "Add Doc",
+                    color: Color(red: 0.55, green: 0.55, blue: 0.95)
+                ) {
+                    HapticFeedback.impact(.medium)
+                    router.selectedTab = .settings
+                }
+                QuickActionButton(
+                    icon: "creditcard.fill",
+                    label: "Expense",
+                    color: Color(red: 0.3, green: 0.85, blue: 0.45)
+                ) {
+                    HapticFeedback.impact(.medium)
+                    router.selectedTab = .settings
+                }
+                QuickActionButton(
+                    icon: "wave.3.right.circle.fill",
+                    label: "NFC Tag",
+                    color: Color(red: 0.2, green: 0.55, blue: 0.95)
+                ) {
+                    HapticFeedback.impact(.medium)
+                    router.selectedTab = .settings
+                }
+                QuickActionButton(
+                    icon: "leaf.fill",
+                    label: "Log Plant",
+                    color: Color(red: 0.25, green: 0.78, blue: 0.45)
+                ) {
+                    HapticFeedback.impact(.medium)
+                    router.selectedTab = .settings
+                }
+            }
+            .padding(.horizontal, 2)
+            .padding(.vertical, 6)
         }
     }
 
