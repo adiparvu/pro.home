@@ -86,6 +86,17 @@ struct AutomationRule: Identifiable {
 
 // MARK: - Add Automation Sheet
 
+private struct TriggerOption {
+    let label: String
+    let icon: String
+    let color: Color
+}
+
+private struct ActionOption {
+    let label: String
+    let icon: String
+}
+
 private struct AddAutomationSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onAdd: (AutomationRule) -> Void
@@ -95,23 +106,23 @@ private struct AddAutomationSheet: View {
     @State private var triggerType = 0
     @State private var actionType  = 0
 
-    private let triggerOptions = [
-        ("Warranty expires", "shield.lefthalf.filled", Color(red: 0.95, green: 0.45, blue: 0.15)),
-        ("Task overdue", "exclamationmark.circle.fill", Color.red),
-        ("Plant needs water", "drop.fill", Color(red: 0.15, green: 0.72, blue: 0.37)),
-        ("Document expires", "doc.badge.clock.fill", Color.purple),
-        ("Time schedule", "clock.fill", Color.blue),
-        ("Motion detected", "camera.fill", Color.orange),
+    private let triggerOptions: [TriggerOption] = [
+        TriggerOption(label: "Warranty expires",   icon: "shield.lefthalf.filled",       color: Color(red: 0.95, green: 0.45, blue: 0.15)),
+        TriggerOption(label: "Task overdue",        icon: "exclamationmark.circle.fill",   color: .red),
+        TriggerOption(label: "Plant needs water",   icon: "drop.fill",                    color: Color(red: 0.15, green: 0.72, blue: 0.37)),
+        TriggerOption(label: "Document expires",    icon: "doc.badge.clock.fill",          color: .purple),
+        TriggerOption(label: "Time schedule",       icon: "clock.fill",                   color: .blue),
+        TriggerOption(label: "Motion detected",     icon: "camera.fill",                  color: .orange),
     ]
-    private let actionOptions = [
-        ("Send notification", "bell.badge.fill"),
-        ("Create task", "checkmark.circle.fill"),
-        ("Mark as completed", "checkmark.seal.fill"),
-        ("Log to activity", "clock.arrow.circlepath"),
+    private let actionOptions: [ActionOption] = [
+        ActionOption(label: "Send notification",   icon: "bell.badge.fill"),
+        ActionOption(label: "Create task",         icon: "checkmark.circle.fill"),
+        ActionOption(label: "Mark as completed",   icon: "checkmark.seal.fill"),
+        ActionOption(label: "Log to activity",     icon: "clock.arrow.circlepath"),
     ]
 
-    private var selectedTrigger: (String, String, Color) { triggerOptions[triggerType] }
-    private var selectedAction: (String, String) { actionOptions[actionType] }
+    private var selectedTrigger: TriggerOption { triggerOptions[triggerType] }
+    private var selectedAction: ActionOption { actionOptions[actionType] }
 
     var body: some View {
         NavigationStack {
@@ -143,17 +154,17 @@ private struct AddAutomationSheet: View {
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
                                 ForEach(0..<triggerOptions.count, id: \.self) { i in
-                                    let t = triggerOptions[i]
+                                    let opt = triggerOptions[i]
                                     Button {
                                         triggerType = i
                                         HapticFeedback.selection()
                                     } label: {
                                         HStack(spacing: 12) {
-                                            Image(systemName: t.1)
+                                            Image(systemName: opt.icon)
                                                 .font(.system(size: 14))
-                                                .foregroundStyle(t.2)
+                                                .foregroundStyle(opt.color)
                                                 .frame(width: 28)
-                                            Text(t.0)
+                                            Text(opt.label)
                                                 .font(.system(size: 15))
                                                 .foregroundStyle(.primary)
                                             Spacer()
@@ -185,17 +196,17 @@ private struct AddAutomationSheet: View {
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
                                 ForEach(0..<actionOptions.count, id: \.self) { i in
-                                    let a = actionOptions[i]
+                                    let opt = actionOptions[i]
                                     Button {
                                         actionType = i
                                         HapticFeedback.selection()
                                     } label: {
                                         HStack(spacing: 12) {
-                                            Image(systemName: a.1)
+                                            Image(systemName: opt.icon)
                                                 .font(.system(size: 14))
                                                 .foregroundStyle(.purple)
                                                 .frame(width: 28)
-                                            Text(a.0)
+                                            Text(opt.label)
                                                 .font(.system(size: 15))
                                                 .foregroundStyle(.primary)
                                             Spacer()
@@ -235,15 +246,15 @@ private struct AddAutomationSheet: View {
                         let t = selectedTrigger
                         let a = selectedAction
                         let rule = AutomationRule(
-                            name: name.trimmingCharacters(in: .whitespaces).isEmpty ? t.0 : name,
-                            triggerIcon: t.1,
-                            triggerLabel: t.0,
+                            name: name.trimmingCharacters(in: .whitespaces).isEmpty ? t.label : name,
+                            triggerIcon: t.icon,
+                            triggerLabel: t.label,
                             conditionIcon: "checkmark.circle",
                             conditionLabel: "Always",
-                            actionIcon: a.1,
-                            actionLabel: a.0,
+                            actionIcon: a.icon,
+                            actionLabel: a.label,
                             isActive: true,
-                            color: t.2
+                            color: t.color
                         )
                         onAdd(rule)
                         HapticFeedback.success()
