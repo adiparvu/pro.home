@@ -16,6 +16,7 @@ struct DirectMessageView: View {
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var showProfile = false
+    @State private var sendError: String? = nil
     @FocusState private var focused: Bool
     @State private var isSending = false
 
@@ -70,6 +71,14 @@ struct DirectMessageView: View {
                 .environmentObject(familyService)
         }
         .onAppear { directMessageService.markRead(partner: member.name) }
+        .alert("Message Not Sent", isPresented: .init(
+            get: { sendError != nil },
+            set: { if !$0 { sendError = nil } }
+        )) {
+            Button("OK", role: .cancel) { sendError = nil }
+        } message: {
+            Text(sendError ?? "")
+        }
     }
 
     // MARK: - Message List
@@ -235,6 +244,8 @@ struct DirectMessageView: View {
             directMessageService.dms.append(sent)
             HapticFeedback.impact(.light)
         } catch {
+            HapticFeedback.warning()
+            sendError = String(localized: "Failed to send message. Check your connection and try again.")
 #if DEBUG
             print("[DM] send error: \(error)")
 #endif

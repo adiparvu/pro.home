@@ -31,6 +31,7 @@ struct ChatView: View {
     @State var isSending = false
     @State private var showPhotoPickerTrigger = false
     @State private var showFileImporter = false
+    @State var sendError: String? = nil
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @StateObject private var audioRecorder = ChatAudioRecorder()
@@ -203,6 +204,14 @@ struct ChatView: View {
             if case .success(let urls) = result, let url = urls.first {
                 Task { await sendFile(url: url) }
             }
+        }
+        .alert("Message Not Sent", isPresented: .init(
+            get: { sendError != nil },
+            set: { if !$0 { sendError = nil } }
+        )) {
+            Button("OK", role: .cancel) { sendError = nil }
+        } message: {
+            Text(sendError ?? "")
         }
         .userActivity("com.prvio.chat") { activity in
             activity.title = String(localized: "Chat — PRVIO")

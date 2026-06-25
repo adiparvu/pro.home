@@ -14,12 +14,17 @@ extension ChatView {
         HapticFeedback.impact(.light)
         isSending = true
         defer { isSending = false }
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName,
-            body: body, mentionedIds: mentionedIds
-        )
-        scheduleLocalMentionNotifications(body: body)
-        mentionedIds = []; mentionedNames = []
+        do {
+            try await messageService.send(
+                propertyId: pid, senderName: senderName,
+                body: body, mentionedIds: mentionedIds
+            )
+            scheduleLocalMentionNotifications(body: body)
+            mentionedIds = []; mentionedNames = []
+        } catch {
+            HapticFeedback.warning()
+            sendError = String(localized: "Failed to send message. Check your connection and try again.")
+        }
     }
 
     func sendSticker(_ sticker: Sticker) async {
