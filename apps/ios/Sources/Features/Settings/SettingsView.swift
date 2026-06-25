@@ -341,6 +341,7 @@ struct SettingsView: View {
                     .environmentObject(appSettings)
                     .environmentObject(taskService)
                     .environmentObject(applianceService)
+                    .environmentObject(plantService)
             }
             NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()

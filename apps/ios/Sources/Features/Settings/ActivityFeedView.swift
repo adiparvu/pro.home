@@ -168,11 +168,12 @@ struct ActivityFeedView: View {
                 ))
             }
             let addedDate = isoTask(plant.createdAt) ?? Date()
+            let plantSubtitle = plant.emoji.isEmpty ? plant.name : "\(plant.emoji) \(plant.name)"
             events.append(ActivityEvent(
-                icon:     plant.emoji.isEmpty ? "leaf.fill" : plant.emoji,
+                icon:     "leaf.fill",
                 color:    Color(red: 0.15, green: 0.75, blue: 0.40),
                 title:    "Plant added",
-                subtitle: plant.name,
+                subtitle: plantSubtitle,
                 date:     addedDate,
                 member:   currentUser,
                 category: .plants
