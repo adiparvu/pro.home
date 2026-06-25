@@ -29977,6 +29977,22 @@
           }
         }
       }
+    },
+    "Brand (e.g. Farrow & Ball)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brand (e.g. Farrow & Ball)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcă (ex. Vopsele Spor)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

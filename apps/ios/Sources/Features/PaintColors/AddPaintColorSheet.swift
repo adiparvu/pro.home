@@ -213,7 +213,7 @@ struct AddPaintColorSheet: View {
         return Color(red: r, green: g, blue: b)
     }
 
-    private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>) -> some View {
+    private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))

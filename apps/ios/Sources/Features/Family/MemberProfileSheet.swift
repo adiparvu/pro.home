@@ -149,31 +149,23 @@ struct MemberProfileSheet: View {
     private func socialSection(_ links: [SocialLink]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionLabel("SOCIAL NETWORKS")
-            VStack(spacing: 0) {
+            HStack(spacing: 12) {
                 ForEach(links) { link in
                     Button {
                         if let url = link.openURL { UIApplication.shared.open(url) }
                     } label: {
-                        HStack(spacing: 12) {
-                            ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(link.platformLabel)
-                                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
-                                Text("@\(link.handle.replacingOccurrences(of: "@", with: ""))")
-                                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
-                            }
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.3))
+                        ZStack {
+                            Circle()
+                                .fill(link.platformColor.opacity(0.13))
+                                .frame(width: 46, height: 46)
+                            Image(systemName: link.platformIcon)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(link.platformColor)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 11)
                     }
                     .buttonStyle(.plain)
-                    if link.id != links.last?.id { divider }
                 }
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
         }
     }
 

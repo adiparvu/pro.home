@@ -42,7 +42,7 @@ struct TwinInsightsSheet: View {
                 .padding(20)
             }
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle("ARIA Insights")
+            .navigationTitle("\(assistantName) Insights")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -122,7 +122,7 @@ struct TwinInsightsSheet: View {
     private var aiCard: some View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Label("ARIA Analysis", systemImage: "sparkles")
+                Label("\(assistantName) Analysis", systemImage: "sparkles")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
 

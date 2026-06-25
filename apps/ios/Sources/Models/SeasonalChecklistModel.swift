@@ -53,12 +53,25 @@ enum Season: String, CaseIterable, Codable {
 }
 
 struct SeasonalCheckItem: Identifiable {
-    // Deterministic ID — stable across app restarts
-    var id: String { "\(season.rawValue):\(title)" }
-    var title: String
-    var description: String
-    var category: String
+    // Stable English keys for IDs and xcstrings lookup
+    private let titleKey: String
+    private let descriptionKey: String
+    private let categoryKey: String
     var season: Season
+
+    // Deterministic ID — stable across locales and app restarts
+    var id: String { "\(season.rawValue):\(titleKey)" }
+
+    var title: String { String(localized: String.LocalizationValue(titleKey)) }
+    var description: String { String(localized: String.LocalizationValue(descriptionKey)) }
+    var category: String { String(localized: String.LocalizationValue(categoryKey)) }
+
+    init(title: String, description: String, category: String, season: Season) {
+        self.titleKey = title
+        self.descriptionKey = description
+        self.categoryKey = category
+        self.season = season
+    }
 }
 
 struct SeasonalChecklistData {
