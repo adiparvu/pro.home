@@ -74,6 +74,55 @@ struct SeasonalCheckItem: Identifiable {
     }
 }
 
+// MARK: - Custom Item
+
+struct CustomSeasonalItem: Identifiable, Codable, Equatable {
+    let id: UUID
+    var title: String
+    var description: String
+    var category: String
+    var season: Season
+
+    init(id: UUID = UUID(), title: String, description: String = "", category: String = "Custom", season: Season) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.category = category
+        self.season = season
+    }
+}
+
+// MARK: - Unified list item (built-in + custom)
+
+enum SeasonalListItem: Identifiable {
+    case builtin(SeasonalCheckItem)
+    case custom(CustomSeasonalItem)
+
+    var id: String {
+        switch self {
+        case .builtin(let i): return i.id
+        case .custom(let i):  return "custom:\(i.id.uuidString)"
+        }
+    }
+    var title: String {
+        switch self { case .builtin(let i): return i.title; case .custom(let i): return i.title }
+    }
+    var description: String {
+        switch self { case .builtin(let i): return i.description; case .custom(let i): return i.description }
+    }
+    var category: String {
+        switch self { case .builtin(let i): return i.category; case .custom(let i): return i.category }
+    }
+    var isCustom: Bool {
+        if case .custom = self { return true }; return false
+    }
+    var customItem: CustomSeasonalItem? {
+        if case .custom(let i) = self { return i }; return nil
+    }
+}
+
+// MARK: - Static data
+
 struct SeasonalChecklistData {
     static let allItems: [SeasonalCheckItem] = [
         // Spring
@@ -121,11 +170,14 @@ struct SeasonalChecklistData {
 @MainActor
 final class SeasonalChecklistService: ObservableObject {
     @Published var completedItemIds: Set<String> = []
+    @Published var customItems: [CustomSeasonalItem] = []
 
-    // v2 key — String IDs, stable across app restarts
-    private let defaultsKey = "seasonal_checklist_completed_v2"
+    private let defaultsKey  = "seasonal_checklist_completed_v2"
+    private let customKey    = "seasonal_checklist_custom_v1"
 
-    init() { load() }
+    init() { load(); loadCustom() }
+
+    // MARK: - Completion
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: defaultsKey),
@@ -140,23 +192,71 @@ final class SeasonalChecklistService: ObservableObject {
     }
 
     func toggleItem(_ id: String) {
-        if completedItemIds.contains(id) {
-            completedItemIds.remove(id)
-        } else {
-            completedItemIds.insert(id)
-        }
+        if completedItemIds.contains(id) { completedItemIds.remove(id) }
+        else { completedItemIds.insert(id) }
         persist()
     }
 
-    func isCompleted(_ id: String) -> Bool {
-        completedItemIds.contains(id)
+    func isCompleted(_ id: String) -> Bool { completedItemIds.contains(id) }
+
+    // MARK: - Built-in items
+
+    func builtinItems(for season: Season) -> [SeasonalCheckItem] {
+        SeasonalChecklistData.allItems.filter { $0.season == season }
+    }
+
+    // MARK: - Custom item CRUD
+
+    private func loadCustom() {
+        guard let data = UserDefaults.standard.data(forKey: customKey),
+              let items = try? JSONDecoder().decode([CustomSeasonalItem].self, from: data) else { return }
+        customItems = items
+    }
+
+    private func persistCustom() {
+        if let data = try? JSONEncoder().encode(customItems) {
+            UserDefaults.standard.set(data, forKey: customKey)
+        }
+    }
+
+    func customItems(for season: Season) -> [CustomSeasonalItem] {
+        customItems.filter { $0.season == season }
+    }
+
+    func addCustomItem(_ item: CustomSeasonalItem) {
+        customItems.append(item)
+        persistCustom()
+    }
+
+    func updateCustomItem(_ item: CustomSeasonalItem) {
+        if let idx = customItems.firstIndex(where: { $0.id == item.id }) {
+            customItems[idx] = item
+            persistCustom()
+        }
+    }
+
+    func deleteCustomItem(_ item: CustomSeasonalItem) {
+        completedItemIds.remove("custom:\(item.id.uuidString)")
+        customItems.removeAll { $0.id == item.id }
+        persist()
+        persistCustom()
+    }
+
+    // MARK: - Unified list
+
+    func allListItems(for season: Season) -> [SeasonalListItem] {
+        builtinItems(for: season).map { .builtin($0) } +
+        customItems(for: season).map { .custom($0) }
     }
 
     func completedCount(for season: Season) -> Int {
-        items(for: season).filter { isCompleted($0.id) }.count
+        allListItems(for: season).filter { isCompleted($0.id) }.count
     }
 
-    func items(for season: Season) -> [SeasonalCheckItem] {
-        SeasonalChecklistData.allItems.filter { $0.season == season }
+    func totalCount(for season: Season) -> Int {
+        allListItems(for: season).count
     }
+
+    // Legacy alias kept for compatibility
+    func items(for season: Season) -> [SeasonalCheckItem] { builtinItems(for: season) }
 }
