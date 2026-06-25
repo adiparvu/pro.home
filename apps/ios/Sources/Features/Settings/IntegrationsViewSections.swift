@@ -153,11 +153,8 @@ extension IntegrationsView {
             IntegrationRow(icon: "homekit", color: Color(red: 0.35, green: 0.82, blue: 0.58),
                 title: "Apple HomeKit",
                 description: "Controlează becuri, prize și termostate smart din PRVIO fără să deschizi Casa.",
-                status: HomeKitService.shared.isAuthorized ? .active("Conectat") : .deepLink("Conectează"),
-                action: {
-                    HomeKitService.shared.requestAccess()
-                    if let url = URL(string: "homeapp://") { UIApplication.shared.open(url) }
-                })
+                status: vm.homeKitStatus,
+                action: { vm.activateHomeKit() })
             IntegrationRow(icon: "house.circle.fill", color: Color(red: 0.12, green: 0.55, blue: 0.95),
                 title: "Home Assistant",
                 description: "Connect to your local Home Assistant for full smart home control.",

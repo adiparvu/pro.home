@@ -11,7 +11,7 @@ final class HomeKitService: NSObject, ObservableObject {
     @Published var isAuthorized = false
     @Published var authorizationStatus: HMHomeManagerAuthorizationStatus = .determined
 
-    private let manager = HMHomeManager()
+    private lazy var manager: HMHomeManager = HMHomeManager()
 
     private override init() {
         super.init()
@@ -21,8 +21,11 @@ final class HomeKitService: NSObject, ObservableObject {
     var primaryHome: HMHome? { manager.primaryHome }
 
     func requestAccess() {
-        // Triggers HMHomeManager authorization prompt on first access
         _ = manager.homes
+    }
+
+    var currentAuthorizationStatus: Bool {
+        isAuthorized
     }
 
     func allAccessories() -> [HMAccessory] {

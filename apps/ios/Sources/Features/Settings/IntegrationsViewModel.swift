@@ -20,6 +20,7 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var calendarStatus: IntegrationStatus = .notConnected
     @Published var remindersStatus: IntegrationStatus = .notConnected
     @Published var contactsStatus: IntegrationStatus = .notConnected
+    @Published var homeKitStatus: IntegrationStatus = .deepLink("Conectează")
     @Published var showCalendarSuccess = false
     @Published var showContactsSuccess = false
     @Published var showPermissionDenied = false
@@ -39,6 +40,18 @@ final class IntegrationsViewModel: ObservableObject {
         contactsStatus = checkContactsAccess() ? .connected : .notConnected
         iCloudAvailable = CloudKitSyncService.shared.isAvailable
         applePayAvailable = ApplePayService.shared.isAvailable
+        // HomeKit checked lazily — do NOT access HMHomeManager here to avoid
+        // a crash when the provisioning profile lacks the HomeKit capability.
+    }
+
+    func activateHomeKit() {
+        // Only called from an explicit user tap — safe to initialize HMHomeManager here.
+        HomeKitService.shared.requestAccess()
+        homeKitStatus = HomeKitService.shared.currentAuthorizationStatus
+            ? .active("Conectat") : .deepLink("Conectează")
+        if let url = URL(string: "homeapp://") {
+            UIApplication.shared.open(url)
+        }
     }
 
     // MARK: - Calendar
