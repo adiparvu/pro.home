@@ -22,6 +22,8 @@ let supplyPriorities: [(id: String, label: String)] = [
 
 // MARK: - Supplies / Expense Hub
 
+enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
+
 struct SuppliesView: View {
     @EnvironmentObject private var supplyService: SupplyService
     @EnvironmentObject private var receiptService: ReceiptService
@@ -33,8 +35,6 @@ struct SuppliesView: View {
     @State private var showAddReceipt = false
     @State private var showBudgets = false
     @State private var showReports = false
-
-    enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,6 +59,7 @@ struct SuppliesView: View {
             switch activeTab {
             case .overview:
                 ExpenseDashboardView(
+                    activeTab: $activeTab,
                     showScanner: $showScanner,
                     showAddReceipt: $showAddReceipt,
                     showBudgets: $showBudgets,
@@ -66,6 +67,7 @@ struct SuppliesView: View {
                 )
                 .environmentObject(receiptService)
                 .environmentObject(propertyService)
+                .environmentObject(supplyService)
             case .lists:
                 shoppingListsContent
             case .toBuy:
@@ -190,15 +192,6 @@ struct SuppliesView: View {
     private var listsScrollContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                GlassCard(padding: 18) {
-                    HStack(spacing: 0) {
-                        statCell(value: "\(supplyService.lists.count)", label: String(localized: "supply_lists_count"), tab: .lists)
-                        Divider().frame(height: 32).opacity(0.3)
-                        statCell(value: "\(supplyService.totalPending)", label: String(localized: "supply_to_buy"), tab: .toBuy)
-                        Divider().frame(height: 32).opacity(0.3)
-                        statCell(value: "\(supplyService.totalCompleted)", label: String(localized: "supply_completed"), tab: .completed)
-                    }
-                }
                 listsGrid
                 if supplyService.totalPending > 0 { urgentSection }
                 Spacer(minLength: 110)
@@ -210,20 +203,6 @@ struct SuppliesView: View {
                 await supplyService.load(propertyId: id)
             }
         }
-    }
-
-    private func statCell(value: String, label: String, tab: ExpenseTab) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.18)) { activeTab = tab }
-            HapticFeedback.selection()
-        } label: {
-            VStack(spacing: 2) {
-                Text(value).font(.system(size: 22, weight: .bold)).contentTransition(.numericText())
-                Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
     }
 
     private var listsGrid: some View {

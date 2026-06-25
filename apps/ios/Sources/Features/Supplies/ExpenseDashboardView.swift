@@ -6,7 +6,9 @@ import Charts
 struct ExpenseDashboardView: View {
     @EnvironmentObject private var receiptService: ReceiptService
     @EnvironmentObject private var propertyService: PropertyService
+    @EnvironmentObject private var supplyService: SupplyService
 
+    @Binding var activeTab: ExpenseTab
     @Binding var showScanner: Bool
     @Binding var showAddReceipt: Bool
     @Binding var showBudgets: Bool
@@ -20,6 +22,7 @@ struct ExpenseDashboardView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                listsStatsCard
                 monthTotalCard
                 dailyChartCard
                 quickActionsRow
@@ -49,6 +52,34 @@ struct ExpenseDashboardView: View {
         .onChange(of: receiptService.currentMonthKey) { _, new in
             if selectedMonth.isEmpty { selectedMonth = new }
         }
+    }
+
+    // MARK: - Lists stats card
+
+    private var listsStatsCard: some View {
+        GlassCard(padding: 18) {
+            HStack(spacing: 0) {
+                statCell(value: "\(supplyService.lists.count)", label: String(localized: "supply_lists_count"), tab: .lists)
+                Divider().frame(height: 32).opacity(0.3)
+                statCell(value: "\(supplyService.totalPending)", label: String(localized: "supply_to_buy"), tab: .toBuy)
+                Divider().frame(height: 32).opacity(0.3)
+                statCell(value: "\(supplyService.totalCompleted)", label: String(localized: "supply_completed"), tab: .completed)
+            }
+        }
+    }
+
+    private func statCell(value: String, label: String, tab: ExpenseTab) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) { activeTab = tab }
+            HapticFeedback.selection()
+        } label: {
+            VStack(spacing: 2) {
+                Text(value).font(.system(size: 22, weight: .bold)).contentTransition(.numericText())
+                Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Month + Total card
