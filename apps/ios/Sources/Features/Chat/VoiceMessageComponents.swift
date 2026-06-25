@@ -14,6 +14,20 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
     private(set) var recordingURL: URL?
 
     func start() {
+        // Request microphone permission first; if denied, bail out silently
+        let status: AVAudioApplication.recordPermission = AVAudioApplication.shared.recordPermission
+        if status == .denied { return }
+        if status == .undetermined {
+            AVAudioApplication.requestRecordPermission { [weak self] granted in
+                guard granted else { return }
+                Task { @MainActor [weak self] in self?.beginRecording() }
+            }
+            return
+        }
+        beginRecording()
+    }
+
+    private func beginRecording() {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
         try? session.setActive(true)
@@ -28,14 +42,15 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
         ]
         recorder = try? AVAudioRecorder(url: url, settings: settings)
         recorder?.delegate = self
-        recorder?.record()
+        guard recorder?.record() == true else {
+            try? AVAudioSession.sharedInstance().setActive(false)
+            return
+        }
         recordingURL = url
         isRecording = true
         duration = 0
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.duration += 0.1
-            }
+            Task { @MainActor [weak self] in self?.duration += 0.1 }
         }
     }
 

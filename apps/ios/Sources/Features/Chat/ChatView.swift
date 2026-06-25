@@ -426,28 +426,11 @@ struct ChatView: View {
                                     .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(0.45))
                                     .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
                             }
-                            .gesture(
-                                LongPressGesture(minimumDuration: 0.3)
-                                    .onEnded { _ in
-                                        guard !audioRecorder.isRecording else { return }
-                                        audioRecorder.start()
-                                        HapticFeedback.impact(.medium)
-                                    }
-                            )
-                            .simultaneousGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onEnded { val in
-                                        guard audioRecorder.isRecording else { return }
-                                        if val.translation.width < -60 {
-                                            _ = audioRecorder.stop()
-                                            HapticFeedback.warning()
-                                        } else {
-                                            if let url = audioRecorder.stop() {
-                                                Task { await sendAudio(url: url) }
-                                            }
-                                        }
-                                    }
-                            )
+                            .onLongPressGesture(minimumDuration: 0.3) {
+                                guard !audioRecorder.isRecording else { return }
+                                audioRecorder.start()
+                                HapticFeedback.impact(.medium)
+                            }
                         } else {
                             // Send button
                             Button {
