@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreNFC
+import PassKit
 
 // MARK: - NFC Tag Model
 
@@ -21,13 +22,35 @@ struct NFCTag: Identifiable, Codable {
         }
     }
 
-    var typeColor: Color {
+    var cardGradient: [Color] {
         switch linkedType {
-        case "zone":      return .blue
-        case "appliance": return Color(red: 0.2, green: 0.55, blue: 0.95)
-        case "element":   return .purple
-        default:          return .gray
+        case "zone":      return [Color(red: 0.12, green: 0.32, blue: 0.86), Color(red: 0.04, green: 0.14, blue: 0.60)]
+        case "appliance": return [Color(red: 0.22, green: 0.18, blue: 0.82), Color(red: 0.48, green: 0.10, blue: 0.68)]
+        case "element":   return [Color(red: 0.50, green: 0.08, blue: 0.72), Color(red: 0.68, green: 0.04, blue: 0.44)]
+        default:          return [Color(red: 0.18, green: 0.22, blue: 0.32), Color(red: 0.08, green: 0.10, blue: 0.18)]
         }
+    }
+}
+
+// MARK: - PKAddPassButton wrapper
+
+struct AddToWalletButton: UIViewRepresentable {
+    let action: () -> Void
+
+    func makeUIView(context: Context) -> PKAddPassButton {
+        let btn = PKAddPassButton(addPassButtonStyle: .blackOutline)
+        btn.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
+        return btn
+    }
+
+    func updateUIView(_ uiView: PKAddPassButton, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(action: action) }
+
+    final class Coordinator: NSObject {
+        let action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+        @objc func tapped() { action() }
     }
 }
 
@@ -39,8 +62,11 @@ struct NFCWalletView: View {
     @State private var tags: [NFCTag] = []
     @State private var showAddSheet    = false
     @State private var pendingUID: String?
+    @State private var addingTagId: UUID?
     @State private var showScanError   = false
     @State private var scanErrorMsg    = ""
+    @State private var showWalletError = false
+    @State private var walletErrorMsg  = ""
 
     private let storageKey = "prvio.nfcTags"
 
@@ -54,9 +80,9 @@ struct NFCWalletView: View {
                     emptyState
                 } else {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 20) {
                             ForEach(tags) { tag in
-                                tagCard(tag)
+                                cardSection(tag)
                             }
                         }
                         .padding(.horizontal, 20)
@@ -73,9 +99,7 @@ struct NFCWalletView: View {
                 if nfc.isScanning {
                     ProgressView().tint(.accentColor)
                 } else {
-                    Button {
-                        scanForNewTag()
-                    } label: {
+                    Button { scanForNewTag() } label: {
                         Label("Scan Tag", systemImage: "wave.3.right.circle.fill")
                             .font(.system(size: 19, weight: .medium))
                             .foregroundStyle(.primary)
@@ -93,10 +117,150 @@ struct NFCWalletView: View {
                 }
             }
         }
-        .alert("NFC Error", isPresented: $showScanError) {
+        .alert("Scan Error", isPresented: $showScanError) {
             Button("OK", role: .cancel) {}
-        } message: {
-            Text(scanErrorMsg)
+        } message: { Text(scanErrorMsg) }
+        .alert("Apple Wallet", isPresented: $showWalletError) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(walletErrorMsg) }
+    }
+
+    // MARK: - Card section (card + controls)
+
+    private func cardSection(_ tag: NFCTag) -> some View {
+        VStack(spacing: 12) {
+            walletCard(tag)
+
+            HStack(spacing: 12) {
+                if WalletPassService.shared.canAddPasses {
+                    if addingTagId == tag.id {
+                        HStack(spacing: 8) {
+                            ProgressView().tint(.primary)
+                            Text("Adding…")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(height: 44)
+                    } else {
+                        AddToWalletButton {
+                            Task { await addTagToWallet(tag) }
+                        }
+                        .frame(height: 44)
+                    }
+                }
+
+                Spacer()
+
+                Button {
+                    rescanTag(tag)
+                } label: {
+                    Image(systemName: "wave.3.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .frame(width: 44, height: 44)
+                        .background(Color.blue.opacity(0.1),
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button(role: .destructive) {
+                    HapticFeedback.warning()
+                    withAnimation {
+                        tags.removeAll { $0.id == tag.id }
+                        saveTags()
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.red)
+                        .frame(width: 44, height: 44)
+                        .background(Color.red.opacity(0.1),
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Wallet card
+
+    private func walletCard(_ tag: NFCTag) -> some View {
+        ZStack {
+            // Gradient background
+            LinearGradient(colors: tag.cardGradient,
+                           startPoint: .topLeading,
+                           endPoint: .bottomTrailing)
+
+            // Decorative NFC waves
+            HStack {
+                Spacer()
+                Image(systemName: "wave.3.right")
+                    .font(.system(size: 90, weight: .ultraLight))
+                    .foregroundStyle(.white.opacity(0.08))
+                    .offset(x: 20, y: 0)
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: 0) {
+                // Top row
+                HStack(alignment: .top) {
+                    Text("PRVIO")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .tracking(3)
+                    Spacer()
+                    Image(systemName: tag.icon)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+
+                Spacer()
+
+                // Tag name
+                Text(tag.name)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                Spacer().frame(height: 10)
+
+                // Bottom row
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tag.typeLabel.uppercased())
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .tracking(1.5)
+                        Text(tag.linkedName.isEmpty ? "Standalone" : tag.linkedName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.88))
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Text(tag.uid.prefix(12).uppercased())
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+            }
+            .padding(22)
+        }
+        .frame(height: 175)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: (tag.cardGradient.first ?? .blue).opacity(0.45),
+                radius: 14, y: 7)
+    }
+
+    // MARK: - Add to Apple Wallet
+
+    private func addTagToWallet(_ tag: NFCTag) async {
+        addingTagId = tag.id
+        defer { addingTagId = nil }
+
+        do {
+            try await WalletPassService.shared.addNFCTagToWallet(tag: tag)
+        } catch {
+            walletErrorMsg = error.localizedDescription
+            showWalletError = true
         }
     }
 
@@ -114,75 +278,6 @@ struct NFCWalletView: View {
             showAddSheet = true
         }
     }
-
-    // MARK: - Tag card
-
-    private func tagCard(_ tag: NFCTag) -> some View {
-        GlassCard(padding: 16) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(tag.typeColor.opacity(0.14))
-                        .frame(width: 50, height: 50)
-                    Image(systemName: tag.icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(tag.typeColor)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(tag.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    HStack(spacing: 5) {
-                        Image(systemName: "wave.3.right")
-                            .font(.system(size: 9))
-                        Text(tag.typeLabel)
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(tag.typeColor)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(tag.typeColor.opacity(0.1), in: Capsule())
-
-                    if !tag.linkedName.isEmpty {
-                        Label(tag.linkedName, systemImage: "link")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer()
-
-                VStack(spacing: 4) {
-                    Button {
-                        rescanTag(tag)
-                    } label: {
-                        Image(systemName: "wave.3.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.blue)
-                            .frame(width: 36, height: 36)
-                            .background(Color.blue.opacity(0.1),
-                                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(relativeDate(tag.scannedAt))
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.35))
-                }
-            }
-        }
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                HapticFeedback.warning()
-                tags.removeAll { $0.id == tag.id }
-                saveTags()
-            } label: { Label("Delete", systemImage: "trash") }
-        }
-    }
-
-    // MARK: - Rescan (update last scanned date)
 
     private func rescanTag(_ tag: NFCTag) {
         guard NFCScanService.isSupported else { return }
@@ -242,14 +337,6 @@ struct NFCWalletView: View {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let saved = try? JSONDecoder().decode([NFCTag].self, from: data) else { return }
         tags = saved
-    }
-
-    private func relativeDate(_ date: Date) -> String {
-        let cal = Calendar.current
-        if cal.isDateInToday(date) { return "Today" }
-        if cal.isDateInYesterday(date) { return "Yesterday" }
-        let df = DateFormatter(); df.dateStyle = .short
-        return df.string(from: date)
     }
 }
 

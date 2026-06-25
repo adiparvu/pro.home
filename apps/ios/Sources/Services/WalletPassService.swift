@@ -52,6 +52,49 @@ final class WalletPassService: ObservableObject {
         }
     }
 
+    // MARK: - NFC Tag → Apple Wallet
+
+    func addNFCTagToWallet(tag: NFCTag) async throws {
+        struct NFCTagPassRequest: Encodable {
+            let tagId: String
+            let tagName: String
+            let linkedType: String
+            let linkedName: String
+            let uid: String
+        }
+
+        let payload = NFCTagPassRequest(
+            tagId: tag.id.uuidString,
+            tagName: tag.name,
+            linkedType: tag.linkedType,
+            linkedName: tag.linkedName,
+            uid: tag.uid
+        )
+
+        let passData: Data = try await supabase.functions
+            .invoke("sign-pass", options: .init(body: payload))
+
+        // Edge function returns error JSON when certs not configured
+        if let json = try? JSONSerialization.jsonObject(with: passData) as? [String: Any],
+           let errorMsg = json["error"] as? String {
+            throw NSError(domain: "WalletPass", code: 503,
+                          userInfo: [NSLocalizedDescriptionKey: errorMsg])
+        }
+
+        let pass = try PKPass(data: passData)
+        guard let addVC = PKAddPassesViewController(pass: pass) else { return }
+
+        await MainActor.run {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let root = windowScene.windows.first?.rootViewController else { return }
+            var presenter = root
+            while let presented = presenter.presentedViewController {
+                presenter = presented
+            }
+            presenter.present(addVC, animated: true)
+        }
+    }
+
     // MARK: - Contractor / Guest pass metadata builder
     // Returns a JSON dict that your server signs into a .pkpass
 
