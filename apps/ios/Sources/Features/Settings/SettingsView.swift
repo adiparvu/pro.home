@@ -308,14 +308,12 @@ struct SettingsView: View {
                 SupervisionView()
                     .environmentObject(familyService)
             }
-            NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Family Chat") {
+            NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
                 Group {
-                    if let propId = propertyService.primary?.id {
-                        ChatView()
-                            .environmentObject(familyService)
-                            .environmentObject(messageService)
+                    if propertyService.primary?.id != nil {
+                        ConversationsView()
                     } else {
-                        SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Family Chat", description: "Add a property first to start chatting.")
+                        SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Chat", description: "Adaugă o proprietate pentru a putea trimite mesaje.")
                     }
                 }
             }

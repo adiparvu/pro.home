@@ -144,7 +144,7 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         switch self {
         case .aria:       return UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA"
         case .newTask:    return String(localized: "New Task")
-        case .chat:       return String(localized: "Family Chat")
+        case .chat:       return String(localized: "Chat")
         case .scan:       return String(localized: "Scan")
         case .addItem:    return String(localized: "Add Object")
         case .addExpense: return String(localized: "New Transaction")

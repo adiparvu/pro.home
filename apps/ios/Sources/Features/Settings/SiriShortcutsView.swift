@@ -84,7 +84,7 @@ struct SiriShortcutsView: View {
         ("cart.fill",     Color(red: 0.35, green: 0.65, blue: 1.0),
          "Shopping List", ["\"Open shopping in PRVIO\"", "\"Shopping list PRVIO\""]),
         ("message.fill",  Color(red: 0.2, green: 0.55, blue: 0.95),
-         "Family Chat",   ["\"Open family chat in PRVIO\"", "\"Family chat PRVIO\""]),
+         "Chat",          ["\"Open chat in PRVIO\"", "\"Chat PRVIO\""]),
         ("sparkles",      Color(red: 0.55, green: 0.35, blue: 0.95),
          "Ask ARIA",      ["\"Ask ARIA in PRVIO\"", "\"Talk to PRVIO\""]),
     ]

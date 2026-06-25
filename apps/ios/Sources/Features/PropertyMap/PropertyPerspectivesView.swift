@@ -227,7 +227,7 @@ struct PropertyPerspectivesView: View {
             ]
         case "tenant":
             tips = [
-                "Contact your owner from Family Chat.",
+                "Contact your owner from Chat.",
                 "Shared tasks appear in your Tasks tab.",
                 "Document your lease under Documents.",
             ]
@@ -240,7 +240,7 @@ struct PropertyPerspectivesView: View {
             tips = [
                 "View maintenance tasks assigned to you in the Tasks tab.",
                 "Appliance manuals are stored in Documents.",
-                "Contact the owner via Family Chat.",
+                "Contact the owner via Chat.",
             ]
         }
 

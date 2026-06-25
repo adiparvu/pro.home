@@ -29,6 +29,7 @@ struct MainTabView: View {
     @StateObject private var paintColorService = PaintColorService()
     @StateObject private var propertyValueService = PropertyValueService()
     @StateObject private var contractorService = ContractorService()
+    @StateObject private var directMessageService = DirectMessageService()
     @StateObject private var proactiveEngine = ProactiveEngine()
     @StateObject private var tabBarVis = TabBarVisibility()
     @EnvironmentObject private var router: AppRouter
@@ -93,11 +94,17 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $router.showFamilyChat) {
             NavigationStack {
-                ChatView()
+                ConversationsView()
+                    .environmentObject(messageService)
+                    .environmentObject(directMessageService)
                     .environmentObject(familyService)
                     .environmentObject(propertyService)
-                    .environmentObject(messageService)
+                    .environmentObject(profileService)
+                    .environmentObject(stickerService)
+                    .environmentObject(tabBarVis)
+                    .environmentObject(router)
             }
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showDocuments) {
             NavigationStack {
@@ -176,6 +183,7 @@ struct MainTabView: View {
         .environmentObject(paintColorService)
         .environmentObject(propertyValueService)
         .environmentObject(contractorService)
+        .environmentObject(directMessageService)
         .environmentObject(proactiveEngine)
         .task {
             await currencyService.refresh()

@@ -95,9 +95,9 @@ struct ChatView: View {
                         withAnimation { showMentionPicker.toggle() }
                     }
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(String(localized: "Family Chat"))
+                        Text(String(localized: "Chat Grup"))
                             .font(.system(size: 16, weight: .semibold))
-                        Text("Group · \(familyService.members.count + 1) members")
+                        Text("Grup · \(familyService.members.count + 1) membri")
                             .font(.system(size: 11))
                             .foregroundStyle(Color.primary.opacity(0.45))
                     }
@@ -206,7 +206,7 @@ struct ChatView: View {
             }
         }
         .userActivity("com.prvio.chat") { activity in
-            activity.title = String(localized: "Chat familie — PRVIO")
+            activity.title = String(localized: "Chat — PRVIO")
             activity.userInfo = ["tab": "chat"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = false
