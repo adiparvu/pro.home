@@ -240,7 +240,7 @@ final class MessageService: ObservableObject {
     func subscribeReactions(propertyId: UUID) async {
         let channel = await supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
         let changes = await channel.postgresChange(
-            AnyAction.self,
+            InsertAction.self,
             schema: "public",
             table: "message_reactions",
             filter: "property_id=eq.\(propertyId.uuidString)"
