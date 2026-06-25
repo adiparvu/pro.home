@@ -35,7 +35,6 @@ struct ChatView: View {
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @StateObject private var audioRecorder = ChatAudioRecorder()
-    @GestureState private var micPressing = false
 
     var propertyId: UUID? { propertyService.primary?.id }
 
@@ -158,13 +157,6 @@ struct ChatView: View {
             if newValue.hasSuffix("@") && !showMentionPicker {
                 text = String(newValue.dropLast())
                 showMentionPicker = true
-            }
-        }
-        .onChange(of: micPressing) { _, pressing in
-            if !pressing && audioRecorder.isRecording {
-                if let url = audioRecorder.stop() {
-                    Task { await sendAudio(url: url) }
-                }
             }
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
@@ -427,18 +419,33 @@ struct ChatView: View {
                             // Mic button — hold to record
                             ZStack {
                                 Circle()
-                                    .fill(Color.primary.opacity(0.12))
+                                    .fill(audioRecorder.isRecording ? Color.red.opacity(0.15) : Color.primary.opacity(0.12))
                                     .frame(width: 30, height: 30)
-                                Image(systemName: "mic.fill")
+                                Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
                                     .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(Color.primary.opacity(0.45))
+                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(0.45))
+                                    .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
                             }
                             .gesture(
                                 LongPressGesture(minimumDuration: 0.3)
-                                    .updating($micPressing) { value, state, _ in state = value }
                                     .onEnded { _ in
-                                        Task { @MainActor in audioRecorder.start() }
+                                        guard !audioRecorder.isRecording else { return }
+                                        audioRecorder.start()
                                         HapticFeedback.impact(.medium)
+                                    }
+                            )
+                            .simultaneousGesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onEnded { val in
+                                        guard audioRecorder.isRecording else { return }
+                                        if val.translation.width < -60 {
+                                            _ = audioRecorder.stop()
+                                            HapticFeedback.warning()
+                                        } else {
+                                            if let url = audioRecorder.stop() {
+                                                Task { await sendAudio(url: url) }
+                                            }
+                                        }
                                     }
                             )
                         } else {
@@ -449,11 +456,11 @@ struct ChatView: View {
                             } label: {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.primary)
+                                        .fill(Color.accentColor)
                                         .frame(width: 30, height: 30)
                                     Image(systemName: isSending ? "stop.fill" : "arrow.up")
                                         .font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(Color(UIColor.systemBackground))
+                                        .foregroundStyle(.white)
                                 }
                             }
                             .buttonStyle(.plain)

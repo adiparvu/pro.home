@@ -68,7 +68,6 @@ struct VoiceRecordButton: View {
     @ObservedObject var recorder: ChatAudioRecorder
     let onSend: (URL) -> Void
 
-    @GestureState private var isPressing = false
     @State private var cancelled = false
 
     var body: some View {
@@ -99,34 +98,27 @@ struct VoiceRecordButton: View {
         }
         .gesture(
             LongPressGesture(minimumDuration: 0.3)
-                .updating($isPressing) { value, state, _ in state = value }
                 .onEnded { _ in
+                    guard !recorder.isRecording else { return }
                     cancelled = false
-                    Task { @MainActor in recorder.start() }
+                    recorder.start()
                     HapticFeedback.impact(.medium)
                 }
         )
         .simultaneousGesture(
-            DragGesture(minimumDistance: 40)
+            DragGesture(minimumDistance: 0)
                 .onChanged { val in
-                    if val.translation.width < -60 && recorder.isRecording {
+                    if val.translation.width < -60 && recorder.isRecording && !cancelled {
                         cancelled = true
                         _ = recorder.stop()
                         HapticFeedback.warning()
                     }
                 }
                 .onEnded { _ in
-                    guard !cancelled else { cancelled = false; return }
-                    if recorder.isRecording, let url = recorder.stop() {
-                        onSend(url)
-                    }
+                    guard recorder.isRecording, !cancelled else { cancelled = false; return }
+                    if let url = recorder.stop() { onSend(url) }
                 }
         )
-        .onChange(of: isPressing) { _, pressing in
-            if !pressing && recorder.isRecording && !cancelled {
-                if let url = recorder.stop() { onSend(url) }
-            }
-        }
     }
 }
 
