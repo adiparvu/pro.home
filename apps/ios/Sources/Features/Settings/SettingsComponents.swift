@@ -27,17 +27,14 @@ struct NavSettingsRow<D: View>: View {
     let color: Color
     let label: LocalizedStringKey
     @ViewBuilder let destination: () -> D
-    @State private var iconBounce = false
-    @State private var isPresented = false
 
     var body: some View {
         VStack(spacing: 0) {
-            Button {
-                iconBounce.toggle()
-                isPresented = true
+            NavigationLink {
+                destination()
             } label: {
                 HStack(spacing: 12) {
-                    ColoredIconBadge(icon: icon, color: color, bounce: iconBounce)
+                    ColoredIconBadge(icon: icon, color: color)
                     Text(label)
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
@@ -56,9 +53,6 @@ struct NavSettingsRow<D: View>: View {
                 .fill(Color.primary.opacity(0.06))
                 .frame(height: 0.4)
                 .padding(.leading, 52)
-        }
-        .navigationDestination(isPresented: $isPresented) {
-            destination()
         }
     }
 }
