@@ -231,7 +231,7 @@ final class IoTService: ObservableObject {
             let path = device.apiPath.isEmpty ? "/sensors" : device.apiPath
             guard let url = URL(string: "\(device.baseURL)\(path)") else { return false }
             do {
-                let (_, resp) = try await URLSession.shared.data(from: URLRequest(url: url, timeoutInterval: 4))
+                let (_, resp) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 4))
                 return (resp as? HTTPURLResponse)?.statusCode == 200
             } catch { return false }
         case .modbusTCP:

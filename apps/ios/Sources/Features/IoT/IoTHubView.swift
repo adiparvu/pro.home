@@ -48,7 +48,7 @@ struct IoTHubView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 14) {
                     if service.isPolling {
-                        ProgressView().tint(.accentColor).scaleEffect(0.85)
+                        ProgressView().tint(Color.accentColor).scaleEffect(0.85)
                     } else {
                         Button { Task { await service.pollAllDevices() } } label: {
                             Image(systemName: "arrow.clockwise")
@@ -59,7 +59,7 @@ struct IoTHubView: View {
                     Button { addAction() } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 19, weight: .medium))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
             }
@@ -77,7 +77,7 @@ struct IoTHubView: View {
             }
         }
         .sheet(isPresented: $showAddAutomation) {
-            AddAutomationSheet(sensors: service.sensors) { automation in
+            AddIoTAutomationSheet(sensors: service.sensors) { automation in
                 service.addAutomation(automation)
             }
         }
@@ -311,7 +311,7 @@ struct IoTHubView: View {
                         .frame(width: 42, height: 42)
                     Image(systemName: auto.action.icon)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -333,7 +333,7 @@ struct IoTHubView: View {
                     set: { _ in service.toggleAutomation(auto) }
                 ))
                 .labelsHidden()
-                .tint(.accentColor)
+                .tint(Color.accentColor)
             }
         }
         .swipeActions(edge: .trailing) {

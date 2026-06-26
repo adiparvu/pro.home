@@ -483,9 +483,9 @@ struct SensorDetailSheet: View {
     }
 }
 
-// MARK: - Add Automation Sheet
+// MARK: - Add IoT Automation Sheet
 
-struct AddAutomationSheet: View {
+struct AddIoTAutomationSheet: View {
     let sensors: [IoTSensor]
     var onAdd: (IoTAutomation) -> Void
 
@@ -556,7 +556,7 @@ struct AddAutomationSheet: View {
                             .foregroundStyle(.secondary)
                         Text("THEN \(action.rawValue)")
                             .font(.footnote)
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
             }
