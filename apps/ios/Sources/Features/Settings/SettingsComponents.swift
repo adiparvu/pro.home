@@ -51,14 +51,14 @@ struct NavSettingsRow<D: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .navigationDestination(isPresented: $isPresented) {
-                destination()
-            }
 
             Rectangle()
                 .fill(Color.primary.opacity(0.06))
                 .frame(height: 0.4)
                 .padding(.leading, 52)
+        }
+        .navigationDestination(isPresented: $isPresented) {
+            destination()
         }
     }
 }
