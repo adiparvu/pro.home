@@ -39,8 +39,11 @@ final class FamilyControlsService: ObservableObject {
     // MARK: - App restrictions (example: lock destructive actions)
 
     func lockDestructiveActions() {
-        // In a real implementation, use ActivitySelection + ManagedSettings
-        // to prevent deletion of zones, documents, etc. for child accounts.
-        // The ManagedSettingsStore controls what apps and content are accessible.
+        guard isAuthorized else { return }
+        // TODO: Apply ManagedSettingsStore restrictions to prevent child accounts
+        // from deleting zones, documents, and other critical data.
+        // Requires ActivitySelection UI (a system picker) which must be triggered
+        // from an explicit user action — cannot run silently in the background.
+        // store.application.blockedApplications = selectedApps
     }
 }

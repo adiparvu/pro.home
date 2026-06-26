@@ -87,8 +87,11 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
     }
 
     deinit {
-        timer?.invalidate()
-        recorder?.stop()
+        // Timer was scheduled on the main RunLoop — must be invalidated there.
+        // Capture both so we don't reference self in the async block.
+        let t = timer
+        let r = recorder
+        DispatchQueue.main.async { t?.invalidate(); r?.stop() }
     }
 
     var durationText: String {
