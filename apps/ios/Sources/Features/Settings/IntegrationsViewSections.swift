@@ -6,15 +6,14 @@ extension IntegrationsView {
 
     var appleEcosystemSection: some View {
         IntegrationGroup(title: "iOS & Apple Ecosystem") {
-            NavigationLink {
-                SiriShortcutsView()
-            } label: {
+            Button { vm.activeSheet = .siriShortcuts } label: {
                 IntegrationRowContent(
                     icon: "mic.fill", color: Color(red: 0.58, green: 0.25, blue: 0.95),
                     title: "Siri & Shortcuts",
                     description: "Create tasks, water plants, and open features with your voice.",
                     status: .deepLink("Configure"))
             }
+            .buttonStyle(.plain)
 
             IntegrationRow(icon: "magnifyingglass", color: Color(red: 0.2, green: 0.6, blue: 0.95),
                 title: "Spotlight Search",
@@ -71,15 +70,14 @@ extension IntegrationsView {
                     }
                 })
 
-            NavigationLink {
-                NFCWalletView()
-            } label: {
+            Button { vm.activeSheet = .nfcWallet } label: {
                 IntegrationRowContent(
                     icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
                     title: "NFC Keys",
                     description: "Scanează și gestionează tag-uri NFC pentru camere și echipamente — acces instant în Digital Twin.",
                     status: NFCScanService.isSupported ? .active("Disponibil") : .notConnected)
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -150,33 +148,30 @@ extension IntegrationsView {
 
     var localControllersSection: some View {
         IntegrationGroup(title: "Local Controllers") {
-            NavigationLink {
-                IoTHubView()
-            } label: {
+            Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "cpu.fill", color: Color(red: 0.05, green: 0.75, blue: 0.45),
                     title: "ESP32",
                     description: "Connect ESP32 microcontrollers via HTTP REST. Auto-discovers sensors from JSON responses.",
                     status: .deepLink("Manage"))
             }
-            NavigationLink {
-                IoTHubView()
-            } label: {
+            .buttonStyle(.plain)
+            Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "server.rack", color: Color(red: 0.85, green: 0.15, blue: 0.35),
                     title: "Raspberry Pi",
                     description: "Poll a Raspberry Pi running Flask or FastAPI for sensor data over HTTP.",
                     status: .deepLink("Manage"))
             }
-            NavigationLink {
-                IoTHubView()
-            } label: {
+            .buttonStyle(.plain)
+            Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
                     icon: "network", color: Color(red: 0.35, green: 0.55, blue: 0.95),
                     title: "RS485 Modbus",
                     description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
                     status: .deepLink("Manage"))
             }
+            .buttonStyle(.plain)
         }
     }
 

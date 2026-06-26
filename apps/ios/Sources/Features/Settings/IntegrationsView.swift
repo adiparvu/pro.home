@@ -52,5 +52,15 @@ struct IntegrationsView: View {
         } message: {
             Text("Please allow access in Settings to enable this integration.")
         }
+        .sheet(item: $vm.activeSheet) { sheet in
+            switch sheet {
+            case .siriShortcuts:
+                NavigationStack { SiriShortcutsView() }
+            case .nfcWallet:
+                NavigationStack { NFCWalletView() }
+            case .iotHub:
+                NavigationStack { IoTHubView() }
+            }
+        }
     }
 }

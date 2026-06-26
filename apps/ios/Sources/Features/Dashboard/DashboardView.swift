@@ -174,7 +174,7 @@ struct DashboardView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 5) {
-                            Text("\(greetingText), \(displayName)!")
+                            Text(displayName.isEmpty ? "\(greetingText)!" : "\(greetingText), \(displayName)!")
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundStyle(.primary)
                             Image(systemName: "chevron.down")

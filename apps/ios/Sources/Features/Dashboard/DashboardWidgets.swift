@@ -312,13 +312,12 @@ extension DashboardView {
     }
 
     var displayName: String {
-        profileService.profile?.preferredName
-            ?? auth.session?.user.email?.components(separatedBy: "@").first?.capitalized
-            ?? "there"
+        profileService.profile?.preferredName ?? ""
     }
 
     var avatarInitial: String {
-        String(displayName.prefix(1).uppercased())
+        let name = profileService.profile?.preferredName ?? profileService.profile?.fullName ?? ""
+        return name.isEmpty ? "" : String(name.prefix(1).uppercased())
     }
 
     var topSafeArea: CGFloat {

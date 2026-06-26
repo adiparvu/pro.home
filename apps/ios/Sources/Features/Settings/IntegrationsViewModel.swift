@@ -13,6 +13,19 @@ enum IntegrationStatus: Equatable {
     case deepLink(String)
 }
 
+// MARK: - Sheet destination
+
+enum IntegrationSheet: Identifiable {
+    case siriShortcuts, nfcWallet, iotHub
+    var id: Int {
+        switch self {
+        case .siriShortcuts: return 1
+        case .nfcWallet:     return 2
+        case .iotHub:        return 3
+        }
+    }
+}
+
 // MARK: - ViewModel
 
 @MainActor
@@ -26,8 +39,10 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var showPermissionDenied = false
     @Published var iCloudAvailable = false
     @Published var applePayAvailable = false
+    @Published var nfcAvailable = false
     @Published var connectedCouriers: Set<String> = []
     @Published var emailImportStatus: IntegrationStatus = .notConnected
+    @Published var activeSheet: IntegrationSheet? = nil
     var tasks: [MaintenanceTask] = []
     var property: PropertyModel? = nil
     var familyMembers: [FamilyMember] = []
