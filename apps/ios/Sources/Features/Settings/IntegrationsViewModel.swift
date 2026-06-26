@@ -58,6 +58,7 @@ final class IntegrationsViewModel: ObservableObject {
         contactsStatus = checkContactsAccess() ? .connected : .notConnected
         iCloudAvailable = CloudKitSyncService.shared.isAvailable
         applePayAvailable = ApplePayService.shared.isAvailable
+        nfcAvailable = NFCScanService.isSupported
         loadCourierStatuses()
         // HomeKit checked lazily — do NOT access HMHomeManager here to avoid
         // a crash when the provisioning profile lacks the HomeKit capability.

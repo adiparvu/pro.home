@@ -75,7 +75,7 @@ extension IntegrationsView {
                     icon: "wave.3.right", color: Color(red: 0.15, green: 0.65, blue: 0.85),
                     title: "NFC Keys",
                     description: "Scanează și gestionează tag-uri NFC pentru camere și echipamente — acces instant în Digital Twin.",
-                    status: NFCScanService.isSupported ? .active("Disponibil") : .notConnected)
+                    status: vm.nfcAvailable ? .active("Disponibil") : .notConnected)
             }
             .buttonStyle(.plain)
         }
