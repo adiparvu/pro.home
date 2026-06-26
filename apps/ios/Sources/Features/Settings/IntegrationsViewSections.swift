@@ -149,10 +149,7 @@ extension IntegrationsView {
     }
 
     var localControllersSection: some View {
-        let esp32Count = iotService.devices.filter { $0.type == .esp32 }.count
-        let piCount    = iotService.devices.filter { $0.type == .raspberryPi }.count
-        let modbusCount = iotService.devices.filter { $0.type == .rs485Modbus }.count
-        return IntegrationGroup(title: "Local Controllers") {
+        IntegrationGroup(title: "Local Controllers") {
             NavigationLink {
                 IoTHubView()
             } label: {
@@ -160,7 +157,7 @@ extension IntegrationsView {
                     icon: "cpu.fill", color: Color(red: 0.05, green: 0.75, blue: 0.45),
                     title: "ESP32",
                     description: "Connect ESP32 microcontrollers via HTTP REST. Auto-discovers sensors from JSON responses.",
-                    status: esp32Count == 0 ? .notConnected : .active("\(esp32Count) active"))
+                    status: .deepLink("Manage"))
             }
             NavigationLink {
                 IoTHubView()
@@ -169,7 +166,7 @@ extension IntegrationsView {
                     icon: "server.rack", color: Color(red: 0.85, green: 0.15, blue: 0.35),
                     title: "Raspberry Pi",
                     description: "Poll a Raspberry Pi running Flask or FastAPI for sensor data over HTTP.",
-                    status: piCount == 0 ? .notConnected : .active("\(piCount) active"))
+                    status: .deepLink("Manage"))
             }
             NavigationLink {
                 IoTHubView()
@@ -178,7 +175,7 @@ extension IntegrationsView {
                     icon: "network", color: Color(red: 0.35, green: 0.55, blue: 0.95),
                     title: "RS485 Modbus",
                     description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
-                    status: modbusCount == 0 ? .notConnected : .active("\(modbusCount) active"))
+                    status: .deepLink("Manage"))
             }
         }
     }
