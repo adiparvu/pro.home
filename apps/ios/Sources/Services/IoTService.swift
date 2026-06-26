@@ -300,7 +300,15 @@ final class IoTService: ObservableObject {
             }
 
         case .createTask:
-            break // handled by view observer via notification
+            NotificationCenter.default.post(
+                name: .init("com.prvio.iot.createTask"),
+                object: nil,
+                userInfo: [
+                    "automationName": auto.name,
+                    "sensorValue": sensor.displayValue,
+                    "sensorName": sensor.name
+                ]
+            )
         }
     }
 }

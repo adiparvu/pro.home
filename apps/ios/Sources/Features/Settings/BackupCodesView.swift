@@ -161,13 +161,16 @@ struct BackupCodesView: View {
     // MARK: - Code generation
 
     private func generateCodesIfNeeded() {
-        // If we have saved hashes, show placeholder codes (already generated)
-        // On fresh open, generate new codes
+        // Don't regenerate if codes are already visible in this session.
+        guard codes.isEmpty else { return }
         if UserDefaults.standard.data(forKey: "prvio.backupCodesHash") == nil {
+            // First time: generate fresh codes.
             generateNewCodes()
         } else {
-            // Show codes from this session (not stored in plain text — they were just generated)
-            generateNewCodes()
+            // Codes were generated in a previous session; codes aren't stored in
+            // plain text (only hashes). Show redacted placeholders so the user
+            // can either use them (if written down) or regenerate.
+            codes = (0..<8).map { _ in "•••••-•••••" }
         }
     }
 

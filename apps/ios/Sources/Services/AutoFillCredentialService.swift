@@ -1,9 +1,49 @@
 import Foundation
+import Security
 import AuthenticationServices
 
 // MARK: - AutoFill Credential Service
 // Stores smart home / property credentials that iOS AutoFill can suggest
 // in Safari and other apps (router admin, camera IP, solar app, etc.)
+
+// MARK: - Keychain helper (credentials contain passwords — never UserDefaults)
+private enum KeychainStore {
+    static let service = "com.prvio.app.autofill"
+    static let account = "credentials"
+
+    static func save(_ data: Data) {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String:   data
+        ]
+        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
+    }
+
+    static func load() -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String:            kSecClassGenericPassword,
+            kSecAttrService as String:      service,
+            kSecAttrAccount as String:      account,
+            kSecReturnData as String:       true,
+            kSecMatchLimit as String:       kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
+        return result as? Data
+    }
+
+    static func delete() {
+        let query: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+}
 
 @MainActor
 final class AutoFillCredentialService: ObservableObject {
@@ -46,8 +86,6 @@ final class AutoFillCredentialService: ObservableObject {
 
     @Published var credentials: [PropertyCredential] = []
 
-    private let storageKey = "prvio.autofill.credentials"
-
     private init() { load() }
 
     func add(_ credential: PropertyCredential) {
@@ -67,15 +105,13 @@ final class AutoFillCredentialService: ObservableObject {
         }
     }
 
-    // Saves to Keychain via UserDefaults (in production: use SecItemAdd)
     private func save() {
-        if let data = try? JSONEncoder().encode(credentials) {
-            UserDefaults(suiteName: "group.com.prvio.app")?.set(data, forKey: storageKey)
-        }
+        guard let data = try? JSONEncoder().encode(credentials) else { return }
+        KeychainStore.save(data)
     }
 
     private func load() {
-        guard let data = UserDefaults(suiteName: "group.com.prvio.app")?.data(forKey: storageKey),
+        guard let data = KeychainStore.load(),
               let saved = try? JSONDecoder().decode([PropertyCredential].self, from: data)
         else { return }
         credentials = saved

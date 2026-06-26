@@ -302,6 +302,9 @@ final class AudioPlayer: ObservableObject {
     }
 
     deinit {
+        if let token = timeObserverToken {
+            player?.removeTimeObserver(token)
+        }
         player?.pause()
         if let obs = endObserver {
             NotificationCenter.default.removeObserver(obs)

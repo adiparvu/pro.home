@@ -1,6 +1,8 @@
 import SwiftUI
 import Foundation
+#if canImport(FoundationModels)
 import FoundationModels
+#endif
 
 // MARK: - Message model (keep same as before for history)
 struct ChatMessage: Identifiable {
@@ -233,6 +235,7 @@ struct LocalAssistantView: View {
         }
     }
 
+    #if canImport(FoundationModels)
     @available(iOS 26.0, *)
     private func respondWithFoundationModels(_ text: String) async -> String {
         let property = propertyService.primary?.name ?? "your property"
@@ -260,6 +263,13 @@ struct LocalAssistantView: View {
             return engine.respond(to: text)
         }
     }
+    #else
+    @available(iOS 26.0, *)
+    private func respondWithFoundationModels(_ text: String) async -> String {
+        try? await Task.sleep(for: .milliseconds(600))
+        return engine.respond(to: text)
+    }
+    #endif
 }
 
 // MARK: - Bubbles

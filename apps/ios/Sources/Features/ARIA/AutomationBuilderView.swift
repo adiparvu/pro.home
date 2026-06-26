@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 // MARK: - AutomationRule Model
 
@@ -541,12 +542,35 @@ struct AutomationBuilderView: View {
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(color.opacity(0.6), lineWidth: 1))
     }
 
+    // MARK: - Test Automation
+
+    private func testActiveRule() {
+        let rule = activeRule
+        let content = UNMutableNotificationContent()
+        content.title = String(format: String(localized: "[Test] %@"), rule.name)
+        content.body = String(format: String(localized: "Trigger: %@ → Action: %@"),
+                              rule.triggerLabel.replacingOccurrences(of: "\n", with: " "),
+                              rule.actionLabel.replacingOccurrences(of: "\n", with: " "))
+        content.sound = .default
+        let request = UNNotificationRequest(
+            identifier: "automation-test-\(UUID().uuidString)",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request)
+        HapticFeedback.success()
+    }
+
     // MARK: - Action Bar
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0)) {}
-            actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45)) {}
+            actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0)) {
+                showAdd = true
+            }
+            actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45)) {
+                testActiveRule()
+            }
             Button {
                 guard !isDeployed else { return }
                 HapticFeedback.success()

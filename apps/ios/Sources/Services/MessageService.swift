@@ -17,6 +17,8 @@ final class MessageService: ObservableObject {
     private var reactionsChannel: RealtimeChannelV2?
 
     func load(propertyId: UUID) async {
+        // Unsubscribe from any previous property's channels before loading new data.
+        await unsubscribeAll()
         isLoading = true
         defer { isLoading = false }
         do {
@@ -145,6 +147,7 @@ final class MessageService: ObservableObject {
             .from("message_reads")
             .upsert(payload, onConflict: "message_id,user_id", ignoreDuplicates: true)
             .execute()
+        unreadCount = 0
     }
 
     /// Subscribes to read receipt changes so the sender sees "seen" updates live.
@@ -258,5 +261,11 @@ final class MessageService: ObservableObject {
             await supabase.realtimeV2.removeChannel(ch)
             reactionsChannel = nil
         }
+    }
+
+    func unsubscribeAll() async {
+        await unsubscribe()
+        await unsubscribeReads()
+        await unsubscribeReactions()
     }
 }

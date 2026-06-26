@@ -32,7 +32,7 @@ struct ProactiveInsight: Identifiable, Codable {
 final class ProactiveEngine: ObservableObject {
     @Published var insights: [ProactiveInsight] = []
 
-    nonisolated(unsafe) static var shared: ProactiveEngine?
+    @MainActor static var shared: ProactiveEngine?
 
     static let bgTaskId = "com.prvio.app.proactive"
     private static let insightsKey        = "prvio.proactive.insights_v1"

@@ -9,9 +9,12 @@ final class AuthService: ObservableObject {
     @Published var session: Session?
     @Published var isLoading = true
 
+    private var sessionTask: Task<Void, Never>?
+    private var authChangesTask: Task<Void, Never>?
+
     private init() {
-        Task { await loadSession() }
-        Task { await listenToAuthChanges() }
+        sessionTask     = Task { await loadSession() }
+        authChangesTask = Task { await listenToAuthChanges() }
     }
 
     private func loadSession() async {

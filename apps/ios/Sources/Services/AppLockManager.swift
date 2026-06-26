@@ -109,6 +109,7 @@ final class AppLockManager: ObservableObject {
                 isLocked = false
                 authFailed = false
                 backgroundedAt = nil
+                authContext?.invalidate()
                 authContext = nil
             } else {
                 authFailed = true
@@ -132,6 +133,7 @@ final class AppLockManager: ObservableObject {
 
     private func engageLock() {
         // Reset per-session state.
+        authContext?.invalidate()
         authContext = nil
         authFailed = false
         isLocked = true

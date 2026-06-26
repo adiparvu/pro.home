@@ -56,9 +56,10 @@ final class IntegrationsViewModel: ObservableObject {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
         remindersStatus = await checkRemindersAccess() ? .connected : .notConnected
         contactsStatus = checkContactsAccess() ? .connected : .notConnected
-        // CloudKitSyncService.shared is NOT accessed here — CKContainer(identifier:)
-        // throws NSInvalidArgumentException if the provisioning profile lacks the
-        // iCloud container entitlement, crashing the app on every navigation.
+        // Use FileManager to detect iCloud sign-in without touching CKContainer.
+        // CKContainer(identifier:) throws NSInvalidArgumentException when the
+        // provisioning profile lacks the iCloud container entitlement.
+        iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil
         applePayAvailable = ApplePayService.shared.isAvailable
         nfcAvailable = NFCScanService.isSupported
         loadCourierStatuses()

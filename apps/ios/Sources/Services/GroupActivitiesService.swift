@@ -65,8 +65,12 @@ final class GroupActivitiesService: ObservableObject {
         self.messenger = messenger
 
         let t = Task {
-            for await (_, _) in messenger.messages(of: String.self) {
-                // handle real-time messages (camera position, selection, etc.)
+            for await (message, _) in messenger.messages(of: String.self) {
+                // Handle real-time messages (camera position, selection, etc.)
+                // Extend this block when a shared-state protocol is defined.
+                #if DEBUG
+                print("[GroupActivities] received message: \(message)")
+                #endif
             }
         }
         tasks.insert(t)

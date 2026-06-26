@@ -1,5 +1,39 @@
 import SwiftUI
 import UIKit
+import Security
+
+// MARK: - WiFi password stored in Keychain (never UserDefaults)
+
+private enum GuestWiFiKeychain {
+    static let service = "com.prvio.app.guest"
+    static let account = "wifi_password"
+
+    static func load() -> String {
+        let q: [String: Any] = [
+            kSecClass as String:        kSecClassGenericPassword,
+            kSecAttrService as String:  service,
+            kSecAttrAccount as String:  account,
+            kSecReturnData as String:   true,
+            kSecMatchLimit as String:   kSecMatchLimitOne
+        ]
+        var ref: AnyObject?
+        guard SecItemCopyMatching(q as CFDictionary, &ref) == errSecSuccess,
+              let data = ref as? Data else { return "" }
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    static func save(_ password: String) {
+        let data = Data(password.utf8)
+        let q: [String: Any] = [
+            kSecClass as String:        kSecClassGenericPassword,
+            kSecAttrService as String:  service,
+            kSecAttrAccount as String:  account,
+            kSecValueData as String:    data
+        ]
+        SecItemDelete(q as CFDictionary)
+        if !password.isEmpty { SecItemAdd(q as CFDictionary, nil) }
+    }
+}
 
 // MARK: - GuestModeView
 
@@ -7,7 +41,7 @@ struct GuestModeView: View {
     @EnvironmentObject private var propertyService: PropertyService
 
     @AppStorage("prvio.guest.wifi_name") private var wifiName = ""
-    @AppStorage("prvio.guest.wifi_pass") private var wifiPass = ""
+    @State private var wifiPass: String = GuestWiFiKeychain.load()
     @AppStorage("prvio.guest.rules") private var houseRules = ""
     @AppStorage("prvio.guest.notes") private var guestNotes = ""
 
@@ -33,6 +67,7 @@ struct GuestModeView: View {
         }
         .navigationTitle("Guest Mode")
         .navigationBarTitleDisplayMode(.large)
+        .onChange(of: wifiPass) { _, newVal in GuestWiFiKeychain.save(newVal) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

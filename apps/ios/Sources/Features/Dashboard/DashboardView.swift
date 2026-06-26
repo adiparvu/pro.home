@@ -232,9 +232,9 @@ struct DashboardView: View {
     // MARK: - Aerial background (drone photo or canvas illustration)
 
     @ViewBuilder private var aerialBackground: some View {
-        if propertyService.primary?.photoUrl != nil {
+        if let primary = propertyService.primary, primary.photoUrl != nil {
             AerialCanvasView(
-                property: propertyService.primary!,
+                property: primary,
                 zones: zoneService.zones,
                 elements: elementService.elements
             )

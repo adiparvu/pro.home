@@ -44,11 +44,12 @@ final class WalletPassService: ObservableObject {
     func openPass(passTypeIdentifier: String, serialNumber: String) {
         guard PKPassLibrary.isPassLibraryAvailable() else { return }
         let library = PKPassLibrary()
-        if let pass = library.passes().first(where: {
+        guard library.passes().contains(where: {
             $0.passTypeIdentifier == passTypeIdentifier && $0.serialNumber == serialNumber
-        }) {
-            library.openPaymentSetup()
-            _ = pass
+        }) else { return }
+        // Open the Wallet app so the user can locate the pass.
+        if let url = URL(string: "shoebox://") ?? URL(string: "wallet://") {
+            UIApplication.shared.open(url)
         }
     }
 

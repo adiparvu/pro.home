@@ -42,10 +42,10 @@ final class SpeechRecognizer: ObservableObject {
             guard let self else { return }
             if let result {
                 let text = result.bestTranscription.formattedString
-                Task { @MainActor in self.transcript = text }
+                Task { @MainActor [weak self] in self?.transcript = text }
             }
             if error != nil || result?.isFinal == true {
-                Task { @MainActor in self.stop() }
+                Task { @MainActor [weak self] in self?.stop() }
             }
         }
     }
