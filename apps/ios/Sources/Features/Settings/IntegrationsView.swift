@@ -7,28 +7,57 @@ struct IntegrationsView: View {
     @StateObject var vm = IntegrationsViewModel()
 
     var body: some View {
-        List {
-            Section("iOS & Apple Ecosystem") {
-                Label("Siri & Shortcuts", systemImage: "mic.fill")
-                Label("Apple Calendar", systemImage: "calendar")
-                Label("Apple Reminders", systemImage: "checklist")
-                Label("Apple Contacts", systemImage: "person.2.fill")
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                appleEcosystemSection
+                productivitySection
+                localControllersSection
+                smartHomeSection
+                paymentsSection
+                securitySection
+                financeSection
+                rentalsSection
+                deliveriesSection
+                energySection
+
+                Spacer(minLength: 110)
             }
-            Section("Smart Home") {
-                Label("Apple HomeKit", systemImage: "homekit")
-            }
-            Section("Payments") {
-                Label("Apple Pay", systemImage: "creditcard.fill")
-            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
         }
-        .listStyle(.insetGrouped)
+        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Integrations")
         .navigationBarTitleDisplayMode(.large)
-        // NO .task modifiers — no service access at all
+        .task { await vm.checkStatuses() }
+        .task { vm.tasks = taskService.tasks }
+        .task { vm.property = propertyService.primary }
+        .task { vm.familyMembers = familyService.members }
+        .alert("Calendar Sync Enabled", isPresented: $vm.showCalendarSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Your upcoming tasks will appear in your Apple Calendar under the \"PRVIO\" calendar.")
+        }
+        .alert("Contacts Synced", isPresented: $vm.showContactsSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Family members have been added to your Contacts under the \"PRVIO Family\" group.")
+        }
         .alert("Access Denied", isPresented: $vm.showPermissionDenied) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Please allow access in Settings.")
+            Text("Please allow access in Settings to enable this integration.")
+        }
+        .sheet(item: $vm.activeSheet) { sheet in
+            switch sheet {
+            case .siriShortcuts: NavigationStack { SiriShortcutsView() }
+            case .nfcWallet:     NavigationStack { NFCWalletView() }
+            case .iotHub:        NavigationStack { IoTHubView() }
+            }
         }
     }
 }
