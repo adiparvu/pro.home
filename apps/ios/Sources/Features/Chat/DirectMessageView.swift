@@ -15,10 +15,14 @@ struct DirectMessageView: View {
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
+    @State private var showCameraPicker = false
+    @State private var showAttachmentTray = false
     @State private var showProfile = false
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
     @State private var isSending = false
+    @StateObject private var audioRecorder = ChatAudioRecorder()
+    @State private var recordingCancelled = false
 
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
@@ -26,6 +30,10 @@ struct DirectMessageView: View {
 
     private var conversationMessages: [DirectMessage] {
         directMessageService.messages(with: member.name, myName: myName)
+    }
+
+    private var isTextEmpty: Bool {
+        input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
@@ -41,9 +49,7 @@ struct DirectMessageView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Button {
-                    showProfile = true
-                } label: {
+                Button { showProfile = true } label: {
                     HStack(spacing: 8) {
                         ZStack {
                             Circle()
@@ -69,6 +75,12 @@ struct DirectMessageView: View {
         .sheet(isPresented: $showProfile) {
             MemberProfileSheet(member: member)
                 .environmentObject(familyService)
+        }
+        .fullScreenCover(isPresented: $showCameraPicker) {
+            DMCameraPickerView(isPresented: $showCameraPicker) { img in
+                Task { await sendCameraImage(img) }
+            }
+            .ignoresSafeArea()
         }
         .onAppear { directMessageService.markRead(partner: member.name) }
         .alert("Message Not Sent", isPresented: .init(
@@ -155,59 +167,203 @@ struct DirectMessageView: View {
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Button {
-                    showPhotoPicker = true
-                } label: {
-                    Label("Fotografie", systemImage: "photo")
+        VStack(spacing: 0) {
+            if showAttachmentTray {
+                dmAttachmentTray
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            HStack(alignment: .bottom, spacing: 10) {
+                plusButton
+
+                if audioRecorder.isRecording {
+                    recordingIndicator
+                } else {
+                    textField
                 }
-            } label: {
+
+                rightButtons
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.regularMaterial)
+        }
+        .animation(.spring(duration: 0.25), value: isTextEmpty)
+        .animation(.spring(duration: 0.25), value: audioRecorder.isRecording)
+        .animation(.spring(duration: 0.3), value: showAttachmentTray)
+        .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
+                      maxSelectionCount: 1, matching: .images)
+        .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
+    }
+
+    private var plusButton: some View {
+        Button {
+            withAnimation(.spring(duration: 0.3)) {
+                showAttachmentTray.toggle()
+                if showAttachmentTray { focused = false }
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color.primary.opacity(0.07))
+                    .frame(width: 34, height: 34)
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.5))
-                    .frame(width: 34, height: 34)
-                    .background(Color.primary.opacity(0.07), in: Circle())
+                    .foregroundStyle(showAttachmentTray ? Color.accentColor : Color.primary.opacity(0.5))
+                    .rotationEffect(.degrees(showAttachmentTray ? 45 : 0))
             }
-            .buttonStyle(.plain)
+        }
+        .buttonStyle(.plain)
+    }
 
-            TextField("Mesaj…", text: $input, axis: .vertical)
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-                .tint(.accentColor)
-                .lineLimit(1...5)
-                .focused($focused)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .liquidGlass(cornerRadius: 20)
-
-            Button {
-                Task { await sendMessage() }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                              ? Color.primary.opacity(0.1) : Color.accentColor)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(
-                            input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                ? Color.primary.opacity(0.3) : .white
-                        )
+    private var textField: some View {
+        TextField("Message…", text: $input, axis: .vertical)
+            .font(.system(size: 15))
+            .foregroundStyle(.primary)
+            .tint(.accentColor)
+            .lineLimit(1...5)
+            .focused($focused)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .liquidGlass(cornerRadius: 20)
+            .onChange(of: input) { _, val in
+                if !val.isEmpty, showAttachmentTray {
+                    withAnimation { showAttachmentTray = false }
                 }
             }
-            .buttonStyle(.plain)
-            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+    }
+
+    private var recordingIndicator: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 8, height: 8)
+                .symbolEffect(.pulse)
+            Text(audioRecorder.durationText)
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+            Spacer()
+            Image(systemName: "lessthan")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(0.3))
+            Text("Slide to cancel")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.primary.opacity(0.4))
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial)
-        .photosPicker(isPresented: $showPhotoPicker,
-                      selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
-        .onChange(of: photoPickerItems) { _, items in
-            Task { await sendPhoto(items) }
+        .padding(.vertical, 9)
+        .liquidGlass(cornerRadius: 20)
+    }
+
+    @ViewBuilder
+    private var rightButtons: some View {
+        if audioRecorder.isRecording {
+            micButton
+        } else if isTextEmpty {
+            HStack(spacing: 6) {
+                cameraButton
+                micButton
+            }
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                removal: .opacity.combined(with: .scale(scale: 0.8))
+            ))
+        } else {
+            sendButton
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                    removal: .opacity.combined(with: .scale(scale: 0.8))
+                ))
         }
+    }
+
+    private var cameraButton: some View {
+        Button {
+            withAnimation { showAttachmentTray = false }
+            showCameraPicker = true
+        } label: {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.55))
+                .frame(width: 34, height: 34)
+                .background(Color.primary.opacity(0.07), in: Circle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var micButton: some View {
+        ZStack {
+            Circle()
+                .fill(audioRecorder.isRecording ? Color.red.opacity(0.12) : Color.primary.opacity(0.07))
+                .frame(width: 34, height: 34)
+            Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(0.55))
+                .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
+        }
+        .gesture(
+            LongPressGesture(minimumDuration: 0.3)
+                .onEnded { _ in
+                    guard !audioRecorder.isRecording else { return }
+                    recordingCancelled = false
+                    audioRecorder.start()
+                    HapticFeedback.impact(.medium)
+                }
+        )
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { val in
+                    if val.translation.width < -60 && audioRecorder.isRecording && !recordingCancelled {
+                        recordingCancelled = true
+                        _ = audioRecorder.stop()
+                        HapticFeedback.warning()
+                    }
+                }
+                .onEnded { _ in
+                    guard audioRecorder.isRecording, !recordingCancelled else {
+                        recordingCancelled = false
+                        return
+                    }
+                    if let url = audioRecorder.stop() {
+                        Task { await sendAudio(url) }
+                    }
+                }
+        )
+    }
+
+    private var sendButton: some View {
+        Button {
+            Task { await sendMessage() }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor)
+                    .frame(width: 34, height: 34)
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isSending)
+    }
+
+    private var dmAttachmentTray: some View {
+        HStack(spacing: 28) {
+            DMAttachmentOption(icon: "photo.on.rectangle.angled", label: "Gallery", color: .purple) {
+                withAnimation { showAttachmentTray = false }
+                showPhotoPicker = true
+            }
+            DMAttachmentOption(icon: "camera.fill", label: "Camera", color: .blue) {
+                withAnimation { showAttachmentTray = false }
+                showCameraPicker = true
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 16)
+        .background(.regularMaterial)
     }
 
     // MARK: - Send
@@ -254,13 +410,23 @@ struct DirectMessageView: View {
 
     private func sendPhoto(_ items: [PhotosPickerItem]) async {
         guard let item = items.first else { return }
+        photoPickerItems = []
         guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-        let filename = "\(UUID().uuidString).jpg"
+        await uploadAndSendImage(data: data)
+    }
 
+    private func sendCameraImage(_ image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+        await uploadAndSendImage(data: data)
+    }
+
+    private func uploadAndSendImage(data: Data) async {
         guard let propId = propertyService.primary?.id else { return }
+        let filename = "dm-images/\(UUID().uuidString).jpg"
 
         do {
-            try await supabase.storage.from("documents").upload(filename, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            try await supabase.storage.from("documents")
+                .upload(filename, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
             let urlStr = (try? supabase.storage.from("documents").getPublicURL(path: filename))?.absoluteString ?? ""
             guard !urlStr.isEmpty else { return }
 
@@ -271,24 +437,54 @@ struct DirectMessageView: View {
                 let property_id: String
             }
 
-            let payload = PhotoPayload(
-                sender_name: myName,
-                recipient_name: member.name,
-                body: urlStr,
-                property_id: propId.uuidString
-            )
-
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
-                .insert(payload)
+                .insert(PhotoPayload(sender_name: myName, recipient_name: member.name,
+                                     body: urlStr, property_id: propId.uuidString))
                 .select()
                 .single()
                 .execute()
                 .value
             directMessageService.dms.append(sent)
+            HapticFeedback.impact(.light)
         } catch {
 #if DEBUG
-            print("[DM] photo error: \(error)")
+            print("[DM] image error: \(error)")
+#endif
+        }
+    }
+
+    private func sendAudio(_ fileURL: URL) async {
+        guard let data = try? Data(contentsOf: fileURL) else { return }
+        guard let propId = propertyService.primary?.id else { return }
+        let filename = "dm-audio/\(UUID().uuidString).m4a"
+
+        do {
+            try await supabase.storage.from("documents")
+                .upload(filename, data: data, options: FileOptions(contentType: "audio/mp4", upsert: false))
+            let urlStr = (try? supabase.storage.from("documents").getPublicURL(path: filename))?.absoluteString ?? ""
+            guard !urlStr.isEmpty else { return }
+
+            struct AudioPayload: Encodable {
+                let sender_name: String
+                let recipient_name: String
+                let body: String
+                let property_id: String
+            }
+
+            let sent: DirectMessage = try await supabase
+                .from("direct_messages")
+                .insert(AudioPayload(sender_name: myName, recipient_name: member.name,
+                                     body: urlStr, property_id: propId.uuidString))
+                .select()
+                .single()
+                .execute()
+                .value
+            directMessageService.dms.append(sent)
+            HapticFeedback.impact(.light)
+        } catch {
+#if DEBUG
+            print("[DM] audio error: \(error)")
 #endif
         }
     }
@@ -301,6 +497,69 @@ struct DirectMessageView: View {
     }
 }
 
+// MARK: - Camera Picker (UIKit bridge)
+
+private struct DMCameraPickerView: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    let onCapture: (UIImage) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let vc = UIImagePickerController()
+        vc.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
+        vc.delegate = context.coordinator
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: DMCameraPickerView
+        init(_ parent: DMCameraPickerView) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let img = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
+                parent.onCapture(img)
+            }
+            parent.isPresented = false
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.isPresented = false
+        }
+    }
+}
+
+// MARK: - Attachment Option
+
+private struct DMAttachmentOption: View {
+    let icon: String
+    let label: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(color.opacity(0.15))
+                        .frame(width: 58, height: 58)
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(color)
+                }
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - DM Bubble
 
 private struct DMBubble: View {
@@ -309,9 +568,16 @@ private struct DMBubble: View {
     let showSenderBubbleTail: Bool
     var onDelete: (() -> Void)? = nil
 
-    private var isImageUrl: Bool {
+    private enum DMMessageType { case text, image, audio }
+
+    private var messageType: DMMessageType {
         let lower = message.body.lowercased()
-        return lower.contains("supabase") && (lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".png") || lower.hasSuffix(".webp"))
+        if lower.hasSuffix(".m4a") || lower.contains("/dm-audio/") { return .audio }
+        if lower.contains("supabase") &&
+           (lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") ||
+            lower.hasSuffix(".png") || lower.hasSuffix(".webp") ||
+            lower.contains("/dm-images/")) { return .image }
+        return .text
     }
 
     var body: some View {
@@ -320,17 +586,19 @@ private struct DMBubble: View {
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                 Group {
-                    if isImageUrl {
-                        imageBubble
-                    } else {
-                        textBubble
+                    switch messageType {
+                    case .audio: AudioBubble(url: URL(string: message.body), isOwn: isOwn)
+                    case .image: imageBubble
+                    case .text:  textBubble
                     }
                 }
                 .contextMenu {
-                    Button {
-                        UIPasteboard.general.string = message.body
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
+                    if messageType == .text {
+                        Button {
+                            UIPasteboard.general.string = message.body
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
                     }
                     if isOwn, let onDelete {
                         Divider()
@@ -339,6 +607,7 @@ private struct DMBubble: View {
                         }
                     }
                 }
+
                 Text(message.timeDisplay)
                     .font(.system(size: 10))
                     .foregroundStyle(Color.primary.opacity(0.35))
@@ -357,9 +626,7 @@ private struct DMBubble: View {
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
             .background(
-                isOwn
-                    ? Color.accentColor
-                    : Color.primary.opacity(0.09),
+                isOwn ? Color.accentColor : Color.primary.opacity(0.09),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -387,4 +654,3 @@ private struct DMBubble: View {
         }
     }
 }
-
