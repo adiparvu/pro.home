@@ -5,6 +5,7 @@ struct IntegrationsView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var familyService: FamilyService
     @StateObject var vm = IntegrationsViewModel()
+    @ObservedObject private var iotService = IoTService.shared
 
     var body: some View {
         ScrollView(showsIndicators: false) {
