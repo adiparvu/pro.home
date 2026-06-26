@@ -14,8 +14,7 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
     private(set) var recordingURL: URL?
 
     func start() {
-        // Request microphone permission first; if denied, bail out silently
-        let status: AVAudioApplication.recordPermission = AVAudioApplication.shared.recordPermission
+        let status = AVAudioApplication.shared.recordPermission
         if status == .denied { return }
         if status == .undetermined {
             AVAudioApplication.requestRecordPermission { [weak self] granted in
@@ -29,8 +28,15 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
 
     private func beginRecording() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-        try? session.setActive(true)
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setActive(true)
+        } catch {
+#if DEBUG
+            print("[Recorder] session error: \(error)")
+#endif
+            return
+        }
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(UUID().uuidString).m4a")
@@ -40,10 +46,19 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
             AVNumberOfChannelsKey: 1,
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
-        recorder = try? AVAudioRecorder(url: url, settings: settings)
+        do {
+            recorder = try AVAudioRecorder(url: url, settings: settings)
+        } catch {
+#if DEBUG
+            print("[Recorder] init error: \(error)")
+#endif
+            try? session.setActive(false)
+            return
+        }
         recorder?.delegate = self
         guard recorder?.record() == true else {
-            try? AVAudioSession.sharedInstance().setActive(false)
+            recorder = nil
+            try? session.setActive(false)
             return
         }
         recordingURL = url
@@ -54,6 +69,9 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
         }
     }
 
+    // Returns nil if recording was shorter than 0.5 s — AVAudioRecorder writes a valid
+    // M4A container but AVURLAsset reads 0 duration for very short clips, causing the
+    // play button to crash when AVPlayer tries to load them.
     func stop() -> URL? {
         timer?.invalidate(); timer = nil
         recorder?.stop()
@@ -61,8 +79,10 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isRecording = false
         let url = recordingURL
+        let capturedDuration = duration
         recordingURL = nil
         duration = 0
+        guard capturedDuration >= 0.5 else { return nil }
         return url
     }
 
@@ -162,6 +182,7 @@ struct AudioBubble: View {
                 }
             }
             .buttonStyle(.plain)
+            .disabled(url == nil || loadedDuration == 0)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -192,54 +213,87 @@ struct AudioBubble: View {
             let asset = AVURLAsset(url: url)
             if let cmTime = try? await asset.load(.duration) {
                 let secs = CMTimeGetSeconds(cmTime)
-                if secs.isFinite && secs > 0 { loadedDuration = secs }
+                if secs.isFinite && secs > 0 {
+                    loadedDuration = secs
+                    player.totalDuration = secs
+                }
             }
         }
         .onDisappear { player.stop() }
     }
 
     private var durationText: String {
+        guard loadedDuration > 0 else { return "-:--" }
         let s = Int(loadedDuration)
         return String(format: "%d:%02d", s / 60, s % 60)
     }
 }
 
+// MARK: - Audio Player (AVPlayer — supports remote HTTPS URLs)
+// AVAudioPlayer only works with local files. All chat audio lives in Supabase
+// Storage (HTTPS), so AVPlayer is required here.
+
 @MainActor
-final class AudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
+final class AudioPlayer: ObservableObject {
     @Published var isPlaying = false
     @Published var progress: Double = 0
     @Published var position: TimeInterval = 0
+    var totalDuration: TimeInterval = 0
 
-    private var player: AVAudioPlayer?
-    private var timer: Timer?
+    private var player: AVPlayer?
+    private var timeObserverToken: Any?
+    private var endObserver: NSObjectProtocol?
 
     func play(url: URL) {
+        stop()
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
-        player = try? AVAudioPlayer(contentsOf: url)
-        player?.delegate = self
-        player?.play()
-        isPlaying = true
-        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self, let p = self.player else { return }
-                self.position = p.currentTime
-                self.progress = p.duration > 0 ? p.currentTime / p.duration : 0
-            }
+
+        let item = AVPlayerItem(url: url)
+        let avPlayer = AVPlayer(playerItem: item)
+        player = avPlayer
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            self?.didFinishPlaying()
         }
+
+        let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
+        timeObserverToken = avPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self else { return }
+            let secs = CMTimeGetSeconds(time)
+            self.position = secs.isFinite ? secs : 0
+            self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
+        }
+
+        avPlayer.play()
+        isPlaying = true
+    }
+
+    private func didFinishPlaying() {
+        isPlaying = false
+        progress = 0
+        position = 0
     }
 
     func pause() {
         player?.pause()
         isPlaying = false
-        timer?.invalidate()
-        timer = nil
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
-        player?.stop()
+        if let token = timeObserverToken {
+            player?.removeTimeObserver(token)
+            timeObserverToken = nil
+        }
+        if let obs = endObserver {
+            NotificationCenter.default.removeObserver(obs)
+            endObserver = nil
+        }
+        player?.pause()
         player = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isPlaying = false
@@ -247,23 +301,21 @@ final class AudioPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         position = 0
     }
 
-    nonisolated func audioPlayerDidFinishPlaying(_ p: AVAudioPlayer, successfully _: Bool) {
-        Task { @MainActor in
-            isPlaying = false
-            progress = 0
-            position = 0
-            timer?.invalidate()
-            timer = nil
-        }
-    }
-
     deinit {
-        timer?.invalidate()
-        player?.stop()
+        player?.pause()
+        if let obs = endObserver {
+            NotificationCenter.default.removeObserver(obs)
+        }
     }
 
     var positionText: String {
         let s = Int(position)
         return String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        Swift.min(Swift.max(self, range.lowerBound), range.upperBound)
     }
 }
