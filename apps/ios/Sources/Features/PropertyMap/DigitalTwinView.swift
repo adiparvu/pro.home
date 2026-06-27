@@ -52,7 +52,7 @@ struct DigitalTwinView: View {
         if editingOverlayActive { return elementService.elements }
         switch zoneView {
         case .hidden:
-            return []
+            return elementService.elements   // all elements, just no zone outlines
         case .all:
             return elementService.elements
         case .zone(let id):
@@ -68,7 +68,7 @@ struct DigitalTwinView: View {
 
     private var zoneViewLabel: String {
         switch zoneView {
-        case .hidden: return String(localized: "Show")
+        case .hidden: return String(localized: "Zones")
         case .all:    return String(localized: "All zones")
         case .zone(let id):
             return zoneService.zones.first { $0.id == id }?.name ?? String(localized: "Zone")
@@ -185,7 +185,6 @@ struct DigitalTwinView: View {
         )) {
             AddPropertyElementView(defaultPosition: pendingPin ?? CGPoint(x: 0.5, y: 0.5)) { payload in
                 Task { await elementService.add(payload) }
-                if zoneView == .hidden { zoneView = .all }   // so the new pin is visible
             }
             .environmentObject(propertyService)
         }
