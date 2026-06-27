@@ -24,7 +24,7 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
     override init() {
         super.init()
         completer.delegate = self
-        completer.resultTypes = .address
+        completer.resultTypes = [.address, .pointOfInterest, .query]
         // Default: România
         if let ro = Self.regions["RO"] { completer.region = ro }
     }

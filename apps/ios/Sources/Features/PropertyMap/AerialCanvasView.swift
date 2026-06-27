@@ -20,7 +20,7 @@ struct AerialCanvasView: View {
             TimelineView(.animation(minimumInterval: 1.0 / 60)) { tl in
                 let t = tl.date.timeIntervalSinceReferenceDate
                 ZStack {
-                    dronePhotoLayer(t: t)
+                    dronePhotoLayer(t: t, size: geo.size)
 
                     // Fade out the embedded photo status bar at top
                     VStack(spacing: 0) {
@@ -68,38 +68,39 @@ struct AerialCanvasView: View {
     // MARK: - Drone photo with Ken Burns
 
     @ViewBuilder
-    private func dronePhotoLayer(t: Double) -> some View {
+    private func dronePhotoLayer(t: Double, size: CGSize) -> some View {
         let kenBurnsScale = 1.0 + 0.015 * CGFloat(sin(t * 0.10) * 0.5 + 0.5)
         if let urlStr = property.photoUrl, let url = URL(string: urlStr) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
-                    Color(red: 0.06, green: 0.12, blue: 0.07)
-                        .overlay {
-                            img.resizable()
-                                .scaledToFit()
-                                .scaleEffect(kenBurnsScale)
-                        }
+                    img.resizable()
+                        .scaledToFill()
+                        .frame(width: size.width, height: size.height)
+                        .clipped()
+                        .scaleEffect(kenBurnsScale)
                 default:
-                    bundledAerialPhoto(scale: kenBurnsScale)
+                    bundledAerialPhoto(scale: kenBurnsScale, size: size)
                 }
             }
         } else {
-            bundledAerialPhoto(scale: kenBurnsScale)
+            bundledAerialPhoto(scale: kenBurnsScale, size: size)
         }
     }
 
     @ViewBuilder
-    private func bundledAerialPhoto(scale: CGFloat) -> some View {
-        Color(red: 0.06, green: 0.12, blue: 0.07)
-            .overlay {
-                if let uiImg = UIImage(named: "aerial_property") {
-                    Image(uiImage: uiImg)
-                        .resizable()
-                        .scaledToFit()
-                        .scaleEffect(scale)
-                }
-            }
+    private func bundledAerialPhoto(scale: CGFloat, size: CGSize) -> some View {
+        if let uiImg = UIImage(named: "aerial_property") {
+            Image(uiImage: uiImg)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size.width, height: size.height)
+                .clipped()
+                .scaleEffect(scale)
+        } else {
+            Color(red: 0.06, green: 0.12, blue: 0.07)
+                .frame(width: size.width, height: size.height)
+        }
     }
 
     // MARK: - Geometry helpers

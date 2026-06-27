@@ -277,8 +277,11 @@ struct ChatView: View {
                 .padding(.bottom, 12)
             }
             .scrollDismissesKeyboard(.immediately)
-            .onChange(of: messageService.messages.count) { _, _ in
-                if let last = messageService.messages.last {
+            .onChange(of: messageService.messages.count) { old, new in
+                guard let last = messageService.messages.last else { return }
+                if old == 0 {
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                } else {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
                 if let pid = propertyId {
@@ -286,8 +289,10 @@ struct ChatView: View {
                 }
             }
             .onAppear {
-                if let last = messageService.messages.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
+                DispatchQueue.main.async {
+                    if let last = messageService.messages.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
                 }
             }
             } // end VStack (search + scroll)

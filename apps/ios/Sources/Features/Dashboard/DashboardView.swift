@@ -258,11 +258,6 @@ struct DashboardView: View {
         ZStack(alignment: .bottomLeading) {
             aerialBackground
 
-            if let score = propertyService.primary?.healthScore {
-                PropertyHealthGauge(score: score, size: 82)
-                    .padding(14)
-            }
-
             Button {
                 HapticFeedback.impact(.light)
                 router.selectedTab = .digitalTwin
