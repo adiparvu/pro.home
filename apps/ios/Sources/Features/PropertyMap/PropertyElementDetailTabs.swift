@@ -229,6 +229,7 @@ extension PropertyElementDetailView {
             if recs.isEmpty {
                 emptyRecordsView
             } else {
+                ElementCostTimeline(records: recs, currency: localElement.valueCurrency)
                 ForEach(recs) { record in
                     ElementRecordRow(record: record) {
                         Task { await elementService.deleteRecord(record) }
