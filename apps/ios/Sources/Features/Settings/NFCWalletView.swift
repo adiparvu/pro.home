@@ -317,7 +317,7 @@ struct NFCWalletView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24).padding(.vertical, 13)
-                    .background(Color.blue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
             .disabled(!NFCScanService.isSupported)

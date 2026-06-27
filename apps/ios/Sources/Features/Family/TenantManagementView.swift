@@ -247,7 +247,7 @@ struct TenantManagementView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24).padding(.vertical, 13)
-                    .background(Color.purple, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
             Spacer()

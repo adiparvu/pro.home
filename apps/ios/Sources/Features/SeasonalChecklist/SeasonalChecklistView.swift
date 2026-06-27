@@ -82,14 +82,21 @@ struct SeasonalChecklistView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: season.icon).font(.system(size: 20))
+                                .foregroundStyle(selectedSeason == season ? season.color : Color.primary.opacity(0.55))
                             Text(LocalizedStringKey(season.displayName))
                                 .font(.system(size: 11, weight: selectedSeason == season ? .semibold : .regular))
-                                .foregroundStyle(selectedSeason == season ? .white : Color.primary.opacity(0.6))
+                                .foregroundStyle(selectedSeason == season ? .primary : Color.primary.opacity(0.6))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(selectedSeason == season ? season.color : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background {
+                            if selectedSeason == season {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(.regularMaterial)
+                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(season.color.opacity(0.5), lineWidth: 1))
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
                 }
