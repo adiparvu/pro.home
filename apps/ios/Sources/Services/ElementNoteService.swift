@@ -25,9 +25,11 @@ final class ElementNoteService: ObservableObject {
         }
     }
 
-    func add(elementId: UUID, propertyId: UUID, body: String, locked: Bool) async {
+    func add(elementId: UUID, propertyId: UUID, body: String, locked: Bool,
+             checklist: [ChecklistItem] = [], photoUrls: [String] = []) async {
         let storedBody = locked ? (NoteLockManager.shared.encrypt(body) ?? body) : body
-        let payload = NewElementNote(elementId: elementId, propertyId: propertyId, body: storedBody, isLocked: locked)
+        let payload = NewElementNote(elementId: elementId, propertyId: propertyId, body: storedBody,
+                                     isLocked: locked, checklist: checklist, photoUrls: photoUrls)
         do {
             let created: ElementNote = try await supabase
                 .from("element_notes")
@@ -42,11 +44,14 @@ final class ElementNoteService: ObservableObject {
         }
     }
 
-    func update(_ note: ElementNote, body: String, locked: Bool) async {
+    func update(_ note: ElementNote, body: String, locked: Bool,
+                checklist: [ChecklistItem]? = nil, photoUrls: [String]? = nil) async {
         let storedBody = locked ? (NoteLockManager.shared.encrypt(body) ?? body) : body
         let payload = ElementNoteUpdate(
             body: storedBody,
             isLocked: locked,
+            checklist: checklist ?? note.checklist,
+            photoUrls: photoUrls ?? note.photoUrls,
             updatedAt: ISO8601DateFormatter().string(from: Date())
         )
         do {
@@ -79,6 +84,17 @@ final class ElementNoteService: ObservableObject {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    func toggleChecklistItem(_ note: ElementNote, itemId: UUID) async {
+        guard var arr = notesByElement[note.elementId],
+              let idx = arr.firstIndex(where: { $0.id == note.id }),
+              let ci = arr[idx].checklist.firstIndex(where: { $0.id == itemId }) else { return }
+        arr[idx].checklist[ci].done.toggle()
+        notesByElement[note.elementId] = arr // optimistic
+        let updated = arr[idx]
+        await update(updated, body: displayBody(updated), locked: updated.isLocked,
+                     checklist: updated.checklist, photoUrls: updated.photoUrls)
     }
 
     /// Returns the readable body: decrypts locked notes (caller must ensure unlocked).
