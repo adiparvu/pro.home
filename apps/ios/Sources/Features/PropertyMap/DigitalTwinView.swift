@@ -27,6 +27,9 @@ struct DigitalTwinView: View {
     @State private var editElementId: UUID?
     @State private var deleteElement: PropertyElement?
     @State private var categoryFilter: ElementCategory? = nil
+    @State private var zoneDrawMode = false
+    @State private var draftZonePoints: [CGPoint] = []
+    @State private var editZone: PropertyZone?
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -34,8 +37,11 @@ struct DigitalTwinView: View {
                 AerialCanvasView(
                     property: prop,
                     elements: elementService.elements,
+                    zones: zoneService.zones,
                     interactive: true,
                     pinMode: pinMode,
+                    zoneDrawMode: zoneDrawMode,
+                    draftZonePoints: draftZonePoints,
                     showNames: showNames,
                     sectionFilter: sectionFilter,
                     categoryFilter: categoryFilter,
@@ -52,7 +58,9 @@ struct DigitalTwinView: View {
                     onElementFavorite: { el in
                         Task { await elementService.toggleFavorite(elementId: el.id) }
                         HapticFeedback.selection()
-                    }
+                    },
+                    onZoneTap: { editZone = $0 },
+                    onAddZonePoint: { draftZonePoints.append($0) }
                 )
                 .ignoresSafeArea(edges: .bottom)
 
@@ -61,6 +69,11 @@ struct DigitalTwinView: View {
 
                 controls
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+
+                if zoneDrawMode {
+                    zoneDrawToolbar
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
             } else {
                 emptyState
             }
@@ -123,6 +136,13 @@ struct DigitalTwinView: View {
                 .environmentObject(currencyService)
                 .environmentObject(appSettings)
         }
+        .sheet(item: $editZone) { zone in
+            ZoneEditSheet(
+                zone: zone,
+                onSave: { updated in Task { await zoneService.update(updated) } },
+                onDelete: { Task { await zoneService.delete(zone) } }
+            )
+        }
         .task { await loadData() }
     }
 
@@ -153,6 +173,14 @@ struct DigitalTwinView: View {
                     HapticFeedback.selection()
                 }
                 categoryMenu
+                controlButton(icon: "pentagon", tint: zoneDrawMode ? Color.accentColor : .white, label: "Zone") {
+                    withAnimation(.spring(response: 0.3)) {
+                        zoneDrawMode = true
+                        controlsExpanded = false
+                        draftZonePoints = []
+                    }
+                    HapticFeedback.impact(.medium)
+                }
                 controlButton(icon: "heart.text.square.fill", tint: .pink) {
                     showHealth = true
                     HapticFeedback.impact(.light)
@@ -220,6 +248,50 @@ struct DigitalTwinView: View {
         .transition(.scale.combined(with: .opacity))
     }
 
+    // MARK: - Zone draw toolbar
+
+    private var zoneDrawToolbar: some View {
+        HStack(spacing: 10) {
+            zoneToolButton("Cancel", icon: "xmark", tint: .red) {
+                withAnimation { zoneDrawMode = false; draftZonePoints = [] }
+            }
+            zoneToolButton("Undo", icon: "arrow.uturn.backward", tint: .white) {
+                if !draftZonePoints.isEmpty { draftZonePoints.removeLast() }
+            }
+            .opacity(draftZonePoints.isEmpty ? 0.4 : 1)
+            zoneToolButton("Save", icon: "checkmark", tint: .green) {
+                Task { await saveDraftZone() }
+            }
+            .opacity(draftZonePoints.count < 3 ? 0.4 : 1)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
+        .padding(.bottom, 40)
+    }
+
+    private func zoneToolButton(_ title: String, icon: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                Text(LocalizedStringKey(title)).font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func saveDraftZone() async {
+        guard draftZonePoints.count >= 3, let pid = propertyService.primary?.id else { return }
+        let poly = draftZonePoints.map { ImagePoint(x: $0.x, y: $0.y) }
+        let created = await zoneService.createImageZone(propertyId: pid, imagePolygon: poly)
+        withAnimation { zoneDrawMode = false; draftZonePoints = [] }
+        HapticFeedback.success()
+        if let created { editZone = created }   // open editor to name/color it
+    }
+
     // MARK: - Section filter bar
 
     private var sectionBar: some View {
@@ -276,6 +348,9 @@ struct DigitalTwinView: View {
         guard let pid = propertyService.primary?.id else { return }
         if elementService.elements.isEmpty {
             await elementService.load(propertyId: pid)
+        }
+        if zoneService.zones.isEmpty {
+            await zoneService.load(propertyId: pid)
         }
     }
 }

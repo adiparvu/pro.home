@@ -51,6 +51,7 @@ final class PropertyZoneService: ObservableObject {
             layer: zone.layer.rawValue,
             healthScore: zone.healthScore,
             polygon: zone.polygon,
+            imagePolygon: zone.imagePolygon,
             photoUrl: zone.photoUrl,
             sortOrder: zone.sortOrder,
             createdAt: zone.createdAt,
@@ -115,5 +116,31 @@ final class PropertyZoneService: ObservableObject {
 
     func zone(containing coordinate: CLLocationCoordinate2D) -> PropertyZone? {
         zones.first { $0.contains(coordinate) }
+    }
+
+    /// Creates a zone defined by a normalized polygon drawn on the aerial photo.
+    @discardableResult
+    func createImageZone(
+        propertyId: UUID,
+        imagePolygon: [ImagePoint],
+        name: String = "New zone",
+        icon: String = "square.dashed",
+        layer: PropertyLayer = .property
+    ) async -> PropertyZone? {
+        let now = ISO8601DateFormatter().string(from: Date())
+        let payload = NewPropertyZone(
+            propertyId: propertyId,
+            name: name,
+            icon: icon,
+            colorHex: layer.color.hexString(),
+            layer: layer.rawValue,
+            healthScore: 100,
+            polygon: [],
+            imagePolygon: imagePolygon,
+            sortOrder: zones.count,
+            createdAt: now,
+            updatedAt: now
+        )
+        return await add(payload)
     }
 }

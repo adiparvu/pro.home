@@ -13,6 +13,13 @@ struct GeoPoint: Codable, Equatable, Hashable {
     }
 }
 
+// MARK: - Image point (normalized 0–1 vertex on the static aerial photo)
+
+struct ImagePoint: Codable, Equatable, Hashable {
+    var x: Double
+    var y: Double
+}
+
 // MARK: - PropertyZone
 
 struct PropertyZone: Identifiable, Codable, Equatable {
@@ -24,6 +31,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     var layer: PropertyLayer
     var healthScore: Int
     var polygon: [GeoPoint]
+    var imagePolygon: [ImagePoint]?
     var notes: String?
     var photoUrl: String?
     var sortOrder: Int
@@ -32,6 +40,7 @@ struct PropertyZone: Identifiable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, icon, layer, polygon, notes
+        case imagePolygon = "image_polygon"
         case propertyId  = "property_id"
         case colorHex    = "color_hex"
         case healthScore = "health_score"
@@ -44,6 +53,17 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     // Coordinates for MapPolygon
     var coordinates: [CLLocationCoordinate2D] {
         polygon.map(\.coordinate)
+    }
+
+    var imagePoints: [ImagePoint] { imagePolygon ?? [] }
+    var hasImageShape: Bool { imagePoints.count >= 3 }
+
+    /// Normalized centroid (0–1) of the image polygon, for placing a label.
+    var imageCentroid: ImagePoint? {
+        guard !imagePoints.isEmpty else { return nil }
+        let n = Double(imagePoints.count)
+        return ImagePoint(x: imagePoints.map(\.x).reduce(0, +) / n,
+                          y: imagePoints.map(\.y).reduce(0, +) / n)
     }
 
     var isDrawable: Bool { polygon.count >= 3 }
@@ -132,6 +152,7 @@ struct NewPropertyZone: Encodable {
     var layer: String
     var healthScore: Int
     var polygon: [GeoPoint]
+    var imagePolygon: [ImagePoint]? = nil
     var photoUrl: String?
     var sortOrder: Int
     let createdAt: String
@@ -139,6 +160,7 @@ struct NewPropertyZone: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case name, icon, layer, polygon
+        case imagePolygon = "image_polygon"
         case propertyId  = "property_id"
         case colorHex    = "color_hex"
         case healthScore = "health_score"

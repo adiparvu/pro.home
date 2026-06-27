@@ -14,8 +14,12 @@ import UIKit
 struct AerialCanvasView: View {
     let property: PropertyModel
     let elements: [PropertyElement]
+    var zones: [PropertyZone] = []
     var interactive: Bool = false
     var pinMode: Bool = false
+    var zoneDrawMode: Bool = false
+    var draftZonePoints: [CGPoint] = []   // normalized 0–1
+    var showZones: Bool = true
     var showNames: Bool = true
     /// nil = show all; 0/1/2 = only elements in the top/middle/bottom third.
     var sectionFilter: Int? = nil
@@ -26,6 +30,8 @@ struct AerialCanvasView: View {
     var onElementEdit: (PropertyElement) -> Void = { _ in }
     var onElementDelete: (PropertyElement) -> Void = { _ in }
     var onElementFavorite: (PropertyElement) -> Void = { _ in }
+    var onZoneTap: (PropertyZone) -> Void = { _ in }
+    var onAddZonePoint: (CGPoint) -> Void = { _ in }
 
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
@@ -49,6 +55,13 @@ struct AerialCanvasView: View {
             ZStack {
                 aerialImage(size: geo.size)
 
+                // Zones (under pins)
+                if showZones {
+                    ForEach(zones.filter(\.hasImageShape)) { zone in
+                        zoneShape(zone, size: geo.size)
+                    }
+                }
+
                 // Tap-to-place layer (only while in pin mode)
                 if interactive && pinMode {
                     Color.black.opacity(0.001)
@@ -59,6 +72,19 @@ struct AerialCanvasView: View {
                                     onCanvasTap(clampNorm(val.location, in: geo.size))
                                 }
                         )
+                }
+
+                // Tap-to-add-corner layer (zone drawing)
+                if interactive && zoneDrawMode {
+                    Color.black.opacity(0.001)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            SpatialTapGesture()
+                                .onEnded { val in
+                                    onAddZonePoint(clampNorm(val.location, in: geo.size))
+                                }
+                        )
+                    zoneDraftOverlay(size: geo.size)
                 }
 
                 // Section dividers (only while a section filter is active)
@@ -161,6 +187,57 @@ struct AerialCanvasView: View {
         )
     }
 
+    // MARK: - Zones
+
+    @ViewBuilder
+    private func zoneShape(_ zone: PropertyZone, size: CGSize) -> some View {
+        let pts = zone.imagePoints
+        let interactable = interactive && !pinMode && !zoneDrawMode
+        ZStack {
+            NormPolygon(points: pts).fill(zone.tint.opacity(0.22))
+            NormPolygon(points: pts).stroke(zone.tint, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+            if let c = zone.imageCentroid {
+                HStack(spacing: 4) {
+                    Image(systemName: zone.icon).font(.system(size: 9, weight: .bold))
+                    Text(zone.name).font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 7).padding(.vertical, 3)
+                .background(zone.tint.opacity(0.85), in: Capsule())
+                .position(x: c.x * size.width, y: c.y * size.height)
+            }
+        }
+        .contentShape(NormPolygon(points: pts))
+        .onTapGesture { if interactable { onZoneTap(zone) } }
+        .allowsHitTesting(interactable)
+    }
+
+    @ViewBuilder
+    private func zoneDraftOverlay(size: CGSize) -> some View {
+        let imgPts = draftZonePoints.map { ImagePoint(x: $0.x, y: $0.y) }
+        ZStack {
+            if imgPts.count >= 2 {
+                NormPolygon(points: imgPts).fill(Color.accentColor.opacity(0.15))
+                NormPolygon(points: imgPts)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
+            }
+            ForEach(Array(draftZonePoints.enumerated()), id: \.offset) { _, pt in
+                Circle().fill(.white).frame(width: 12, height: 12)
+                    .overlay(Circle().fill(Color.accentColor).frame(width: 6, height: 6))
+                    .position(x: pt.x * size.width, y: pt.y * size.height)
+            }
+            VStack {
+                Text("Tap to add corners (\(draftZonePoints.count))")
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(.black.opacity(0.65), in: Capsule())
+                    .padding(.top, 14)
+                Spacer()
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
     // MARK: - Banner
 
     private var placeBanner: some View {
@@ -181,6 +258,22 @@ struct AerialCanvasView: View {
 }
 
 // MARK: - Aerial Element Pin
+
+// MARK: - Normalized polygon shape (points are 0–1 of the frame)
+
+struct NormPolygon: Shape {
+    let points: [ImagePoint]
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        guard let f = points.first else { return p }
+        p.move(to: CGPoint(x: f.x * rect.width, y: f.y * rect.height))
+        for pt in points.dropFirst() {
+            p.addLine(to: CGPoint(x: pt.x * rect.width, y: pt.y * rect.height))
+        }
+        p.closeSubpath()
+        return p
+    }
+}
 
 private struct AerialElementPin: View {
     let element: PropertyElement
