@@ -14,15 +14,16 @@ import SwiftUI
 extension View {
     @ViewBuilder
     func liquidGlass(cornerRadius: CGFloat = 24, thick: Bool = false) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if #available(iOS 26, *) {
-            self.glassEffect(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            self.glassEffect(in: shape).contentShape(shape)
         } else {
-            let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             self
                 .background(thick ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.ultraThinMaterial),
                             in: shape)
                 .shadow(color: Color.primary.opacity(0.07), radius: 20, y: 5)
                 .shadow(color: Color.primary.opacity(0.03), radius: 3, y: 1)
+                .contentShape(shape)
         }
     }
 
@@ -32,11 +33,12 @@ extension View {
     @ViewBuilder
     func glassCircle() -> some View {
         if #available(iOS 26, *) {
-            self.glassEffect(in: Circle())
+            self.glassEffect(in: Circle()).contentShape(Circle())
         } else {
             self
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                .contentShape(Circle())
         }
     }
 
@@ -44,11 +46,12 @@ extension View {
     @ViewBuilder
     func glassCapsule() -> some View {
         if #available(iOS 26, *) {
-            self.glassEffect(in: Capsule())
+            self.glassEffect(in: Capsule()).contentShape(Capsule())
         } else {
             self
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                .contentShape(Capsule())
         }
     }
 
@@ -57,11 +60,12 @@ extension View {
     func glassRoundedRect(_ cornerRadius: CGFloat = 12) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if #available(iOS 26, *) {
-            self.glassEffect(in: shape)
+            self.glassEffect(in: shape).contentShape(shape)
         } else {
             self
                 .background(.ultraThinMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                .contentShape(shape)
         }
     }
 }
