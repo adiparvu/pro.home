@@ -62,10 +62,10 @@ struct ChatView: View {
     }
 
     var body: some View {
-        messageList
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                inputBar
-            }
+        VStack(spacing: 0) {
+            messageList
+            inputBar
+        }
             .background(appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
