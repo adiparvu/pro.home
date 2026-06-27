@@ -80,6 +80,7 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
         .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
         .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
+        .sheet(isPresented: $router.showInventoryView) { NavigationStack { InventoryView() } }
         .sheet(isPresented: $router.showAddSupply) {
             AddSupplyItemSheet(list: nil, editingItem: nil)
                 .environmentObject(supplyService)

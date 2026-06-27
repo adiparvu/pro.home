@@ -14,6 +14,8 @@ struct AerialCanvasView: View {
     let zones: [PropertyZone]
     let elements: [PropertyElement]
     var onElementTap: (PropertyElement) -> Void = { _ in }
+    var pinMode: Bool = false
+    var onCanvasTap: ((CGPoint) -> Void)? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -51,6 +53,21 @@ struct AerialCanvasView: View {
                     }
                     .allowsHitTesting(false)
 
+                    if pinMode {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .gesture(
+                                SpatialTapGesture()
+                                    .onEnded { val in
+                                        let norm = CGPoint(
+                                            x: val.location.x / geo.size.width,
+                                            y: val.location.y / geo.size.height
+                                        )
+                                        onCanvasTap?(norm)
+                                    }
+                            )
+                    }
+
                     let pinnable = elements.filter {
                         $0.latitude != nil || $0.positionX > 0 || $0.positionY > 0
                     }
@@ -58,6 +75,22 @@ struct AerialCanvasView: View {
                         AerialElementPin(element: el)
                             .position(pinPoint(el, geo.size))
                             .onTapGesture { onElementTap(el) }
+                    }
+
+                    if pinMode {
+                        VStack {
+                            HStack(spacing: 6) {
+                                Image(systemName: "mappin.circle.fill").foregroundStyle(.red)
+                                Text("Tap to place pin")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .background(.black.opacity(0.65), in: Capsule())
+                            .padding(.top, 60)
+                            Spacer()
+                        }
+                        .allowsHitTesting(false)
                     }
                 }
             }

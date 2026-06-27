@@ -50,6 +50,8 @@ struct DigitalTwinView: View {
     @State var isAerial = true
     @State var showStylePicker = false
     @State var controlsExpanded = false
+    @State var aerialPinMode = false
+    @State var pendingPinPosition: CGPoint? = nil
     @State var zoneStyle: ZoneDisplayStyle = .filled
     @AppStorage("prvio.mapStyle") var savedMapStyle: String = "hybrid"
 
@@ -100,7 +102,12 @@ struct DigitalTwinView: View {
                         property: prop,
                         zones: zoneService.zones,
                         elements: elementService.elements,
-                        onElementTap: { selectedElement = $0 }
+                        onElementTap: { selectedElement = $0 },
+                        pinMode: aerialPinMode,
+                        onCanvasTap: { pos in
+                            pendingPinPosition = pos
+                            aerialPinMode = false
+                        }
                     )
                 } else {
                     AerialPropertyView(
@@ -114,6 +121,40 @@ struct DigitalTwinView: View {
             .overlay(alignment: .top) { if !drawMode { layerBar } }
             .overlay(alignment: .bottomTrailing) {
                 if !drawMode { sideControls }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if !drawMode {
+                    Button { aerialPinMode.toggle() } label: {
+                        Image(systemName: aerialPinMode ? "xmark.circle.fill" : "mappin.badge.plus")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(aerialPinMode ? Color.red : Color.white)
+                            .frame(width: 44, height: 44)
+                            .background(.black.opacity(0.55), in: Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 14)
+                    .padding(.bottom, 90)
+                }
+            }
+            .sheet(item: $selectedElement) { element in
+                PropertyElementDetailView(element: element)
+                    .environmentObject(elementService)
+                    .environmentObject(currencyService)
+                    .environmentObject(appSettings)
+                    .environmentObject(documentService)
+                    .environmentObject(taskService)
+            }
+            .sheet(isPresented: Binding(
+                get: { pendingPinPosition != nil },
+                set: { if !$0 { pendingPinPosition = nil } }
+            )) {
+                if let pos = pendingPinPosition {
+                    AddPropertyElementView(defaultPosition: pos) { payload in
+                        Task { await elementService.add(payload) }
+                    }
+                    .environmentObject(propertyService as PropertyService)
+                }
             }
             .task { await loadData() }
         } else {

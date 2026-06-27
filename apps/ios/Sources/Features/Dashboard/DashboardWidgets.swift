@@ -192,7 +192,7 @@ extension DashboardView {
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
                 subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
-            ) { router.selectedTab = .settings; router.showSuppliesView = true }
+            ) { router.showInventoryView = true }
 
         case .contractors:
             HomeWidget(

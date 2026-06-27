@@ -105,6 +105,12 @@ struct FinancesView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
         }
         .sheet(isPresented: $showAddSheet) {
             AddFinancialView { await financialService.load() }

@@ -11,6 +11,7 @@ final class AppRouter: ObservableObject {
     @Published var showAddExpense = false
     @Published var showInventoryScan = false
     @Published var showInventoryAdd = false
+    @Published var showInventoryView = false
     @Published var showAddSupply = false
     @Published var showWaterPlant = false
     @Published var showSuppliesView = false
