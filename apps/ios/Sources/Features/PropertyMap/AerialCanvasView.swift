@@ -19,6 +19,7 @@ struct AerialCanvasView: View {
     var showNames: Bool = true
     /// nil = show all; 0/1/2 = only elements in the top/middle/bottom third.
     var sectionFilter: Int? = nil
+    var categoryFilter: ElementCategory? = nil
     var onElementTap: (PropertyElement) -> Void = { _ in }
     var onCanvasTap: (CGPoint) -> Void = { _ in }
     var onElementMove: (PropertyElement, CGPoint) -> Void = { _, _ in }
@@ -30,11 +31,17 @@ struct AerialCanvasView: View {
     @State private var dragPos: CGPoint = .zero
 
     private var visibleElements: [PropertyElement] {
-        guard let s = sectionFilter else { return elements }
-        return elements.filter { el in
-            let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
-            return Int(min(max(y, 0), 0.999) * 3) == s
+        var items = elements
+        if let cat = categoryFilter {
+            items = items.filter { $0.elementType.category == cat }
         }
+        if let s = sectionFilter {
+            items = items.filter { el in
+                let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+                return Int(min(max(y, 0), 0.999) * 3) == s
+            }
+        }
+        return items
     }
 
     var body: some View {

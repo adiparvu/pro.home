@@ -385,6 +385,81 @@ enum PropertyElementType: String, Codable, CaseIterable {
     static let common: [PropertyElementType] = [
         .house, .garage, .gate, .fence, .pool, .yard, .tree, .camera, .boiler, .solar
     ]
+
+    var category: ElementCategory {
+        switch self {
+        case .house, .garage, .gazebo, .shed, .barn, .carport, .terrace, .balcony,
+             .basement, .attic, .roof, .chimney, .staircase, .fence, .gate, .driveway, .parking:
+            return .structures
+        case .kitchen, .bathroom, .bedroom, .livingRoom, .office, .laundry:
+            return .rooms
+        case .yard, .lawn, .tree, .garden, .vegetableGarden, .greenhouse, .playground:
+            return .outdoor
+        case .pool, .pond, .fountain, .well, .septic, .waterTank, .irrigation, .waterMeter:
+            return .water
+        case .solar, .boiler, .electricalPanel, .heatPump, .waterHeater, .generator,
+             .battery, .evCharger, .gasMeter, .electricMeter:
+            return .energy
+        case .camera, .alarm, .smartLock, .intercom, .doorbell, .sensor:
+            return .security
+        case .airConditioner, .ventilation, .thermostat, .router,
+             .fridge, .washingMachine, .dryer, .dishwasher, .oven, .stove, .microwave, .tv:
+            return .appliances
+        case .bbq, .lawnMower:
+            return .equipment
+        case .pet, .other:
+            return .other
+        }
+    }
+}
+
+// MARK: - ElementCategory (type groups, for filtering)
+
+enum ElementCategory: String, CaseIterable, Identifiable {
+    case structures, rooms, outdoor, water, energy, security, appliances, equipment, other
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .structures: return String(localized: "Structures")
+        case .rooms:      return String(localized: "Rooms")
+        case .outdoor:    return String(localized: "Outdoor")
+        case .water:      return String(localized: "Water")
+        case .energy:     return String(localized: "Energy")
+        case .security:   return String(localized: "Security")
+        case .appliances: return String(localized: "Appliances")
+        case .equipment:  return String(localized: "Equipment")
+        case .other:      return String(localized: "Other")
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .structures: return "building.2.fill"
+        case .rooms:      return "sofa.fill"
+        case .outdoor:    return "leaf.fill"
+        case .water:      return "drop.fill"
+        case .energy:     return "bolt.fill"
+        case .security:   return "lock.shield.fill"
+        case .appliances: return "tv.fill"
+        case .equipment:  return "wrench.and.screwdriver.fill"
+        case .other:      return "square.grid.2x2.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .structures: return Color(red: 0.29, green: 0.56, blue: 0.89)
+        case .rooms:      return Color(red: 0.48, green: 0.41, blue: 0.93)
+        case .outdoor:    return Color(red: 0.18, green: 0.8, blue: 0.44)
+        case .water:      return Color(red: 0.0, green: 0.71, blue: 0.85)
+        case .energy:     return Color(red: 0.95, green: 0.77, blue: 0.06)
+        case .security:   return Color(red: 0.91, green: 0.3, blue: 0.24)
+        case .appliances: return Color(red: 0.0, green: 0.6, blue: 0.7)
+        case .equipment:  return Color(red: 0.55, green: 0.45, blue: 0.33)
+        case .other:      return Color(red: 0.61, green: 0.35, blue: 0.71)
+        }
+    }
 }
 
 // MARK: - TechnicalCondition

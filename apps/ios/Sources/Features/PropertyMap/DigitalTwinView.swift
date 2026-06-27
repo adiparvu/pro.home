@@ -26,6 +26,7 @@ struct DigitalTwinView: View {
     @State private var sectionFilter: Int? = nil
     @State private var editElementId: UUID?
     @State private var deleteElement: PropertyElement?
+    @State private var categoryFilter: ElementCategory? = nil
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -37,6 +38,7 @@ struct DigitalTwinView: View {
                     pinMode: pinMode,
                     showNames: showNames,
                     sectionFilter: sectionFilter,
+                    categoryFilter: categoryFilter,
                     onElementTap: { selectedElement = $0 },
                     onCanvasTap: { pos in
                         pendingPin = pos
@@ -150,6 +152,7 @@ struct DigitalTwinView: View {
                     withAnimation(.spring(response: 0.3)) { showNames.toggle() }
                     HapticFeedback.selection()
                 }
+                categoryMenu
                 controlButton(icon: "heart.text.square.fill", tint: .pink) {
                     showHealth = true
                     HapticFeedback.impact(.light)
@@ -162,6 +165,38 @@ struct DigitalTwinView: View {
         }
         .padding(.trailing, 16)
         .padding(.top, 8)
+    }
+
+    private var categoryMenu: some View {
+        Menu {
+            Button {
+                withAnimation { categoryFilter = nil }
+            } label: {
+                Label("All categories", systemImage: categoryFilter == nil ? "checkmark" : "square.grid.2x2")
+            }
+            Divider()
+            ForEach(ElementCategory.allCases) { cat in
+                Button {
+                    withAnimation { categoryFilter = cat }
+                } label: {
+                    Label(cat.displayName, systemImage: categoryFilter == cat ? "checkmark" : cat.icon)
+                }
+            }
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: "line.3.horizontal.decrease.circle\(categoryFilter == nil ? "" : ".fill")")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
+                Text(categoryFilter?.displayName ?? "Filter")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
+                    .lineLimit(1)
+            }
+            .frame(width: 52, height: 52)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
+        }
     }
 
     private func controlButton(icon: String, tint: Color, label: String? = nil, action: @escaping () -> Void) -> some View {

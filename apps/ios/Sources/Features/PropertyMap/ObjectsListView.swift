@@ -14,6 +14,10 @@ struct ObjectsListView: View {
     @State private var filter: ObjectFilter = .all
     @State private var favoritesOnly = false
     @State private var selectedElement: PropertyElement?
+    @State private var filterMode: FilterMode = .categories
+    @State private var categoryFilter: ElementCategory? = nil
+
+    enum FilterMode: String, CaseIterable { case categories, layers }
 
     enum ObjectFilter: String, CaseIterable {
         case all       = "All"
@@ -36,7 +40,12 @@ struct ObjectsListView: View {
     private var filteredElements: [PropertyElement] {
         var items = elementService.elements
         if favoritesOnly { items = items.filter { $0.isFavorite } }
-        if let layer = filter.layer { items = items.filter { $0.layer == layer } }
+        switch filterMode {
+        case .layers:
+            if let layer = filter.layer { items = items.filter { $0.layer == layer } }
+        case .categories:
+            if let cat = categoryFilter { items = items.filter { $0.elementType.category == cat } }
+        }
         return items
     }
 
@@ -115,9 +124,36 @@ struct ObjectsListView: View {
                 }
                 .buttonStyle(.plain)
 
-                ForEach(ObjectFilter.allCases, id: \.self) { f in
-                    CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
-                        withAnimation(.spring(response: 0.3)) { filter = f }
+                // Mode toggle: Categories <-> Layers
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        filterMode = filterMode == .categories ? .layers : .categories
+                        categoryFilter = nil; filter = .all
+                    }
+                    HapticFeedback.selection()
+                } label: {
+                    Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 11).padding(.vertical, 8)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+
+                if filterMode == .layers {
+                    ForEach(ObjectFilter.allCases, id: \.self) { f in
+                        CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
+                            withAnimation(.spring(response: 0.3)) { filter = f }
+                        }
+                    }
+                } else {
+                    CategoryFilterChip(label: "All", isActive: categoryFilter == nil) {
+                        withAnimation(.spring(response: 0.3)) { categoryFilter = nil }
+                    }
+                    ForEach(ElementCategory.allCases) { cat in
+                        CategoryFilterChip(label: LocalizedStringKey(cat.displayName), isActive: categoryFilter == cat) {
+                            withAnimation(.spring(response: 0.3)) { categoryFilter = cat }
+                        }
                     }
                 }
             }
