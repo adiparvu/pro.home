@@ -47,10 +47,10 @@ struct SeasonalChecklistView: View {
                     HapticFeedback.impact(.light)
                     showAddSheet = true
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(selectedSeason.color)
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
                 }
+                .tint(.accentColor)
             }
         }
         .sheet(isPresented: $showAddSheet) {

@@ -8,6 +8,11 @@ import Supabase
 
 private let kAvatarRingColorKey = "prvio.avatarRingColorName"
 
+private struct ChatBottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 struct ChatView: View {
     @EnvironmentObject var messageService: MessageService
     @EnvironmentObject private var familyService: FamilyService
@@ -20,6 +25,7 @@ struct ChatView: View {
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State private var searchText = ""
     @State private var showSearch = false
+    @State private var showJumpToLatest = false
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
     @State private var showCameraSheet = false
@@ -217,6 +223,7 @@ struct ChatView: View {
 
     private var messageList: some View {
         ScrollViewReader { proxy in
+            GeometryReader { outer in
             VStack(spacing: 0) {
                 if showSearch {
                     HStack(spacing: 10) {
@@ -271,10 +278,21 @@ struct ChatView: View {
                         )
                         .id(msg.id)
                     }
+                    Color.clear.frame(height: 1).id("CHAT_BOTTOM")
+                        .background(GeometryReader { g in
+                            Color.clear.preference(key: ChatBottomKey.self,
+                                                   value: g.frame(in: .named("chatScroll")).minY)
+                        })
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
+            }
+            .coordinateSpace(name: "chatScroll")
+            .onPreferenceChange(ChatBottomKey.self) { minY in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showJumpToLatest = minY > outer.size.height + 60
+                }
             }
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { old, new in
@@ -296,6 +314,29 @@ struct ChatView: View {
                 }
             }
             } // end VStack (search + scroll)
+            .overlay(alignment: .bottom) {
+                if showJumpToLatest {
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            if let last = messageService.messages.last {
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            }
+                        }
+                        HapticFeedback.impact(.light)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassCircle()
+                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                    .padding(.bottom, 10)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            } // end GeometryReader
         }
     }
 

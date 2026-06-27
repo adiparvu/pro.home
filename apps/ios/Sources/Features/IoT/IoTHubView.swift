@@ -57,9 +57,9 @@ struct IoTHubView: View {
                         }
                     }
                     Button { addAction() } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 19, weight: .medium))
-                            .foregroundStyle(Color.accentColor)
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
                 }
             }
