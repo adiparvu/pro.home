@@ -24,6 +24,8 @@ struct DigitalTwinView: View {
     @State private var controlsExpanded = false
     @State private var showNames = true
     @State private var sectionFilter: Int? = nil
+    @State private var editElementId: UUID?
+    @State private var deleteElement: PropertyElement?
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -42,6 +44,12 @@ struct DigitalTwinView: View {
                     },
                     onElementMove: { el, pos in
                         Task { await elementService.updatePosition(elementId: el.id, x: pos.x, y: pos.y) }
+                    },
+                    onElementEdit: { editElementId = $0.id },
+                    onElementDelete: { deleteElement = $0 },
+                    onElementFavorite: { el in
+                        Task { await elementService.toggleFavorite(elementId: el.id) }
+                        HapticFeedback.selection()
                     }
                 )
                 .ignoresSafeArea(edges: .bottom)
@@ -50,12 +58,38 @@ struct DigitalTwinView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 controls
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             } else {
                 emptyState
             }
         }
         .navigationTitle("Digital Twin")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: Binding(
+            get: { editElementId != nil },
+            set: { if !$0 { editElementId = nil } }
+        )) {
+            if let id = editElementId,
+               let idx = elementService.elements.firstIndex(where: { $0.id == id }) {
+                EditPropertyElementView(element: $elementService.elements[idx]) {
+                    Task { await elementService.update(elementService.elements[idx]) }
+                }
+                .environmentObject(propertyService)
+            }
+        }
+        .confirmationDialog(
+            "Delete this element?",
+            isPresented: Binding(get: { deleteElement != nil }, set: { if !$0 { deleteElement = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let el = deleteElement {
+                    Task { await elementService.delete(el) }
+                }
+                deleteElement = nil
+            }
+            Button("Cancel", role: .cancel) { deleteElement = nil }
+        }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
                 .environmentObject(elementService)
@@ -94,6 +128,11 @@ struct DigitalTwinView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
+            controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: .white) {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { controlsExpanded.toggle() }
+                HapticFeedback.impact(.medium)
+            }
+
             if controlsExpanded {
                 controlButton(
                     icon: pinMode ? "xmark.circle.fill" : "mappin.and.ellipse",
@@ -120,14 +159,9 @@ struct DigitalTwinView: View {
                     HapticFeedback.impact(.light)
                 }
             }
-
-            controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: .white) {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { controlsExpanded.toggle() }
-                HapticFeedback.impact(.medium)
-            }
         }
         .padding(.trailing, 16)
-        .padding(.bottom, 36)
+        .padding(.top, 8)
     }
 
     private func controlButton(icon: String, tint: Color, label: String? = nil, action: @escaping () -> Void) -> some View {

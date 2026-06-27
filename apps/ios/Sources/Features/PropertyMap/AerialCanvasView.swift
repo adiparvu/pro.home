@@ -22,6 +22,9 @@ struct AerialCanvasView: View {
     var onElementTap: (PropertyElement) -> Void = { _ in }
     var onCanvasTap: (CGPoint) -> Void = { _ in }
     var onElementMove: (PropertyElement, CGPoint) -> Void = { _, _ in }
+    var onElementEdit: (PropertyElement) -> Void = { _ in }
+    var onElementDelete: (PropertyElement) -> Void = { _ in }
+    var onElementFavorite: (PropertyElement) -> Void = { _ in }
 
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
@@ -103,6 +106,18 @@ struct AerialCanvasView: View {
             pin
                 .highPriorityGesture(dragGesture(el, size))
                 .onTapGesture { if dragId == nil { onElementTap(el) } }
+                .contextMenu {
+                    Button { onElementTap(el) } label: { Label("Open", systemImage: "eye") }
+                    Button { onElementEdit(el) } label: { Label("Edit", systemImage: "pencil") }
+                    Button { onElementFavorite(el) } label: {
+                        Label(el.isFavorite ? "Remove from favorites" : "Add to favorites",
+                              systemImage: el.isFavorite ? "star.slash" : "star")
+                    }
+                    Divider()
+                    Button(role: .destructive) { onElementDelete(el) } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
         } else {
             pin
         }
@@ -189,6 +204,16 @@ private struct AerialElementPin: View {
                     Image(systemName: element.elementType.icon)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if element.isFavorite {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.yellow)
+                        .padding(2)
+                        .background(Circle().fill(.black.opacity(0.55)))
+                        .offset(x: 4, y: -4)
                 }
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)

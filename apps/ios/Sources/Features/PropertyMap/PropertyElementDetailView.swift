@@ -95,6 +95,14 @@ struct PropertyElementDetailView: View {
                         Button { showEditElement = true } label: {
                             Label("Edit", systemImage: "pencil")
                         }
+                        Button {
+                            Task { await elementService.toggleFavorite(elementId: localElement.id) }
+                            localElement.isFavorite.toggle()
+                            HapticFeedback.selection()
+                        } label: {
+                            Label(localElement.isFavorite ? "Remove from favorites" : "Add to favorites",
+                                  systemImage: localElement.isFavorite ? "star.slash" : "star")
+                        }
                         Button(role: .destructive) { showDeleteConfirm = true } label: {
                             Label("Delete element", systemImage: "trash")
                         }

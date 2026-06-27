@@ -32,6 +32,7 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var coverPhotoUrl: String?
     var isElectric: Bool
     var automationSystem: String?
+    var isFavorite: Bool
     let createdAt: String
     var updatedAt: String
 
@@ -43,6 +44,7 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         case coverPhotoUrl     = "cover_photo_url"
         case isElectric        = "is_electric"
         case automationSystem  = "automation_system"
+        case isFavorite        = "is_favorite"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -88,6 +90,7 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         coverPhotoUrl = try c.decodeIfPresent(String.self, forKey: .coverPhotoUrl)
         isElectric = try c.decodeIfPresent(Bool.self, forKey: .isElectric) ?? false
         automationSystem = try c.decodeIfPresent(String.self, forKey: .automationSystem)
+        isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
         createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
         updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt) ?? ""
     }

@@ -12,6 +12,7 @@ struct ObjectsListView: View {
     @EnvironmentObject private var tabBarVis: TabBarVisibility
 
     @State private var filter: ObjectFilter = .all
+    @State private var favoritesOnly = false
     @State private var selectedElement: PropertyElement?
 
     enum ObjectFilter: String, CaseIterable {
@@ -33,8 +34,10 @@ struct ObjectsListView: View {
     }
 
     private var filteredElements: [PropertyElement] {
-        guard let layer = filter.layer else { return elementService.elements }
-        return elementService.elements.filter { $0.layer == layer }
+        var items = elementService.elements
+        if favoritesOnly { items = items.filter { $0.isFavorite } }
+        if let layer = filter.layer { items = items.filter { $0.layer == layer } }
+        return items
     }
 
     var body: some View {
@@ -52,7 +55,11 @@ struct ObjectsListView: View {
                         ForEach(filteredElements) { element in
                             ObjectListRow(
                                 element: element,
-                                zoneName: zoneName(for: element)
+                                zoneName: zoneName(for: element),
+                                onToggleFavorite: {
+                                    Task { await elementService.toggleFavorite(elementId: element.id) }
+                                    HapticFeedback.selection()
+                                }
                             )
                             .onTapGesture {
                                 HapticFeedback.impact(.light)
@@ -93,6 +100,21 @@ struct ObjectsListView: View {
     private var filterChipsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                Button {
+                    withAnimation(.spring(response: 0.3)) { favoritesOnly.toggle() }
+                    HapticFeedback.selection()
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: favoritesOnly ? "star.fill" : "star")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Favorites").font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(favoritesOnly ? Color.yellow : Color.primary.opacity(0.08), in: Capsule())
+                }
+                .buttonStyle(.plain)
+
                 ForEach(ObjectFilter.allCases, id: \.self) { f in
                     CategoryFilterChip(label: LocalizedStringKey(f.rawValue), isActive: filter == f) {
                         withAnimation(.spring(response: 0.3)) { filter = f }
@@ -130,6 +152,7 @@ struct ObjectsListView: View {
 struct ObjectListRow: View {
     let element: PropertyElement
     let zoneName: String?
+    var onToggleFavorite: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 14) {
@@ -158,6 +181,14 @@ struct ObjectListRow: View {
             }
 
             Spacer()
+
+            Button { onToggleFavorite() } label: {
+                Image(systemName: element.isFavorite ? "star.fill" : "star")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(element.isFavorite ? .yellow : Color.primary.opacity(0.3))
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(.plain)
 
             // Health score badge
             Text("\(element.healthScore)")

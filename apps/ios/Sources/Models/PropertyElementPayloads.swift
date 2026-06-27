@@ -27,6 +27,7 @@ struct NewPropertyElement: Encodable {
     var coverPhotoUrl: String? = nil
     var isElectric: Bool = false
     var automationSystem: String? = nil
+    var isFavorite: Bool = false
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -35,6 +36,7 @@ struct NewPropertyElement: Encodable {
         case coverPhotoUrl     = "cover_photo_url"
         case isElectric        = "is_electric"
         case automationSystem  = "automation_system"
+        case isFavorite        = "is_favorite"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -78,6 +80,15 @@ struct ElementCoverUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case coverPhotoUrl = "cover_photo_url"
         case updatedAt     = "updated_at"
+    }
+}
+
+struct ElementFavoriteUpdate: Encodable {
+    var isFavorite: Bool
+    var updatedAt: String
+    enum CodingKeys: String, CodingKey {
+        case isFavorite = "is_favorite"
+        case updatedAt  = "updated_at"
     }
 }
 

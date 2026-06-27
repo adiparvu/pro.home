@@ -68,6 +68,7 @@ final class PropertyElementService: ObservableObject {
                 coverPhotoUrl: element.coverPhotoUrl,
                 isElectric: element.isElectric,
                 automationSystem: element.automationSystem,
+                isFavorite: element.isFavorite,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase
@@ -122,6 +123,28 @@ final class PropertyElementService: ObservableObject {
                 elements[idx].coverPhotoUrl = url
             }
         } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func toggleFavorite(elementId: UUID) async {
+        guard let idx = elements.firstIndex(where: { $0.id == elementId }) else { return }
+        let newValue = !elements[idx].isFavorite
+        elements[idx].isFavorite = newValue // optimistic
+        let payload = ElementFavoriteUpdate(
+            isFavorite: newValue,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        do {
+            try await supabase
+                .from("property_elements")
+                .update(payload)
+                .eq("id", value: elementId.uuidString)
+                .execute()
+        } catch {
+            if let i = elements.firstIndex(where: { $0.id == elementId }) {
+                elements[i].isFavorite = !newValue // revert
+            }
             self.error = error.localizedDescription
         }
     }
