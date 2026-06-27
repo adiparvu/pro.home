@@ -61,10 +61,12 @@ extension PropertyElementDetailView {
                 }
             }
 
+            ElementNotesSection(element: localElement)
+
             if let notes = localElement.notes, !notes.isEmpty {
                 GlassCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Label("Notes", systemImage: "note.text")
+                        Label("Quick note", systemImage: "note.text")
                             .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                         Text(notes)
                             .font(.subheadline)
