@@ -9,17 +9,44 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
     @Published var suggestions: [MKLocalSearchCompletion] = []
     private let completer = MKLocalSearchCompleter()
 
+    // Bounding boxes for supported countries
+    private static let regions: [String: MKCoordinateRegion] = [
+        "RO": MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 45.9, longitude: 24.9),
+            span: MKCoordinateSpan(latitudeDelta: 10, longitudeDelta: 12)
+        ),
+        "BE": MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 50.5, longitude: 4.5),
+            span: MKCoordinateSpan(latitudeDelta: 3.5, longitudeDelta: 5)
+        )
+    ]
+
     override init() {
         super.init()
         completer.delegate = self
         completer.resultTypes = .address
+        // Default: România
+        if let ro = Self.regions["RO"] { completer.region = ro }
+    }
+
+    func setCountry(_ code: String) {
+        if let region = Self.regions[code.uppercased()] {
+            completer.region = region
+        }
     }
 
     func query(_ text: String) { completer.queryFragment = text }
 
     nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         let results = completer.results
-        Task { @MainActor in self.suggestions = results }
+        Task { @MainActor in
+            // Deduplicate by "title|subtitle" — MKLocalSearchCompleter can return
+            // the same address from multiple data sources
+            var seen = Set<String>()
+            self.suggestions = results.filter {
+                seen.insert("\($0.title)|\($0.subtitle)").inserted
+            }
+        }
     }
 
     nonisolated func completer(_ completer: MKLocalSearchCompleter, didFailWithError _: Error) {
@@ -116,7 +143,8 @@ struct AddPropertySheet: View {
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .focused($addressFocused)
                                         .onChange(of: addressLine1) { _, val in
-                                            completer.query(val + " " + city)
+                                            let hint = [city, country].filter { !$0.isEmpty }.joined(separator: ", ")
+                                            completer.query(val + (hint.isEmpty ? "" : " " + hint))
                                             showSuggestions = !val.isEmpty
                                         }
                                 }.padding(.horizontal, 16).padding(.vertical, 13)
@@ -126,10 +154,11 @@ struct AddPropertySheet: View {
                                 formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
                                 formDivider()
                                 formFieldRow("globe.europe.africa.fill", "Country", $country)
+                                    .onChange(of: country) { _, code in completer.setCountry(code) }
                             }
                             if showSuggestions && !completer.suggestions.isEmpty {
                                 VStack(spacing: 0) {
-                                    ForEach(completer.suggestions.prefix(4), id: \.title) { s in
+                                    ForEach(completer.suggestions.prefix(5), id: \.self) { s in
                                         Button { applySuggestion(s) } label: {
                                             HStack(spacing: 10) {
                                                 Image(systemName: "mappin.circle.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
@@ -140,7 +169,7 @@ struct AddPropertySheet: View {
                                                 Spacer()
                                             }.padding(.horizontal, 16).padding(.vertical, 10)
                                         }.buttonStyle(.plain)
-                                        if s.title != completer.suggestions.prefix(4).last?.title { Divider().padding(.leading, 44) }
+                                        if s.title != completer.suggestions.prefix(5).last?.title { Divider().padding(.leading, 44) }
                                     }
                                 }
                                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))

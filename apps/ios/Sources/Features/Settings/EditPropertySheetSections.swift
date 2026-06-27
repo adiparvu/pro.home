@@ -8,7 +8,7 @@ extension EditPropertySheet {
 
     var suggestionDropdown: some View {
         VStack(spacing: 0) {
-            ForEach(completer.suggestions.prefix(4), id: \.title) { s in
+            ForEach(completer.suggestions.prefix(5), id: \.self) { s in
                 Button { applySuggestion(s) } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "mappin.circle.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
@@ -21,7 +21,7 @@ extension EditPropertySheet {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
-                if s.title != completer.suggestions.prefix(4).last?.title { Divider().padding(.leading, 44) }
+                if s.title != completer.suggestions.prefix(5).last?.title { Divider().padding(.leading, 44) }
             }
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))

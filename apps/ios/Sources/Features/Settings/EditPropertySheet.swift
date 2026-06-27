@@ -91,7 +91,8 @@ struct EditPropertySheet: View {
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .focused($addressFocused)
                                         .onChange(of: addressLine1) { _, val in
-                                            completer.query(val + " " + city)
+                                            let hint = [city, country].filter { !$0.isEmpty }.joined(separator: ", ")
+                                            completer.query(val + (hint.isEmpty ? "" : " " + hint))
                                             showSuggestions = !val.isEmpty
                                         }
                                 }
@@ -102,6 +103,7 @@ struct EditPropertySheet: View {
                                 formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
                                 formDivider()
                                 formFieldRow("globe.europe.africa.fill", "Country", $country)
+                                    .onChange(of: country) { _, code in completer.setCountry(code) }
                             }
                             if showSuggestions && !completer.suggestions.isEmpty {
                                 suggestionDropdown
