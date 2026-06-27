@@ -68,6 +68,8 @@ extension PropertyElementDetailView {
 
             ElementTagsSection(elementId: localElement.id)
 
+            ElementObjectsSection(element: localElement)
+
             ElementAutomationsSection(element: localElement)
 
             ElementNotesSection(element: localElement)

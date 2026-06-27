@@ -48,6 +48,7 @@ struct InventoryItem: Identifiable, Codable {
     var longitude: Double?
     var trackerType: String = ""
     var trackerIdentifier: String = ""
+    var elementId: UUID? = nil
 
     var hasLocation: Bool { latitude != nil && longitude != nil }
     var isLoaned: Bool { currentLoan != nil }
@@ -114,6 +115,7 @@ struct InventoryMetadata: Codable {
     var longitude: Double? = nil
     var trackerType: String = ""
     var trackerIdentifier: String = ""
+    var elementId: UUID? = nil
 }
 
 struct DBInventoryRecord: Codable {
@@ -155,6 +157,7 @@ struct DBInventoryRecord: Codable {
         item.longitude = metadata.longitude
         item.trackerType = metadata.trackerType
         item.trackerIdentifier = metadata.trackerIdentifier
+        item.elementId = metadata.elementId
         return item
     }
 }
@@ -242,7 +245,8 @@ extension InventoryItem {
     private var inventoryMetadata: InventoryMetadata {
         InventoryMetadata(location: location, currentLoan: currentLoan, loanHistory: loanHistory,
                           publicProfile: publicProfile, latitude: latitude, longitude: longitude,
-                          trackerType: trackerType, trackerIdentifier: trackerIdentifier)
+                          trackerType: trackerType, trackerIdentifier: trackerIdentifier,
+                          elementId: elementId)
     }
 }
 
