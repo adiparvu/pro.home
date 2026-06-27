@@ -61,6 +61,11 @@ extension PropertyElementDetailView {
                 }
             }
 
+            if localElement.isElectric ||
+               [.appliances, .security, .energy].contains(localElement.elementType.category) {
+                ElementSmartControlSection(elementId: localElement.id)
+            }
+
             ElementAutomationsSection(element: localElement)
 
             ElementNotesSection(element: localElement)

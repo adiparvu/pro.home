@@ -28,6 +28,7 @@ struct NewPropertyElement: Encodable {
     var isElectric: Bool = false
     var automationSystem: String? = nil
     var isFavorite: Bool = false
+    var homekitAccessoryId: String? = nil
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -37,6 +38,7 @@ struct NewPropertyElement: Encodable {
         case isElectric        = "is_electric"
         case automationSystem  = "automation_system"
         case isFavorite        = "is_favorite"
+        case homekitAccessoryId = "homekit_accessory_id"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"

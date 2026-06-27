@@ -69,6 +69,7 @@ final class PropertyElementService: ObservableObject {
                 isElectric: element.isElectric,
                 automationSystem: element.automationSystem,
                 isFavorite: element.isFavorite,
+                homekitAccessoryId: element.homekitAccessoryId,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase
@@ -121,6 +122,27 @@ final class PropertyElementService: ObservableObject {
                 .execute()
             if let idx = elements.firstIndex(where: { $0.id == elementId }) {
                 elements[idx].coverPhotoUrl = url
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func updateHomeKit(elementId: UUID, accessoryId: String?) async {
+        struct Payload: Encodable {
+            let homekit_accessory_id: String?
+            let updated_at: String
+        }
+        let payload = Payload(homekit_accessory_id: accessoryId,
+                              updated_at: ISO8601DateFormatter().string(from: Date()))
+        do {
+            try await supabase
+                .from("property_elements")
+                .update(payload)
+                .eq("id", value: elementId.uuidString)
+                .execute()
+            if let idx = elements.firstIndex(where: { $0.id == elementId }) {
+                elements[idx].homekitAccessoryId = accessoryId
             }
         } catch {
             self.error = error.localizedDescription
