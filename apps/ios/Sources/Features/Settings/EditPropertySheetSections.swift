@@ -4,31 +4,6 @@ import CoreLocation
 
 extension EditPropertySheet {
 
-    // MARK: - Suggestion Dropdown
-
-    var suggestionDropdown: some View {
-        VStack(spacing: 0) {
-            ForEach(completer.suggestions.prefix(5), id: \.self) { s in
-                Button { applySuggestion(s) } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "mappin.circle.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(s.title).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
-                            if !s.subtitle.isEmpty { Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5)) }
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                }
-                .buttonStyle(.plain)
-                if s.title != completer.suggestions.prefix(5).last?.title { Divider().padding(.leading, 44) }
-            }
-        }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        .padding(.top, 4)
-    }
-
     // MARK: - Map
 
     var mapToggleButton: some View {
@@ -245,25 +220,6 @@ extension EditPropertySheet {
         updated.story = story.isEmpty ? nil : story
         updated.renovations = renovations; updated.owners = owners
         await onSave(updated); HapticFeedback.success(); dismiss()
-    }
-
-    private func applySuggestion(_ suggestion: MKLocalSearchCompletion) {
-        showSuggestions = false; addressFocused = false
-        let req = MKLocalSearch.Request(completion: suggestion)
-        Task {
-            if let item = try? await MKLocalSearch(request: req).start().mapItems.first {
-                let p = item.placemark
-                if let t = p.thoroughfare { addressLine1 = t + (p.subThoroughfare.map { " " + $0 } ?? "") }
-                city = p.locality ?? p.administrativeArea ?? city
-                country = p.countryCode ?? country
-                if let pc = p.postalCode, !pc.isEmpty { postalCode = pc }
-                latitude = p.coordinate.latitude; longitude = p.coordinate.longitude
-                latText = String(format: "%.6f", p.coordinate.latitude)
-                lonText = String(format: "%.6f", p.coordinate.longitude)
-                mapPosition = .region(MKCoordinateRegion(center: p.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)))
-                if !showMap { showMap = true }
-            }
-        }
     }
 
     private func reverseGeocode() async {

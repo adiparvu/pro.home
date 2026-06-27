@@ -24,7 +24,7 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
     override init() {
         super.init()
         completer.delegate = self
-        completer.resultTypes = [.address, .pointOfInterest, .query]
+        completer.resultTypes = .address
         // Default: România
         if let ro = Self.regions["RO"] { completer.region = ro }
     }
@@ -97,6 +97,150 @@ func formCoordField(_ label: String, text: Binding<String>, placeholder: String)
     .frame(maxWidth: .infinity)
 }
 
+// MARK: - Address Autocomplete Field (reusable)
+//
+// One self-contained address block: Street + City + Postal + Country with a
+// live suggestion dropdown. Picking a suggestion fills every field reliably:
+//   • The street is filled immediately from the chosen completion (so the field
+//     never just "stays as typed"), then refined via MKLocalSearch for the
+//     precise street/city/postal/coordinates.
+//   • While applying a pick we suppress the completer (isApplying) so the
+//     programmatic field change does NOT re-open the dropdown.
+
+struct AddressAutocompleteField: View {
+    @Binding var addressLine1: String
+    @Binding var city: String
+    @Binding var postalCode: String
+    @Binding var country: String
+    @Binding var latitude: Double?
+    @Binding var longitude: Double?
+    var onPicked: () -> Void = {}
+
+    @StateObject private var completer = AddressCompleter()
+    @State private var showSuggestions = false
+    @State private var isApplying = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            formFieldGroup {
+                HStack(spacing: 12) {
+                    Image(systemName: "mappin.fill")
+                        .font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
+                    TextField("Street and number", text: $addressLine1)
+                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
+                        .focused($focused)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .onChange(of: addressLine1) { _, val in
+                            guard !isApplying else { return }
+                            completer.query(val)
+                            showSuggestions = !val.isEmpty
+                        }
+                    if !addressLine1.isEmpty {
+                        Button {
+                            addressLine1 = ""; completer.suggestions = []; showSuggestions = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.3))
+                        }.buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 13)
+                formDivider()
+                formFieldRow("building.2.fill", "City", $city)
+                formDivider()
+                formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
+                formDivider()
+                formFieldRow("globe.europe.africa.fill", "Country", $country)
+                    .onChange(of: country) { _, code in completer.setCountry(code) }
+            }
+            if showSuggestions && !completer.suggestions.isEmpty {
+                suggestionList
+            }
+        }
+        .onAppear { if !country.isEmpty { completer.setCountry(country) } }
+        .onChange(of: focused) { _, isFocused in
+            if !isFocused {
+                // Delay hiding so a tap on a suggestion registers first.
+                Task { try? await Task.sleep(for: .milliseconds(250)); showSuggestions = false }
+            } else if !addressLine1.isEmpty {
+                showSuggestions = !completer.suggestions.isEmpty
+            }
+        }
+    }
+
+    private var suggestionList: some View {
+        VStack(spacing: 0) {
+            let items = Array(completer.suggestions.prefix(6))
+            ForEach(Array(items.enumerated()), id: \.offset) { idx, s in
+                Button { pick(s) } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "mappin.circle.fill")
+                            .font(.system(size: 16)).foregroundStyle(Color.accentColor)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(s.title).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                            if !s.subtitle.isEmpty {
+                                Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 16).padding(.vertical, 11)
+                }
+                .buttonStyle(.plain)
+                if idx < items.count - 1 { Divider().padding(.leading, 44) }
+            }
+        }
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .padding(.top, 6)
+    }
+
+    private func pick(_ s: MKLocalSearchCompletion) {
+        isApplying = true
+        showSuggestions = false
+        focused = false
+        completer.suggestions = []
+        HapticFeedback.selection()
+
+        // Immediate fill so the field reflects the choice right away.
+        addressLine1 = s.title
+        let ignore: Set<String> = ["românia", "romania", "belgië", "belgique", "belgium", "belgia"]
+        let parts = s.subtitle
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !ignore.contains($0.lowercased()) }
+        if let firstCity = parts.first { city = firstCity }
+
+        // Refine with a precise placemark lookup.
+        let req = MKLocalSearch.Request(completion: s)
+        Task {
+            if let item = try? await MKLocalSearch(request: req).start().mapItems.first {
+                let p = item.placemark
+                await MainActor.run {
+                    if let t = p.thoroughfare {
+                        addressLine1 = t + (p.subThoroughfare.map { " " + $0 } ?? "")
+                    }
+                    if let l = p.locality { city = l }
+                    else if let a = p.administrativeArea { city = a }
+                    if let pc = p.postalCode, !pc.isEmpty { postalCode = pc }
+                    if let cc = p.isoCountryCode { country = cc }
+                    latitude = p.coordinate.latitude
+                    longitude = p.coordinate.longitude
+                }
+            }
+            // Keep the completer suppressed until programmatic edits settle.
+            try? await Task.sleep(for: .milliseconds(350))
+            await MainActor.run {
+                isApplying = false
+                onPicked()
+            }
+        }
+    }
+}
+
 // MARK: - Add Property Sheet
 
 struct AddPropertySheet: View {
@@ -121,10 +265,6 @@ struct AddPropertySheet: View {
     @State private var mapPosition: MapCameraPosition = .automatic
     @State private var isLocating = false
 
-    @StateObject private var completer = AddressCompleter()
-    @State private var showSuggestions = false
-    @FocusState private var addressFocused: Bool
-
     private let propertyTypes = ["apartment", "house", "villa", "studio", "commercial", "other"]
 
     var body: some View {
@@ -135,48 +275,25 @@ struct AddPropertySheet: View {
                     VStack(spacing: 0) {
                         formFieldGroup { formFieldRow("house.fill", "Property name", $name) }
 
-                        VStack(spacing: 0) {
-                            formFieldGroup {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "mappin.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                                    TextField("Address", text: $addressLine1)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                        .focused($addressFocused)
-                                        .onChange(of: addressLine1) { _, val in
-                                            let hint = [city, country].filter { !$0.isEmpty }.joined(separator: ", ")
-                                            completer.query(val + (hint.isEmpty ? "" : " " + hint))
-                                            showSuggestions = !val.isEmpty
-                                        }
-                                }.padding(.horizontal, 16).padding(.vertical, 13)
-                                formDivider()
-                                formFieldRow("building.2.fill", "City", $city)
-                                formDivider()
-                                formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
-                                formDivider()
-                                formFieldRow("globe.europe.africa.fill", "Country", $country)
-                                    .onChange(of: country) { _, code in completer.setCountry(code) }
-                            }
-                            if showSuggestions && !completer.suggestions.isEmpty {
-                                VStack(spacing: 0) {
-                                    ForEach(completer.suggestions.prefix(5), id: \.self) { s in
-                                        Button { applySuggestion(s) } label: {
-                                            HStack(spacing: 10) {
-                                                Image(systemName: "mappin.circle.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                                                VStack(alignment: .leading, spacing: 1) {
-                                                    Text(s.title).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
-                                                    if !s.subtitle.isEmpty { Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5)) }
-                                                }
-                                                Spacer()
-                                            }.padding(.horizontal, 16).padding(.vertical, 10)
-                                        }.buttonStyle(.plain)
-                                        if s.title != completer.suggestions.prefix(5).last?.title { Divider().padding(.leading, 44) }
-                                    }
+                        AddressAutocompleteField(
+                            addressLine1: $addressLine1,
+                            city: $city,
+                            postalCode: $postalCode,
+                            country: $country,
+                            latitude: $latitude,
+                            longitude: $longitude,
+                            onPicked: {
+                                if let lat = latitude, let lon = longitude {
+                                    latText = String(format: "%.6f", lat)
+                                    lonText = String(format: "%.6f", lon)
+                                    mapPosition = .region(MKCoordinateRegion(
+                                        center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)))
+                                    if !showMap { showMap = true }
                                 }
-                                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                                .padding(.top, 4)
                             }
-                        }.padding(.top, 16)
+                        )
+                        .padding(.top, 16)
 
                         Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() } } label: {
                             HStack {
@@ -216,7 +333,7 @@ struct AddPropertySheet: View {
                     }
                     .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 40)
                 }
-                .onTapGesture { if showSuggestions { showSuggestions = false }; addressFocused = false }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("Add Property").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -269,25 +386,6 @@ struct AddPropertySheet: View {
                 Button { applyManualCoords() } label: {
                     Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
                 }.buttonStyle(.plain)
-            }
-        }
-    }
-
-    private func applySuggestion(_ suggestion: MKLocalSearchCompletion) {
-        showSuggestions = false; addressFocused = false
-        let req = MKLocalSearch.Request(completion: suggestion)
-        Task {
-            if let item = try? await MKLocalSearch(request: req).start().mapItems.first {
-                let p = item.placemark
-                if let t = p.thoroughfare { addressLine1 = t + (p.subThoroughfare.map { " " + $0 } ?? "") }
-                city = p.locality ?? p.administrativeArea ?? city
-                country = p.countryCode ?? country
-                if let pc = p.postalCode, !pc.isEmpty { postalCode = pc }
-                latitude = p.coordinate.latitude; longitude = p.coordinate.longitude
-                latText = String(format: "%.6f", p.coordinate.latitude)
-                lonText = String(format: "%.6f", p.coordinate.longitude)
-                mapPosition = .region(MKCoordinateRegion(center: p.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)))
-                if !showMap { showMap = true }
             }
         }
     }

@@ -42,10 +42,6 @@ struct EditPropertySheet: View {
     @State var mapPosition: MapCameraPosition = .automatic
     @State var isLocating = false
 
-    @StateObject var completer = AddressCompleter()
-    @State var showSuggestions = false
-    @FocusState var addressFocused: Bool
-
     private let propertyTypes = ["apartment", "house", "villa", "studio", "commercial", "other"]
 
     init(property: PropertyModel, onSave: @escaping (PropertyModel) async -> Void) {
@@ -83,32 +79,24 @@ struct EditPropertySheet: View {
                     VStack(spacing: 0) {
                         formFieldGroup { formFieldRow("house.fill", "Property name", $name) }
 
-                        VStack(spacing: 0) {
-                            formFieldGroup {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "mappin.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
-                                    TextField("Address", text: $addressLine1)
-                                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                        .focused($addressFocused)
-                                        .onChange(of: addressLine1) { _, val in
-                                            let hint = [city, country].filter { !$0.isEmpty }.joined(separator: ", ")
-                                            completer.query(val + (hint.isEmpty ? "" : " " + hint))
-                                            showSuggestions = !val.isEmpty
-                                        }
+                        AddressAutocompleteField(
+                            addressLine1: $addressLine1,
+                            city: $city,
+                            postalCode: $postalCode,
+                            country: $country,
+                            latitude: $latitude,
+                            longitude: $longitude,
+                            onPicked: {
+                                if let lat = latitude, let lon = longitude {
+                                    latText = String(format: "%.6f", lat)
+                                    lonText = String(format: "%.6f", lon)
+                                    mapPosition = .region(MKCoordinateRegion(
+                                        center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)))
+                                    if !showMap { showMap = true }
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 13)
-                                formDivider()
-                                formFieldRow("building.2.fill", "City", $city)
-                                formDivider()
-                                formFieldRow("envelope.fill", "Postal code", $postalCode, keyboard: .numbersAndPunctuation)
-                                formDivider()
-                                formFieldRow("globe.europe.africa.fill", "Country", $country)
-                                    .onChange(of: country) { _, code in completer.setCountry(code) }
                             }
-                            if showSuggestions && !completer.suggestions.isEmpty {
-                                suggestionDropdown
-                            }
-                        }
+                        )
                         .padding(.top, 16)
 
                         mapToggleButton.padding(.top, 12)
@@ -148,7 +136,7 @@ struct EditPropertySheet: View {
                     }
                     .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 40)
                 }
-                .onTapGesture { if showSuggestions { showSuggestions = false }; addressFocused = false }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("Edit Property").navigationBarTitleDisplayMode(.inline)
             .toolbar {
