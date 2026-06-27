@@ -16,12 +16,23 @@ struct AerialCanvasView: View {
     let elements: [PropertyElement]
     var interactive: Bool = false
     var pinMode: Bool = false
+    var showNames: Bool = true
+    /// nil = show all; 0/1/2 = only elements in the top/middle/bottom third.
+    var sectionFilter: Int? = nil
     var onElementTap: (PropertyElement) -> Void = { _ in }
     var onCanvasTap: (CGPoint) -> Void = { _ in }
     var onElementMove: (PropertyElement, CGPoint) -> Void = { _, _ in }
 
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
+
+    private var visibleElements: [PropertyElement] {
+        guard let s = sectionFilter else { return elements }
+        return elements.filter { el in
+            let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+            return Int(min(max(y, 0), 0.999) * 3) == s
+        }
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -40,8 +51,22 @@ struct AerialCanvasView: View {
                         )
                 }
 
+                // Section dividers (only while a section filter is active)
+                if sectionFilter != nil {
+                    VStack(spacing: 0) {
+                        ForEach(0..<3) { idx in
+                            Rectangle()
+                                .fill(idx == sectionFilter ? Color.clear : Color.black.opacity(0.35))
+                                .overlay(alignment: .bottom) {
+                                    if idx < 2 { Rectangle().fill(.white.opacity(0.25)).frame(height: 1) }
+                                }
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
+
                 // Element pins
-                ForEach(elements) { el in
+                ForEach(visibleElements) { el in
                     pinView(el, size: geo.size)
                 }
 
@@ -72,7 +97,7 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func pinView(_ el: PropertyElement, size: CGSize) -> some View {
-        let pin = AerialElementPin(element: el, dragging: dragId == el.id)
+        let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames)
             .position(pinPoint(el, size))
         if interactive {
             pin
@@ -138,27 +163,45 @@ struct AerialCanvasView: View {
 private struct AerialElementPin: View {
     let element: PropertyElement
     var dragging: Bool = false
+    var showName: Bool = true
+
+    private let size: CGFloat = 28
 
     var body: some View {
         VStack(spacing: 3) {
             ZStack {
-                Circle()
-                    .fill(element.elementType.accentColor)
-                    .frame(width: 36, height: 36)
-                    .overlay(Circle().strokeBorder(.white, lineWidth: 2))
-                    .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
-                Image(systemName: element.elementType.icon)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                if let cover = element.coverPhotoUrl, let url = URL(string: cover) {
+                    // Cover thumbnail pin
+                    AsyncImage(url: url) { phase in
+                        if case .success(let img) = phase { img.resizable().scaledToFill() }
+                        else { element.elementType.accentColor.opacity(0.5) }
+                    }
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
+                } else {
+                    // Liquid-glass icon pin
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(Circle().fill(element.elementType.accentColor.opacity(0.45)))
+                        .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1))
+                        .frame(width: size, height: size)
+                    Image(systemName: element.elementType.icon)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                }
             }
-            .scaleEffect(dragging ? 1.25 : 1.0)
+            .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+            .scaleEffect(dragging ? 1.3 : 1.0)
 
-            Text(element.name)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .padding(.horizontal, 6).padding(.vertical, 2)
-                .background(.black.opacity(0.55), in: Capsule())
+            if showName {
+                Text(element.name)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
         }
         .animation(.spring(response: 0.25), value: dragging)
     }

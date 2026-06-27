@@ -1,5 +1,7 @@
 import SwiftUI
 import PhotosUI
+import Supabase
+import UniformTypeIdentifiers
 
 struct AddPropertyElementView: View {
     let defaultPosition: CGPoint
@@ -29,6 +31,30 @@ struct AddPropertyElementView: View {
     @State private var scanPickerItem: PhotosPickerItem? = nil
     @State private var isScanning = false
 
+    // Type picker (full list)
+    @State private var showTypePicker = false
+
+    // Photos
+    @State private var coverURL: String?
+    @State private var galleryURLs: [String] = []
+    @State private var isUploadingMedia = false
+    @State private var mediaTarget: MediaTarget = .gallery
+    @State private var showSourceDialog = false
+    @State private var showCamera = false
+    @State private var showLibrary = false
+    @State private var showFiles = false
+    @State private var libraryItem: PhotosPickerItem?
+
+    // Automation (gate / powered elements)
+    @State private var isElectric = false
+    @State private var automationSystem = ""
+
+    private enum MediaTarget { case cover, gallery }
+
+    private var showsAutomation: Bool {
+        elementType == .gate || elementType == .garage
+    }
+
     private var canSave: Bool { name.trimmingCharacters(in: .whitespaces).count >= 2 }
 
     var body: some View {
@@ -40,18 +66,28 @@ struct AddPropertyElementView: View {
                         // Type picker
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 10) {
-                                Label("Element type", systemImage: "tag").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                HStack {
+                                    Label("Element type", systemImage: "tag").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button { showTypePicker = true } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "square.grid.2x2.fill").font(.system(size: 11))
+                                            Text("All types").font(.caption.weight(.semibold))
+                                        }
+                                        .foregroundStyle(Color.accentColor)
+                                        .padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                                    }
+                                }
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 8) {
-                                        ForEach(PropertyElementType.allCases, id: \.self) { type in
+                                        // Always include the currently-selected type so it stays visible.
+                                        let chips = PropertyElementType.common.contains(elementType)
+                                            ? PropertyElementType.common
+                                            : [elementType] + PropertyElementType.common
+                                        ForEach(chips, id: \.self) { type in
                                             TypeChip(type: type, isSelected: elementType == type) {
-                                                withAnimation(.spring(response: 0.25)) {
-                                                    elementType = type
-                                                    if name.isEmpty { name = type.displayName }
-                                                    selectedLayer = type.defaultLayer
-                                                    condition = .good
-                                                    healthScore = 100
-                                                }
+                                                selectType(type)
                                             }
                                         }
                                     }
@@ -68,6 +104,12 @@ struct AddPropertyElementView: View {
                                 fieldRow(label: "Description", placeholder: "Additional details...", text: $description)
                             }
                         }
+
+                        // Photos (cover + gallery)
+                        photosCard
+
+                        // Automation (gate / powered)
+                        if showsAutomation { automationCard }
 
                         // Condition & health
                         GlassCard(padding: 14) {
@@ -245,6 +287,187 @@ struct AddPropertyElementView: View {
                         .disabled(!canSave)
                 }
             }
+            .sheet(isPresented: $showTypePicker) {
+                ElementTypePickerSheet(selected: elementType) { selectType($0) }
+            }
+            .confirmationDialog("Add photo", isPresented: $showSourceDialog, titleVisibility: .visible) {
+                Button("Take photo") { showCamera = true }
+                Button("Photo library") { showLibrary = true }
+                Button("Files") { showFiles = true }
+                Button("Cancel", role: .cancel) {}
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraCapture { img in Task { await handlePicked(img) } }
+                    .ignoresSafeArea()
+            }
+            .photosPicker(isPresented: $showLibrary, selection: $libraryItem, matching: .images)
+            .onChange(of: libraryItem) { _, item in
+                guard let item else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let img = UIImage(data: data) {
+                        await handlePicked(img)
+                    }
+                    libraryItem = nil
+                }
+            }
+            .fileImporter(isPresented: $showFiles, allowedContentTypes: [.image, .jpeg, .png, .heic]) { result in
+                if case .success(let url) = result {
+                    let scoped = url.startAccessingSecurityScopedResource()
+                    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                    if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
+                        Task { await handlePicked(img) }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Photos card
+
+    private var photosCard: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Photos", systemImage: "photo.on.rectangle.angled")
+                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    if isUploadingMedia { ProgressView().scaleEffect(0.7) }
+                }
+
+                // Cover
+                Text("Cover photo").font(.caption2).foregroundStyle(.tertiary)
+                Button {
+                    mediaTarget = .cover; showSourceDialog = true
+                } label: {
+                    ZStack {
+                        if let coverURL, let url = URL(string: coverURL) {
+                            AsyncImage(url: url) { phase in
+                                if case .success(let img) = phase { img.resizable().scaledToFill() }
+                                else { Color.primary.opacity(0.06) }
+                            }
+                        } else {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.primary.opacity(0.05))
+                                .overlay(
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "photo.badge.plus").font(.system(size: 24))
+                                        Text("Add cover").font(.caption)
+                                    }.foregroundStyle(.secondary)
+                                )
+                        }
+                    }
+                    .frame(height: 150)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+                }
+                .buttonStyle(.plain)
+                if coverURL != nil {
+                    Button(role: .destructive) { coverURL = nil } label: {
+                        Label("Remove cover", systemImage: "trash").font(.caption)
+                    }
+                }
+
+                // Gallery
+                Text("More photos").font(.caption2).foregroundStyle(.tertiary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(galleryURLs, id: \.self) { urlStr in
+                            if let url = URL(string: urlStr) {
+                                AsyncImage(url: url) { phase in
+                                    if case .success(let img) = phase { img.resizable().scaledToFill() }
+                                    else { Color.primary.opacity(0.06) }
+                                }
+                                .frame(width: 78, height: 78)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .contextMenu {
+                                    Button { coverURL = urlStr } label: { Label("Set as cover", systemImage: "star") }
+                                    Button(role: .destructive) { galleryURLs.removeAll { $0 == urlStr } } label: { Label("Delete", systemImage: "trash") }
+                                }
+                            }
+                        }
+                        Button {
+                            mediaTarget = .gallery; showSourceDialog = true
+                        } label: {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.primary.opacity(0.05))
+                                .frame(width: 78, height: 78)
+                                .overlay(Image(systemName: "plus").font(.system(size: 20)).foregroundStyle(Color.accentColor))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Automation card
+
+    private var automationCard: some View {
+        GlassCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Automation", systemImage: "bolt.fill")
+                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Toggle(isOn: $isElectric) {
+                    Text("Electric / automated").font(.subheadline)
+                }
+                .tint(Color(red: 0.29, green: 0.56, blue: 0.89))
+                if isElectric {
+                    fieldRow(label: "Automation system", placeholder: "e.g. Nice sliding motor, remote + app", text: $automationSystem)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(["Nice", "BFT", "CAME", "Somfy", "FAAC", "Roger", "Hörmann"], id: \.self) { brandName in
+                                Button { automationSystem = brandName } label: {
+                                    Text(brandName)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(automationSystem == brandName ? Color.white : Color.secondary)
+                                        .padding(.horizontal, 12).padding(.vertical, 6)
+                                        .background(
+                                            Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func selectType(_ type: PropertyElementType) {
+        withAnimation(.spring(response: 0.25)) {
+            elementType = type
+            if name.isEmpty { name = type.displayName }
+            selectedLayer = type.defaultLayer
+            condition = .good
+            healthScore = 100
+        }
+    }
+
+    private func handlePicked(_ image: UIImage) async {
+        guard let pid = propertyService.primary?.id,
+              let data = image.jpegData(compressionQuality: 0.82) else { return }
+        isUploadingMedia = true
+        defer { isUploadingMedia = false }
+        let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
+        let path = "\(uid)/elements/\(pid.uuidString)/\(UUID().uuidString).jpg"
+        do {
+            try await supabase.storage.from("documents")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            let url = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
+            await MainActor.run {
+                switch mediaTarget {
+                case .cover: coverURL = url
+                case .gallery: galleryURLs.append(url)
+                }
+                HapticFeedback.success()
+            }
+        } catch {
+            await MainActor.run { HapticFeedback.warning() }
         }
     }
 
@@ -270,6 +493,10 @@ struct AddPropertyElementView: View {
             serialNumber: serialNumber.isEmpty ? nil : serialNumber,
             notes: notes.isEmpty ? nil : notes,
             layer: selectedLayer.rawValue,
+            photoUrls: galleryURLs.isEmpty ? nil : galleryURLs,
+            coverPhotoUrl: coverURL,
+            isElectric: showsAutomation ? isElectric : false,
+            automationSystem: (showsAutomation && isElectric && !automationSystem.isEmpty) ? automationSystem : nil,
             updatedAt: ISO8601DateFormatter().string(from: Date())
         )
         onAdd(payload)

@@ -29,6 +29,9 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var longitude: Double?
     var zoneId: UUID?
     var photoUrls: [String]?
+    var coverPhotoUrl: String?
+    var isElectric: Bool
+    var automationSystem: String?
     let createdAt: String
     var updatedAt: String
 
@@ -37,6 +40,9 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case id, name, description, brand, model, notes, layer, latitude, longitude
         case photoUrls         = "photo_urls"
+        case coverPhotoUrl     = "cover_photo_url"
+        case isElectric        = "is_electric"
+        case automationSystem  = "automation_system"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -52,6 +58,38 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         case zoneId            = "zone_id"
         case createdAt         = "created_at"
         case updatedAt         = "updated_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        propertyId = try c.decode(UUID.self, forKey: .propertyId)
+        name = try c.decode(String.self, forKey: .name)
+        elementType = try c.decode(PropertyElementType.self, forKey: .elementType)
+        description = try c.decodeIfPresent(String.self, forKey: .description)
+        positionX = try c.decodeIfPresent(Double.self, forKey: .positionX) ?? 0
+        positionY = try c.decodeIfPresent(Double.self, forKey: .positionY) ?? 0
+        healthScore = try c.decodeIfPresent(Int.self, forKey: .healthScore) ?? 100
+        technicalCondition = try c.decodeIfPresent(TechnicalCondition.self, forKey: .technicalCondition) ?? .good
+        estimatedValue = try c.decodeIfPresent(Double.self, forKey: .estimatedValue)
+        valueCurrency = try c.decodeIfPresent(String.self, forKey: .valueCurrency) ?? "EUR"
+        purchaseDate = try c.decodeIfPresent(String.self, forKey: .purchaseDate)
+        warrantyUntil = try c.decodeIfPresent(String.self, forKey: .warrantyUntil)
+        brand = try c.decodeIfPresent(String.self, forKey: .brand)
+        model = try c.decodeIfPresent(String.self, forKey: .model)
+        serialNumber = try c.decodeIfPresent(String.self, forKey: .serialNumber)
+        notes = try c.decodeIfPresent(String.self, forKey: .notes)
+        layer = try c.decodeIfPresent(PropertyLayer.self, forKey: .layer) ?? .property
+        sortOrder = try c.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
+        latitude = try c.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try c.decodeIfPresent(Double.self, forKey: .longitude)
+        zoneId = try c.decodeIfPresent(UUID.self, forKey: .zoneId)
+        photoUrls = try c.decodeIfPresent([String].self, forKey: .photoUrls)
+        coverPhotoUrl = try c.decodeIfPresent(String.self, forKey: .coverPhotoUrl)
+        isElectric = try c.decodeIfPresent(Bool.self, forKey: .isElectric) ?? false
+        automationSystem = try c.decodeIfPresent(String.self, forKey: .automationSystem)
+        createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
+        updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt) ?? ""
     }
 
     /// Map coordinate when the object has been geo-located.
@@ -105,41 +143,106 @@ enum WarrantyStatus {
 // MARK: - PropertyElementType
 
 enum PropertyElementType: String, Codable, CaseIterable {
-    case house           = "house"
-    case garage          = "garage"
-    case gazebo          = "gazebo"
-    case pool            = "pool"
-    case yard            = "yard"
-    case lawn            = "lawn"
-    case tree            = "tree"
-    case fence           = "fence"
-    case gate            = "gate"
-    case camera          = "camera"
-    case irrigation      = "irrigation"
-    case solar           = "solar"
-    case boiler          = "boiler"
-    case electricalPanel = "electrical_panel"
-    case shed            = "shed"
-    case pet             = "pet"
-    case other           = "other"
+    // Structures
+    case house = "house", garage = "garage", gazebo = "gazebo", shed = "shed"
+    case barn = "barn", carport = "carport", terrace = "terrace", balcony = "balcony"
+    case basement = "basement", attic = "attic", roof = "roof", chimney = "chimney"
+    case staircase = "staircase", greenhouse = "greenhouse", playground = "playground"
+    // Access
+    case fence = "fence", gate = "gate", driveway = "driveway", parking = "parking"
+    // Rooms
+    case kitchen = "kitchen", bathroom = "bathroom", bedroom = "bedroom"
+    case livingRoom = "living_room", office = "office", laundry = "laundry"
+    // Outdoor / green
+    case yard = "yard", lawn = "lawn", tree = "tree", garden = "garden"
+    case vegetableGarden = "vegetable_garden", pool = "pool", pond = "pond", fountain = "fountain"
+    // Water
+    case well = "well", septic = "septic", waterTank = "water_tank", irrigation = "irrigation"
+    // Energy / utilities
+    case solar = "solar", boiler = "boiler", electricalPanel = "electrical_panel"
+    case heatPump = "heat_pump", airConditioner = "air_conditioner", ventilation = "ventilation"
+    case waterHeater = "water_heater", generator = "generator", battery = "battery_storage"
+    case evCharger = "ev_charger", gasMeter = "gas_meter", waterMeter = "water_meter", electricMeter = "electric_meter"
+    // Smart / security
+    case camera = "camera", alarm = "alarm_system", smartLock = "smart_lock"
+    case intercom = "intercom", doorbell = "doorbell", thermostat = "thermostat"
+    case router = "router", sensor = "sensor"
+    // Appliances
+    case fridge = "fridge", washingMachine = "washing_machine", dryer = "dryer"
+    case dishwasher = "dishwasher", oven = "oven", stove = "stove", microwave = "microwave", tv = "tv"
+    // Equipment / misc
+    case bbq = "bbq", lawnMower = "lawn_mower", pet = "pet", other = "other"
 
     var displayName: String {
         switch self {
         case .house:           return String(localized: "House")
         case .garage:          return String(localized: "Garage")
         case .gazebo:          return String(localized: "Gazebo")
-        case .pool:            return String(localized: "Pool")
+        case .shed:            return String(localized: "Shed")
+        case .barn:            return String(localized: "Barn")
+        case .carport:         return String(localized: "Carport")
+        case .terrace:         return String(localized: "Terrace")
+        case .balcony:         return String(localized: "Balcony")
+        case .basement:        return String(localized: "Basement")
+        case .attic:           return String(localized: "Attic")
+        case .roof:            return String(localized: "Roof")
+        case .chimney:         return String(localized: "Chimney")
+        case .staircase:       return String(localized: "Staircase")
+        case .greenhouse:      return String(localized: "Greenhouse")
+        case .playground:      return String(localized: "Playground")
+        case .fence:           return String(localized: "Fence")
+        case .gate:            return String(localized: "Gate")
+        case .driveway:        return String(localized: "Driveway")
+        case .parking:         return String(localized: "Parking")
+        case .kitchen:         return String(localized: "Kitchen")
+        case .bathroom:        return String(localized: "Bathroom")
+        case .bedroom:         return String(localized: "Bedroom")
+        case .livingRoom:      return String(localized: "Living room")
+        case .office:          return String(localized: "Office")
+        case .laundry:         return String(localized: "Laundry room")
         case .yard:            return String(localized: "Yard")
         case .lawn:            return String(localized: "Lawn")
         case .tree:            return String(localized: "Tree")
-        case .fence:           return String(localized: "Fence")
-        case .gate:            return String(localized: "Gate")
-        case .camera:          return String(localized: "Security camera")
+        case .garden:          return String(localized: "Garden")
+        case .vegetableGarden: return String(localized: "Vegetable garden")
+        case .pool:            return String(localized: "Pool")
+        case .pond:            return String(localized: "Pond")
+        case .fountain:        return String(localized: "Fountain")
+        case .well:            return String(localized: "Well")
+        case .septic:          return String(localized: "Septic tank")
+        case .waterTank:       return String(localized: "Water tank")
         case .irrigation:      return String(localized: "Irrigation system")
         case .solar:           return String(localized: "Solar panels")
         case .boiler:          return String(localized: "Boiler")
         case .electricalPanel: return String(localized: "Electrical panel")
-        case .shed:            return String(localized: "Shed")
+        case .heatPump:        return String(localized: "Heat pump")
+        case .airConditioner:  return String(localized: "Air conditioning")
+        case .ventilation:     return String(localized: "Ventilation")
+        case .waterHeater:     return String(localized: "Water heater")
+        case .generator:       return String(localized: "Generator")
+        case .battery:         return String(localized: "Battery storage")
+        case .evCharger:       return String(localized: "EV charger")
+        case .gasMeter:        return String(localized: "Gas meter")
+        case .waterMeter:      return String(localized: "Water meter")
+        case .electricMeter:   return String(localized: "Electric meter")
+        case .camera:          return String(localized: "Security camera")
+        case .alarm:           return String(localized: "Alarm system")
+        case .smartLock:       return String(localized: "Smart lock")
+        case .intercom:        return String(localized: "Intercom")
+        case .doorbell:        return String(localized: "Doorbell")
+        case .thermostat:      return String(localized: "Thermostat")
+        case .router:          return String(localized: "Router / Wi-Fi")
+        case .sensor:          return String(localized: "Sensor")
+        case .fridge:          return String(localized: "Refrigerator")
+        case .washingMachine:  return String(localized: "Washing machine")
+        case .dryer:           return String(localized: "Dryer")
+        case .dishwasher:      return String(localized: "Dishwasher")
+        case .oven:            return String(localized: "Oven")
+        case .stove:           return String(localized: "Stove")
+        case .microwave:       return String(localized: "Microwave")
+        case .tv:              return String(localized: "TV")
+        case .bbq:             return String(localized: "BBQ / Grill")
+        case .lawnMower:       return String(localized: "Lawn mower")
         case .pet:             return String(localized: "Pet")
         case .other:           return String(localized: "Other")
         }
@@ -150,18 +253,71 @@ enum PropertyElementType: String, Codable, CaseIterable {
         case .house:           return "house.fill"
         case .garage:          return "car.fill"
         case .gazebo:          return "umbrella.fill"
-        case .pool:            return "drop.fill"
+        case .shed:            return "shippingbox.fill"
+        case .barn:            return "house.lodge.fill"
+        case .carport:         return "car.2.fill"
+        case .terrace:         return "sun.haze.fill"
+        case .balcony:         return "building.2.fill"
+        case .basement:        return "stairs"
+        case .attic:           return "house"
+        case .roof:            return "house.lodge.fill"
+        case .chimney:         return "smoke.fill"
+        case .staircase:       return "stairs"
+        case .greenhouse:      return "leaf.circle.fill"
+        case .playground:      return "figure.play"
+        case .fence:           return "align.horizontal.left"
+        case .gate:            return "door.left.hand.open"
+        case .driveway:        return "road.lanes"
+        case .parking:         return "parkingsign"
+        case .kitchen:         return "frying.pan.fill"
+        case .bathroom:        return "shower.fill"
+        case .bedroom:         return "bed.double.fill"
+        case .livingRoom:      return "sofa.fill"
+        case .office:          return "lamp.desk.fill"
+        case .laundry:         return "washer.fill"
         case .yard:            return "leaf.fill"
         case .lawn:            return "leaf"
         case .tree:            return "tree.fill"
-        case .fence:           return "align.horizontal.left"
-        case .gate:            return "door.left.hand.open"
-        case .camera:          return "camera.fill"
+        case .garden:          return "camera.macro"
+        case .vegetableGarden: return "carrot.fill"
+        case .pool:            return "drop.fill"
+        case .pond:            return "water.waves"
+        case .fountain:        return "drop.circle.fill"
+        case .well:            return "cylinder.split.1x2.fill"
+        case .septic:          return "arrow.triangle.2.circlepath"
+        case .waterTank:       return "cylinder.fill"
         case .irrigation:      return "humidity.fill"
         case .solar:           return "sun.max.fill"
         case .boiler:          return "flame.fill"
         case .electricalPanel: return "bolt.fill"
-        case .shed:            return "shippingbox.fill"
+        case .heatPump:        return "thermometer.snowflake"
+        case .airConditioner:  return "wind.snow"
+        case .ventilation:     return "fan.fill"
+        case .waterHeater:     return "spigot.fill"
+        case .generator:       return "engine.combustion.fill"
+        case .battery:         return "minus.plus.batteryblock.fill"
+        case .evCharger:       return "bolt.car.fill"
+        case .gasMeter:        return "flame.circle.fill"
+        case .waterMeter:      return "gauge.medium"
+        case .electricMeter:   return "bolt.circle.fill"
+        case .camera:          return "camera.fill"
+        case .alarm:           return "bell.badge.fill"
+        case .smartLock:       return "lock.fill"
+        case .intercom:        return "phone.bubble.fill"
+        case .doorbell:        return "bell.fill"
+        case .thermostat:      return "thermometer.medium"
+        case .router:          return "wifi.router.fill"
+        case .sensor:          return "sensor.fill"
+        case .fridge:          return "refrigerator.fill"
+        case .washingMachine:  return "washer.fill"
+        case .dryer:           return "dryer.fill"
+        case .dishwasher:      return "dishwasher.fill"
+        case .oven:            return "oven.fill"
+        case .stove:           return "stove.fill"
+        case .microwave:       return "microwave.fill"
+        case .tv:              return "tv.fill"
+        case .bbq:             return "flame.fill"
+        case .lawnMower:       return "scissors"
         case .pet:             return "pawprint.fill"
         case .other:           return "questionmark.circle.fill"
         }
@@ -169,30 +325,63 @@ enum PropertyElementType: String, Codable, CaseIterable {
 
     var accentColor: Color {
         switch self {
-        case .house:           return Color(red: 0.29, green: 0.56, blue: 0.89)
-        case .garage:          return Color(red: 0.48, green: 0.41, blue: 0.93)
-        case .gazebo:          return Color(red: 0.31, green: 0.78, blue: 0.47)
-        case .pool:            return Color(red: 0.0,  green: 0.71, blue: 0.85)
-        case .yard, .lawn:     return Color(red: 0.18, green: 0.8,  blue: 0.44)
-        case .tree:            return Color(red: 0.1,  green: 0.65, blue: 0.3)
-        case .fence, .gate:    return Color(red: 0.58, green: 0.65, blue: 0.65)
-        case .camera:          return Color(red: 0.91, green: 0.3,  blue: 0.24)
-        case .irrigation:      return Color(red: 0.2,  green: 0.6,  blue: 0.86)
-        case .solar:           return Color(red: 0.95, green: 0.77, blue: 0.06)
-        case .boiler:          return Color(red: 0.91, green: 0.3,  blue: 0.24)
-        case .electricalPanel: return Color(red: 0.95, green: 0.77, blue: 0.06)
-        case .shed:            return Color(red: 0.55, green: 0.45, blue: 0.33)
-        case .pet:             return Color(red: 0.91, green: 0.12, blue: 0.39)
-        case .other:           return Color(red: 0.61, green: 0.35, blue: 0.71)
+        // Structures — slate blue
+        case .house, .garage, .gazebo, .shed, .barn, .carport, .terrace, .balcony,
+             .basement, .attic, .roof, .chimney, .staircase, .playground:
+            return Color(red: 0.29, green: 0.56, blue: 0.89)
+        // Access — gray
+        case .fence, .gate, .driveway, .parking:
+            return Color(red: 0.58, green: 0.65, blue: 0.65)
+        // Rooms — indigo
+        case .kitchen, .bathroom, .bedroom, .livingRoom, .office, .laundry:
+            return Color(red: 0.48, green: 0.41, blue: 0.93)
+        // Green
+        case .yard, .lawn, .garden, .vegetableGarden, .greenhouse:
+            return Color(red: 0.18, green: 0.8, blue: 0.44)
+        case .tree:
+            return Color(red: 0.1, green: 0.65, blue: 0.3)
+        // Water — cyan
+        case .pool, .pond, .fountain, .well, .septic, .waterTank, .irrigation, .waterMeter:
+            return Color(red: 0.0, green: 0.71, blue: 0.85)
+        // Energy — amber
+        case .solar, .electricalPanel, .evCharger, .gasMeter, .electricMeter, .battery, .generator:
+            return Color(red: 0.95, green: 0.77, blue: 0.06)
+        // Heat — red/orange
+        case .boiler, .heatPump, .waterHeater, .bbq:
+            return Color(red: 0.91, green: 0.3, blue: 0.24)
+        // Climate / appliances — teal/purple
+        case .airConditioner, .ventilation, .thermostat, .router,
+             .fridge, .washingMachine, .dryer, .dishwasher, .oven, .stove, .microwave, .tv:
+            return Color(red: 0.0, green: 0.6, blue: 0.7)
+        // Security — red
+        case .camera, .alarm, .smartLock, .intercom, .doorbell, .sensor:
+            return Color(red: 0.91, green: 0.3, blue: 0.24)
+        case .pet:
+            return Color(red: 0.91, green: 0.12, blue: 0.39)
+        case .lawnMower:
+            return Color(red: 0.55, green: 0.45, blue: 0.33)
+        case .other:
+            return Color(red: 0.61, green: 0.35, blue: 0.71)
         }
     }
 
     var defaultLayer: PropertyLayer {
         switch self {
-        case .camera, .irrigation, .solar, .boiler, .electricalPanel: return .utility
-        default: return .property
+        case .camera, .irrigation, .solar, .boiler, .electricalPanel, .heatPump,
+             .airConditioner, .ventilation, .waterHeater, .generator, .battery,
+             .evCharger, .gasMeter, .waterMeter, .electricMeter, .smartLock, .alarm,
+             .intercom, .doorbell, .thermostat, .router, .sensor,
+             .fridge, .washingMachine, .dryer, .dishwasher, .oven, .stove, .microwave, .tv:
+            return .utility
+        default:
+            return .property
         }
     }
+
+    /// Curated short list shown as quick chips; the full set is in `allCases`.
+    static let common: [PropertyElementType] = [
+        .house, .garage, .gate, .fence, .pool, .yard, .tree, .camera, .boiler, .solar
+    ]
 }
 
 // MARK: - TechnicalCondition

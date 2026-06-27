@@ -47,6 +47,20 @@ extension PropertyElementDetailView {
                 }
             }
 
+            if localElement.isElectric || (localElement.automationSystem?.isEmpty == false) {
+                GlassCard(padding: 14) {
+                    VStack(spacing: 10) {
+                        SectionHeader("Automation")
+                        StatRow(label: "Electric",
+                                value: localElement.isElectric ? String(localized: "Yes") : String(localized: "No"),
+                                valueColor: localElement.isElectric ? Color(red: 0.2, green: 0.8, blue: 0.4) : .secondary)
+                        if let sys = localElement.automationSystem, !sys.isEmpty {
+                            StatRow(label: "System", value: sys)
+                        }
+                    }
+                }
+            }
+
             if let notes = localElement.notes, !notes.isEmpty {
                 GlassCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 6) {

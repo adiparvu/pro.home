@@ -65,6 +65,9 @@ final class PropertyElementService: ObservableObject {
                 longitude: element.longitude,
                 zoneId: element.zoneId,
                 photoUrls: element.photoUrls,
+                coverPhotoUrl: element.coverPhotoUrl,
+                isElectric: element.isElectric,
+                automationSystem: element.automationSystem,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase
@@ -98,6 +101,25 @@ final class PropertyElementService: ObservableObject {
             if let idx = elements.firstIndex(where: { $0.id == elementId }) {
                 elements[idx].positionX = x
                 elements[idx].positionY = y
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func updateCover(elementId: UUID, url: String?) async {
+        let payload = ElementCoverUpdate(
+            coverPhotoUrl: url,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        do {
+            try await supabase
+                .from("property_elements")
+                .update(payload)
+                .eq("id", value: elementId.uuidString)
+                .execute()
+            if let idx = elements.firstIndex(where: { $0.id == elementId }) {
+                elements[idx].coverPhotoUrl = url
             }
         } catch {
             self.error = error.localizedDescription

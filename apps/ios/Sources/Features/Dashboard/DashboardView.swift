@@ -235,7 +235,8 @@ struct DashboardView: View {
         if let primary = propertyService.primary {
             AerialCanvasView(
                 property: primary,
-                elements: elementService.elements
+                elements: elementService.elements,
+                showNames: false
             )
             .aspectRatio(16 / 9, contentMode: .fit)
             .frame(maxWidth: .infinity)

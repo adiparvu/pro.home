@@ -24,11 +24,17 @@ struct NewPropertyElement: Encodable {
     var longitude: Double? = nil
     var zoneId: UUID? = nil
     var photoUrls: [String]? = nil
+    var coverPhotoUrl: String? = nil
+    var isElectric: Bool = false
+    var automationSystem: String? = nil
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
         case name, description, brand, model, notes, layer, latitude, longitude
         case photoUrls         = "photo_urls"
+        case coverPhotoUrl     = "cover_photo_url"
+        case isElectric        = "is_electric"
+        case automationSystem  = "automation_system"
         case propertyId        = "property_id"
         case elementType       = "element_type"
         case positionX         = "position_x"
@@ -63,6 +69,15 @@ struct ElementPhotosUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case photoUrls = "photo_urls"
         case updatedAt = "updated_at"
+    }
+}
+
+struct ElementCoverUpdate: Encodable {
+    var coverPhotoUrl: String?
+    var updatedAt: String
+    enum CodingKeys: String, CodingKey {
+        case coverPhotoUrl = "cover_photo_url"
+        case updatedAt     = "updated_at"
     }
 }
 
