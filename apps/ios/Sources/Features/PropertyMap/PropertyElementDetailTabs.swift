@@ -61,6 +61,8 @@ extension PropertyElementDetailView {
                 }
             }
 
+            ElementAutomationsSection(element: localElement)
+
             ElementNotesSection(element: localElement)
 
             if let notes = localElement.notes, !notes.isEmpty {
