@@ -336,24 +336,24 @@ private struct AddAutomationSheet: View {
 // MARK: - AutomationBuilderView
 
 struct AutomationBuilderView: View {
-    @State private var automations: [AutomationRule] = Self.loadSaved()
+    @EnvironmentObject private var propertyService: PropertyService
+    @StateObject private var cloud = GlobalAutomationService()
+    @State private var automations: [AutomationRule] = AutomationRule.prvioTemplates
     @State private var activeFlowIndex = 0
     @State private var isDeployed      = false
     @State private var showAdd         = false
+    @State private var didLoad         = false
 
-    private static let udKey = "prvio.automations"
-
-    private static func loadSaved() -> [AutomationRule] {
-        guard let data = UserDefaults.standard.data(forKey: udKey),
-              let rules = try? JSONDecoder().decode([AutomationRule].self, from: data)
-        else { return AutomationRule.prvioTemplates }
-        return rules
+    private func loadFromCloud() async {
+        guard !didLoad, let pid = propertyService.primary?.id else { return }
+        didLoad = true
+        let rules = await cloud.load(propertyId: pid)
+        if !rules.isEmpty { automations = rules }
     }
 
     private func persist() {
-        if let data = try? JSONEncoder().encode(automations) {
-            UserDefaults.standard.set(data, forKey: Self.udKey)
-        }
+        guard let pid = propertyService.primary?.id else { return }
+        Task { await cloud.replaceAll(propertyId: pid, rules: automations) }
     }
 
     private var activeRule: AutomationRule {
@@ -377,6 +377,7 @@ struct AutomationBuilderView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Automations")
         .navigationBarTitleDisplayMode(.large)
+        .task { await loadFromCloud() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
