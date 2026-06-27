@@ -52,9 +52,13 @@ struct PropertyElementDetailView: View {
                 appBackground.ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    elementHeader
+                    coverHero
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
+
+                    elementHeader
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
                         .padding(.bottom, 12)
 
                     healthSection
@@ -164,6 +168,33 @@ struct PropertyElementDetailView: View {
     }
 
     // MARK: - Header
+
+    private var heroImageURLs: [String] {
+        var arr: [String] = []
+        if let c = localElement.coverPhotoUrl { arr.append(c) }
+        arr.append(contentsOf: localElement.photos.filter { $0 != localElement.coverPhotoUrl })
+        return arr
+    }
+
+    @ViewBuilder
+    private var coverHero: some View {
+        let urls = heroImageURLs
+        if !urls.isEmpty {
+            TabView {
+                ForEach(urls, id: \.self) { u in
+                    AsyncImage(url: URL(string: u)) { phase in
+                        if case .success(let img) = phase { img.resizable().scaledToFill() }
+                        else { Color.primary.opacity(0.06) }
+                    }
+                    .clipped()
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: urls.count > 1 ? .automatic : .never))
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
+        }
+    }
 
     private var elementHeader: some View {
         HStack(spacing: 14) {
