@@ -232,10 +232,9 @@ struct DashboardView: View {
     // MARK: - Aerial background (drone photo or canvas illustration)
 
     @ViewBuilder private var aerialBackground: some View {
-        if let primary = propertyService.primary, primary.photoUrl != nil {
+        if let primary = propertyService.primary {
             AerialCanvasView(
                 property: primary,
-                zones: zoneService.zones,
                 elements: elementService.elements
             )
             .aspectRatio(16 / 9, contentMode: .fit)
