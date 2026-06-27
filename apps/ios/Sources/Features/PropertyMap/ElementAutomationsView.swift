@@ -74,7 +74,7 @@ struct ElementAutomationsSection: View {
             Spacer()
             Toggle("", isOn: Binding(
                 get: { a.isActive },
-                set: { Task { await service.setActive(a, active: $0) } }
+                set: { newValue in Task { await service.setActive(a, active: newValue) } }
             ))
             .labelsHidden()
             .scaleEffect(0.8)
