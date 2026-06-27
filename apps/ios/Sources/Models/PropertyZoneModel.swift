@@ -58,6 +58,25 @@ struct PropertyZone: Identifiable, Codable, Equatable {
     var imagePoints: [ImagePoint] { imagePolygon ?? [] }
     var hasImageShape: Bool { imagePoints.count >= 3 }
 
+    /// Ray-casting test: is a normalized (0–1) image point inside this zone's
+    /// drawn polygon? Used to associate freely-placed element pins with a zone.
+    func containsImage(x: Double, y: Double) -> Bool {
+        let pts = imagePoints
+        guard pts.count >= 3 else { return false }
+        var inside = false
+        var j = pts.count - 1
+        for i in 0..<pts.count {
+            let xi = pts[i].x, yi = pts[i].y
+            let xj = pts[j].x, yj = pts[j].y
+            if ((yi > y) != (yj > y)),
+               x < (xj - xi) * (y - yi) / (yj - yi) + xi {
+                inside.toggle()
+            }
+            j = i
+        }
+        return inside
+    }
+
     /// Normalized centroid (0–1) of the image polygon, for placing a label.
     var imageCentroid: ImagePoint? {
         guard !imagePoints.isEmpty else { return nil }

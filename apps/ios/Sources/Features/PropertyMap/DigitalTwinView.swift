@@ -51,9 +51,18 @@ struct DigitalTwinView: View {
     private var displayedElements: [PropertyElement] {
         if editingOverlayActive { return elementService.elements }
         switch zoneView {
-        case .hidden:        return []
-        case .all:           return elementService.elements
-        case .zone(let id):  return elementService.elements.filter { $0.zoneId == id }
+        case .hidden:
+            return []
+        case .all:
+            return elementService.elements
+        case .zone(let id):
+            guard let z = zoneService.zones.first(where: { $0.id == id }) else { return [] }
+            return elementService.elements.filter { el in
+                // Prefer geometric containment on the photo; fall back to a saved zoneId link.
+                let x = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionX
+                let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+                return z.containsImage(x: x, y: y) || el.zoneId == id
+            }
         }
     }
 
