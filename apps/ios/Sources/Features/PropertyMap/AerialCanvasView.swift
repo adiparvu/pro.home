@@ -58,35 +58,37 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func dronePhotoLayer(t: Double) -> some View {
-        let kenBurnsScale = 1.0 + 0.03 * CGFloat(sin(t * 0.125) * 0.5 + 0.5)
+        let kenBurnsScale = 1.0 + 0.015 * CGFloat(sin(t * 0.10) * 0.5 + 0.5)
         if let urlStr = property.photoUrl, let url = URL(string: urlStr) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
-                    img.resizable()
-                        .scaledToFill()
-                        .scaleEffect(kenBurnsScale)
+                    Color(red: 0.06, green: 0.12, blue: 0.07)
+                        .overlay {
+                            img.resizable()
+                                .scaledToFit()
+                                .scaleEffect(kenBurnsScale)
+                        }
                 default:
                     bundledAerialPhoto(scale: kenBurnsScale)
                 }
             }
-            .clipped()
         } else {
             bundledAerialPhoto(scale: kenBurnsScale)
-                .clipped()
         }
     }
 
     @ViewBuilder
     private func bundledAerialPhoto(scale: CGFloat) -> some View {
-        if let uiImg = UIImage(named: "aerial_property") {
-            Image(uiImage: uiImg)
-                .resizable()
-                .scaledToFill()
-                .scaleEffect(scale)
-        } else {
-            Color(red: 0.04, green: 0.09, blue: 0.06)
-        }
+        Color(red: 0.06, green: 0.12, blue: 0.07)
+            .overlay {
+                if let uiImg = UIImage(named: "aerial_property") {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFit()
+                        .scaleEffect(scale)
+                }
+            }
     }
 
     // MARK: - Geometry helpers

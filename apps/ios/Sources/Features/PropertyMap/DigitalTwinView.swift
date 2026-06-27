@@ -95,8 +95,7 @@ struct DigitalTwinView: View {
         ZStack(alignment: .bottomTrailing) {
         if isAerial {
             Group {
-                if let prop = propertyService.primary,
-                   let urlStr = prop.photoUrl, !urlStr.isEmpty {
+                if let prop = propertyService.primary {
                     AerialCanvasView(
                         property: prop,
                         zones: zoneService.zones,
@@ -105,9 +104,9 @@ struct DigitalTwinView: View {
                     )
                 } else {
                     AerialPropertyView(
-                        property: propertyService.primary,
-                        zones: zoneService.zones,
-                        elements: elementService.elements
+                        property: nil,
+                        zones: [],
+                        elements: []
                     )
                 }
             }
