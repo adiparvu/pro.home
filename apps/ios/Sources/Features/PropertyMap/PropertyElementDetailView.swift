@@ -19,6 +19,7 @@ struct PropertyElementDetailView: View {
     @State private var showEditElement = false
     @State var localElement: PropertyElement
     @State private var showDeleteConfirm = false
+    @State private var exportURL: ShareURL?
     @State var showLocationPicker = false
     @State var showLinkDocument = false
     @State var showLinkTask = false
@@ -107,6 +108,15 @@ struct PropertyElementDetailView: View {
                             Label(localElement.isFavorite ? "Remove from favorites" : "Add to favorites",
                                   systemImage: localElement.isFavorite ? "star.slash" : "star")
                         }
+                        Button {
+                            Task {
+                                if let u = await Task.detached(priority: .userInitiated, operation: { ElementPDFExporter.makePDF(for: localElement) }).value {
+                                    exportURL = ShareURL(url: u)
+                                }
+                            }
+                        } label: {
+                            Label("Export PDF", systemImage: "square.and.arrow.up")
+                        }
                         Button(role: .destructive) { showDeleteConfirm = true } label: {
                             Label("Delete element", systemImage: "trash")
                         }
@@ -127,6 +137,9 @@ struct PropertyElementDetailView: View {
             EditPropertyElementView(element: $localElement) {
                 Task { await elementService.update(localElement) }
             }
+        }
+        .sheet(item: $exportURL) { share in
+            ActivityShareView(items: [share.url])
         }
         .sheet(isPresented: $showLocationPicker) {
             ObjectLocationPicker(
