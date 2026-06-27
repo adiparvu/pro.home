@@ -23,7 +23,6 @@ struct DigitalTwinView: View {
     @State private var showHealth = false
     @State private var controlsExpanded = false
     @State private var showNames = true
-    @State private var sectionFilter: Int? = nil
     @State private var editElementId: UUID?
     @State private var deleteElement: PropertyElement?
     @State private var categoryFilter: ElementCategory? = nil
@@ -32,14 +31,48 @@ struct DigitalTwinView: View {
     @State private var editZone: PropertyZone?
     @State private var reshapeZoneId: UUID?
     @State private var reshapePoints: [CGPoint] = []
+    @State private var zoneView: ZoneViewKind = .hidden
+
+    enum ZoneViewKind: Equatable { case hidden, all, zone(UUID) }
+
+    /// Editing modes force everything visible so the user has context.
+    private var editingOverlayActive: Bool { pinMode || zoneDrawMode || reshapeZoneId != nil }
+
+    private var displayedZones: [PropertyZone] {
+        let base = reshapeZoneId == nil ? zoneService.zones : zoneService.zones.filter { $0.id != reshapeZoneId }
+        if editingOverlayActive { return base }
+        switch zoneView {
+        case .hidden:        return []
+        case .all:           return base
+        case .zone(let id):  return base.filter { $0.id == id }
+        }
+    }
+
+    private var displayedElements: [PropertyElement] {
+        if editingOverlayActive { return elementService.elements }
+        switch zoneView {
+        case .hidden:        return []
+        case .all:           return elementService.elements
+        case .zone(let id):  return elementService.elements.filter { $0.zoneId == id }
+        }
+    }
+
+    private var zoneViewLabel: String {
+        switch zoneView {
+        case .hidden: return String(localized: "Show")
+        case .all:    return String(localized: "All zones")
+        case .zone(let id):
+            return zoneService.zones.first { $0.id == id }?.name ?? String(localized: "Zone")
+        }
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             if let prop = propertyService.primary {
                 AerialCanvasView(
                     property: prop,
-                    elements: elementService.elements,
-                    zones: reshapeZoneId == nil ? zoneService.zones : zoneService.zones.filter { $0.id != reshapeZoneId },
+                    elements: displayedElements,
+                    zones: displayedZones,
                     interactive: true,
                     pinMode: pinMode,
                     zoneDrawMode: zoneDrawMode,
@@ -47,7 +80,6 @@ struct DigitalTwinView: View {
                     reshapeMode: reshapeZoneId != nil,
                     reshapePoints: reshapePoints,
                     showNames: showNames,
-                    sectionFilter: sectionFilter,
                     categoryFilter: categoryFilter,
                     onElementTap: { selectedElement = $0 },
                     onCanvasTap: { pos in
@@ -84,7 +116,7 @@ struct DigitalTwinView: View {
                 )
                 .ignoresSafeArea(edges: .bottom)
 
-                sectionBar
+                zoneSelectorBar
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 controls
@@ -144,6 +176,7 @@ struct DigitalTwinView: View {
         )) {
             AddPropertyElementView(defaultPosition: pendingPin ?? CGPoint(x: 0.5, y: 0.5)) { payload in
                 Task { await elementService.add(payload) }
+                if zoneView == .hidden { zoneView = .all }   // so the new pin is visible
             }
             .environmentObject(propertyService)
         }
@@ -314,7 +347,10 @@ struct DigitalTwinView: View {
         let created = await zoneService.createImageZone(propertyId: pid, imagePolygon: poly)
         withAnimation { zoneDrawMode = false; draftZonePoints = [] }
         HapticFeedback.success()
-        if let created { editZone = created }   // open editor to name/color it
+        if let created {
+            zoneView = .all          // reveal zones so the new one shows
+            editZone = created       // open editor to name/color it
+        }
     }
 
     // MARK: - Reshape toolbar
@@ -351,36 +387,40 @@ struct DigitalTwinView: View {
         HapticFeedback.success()
     }
 
-    // MARK: - Section filter bar
+    // MARK: - Zone selector bar (middle) — zones & their elements are hidden
+    // until the user picks one here.
 
-    private var sectionBar: some View {
-        HStack(spacing: 4) {
-            sectionChip(label: "All", value: nil)
-            sectionChip(label: "1", value: 0)
-            sectionChip(label: "2", value: 1)
-            sectionChip(label: "3", value: 2)
-        }
-        .padding(4)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
-        .padding(.top, 10)
-    }
-
-    private func sectionChip(label: String, value: Int?) -> some View {
-        let active = sectionFilter == value
-        return Button {
-            withAnimation(.spring(response: 0.3)) { sectionFilter = value }
-            HapticFeedback.selection()
+    private var zoneSelectorBar: some View {
+        Menu {
+            Button { withAnimation { zoneView = .hidden } } label: {
+                Label("Hide zones", systemImage: zoneView == .hidden ? "checkmark" : "eye.slash")
+            }
+            Button { withAnimation { zoneView = .all } } label: {
+                Label("All zones", systemImage: zoneView == .all ? "checkmark" : "square.stack.3d.up")
+            }
+            if !zoneService.zones.isEmpty {
+                Divider()
+                ForEach(zoneService.zones) { z in
+                    Button { withAnimation { zoneView = .zone(z.id) } } label: {
+                        Label(z.name, systemImage: zoneView == .zone(z.id) ? "checkmark" : z.icon)
+                    }
+                }
+            }
         } label: {
-            Text(LocalizedStringKey(label))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(active ? Color.black : .white)
-                .frame(minWidth: 34)
-                .padding(.vertical, 7)
-                .background(active ? Color.white : Color.clear, in: Capsule())
+            HStack(spacing: 6) {
+                Image(systemName: zoneView == .hidden ? "square.on.square.dashed" : "square.on.square")
+                    .font(.system(size: 13, weight: .semibold))
+                Text(zoneViewLabel)
+                    .font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
         }
-        .buttonStyle(.plain)
+        .padding(.top, 10)
     }
 
     // MARK: - Empty state
