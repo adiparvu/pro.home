@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import CoreLocation
 
 // MARK: - Aerial Canvas View
@@ -57,18 +58,32 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func dronePhotoLayer(t: Double) -> some View {
+        let kenBurnsScale = 1.0 + 0.03 * CGFloat(sin(t * 0.125) * 0.5 + 0.5)
         if let urlStr = property.photoUrl, let url = URL(string: urlStr) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable()
                         .scaledToFill()
-                        .scaleEffect(1.0 + 0.03 * CGFloat(sin(t * 0.125) * 0.5 + 0.5))
+                        .scaleEffect(kenBurnsScale)
                 default:
-                    Color(red: 0.04, green: 0.09, blue: 0.06)
+                    bundledAerialPhoto(scale: kenBurnsScale)
                 }
             }
             .clipped()
+        } else {
+            bundledAerialPhoto(scale: kenBurnsScale)
+                .clipped()
+        }
+    }
+
+    @ViewBuilder
+    private func bundledAerialPhoto(scale: CGFloat) -> some View {
+        if let uiImg = UIImage(named: "aerial_property") {
+            Image(uiImage: uiImg)
+                .resizable()
+                .scaledToFill()
+                .scaleEffect(scale)
         } else {
             Color(red: 0.04, green: 0.09, blue: 0.06)
         }

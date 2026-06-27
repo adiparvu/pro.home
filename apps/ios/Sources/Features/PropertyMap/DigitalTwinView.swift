@@ -47,7 +47,7 @@ struct DigitalTwinView: View {
     @State var showHealth = false
     @State var showLabels = false
     @State var didCenter = false
-    @State var isAerial = false
+    @State var isAerial = true
     @State var showStylePicker = false
     @State var controlsExpanded = false
     @State var zoneStyle: ZoneDisplayStyle = .filled
