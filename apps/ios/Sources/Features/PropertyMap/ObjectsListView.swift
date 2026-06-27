@@ -50,9 +50,9 @@ struct ObjectsListView: View {
         let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         if !q.isEmpty {
             items = items.filter { el in
-                [el.name, el.brand, el.model, el.serialNumber, el.notes, el.elementType.displayName]
-                    .compactMap { $0 }
-                    .contains { $0.lowercased().contains(q) }
+                let fields = [el.name, el.brand, el.model, el.serialNumber, el.notes, el.elementType.displayName]
+                    .compactMap { $0 } + el.tags
+                return fields.contains { $0.lowercased().contains(q) }
             }
         }
         return items

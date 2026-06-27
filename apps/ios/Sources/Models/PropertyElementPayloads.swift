@@ -29,10 +29,11 @@ struct NewPropertyElement: Encodable {
     var automationSystem: String? = nil
     var isFavorite: Bool = false
     var homekitAccessoryId: String? = nil
+    var tags: [String] = []
     var updatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case name, description, brand, model, notes, layer, latitude, longitude
+        case name, description, brand, model, notes, layer, latitude, longitude, tags
         case photoUrls         = "photo_urls"
         case coverPhotoUrl     = "cover_photo_url"
         case isElectric        = "is_electric"

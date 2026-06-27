@@ -66,6 +66,8 @@ extension PropertyElementDetailView {
                 ElementSmartControlSection(elementId: localElement.id)
             }
 
+            ElementTagsSection(elementId: localElement.id)
+
             ElementAutomationsSection(element: localElement)
 
             ElementNotesSection(element: localElement)

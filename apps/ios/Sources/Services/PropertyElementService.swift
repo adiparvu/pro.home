@@ -70,6 +70,7 @@ final class PropertyElementService: ObservableObject {
                 automationSystem: element.automationSystem,
                 isFavorite: element.isFavorite,
                 homekitAccessoryId: element.homekitAccessoryId,
+                tags: element.tags,
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
             let updated: PropertyElement = try await supabase

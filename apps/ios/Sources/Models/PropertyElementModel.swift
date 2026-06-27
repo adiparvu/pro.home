@@ -34,13 +34,14 @@ struct PropertyElement: Identifiable, Codable, Equatable {
     var automationSystem: String?
     var isFavorite: Bool
     var homekitAccessoryId: String?
+    var tags: [String]
     let createdAt: String
     var updatedAt: String
 
     var photos: [String] { photoUrls ?? [] }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, brand, model, notes, layer, latitude, longitude
+        case id, name, description, brand, model, notes, layer, latitude, longitude, tags
         case photoUrls         = "photo_urls"
         case coverPhotoUrl     = "cover_photo_url"
         case isElectric        = "is_electric"
@@ -94,6 +95,7 @@ struct PropertyElement: Identifiable, Codable, Equatable {
         automationSystem = try c.decodeIfPresent(String.self, forKey: .automationSystem)
         isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
         homekitAccessoryId = try c.decodeIfPresent(String.self, forKey: .homekitAccessoryId)
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
         updatedAt = try c.decodeIfPresent(String.self, forKey: .updatedAt) ?? ""
     }
