@@ -22,6 +22,17 @@ struct AerialCanvasView: View {
                 ZStack {
                     dronePhotoLayer(t: t)
 
+                    // Fade out the embedded photo status bar at top
+                    VStack(spacing: 0) {
+                        LinearGradient(
+                            colors: [.black.opacity(0.55), .clear],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .frame(height: geo.size.height * 0.09)
+                        Spacer()
+                    }
+                    .allowsHitTesting(false)
+
                     Canvas { ctx, size in
                         for center in waterCentroids(size) {
                             for i in 0..<3 {
