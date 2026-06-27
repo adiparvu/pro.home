@@ -16,6 +16,7 @@ struct ObjectsListView: View {
     @State private var selectedElement: PropertyElement?
     @State private var filterMode: FilterMode = .categories
     @State private var categoryFilter: ElementCategory? = nil
+    @State private var searchText = ""
 
     enum FilterMode: String, CaseIterable { case categories, layers }
 
@@ -45,6 +46,14 @@ struct ObjectsListView: View {
             if let layer = filter.layer { items = items.filter { $0.layer == layer } }
         case .categories:
             if let cat = categoryFilter { items = items.filter { $0.elementType.category == cat } }
+        }
+        let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        if !q.isEmpty {
+            items = items.filter { el in
+                [el.name, el.brand, el.model, el.serialNumber, el.notes, el.elementType.displayName]
+                    .compactMap { $0 }
+                    .contains { $0.lowercased().contains(q) }
+            }
         }
         return items
     }
@@ -87,6 +96,7 @@ struct ObjectsListView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Objects")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search name, brand, serial…")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredElements.count)")
