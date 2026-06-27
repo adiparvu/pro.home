@@ -42,6 +42,34 @@ struct AerialCanvasView: View {
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
 
+    // Pinch-to-zoom / pan (view-only; reset while editing)
+    @State private var zoomScale: CGFloat = 1
+    @State private var lastZoom: CGFloat = 1
+    @State private var panOffset: CGSize = .zero
+    @State private var lastPan: CGSize = .zero
+
+    private var canZoom: Bool { interactive && !pinMode && !zoneDrawMode && !reshapeMode }
+
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { v in guard canZoom else { return }; zoomScale = min(max(lastZoom * v, 1), 5) }
+            .onEnded { _ in
+                lastZoom = zoomScale
+                if zoomScale <= 1.01 { withAnimation(.spring(response: 0.3)) { zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero } }
+            }
+    }
+
+    private var panGesture: some Gesture {
+        DragGesture()
+            .onChanged { v in guard canZoom, zoomScale > 1 else { return }
+                panOffset = CGSize(width: lastPan.width + v.translation.width, height: lastPan.height + v.translation.height) }
+            .onEnded { _ in lastPan = panOffset }
+    }
+
+    private func resetZoom() {
+        zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero
+    }
+
     private var visibleElements: [PropertyElement] {
         var items = elements
         if let cat = categoryFilter {
@@ -127,6 +155,13 @@ struct AerialCanvasView: View {
 
                 if interactive && pinMode { placeBanner }
             }
+            .scaleEffect(zoomScale)
+            .offset(panOffset)
+            .simultaneousGesture(zoomGesture)
+            .simultaneousGesture(panGesture)
+            .onChange(of: pinMode) { _, on in if on { resetZoom() } }
+            .onChange(of: zoneDrawMode) { _, on in if on { resetZoom() } }
+            .onChange(of: reshapeMode) { _, on in if on { resetZoom() } }
         }
         .clipped()
     }
@@ -155,8 +190,7 @@ struct AerialCanvasView: View {
         let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames)
             .position(pinPoint(el, size))
         if interactive {
-            pin
-                .highPriorityGesture(dragGesture(el, size))
+            let base = pin
                 .onTapGesture { if dragId == nil { onElementTap(el) } }
                 .contextMenu {
                     Button { onElementTap(el) } label: { Label("Open", systemImage: "eye") }
@@ -170,6 +204,11 @@ struct AerialCanvasView: View {
                         Label("Delete", systemImage: "trash")
                     }
                 }
+            if zoomScale == 1 {
+                base.highPriorityGesture(dragGesture(el, size))
+            } else {
+                base
+            }
         } else {
             pin
         }
@@ -257,16 +296,6 @@ struct AerialCanvasView: View {
         ZStack {
             NormPolygon(points: pts).fill(zone.tint.opacity(0.22))
             NormPolygon(points: pts).stroke(zone.tint, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
-            if let c = zone.imageCentroid {
-                HStack(spacing: 4) {
-                    Image(systemName: zone.icon).font(.system(size: 9, weight: .bold))
-                    Text(zone.name).font(.system(size: 10, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 7).padding(.vertical, 3)
-                .background(zone.tint.opacity(0.85), in: Capsule())
-                .position(x: c.x * size.width, y: c.y * size.height)
-            }
         }
         .contentShape(NormPolygon(points: pts))
         .onTapGesture { if interactable { onZoneTap(zone) } }

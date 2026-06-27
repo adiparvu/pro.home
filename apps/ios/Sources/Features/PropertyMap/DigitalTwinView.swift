@@ -414,6 +414,19 @@ struct DigitalTwinView: View {
                     }
                 }
             }
+            if case .zone(let id) = zoneView, let z = zoneService.zones.first(where: { $0.id == id }) {
+                Divider()
+                Button { editZone = z } label: { Label("Edit zone details", systemImage: "pencil") }
+                Button {
+                    reshapePoints = z.imagePoints.map { CGPoint(x: $0.x, y: $0.y) }
+                    reshapeZoneId = z.id
+                    HapticFeedback.impact(.medium)
+                } label: { Label("Edit zone shape", systemImage: "pencil.and.outline") }
+                Button(role: .destructive) {
+                    Task { await zoneService.delete(z) }
+                    zoneView = .hidden
+                } label: { Label("Delete zone", systemImage: "trash") }
+            }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: zoneView == .hidden ? "square.on.square.dashed" : "square.on.square")
