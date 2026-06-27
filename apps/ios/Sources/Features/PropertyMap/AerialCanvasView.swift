@@ -19,6 +19,8 @@ struct AerialCanvasView: View {
     var pinMode: Bool = false
     var zoneDrawMode: Bool = false
     var draftZonePoints: [CGPoint] = []   // normalized 0–1
+    var reshapeMode: Bool = false
+    var reshapePoints: [CGPoint] = []     // normalized 0–1
     var showZones: Bool = true
     var showNames: Bool = true
     /// nil = show all; 0/1/2 = only elements in the top/middle/bottom third.
@@ -32,6 +34,10 @@ struct AerialCanvasView: View {
     var onElementFavorite: (PropertyElement) -> Void = { _ in }
     var onZoneTap: (PropertyZone) -> Void = { _ in }
     var onAddZonePoint: (CGPoint) -> Void = { _ in }
+    var onZoneReshape: (PropertyZone) -> Void = { _ in }
+    var onZoneDelete: (PropertyZone) -> Void = { _ in }
+    var onMoveReshapePoint: (Int, CGPoint) -> Void = { _, _ in }
+    var onRemoveReshapePoint: (Int) -> Void = { _ in }
 
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
@@ -105,6 +111,8 @@ struct AerialCanvasView: View {
                 ForEach(visibleElements) { el in
                     pinView(el, size: geo.size)
                 }
+
+                if interactive && reshapeMode { reshapeOverlay(size: geo.size) }
 
                 if interactive && pinMode { placeBanner }
             }
@@ -192,7 +200,7 @@ struct AerialCanvasView: View {
     @ViewBuilder
     private func zoneShape(_ zone: PropertyZone, size: CGSize) -> some View {
         let pts = zone.imagePoints
-        let interactable = interactive && !pinMode && !zoneDrawMode
+        let interactable = interactive && !pinMode && !zoneDrawMode && !reshapeMode
         ZStack {
             NormPolygon(points: pts).fill(zone.tint.opacity(0.22))
             NormPolygon(points: pts).stroke(zone.tint, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
@@ -209,7 +217,38 @@ struct AerialCanvasView: View {
         }
         .contentShape(NormPolygon(points: pts))
         .onTapGesture { if interactable { onZoneTap(zone) } }
+        .contextMenu {
+            Button { onZoneTap(zone) } label: { Label("Edit details", systemImage: "pencil") }
+            Button { onZoneReshape(zone) } label: { Label("Edit shape", systemImage: "pencil.and.outline") }
+            Divider()
+            Button(role: .destructive) { onZoneDelete(zone) } label: { Label("Delete", systemImage: "trash") }
+        }
         .allowsHitTesting(interactable)
+    }
+
+    @ViewBuilder
+    private func reshapeOverlay(size: CGSize) -> some View {
+        let imgPts = reshapePoints.map { ImagePoint(x: $0.x, y: $0.y) }
+        ZStack {
+            if imgPts.count >= 2 {
+                NormPolygon(points: imgPts).fill(Color.accentColor.opacity(0.18))
+                NormPolygon(points: imgPts)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 2.5, lineJoin: .round))
+            }
+            ForEach(Array(reshapePoints.enumerated()), id: \.offset) { idx, pt in
+                Circle()
+                    .fill(.white)
+                    .frame(width: 22, height: 22)
+                    .overlay(Circle().fill(Color.accentColor).frame(width: 11, height: 11))
+                    .shadow(color: .black.opacity(0.3), radius: 3)
+                    .position(x: pt.x * size.width, y: pt.y * size.height)
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { v in onMoveReshapePoint(idx, clampNorm(v.location, in: size)) }
+                    )
+                    .onTapGesture(count: 2) { onRemoveReshapePoint(idx) }
+            }
+        }
     }
 
     @ViewBuilder

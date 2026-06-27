@@ -30,6 +30,8 @@ struct DigitalTwinView: View {
     @State private var zoneDrawMode = false
     @State private var draftZonePoints: [CGPoint] = []
     @State private var editZone: PropertyZone?
+    @State private var reshapeZoneId: UUID?
+    @State private var reshapePoints: [CGPoint] = []
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -37,11 +39,13 @@ struct DigitalTwinView: View {
                 AerialCanvasView(
                     property: prop,
                     elements: elementService.elements,
-                    zones: zoneService.zones,
+                    zones: reshapeZoneId == nil ? zoneService.zones : zoneService.zones.filter { $0.id != reshapeZoneId },
                     interactive: true,
                     pinMode: pinMode,
                     zoneDrawMode: zoneDrawMode,
                     draftZonePoints: draftZonePoints,
+                    reshapeMode: reshapeZoneId != nil,
+                    reshapePoints: reshapePoints,
                     showNames: showNames,
                     sectionFilter: sectionFilter,
                     categoryFilter: categoryFilter,
@@ -60,7 +64,23 @@ struct DigitalTwinView: View {
                         HapticFeedback.selection()
                     },
                     onZoneTap: { editZone = $0 },
-                    onAddZonePoint: { draftZonePoints.append($0) }
+                    onAddZonePoint: { draftZonePoints.append($0) },
+                    onZoneReshape: { zone in
+                        editZone = nil
+                        reshapePoints = zone.imagePoints.map { CGPoint(x: $0.x, y: $0.y) }
+                        reshapeZoneId = zone.id
+                        HapticFeedback.impact(.medium)
+                    },
+                    onZoneDelete: { zone in Task { await zoneService.delete(zone) } },
+                    onMoveReshapePoint: { idx, p in
+                        if idx < reshapePoints.count { reshapePoints[idx] = p }
+                    },
+                    onRemoveReshapePoint: { idx in
+                        if reshapePoints.count > 3, idx < reshapePoints.count {
+                            reshapePoints.remove(at: idx)
+                            HapticFeedback.impact(.light)
+                        }
+                    }
                 )
                 .ignoresSafeArea(edges: .bottom)
 
@@ -72,6 +92,11 @@ struct DigitalTwinView: View {
 
                 if zoneDrawMode {
                     zoneDrawToolbar
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
+
+                if reshapeZoneId != nil {
+                    reshapeToolbar
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 }
             } else {
@@ -290,6 +315,40 @@ struct DigitalTwinView: View {
         withAnimation { zoneDrawMode = false; draftZonePoints = [] }
         HapticFeedback.success()
         if let created { editZone = created }   // open editor to name/color it
+    }
+
+    // MARK: - Reshape toolbar
+
+    private var reshapeToolbar: some View {
+        HStack(spacing: 10) {
+            zoneToolButton("Cancel", icon: "xmark", tint: .red) {
+                withAnimation { reshapeZoneId = nil; reshapePoints = [] }
+            }
+            zoneToolButton("Add point", icon: "plus", tint: .white) {
+                let n = Double(reshapePoints.count)
+                let cx = n > 0 ? reshapePoints.map(\.x).reduce(0, +) / n : 0.5
+                let cy = n > 0 ? reshapePoints.map(\.y).reduce(0, +) / n : 0.5
+                reshapePoints.append(CGPoint(x: min(cx + 0.04, 1), y: min(cy + 0.04, 1)))
+            }
+            zoneToolButton("Save", icon: "checkmark", tint: .green) {
+                Task { await saveReshape() }
+            }
+            .opacity(reshapePoints.count < 3 ? 0.4 : 1)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
+        .padding(.bottom, 40)
+    }
+
+    private func saveReshape() async {
+        guard reshapePoints.count >= 3, let id = reshapeZoneId,
+              var zone = zoneService.zones.first(where: { $0.id == id }) else { return }
+        zone.imagePolygon = reshapePoints.map { ImagePoint(x: $0.x, y: $0.y) }
+        await zoneService.update(zone)
+        withAnimation { reshapeZoneId = nil; reshapePoints = [] }
+        HapticFeedback.success()
     }
 
     // MARK: - Section filter bar
