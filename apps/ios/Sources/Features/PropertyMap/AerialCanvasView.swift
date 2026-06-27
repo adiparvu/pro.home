@@ -107,9 +107,20 @@ struct AerialCanvasView: View {
                     .allowsHitTesting(false)
                 }
 
-                // Element pins
-                ForEach(visibleElements) { el in
-                    pinView(el, size: geo.size)
+                // Element pins (clustered when idle to reduce crowding)
+                if !pinMode && !zoneDrawMode && !reshapeMode {
+                    let clusters = clusterize(visibleElements, size: geo.size)
+                    ForEach(clusters.indices, id: \.self) { i in
+                        if clusters[i].count == 1 {
+                            pinView(clusters[i][0], size: geo.size)
+                        } else {
+                            clusterPin(clusters[i], size: geo.size)
+                        }
+                    }
+                } else {
+                    ForEach(visibleElements) { el in
+                        pinView(el, size: geo.size)
+                    }
                 }
 
                 if interactive && reshapeMode { reshapeOverlay(size: geo.size) }
@@ -178,6 +189,48 @@ struct AerialCanvasView: View {
                 dragId = nil
                 HapticFeedback.success()
             }
+    }
+
+    // MARK: - Clustering
+
+    private func clusterize(_ els: [PropertyElement], size: CGSize) -> [[PropertyElement]] {
+        var clusters: [[PropertyElement]] = []
+        var centers: [CGPoint] = []
+        let threshold: CGFloat = 42
+        for el in els {
+            let p = pinPoint(el, size)
+            if let idx = centers.firstIndex(where: { hypot($0.x - p.x, $0.y - p.y) < threshold }) {
+                clusters[idx].append(el)
+                let n = CGFloat(clusters[idx].count)
+                centers[idx] = CGPoint(x: (centers[idx].x * (n - 1) + p.x) / n,
+                                       y: (centers[idx].y * (n - 1) + p.y) / n)
+            } else {
+                clusters.append([el]); centers.append(p)
+            }
+        }
+        return clusters
+    }
+
+    @ViewBuilder
+    private func clusterPin(_ els: [PropertyElement], size: CGSize) -> some View {
+        let pts = els.map { pinPoint($0, size) }
+        let cx = pts.map(\.x).reduce(0, +) / CGFloat(pts.count)
+        let cy = pts.map(\.y).reduce(0, +) / CGFloat(pts.count)
+        Menu {
+            ForEach(els) { el in
+                Button { onElementTap(el) } label: { Label(el.name, systemImage: el.elementType.icon) }
+            }
+        } label: {
+            ZStack {
+                Circle().fill(.ultraThinMaterial)
+                    .overlay(Circle().fill(Color.accentColor.opacity(0.55)))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 1.5))
+                    .frame(width: 34, height: 34)
+                Text("\(els.count)").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            }
+            .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+        }
+        .position(x: cx, y: cy)
     }
 
     private func pinPoint(_ el: PropertyElement, _ size: CGSize) -> CGPoint {
