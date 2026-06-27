@@ -36,6 +36,14 @@ struct ZonesListView: View {
         return zoneService.zones.filter { $0.layer == layer }
     }
 
+    private func elementCount(in zone: PropertyZone) -> Int {
+        elementService.elements.filter { el in
+            let x = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionX
+            let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+            return zone.containsImage(x: x, y: y) || el.zoneId == zone.id
+        }.count
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
@@ -61,7 +69,7 @@ struct ZonesListView: View {
                             } label: {
                                 ZoneListRow(
                                     zone: zone,
-                                    elementCount: elementService.elements(inZone: zone.id).count
+                                    elementCount: elementCount(in: zone)
                                 )
                             }
                             .buttonStyle(.plain)

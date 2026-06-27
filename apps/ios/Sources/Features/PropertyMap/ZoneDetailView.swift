@@ -62,8 +62,16 @@ struct ZoneDetailView: View {
     @State private var editingZone: PropertyZone? = nil
     @State private var showDeleteConfirm = false
 
+    @State private var selectedElement: PropertyElement?
+
     private var zoneType: ZoneType { ZoneType.detect(from: zone) }
-    private var elements: [PropertyElement] { elementService.elements(inZone: zone.id) }
+    private var elements: [PropertyElement] {
+        elementService.elements.filter { el in
+            let x = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionX
+            let y = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+            return zone.containsImage(x: x, y: y) || el.zoneId == zone.id
+        }
+    }
     private var openTasks: [MaintenanceTask] { taskService.tasks.filter { !$0.isCompleted } }
 
     private var shareText: String {
@@ -501,8 +509,22 @@ struct ZoneDetailView: View {
                 .padding(.leading, 4)
 
             ForEach(elements) { element in
-                ObjectListRow(element: element, zoneName: nil)
+                Button {
+                    HapticFeedback.impact(.light)
+                    selectedElement = element
+                } label: {
+                    ObjectListRow(element: element, zoneName: nil)
+                }
+                .buttonStyle(.plain)
             }
+        }
+        .sheet(item: $selectedElement) { element in
+            PropertyElementDetailView(element: element)
+                .environmentObject(elementService)
+                .environmentObject(currencyService)
+                .environmentObject(appSettings)
+                .environmentObject(documentService)
+                .environmentObject(taskService)
         }
     }
 }
