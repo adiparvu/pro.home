@@ -1,5 +1,10 @@
 import SwiftUI
 
+private struct ARIABottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 // MARK: - Proposed action model
 
 struct ARIAProposedAction {
@@ -30,6 +35,7 @@ struct ARIAView: View {
     @AppStorage("prvio.locale")            private var currentLocale: String = "en"
     @AppStorage("prvio.followSystemLang")  private var followSystemLanguage: Bool = true
     @StateObject private var speech = SpeechRecognizer()
+    @State private var showJumpToLatest = false
 
     var body: some View {
         ZStack {
@@ -85,6 +91,7 @@ struct ARIAView: View {
 
     private var messageList: some View {
         ScrollViewReader { proxy in
+            GeometryReader { outer in
             ScrollView {
                 if isLoadingHistory {
                     VStack { Spacer(minLength: 40); ProgressView().tint(.white); Spacer() }
@@ -97,10 +104,21 @@ struct ARIAView: View {
                         if isThinking {
                             ThinkingBubble().id("thinking")
                         }
+                        Color.clear.frame(height: 1).id("ARIA_BOTTOM")
+                            .background(GeometryReader { g in
+                                Color.clear.preference(key: ARIABottomKey.self,
+                                                       value: g.frame(in: .named("ariaScroll")).minY)
+                            })
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .padding(.bottom, 20)
+                }
+            }
+            .coordinateSpace(name: "ariaScroll")
+            .onPreferenceChange(ARIABottomKey.self) { minY in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showJumpToLatest = minY > outer.size.height + 60
                 }
             }
             .scrollDismissesKeyboard(.interactively)
@@ -110,6 +128,27 @@ struct ARIAView: View {
             .onChange(of: isThinking) {
                 if isThinking { withAnimation { proxy.scrollTo("thinking", anchor: .bottom) } }
             }
+            .overlay(alignment: .bottom) {
+                if showJumpToLatest {
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            proxy.scrollTo(messages.last?.id, anchor: .bottom)
+                        }
+                        HapticFeedback.impact(.light)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassCircle()
+                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                    .padding(.bottom, 10)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            } // end GeometryReader
         }
     }
 
