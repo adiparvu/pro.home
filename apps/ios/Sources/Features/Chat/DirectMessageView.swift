@@ -92,7 +92,10 @@ struct DirectMessageView: View {
             }
             .ignoresSafeArea()
         }
-        .onAppear { directMessageService.markRead(partner: member.name) }
+        .onAppear {
+            directMessageService.markRead(partner: member.name)
+            Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
+        }
         .alert("Message Not Sent", isPresented: .init(
             get: { sendError != nil },
             set: { if !$0 { sendError = nil } }
@@ -127,8 +130,12 @@ struct DirectMessageView: View {
                                     message: msg,
                                     isOwn: isOwn,
                                     showSenderBubbleTail: !prevSameSender || showDate,
+                                    myName: myName,
                                     repliedMessage: msg.replyTo.flatMap { rid in
                                         conversationMessages.first { $0.id == rid }
+                                    },
+                                    onReact: { emoji in
+                                        Task { await directMessageService.toggleReaction(msg, emoji: emoji, myName: myName) }
                                     },
                                     onReply: { withAnimation { replyingTo = msg } },
                                     onForward: { forwarding = msg },
@@ -151,6 +158,7 @@ struct DirectMessageView: View {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                         }
                         directMessageService.markRead(partner: member.name)
+                        Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
                     }
                     .onAppear {
                         if let last = conversationMessages.last {
@@ -661,7 +669,9 @@ private struct DMBubble: View {
     let message: DirectMessage
     let isOwn: Bool
     let showSenderBubbleTail: Bool
+    var myName: String = ""
     var repliedMessage: DirectMessage? = nil
+    var onReact: ((String) -> Void)? = nil
     var onReply: (() -> Void)? = nil
     var onForward: (() -> Void)? = nil
     var onPin: (() -> Void)? = nil
@@ -671,6 +681,15 @@ private struct DMBubble: View {
 
     @State private var swipeOffset: CGFloat = 0
     @State private var showDetails = false
+
+    private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
+
+    private var reactionCounts: [String: Int] {
+        var out: [String: Int] = [:]
+        for (_, emoji) in message.reactions ?? [:] { out[emoji, default: 0] += 1 }
+        return out
+    }
+    private var myReaction: String? { message.reactions?[myName] }
 
     private enum DMMessageType { case text, image, audio, deleted }
 
@@ -714,6 +733,8 @@ private struct DMBubble: View {
                 .gesture(swipeGesture)
                 .contextMenu { menuContent }
 
+                if !reactionCounts.isEmpty { reactionPills }
+
                 statusRow
             }
 
@@ -743,6 +764,12 @@ private struct DMBubble: View {
     @ViewBuilder
     private var menuContent: some View {
         if messageType != .deleted {
+            if let onReact {
+                ForEach(Self.reactionEmojis, id: \.self) { emoji in
+                    Button { onReact(emoji) } label: { Text(emoji) }
+                }
+                Divider()
+            }
             if let onReply {
                 Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
             }
@@ -779,6 +806,28 @@ private struct DMBubble: View {
         }
     }
 
+    private var reactionPills: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(reactionCounts.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
+                Button {
+                    onReact?(emoji)
+                } label: {
+                    HStack(spacing: 3) {
+                        Text(emoji).font(.system(size: 14))
+                        if count > 1 {
+                            Text("\(count)").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary)
+                        }
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
+                                in: Capsule())
+                    .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
     private var statusRow: some View {
         HStack(spacing: 4) {
             Text(message.timeDisplay)
@@ -798,6 +847,9 @@ private struct DMBubble: View {
                 Image(systemName: "flag.fill")
                     .font(.system(size: 8))
                     .foregroundStyle(.orange.opacity(0.7))
+            }
+            if isOwn, messageType != .deleted {
+                DMReadCheck(seen: message.readAt != nil)
             }
         }
         .padding(.horizontal, 2)
@@ -880,6 +932,21 @@ private struct DMBubble: View {
     }
 }
 
+// MARK: - DM Read Receipt Check
+
+private struct DMReadCheck: View {
+    let seen: Bool
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
+            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).offset(x: 3.5)
+        }
+        .frame(width: 14, alignment: .leading)
+        .foregroundStyle(seen ? Color.blue : Color.primary.opacity(0.4))
+    }
+}
+
 // MARK: - DM Message Details
 
 private struct DMDetailsSheet: View {
@@ -894,6 +961,7 @@ private struct DMDetailsSheet: View {
                     detailRow("From", message.senderName)
                     detailRow("To", message.recipientName)
                     detailRow("Sent", message.timeDisplay)
+                    detailRow("Read", message.readAt != nil ? "Yes" : "No")
                     if message.editedAt != nil { detailRow("Edited", "Yes") }
                     Spacer()
                 }

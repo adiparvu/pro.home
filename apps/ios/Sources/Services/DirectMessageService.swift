@@ -14,9 +14,11 @@ struct DirectMessage: Identifiable, Codable {
     var editedAt: String?
     var pinned: Bool?
     var isMarked: Bool?
+    var reactions: [String: String]?
+    var readAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, body, pinned
+        case id, body, pinned, reactions
         case senderName    = "sender_name"
         case recipientName = "recipient_name"
         case createdAt     = "created_at"
@@ -24,6 +26,7 @@ struct DirectMessage: Identifiable, Codable {
         case deletedForAll = "deleted_for_all"
         case editedAt      = "edited_at"
         case isMarked      = "is_marked"
+        case readAt        = "read_at"
     }
 
     var timeDisplay: String {
@@ -103,8 +106,14 @@ final class DirectMessageService: ObservableObject {
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
         let ch = await supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
-        let changes = await ch.postgresChange(
+        let inserts = await ch.postgresChange(
             InsertAction.self,
+            schema: "public",
+            table: "direct_messages",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        )
+        let updates = await ch.postgresChange(
+            UpdateAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
@@ -112,7 +121,14 @@ final class DirectMessageService: ObservableObject {
         await ch.subscribe()
         channel = ch
 
-        for await _ in changes {
+        // Updates (reactions, read receipts, pin/mark, edit, delete-for-all) on a side task.
+        Task { [weak self] in
+            for await _ in updates {
+                await self?.load(propertyId: propertyId, myName: myName)
+            }
+        }
+
+        for await _ in inserts {
             await load(propertyId: propertyId, myName: myName)
         }
     }
@@ -193,6 +209,41 @@ final class DirectMessageService: ObservableObject {
             print("[DM] toggleMark error: \(error)")
 #endif
         }
+    }
+
+    func toggleReaction(_ msg: DirectMessage, emoji: String, myName: String) async {
+        var map = msg.reactions ?? [:]
+        if map[myName] == emoji { map.removeValue(forKey: myName) } else { map[myName] = emoji }
+        do {
+            try await supabase
+                .from("direct_messages")
+                .update(["reactions": map])
+                .eq("id", value: msg.id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].reactions = map }
+        } catch {
+#if DEBUG
+            print("[DM] toggleReaction error: \(error)")
+#endif
+        }
+    }
+
+    /// Marks incoming messages from `partner` as read (sets read_at) and updates local state.
+    func markReadRemote(partner: String, myName: String) async {
+        let unread = dms.filter {
+            $0.senderName == partner && $0.recipientName == myName && $0.readAt == nil
+        }
+        guard !unread.isEmpty else { return }
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        for m in unread {
+            try? await supabase
+                .from("direct_messages")
+                .update(["read_at": nowISO])
+                .eq("id", value: m.id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].readAt = nowISO }
+        }
+        objectWillChange.send()
     }
 
     // MARK: - Private helpers
