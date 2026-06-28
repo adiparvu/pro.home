@@ -143,90 +143,92 @@ struct DashboardView: View {
 
     private var dashHeader: some View {
         HStack(alignment: .center, spacing: 10) {
-            Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
-                HStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(LinearGradient(
-                                colors: [Color(red: 0.25, green: 0.82, blue: 0.48),
-                                         Color(red: 0.18, green: 0.60, blue: 0.88)],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            ))
-                        if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
-                            AsyncImage(url: url) { phase in
-                                if case .success(let img) = phase {
-                                    img.resizable().scaledToFill()
-                                        .frame(width: 38, height: 38)
-                                        .clipShape(Circle())
-                                } else {
-                                    Text(avatarInitial)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                        } else {
-                            Text(avatarInitial)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                    }
-                    .frame(width: 38, height: 38)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        HStack(spacing: 5) {
-                            Text(displayName.isEmpty ? "\(greetingText)!" : "\(greetingText), \(displayName)!")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(Color.primary.opacity(0.35))
-                        }
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color(red: 0.20, green: 0.87, blue: 0.48))
-                                .frame(width: 5, height: 5)
-                            Text("Live")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(Color(red: 0.20, green: 0.87, blue: 0.48))
-                        }
-                    }
-                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(dateString)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+                Text(displayName.isEmpty ? greetingText : "\(greetingText), \(displayName)")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            .buttonStyle(.plain)
 
-            Spacer()
-
-            if let score = propertyService.primary?.healthScore {
-                VStack(spacing: 1) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 7, weight: .bold))
-                    Text("\(score)")
-                        .font(.system(size: 13, weight: .bold))
-                }
-                .foregroundStyle(healthScoreColor(score))
-                .frame(width: 36, height: 36)
-                .glassCircle()
-                .allowsHitTesting(false)
-            }
+            Spacer(minLength: 8)
 
             Button { HapticFeedback.impact(.light); showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 36, height: 36)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.75))
+                    .frame(width: 40, height: 40)
             }
             .buttonStyle(.plain)
             .glassCircle()
 
             Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
                 Image(systemName: "bell.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.7))
-                    .frame(width: 36, height: 36)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.primary.opacity(0.75))
+                    .frame(width: 40, height: 40)
+                    .overlay(alignment: .topTrailing) {
+                        if hasNotifications {
+                            Circle()
+                                .fill(Color(red: 0.20, green: 0.87, blue: 0.48))
+                                .frame(width: 10, height: 10)
+                                .overlay(Circle().strokeBorder(.black.opacity(0.55), lineWidth: 1.5))
+                                .offset(x: -8, y: 8)
+                        }
+                    }
             }
             .buttonStyle(.plain)
             .glassCircle()
+
+            Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
+                avatarCircle
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private var dateString: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, MMM d"
+        f.locale = .current
+        return f.string(from: Date())
+    }
+
+    private var hasNotifications: Bool {
+        taskService.overdueCount > 0 || !proactiveEngine.activeInsights.isEmpty
+    }
+
+    private var avatarCircle: some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color(red: 0.25, green: 0.82, blue: 0.48),
+                             Color(red: 0.18, green: 0.60, blue: 0.88)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+            if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                            .frame(width: 42, height: 42)
+                            .clipShape(Circle())
+                    } else {
+                        Text(avatarInitial)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+            } else {
+                Text(avatarInitial)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(width: 42, height: 42)
+        .overlay(Circle().strokeBorder(Color(red: 0.20, green: 0.87, blue: 0.48).opacity(0.55), lineWidth: 1.5))
     }
 
     // MARK: - Aerial background (drone photo or canvas illustration)
