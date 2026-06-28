@@ -10,6 +10,7 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     let id: UUID
     let propertyId: UUID
     let senderName: String
+    let recipientName: String?     // nil = group chat; set = DM recipient
     let body: String?
     let attachmentUrl: String?
     let attachmentType: String?
@@ -17,10 +18,11 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     let replyTo: UUID?
     let createdAt: Date
 
-    init(id: UUID = UUID(), propertyId: UUID, senderName: String, body: String?,
-         attachmentUrl: String? = nil, attachmentType: String? = nil,
+    init(id: UUID = UUID(), propertyId: UUID, senderName: String, recipientName: String? = nil,
+         body: String?, attachmentUrl: String? = nil, attachmentType: String? = nil,
          mentionedIds: [String] = [], replyTo: UUID? = nil, createdAt: Date = Date()) {
         self.id = id; self.propertyId = propertyId; self.senderName = senderName
+        self.recipientName = recipientName
         self.body = body; self.attachmentUrl = attachmentUrl; self.attachmentType = attachmentType
         self.mentionedIds = mentionedIds; self.replyTo = replyTo; self.createdAt = createdAt
     }
@@ -33,15 +35,17 @@ final class OfflineOutbox: ObservableObject {
 
     private let monitor = NWPathMonitor()
     private var flushing = false
+    private let filename: String
 
     private var fileURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("chat_outbox.json")
+        return dir.appendingPathComponent(filename)
     }
 
-    init() {
+    init(filename: String = "chat_outbox.json") {
+        self.filename = filename
         load()
         monitor.pathUpdateHandler = { [weak self] path in
             let online = path.status == .satisfied

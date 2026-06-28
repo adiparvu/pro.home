@@ -47,6 +47,7 @@ struct DirectMessageView: View {
     @State private var isSending = false
     @State private var lastTypingSent = Date.distantPast
     @StateObject private var audioRecorder = ChatAudioRecorder()
+    @StateObject private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
     @State private var recordingCancelled = false
 
     private var myName: String {
@@ -63,6 +64,11 @@ struct DirectMessageView: View {
 
     private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
     private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
+    private var pendingOutbox: [PendingMessage] {
+        outbox.pending
+            .filter { $0.recipientName == member.name && $0.propertyId == propertyService.primary?.id }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
 
     var body: some View {
         ZStack {
@@ -182,7 +188,11 @@ struct DirectMessageView: View {
         .onAppear {
             directMessageService.markRead(partner: member.name)
             Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
+            Task { await flushOutbox() }
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
+        }
+        .onChange(of: outbox.isOnline) { _, online in
+            if online { Task { await flushOutbox() } }
         }
         .alert("Message Not Sent", isPresented: .init(
             get: { sendError != nil },
@@ -389,6 +399,23 @@ struct DirectMessageView: View {
                                     onLongPress: { menuMessage = msg }
                                 )
                                 .id(msg.id)
+                            }
+                            ForEach(pendingOutbox) { pm in
+                                HStack {
+                                    Spacer(minLength: 72)
+                                    HStack(spacing: 6) {
+                                        Text(pm.body ?? "")
+                                            .font(.system(size: 15))
+                                            .foregroundStyle(.white)
+                                        Image(systemName: "clock")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(.white.opacity(0.75))
+                                    }
+                                    .padding(.horizontal, 13).padding(.vertical, 9)
+                                    .background(chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+                                                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                    .opacity(0.85)
+                                }
                             }
                             Color.clear.frame(height: 1).id("DM_BOTTOM")
                                 .background(GeometryReader { g in
@@ -756,11 +783,38 @@ struct DirectMessageView: View {
             withAnimation { replyingTo = nil }
             HapticFeedback.impact(.light)
         } catch {
+            // Offline / send failed → queue it; sends automatically when back online.
+            if let pid = propertyService.primary?.id {
+                outbox.enqueue(PendingMessage(
+                    propertyId: pid, senderName: myName, recipientName: member.name,
+                    body: text, replyTo: replyingTo?.id
+                ))
+            }
+            withAnimation { replyingTo = nil }
             HapticFeedback.warning()
-            sendError = String(localized: "Failed to send message. Check your connection and try again.")
-#if DEBUG
-            print("[DM] send error: \(error)")
-#endif
+        }
+    }
+
+    private func flushOutbox() async {
+        guard let pid = propertyService.primary?.id else { return }
+        await outbox.flush { pm in
+            guard pm.propertyId == pid, let recipient = pm.recipientName else { return false }
+            struct P: Encodable {
+                let sender_name, recipient_name, body, property_id: String
+                let reply_to: String?
+            }
+            do {
+                let sent: DirectMessage = try await supabase
+                    .from("direct_messages")
+                    .insert(P(sender_name: pm.senderName, recipient_name: recipient,
+                              body: pm.body ?? "", property_id: pid.uuidString,
+                              reply_to: pm.replyTo?.uuidString))
+                    .select().single().execute().value
+                directMessageService.dms.append(sent)
+                return true
+            } catch {
+                return false
+            }
         }
     }
 
