@@ -50,16 +50,17 @@ struct MainTabView: View {
                 .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
 
             NavigationStack {
-                AIInsightsView()
-                    .environmentObject(taskService)
-                    .environmentObject(elementService)
-                    .environmentObject(zoneService)
-                    .environmentObject(plantService)
+                ConversationsView()
+                    .environmentObject(messageService)
+                    .environmentObject(directMessageService)
+                    .environmentObject(familyService)
                     .environmentObject(propertyService)
+                    .environmentObject(profileService)
+                    .environmentObject(stickerService)
                     .environmentObject(tabBarVis)
                     .environmentObject(router)
             }
-            .tabItem { Image(systemName: "sparkles") }
+            .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
             .tag(AppTab.chat)
 
             NavigationStack { SettingsView() }
