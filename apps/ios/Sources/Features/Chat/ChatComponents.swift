@@ -232,6 +232,7 @@ struct MessageBubble: View {
     @State private var localMyReaction: String? = nil
     @State private var showReactionPicker = false
     @State private var swipeOffset: CGFloat = 0
+    @State private var viewerItem: ImageViewerItem? = nil
 
     private var displayReactions: [String: Int] {
         onReact != nil ? persistedReactions : localReactions
@@ -300,6 +301,9 @@ struct MessageBubble: View {
         }
         .sheet(isPresented: $showReaders) {
             SeenBySheet(readers: readers, members: members)
+        }
+        .fullScreenCover(item: $viewerItem) { item in
+            FullScreenImageViewer(url: item.url)
         }
         .sheet(isPresented: $showReactionPicker) {
             ReactionPickerView(myReaction: displayMyReaction) { emoji in
@@ -546,6 +550,7 @@ struct MessageBubble: View {
                         .overlay(ProgressView().tint(.white))
                 }
             }
+            .onTapGesture { viewerItem = ImageViewerItem(url: url) }
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))

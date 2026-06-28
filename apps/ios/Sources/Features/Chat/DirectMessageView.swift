@@ -747,6 +747,7 @@ private struct DMBubble: View {
 
     @State private var swipeOffset: CGFloat = 0
     @State private var showDetails = false
+    @State private var viewerItem: ImageViewerItem? = nil
 
     private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
@@ -810,6 +811,9 @@ private struct DMBubble: View {
         .sheet(isPresented: $showDetails) {
             DMDetailsSheet(message: message)
                 .presentationDetents([.height(220)])
+        }
+        .fullScreenCover(item: $viewerItem) { item in
+            FullScreenImageViewer(url: item.url)
         }
     }
 
@@ -986,6 +990,9 @@ private struct DMBubble: View {
                     .scaledToFill()
                     .frame(maxWidth: 220, maxHeight: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .onTapGesture {
+                        if let u = URL(string: message.body) { viewerItem = ImageViewerItem(url: u) }
+                    }
             case .failure:
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.primary.opacity(0.08))
