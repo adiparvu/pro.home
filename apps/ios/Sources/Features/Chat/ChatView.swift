@@ -31,6 +31,7 @@ struct ChatView: View {
     @State private var showAddMember = false
     @State private var scrollTarget: UUID? = nil
     @State private var menuMessage: Message?
+    @State private var deleteCandidate: Message?
     @State private var editingMessage: Message? = nil
     @State private var editText = ""
     @State private var lastTypingSent = Date.distantPast
@@ -116,15 +117,7 @@ struct ChatView: View {
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
             items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body ?? "" })
         }
-        if own {
-            items.append(ChatActionItem("Delete", "trash", destructive: true) {
-                Task { await messageService.deleteForEveryone(id: m.id) }
-            })
-        } else {
-            items.append(ChatActionItem("Delete for me", "trash", destructive: true) {
-                messageService.deleteForMe(id: m.id)
-            })
-        }
+        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
     }
 
@@ -190,51 +183,18 @@ struct ChatView: View {
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 0) {
-                    Button {
-                        withAnimation(.spring(response: 0.3)) { showSearch.toggle() }
-                        if !showSearch { searchText = "" }
-                    } label: {
-                        Image(systemName: showSearch ? "magnifyingglass.circle.fill" : "magnifyingglass")
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(width: 38, height: 32)
-                    }
-                    .buttonStyle(.plain)
-
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(width: 0.5, height: 18)
-
-                    Button { showCallSheet = true } label: {
-                        Image(systemName: "phone.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(width: 38, height: 32)
-                    }
-
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(width: 0.5, height: 18)
-
-                    Button { showVideoSheet = true } label: {
-                        Image(systemName: "video.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(width: 38, height: 32)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button { showStarred = true } label: {
-                        Label("Starred messages", systemImage: "flag")
-                    }
-                    Button { showThemePicker = true } label: {
-                        Label("Conversation theme", systemImage: "paintpalette")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                Button { showVideoSheet = true } label: {
+                    Image(systemName: "video.fill")
                         .font(.system(size: 16, weight: .semibold))
                 }
+                .buttonStyle(.plain)
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showCallSheet = true } label: {
+                    Image(systemName: "phone.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .buttonStyle(.plain)
             }
         }
         .task {
@@ -355,6 +315,24 @@ struct ChatView: View {
         .sheet(isPresented: $showEventComposer) {
             EventComposerView { title, details, date, location in
                 Task { await sendEvent(title: title, details: details, date: date, location: location) }
+            }
+        }
+        .confirmationDialog("Delete message?", isPresented: .init(
+            get: { deleteCandidate != nil },
+            set: { if !$0 { deleteCandidate = nil } }
+        ), titleVisibility: .visible) {
+            if let m = deleteCandidate {
+                if m.senderId == supabase.auth.currentSession?.user.id {
+                    Button("Delete for everyone", role: .destructive) {
+                        Task { await messageService.deleteForEveryone(id: m.id) }
+                        deleteCandidate = nil
+                    }
+                }
+                Button("Delete for me", role: .destructive) {
+                    messageService.deleteForMe(id: m.id)
+                    deleteCandidate = nil
+                }
+                Button("Cancel", role: .cancel) { deleteCandidate = nil }
             }
         }
         .alert("Edit message", isPresented: .init(

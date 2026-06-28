@@ -25,6 +25,7 @@ struct DirectMessageView: View {
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
+    @State private var deleteCandidate: DirectMessage? = nil
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -176,6 +177,24 @@ struct DirectMessageView: View {
         } message: {
             Text(sendError ?? "")
         }
+        .confirmationDialog("Delete message?", isPresented: .init(
+            get: { deleteCandidate != nil },
+            set: { if !$0 { deleteCandidate = nil } }
+        ), titleVisibility: .visible) {
+            if let m = deleteCandidate {
+                if m.senderName == myName {
+                    Button("Delete for everyone", role: .destructive) {
+                        Task { await directMessageService.deleteForEveryone(id: m.id) }
+                        deleteCandidate = nil
+                    }
+                }
+                Button("Delete for me", role: .destructive) {
+                    directMessageService.deleteForMe(id: m.id)
+                    deleteCandidate = nil
+                }
+                Button("Cancel", role: .cancel) { deleteCandidate = nil }
+            }
+        }
         .alert("Edit message", isPresented: .init(
             get: { editingMessage != nil },
             set: { if !$0 { editingMessage = nil } }
@@ -244,15 +263,7 @@ struct DirectMessageView: View {
         if own, m.deletedForAll != true, !isMedia {
             items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body })
         }
-        if own {
-            items.append(ChatActionItem("Delete", "trash", destructive: true) {
-                Task { await directMessageService.deleteForEveryone(id: m.id) }
-            })
-        } else {
-            items.append(ChatActionItem("Delete for me", "trash", destructive: true) {
-                directMessageService.deleteForMe(id: m.id)
-            })
-        }
+        items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
     }
 

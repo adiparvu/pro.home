@@ -79,21 +79,20 @@ struct SwipeableRow<Content: View>: View {
             a.action()
             close()
         } label: {
-            VStack(spacing: 4) {
-                ZStack {
-                    Circle().fill(a.color.gradient)
-                    Image(systemName: a.icon)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 46, height: 46)
-                .overlay(Circle().strokeBorder(.white.opacity(0.3), lineWidth: 1))
-                .shadow(color: a.color.opacity(0.45), radius: 5, y: 2)
+            VStack(spacing: 5) {
+                Image(systemName: a.icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
                 Text(LocalizedStringKey(a.label))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.55))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            .frame(width: slot)
+            .frame(width: slot - 8)
+            .frame(maxHeight: .infinity)
+            .background(a.color.gradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal, 3).padding(.vertical, 2)
         }
         .buttonStyle(.plain)
     }

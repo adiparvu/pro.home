@@ -281,20 +281,44 @@ struct ConversationsView: View {
     }
 
     private func leadingActions(_ entry: ConversationEntry) -> [ConvSwipeAction] {
-        [
-            ConvSwipeAction(label: pinnedIds.contains(entry.id) ? "Unpin" : "Pin",
-                            icon: "pin.fill", color: .green) { togglePinned(entry.id) },
-            ConvSwipeAction(label: "Unread", icon: "message.badge.fill", color: .blue) { toggleUnread(entry.id) }
+        let unread = isUnread(entry)
+        return [
+            unread
+                ? ConvSwipeAction(label: "Citit", icon: "checkmark.message.fill", color: .gray) { markConversationRead(entry) }
+                : ConvSwipeAction(label: "Necitit", icon: "message.badge.fill", color: .blue) { markConversationUnread(entry) },
+            ConvSwipeAction(label: pinnedIds.contains(entry.id) ? "Detașează" : "Fixează",
+                            icon: pinnedIds.contains(entry.id) ? "pin.slash.fill" : "pin.fill",
+                            color: .green) { togglePinned(entry.id) }
         ]
     }
 
     private func trailingActions(_ entry: ConversationEntry) -> [ConvSwipeAction] {
-        [
-            ConvSwipeAction(label: mutedIds.contains(entry.id) ? "Unmute" : "Mute",
-                            icon: mutedIds.contains(entry.id) ? "bell.fill" : "bell.slash.fill",
+        let muted = mutedIds.contains(entry.id)
+        return [
+            ConvSwipeAction(label: muted ? "Activează" : "Oprește",
+                            icon: muted ? "bell.fill" : "bell.slash.fill",
                             color: .orange) { toggleMuted(entry.id) },
-            ConvSwipeAction(label: "Archive", icon: "archivebox.fill", color: .gray) { toggleArchived(entry.id) }
+            ConvSwipeAction(label: archivedIds.contains(entry.id) ? "Dezarhivează" : "Arhivează",
+                            icon: "archivebox.fill", color: .gray) { toggleArchived(entry.id) }
         ]
+    }
+
+    private func markConversationRead(_ entry: ConversationEntry) {
+        manualUnreadIds.remove(entry.id)
+        UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
+        if entry.isGroup {
+            messageService.resetUnread()
+            if let pid = propertyService.primary?.id {
+                Task { await messageService.markRead(propertyId: pid, readerName: myName) }
+            }
+        } else if let m = entry.member {
+            directMessageService.markRead(partner: m.name)
+        }
+    }
+
+    private func markConversationUnread(_ entry: ConversationEntry) {
+        manualUnreadIds.insert(entry.id)
+        UserDefaults.standard.set(Array(manualUnreadIds), forKey: "chat.manualUnread")
     }
 
     private var searchField: some View {
