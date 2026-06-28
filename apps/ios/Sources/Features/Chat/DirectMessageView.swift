@@ -3,6 +3,11 @@ import PhotosUI
 import UIKit
 import Supabase
 
+private struct DMBottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 // MARK: - Direct Message View (1-on-1 private chat)
 
 struct DirectMessageView: View {
@@ -26,6 +31,7 @@ struct DirectMessageView: View {
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
     @State private var deleteCandidate: DirectMessage? = nil
+    @State private var showJumpToLatest = false
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -188,11 +194,13 @@ struct DirectMessageView: View {
             if let m = deleteCandidate {
                 if m.senderName == myName {
                     Button("Delete for everyone", role: .destructive) {
+                        HapticFeedback.warning()
                         Task { await directMessageService.deleteForEveryone(id: m.id) }
                         deleteCandidate = nil
                     }
                 }
                 Button("Delete for me", role: .destructive) {
+                    HapticFeedback.warning()
                     directMessageService.deleteForMe(id: m.id)
                     deleteCandidate = nil
                 }
@@ -335,6 +343,7 @@ struct DirectMessageView: View {
             }
             .buttonStyle(.plain)
         }
+        GeometryReader { outer in
         ScrollViewReader { proxy in
             Group {
                 if conversationMessages.isEmpty {
@@ -376,11 +385,21 @@ struct DirectMessageView: View {
                                 )
                                 .id(msg.id)
                             }
+                            Color.clear.frame(height: 1).id("DM_BOTTOM")
+                                .background(GeometryReader { g in
+                                    Color.clear.preference(key: DMBottomKey.self,
+                                                           value: g.frame(in: .named("DMOUTER")).maxY)
+                                })
                         }
                         .padding(.horizontal, 12)
                         .padding(.bottom, 12)
                     }
                     .scrollDismissesKeyboard(.immediately)
+                    .onPreferenceChange(DMBottomKey.self) { maxY in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showJumpToLatest = maxY > outer.size.height + 60
+                        }
+                    }
                     .onChange(of: conversationMessages.count) { _, _ in
                         if let last = conversationMessages.last {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -400,7 +419,29 @@ struct DirectMessageView: View {
                     }
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                if showJumpToLatest {
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            proxy.scrollTo("DM_BOTTOM", anchor: .bottom)
+                        }
+                        HapticFeedback.impact(.light)
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassCircle()
+                    .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                    .padding(.trailing, 16).padding(.bottom, 10)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
         }
+        }
+        .coordinateSpace(name: "DMOUTER")
         }
     }
 

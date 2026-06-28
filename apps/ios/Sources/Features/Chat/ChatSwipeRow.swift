@@ -76,6 +76,7 @@ struct SwipeableRow<Content: View>: View {
 
     private func actionButton(_ a: ConvSwipeAction) -> some View {
         Button {
+            HapticFeedback.impact(.medium)
             a.action()
             close()
         } label: {

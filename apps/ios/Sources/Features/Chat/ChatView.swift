@@ -334,11 +334,13 @@ struct ChatView: View {
             if let m = deleteCandidate {
                 if m.senderId == supabase.auth.currentSession?.user.id {
                     Button("Delete for everyone", role: .destructive) {
+                        HapticFeedback.warning()
                         Task { await messageService.deleteForEveryone(id: m.id) }
                         deleteCandidate = nil
                     }
                 }
                 Button("Delete for me", role: .destructive) {
+                    HapticFeedback.warning()
                     messageService.deleteForMe(id: m.id)
                     deleteCandidate = nil
                 }

@@ -25,6 +25,7 @@ struct ChatActionOverlay: View {
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -40,10 +41,13 @@ struct ChatActionOverlay: View {
             }
             .padding(.horizontal, 24)
             .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
-            .scaleEffect(appear ? 1 : 0.92)
+            .scaleEffect(reduceMotion ? 1 : (appear ? 1 : 0.92))
             .opacity(appear ? 1 : 0)
         }
-        .onAppear { withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) { appear = true } }
+        .onAppear {
+            if reduceMotion { appear = true }
+            else { withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) { appear = true } }
+        }
     }
 
     private var reactionPill: some View {
