@@ -214,11 +214,18 @@ struct MessageBubble: View {
     var persistedMyReaction: String? = nil
     /// Called when user toggles a reaction emoji; nil = use local-only state.
     var onReact: ((String) -> Void)? = nil
+    /// The message this one replies to (for the quoted snippet), if any.
+    var repliedMessage: Message? = nil
+    var onReply: (() -> Void)? = nil
+    var onDetails: (() -> Void)? = nil
+    var onPin: (() -> Void)? = nil
+    var onMark: (() -> Void)? = nil
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
     @State private var localMyReaction: String? = nil
     @State private var showReactionPicker = false
+    @State private var swipeOffset: CGFloat = 0
 
     private var displayReactions: [String: Int] {
         onReact != nil ? persistedReactions : localReactions
@@ -249,13 +256,56 @@ struct MessageBubble: View {
                         .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(0.45))
                         .padding(.leading, 4)
                 }
+                if let replied = repliedMessage {
+                    quotedReply(replied)
+                }
                 bubbleContent
+                    .offset(x: swipeOffset)
+                    .overlay(alignment: isOwn ? .trailing : .leading) {
+                        if abs(swipeOffset) > 12 {
+                            Image(systemName: swipeOffset > 0 ? "arrowshape.turn.up.left.fill" : "info.circle.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .offset(x: swipeOffset > 0 ? -28 : 28)
+                        }
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 18)
+                            .onChanged { v in
+                                // right = reply, left = details; clamp the rubber-band
+                                swipeOffset = max(-70, min(70, v.translation.width))
+                            }
+                            .onEnded { v in
+                                if v.translation.width > 55 { onReply?(); HapticFeedback.impact(.light) }
+                                else if v.translation.width < -55 { (onDetails ?? { showReaders = true })(); HapticFeedback.impact(.light) }
+                                withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
+                            }
+                    )
                     .contextMenu {
+                        ForEach(Self.reactionEmojis, id: \.self) { emoji in
+                            Button {
+                                if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
+                            } label: { Text(emoji) }
+                        }
+                        Divider()
+                        if let onReply {
+                            Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+                        }
                         Button { UIPasteboard.general.string = message.body } label: {
                             Label("Copy", systemImage: "doc.on.doc")
                         }
-                        Button { showReactionPicker = true } label: {
-                            Label("React", systemImage: "face.smiling")
+                        Button { (onDetails ?? { showReaders = true })() } label: {
+                            Label("Details", systemImage: "info.circle")
+                        }
+                        if let onMark {
+                            Button { onMark() } label: {
+                                Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
+                            }
+                        }
+                        if let onPin {
+                            Button { onPin() } label: {
+                                Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
+                            }
                         }
                         if isOwn, let onDelete {
                             Divider()
@@ -263,10 +313,6 @@ struct MessageBubble: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
-                    }
-                    .onLongPressGesture(minimumDuration: 0.4) {
-                        HapticFeedback.impact(.medium)
-                        showReactionPicker = true
                     }
                 if !displayReactions.isEmpty {
                     reactionPills
@@ -289,6 +335,29 @@ struct MessageBubble: View {
             }
             .presentationDetents([.height(100)])
         }
+    }
+
+    @ViewBuilder
+    private func quotedReply(_ replied: Message) -> some View {
+        HStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(replied.senderName)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(replied.body?.isEmpty == false ? (replied.body ?? "") :
+                        (replied.isAudioMessage ? "🎤 Voice message" :
+                         replied.isImageMessage ? "📷 Photo" :
+                         replied.isLocationMessage ? "📍 Location" : "Attachment"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .frame(maxWidth: 240, alignment: .leading)
     }
 
     private var reactionPills: some View {

@@ -77,7 +77,7 @@ final class MessageService: ObservableObject {
     func send(propertyId: UUID, senderName: String, body: String?,
               attachmentUrl: String? = nil, attachmentType: String? = nil,
               latitude: Double? = nil, longitude: Double? = nil,
-              mentionedIds: [String] = []) async throws {
+              mentionedIds: [String] = [], replyTo: UUID? = nil) async throws {
         guard let senderId = supabase.auth.currentSession?.user.id else { return }
 
         let payload = NewMessage(
@@ -89,7 +89,8 @@ final class MessageService: ObservableObject {
             attachment_type: attachmentType,
             latitude: latitude,
             longitude: longitude,
-            mentioned_ids: mentionedIds
+            mentioned_ids: mentionedIds,
+            reply_to: replyTo
         )
 
         let sent: Message = try await supabase
@@ -103,6 +104,22 @@ final class MessageService: ObservableObject {
     }
 
     func resetUnread() { unreadCount = 0 }
+
+    func togglePin(_ message: Message) async {
+        let newValue = !(message.pinned ?? false)
+        if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].pinned = newValue }
+        struct P: Encodable { let pinned: Bool }
+        try? await supabase.from("messages").update(P(pinned: newValue))
+            .eq("id", value: message.id.uuidString).execute()
+    }
+
+    func toggleMark(_ message: Message) async {
+        let newValue = !(message.isMarked ?? false)
+        if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].isMarked = newValue }
+        struct M: Encodable { let is_marked: Bool }
+        try? await supabase.from("messages").update(M(is_marked: newValue))
+            .eq("id", value: message.id.uuidString).execute()
+    }
 
     // MARK: - Read receipts
 

@@ -11,16 +11,21 @@ struct Message: Identifiable, Codable {
     var latitude: Double?
     var longitude: Double?
     var mentionedIds: [String]
+    var replyTo: UUID?
+    var pinned: Bool?
+    var isMarked: Bool?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, body, latitude, longitude
+        case id, body, latitude, longitude, pinned
         case propertyId    = "property_id"
         case senderId      = "sender_id"
         case senderName    = "sender_name"
         case attachmentUrl = "attachment_url"
         case attachmentType = "attachment_type"
         case mentionedIds  = "mentioned_ids"
+        case replyTo       = "reply_to"
+        case isMarked      = "is_marked"
         case createdAt     = "created_at"
     }
 
@@ -52,6 +57,7 @@ struct NewMessage: Encodable {
     let latitude: Double?
     let longitude: Double?
     let mentioned_ids: [String]
+    var reply_to: UUID? = nil
 }
 
 // MARK: - Emoji reactions

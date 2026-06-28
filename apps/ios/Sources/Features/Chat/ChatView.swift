@@ -26,6 +26,7 @@ struct ChatView: View {
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showJumpToLatest = false
+    @State var replyingTo: Message?
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
     @State private var showCameraSheet = false
@@ -274,7 +275,11 @@ struct ChatView: View {
                                 Task { await messageService.toggleReaction(
                                     messageId: msg.id, propertyId: pid,
                                     emoji: emoji, reactorName: senderName) }
-                            }
+                            },
+                            repliedMessage: msg.replyTo.flatMap { rid in messageService.messages.first { $0.id == rid } },
+                            onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
+                            onPin: { Task { await messageService.togglePin(msg) } },
+                            onMark: { Task { await messageService.toggleMark(msg) } }
                         )
                         .id(msg.id)
                     }
@@ -343,6 +348,23 @@ struct ChatView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
+            if let replyingTo {
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
+                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        Text(replyingTo.body?.isEmpty == false ? (replyingTo.body ?? "") : String(localized: "Attachment"))
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
+                    }
+                    Spacer()
+                    Button { withAnimation { self.replyingTo = nil } } label: {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
+                    }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Color.primary.opacity(0.05))
+            }
             if !mentionedNames.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {

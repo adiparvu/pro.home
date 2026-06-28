@@ -14,13 +14,15 @@ extension ChatView {
         HapticFeedback.impact(.light)
         isSending = true
         defer { isSending = false }
+        let replyId = replyingTo?.id
         do {
             try await messageService.send(
                 propertyId: pid, senderName: senderName,
-                body: body, mentionedIds: mentionedIds
+                body: body, mentionedIds: mentionedIds, replyTo: replyId
             )
             scheduleLocalMentionNotifications(body: body)
             mentionedIds = []; mentionedNames = []
+            replyingTo = nil
         } catch {
             HapticFeedback.warning()
             sendError = String(localized: "Failed to send message. Check your connection and try again.")
