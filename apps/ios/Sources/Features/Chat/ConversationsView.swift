@@ -224,19 +224,11 @@ struct ConversationsView: View {
 
                 let entries = showArchived ? archivedList : searchedConversations
                 LazyVStack(spacing: 8) {
-                    if !showArchived && searchText.isEmpty {
-                        if filter == .all {
-                            Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
-                                .buttonStyle(.plain)
-                                .background(Color(.secondarySystemGroupedBackground),
-                                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        }
-                        if !archivedList.isEmpty {
-                            Button { withAnimation { showArchived = true } } label: { archivedRow }
-                                .buttonStyle(.plain)
-                                .background(Color(.secondarySystemGroupedBackground),
-                                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        }
+                    if !showArchived && searchText.isEmpty && filter == .all {
+                        Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
+                            .buttonStyle(.plain)
+                            .background(Color(.secondarySystemGroupedBackground),
+                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
 
                     ForEach(entries) { entry in
@@ -272,6 +264,13 @@ struct ConversationsView: View {
                                 }
                             }
                         }
+                    }
+
+                    if !showArchived && searchText.isEmpty && !archivedList.isEmpty {
+                        Button { withAnimation { showArchived = true } } label: { archivedRow }
+                            .buttonStyle(.plain)
+                            .background(Color(.secondarySystemGroupedBackground),
+                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
                 .padding(.horizontal, 16)
