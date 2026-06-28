@@ -7,14 +7,23 @@ struct DirectMessage: Identifiable, Codable {
     let id: UUID
     let senderName: String
     let recipientName: String
-    let body: String
+    var body: String
     let createdAt: String
+    var replyTo: UUID?
+    var deletedForAll: Bool?
+    var editedAt: String?
+    var pinned: Bool?
+    var isMarked: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case id, body
+        case id, body, pinned
         case senderName    = "sender_name"
         case recipientName = "recipient_name"
         case createdAt     = "created_at"
+        case replyTo       = "reply_to"
+        case deletedForAll = "deleted_for_all"
+        case editedAt      = "edited_at"
+        case isMarked      = "is_marked"
     }
 
     var timeDisplay: String {
@@ -45,9 +54,11 @@ final class DirectMessageService: ObservableObject {
     // MARK: - Queries
 
     func messages(with partner: String, myName: String) -> [DirectMessage] {
-        dms.filter {
-            ($0.senderName == partner && $0.recipientName == myName) ||
-            ($0.senderName == myName   && $0.recipientName == partner)
+        let hidden = hiddenIds()
+        return dms.filter {
+            (($0.senderName == partner && $0.recipientName == myName) ||
+             ($0.senderName == myName   && $0.recipientName == partner))
+            && !hidden.contains($0.id)
         }
     }
 
@@ -128,7 +139,70 @@ final class DirectMessageService: ObservableObject {
         }
     }
 
+    /// Delete for everyone — keeps the row but replaces it with a tombstone.
+    func deleteForEveryone(id: UUID) async {
+        do {
+            try await supabase
+                .from("direct_messages")
+                .update(["deleted_for_all": true])
+                .eq("id", value: id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == id }) { dms[i].deletedForAll = true }
+        } catch {
+#if DEBUG
+            print("[DM] deleteForEveryone error: \(error)")
+#endif
+        }
+    }
+
+    /// Delete for me — hides the row locally only.
+    func deleteForMe(id: UUID) {
+        var h = hiddenIds()
+        h.insert(id)
+        UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
+        objectWillChange.send()
+    }
+
+    func togglePin(_ msg: DirectMessage) async {
+        let newVal = !(msg.pinned ?? false)
+        do {
+            try await supabase
+                .from("direct_messages")
+                .update(["pinned": newVal])
+                .eq("id", value: msg.id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].pinned = newVal }
+        } catch {
+#if DEBUG
+            print("[DM] togglePin error: \(error)")
+#endif
+        }
+    }
+
+    func toggleMark(_ msg: DirectMessage) async {
+        let newVal = !(msg.isMarked ?? false)
+        do {
+            try await supabase
+                .from("direct_messages")
+                .update(["is_marked": newVal])
+                .eq("id", value: msg.id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].isMarked = newVal }
+        } catch {
+#if DEBUG
+            print("[DM] toggleMark error: \(error)")
+#endif
+        }
+    }
+
     // MARK: - Private helpers
+
+    private static let hiddenKey = "dm.hidden.ids"
+
+    private func hiddenIds() -> Set<UUID> {
+        let arr = UserDefaults.standard.stringArray(forKey: Self.hiddenKey) ?? []
+        return Set(arr.compactMap { UUID(uuidString: $0) })
+    }
 
     private func lastSeenDate(for partner: String) -> Date {
         UserDefaults.standard.object(forKey: "dm.lastseen.\(partner)") as? Date ?? .distantPast

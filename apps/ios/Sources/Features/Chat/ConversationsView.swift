@@ -200,6 +200,7 @@ struct ConversationsView: View {
             let last = directMessageService.lastMessage(with: member.name, myName: myName)
             let preview: String = {
                 guard let last else { return "Niciun mesaj" }
+                if last.deletedForAll == true { return "🚫 Mesaj șters" }
                 let prefix = last.senderName == myName ? "Tu: " : ""
                 return prefix + last.body
             }()

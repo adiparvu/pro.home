@@ -12,7 +12,10 @@ struct DirectMessageView: View {
     @EnvironmentObject private var profileService: ProfileService
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var messageService: MessageService
 
+    @State private var replyingTo: DirectMessage? = nil
+    @State private var forwarding: DirectMessage? = nil
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -77,6 +80,12 @@ struct DirectMessageView: View {
             MemberProfileSheet(member: member)
                 .environmentObject(familyService)
         }
+        .sheet(item: $forwarding) { msg in
+            ForwardPicker(members: familyService.members) { dest in
+                Task { await forward(msg, to: dest) }
+                forwarding = nil
+            }
+        }
         .fullScreenCover(isPresented: $showCameraPicker) {
             DMCameraPickerView(isPresented: $showCameraPicker) { img in
                 Task { @MainActor in await sendCameraImage(img) }
@@ -118,7 +127,17 @@ struct DirectMessageView: View {
                                     message: msg,
                                     isOwn: isOwn,
                                     showSenderBubbleTail: !prevSameSender || showDate,
-                                    onDelete: isOwn ? { Task { await directMessageService.deleteMessage(id: msg.id) } } : nil
+                                    repliedMessage: msg.replyTo.flatMap { rid in
+                                        conversationMessages.first { $0.id == rid }
+                                    },
+                                    onReply: { withAnimation { replyingTo = msg } },
+                                    onForward: { forwarding = msg },
+                                    onPin: { Task { await directMessageService.togglePin(msg) } },
+                                    onMark: { Task { await directMessageService.toggleMark(msg) } },
+                                    onDeleteForEveryone: isOwn
+                                        ? { Task { await directMessageService.deleteForEveryone(id: msg.id) } }
+                                        : nil,
+                                    onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) }
                                 )
                                 .id(msg.id)
                             }
@@ -169,6 +188,11 @@ struct DirectMessageView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
+            if let replyingTo {
+                replyPreviewBar(replyingTo)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
             if showAttachmentTray {
                 dmAttachmentTray
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -232,10 +256,43 @@ struct DirectMessageView: View {
             .background(.regularMaterial)
         }
         .animation(.spring(duration: 0.3), value: showAttachmentTray)
+        .animation(.spring(duration: 0.3), value: replyingTo?.id)
         .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
                       maxSelectionCount: 1, matching: .images)
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
+    }
+
+    @ViewBuilder
+    private func replyPreviewBar(_ msg: DirectMessage) -> some View {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Replying to \(msg.senderName)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(replyPreviewText(msg))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary.opacity(0.55))
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button { withAnimation { replyingTo = nil } } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(.regularMaterial)
+    }
+
+    private func replyPreviewText(_ msg: DirectMessage) -> String {
+        let lower = msg.body.lowercased()
+        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
+        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
+        return msg.body
     }
 
     private var plusButton: some View {
@@ -388,18 +445,22 @@ struct DirectMessageView: View {
             let recipient_name: String
             let body: String
             let property_id: String?
+            let reply_to: String?
         }
 
+        let replyId = replyingTo?.id.uuidString
         do {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(Payload(sender_name: myName, recipient_name: member.name,
-                                body: text, property_id: propertyService.primary?.id.uuidString))
+                                body: text, property_id: propertyService.primary?.id.uuidString,
+                                reply_to: replyId))
                 .select()
                 .single()
                 .execute()
                 .value
             directMessageService.dms.append(sent)
+            withAnimation { replyingTo = nil }
             HapticFeedback.impact(.light)
         } catch {
             HapticFeedback.warning()
@@ -408,6 +469,39 @@ struct DirectMessageView: View {
             print("[DM] send error: \(error)")
 #endif
         }
+    }
+
+    @MainActor
+    private func forward(_ message: DirectMessage, to dest: ForwardDestination) async {
+        guard let propId = propertyService.primary?.id else { return }
+        let lower = message.body.lowercased()
+        let isImage = lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg")
+        let isAudio = lower.contains("/dm-audio/") || lower.hasSuffix(".m4a")
+
+        switch dest {
+        case .group:
+            if isImage {
+                try? await messageService.send(propertyId: propId, senderName: myName, body: nil,
+                                               attachmentUrl: message.body, attachmentType: "image")
+            } else if isAudio {
+                try? await messageService.send(propertyId: propId, senderName: myName, body: nil,
+                                               attachmentUrl: message.body, attachmentType: "audio")
+            } else {
+                try? await messageService.send(propertyId: propId, senderName: myName, body: message.body)
+            }
+        case .member(let m):
+            struct Payload: Encodable {
+                let sender_name, recipient_name, body, property_id: String
+            }
+            if let sent: DirectMessage = try? await supabase
+                .from("direct_messages")
+                .insert(Payload(sender_name: myName, recipient_name: m.name,
+                                body: message.body, property_id: propId.uuidString))
+                .select().single().execute().value {
+                directMessageService.dms.append(sent)
+            }
+        }
+        HapticFeedback.success()
     }
 
     @MainActor
@@ -567,11 +661,21 @@ private struct DMBubble: View {
     let message: DirectMessage
     let isOwn: Bool
     let showSenderBubbleTail: Bool
-    var onDelete: (() -> Void)? = nil
+    var repliedMessage: DirectMessage? = nil
+    var onReply: (() -> Void)? = nil
+    var onForward: (() -> Void)? = nil
+    var onPin: (() -> Void)? = nil
+    var onMark: (() -> Void)? = nil
+    var onDeleteForEveryone: (() -> Void)? = nil
+    var onDeleteForMe: (() -> Void)? = nil
 
-    private enum DMMessageType { case text, image, audio }
+    @State private var swipeOffset: CGFloat = 0
+    @State private var showDetails = false
+
+    private enum DMMessageType { case text, image, audio, deleted }
 
     private var messageType: DMMessageType {
+        if message.deletedForAll == true { return .deleted }
         let lower = message.body.lowercased()
         if lower.hasSuffix(".m4a") || lower.contains("/dm-audio/") { return .audio }
         if lower.contains("supabase") &&
@@ -586,38 +690,158 @@ private struct DMBubble: View {
             if isOwn { Spacer(minLength: 72) }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
+                if let replied = repliedMessage, messageType != .deleted {
+                    quotedReply(replied)
+                }
+
                 Group {
                     switch messageType {
+                    case .deleted: deletedBubble
                     case .audio: AudioBubble(url: URL(string: message.body), isOwn: isOwn)
                     case .image: imageBubble
                     case .text:  textBubble
                     }
                 }
-                .contextMenu {
-                    if messageType == .text {
-                        Button {
-                            UIPasteboard.general.string = message.body
-                        } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                        }
-                    }
-                    if isOwn, let onDelete {
-                        Divider()
-                        Button(role: .destructive, action: onDelete) {
-                            Label("Delete", systemImage: "trash")
-                        }
+                .offset(x: swipeOffset)
+                .overlay(alignment: isOwn ? .trailing : .leading) {
+                    if abs(swipeOffset) > 12 {
+                        Image(systemName: swipeOffset > 0 ? "arrowshape.turn.up.left.fill" : "info.circle.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .offset(x: swipeOffset > 0 ? -28 : 28)
                     }
                 }
+                .gesture(swipeGesture)
+                .contextMenu { menuContent }
 
-                Text(message.timeDisplay)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.primary.opacity(0.35))
-                    .padding(.horizontal, 2)
+                statusRow
             }
 
             if !isOwn { Spacer(minLength: 72) }
         }
         .padding(.vertical, 1)
+        .sheet(isPresented: $showDetails) {
+            DMDetailsSheet(message: message)
+                .presentationDetents([.height(220)])
+        }
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 18)
+            .onChanged { v in
+                guard messageType != .deleted else { return }
+                swipeOffset = max(-70, min(70, v.translation.width))
+            }
+            .onEnded { v in
+                guard messageType != .deleted else { return }
+                if v.translation.width > 55 { onReply?(); HapticFeedback.impact(.light) }
+                else if v.translation.width < -55 { showDetails = true; HapticFeedback.impact(.light) }
+                withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
+            }
+    }
+
+    @ViewBuilder
+    private var menuContent: some View {
+        if messageType != .deleted {
+            if let onReply {
+                Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+            }
+            if let onForward {
+                Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+            }
+            if messageType == .text {
+                Button { UIPasteboard.general.string = message.body } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+            }
+            Button { showDetails = true } label: { Label("Details", systemImage: "info.circle") }
+            if let onMark {
+                Button { onMark() } label: {
+                    Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
+                }
+            }
+            if let onPin {
+                Button { onPin() } label: {
+                    Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
+                }
+            }
+            Divider()
+        }
+        if isOwn, let onDeleteForEveryone, messageType != .deleted {
+            Button(role: .destructive) { onDeleteForEveryone() } label: {
+                Label("Delete for everyone", systemImage: "trash")
+            }
+        }
+        if let onDeleteForMe {
+            Button(role: .destructive) { onDeleteForMe() } label: {
+                Label("Delete for me", systemImage: "trash.slash")
+            }
+        }
+    }
+
+    private var statusRow: some View {
+        HStack(spacing: 4) {
+            Text(message.timeDisplay)
+                .font(.system(size: 10))
+                .foregroundStyle(Color.primary.opacity(0.35))
+            if message.editedAt != nil, messageType != .deleted {
+                Text("· edited")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+            }
+            if message.pinned == true {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+            if message.isMarked == true {
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.orange.opacity(0.7))
+            }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    @ViewBuilder
+    private func quotedReply(_ replied: DirectMessage) -> some View {
+        let preview: String = {
+            let lower = replied.body.lowercased()
+            if replied.deletedForAll == true { return "This message was deleted" }
+            if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
+            if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
+            return replied.body
+        }()
+        HStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(replied.senderName)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(preview)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .frame(maxWidth: 240, alignment: .leading)
+    }
+
+    private var deletedBubble: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "slash.circle")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.primary.opacity(0.4))
+            Text("This message was deleted")
+                .font(.system(size: 14))
+                .italic()
+                .foregroundStyle(Color.primary.opacity(0.5))
+        }
+        .padding(.horizontal, 13).padding(.vertical, 9)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var textBubble: some View {
@@ -653,5 +877,48 @@ private struct DMBubble: View {
                     .overlay(ProgressView())
             }
         }
+    }
+}
+
+// MARK: - DM Message Details
+
+private struct DMDetailsSheet: View {
+    let message: DirectMessage
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                VStack(alignment: .leading, spacing: 14) {
+                    detailRow("From", message.senderName)
+                    detailRow("To", message.recipientName)
+                    detailRow("Sent", message.timeDisplay)
+                    if message.editedAt != nil { detailRow("Edited", "Yes") }
+                    Spacer()
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .navigationTitle("Message info")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(LocalizedStringKey(label))
+                .foregroundStyle(Color.primary.opacity(0.5))
+            Spacer()
+            Text(value)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
+        }
+        .font(.system(size: 15))
     }
 }
