@@ -29,6 +29,7 @@ struct DirectMessageView: View {
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
     @State private var isSending = false
+    @State private var lastTypingSent = Date.distantPast
     @StateObject private var audioRecorder = ChatAudioRecorder()
     @State private var recordingCancelled = false
 
@@ -71,9 +72,15 @@ struct DirectMessageView: View {
                             Text(member.name)
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(.primary)
-                            Text(member.roleLabel)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.primary.opacity(0.4))
+                            if directMessageService.typingNames.contains(member.name) {
+                                Text("typing…")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.accentColor)
+                            } else {
+                                Text(member.roleLabel)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.primary.opacity(0.4))
+                            }
                         }
                     }
                 }
@@ -292,6 +299,11 @@ struct DirectMessageView: View {
                         .onChange(of: input) { _, val in
                             if !val.isEmpty, showAttachmentTray {
                                 withAnimation { showAttachmentTray = false }
+                            }
+                            let now = Date()
+                            if !val.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
+                                lastTypingSent = now
+                                directMessageService.sendTyping()
                             }
                         }
 

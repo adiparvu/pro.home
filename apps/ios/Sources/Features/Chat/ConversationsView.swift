@@ -44,6 +44,7 @@ struct ConversationsView: View {
         }
         .task {
             guard let pid = propertyService.primary?.id else { return }
+            directMessageService.myName = myName
             await directMessageService.load(propertyId: pid, myName: myName)
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
         }

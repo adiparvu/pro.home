@@ -30,6 +30,7 @@ struct ChatView: View {
     @State private var scrollTarget: UUID? = nil
     @State private var editingMessage: Message? = nil
     @State private var editText = ""
+    @State private var lastTypingSent = Date.distantPast
     @State var replyingTo: Message?
     @State private var forwardingMessage: Message?
     @State private var showLocationSheet = false
@@ -63,6 +64,12 @@ struct ChatView: View {
         return messageService.messages.filter {
             ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
         }
+    }
+    private var typingText: String? {
+        let names = messageService.typingNames.sorted()
+        guard let first = names.first else { return nil }
+        if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
+        return String(format: String(localized: "%d people are typing…"), names.count)
     }
     private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
@@ -111,9 +118,15 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(String(localized: "Chat Grup"))
                             .font(.system(size: 16, weight: .semibold))
-                        Text("Grup · \(familyService.members.count + 1) membri")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                        if let t = typingText {
+                            Text(t)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.accentColor)
+                        } else {
+                            Text("Grup · \(familyService.members.count + 1) membri")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.primary.opacity(0.45))
+                        }
                     }
                 }
             }
@@ -172,6 +185,7 @@ struct ChatView: View {
         }
         .task {
             guard let pid = propertyId else { return }
+            messageService.myName = senderName
             await messageService.subscribeRealtime(propertyId: pid)
         }
         .task {
@@ -195,6 +209,11 @@ struct ChatView: View {
             if newValue.hasSuffix("@") && !showMentionPicker {
                 text = String(newValue.dropLast())
                 showMentionPicker = true
+            }
+            let now = Date()
+            if !newValue.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
+                lastTypingSent = now
+                messageService.sendTyping()
             }
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)

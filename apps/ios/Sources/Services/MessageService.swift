@@ -16,6 +16,27 @@ final class MessageService: ObservableObject {
     private var readsChannel: RealtimeChannelV2?
     private var reactionsChannel: RealtimeChannelV2?
 
+    // MARK: - Typing indicator
+    @Published var typingNames: Set<String> = []
+    var myName: String = ""
+    private var typingSub: RealtimeSubscription?
+    private var typingTasks: [String: Task<Void, Never>] = [:]
+
+    func sendTyping() {
+        guard let ch = realtimeChannel, !myName.isEmpty else { return }
+        Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
+    }
+
+    private func handleTyping(_ name: String) {
+        guard !name.isEmpty, name != myName else { return }
+        typingNames.insert(name)
+        typingTasks[name]?.cancel()
+        typingTasks[name] = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            self?.typingNames.remove(name)
+        }
+    }
+
     func load(propertyId: UUID) async {
         // Unsubscribe from any previous property's channels before loading new data.
         await unsubscribeAll()
@@ -45,6 +66,11 @@ final class MessageService: ObservableObject {
             table: "messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
+        typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
+            if case let .string(name)? = json["name"] {
+                Task { @MainActor in self?.handleTyping(name) }
+            }
+        }
         await channel.subscribe()
         realtimeChannel = channel
 

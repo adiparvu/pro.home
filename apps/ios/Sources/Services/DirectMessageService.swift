@@ -54,6 +54,27 @@ final class DirectMessageService: ObservableObject {
 
     private var channel: RealtimeChannelV2?
 
+    // MARK: - Typing indicator
+    @Published var typingNames: Set<String> = []
+    var myName: String = ""
+    private var typingSub: RealtimeSubscription?
+    private var typingTasks: [String: Task<Void, Never>] = [:]
+
+    func sendTyping() {
+        guard let ch = channel, !myName.isEmpty else { return }
+        Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
+    }
+
+    private func handleTyping(_ name: String) {
+        guard !name.isEmpty, name != myName else { return }
+        typingNames.insert(name)
+        typingTasks[name]?.cancel()
+        typingTasks[name] = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            self?.typingNames.remove(name)
+        }
+    }
+
     // MARK: - Queries
 
     func messages(with partner: String, myName: String) -> [DirectMessage] {
@@ -118,6 +139,11 @@ final class DirectMessageService: ObservableObject {
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
+        typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
+            if case let .string(name)? = json["name"] {
+                Task { @MainActor in self?.handleTyping(name) }
+            }
+        }
         await ch.subscribe()
         channel = ch
 
