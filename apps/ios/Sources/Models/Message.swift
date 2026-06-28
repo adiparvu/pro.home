@@ -14,6 +14,8 @@ struct Message: Identifiable, Codable {
     var replyTo: UUID?
     var pinned: Bool?
     var isMarked: Bool?
+    var editedAt: String?
+    var deletedForAll: Bool?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -26,6 +28,8 @@ struct Message: Identifiable, Codable {
         case mentionedIds  = "mentioned_ids"
         case replyTo       = "reply_to"
         case isMarked      = "is_marked"
+        case editedAt      = "edited_at"
+        case deletedForAll = "deleted_for_all"
         case createdAt     = "created_at"
     }
 

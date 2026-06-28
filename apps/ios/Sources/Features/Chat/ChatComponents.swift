@@ -221,6 +221,11 @@ struct MessageBubble: View {
     var onPin: (() -> Void)? = nil
     var onMark: (() -> Void)? = nil
     var onForward: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
+    var onDeleteForEveryone: (() -> Void)? = nil
+    var onDeleteForMe: (() -> Void)? = nil
+
+    private var isDeleted: Bool { message.deletedForAll == true }
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
@@ -257,7 +262,7 @@ struct MessageBubble: View {
                         .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(0.45))
                         .padding(.leading, 4)
                 }
-                if let replied = repliedMessage {
+                if let replied = repliedMessage, !isDeleted {
                     quotedReply(replied)
                 }
                 bubbleContent
@@ -273,52 +278,19 @@ struct MessageBubble: View {
                     .gesture(
                         DragGesture(minimumDistance: 18)
                             .onChanged { v in
+                                guard !isDeleted else { return }
                                 // right = reply, left = details; clamp the rubber-band
                                 swipeOffset = max(-70, min(70, v.translation.width))
                             }
                             .onEnded { v in
+                                guard !isDeleted else { return }
                                 if v.translation.width > 55 { onReply?(); HapticFeedback.impact(.light) }
                                 else if v.translation.width < -55 { (onDetails ?? { showReaders = true })(); HapticFeedback.impact(.light) }
                                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                             }
                     )
-                    .contextMenu {
-                        ForEach(Self.reactionEmojis, id: \.self) { emoji in
-                            Button {
-                                if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
-                            } label: { Text(emoji) }
-                        }
-                        Divider()
-                        if let onReply {
-                            Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
-                        }
-                        if let onForward {
-                            Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
-                        }
-                        Button { UIPasteboard.general.string = message.body } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                        }
-                        Button { (onDetails ?? { showReaders = true })() } label: {
-                            Label("Details", systemImage: "info.circle")
-                        }
-                        if let onMark {
-                            Button { onMark() } label: {
-                                Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
-                            }
-                        }
-                        if let onPin {
-                            Button { onPin() } label: {
-                                Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
-                            }
-                        }
-                        if isOwn, let onDelete {
-                            Divider()
-                            Button(role: .destructive, action: onDelete) {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                    }
-                if !displayReactions.isEmpty {
+                    .contextMenu { menuContent }
+                if !displayReactions.isEmpty, !isDeleted {
                     reactionPills
                 }
                 statusRow
@@ -338,6 +310,58 @@ struct MessageBubble: View {
                 }
             }
             .presentationDetents([.height(100)])
+        }
+    }
+
+    @ViewBuilder
+    private var menuContent: some View {
+        if !isDeleted {
+            ForEach(Self.reactionEmojis, id: \.self) { emoji in
+                Button {
+                    if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
+                } label: { Text(emoji) }
+            }
+            Divider()
+            if let onReply {
+                Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+            }
+            if let onForward {
+                Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
+            }
+            Button { UIPasteboard.general.string = message.body } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            if isOwn, message.body?.isEmpty == false, message.attachmentType == nil, let onEdit {
+                Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
+            }
+            Button { (onDetails ?? { showReaders = true })() } label: {
+                Label("Details", systemImage: "info.circle")
+            }
+            if let onMark {
+                Button { onMark() } label: {
+                    Label(message.isMarked == true ? "Unmark" : "Mark", systemImage: "flag")
+                }
+            }
+            if let onPin {
+                Button { onPin() } label: {
+                    Label(message.pinned == true ? "Unpin" : "Pin", systemImage: "pin")
+                }
+            }
+            Divider()
+        }
+        if isOwn, let onDeleteForEveryone, !isDeleted {
+            Button(role: .destructive) { onDeleteForEveryone() } label: {
+                Label("Delete for everyone", systemImage: "trash")
+            }
+        }
+        if let onDeleteForMe {
+            Button(role: .destructive) { onDeleteForMe() } label: {
+                Label("Delete for me", systemImage: "trash.slash")
+            }
+        } else if isOwn, let onDelete, isDeleted == false, onDeleteForEveryone == nil {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 
@@ -417,17 +441,29 @@ struct MessageBubble: View {
                     Text(message.timeDisplay)
                         .font(.system(size: 10))
                         .foregroundStyle(Color.primary.opacity(0.3))
-                    ReadCheck(seen: seen)
+                    if message.editedAt != nil, !isDeleted {
+                        Text("· edited")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.primary.opacity(0.3))
+                    }
+                    if !isDeleted { ReadCheck(seen: seen) }
                 }
                 .padding(.horizontal, 4)
             }
             .buttonStyle(.plain)
             .disabled(!seen)
         } else {
-            Text(message.timeDisplay)
-                .font(.system(size: 10))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .padding(.horizontal, 4)
+            HStack(spacing: 4) {
+                Text(message.timeDisplay)
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.primary.opacity(0.3))
+                if message.editedAt != nil, !isDeleted {
+                    Text("· edited")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+            }
+            .padding(.horizontal, 4)
         }
     }
 
@@ -456,7 +492,19 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var bubbleContent: some View {
-        if message.isStickerMessage, let stickerId = message.body {
+        if isDeleted {
+            HStack(spacing: 6) {
+                Image(systemName: "slash.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.primary.opacity(0.4))
+                Text("This message was deleted")
+                    .font(.system(size: 15))
+                    .italic()
+                    .foregroundStyle(Color.primary.opacity(0.5))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)

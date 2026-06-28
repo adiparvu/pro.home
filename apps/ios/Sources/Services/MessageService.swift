@@ -22,7 +22,7 @@ final class MessageService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            messages = try await supabase
+            let rows: [Message] = try await supabase
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
@@ -30,6 +30,8 @@ final class MessageService: ObservableObject {
                 .limit(200)
                 .execute()
                 .value
+            let hidden = hiddenIds()
+            messages = rows.filter { !hidden.contains($0.id) }
         } catch {
             self.error = error.localizedDescription
         }
@@ -72,6 +74,51 @@ final class MessageService: ObservableObject {
             print("[Chat] delete error: \(error)")
 #endif
         }
+    }
+
+    /// Delete for everyone — keeps the row but replaces it with a tombstone.
+    func deleteForEveryone(id: UUID) async {
+        struct D: Encodable { let deleted_for_all: Bool }
+        do {
+            try await supabase.from("messages").update(D(deleted_for_all: true))
+                .eq("id", value: id.uuidString).execute()
+            if let i = messages.firstIndex(where: { $0.id == id }) { messages[i].deletedForAll = true }
+        } catch {
+#if DEBUG
+            print("[Chat] deleteForEveryone error: \(error)")
+#endif
+        }
+    }
+
+    /// Delete for me — hides the message locally only (persists across reloads).
+    func deleteForMe(id: UUID) {
+        var h = hiddenIds()
+        h.insert(id)
+        UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
+        messages.removeAll { $0.id == id }
+    }
+
+    func editMessage(id: UUID, newBody: String) async {
+        struct E: Encodable { let body: String; let edited_at: String }
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        do {
+            try await supabase.from("messages").update(E(body: newBody, edited_at: nowISO))
+                .eq("id", value: id.uuidString).execute()
+            if let i = messages.firstIndex(where: { $0.id == id }) {
+                messages[i].body = newBody
+                messages[i].editedAt = nowISO
+            }
+        } catch {
+#if DEBUG
+            print("[Chat] editMessage error: \(error)")
+#endif
+        }
+    }
+
+    private static let hiddenKey = "chat.hidden.ids"
+    private func hiddenIds() -> Set<UUID> {
+        let arr = UserDefaults.standard.stringArray(forKey: Self.hiddenKey) ?? []
+        return Set(arr.compactMap { UUID(uuidString: $0) })
     }
 
     func send(propertyId: UUID, senderName: String, body: String?,

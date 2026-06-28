@@ -28,6 +28,8 @@ struct ChatView: View {
     @State private var showJumpToLatest = false
     @State private var showStarred = false
     @State private var scrollTarget: UUID? = nil
+    @State private var editingMessage: Message? = nil
+    @State private var editText = ""
     @State var replyingTo: Message?
     @State private var forwardingMessage: Message?
     @State private var showLocationSheet = false
@@ -225,6 +227,22 @@ struct ChatView: View {
                 scrollTarget = id
             }
         }
+        .alert("Edit message", isPresented: .init(
+            get: { editingMessage != nil },
+            set: { if !$0 { editingMessage = nil } }
+        )) {
+            TextField("Message", text: $editText)
+            Button("Cancel", role: .cancel) { editingMessage = nil }
+            Button("Save") {
+                if let m = editingMessage {
+                    let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !newText.isEmpty {
+                        Task { await messageService.editMessage(id: m.id, newBody: newText) }
+                    }
+                }
+                editingMessage = nil
+            }
+        }
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
@@ -339,7 +357,6 @@ struct ChatView: View {
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
                             readers: messageService.reads[msg.id] ?? [],
-                            onDelete: { Task { await messageService.deleteMessage(id: msg.id) } },
                             persistedReactions: {
                                 let rows = messageService.reactions[msg.id] ?? []
                                 return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
@@ -356,7 +373,12 @@ struct ChatView: View {
                             onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
                             onPin: { Task { await messageService.togglePin(msg) } },
                             onMark: { Task { await messageService.toggleMark(msg) } },
-                            onForward: { forwardingMessage = msg }
+                            onForward: { forwardingMessage = msg },
+                            onEdit: { editingMessage = msg; editText = msg.body ?? "" },
+                            onDeleteForEveryone: msg.senderId == supabase.auth.currentSession?.user.id
+                                ? { Task { await messageService.deleteForEveryone(id: msg.id) } }
+                                : nil,
+                            onDeleteForMe: { messageService.deleteForMe(id: msg.id) }
                         )
                         .id(msg.id)
                     }

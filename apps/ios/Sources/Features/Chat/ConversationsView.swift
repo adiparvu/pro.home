@@ -174,6 +174,7 @@ struct ConversationsView: View {
             guard let m = lastGroupMsg else { return "Nicio activitate" }
             let isOwn = m.senderId == supabase.auth.currentSession?.user.id
             let prefix = isOwn ? "Tu: " : (m.senderName.components(separatedBy: " ").first.map { "\($0): " } ?? "")
+            if m.deletedForAll == true { return prefix + "🚫 Mesaj șters" }
             if let body = m.body, !body.isEmpty { return prefix + body }
             switch m.attachmentType {
             case "image":    return prefix + "📷 Imagine"
