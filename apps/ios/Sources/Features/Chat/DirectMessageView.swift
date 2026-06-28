@@ -498,7 +498,7 @@ struct DirectMessageView: View {
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
-                        .lineLimit(1...5)
+                        .lineLimit(1...6)
                         .focused($focused)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 9)
