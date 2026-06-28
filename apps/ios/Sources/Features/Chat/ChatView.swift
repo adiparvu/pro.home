@@ -296,21 +296,19 @@ struct ChatView: View {
             }
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { old, new in
-                guard let last = messageService.messages.last else { return }
+                guard !messageService.messages.isEmpty else { return }
                 if old == 0 {
-                    proxy.scrollTo(last.id, anchor: .bottom)
+                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 } else {
-                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                    withAnimation { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
                 }
                 if let pid = propertyId {
                     Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
                 }
             }
             .onAppear {
-                DispatchQueue.main.async {
-                    if let last = messageService.messages.last {
-                        proxy.scrollTo(last.id, anchor: .bottom)
-                    }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 }
             }
             } // end VStack (search + scroll)
@@ -318,9 +316,7 @@ struct ChatView: View {
                 if showJumpToLatest {
                     Button {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            if let last = messageService.messages.last {
-                                proxy.scrollTo(last.id, anchor: .bottom)
-                            }
+                            proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                         }
                         HapticFeedback.impact(.light)
                     } label: {
