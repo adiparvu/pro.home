@@ -56,6 +56,7 @@ struct DirectMessageView: View {
     }
 
     private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+    private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
 
     var body: some View {
         ZStack {
@@ -108,6 +109,7 @@ struct DirectMessageView: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Video call")
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCallSheet = true } label: {
@@ -116,6 +118,7 @@ struct DirectMessageView: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Call")
             }
         }
         .sheet(isPresented: $showProfile) {
@@ -168,6 +171,7 @@ struct DirectMessageView: View {
         .onAppear {
             directMessageService.markRead(partner: member.name)
             Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
+            if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
         }
         .alert("Message Not Sent", isPresented: .init(
             get: { sendError != nil },
@@ -463,6 +467,8 @@ struct DirectMessageView: View {
                                 lastTypingSent = now
                                 directMessageService.sendTyping()
                             }
+                            if val.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+                            else { UserDefaults.standard.set(val, forKey: draftKey) }
                         }
 
                     if audioRecorder.isRecording {

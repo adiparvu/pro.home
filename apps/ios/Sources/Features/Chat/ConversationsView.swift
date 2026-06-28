@@ -182,6 +182,7 @@ struct ConversationsView: View {
                         .frame(width: 40, height: 40)
                         .glassCircle()
                 }
+                .accessibilityLabel("More options")
                 Spacer()
                 Button { showStoryCamera = true } label: {
                     Image(systemName: "camera.fill")
@@ -191,6 +192,7 @@ struct ConversationsView: View {
                         .glassCircle()
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Share a moment")
                 Button { showNewConversation = true } label: {
                     ZStack {
                         Circle().fill(Color.accentColor).frame(width: 40, height: 40)
@@ -200,6 +202,7 @@ struct ConversationsView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("New conversation")
             }
 
             Text("Chat")

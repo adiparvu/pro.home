@@ -50,7 +50,7 @@ struct ChatActionOverlay: View {
         HStack(spacing: 10) {
             ForEach(Self.emojis, id: \.self) { e in
                 Button {
-                    onReact(e); onDismiss()
+                    HapticFeedback.impact(.light); onReact(e); onDismiss()
                 } label: {
                     Text(e)
                         .font(.system(size: 28))

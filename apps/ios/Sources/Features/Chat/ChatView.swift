@@ -63,6 +63,8 @@ struct ChatView: View {
 
     var propertyId: UUID? { propertyService.primary?.id }
 
+    private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none")" }
+
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
         let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
@@ -188,6 +190,7 @@ struct ChatView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Video call")
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCallSheet = true } label: {
@@ -195,6 +198,7 @@ struct ChatView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Call")
             }
         }
         .task {
@@ -223,7 +227,10 @@ struct ChatView: View {
             await messageService.loadPollVotes(propertyId: pid)
             await messageService.subscribePollVotes(propertyId: pid)
         }
-        .onAppear { withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true } }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
+            if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
+        }
         .onDisappear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             Task {
@@ -242,6 +249,9 @@ struct ChatView: View {
                 lastTypingSent = now
                 messageService.sendTyping()
             }
+            // Draft restoration: persist the unsent composer text per conversation.
+            if newValue.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+            else { UserDefaults.standard.set(newValue, forKey: draftKey) }
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
