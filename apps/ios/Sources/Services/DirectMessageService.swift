@@ -228,6 +228,25 @@ final class DirectMessageService: ObservableObject {
         }
     }
 
+    func editMessage(id: UUID, newBody: String) async {
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        do {
+            try await supabase
+                .from("direct_messages")
+                .update(["body": newBody, "edited_at": nowISO])
+                .eq("id", value: id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == id }) {
+                dms[i].body = newBody
+                dms[i].editedAt = nowISO
+            }
+        } catch {
+#if DEBUG
+            print("[DM] editMessage error: \(error)")
+#endif
+        }
+    }
+
     /// Marks incoming messages from `partner` as read (sets read_at) and updates local state.
     func markReadRemote(partner: String, myName: String) async {
         let unread = dms.filter {

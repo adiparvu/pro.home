@@ -16,6 +16,10 @@ struct DirectMessageView: View {
 
     @State private var replyingTo: DirectMessage? = nil
     @State private var forwarding: DirectMessage? = nil
+    @State private var showSearch = false
+    @State private var searchText = ""
+    @State private var editingMessage: DirectMessage? = nil
+    @State private var editText = ""
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -75,6 +79,17 @@ struct DirectMessageView: View {
                 }
                 .buttonStyle(.plain)
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    withAnimation { showSearch.toggle() }
+                    if !showSearch { searchText = "" }
+                } label: {
+                    Image(systemName: showSearch ? "xmark.circle.fill" : "magnifyingglass")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .sheet(isPresented: $showProfile) {
             MemberProfileSheet(member: member)
@@ -104,22 +119,70 @@ struct DirectMessageView: View {
         } message: {
             Text(sendError ?? "")
         }
+        .alert("Edit message", isPresented: .init(
+            get: { editingMessage != nil },
+            set: { if !$0 { editingMessage = nil } }
+        )) {
+            TextField("Message", text: $editText)
+            Button("Cancel", role: .cancel) { editingMessage = nil }
+            Button("Save") {
+                if let m = editingMessage {
+                    let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !newText.isEmpty {
+                        Task { await directMessageService.editMessage(id: m.id, newBody: newText) }
+                    }
+                }
+                editingMessage = nil
+            }
+        }
+    }
+
+    private var displayedMessages: [DirectMessage] {
+        let all = conversationMessages
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return all }
+        return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.primary.opacity(0.4))
+            TextField("Search in conversation", text: $searchText)
+                .font(.system(size: 15))
+                .autocorrectionDisabled()
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .liquidGlass(cornerRadius: 18)
+        .padding(.horizontal, 12).padding(.vertical, 8)
     }
 
     // MARK: - Message List
 
     private var messageList: some View {
+        VStack(spacing: 0) {
+        if showSearch { searchBar }
         ScrollViewReader { proxy in
             Group {
                 if conversationMessages.isEmpty {
                     emptyState
                 } else {
+                    let shown = displayedMessages
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 2) {
-                            ForEach(Array(conversationMessages.enumerated()), id: \.element.id) { idx, msg in
+                            ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
                                 let isOwn = msg.senderName == myName
-                                let prevSameSender = idx > 0 && conversationMessages[idx - 1].senderName == msg.senderName
-                                let showDate = idx == 0 || !sameDay(conversationMessages[idx - 1], msg)
+                                let prevSameSender = idx > 0 && shown[idx - 1].senderName == msg.senderName
+                                let showDate = idx == 0 || !sameDay(shown[idx - 1], msg)
 
                                 if showDate {
                                     ChatDateSeparator(dateStr: msg.createdAt)
@@ -139,6 +202,7 @@ struct DirectMessageView: View {
                                     },
                                     onReply: { withAnimation { replyingTo = msg } },
                                     onForward: { forwarding = msg },
+                                    onEdit: isOwn ? { editingMessage = msg; editText = msg.body } : nil,
                                     onPin: { Task { await directMessageService.togglePin(msg) } },
                                     onMark: { Task { await directMessageService.toggleMark(msg) } },
                                     onDeleteForEveryone: isOwn
@@ -167,6 +231,7 @@ struct DirectMessageView: View {
                     }
                 }
             }
+        }
         }
     }
 
@@ -674,6 +739,7 @@ private struct DMBubble: View {
     var onReact: ((String) -> Void)? = nil
     var onReply: (() -> Void)? = nil
     var onForward: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
     var onPin: (() -> Void)? = nil
     var onMark: (() -> Void)? = nil
     var onDeleteForEveryone: (() -> Void)? = nil
@@ -779,6 +845,9 @@ private struct DMBubble: View {
             if messageType == .text {
                 Button { UIPasteboard.general.string = message.body } label: {
                     Label("Copy", systemImage: "doc.on.doc")
+                }
+                if let onEdit {
+                    Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
                 }
             }
             Button { showDetails = true } label: { Label("Details", systemImage: "info.circle") }
