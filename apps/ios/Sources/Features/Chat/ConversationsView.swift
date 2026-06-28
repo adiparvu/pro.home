@@ -323,7 +323,7 @@ struct ConversationsView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(ConvFilter.allCases, id: \.self) { f in
-                    Button { withAnimation { filter = f } } label: {
+                    Button { filter = f } label: {
                         Text(f.label)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))

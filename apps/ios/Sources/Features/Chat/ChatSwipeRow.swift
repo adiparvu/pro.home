@@ -28,10 +28,18 @@ struct SwipeableRow<Content: View>: View {
 
     var body: some View {
         ZStack {
-            HStack(spacing: 0) {
-                ForEach(leading) { actionButton($0) }
-                Spacer(minLength: 0)
-                ForEach(trailing) { actionButton($0) }
+            // Action buttons only exist while actively swiping — avoids a colour
+            // "flash" behind rows during list/filter transitions.
+            if offset > 0 {
+                HStack(spacing: 0) {
+                    ForEach(leading) { actionButton($0) }
+                    Spacer(minLength: 0)
+                }
+            } else if offset < 0 {
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    ForEach(trailing) { actionButton($0) }
+                }
             }
 
             content()
