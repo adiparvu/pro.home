@@ -933,10 +933,9 @@ private struct DMBubble: View {
     private var myReaction: String? { message.reactions?[myName] }
 
     private var showsQuickForward: Bool {
-        guard onForward != nil, messageType != .deleted else { return false }
-        if messageType == .image || messageType == .audio { return true }
-        if messageType == .text, firstDetectedURL(in: message.body) != nil { return true }
-        return false
+        guard onForward != nil, messageType == .text else { return false }
+        // Quick-forward button only on link messages.
+        return firstDetectedURL(in: message.body) != nil
     }
 
     private var forwardButton: some View {

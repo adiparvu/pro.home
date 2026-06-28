@@ -235,9 +235,8 @@ struct MessageBubble: View {
 
     private var showsQuickForward: Bool {
         guard onForward != nil, !isDeleted else { return false }
-        return message.isImageMessage || message.isFileMessage || message.isLocationMessage
-            || message.isAudioMessage || message.isStickerMessage || message.isPollMessage
-            || message.isEventMessage || linkURL != nil
+        // Quick-forward button only on link messages.
+        return linkURL != nil
     }
 
     private var forwardButton: some View {
