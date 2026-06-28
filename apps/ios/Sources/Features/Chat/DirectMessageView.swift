@@ -18,6 +18,8 @@ struct DirectMessageView: View {
     @State private var forwarding: DirectMessage? = nil
     @State private var showSearch = false
     @State private var searchText = ""
+    @State private var showStarred = false
+    @State private var scrollTarget: UUID? = nil
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var input = ""
@@ -97,6 +99,17 @@ struct DirectMessageView: View {
                 }
                 .buttonStyle(.plain)
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button { showStarred = true } label: {
+                        Label("Starred messages", systemImage: "flag")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
         }
         .sheet(isPresented: $showProfile) {
             MemberProfileSheet(member: member)
@@ -106,6 +119,12 @@ struct DirectMessageView: View {
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }
                 forwarding = nil
+            }
+        }
+        .sheet(isPresented: $showStarred) {
+            DMStarredView(messages: markedMessages, partner: member) { id in
+                showStarred = false
+                scrollTarget = id
             }
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
@@ -151,6 +170,20 @@ struct DirectMessageView: View {
         return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
     }
 
+    private var pinnedMessages: [DirectMessage] {
+        conversationMessages.filter { $0.pinned == true && $0.deletedForAll != true }
+    }
+    private var markedMessages: [DirectMessage] {
+        conversationMessages.filter { $0.isMarked == true && $0.deletedForAll != true }
+    }
+
+    private func dmSnippet(_ m: DirectMessage) -> String {
+        let lower = m.body.lowercased()
+        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
+        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
+        return m.body
+    }
+
     private var searchBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
@@ -178,6 +211,43 @@ struct DirectMessageView: View {
     private var messageList: some View {
         VStack(spacing: 0) {
         if showSearch { searchBar }
+        if let pinned = pinnedMessages.last {
+            Button {
+                scrollTarget = pinned.id
+                HapticFeedback.impact(.light)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.accentColor)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(pinnedMessages.count > 1
+                             ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
+                             : String(localized: "Pinned message"))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
+                        Text(dmSnippet(pinned))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.primary.opacity(0.6))
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Button {
+                        Task { await directMessageService.togglePin(pinned) }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                            .frame(width: 26, height: 26)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .liquidGlass(cornerRadius: 14)
+                .padding(.horizontal, 12).padding(.top, 8)
+            }
+            .buttonStyle(.plain)
+        }
         ScrollViewReader { proxy in
             Group {
                 if conversationMessages.isEmpty {
@@ -233,6 +303,11 @@ struct DirectMessageView: View {
                         if let last = conversationMessages.last {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
+                    }
+                    .onChange(of: scrollTarget) { _, target in
+                        guard let t = target else { return }
+                        withAnimation { proxy.scrollTo(t, anchor: .center) }
+                        scrollTarget = nil
                     }
                 }
             }
@@ -1034,6 +1109,90 @@ private struct DMReadCheck: View {
         }
         .frame(width: 14, alignment: .leading)
         .foregroundStyle(seen ? Color.blue : Color.primary.opacity(0.4))
+    }
+}
+
+// MARK: - DM Starred (marked) messages
+
+private struct DMStarredView: View {
+    let messages: [DirectMessage]
+    let partner: FamilyMember
+    let onSelect: (UUID) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private func snippet(_ m: DirectMessage) -> String {
+        let lower = m.body.lowercased()
+        if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
+        if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
+        return m.body
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                if messages.isEmpty {
+                    VStack(spacing: 14) {
+                        Spacer()
+                        Image(systemName: "flag.slash")
+                            .font(.system(size: 44))
+                            .foregroundStyle(Color.primary.opacity(0.18))
+                        Text("No starred messages")
+                            .font(.system(size: 17, weight: .semibold))
+                        Text("Mark a message to find it here later.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 40)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: 10) {
+                            ForEach(messages) { msg in
+                                Button {
+                                    onSelect(msg.id)
+                                    dismiss()
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "flag.fill")
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(.orange)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(msg.senderName)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                            Text(snippet(msg))
+                                                .font(.system(size: 14))
+                                                .foregroundStyle(Color.primary.opacity(0.7))
+                                                .lineLimit(2)
+                                            Text(msg.timeDisplay)
+                                                .font(.system(size: 11))
+                                                .foregroundStyle(Color.primary.opacity(0.35))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(Color.primary.opacity(0.25))
+                                    }
+                                    .padding(14)
+                                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                    }
+                }
+            }
+            .navigationTitle("Starred messages")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }
 
