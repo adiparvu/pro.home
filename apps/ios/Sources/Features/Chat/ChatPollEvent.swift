@@ -1,0 +1,303 @@
+import SwiftUI
+import EventKit
+
+// MARK: - Payloads (stored as JSON in message.body; attachment_type = "poll" | "event")
+
+struct ChatPoll: Codable {
+    let q: String
+    let opts: [String]
+    let multi: Bool
+
+    static func decode(_ body: String?) -> ChatPoll? {
+        guard let data = body?.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(ChatPoll.self, from: data)
+    }
+    func encoded() -> String? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+}
+
+struct ChatEvent: Codable {
+    let t: String
+    let d: String?
+    let date: String   // ISO8601
+    let loc: String?
+
+    static func decode(_ body: String?) -> ChatEvent? {
+        guard let data = body?.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(ChatEvent.self, from: data)
+    }
+    func encoded() -> String? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+    var parsedDate: Date? {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        return f.date(from: date)
+    }
+    var dateDisplay: String {
+        guard let d = parsedDate else { return date }
+        let out = DateFormatter(); out.dateFormat = "EEE, d MMM • HH:mm"; out.locale = .current
+        return out.string(from: d)
+    }
+}
+
+// MARK: - Poll vote model
+
+struct PollVote: Identifiable, Codable {
+    let id: UUID
+    let messageId: UUID
+    let userId: UUID?
+    let voterName: String
+    let optionIndex: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case messageId   = "message_id"
+        case userId      = "user_id"
+        case voterName   = "voter_name"
+        case optionIndex = "option_index"
+    }
+}
+
+// MARK: - Poll bubble
+
+struct PollBubble: View {
+    let poll: ChatPoll
+    let votes: [PollVote]
+    let myUserId: UUID?
+    let isOwn: Bool
+    let onVote: (Int) -> Void
+
+    private var totalVoters: Int { Set(votes.map { $0.userId }).count }
+    private func count(_ i: Int) -> Int { votes.filter { $0.optionIndex == i }.count }
+    private func didVote(_ i: Int) -> Bool { votes.contains { $0.optionIndex == i && $0.userId == myUserId } }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "chart.bar.fill").font(.system(size: 12))
+                Text(poll.multi ? "Poll · multiple choice" : "Poll")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.accentColor)
+
+            Text(poll.q)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(isOwn ? .white : .primary)
+
+            VStack(spacing: 8) {
+                ForEach(Array(poll.opts.enumerated()), id: \.offset) { i, opt in
+                    Button { onVote(i) } label: { optionRow(i, opt) }
+                        .buttonStyle(.plain)
+                }
+            }
+
+            Text(totalVoters == 1 ? "1 vote" : "\(totalVoters) votes")
+                .font(.system(size: 11))
+                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(0.45))
+        }
+        .padding(14)
+        .frame(maxWidth: 260, alignment: .leading)
+        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func optionRow(_ i: Int, _ opt: String) -> some View {
+        let c = count(i)
+        let frac = totalVoters > 0 ? Double(c) / Double(totalVoters) : 0
+        let mine = didVote(i)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: mine ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 15))
+                    .foregroundStyle(mine ? (isOwn ? .white : Color.accentColor) : (isOwn ? .white.opacity(0.6) : Color.primary.opacity(0.4)))
+                Text(opt)
+                    .font(.system(size: 14))
+                    .foregroundStyle(isOwn ? .white : .primary)
+                Spacer()
+                Text("\(c)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(0.5))
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(isOwn ? Color.white.opacity(0.2) : Color.primary.opacity(0.1))
+                    Capsule().fill(isOwn ? Color.white.opacity(0.55) : Color.accentColor.opacity(0.5))
+                        .frame(width: max(4, geo.size.width * frac))
+                }
+            }
+            .frame(height: 5)
+        }
+    }
+}
+
+// MARK: - Event bubble
+
+struct EventBubble: View {
+    let event: ChatEvent
+    let isOwn: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar").font(.system(size: 12))
+                Text("Event").font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.red)
+
+            Text(event.t)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(isOwn ? .white : .primary)
+
+            if let d = event.d, !d.isEmpty {
+                Text(d).font(.system(size: 13))
+                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.7))
+                    .lineLimit(3)
+            }
+
+            Label(event.dateDisplay, systemImage: "clock")
+                .font(.system(size: 12))
+                .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.6))
+
+            if let loc = event.loc, !loc.isEmpty {
+                Label(loc, systemImage: "mappin.and.ellipse")
+                    .font(.system(size: 12))
+                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.6))
+                    .lineLimit(1)
+            }
+
+            Button { addToCalendar() } label: {
+                Text("Add to Calendar")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isOwn ? .white : Color.accentColor)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .frame(maxWidth: 260, alignment: .leading)
+        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func addToCalendar() {
+        guard let start = event.parsedDate else { return }
+        let store = EKEventStore()
+        store.requestWriteOnlyAccessToEvents { granted, _ in
+            guard granted else { return }
+            let ek = EKEvent(eventStore: store)
+            ek.title = event.t
+            ek.startDate = start
+            ek.endDate = start.addingTimeInterval(3600)
+            ek.notes = event.d
+            ek.location = event.loc
+            ek.calendar = store.defaultCalendarForNewEvents
+            try? store.save(ek, span: .thisEvent)
+            DispatchQueue.main.async { HapticFeedback.success() }
+        }
+    }
+}
+
+// MARK: - Poll composer
+
+struct PollComposerView: View {
+    let onSend: (String, [String], Bool) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var question = ""
+    @State private var options: [String] = ["", ""]
+    @State private var multi = false
+
+    private var canSend: Bool {
+        !question.trimmingCharacters(in: .whitespaces).isEmpty &&
+        options.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count >= 2
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                Form {
+                    Section("Question") {
+                        TextField("Write the question", text: $question, axis: .vertical)
+                    }
+                    Section("Options") {
+                        ForEach(options.indices, id: \.self) { i in
+                            TextField("Add", text: $options[i])
+                        }
+                        Button { options.append("") } label: {
+                            Label("Add option", systemImage: "plus.circle")
+                        }
+                        .disabled(options.count >= 12)
+                    }
+                    Section {
+                        Toggle("Allow multiple answers", isOn: $multi)
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Create a poll")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Send") {
+                        let opts = options.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                        onSend(question.trimmingCharacters(in: .whitespaces), opts, multi)
+                        dismiss()
+                    }
+                    .disabled(!canSend)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Event composer
+
+struct EventComposerView: View {
+    let onSend: (String, String, Date, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title = ""
+    @State private var details = ""
+    @State private var date = Date()
+    @State private var location = ""
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                Form {
+                    Section {
+                        TextField("Add the event name", text: $title)
+                        TextField("Add a description (optional)", text: $details, axis: .vertical)
+                    }
+                    Section {
+                        DatePicker("Starts", selection: $date)
+                    }
+                    Section {
+                        TextField("Add the location (optional)", text: $location)
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Create an event")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Send") {
+                        onSend(title.trimmingCharacters(in: .whitespaces), details.trimmingCharacters(in: .whitespaces), date, location.trimmingCharacters(in: .whitespaces))
+                        dismiss()
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+}

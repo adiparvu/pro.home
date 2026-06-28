@@ -14,9 +14,54 @@ struct ConversationsView: View {
     @EnvironmentObject private var router: AppRouter
 
     @State private var showAddMember = false
+    @State private var filter: ConvFilter = .all
+    @State private var archivedIds: Set<String> = []
+    @State private var favoriteIds: Set<String> = []
+    @State private var showArchived = false
+
+    enum ConvFilter: CaseIterable {
+        case all, unread, favorites, groups, family
+        var label: String {
+            switch self {
+            case .all: return "Toate"
+            case .unread: return "Necitite"
+            case .favorites: return "Favorite"
+            case .groups: return "Grupuri"
+            case .family: return "Familie"
+            }
+        }
+    }
 
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
+    }
+
+    private var nonArchived: [ConversationEntry] { sortedConversations.filter { !archivedIds.contains($0.id) } }
+    private var archivedList: [ConversationEntry] { sortedConversations.filter { archivedIds.contains($0.id) } }
+
+    private var visibleConversations: [ConversationEntry] {
+        nonArchived.filter { e in
+            switch filter {
+            case .all:       return true
+            case .unread:    return e.unread > 0
+            case .favorites: return favoriteIds.contains(e.id)
+            case .groups:    return e.isGroup
+            case .family:    return !e.isGroup
+            }
+        }
+    }
+
+    private func loadFlags() {
+        archivedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.archived") ?? [])
+        favoriteIds = Set(UserDefaults.standard.stringArray(forKey: "chat.favorites") ?? [])
+    }
+    private func toggleArchived(_ id: String) {
+        if archivedIds.contains(id) { archivedIds.remove(id) } else { archivedIds.insert(id) }
+        UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
+    }
+    private func toggleFavorite(_ id: String) {
+        if favoriteIds.contains(id) { favoriteIds.remove(id) } else { favoriteIds.insert(id) }
+        UserDefaults.standard.set(Array(favoriteIds), forKey: "chat.favorites")
     }
 
     var body: some View {
@@ -48,6 +93,7 @@ struct ConversationsView: View {
             await directMessageService.load(propertyId: pid, myName: myName)
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
         }
+        .onAppear { loadFlags() }
         .onDisappear {
             Task { await directMessageService.unsubscribe() }
         }
@@ -62,54 +108,126 @@ struct ConversationsView: View {
 
     private var conversationList: some View {
         ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 0) {
-                // ARIA assistant — always first
-                Button {
-                    HapticFeedback.impact(.light)
-                    router.showARIA = true
-                } label: {
-                    ariaRow
-                }
-                .buttonStyle(.plain)
-                Divider().padding(.leading, 78).opacity(0.4)
+            VStack(spacing: 12) {
+                if showArchived { archivedTopBar } else { filterChips }
 
-                ForEach(Array(sortedConversations.enumerated()), id: \.element.id) { idx, entry in
-                    NavigationLink {
-                        if entry.isGroup {
-                            groupChatDestination
-                        } else if let member = entry.member {
-                            DirectMessageView(member: member)
+                let entries = showArchived ? archivedList : visibleConversations
+                LazyVStack(spacing: 0) {
+                    if !showArchived {
+                        if filter == .all {
+                            Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
+                                .buttonStyle(.plain)
+                            Divider().padding(.leading, 78).opacity(0.4)
                         }
-                    } label: {
-                        ConversationRowView(
-                            entry: entry,
-                            myName: myName,
-                            members: familyService.members,
-                            propertyPhotoUrl: propertyService.primary?.photoUrl
-                        )
+                        if !archivedList.isEmpty {
+                            Button { withAnimation { showArchived = true } } label: { archivedRow }
+                                .buttonStyle(.plain)
+                            Divider().padding(.leading, 78).opacity(0.4)
+                        }
                     }
-                    .buttonStyle(.plain)
 
-                    if idx < sortedConversations.count - 1 {
-                        Divider()
-                            .padding(.leading, 78)
-                            .opacity(0.4)
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                        NavigationLink {
+                            if entry.isGroup {
+                                groupChatDestination
+                            } else if let member = entry.member {
+                                DirectMessageView(member: member)
+                            }
+                        } label: {
+                            ConversationRowView(
+                                entry: entry,
+                                myName: myName,
+                                members: familyService.members,
+                                propertyPhotoUrl: propertyService.primary?.photoUrl
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button { toggleFavorite(entry.id) } label: {
+                                Label(favoriteIds.contains(entry.id) ? "Unfavorite" : "Favorite",
+                                      systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
+                            }
+                            Button { toggleArchived(entry.id) } label: {
+                                Label(archivedIds.contains(entry.id) ? "Unarchive" : "Archive",
+                                      systemImage: "archivebox")
+                            }
+                        }
+
+                        if idx < entries.count - 1 {
+                            Divider().padding(.leading, 78).opacity(0.4)
+                        }
                     }
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.primary.opacity(0.04))
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+                )
+                .padding(.horizontal, 16)
             }
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.primary.opacity(0.04))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
-            )
-            .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+    }
+
+    private var filterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ConvFilter.allCases, id: \.self) { f in
+                    Button { withAnimation { filter = f } } label: {
+                        Text(f.label)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06),
+                                        in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private var archivedTopBar: some View {
+        HStack(spacing: 10) {
+            Button { withAnimation { showArchived = false } } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            Text("Conversații arhivate")
+                .font(.system(size: 17, weight: .bold))
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+    }
+
+    private var archivedRow: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(Color.primary.opacity(0.08))
+                Image(systemName: "archivebox.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+            }
+            .frame(width: 52, height: 52)
+            Text("Conversații arhivate")
+                .font(.system(size: 16, weight: .semibold))
+            Spacer()
+            Text("\(archivedList.count)")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.primary.opacity(0.4))
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.25))
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .contentShape(Rectangle())
     }
 
     private var ariaRow: some View {
@@ -183,6 +301,8 @@ struct ConversationsView: View {
             case "location": return prefix + "📍 Locație"
             case "file":     return prefix + "📎 Fișier"
             case "sticker":  return prefix + "😀 Sticker"
+            case "poll":     return prefix + "📊 Sondaj"
+            case "event":    return prefix + "📅 Eveniment"
             default:         return prefix + "Mesaj"
             }
         }()

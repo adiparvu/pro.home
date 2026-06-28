@@ -29,6 +29,8 @@ struct DirectMessageView: View {
     @State private var showPhotoPicker = false
     @State private var showCameraPicker = false
     @State private var showAttachmentTray = false
+    @State private var showAttachmentSheet = false
+    @State private var showContactPicker = false
     @State private var showProfile = false
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
@@ -136,6 +138,16 @@ struct DirectMessageView: View {
         }
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker()
+        }
+        .sheet(isPresented: $showAttachmentSheet) {
+            ChatAttachmentSheet(
+                onPhotos: { showPhotoPicker = true },
+                onCamera: { showCameraPicker = true },
+                onContact: { showContactPicker = true }
+            )
+        }
+        .sheet(isPresented: $showContactPicker) {
+            ChatContactPicker { formatted in Task { await sendDMContact(formatted) } }
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
             DMCameraPickerView(isPresented: $showCameraPicker) { img in
@@ -466,10 +478,8 @@ struct DirectMessageView: View {
 
     private var plusButton: some View {
         Button {
-            withAnimation(.spring(duration: 0.3)) {
-                showAttachmentTray.toggle()
-                if showAttachmentTray { focused = false }
-            }
+            focused = false
+            showAttachmentSheet = true
         } label: {
             ZStack {
                 Circle()
@@ -477,8 +487,7 @@ struct DirectMessageView: View {
                     .frame(width: 34, height: 34)
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(showAttachmentTray ? Color.accentColor : Color.primary.opacity(0.5))
-                    .rotationEffect(.degrees(showAttachmentTray ? 45 : 0))
+                    .foregroundStyle(Color.primary.opacity(0.5))
             }
         }
         .buttonStyle(.plain)
@@ -671,6 +680,22 @@ struct DirectMessageView: View {
             }
         }
         HapticFeedback.success()
+    }
+
+    @MainActor
+    private func sendDMContact(_ formatted: String) async {
+        guard let pid = propertyService.primary?.id else { return }
+        struct Payload: Encodable {
+            let sender_name, recipient_name, body, property_id: String
+        }
+        if let sent: DirectMessage = try? await supabase
+            .from("direct_messages")
+            .insert(Payload(sender_name: myName, recipient_name: member.name,
+                            body: "👤 \(formatted)", property_id: pid.uuidString))
+            .select().single().execute().value {
+            directMessageService.dms.append(sent)
+            HapticFeedback.success()
+        }
     }
 
     @MainActor

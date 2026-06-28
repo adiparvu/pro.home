@@ -39,6 +39,10 @@ struct ChatView: View {
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
     @State private var showStickerPicker = false
+    @State private var showAttachmentSheet = false
+    @State private var showContactPicker = false
+    @State private var showPollComposer = false
+    @State private var showEventComposer = false
     @State var mentionedIds: [String] = []
     @State var mentionedNames: [String] = []
     @State var isSending = false
@@ -203,6 +207,11 @@ struct ChatView: View {
             guard let pid = propertyId else { return }
             await messageService.subscribeReactions(propertyId: pid)
         }
+        .task {
+            guard let pid = propertyId else { return }
+            await messageService.loadPollVotes(propertyId: pid)
+            await messageService.subscribePollVotes(propertyId: pid)
+        }
         .onAppear { withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true } }
         .onDisappear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
@@ -255,6 +264,30 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker()
+        }
+        .sheet(isPresented: $showAttachmentSheet) {
+            ChatAttachmentSheet(
+                onPhotos: { showPhotoPickerTrigger = true },
+                onCamera: { showCameraSheet = true },
+                onLocation: { showLocationSheet = true },
+                onDocument: { showFileImporter = true },
+                onContact: { showContactPicker = true },
+                onPoll: { showPollComposer = true },
+                onEvent: { showEventComposer = true }
+            )
+        }
+        .sheet(isPresented: $showContactPicker) {
+            ChatContactPicker { formatted in Task { await sendContact(formatted) } }
+        }
+        .sheet(isPresented: $showPollComposer) {
+            PollComposerView { question, options, multi in
+                Task { await sendPoll(question: question, options: options, multipleChoice: multi) }
+            }
+        }
+        .sheet(isPresented: $showEventComposer) {
+            EventComposerView { title, details, date, location in
+                Task { await sendEvent(title: title, details: details, date: date, location: location) }
+            }
         }
         .alert("Edit message", isPresented: .init(
             get: { editingMessage != nil },
@@ -406,7 +439,15 @@ struct ChatView: View {
                             onForward: { forwardingMessage = msg },
                             onEdit: { editingMessage = msg; editText = msg.body ?? "" },
                             onDeleteForEveryone: { Task { await messageService.deleteForEveryone(id: msg.id) } },
-                            onDeleteForMe: { messageService.deleteForMe(id: msg.id) }
+                            onDeleteForMe: { messageService.deleteForMe(id: msg.id) },
+                            pollVotes: messageService.pollVotes[msg.id] ?? [],
+                            myUserId: supabase.auth.currentSession?.user.id,
+                            onPollVote: { idx in
+                                guard let pid = propertyId, let poll = ChatPoll.decode(msg.body) else { return }
+                                Task { await messageService.togglePollVote(
+                                    messageId: msg.id, propertyId: pid,
+                                    optionIndex: idx, voterName: senderName, multi: poll.multi) }
+                            }
                         )
                         .id(msg.id)
                     }
@@ -587,11 +628,9 @@ struct ChatView: View {
                         .focused($focused)
 
                     HStack(spacing: 0) {
-                        Menu {
-                            Button { showCameraSheet = true } label: { Label("Camera", systemImage: "camera.fill") }
-                            Button { showPhotoPickerTrigger = true } label: { Label("Photo / Video", systemImage: "photo") }
-                            Button { showLocationSheet = true } label: { Label("Share Location", systemImage: "location.fill") }
-                            Button { showFileImporter = true } label: { Label("File", systemImage: "doc.fill") }
+                        Button {
+                            focused = false
+                            showAttachmentSheet = true
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 16, weight: .semibold))

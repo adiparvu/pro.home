@@ -61,6 +61,36 @@ extension ChatView {
         )
     }
 
+    func sendContact(_ formatted: String) async {
+        guard let pid = propertyId else { return }
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: "👤 \(formatted)"
+        )
+        HapticFeedback.success()
+    }
+
+    func sendPoll(question: String, options: [String], multipleChoice: Bool) async {
+        guard let pid = propertyId else { return }
+        let poll = ChatPoll(q: question, opts: options, multi: multipleChoice)
+        guard let body = poll.encoded() else { return }
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: body, attachmentType: "poll"
+        )
+        HapticFeedback.success()
+    }
+
+    func sendEvent(title: String, details: String, date: Date, location: String) async {
+        guard let pid = propertyId else { return }
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
+        let ev = ChatEvent(t: title, d: details.isEmpty ? nil : details,
+                           date: f.string(from: date), loc: location.isEmpty ? nil : location)
+        guard let body = ev.encoded() else { return }
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: body, attachmentType: "event"
+        )
+        HapticFeedback.success()
+    }
+
     func sendPhoto(_ items: [PhotosPickerItem]) async {
         guard let pid = propertyId, let item = items.first else { return }
         guard let data = try? await item.loadTransferable(type: Data.self) else { return }

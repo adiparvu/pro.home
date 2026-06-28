@@ -353,9 +353,79 @@ final class MessageService: ObservableObject {
         }
     }
 
+    // MARK: - Poll votes
+
+    @Published var pollVotes: [UUID: [PollVote]] = [:]
+    private var pollVotesChannel: RealtimeChannelV2?
+
+    func loadPollVotes(propertyId: UUID) async {
+        guard let rows: [PollVote] = try? await supabase
+            .from("message_poll_votes")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        else { return }
+        pollVotes = Dictionary(grouping: rows, by: { $0.messageId })
+    }
+
+    func togglePollVote(messageId: UUID, propertyId: UUID, optionIndex: Int, voterName: String, multi: Bool) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        let mine = pollVotes[messageId]?.filter { $0.userId == uid } ?? []
+        let already = mine.contains { $0.optionIndex == optionIndex }
+
+        if already {
+            try? await supabase.from("message_poll_votes").delete()
+                .eq("message_id", value: messageId.uuidString)
+                .eq("user_id", value: uid.uuidString)
+                .eq("option_index", value: optionIndex)
+                .execute()
+        } else {
+            if !multi {
+                try? await supabase.from("message_poll_votes").delete()
+                    .eq("message_id", value: messageId.uuidString)
+                    .eq("user_id", value: uid.uuidString)
+                    .execute()
+            }
+            struct V: Encodable {
+                let message_id: String; let property_id: String
+                let user_id: String; let voter_name: String; let option_index: Int
+            }
+            try? await supabase.from("message_poll_votes").insert(
+                V(message_id: messageId.uuidString, property_id: propertyId.uuidString,
+                  user_id: uid.uuidString, voter_name: voterName, option_index: optionIndex)
+            ).execute()
+        }
+        await loadPollVotes(propertyId: propertyId)
+    }
+
+    func subscribePollVotes(propertyId: UUID) async {
+        let channel = await supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString)")
+        let changes = await channel.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "message_poll_votes",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        )
+        await channel.subscribe()
+        pollVotesChannel = channel
+
+        for await _ in changes {
+            await loadPollVotes(propertyId: propertyId)
+        }
+    }
+
+    func unsubscribePollVotes() async {
+        if let ch = pollVotesChannel {
+            await supabase.realtimeV2.removeChannel(ch)
+            pollVotesChannel = nil
+        }
+    }
+
     func unsubscribeAll() async {
         await unsubscribe()
         await unsubscribeReads()
         await unsubscribeReactions()
+        await unsubscribePollVotes()
     }
 }

@@ -225,6 +225,9 @@ struct MessageBubble: View {
     var onEdit: (() -> Void)? = nil
     var onDeleteForEveryone: (() -> Void)? = nil
     var onDeleteForMe: (() -> Void)? = nil
+    var pollVotes: [PollVote] = []
+    var myUserId: UUID? = nil
+    var onPollVote: ((Int) -> Void)? = nil
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
@@ -517,6 +520,11 @@ struct MessageBubble: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else if message.isPollMessage, let poll = ChatPoll.decode(message.body) {
+            PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
+                       onVote: { onPollVote?($0) })
+        } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
+            EventBubble(event: event, isOwn: isOwn)
         } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {

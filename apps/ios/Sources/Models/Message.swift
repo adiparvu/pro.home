@@ -49,6 +49,8 @@ struct Message: Identifiable, Codable {
     var isFileMessage: Bool     { attachmentType == "file" }
     var isStickerMessage: Bool  { attachmentType == "sticker" }
     var isAudioMessage: Bool    { attachmentType == "audio" }
+    var isPollMessage: Bool     { attachmentType == "poll" }
+    var isEventMessage: Bool    { attachmentType == "event" }
 }
 
 struct NewMessage: Encodable {
