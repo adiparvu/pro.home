@@ -27,7 +27,10 @@ struct ChatView: View {
     @State private var showSearch = false
     @State private var showJumpToLatest = false
     @State private var showStarred = false
+    @State private var showGroupInfo = false
+    @State private var showAddMember = false
     @State private var scrollTarget: UUID? = nil
+    @State private var menuMessage: Message?
     @State private var editingMessage: Message? = nil
     @State private var editText = ""
     @State private var lastTypingSent = Date.distantPast
@@ -82,6 +85,49 @@ struct ChatView: View {
     private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
 
+    @ViewBuilder
+    private func actionOverlay(_ m: Message) -> some View {
+        let own = m.senderId == supabase.auth.currentSession?.user.id
+        ChatActionOverlay(
+            previewText: pinnedSnippet(m),
+            isOwn: own,
+            bubbleColor: chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+            myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
+            onReact: { e in
+                if let pid = propertyId {
+                    Task { await messageService.toggleReaction(messageId: m.id, propertyId: pid, emoji: e, reactorName: senderName) }
+                }
+            },
+            actions: messageActions(m),
+            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } }
+        )
+        .transition(.opacity)
+    }
+
+    private func messageActions(_ m: Message) -> [ChatActionItem] {
+        let own = m.senderId == supabase.auth.currentSession?.user.id
+        var items: [ChatActionItem] = [
+            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },
+            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwardingMessage = m },
+            ChatActionItem("Copy", "doc.on.doc") { if let b = m.body { UIPasteboard.general.string = b } },
+            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await messageService.toggleMark(m) } },
+            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
+        ]
+        if own, m.body?.isEmpty == false, m.attachmentType == nil {
+            items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body ?? "" })
+        }
+        if own {
+            items.append(ChatActionItem("Delete", "trash", destructive: true) {
+                Task { await messageService.deleteForEveryone(id: m.id) }
+            })
+        } else {
+            items.append(ChatActionItem("Delete for me", "trash", destructive: true) {
+                messageService.deleteForMe(id: m.id)
+            })
+        }
+        return items
+    }
+
     private func pinnedSnippet(_ m: Message) -> String {
         if let b = m.body, !b.isEmpty { return b }
         if m.isImageMessage { return "📷 Photo" }
@@ -104,6 +150,9 @@ struct ChatView: View {
         messageList
             .overlay(alignment: .bottom) { inputBar }
             .background(chatTheme.background)
+            .overlay {
+                if let m = menuMessage { actionOverlay(m) }
+            }
         .sheet(item: $forwardingMessage) { msg in
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }
@@ -121,7 +170,7 @@ struct ChatView: View {
                         ownerInitial: ownerInitial,
                         ringColor: avatarRingColor(for: avatarRingColorName)
                     ) {
-                        withAnimation { showMentionPicker.toggle() }
+                        showGroupInfo = true
                     }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(String(localized: "Chat Grup"))
@@ -136,6 +185,8 @@ struct ChatView: View {
                                 .foregroundStyle(Color.primary.opacity(0.45))
                         }
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture { showGroupInfo = true }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -264,6 +315,23 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker()
+        }
+        .sheet(isPresented: $showGroupInfo) {
+            GroupDetailsView(
+                groupName: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup"),
+                members: familyService.members,
+                photoUrl: propertyService.primary?.photoUrl,
+                onAudio: { showCallSheet = true },
+                onVideo: { showVideoSheet = true },
+                onAddMember: { showAddMember = true },
+                onSearch: { withAnimation(.spring(response: 0.3)) { showSearch = true } },
+                onStarred: { showStarred = true },
+                onTheme: { showThemePicker = true }
+            )
+        }
+        .sheet(isPresented: $showAddMember) {
+            AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)
+                .environmentObject(familyService)
         }
         .sheet(isPresented: $showAttachmentSheet) {
             ChatAttachmentSheet(
@@ -447,7 +515,8 @@ struct ChatView: View {
                                 Task { await messageService.togglePollVote(
                                     messageId: msg.id, propertyId: pid,
                                     optionIndex: idx, voterName: senderName, multi: poll.multi) }
-                            }
+                            },
+                            onLongPress: { menuMessage = msg }
                         )
                         .id(msg.id)
                     }

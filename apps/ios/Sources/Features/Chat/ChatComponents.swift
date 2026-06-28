@@ -228,6 +228,7 @@ struct MessageBubble: View {
     var pollVotes: [PollVote] = []
     var myUserId: UUID? = nil
     var onPollVote: ((Int) -> Void)? = nil
+    var onLongPress: (() -> Void)? = nil
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
@@ -319,7 +320,10 @@ struct MessageBubble: View {
                                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                             }
                     )
-                    .contextMenu { menuContent }
+                    .onLongPressGesture(minimumDuration: 0.35) {
+                        HapticFeedback.impact(.medium)
+                        onLongPress?()
+                    }
                 if let link = linkURL {
                     LinkPreviewView(url: link)
                 }

@@ -24,6 +24,7 @@ struct DirectMessageView: View {
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
+    @State private var menuMessage: DirectMessage? = nil
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -31,6 +32,8 @@ struct DirectMessageView: View {
     @State private var showAttachmentTray = false
     @State private var showAttachmentSheet = false
     @State private var showContactPicker = false
+    @State private var showCallSheet = false
+    @State private var showVideoSheet = false
     @State private var showProfile = false
     @State private var sendError: String? = nil
     @FocusState private var focused: Bool
@@ -60,6 +63,9 @@ struct DirectMessageView: View {
                 messageList
                 inputBar
             }
+        }
+        .overlay {
+            if let m = menuMessage { dmActionOverlay(m) }
         }
         .navigationTitle(member.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -95,34 +101,37 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    withAnimation { showSearch.toggle() }
-                    if !showSearch { searchText = "" }
-                } label: {
-                    Image(systemName: showSearch ? "xmark.circle.fill" : "magnifyingglass")
+                Button { showVideoSheet = true } label: {
+                    Image(systemName: "video.fill")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button { showStarred = true } label: {
-                        Label("Starred messages", systemImage: "flag")
-                    }
-                    Button { showThemePicker = true } label: {
-                        Label("Conversation theme", systemImage: "paintpalette")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
+                Button { showCallSheet = true } label: {
+                    Image(systemName: "phone.fill")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                 }
+                .buttonStyle(.plain)
             }
         }
         .sheet(isPresented: $showProfile) {
-            MemberProfileSheet(member: member)
-                .environmentObject(familyService)
+            ContactDetailsView(
+                member: member,
+                onAudio: { showCallSheet = true },
+                onVideo: { showVideoSheet = true },
+                onSearch: { withAnimation { showSearch = true } },
+                onStarred: { showStarred = true },
+                onTheme: { showThemePicker = true }
+            )
+        }
+        .sheet(isPresented: $showCallSheet) {
+            CallPickerSheet(members: [member], isVideo: false)
+        }
+        .sheet(isPresented: $showVideoSheet) {
+            CallPickerSheet(members: [member], isVideo: true)
         }
         .sheet(item: $forwarding) { msg in
             ForwardPicker(members: familyService.members) { dest in
@@ -204,6 +213,47 @@ struct DirectMessageView: View {
         if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
         if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
         return m.body
+    }
+
+    @ViewBuilder
+    private func dmActionOverlay(_ m: DirectMessage) -> some View {
+        let own = m.senderName == myName
+        ChatActionOverlay(
+            previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
+            isOwn: own,
+            bubbleColor: chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+            myReaction: m.reactions?[myName],
+            onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
+            actions: dmMessageActions(m, own: own),
+            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } }
+        )
+        .transition(.opacity)
+    }
+
+    private func dmMessageActions(_ m: DirectMessage, own: Bool) -> [ChatActionItem] {
+        let lower = m.body.lowercased()
+        let isMedia = lower.contains("/dm-images/") || lower.contains("/dm-audio/")
+            || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".m4a")
+        var items: [ChatActionItem] = [
+            ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation { replyingTo = m } },
+            ChatActionItem("Forward", "arrowshape.turn.up.right") { forwarding = m },
+            ChatActionItem("Copy", "doc.on.doc") { UIPasteboard.general.string = m.body },
+            ChatActionItem(m.isMarked == true ? "Unmark" : "Mark", "flag") { Task { await directMessageService.toggleMark(m) } },
+            ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await directMessageService.togglePin(m) } }
+        ]
+        if own, m.deletedForAll != true, !isMedia {
+            items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body })
+        }
+        if own {
+            items.append(ChatActionItem("Delete", "trash", destructive: true) {
+                Task { await directMessageService.deleteForEveryone(id: m.id) }
+            })
+        } else {
+            items.append(ChatActionItem("Delete for me", "trash", destructive: true) {
+                directMessageService.deleteForMe(id: m.id)
+            })
+        }
+        return items
     }
 
     private var searchBar: some View {
@@ -306,7 +356,8 @@ struct DirectMessageView: View {
                                     onPin: { Task { await directMessageService.togglePin(msg) } },
                                     onMark: { Task { await directMessageService.toggleMark(msg) } },
                                     onDeleteForEveryone: { Task { await directMessageService.deleteForEveryone(id: msg.id) } },
-                                    onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) }
+                                    onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) },
+                                    onLongPress: { menuMessage = msg }
                                 )
                                 .id(msg.id)
                             }
@@ -866,6 +917,7 @@ private struct DMBubble: View {
     var onMark: (() -> Void)? = nil
     var onDeleteForEveryone: (() -> Void)? = nil
     var onDeleteForMe: (() -> Void)? = nil
+    var onLongPress: (() -> Void)? = nil
 
     @State private var swipeOffset: CGFloat = 0
     @State private var showDetails = false
@@ -941,7 +993,10 @@ private struct DMBubble: View {
                     }
                 }
                 .gesture(swipeGesture)
-                .contextMenu { menuContent }
+                .onLongPressGesture(minimumDuration: 0.35) {
+                    HapticFeedback.impact(.medium)
+                    onLongPress?()
+                }
 
                 if messageType == .text, let link = firstDetectedURL(in: message.body) {
                     LinkPreviewView(url: link)

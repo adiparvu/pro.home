@@ -1,0 +1,302 @@
+import SwiftUI
+
+// MARK: - Shared info bits
+
+private struct InfoActionCard: View {
+    let label: String
+    let icon: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                Text(LocalizedStringKey(label))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color(.secondarySystemGroupedBackground),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct InfoRow: View {
+    let icon: String
+    let label: String
+    var value: String? = nil
+    var tint: Color = .primary
+    var showChevron: Bool = true
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 17))
+                    .foregroundStyle(tint == .primary ? Color.primary.opacity(0.7) : tint)
+                    .frame(width: 26)
+                Text(LocalizedStringKey(label))
+                    .foregroundStyle(tint)
+                Spacer()
+                if let value {
+                    Text(value).foregroundStyle(Color.primary.opacity(0.4))
+                }
+                if showChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.25))
+                }
+            }
+            .font(.system(size: 16))
+            .padding(.horizontal, 16).padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private func infoCardBackground<V: View>(_ content: V) -> some View {
+    content.background(Color(.secondarySystemGroupedBackground),
+                       in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, 16)
+}
+
+// MARK: - Contact details (DM)
+
+struct ContactDetailsView: View {
+    let member: FamilyMember
+    var onAudio: () -> Void
+    var onVideo: () -> Void
+    var onSearch: () -> Void
+    var onStarred: () -> Void
+    var onTheme: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var muted = false
+
+    private var convId: String { member.id.uuidString }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    VStack(spacing: 10) {
+                        MemberCircleAvatarLarge(member: member)
+                            .frame(width: 110, height: 110)
+                        Text(member.name)
+                            .font(.system(size: 24, weight: .bold))
+                        Text(member.roleLabel)
+                            .font(.system(size: 15))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                        if let phone = member.phone, !phone.isEmpty {
+                            Text(phone).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                        }
+                    }
+                    .padding(.top, 8)
+
+                    HStack(spacing: 12) {
+                        InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
+                        InfoActionCard(label: "Video", icon: "video.fill") { dismiss(); onVideo() }
+                        InfoActionCard(label: "Search", icon: "magnifyingglass") { dismiss(); onSearch() }
+                    }
+                    .padding(.horizontal, 16)
+
+                    VStack(spacing: 0) {
+                        InfoRow(icon: "photo.on.rectangle", label: "Media, links, docs") {}
+                        Divider().padding(.leading, 52)
+                        InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
+                    }
+                    .background(Color(.secondarySystemGroupedBackground),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, 16)
+
+                    VStack(spacing: 0) {
+                        HStack(spacing: 14) {
+                            Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
+                                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                            Toggle("Mute notifications", isOn: $muted)
+                                .font(.system(size: 16))
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        Divider().padding(.leading, 52)
+                        InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
+                    }
+                    .background(Color(.secondarySystemGroupedBackground),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, 16)
+
+                    Spacer(minLength: 30)
+                }
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Contact details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .onAppear { muted = ChatMuteStore.isMuted(convId) }
+            .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
+        }
+    }
+}
+
+// MARK: - Group details
+
+struct GroupDetailsView: View {
+    let groupName: String
+    let members: [FamilyMember]
+    let photoUrl: String?
+    var onAudio: () -> Void
+    var onVideo: () -> Void
+    var onAddMember: () -> Void
+    var onSearch: () -> Void
+    var onStarred: () -> Void
+    var onTheme: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var muted = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    VStack(spacing: 10) {
+                        GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                            .frame(width: 110, height: 110)
+                        Text(groupName)
+                            .font(.system(size: 24, weight: .bold))
+                            .multilineTextAlignment(.center)
+                        Text("Group · \(members.count + 1) members")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                    }
+                    .padding(.top, 8)
+
+                    HStack(spacing: 12) {
+                        InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
+                        InfoActionCard(label: "Video", icon: "video.fill") { dismiss(); onVideo() }
+                        InfoActionCard(label: "Add", icon: "person.badge.plus") { dismiss(); onAddMember() }
+                        InfoActionCard(label: "Search", icon: "magnifyingglass") { dismiss(); onSearch() }
+                    }
+                    .padding(.horizontal, 16)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(members.count + 1) members")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .padding(.horizontal, 20)
+
+                        VStack(spacing: 0) {
+                            memberRow(name: "You", member: nil, admin: true)
+                            ForEach(members) { m in
+                                Divider().padding(.leading, 64)
+                                memberRow(name: m.name, member: m, admin: false)
+                            }
+                        }
+                        .background(Color(.secondarySystemGroupedBackground),
+                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.horizontal, 16)
+                    }
+
+                    VStack(spacing: 0) {
+                        InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
+                        Divider().padding(.leading, 52)
+                        HStack(spacing: 14) {
+                            Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
+                                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                            Toggle("Mute notifications", isOn: $muted).font(.system(size: 16))
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        Divider().padding(.leading, 52)
+                        InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
+                    }
+                    .background(Color(.secondarySystemGroupedBackground),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, 16)
+
+                    Spacer(minLength: 30)
+                }
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Group info")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .onAppear { muted = ChatMuteStore.isMuted("group") }
+            .onChange(of: muted) { _, m in ChatMuteStore.setMuted("group", m) }
+        }
+    }
+
+    @ViewBuilder
+    private func memberRow(name: String, member: FamilyMember?, admin: Bool) -> some View {
+        HStack(spacing: 12) {
+            if let m = member {
+                MemberCircleAvatarLarge(member: m).frame(width: 44, height: 44)
+            } else {
+                ZStack {
+                    Circle().fill(Color.accentColor.opacity(0.18))
+                    Image(systemName: "person.fill").foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 44, height: 44)
+            }
+            Text(name).font(.system(size: 16, weight: .medium))
+            Spacer()
+            if admin {
+                Text("Admin").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+}
+
+// MARK: - Mute store (shared with conversation list)
+
+enum ChatMuteStore {
+    static func muted() -> Set<String> { Set(UserDefaults.standard.stringArray(forKey: "chat.muted") ?? []) }
+    static func isMuted(_ id: String) -> Bool { muted().contains(id) }
+    static func setMuted(_ id: String, _ on: Bool) {
+        var s = muted()
+        if on { s.insert(id) } else { s.remove(id) }
+        UserDefaults.standard.set(Array(s), forKey: "chat.muted")
+    }
+}
+
+// MARK: - Large avatars
+
+struct MemberCircleAvatarLarge: View {
+    let member: FamilyMember
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                Circle().fill(member.swiftColor.opacity(0.18))
+                Text(member.initials)
+                    .font(.system(size: geo.size.width * 0.38, weight: .bold))
+                    .foregroundStyle(member.swiftColor)
+            }
+        }
+    }
+}
+
+struct GroupChatAvatarLarge: View {
+    let members: [FamilyMember]
+    var photoUrl: String?
+    var body: some View {
+        ZStack {
+            if let urlStr = photoUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill().clipShape(Circle())
+                    } else { placeholder }
+                }
+            } else { placeholder }
+        }
+        .clipShape(Circle())
+    }
+    private var placeholder: some View {
+        ZStack {
+            Circle().fill(Color.accentColor.opacity(0.15))
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(Color.accentColor)
+        }
+    }
+}
