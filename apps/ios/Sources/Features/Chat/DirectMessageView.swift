@@ -73,6 +73,11 @@ struct DirectMessageView: View {
             }
         }
         .overlay {
+            if directMessageService.isLoading && conversationMessages.isEmpty {
+                MessageSkeleton()
+            }
+        }
+        .overlay {
             if let m = menuMessage { dmActionOverlay(m) }
         }
         .navigationTitle(member.name)
@@ -393,6 +398,7 @@ struct DirectMessageView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.bottom, 12)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.86), value: conversationMessages.count)
                     }
                     .scrollDismissesKeyboard(.immediately)
                     .onPreferenceChange(DMBottomKey.self) { maxY in

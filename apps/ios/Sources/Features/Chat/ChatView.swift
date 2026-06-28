@@ -146,6 +146,11 @@ struct ChatView: View {
             .overlay(alignment: .bottom) { inputBar }
             .background(chatTheme.background)
             .overlay {
+                if messageService.isLoading && messageService.messages.isEmpty {
+                    MessageSkeleton()
+                }
+            }
+            .overlay {
                 if let m = menuMessage { actionOverlay(m) }
             }
         .sheet(item: $forwardingMessage) { msg in
@@ -521,6 +526,7 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
+                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: filteredMessages.count)
             }
             .defaultScrollAnchor(.bottom)
             .onPreferenceChange(ChatBottomKey.self) { maxY in
