@@ -27,6 +27,7 @@ struct ChatView: View {
     @State private var showSearch = false
     @State private var showJumpToLatest = false
     @State var replyingTo: Message?
+    @State private var forwardingMessage: Message?
     @State private var showLocationSheet = false
     @State private var showMentionPicker = false
     @State private var showCameraSheet = false
@@ -72,6 +73,12 @@ struct ChatView: View {
         messageList
             .overlay(alignment: .bottom) { inputBar }
             .background(appBackground.ignoresSafeArea())
+        .sheet(item: $forwardingMessage) { msg in
+            ForwardPicker(members: familyService.members) { dest in
+                Task { await forward(msg, to: dest) }
+                forwardingMessage = nil
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -279,7 +286,8 @@ struct ChatView: View {
                             repliedMessage: msg.replyTo.flatMap { rid in messageService.messages.first { $0.id == rid } },
                             onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
                             onPin: { Task { await messageService.togglePin(msg) } },
-                            onMark: { Task { await messageService.toggleMark(msg) } }
+                            onMark: { Task { await messageService.toggleMark(msg) } },
+                            onForward: { forwardingMessage = msg }
                         )
                         .id(msg.id)
                     }

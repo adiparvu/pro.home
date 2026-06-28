@@ -62,6 +62,16 @@ struct ConversationsView: View {
     private var conversationList: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
+                // ARIA assistant — always first
+                Button {
+                    HapticFeedback.impact(.light)
+                    router.showARIA = true
+                } label: {
+                    ariaRow
+                }
+                .buttonStyle(.plain)
+                Divider().padding(.leading, 78).opacity(0.4)
+
                 ForEach(Array(sortedConversations.enumerated()), id: \.element.id) { idx, entry in
                     NavigationLink {
                         if entry.isGroup {
@@ -99,6 +109,28 @@ struct ConversationsView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+    }
+
+    private var ariaRow: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(LinearGradient(
+                    colors: [Color(red: 0.6, green: 0.35, blue: 0.95), Color(red: 0.29, green: 0.56, blue: 0.89)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing))
+                Image(systemName: "sparkles")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 52, height: 52)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("ARIA").font(.system(size: 16, weight: .semibold))
+                Text("Asistent AI").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .contentShape(Rectangle())
     }
 
     // Injects all environment objects ChatView needs (already in env chain, but explicit for clarity)

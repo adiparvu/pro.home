@@ -220,6 +220,7 @@ struct MessageBubble: View {
     var onDetails: (() -> Void)? = nil
     var onPin: (() -> Void)? = nil
     var onMark: (() -> Void)? = nil
+    var onForward: (() -> Void)? = nil
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
@@ -290,6 +291,9 @@ struct MessageBubble: View {
                         Divider()
                         if let onReply {
                             Button { onReply() } label: { Label("Reply", systemImage: "arrowshape.turn.up.left") }
+                        }
+                        if let onForward {
+                            Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
                         }
                         Button { UIPasteboard.general.string = message.body } label: {
                             Label("Copy", systemImage: "doc.on.doc")

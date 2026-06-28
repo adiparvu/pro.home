@@ -29,6 +29,29 @@ extension ChatView {
         }
     }
 
+    func forward(_ message: Message, to dest: ForwardDestination) async {
+        guard let pid = propertyId else { return }
+        switch dest {
+        case .group:
+            try? await messageService.send(
+                propertyId: pid, senderName: senderName,
+                body: message.body, attachmentUrl: message.attachmentUrl,
+                attachmentType: message.attachmentType,
+                latitude: message.latitude, longitude: message.longitude
+            )
+        case .member(let m):
+            struct DMForward: Encodable {
+                let sender_name: String; let recipient_name: String
+                let body: String; let property_id: String?
+            }
+            try? await supabase.from("direct_messages").insert(
+                DMForward(sender_name: senderName, recipient_name: m.name,
+                          body: message.body ?? "📎", property_id: pid.uuidString)
+            ).execute()
+        }
+        HapticFeedback.success()
+    }
+
     func sendSticker(_ sticker: Sticker) async {
         guard let pid = propertyId else { return }
         HapticFeedback.success()
@@ -146,6 +169,51 @@ extension ChatView {
                 trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
             )
             center.add(req)
+        }
+    }
+}
+
+// MARK: - Forward destination + picker
+
+enum ForwardDestination {
+    case group
+    case member(FamilyMember)
+}
+
+struct ForwardPicker: View {
+    let members: [FamilyMember]
+    let onPick: (ForwardDestination) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                List {
+                    Section {
+                        Button {
+                            onPick(.group); dismiss()
+                        } label: {
+                            Label("Group chat", systemImage: "person.2.fill")
+                        }
+                    }
+                    if !members.isEmpty {
+                        Section("People") {
+                            ForEach(members) { m in
+                                Button {
+                                    onPick(.member(m)); dismiss()
+                                } label: {
+                                    Label(m.name, systemImage: "person.crop.circle")
+                                }
+                            }
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Forward to")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
     }
 }
