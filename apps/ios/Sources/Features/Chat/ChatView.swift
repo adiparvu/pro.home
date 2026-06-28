@@ -26,6 +26,8 @@ struct ChatView: View {
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showJumpToLatest = false
+    @State private var showStarred = false
+    @State private var scrollTarget: UUID? = nil
     @State var replyingTo: Message?
     @State private var forwardingMessage: Message?
     @State private var showLocationSheet = false
@@ -59,6 +61,18 @@ struct ChatView: View {
         return messageService.messages.filter {
             ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
         }
+    }
+    private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
+    private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
+
+    private func pinnedSnippet(_ m: Message) -> String {
+        if let b = m.body, !b.isEmpty { return b }
+        if m.isImageMessage { return "📷 Photo" }
+        if m.isAudioMessage { return "🎤 Voice message" }
+        if m.isLocationMessage { return "📍 Location" }
+        if m.isFileMessage { return "📎 File" }
+        if m.isStickerMessage { return "😀 Sticker" }
+        return String(localized: "Attachment")
     }
     var senderName: String {
         profileService.profile?.preferredName
@@ -135,6 +149,16 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                 }
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button { showStarred = true } label: {
+                        Label("Starred messages", systemImage: "flag")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
         }
         .task {
             guard let pid = propertyId else { return }
@@ -194,6 +218,12 @@ struct ChatView: View {
             .environmentObject(stickerService)
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showStarred) {
+            StarredMessagesView(messages: markedMessages, members: familyService.members) { id in
+                showStarred = false
+                scrollTarget = id
+            }
         }
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
@@ -256,6 +286,45 @@ struct ChatView: View {
                     .liquidGlass(cornerRadius: 16)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                if let pinned = pinnedMessages.last {
+                    Button {
+                        withAnimation { proxy.scrollTo(pinned.id, anchor: .center) }
+                        HapticFeedback.impact(.light)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "pin.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.accentColor)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(pinnedMessages.count > 1
+                                     ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
+                                     : String(localized: "Pinned message"))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color.accentColor)
+                                Text(pinnedSnippet(pinned))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.primary.opacity(0.6))
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await messageService.togglePin(pinned) }
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.primary.opacity(0.4))
+                                    .frame(width: 26, height: 26)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .liquidGlass(cornerRadius: 14)
+                        .padding(.horizontal, 16).padding(.top, 8)
+                    }
+                    .buttonStyle(.plain)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -325,6 +394,11 @@ struct ChatView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 }
+            }
+            .onChange(of: scrollTarget) { _, target in
+                guard let t = target else { return }
+                withAnimation { proxy.scrollTo(t, anchor: .center) }
+                scrollTarget = nil
             }
             } // end VStack (search + scroll)
             .overlay(alignment: .bottom) {
