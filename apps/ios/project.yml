@@ -70,7 +70,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "456"
+        CURRENT_PROJECT_VERSION: "457"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
@@ -82,6 +82,23 @@ targets:
         Release:
           SWIFT_OPTIMIZATION_LEVEL: "-O"
           SWIFT_COMPILATION_MODE: wholemodule
+
+  PRVIOTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: PRVIO
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.tests
+        SWIFT_VERSION: "5.10"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        DEVELOPMENT_TEAM: SU92TVZT8W
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRVIO.app/PRVIO"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
   PRVIOWidgets:
     type: app-extension
@@ -115,7 +132,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "456"
+        CURRENT_PROJECT_VERSION: "457"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:
