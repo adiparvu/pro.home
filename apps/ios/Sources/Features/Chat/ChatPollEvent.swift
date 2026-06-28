@@ -61,6 +61,24 @@ struct PollVote: Identifiable, Codable {
     }
 }
 
+// MARK: - Poll tally (pure, testable)
+
+enum PollTally {
+    static func totalVoters(_ votes: [PollVote]) -> Int {
+        Set(votes.map { $0.userId }).count
+    }
+    static func count(_ votes: [PollVote], option: Int) -> Int {
+        votes.filter { $0.optionIndex == option }.count
+    }
+    static func didVote(_ votes: [PollVote], option: Int, userId: UUID?) -> Bool {
+        votes.contains { $0.optionIndex == option && $0.userId == userId }
+    }
+    static func fraction(_ votes: [PollVote], option: Int) -> Double {
+        let total = totalVoters(votes)
+        return total > 0 ? Double(count(votes, option: option)) / Double(total) : 0
+    }
+}
+
 // MARK: - Poll bubble
 
 struct PollBubble: View {
@@ -70,9 +88,9 @@ struct PollBubble: View {
     let isOwn: Bool
     let onVote: (Int) -> Void
 
-    private var totalVoters: Int { Set(votes.map { $0.userId }).count }
-    private func count(_ i: Int) -> Int { votes.filter { $0.optionIndex == i }.count }
-    private func didVote(_ i: Int) -> Bool { votes.contains { $0.optionIndex == i && $0.userId == myUserId } }
+    private var totalVoters: Int { PollTally.totalVoters(votes) }
+    private func count(_ i: Int) -> Int { PollTally.count(votes, option: i) }
+    private func didVote(_ i: Int) -> Bool { PollTally.didVote(votes, option: i, userId: myUserId) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
