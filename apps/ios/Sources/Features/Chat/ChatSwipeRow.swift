@@ -16,11 +16,15 @@ struct SwipeableRow<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     @State private var offset: CGFloat = 0
-    @GestureState private var translation: CGFloat = 0
+    @State private var lastOffset: CGFloat = 0
 
-    private let slot: CGFloat = 72
+    private let slot: CGFloat = 76
     private var leadingWidth: CGFloat { CGFloat(leading.count) * slot }
     private var trailingWidth: CGFloat { CGFloat(trailing.count) * slot }
+
+    private func close() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { offset = 0; lastOffset = 0 }
+    }
 
     var body: some View {
         ZStack {
@@ -33,30 +37,28 @@ struct SwipeableRow<Content: View>: View {
             content()
                 .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .offset(x: offset + translation)
+                .offset(x: offset)
                 .overlay {
                     if offset != 0 {
                         Color.black.opacity(0.001)
                             .contentShape(Rectangle())
-                            .onTapGesture {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { offset = 0 }
-                            }
+                            .onTapGesture { close() }
+                            .offset(x: offset)
                     }
                 }
                 .highPriorityGesture(
-                    DragGesture(minimumDistance: 20)
-                        .updating($translation) { v, state, _ in
+                    DragGesture(minimumDistance: 24)
+                        .onChanged { v in
                             guard abs(v.translation.width) > abs(v.translation.height) else { return }
-                            let proposed = offset + v.translation.width
-                            let clamped = max(-trailingWidth, min(leadingWidth, proposed))
-                            state = clamped - offset
+                            let new = lastOffset + v.translation.width
+                            offset = max(-trailingWidth, min(leadingWidth, new))
                         }
-                        .onEnded { v in
-                            let total = offset + v.translation.width
+                        .onEnded { _ in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                                if total < -trailingWidth * 0.4 { offset = -trailingWidth }
-                                else if total > leadingWidth * 0.4 { offset = leadingWidth }
+                                if offset < -trailingWidth * 0.4 { offset = -trailingWidth }
+                                else if offset > leadingWidth * 0.4 { offset = leadingWidth }
                                 else { offset = 0 }
+                                lastOffset = offset
                             }
                         }
                 )
@@ -67,7 +69,7 @@ struct SwipeableRow<Content: View>: View {
     private func actionButton(_ a: ConvSwipeAction) -> some View {
         Button {
             a.action()
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { offset = 0 }
+            close()
         } label: {
             VStack(spacing: 4) {
                 ZStack {

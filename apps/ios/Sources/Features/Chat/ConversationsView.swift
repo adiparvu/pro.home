@@ -118,51 +118,16 @@ struct ConversationsView: View {
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
-            if sortedConversations.isEmpty {
-                emptyState
-            } else {
-                conversationList
+            VStack(spacing: 16) {
+                headerBar
+                if sortedConversations.isEmpty {
+                    emptyState
+                } else {
+                    conversationList
+                }
             }
         }
-        .navigationTitle("Chat")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Menu {
-                    Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
-                    if !archivedList.isEmpty {
-                        Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                        .frame(width: 36, height: 36)
-                        .glassCircle()
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showStoryCamera = true } label: {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.7))
-                        .frame(width: 36, height: 36)
-                        .glassCircle()
-                }
-                .buttonStyle(.plain)
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showNewConversation = true } label: {
-                    ZStack {
-                        Circle().fill(Color.accentColor).frame(width: 36, height: 36)
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
@@ -200,16 +165,61 @@ struct ConversationsView: View {
         }
     }
 
+    // MARK: - Custom header (independent round buttons + title + search)
+
+    private var headerBar: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Menu {
+                    Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
+                    if !archivedList.isEmpty {
+                        Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .frame(width: 40, height: 40)
+                        .glassCircle()
+                }
+                Spacer()
+                Button { showStoryCamera = true } label: {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.75))
+                        .frame(width: 40, height: 40)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+                Button { showNewConversation = true } label: {
+                    ZStack {
+                        Circle().fill(Color.accentColor).frame(width: 40, height: 40)
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text("Chat")
+                .font(.system(size: 32, weight: .bold))
+
+            searchField
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+    }
+
     // MARK: - Conversation list
 
     private var conversationList: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 10) {
+            VStack(spacing: 14) {
                 if showArchived {
                     archivedTopBar
                 } else {
                     filterChips
-                    searchField
                 }
 
                 let entries = showArchived ? archivedList : searchedConversations
@@ -307,7 +317,6 @@ struct ConversationsView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .background(Color.primary.opacity(0.06), in: Capsule())
-        .padding(.horizontal, 16)
     }
 
     private var filterChips: some View {
