@@ -1,0 +1,98 @@
+import SwiftUI
+import LinkPresentation
+import UIKit
+
+// MARK: - URL detection
+
+func firstDetectedURL(in text: String) -> URL? {
+    guard !text.isEmpty,
+          let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    else { return nil }
+    let range = NSRange(text.startIndex..., in: text)
+    guard let match = detector.firstMatch(in: text, options: [], range: range),
+          let url = match.url,
+          url.scheme == "http" || url.scheme == "https"
+    else { return nil }
+    return url
+}
+
+// MARK: - Metadata cache (one fetch per URL, in-memory)
+
+@MainActor
+final class LinkMetadataCache {
+    static let shared = LinkMetadataCache()
+    private var cache: [URL: LPLinkMetadata] = [:]
+    private var inProgress: Set<URL> = []
+
+    func fetch(_ url: URL, completion: @escaping (LPLinkMetadata?) -> Void) {
+        if let m = cache[url] { completion(m); return }
+        guard !inProgress.contains(url) else { completion(nil); return }
+        inProgress.insert(url)
+        let provider = LPMetadataProvider()
+        provider.startFetchingMetadata(for: url) { [weak self] meta, _ in
+            DispatchQueue.main.async {
+                self?.inProgress.remove(url)
+                if let meta { self?.cache[url] = meta }
+                completion(meta)
+            }
+        }
+    }
+}
+
+// MARK: - Link preview card
+
+struct LinkPreviewView: View {
+    let url: URL
+
+    @State private var title: String?
+    @State private var image: UIImage?
+    @State private var loaded = false
+
+    var body: some View {
+        Link(destination: url) {
+            VStack(alignment: .leading, spacing: 0) {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: 240, maxHeight: 120)
+                        .clipped()
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title ?? (url.host ?? url.absoluteString))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text(url.host ?? url.absoluteString)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: 240, alignment: .leading)
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onAppear(perform: load)
+    }
+
+    private func load() {
+        guard !loaded else { return }
+        loaded = true
+        LinkMetadataCache.shared.fetch(url) { meta in
+            guard let meta else { return }
+            title = meta.title
+            if let provider = meta.imageProvider {
+                provider.loadObject(ofClass: UIImage.self) { obj, _ in
+                    if let img = obj as? UIImage {
+                        DispatchQueue.main.async { self.image = img }
+                    }
+                }
+            }
+        }
+    }
+}

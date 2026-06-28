@@ -226,6 +226,10 @@ struct MessageBubble: View {
     var onDeleteForMe: (() -> Void)? = nil
 
     private var isDeleted: Bool { message.deletedForAll == true }
+    private var linkURL: URL? {
+        guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }
+        return firstDetectedURL(in: body)
+    }
 
     @State private var showReaders = false
     @State private var localReactions: [String: Int] = [:]
@@ -291,6 +295,9 @@ struct MessageBubble: View {
                             }
                     )
                     .contextMenu { menuContent }
+                if let link = linkURL {
+                    LinkPreviewView(url: link)
+                }
                 if !displayReactions.isEmpty, !isDeleted {
                     reactionPills
                 }

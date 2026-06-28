@@ -812,6 +812,10 @@ private struct DMBubble: View {
                 .gesture(swipeGesture)
                 .contextMenu { menuContent }
 
+                if messageType == .text, let link = firstDetectedURL(in: message.body) {
+                    LinkPreviewView(url: link)
+                }
+
                 if !reactionCounts.isEmpty { reactionPills }
 
                 statusRow
