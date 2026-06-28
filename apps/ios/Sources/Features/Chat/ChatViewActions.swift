@@ -24,8 +24,33 @@ extension ChatView {
             mentionedIds = []; mentionedNames = []
             replyingTo = nil
         } catch {
+            // Offline / send failed → queue it; it sends automatically when back online.
+            outbox.enqueue(PendingMessage(
+                propertyId: pid, senderName: senderName, body: body,
+                mentionedIds: mentionedIds, replyTo: replyId
+            ))
+            mentionedIds = []; mentionedNames = []
+            replyingTo = nil
             HapticFeedback.warning()
-            sendError = String(localized: "Failed to send message. Check your connection and try again.")
+        }
+    }
+
+    /// Retries every queued message for this property.
+    func flushOutbox() async {
+        guard let pid = propertyId else { return }
+        await outbox.flush { pm in
+            guard pm.propertyId == pid else { return false }
+            do {
+                try await messageService.send(
+                    propertyId: pm.propertyId, senderName: pm.senderName,
+                    body: pm.body, attachmentUrl: pm.attachmentUrl,
+                    attachmentType: pm.attachmentType,
+                    mentionedIds: pm.mentionedIds, replyTo: pm.replyTo
+                )
+                return true
+            } catch {
+                return false
+            }
         }
     }
 

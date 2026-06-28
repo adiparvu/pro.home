@@ -58,8 +58,13 @@ struct ChatView: View {
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @State private var showThemePicker = false
     @StateObject private var audioRecorder = ChatAudioRecorder()
+    @StateObject var outbox = OfflineOutbox()
 
     private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+    private var pendingOutbox: [PendingMessage] {
+        guard let pid = propertyId else { return [] }
+        return outbox.pending(for: pid)
+    }
 
     var propertyId: UUID? { propertyService.primary?.id }
 
@@ -231,6 +236,10 @@ struct ChatView: View {
             guard let pid = propertyId else { return }
             await messageService.loadPollVotes(propertyId: pid)
             await messageService.subscribePollVotes(propertyId: pid)
+        }
+        .task { await flushOutbox() }
+        .onChange(of: outbox.isOnline) { _, online in
+            if online { Task { await flushOutbox() } }
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
@@ -514,6 +523,24 @@ struct ChatView: View {
                             onLongPress: { menuMessage = msg }
                         )
                         .id(msg.id)
+                    }
+                    // Pending (offline) messages — shown optimistically with a clock.
+                    ForEach(pendingOutbox) { pm in
+                        HStack {
+                            Spacer(minLength: 60)
+                            HStack(spacing: 6) {
+                                Text(pm.body ?? "")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(.white)
+                                Image(systemName: "clock")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.75))
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 9)
+                            .background(chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+                                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .opacity(0.85)
+                        }
                     }
                     // Clearance so the newest message rests above the overlaid
                     // input bar (which blurs the messages behind it = real glass).
