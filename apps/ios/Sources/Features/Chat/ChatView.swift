@@ -395,7 +395,7 @@ struct ChatView: View {
                             onForward: { forwardingMessage = msg },
                             onEdit: { editingMessage = msg; editText = msg.body ?? "" },
                             onDeleteForEveryone: msg.senderId == supabase.auth.currentSession?.user.id
-                                ? { Task { await messageService.deleteForEveryone(id: msg.id) } }
+                                ? { _ = Task { await messageService.deleteForEveryone(id: msg.id) } }
                                 : nil,
                             onDeleteForMe: { messageService.deleteForMe(id: msg.id) }
                         )

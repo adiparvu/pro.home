@@ -213,7 +213,7 @@ struct DirectMessageView: View {
                                     onPin: { Task { await directMessageService.togglePin(msg) } },
                                     onMark: { Task { await directMessageService.toggleMark(msg) } },
                                     onDeleteForEveryone: isOwn
-                                        ? { Task { await directMessageService.deleteForEveryone(id: msg.id) } }
+                                        ? { _ = Task { await directMessageService.deleteForEveryone(id: msg.id) } }
                                         : nil,
                                     onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) }
                                 )
