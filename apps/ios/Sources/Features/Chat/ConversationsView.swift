@@ -14,10 +14,17 @@ struct ConversationsView: View {
     @EnvironmentObject private var router: AppRouter
 
     @State private var showAddMember = false
+    @State private var showNewConversation = false
+    @State private var showStoryCamera = false
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
+    @State private var pinnedIds: Set<String> = []
+    @State private var mutedIds: Set<String> = []
+    @State private var manualUnreadIds: Set<String> = []
     @State private var showArchived = false
+    @State private var searchText = ""
+    @State private var navTarget: String? = nil
 
     enum ConvFilter: CaseIterable {
         case all, unread, favorites, groups, family
@@ -39,29 +46,73 @@ struct ConversationsView: View {
     private var nonArchived: [ConversationEntry] { sortedConversations.filter { !archivedIds.contains($0.id) } }
     private var archivedList: [ConversationEntry] { sortedConversations.filter { archivedIds.contains($0.id) } }
 
+    private func isUnread(_ e: ConversationEntry) -> Bool { e.unread > 0 || manualUnreadIds.contains(e.id) }
+
     private var visibleConversations: [ConversationEntry] {
-        nonArchived.filter { e in
+        let filtered = nonArchived.filter { e in
             switch filter {
             case .all:       return true
-            case .unread:    return e.unread > 0
+            case .unread:    return isUnread(e)
             case .favorites: return favoriteIds.contains(e.id)
             case .groups:    return e.isGroup
             case .family:    return !e.isGroup
             }
         }
+        // pinned conversations float to the top
+        return filtered.sorted { a, b in
+            let pa = pinnedIds.contains(a.id), pb = pinnedIds.contains(b.id)
+            if pa != pb { return pa }
+            return false
+        }
+    }
+
+    private var searchedConversations: [ConversationEntry] {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return visibleConversations }
+        return nonArchived.filter { $0.name.localizedCaseInsensitiveContains(q) }
     }
 
     private func loadFlags() {
         archivedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.archived") ?? [])
         favoriteIds = Set(UserDefaults.standard.stringArray(forKey: "chat.favorites") ?? [])
+        pinnedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.pinned") ?? [])
+        mutedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.muted") ?? [])
+        manualUnreadIds = Set(UserDefaults.standard.stringArray(forKey: "chat.manualUnread") ?? [])
     }
-    private func toggleArchived(_ id: String) {
-        if archivedIds.contains(id) { archivedIds.remove(id) } else { archivedIds.insert(id) }
-        UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
+    private func toggle(_ id: String, in set: inout Set<String>, key: String) {
+        if set.contains(id) { set.remove(id) } else { set.insert(id) }
+        UserDefaults.standard.set(Array(set), forKey: key)
     }
-    private func toggleFavorite(_ id: String) {
-        if favoriteIds.contains(id) { favoriteIds.remove(id) } else { favoriteIds.insert(id) }
-        UserDefaults.standard.set(Array(favoriteIds), forKey: "chat.favorites")
+    private func toggleArchived(_ id: String) { toggle(id, in: &archivedIds, key: "chat.archived") }
+    private func toggleFavorite(_ id: String) { toggle(id, in: &favoriteIds, key: "chat.favorites") }
+    private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned") }
+    private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted") }
+    private func toggleUnread(_ id: String)   { toggle(id, in: &manualUnreadIds, key: "chat.manualUnread") }
+
+    private func markAllRead() {
+        manualUnreadIds.removeAll()
+        UserDefaults.standard.set([String](), forKey: "chat.manualUnread")
+        messageService.resetUnread()
+        for m in familyService.members { directMessageService.markRead(partner: m.name) }
+        if let pid = propertyService.primary?.id {
+            Task { await messageService.markRead(propertyId: pid, readerName: myName) }
+        }
+        HapticFeedback.success()
+    }
+
+    @MainActor
+    private func sendStory(_ image: UIImage) async {
+        guard let pid = propertyService.primary?.id,
+              let data = image.jpegData(compressionQuality: 0.85) else { return }
+        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(UUID().uuidString).jpg"
+        try? await supabase.storage.from("documents")
+            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        try? await messageService.send(
+            propertyId: pid, senderName: myName, body: nil,
+            attachmentUrl: url?.absoluteString, attachmentType: "image"
+        )
+        HapticFeedback.success()
     }
 
     var body: some View {
@@ -76,13 +127,38 @@ struct ConversationsView: View {
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showAddMember = true
+            ToolbarItem(placement: .navigationBarLeading) {
+                Menu {
+                    Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
+                    if !archivedList.isEmpty {
+                        Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
+                    }
                 } label: {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .frame(width: 36, height: 36)
+                        .glassCircle()
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showStoryCamera = true } label: {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .frame(width: 36, height: 36)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showNewConversation = true } label: {
+                    ZStack {
+                        Circle().fill(Color.accentColor).frame(width: 36, height: 36)
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
                 }
                 .buttonStyle(.plain)
             }
@@ -94,6 +170,13 @@ struct ConversationsView: View {
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
         }
         .onAppear { loadFlags() }
+        .navigationDestination(item: $navTarget) { id in
+            if id == "group" {
+                groupChatDestination
+            } else if let member = familyService.members.first(where: { $0.id.uuidString == id }) {
+                DirectMessageView(member: member)
+            }
+        }
         .onDisappear {
             Task { await directMessageService.unsubscribe() }
         }
@@ -102,76 +185,129 @@ struct ConversationsView: View {
                                  propertyName: propertyService.primary?.name)
                 .environmentObject(familyService)
         }
+        .sheet(isPresented: $showNewConversation) {
+            NewConversationSheet(members: familyService.members,
+                                 groupName: propertyService.primary?.name) { id in
+                showNewConversation = false
+                navTarget = id
+            } onAddMember: {
+                showNewConversation = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddMember = true }
+            }
+        }
+        .fullScreenCover(isPresented: $showStoryCamera) {
+            CameraPickerView { img in Task { await sendStory(img) } }
+        }
     }
 
     // MARK: - Conversation list
 
     private var conversationList: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 12) {
-                if showArchived { archivedTopBar } else { filterChips }
+            VStack(spacing: 10) {
+                if showArchived {
+                    archivedTopBar
+                } else {
+                    filterChips
+                    searchField
+                }
 
-                let entries = showArchived ? archivedList : visibleConversations
-                LazyVStack(spacing: 0) {
-                    if !showArchived {
+                let entries = showArchived ? archivedList : searchedConversations
+                LazyVStack(spacing: 8) {
+                    if !showArchived && searchText.isEmpty {
                         if filter == .all {
                             Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
                                 .buttonStyle(.plain)
-                            Divider().padding(.leading, 78).opacity(0.4)
+                                .background(Color(.secondarySystemGroupedBackground),
+                                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                         if !archivedList.isEmpty {
                             Button { withAnimation { showArchived = true } } label: { archivedRow }
                                 .buttonStyle(.plain)
-                            Divider().padding(.leading, 78).opacity(0.4)
+                                .background(Color(.secondarySystemGroupedBackground),
+                                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                     }
 
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                        NavigationLink {
-                            if entry.isGroup {
-                                groupChatDestination
-                            } else if let member = entry.member {
-                                DirectMessageView(member: member)
+                    ForEach(entries) { entry in
+                        SwipeableRow(
+                            leading: leadingActions(entry),
+                            trailing: trailingActions(entry)
+                        ) {
+                            Button { navTarget = entry.id } label: {
+                                ConversationRowView(
+                                    entry: entry,
+                                    myName: myName,
+                                    members: familyService.members,
+                                    propertyPhotoUrl: propertyService.primary?.photoUrl,
+                                    muted: mutedIds.contains(entry.id),
+                                    pinned: pinnedIds.contains(entry.id),
+                                    forceUnread: manualUnreadIds.contains(entry.id)
+                                )
                             }
-                        } label: {
-                            ConversationRowView(
-                                entry: entry,
-                                myName: myName,
-                                members: familyService.members,
-                                propertyPhotoUrl: propertyService.primary?.photoUrl
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button { toggleFavorite(entry.id) } label: {
-                                Label(favoriteIds.contains(entry.id) ? "Unfavorite" : "Favorite",
-                                      systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button { toggleFavorite(entry.id) } label: {
+                                    Label(favoriteIds.contains(entry.id) ? "Unfavorite" : "Favorite",
+                                          systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
+                                }
+                                Button { togglePinned(entry.id) } label: {
+                                    Label(pinnedIds.contains(entry.id) ? "Unpin" : "Pin", systemImage: "pin")
+                                }
+                                Button { toggleMuted(entry.id) } label: {
+                                    Label(mutedIds.contains(entry.id) ? "Unmute" : "Mute", systemImage: "bell.slash")
+                                }
+                                Button { toggleArchived(entry.id) } label: {
+                                    Label(archivedIds.contains(entry.id) ? "Unarchive" : "Archive", systemImage: "archivebox")
+                                }
                             }
-                            Button { toggleArchived(entry.id) } label: {
-                                Label(archivedIds.contains(entry.id) ? "Unarchive" : "Archive",
-                                      systemImage: "archivebox")
-                            }
-                        }
-
-                        if idx < entries.count - 1 {
-                            Divider().padding(.leading, 78).opacity(0.4)
                         }
                     }
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.primary.opacity(0.04))
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
-                )
                 .padding(.horizontal, 16)
             }
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+    }
+
+    private func leadingActions(_ entry: ConversationEntry) -> [ConvSwipeAction] {
+        [
+            ConvSwipeAction(label: pinnedIds.contains(entry.id) ? "Unpin" : "Pin",
+                            icon: "pin.fill", color: .green) { togglePinned(entry.id) },
+            ConvSwipeAction(label: "Unread", icon: "message.badge.fill", color: .blue) { toggleUnread(entry.id) }
+        ]
+    }
+
+    private func trailingActions(_ entry: ConversationEntry) -> [ConvSwipeAction] {
+        [
+            ConvSwipeAction(label: mutedIds.contains(entry.id) ? "Unmute" : "Mute",
+                            icon: mutedIds.contains(entry.id) ? "bell.fill" : "bell.slash.fill",
+                            color: .orange) { toggleMuted(entry.id) },
+            ConvSwipeAction(label: "Archive", icon: "archivebox.fill", color: .gray) { toggleArchived(entry.id) }
+        ]
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.primary.opacity(0.4))
+            TextField("Caută grupuri, persoane…", text: $searchText)
+                .font(.system(size: 15))
+                .autocorrectionDisabled()
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+        .padding(.horizontal, 16)
     }
 
     private var filterChips: some View {
@@ -390,6 +526,11 @@ private struct ConversationRowView: View {
     let myName: String
     let members: [FamilyMember]
     var propertyPhotoUrl: String? = nil
+    var muted: Bool = false
+    var pinned: Bool = false
+    var forceUnread: Bool = false
+
+    private var isUnread: Bool { entry.unread > 0 || forceUnread }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -397,24 +538,30 @@ private struct ConversationRowView: View {
                 .frame(width: 52, height: 52)
 
             VStack(alignment: .leading, spacing: 3) {
-                HStack {
+                HStack(spacing: 6) {
                     Text(entry.name)
-                        .font(.system(size: 16, weight: entry.unread > 0 ? .bold : .semibold))
+                        .font(.system(size: 16, weight: isUnread ? .bold : .semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
+                    if muted {
+                        Image(systemName: "bell.slash.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.primary.opacity(0.35))
+                    }
                     Spacer()
+                    if pinned {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.primary.opacity(0.35))
+                    }
                     Text(entry.formattedTime)
                         .font(.system(size: 12))
-                        .foregroundStyle(entry.unread > 0
-                            ? Color.accentColor
-                            : Color.primary.opacity(0.35))
+                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(0.35))
                 }
                 HStack {
                     Text(entry.preview)
                         .font(.system(size: 14))
-                        .foregroundStyle(entry.unread > 0
-                            ? Color.primary.opacity(0.65)
-                            : Color.primary.opacity(0.4))
+                        .foregroundStyle(isUnread ? Color.primary.opacity(0.65) : Color.primary.opacity(0.4))
                         .lineLimit(1)
                     Spacer()
                     if entry.unread > 0 {
@@ -423,8 +570,12 @@ private struct ConversationRowView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.accentColor, in: Capsule())
+                            .background(muted ? Color.primary.opacity(0.35) : Color.accentColor, in: Capsule())
                             .fixedSize()
+                    } else if forceUnread {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 9, height: 9)
                     }
                 }
             }
@@ -504,6 +655,62 @@ private struct GroupChatAvatar: View {
             Image(systemName: "person.2.fill")
                 .font(.system(size: 22))
                 .foregroundStyle(Color.accentColor)
+        }
+    }
+}
+
+// MARK: - New conversation sheet
+
+private struct NewConversationSheet: View {
+    let members: [FamilyMember]
+    var groupName: String?
+    let onPick: (String) -> Void
+    let onAddMember: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var search = ""
+
+    private var filtered: [FamilyMember] {
+        let q = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return members }
+        return members.filter { $0.name.localizedCaseInsensitiveContains(q) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                List {
+                    Section {
+                        Button { onPick("group"); dismiss() } label: {
+                            Label(groupName?.isEmpty == false ? groupName! : "Group chat",
+                                  systemImage: "person.2.fill")
+                        }
+                        Button { onAddMember() } label: {
+                            Label("New contact", systemImage: "person.crop.circle.badge.plus")
+                        }
+                    }
+                    if !filtered.isEmpty {
+                        Section("Contacts") {
+                            ForEach(filtered) { m in
+                                Button { onPick(m.id.uuidString); dismiss() } label: {
+                                    HStack(spacing: 12) {
+                                        MemberCircleAvatar(member: m, size: 38)
+                                            .frame(width: 38, height: 38)
+                                        Text(m.name).foregroundStyle(.primary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .searchable(text: $search, prompt: "Caută un nume sau un număr")
+            }
+            .navigationTitle("Conversație nouă")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
         }
     }
 }

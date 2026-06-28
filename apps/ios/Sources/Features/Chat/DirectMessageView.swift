@@ -880,6 +880,24 @@ private struct DMBubble: View {
     }
     private var myReaction: String? { message.reactions?[myName] }
 
+    private var showsQuickForward: Bool {
+        guard onForward != nil, messageType != .deleted else { return false }
+        if messageType == .image || messageType == .audio { return true }
+        if messageType == .text, firstDetectedURL(in: message.body) != nil { return true }
+        return false
+    }
+
+    private var forwardButton: some View {
+        Button { onForward?() } label: {
+            Image(systemName: "arrowshape.turn.up.right.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .glassCircle()
+    }
+
     private enum DMMessageType { case text, image, audio, deleted }
 
     private var messageType: DMMessageType {
@@ -895,7 +913,10 @@ private struct DMBubble: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 6) {
-            if isOwn { Spacer(minLength: 72) }
+            if isOwn {
+                Spacer(minLength: 72)
+                if showsQuickForward { forwardButton }
+            }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                 if let replied = repliedMessage, messageType != .deleted {
@@ -931,12 +952,14 @@ private struct DMBubble: View {
                 statusRow
             }
 
-            if !isOwn { Spacer(minLength: 72) }
+            if !isOwn {
+                if showsQuickForward { forwardButton }
+                Spacer(minLength: 72)
+            }
         }
         .padding(.vertical, 1)
         .sheet(isPresented: $showDetails) {
-            DMDetailsSheet(message: message)
-                .presentationDetents([.height(220)])
+            DMMessageDetailsView(message: message, isOwn: isOwn)
         }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)

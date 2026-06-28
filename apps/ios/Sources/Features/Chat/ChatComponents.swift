@@ -231,6 +231,24 @@ struct MessageBubble: View {
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
+
+    private var showsQuickForward: Bool {
+        guard onForward != nil, !isDeleted else { return false }
+        return message.isImageMessage || message.isFileMessage || message.isLocationMessage
+            || message.isAudioMessage || message.isStickerMessage || message.isPollMessage
+            || message.isEventMessage || linkURL != nil
+    }
+
+    private var forwardButton: some View {
+        Button { onForward?() } label: {
+            Image(systemName: "arrowshape.turn.up.right.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .glassCircle()
+    }
     private var linkURL: URL? {
         guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }
         return firstDetectedURL(in: body)
@@ -242,6 +260,7 @@ struct MessageBubble: View {
     @State private var showReactionPicker = false
     @State private var swipeOffset: CGFloat = 0
     @State private var viewerItem: ImageViewerItem? = nil
+    @State private var showDetails = false
 
     private var displayReactions: [String: Int] {
         onReact != nil ? persistedReactions : localReactions
@@ -261,6 +280,7 @@ struct MessageBubble: View {
         HStack(alignment: .bottom, spacing: 8) {
             if isOwn {
                 Spacer(minLength: 60)
+                if showsQuickForward { forwardButton }
             } else {
                 chatAvatar
             }
@@ -295,7 +315,7 @@ struct MessageBubble: View {
                             .onEnded { v in
                                 guard !isDeleted else { return }
                                 if v.translation.width > 55 { onReply?(); HapticFeedback.impact(.light) }
-                                else if v.translation.width < -55 { (onDetails ?? { showReaders = true })(); HapticFeedback.impact(.light) }
+                                else if v.translation.width < -55 { showDetails = true; HapticFeedback.impact(.light) }
                                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                             }
                     )
@@ -309,13 +329,19 @@ struct MessageBubble: View {
                 statusRow
             }
 
-            if !isOwn { Spacer(minLength: 60) }
+            if !isOwn {
+                if showsQuickForward { forwardButton }
+                Spacer(minLength: 60)
+            }
         }
         .sheet(isPresented: $showReaders) {
             SeenBySheet(readers: readers, members: members)
         }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)
+        }
+        .sheet(isPresented: $showDetails) {
+            MessageDetailsView(message: message, readers: readers)
         }
         .sheet(isPresented: $showReactionPicker) {
             ReactionPickerView(myReaction: displayMyReaction) { emoji in
@@ -350,7 +376,7 @@ struct MessageBubble: View {
             if isOwn, message.body?.isEmpty == false, message.attachmentType == nil, let onEdit {
                 Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
             }
-            Button { (onDetails ?? { showReaders = true })() } label: {
+            Button { showDetails = true } label: {
                 Label("Details", systemImage: "info.circle")
             }
             if let onMark {
