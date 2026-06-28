@@ -68,10 +68,8 @@ struct ChatView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            messageList
-            inputBar
-        }
+        messageList
+            .overlay(alignment: .bottom) { inputBar }
             .background(appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -221,9 +219,11 @@ struct ChatView: View {
 
     // MARK: - Message list
 
+    private let chatBottomInset: CGFloat = 78
+
     private var messageList: some View {
+        GeometryReader { outer in
         ScrollViewReader { proxy in
-            GeometryReader { outer in
             VStack(spacing: 0) {
                 if showSearch {
                     HStack(spacing: 10) {
@@ -278,20 +278,22 @@ struct ChatView: View {
                         )
                         .id(msg.id)
                     }
+                    // Clearance so the newest message rests above the overlaid
+                    // input bar (which blurs the messages behind it = real glass).
+                    Color.clear.frame(height: chatBottomInset)
                     Color.clear.frame(height: 1).id("CHAT_BOTTOM")
                         .background(GeometryReader { g in
                             Color.clear.preference(key: ChatBottomKey.self,
-                                                   value: g.frame(in: .named("chatScroll")).minY)
+                                                   value: g.frame(in: .named("CHATOUTER")).maxY)
                         })
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
-                .padding(.bottom, 12)
             }
-            .coordinateSpace(name: "chatScroll")
-            .onPreferenceChange(ChatBottomKey.self) { minY in
+            .defaultScrollAnchor(.bottom)
+            .onPreferenceChange(ChatBottomKey.self) { maxY in
                 withAnimation(.easeInOut(duration: 0.2)) {
-                    showJumpToLatest = minY > outer.size.height + 60
+                    showJumpToLatest = maxY > outer.size.height + 40
                 }
             }
             .scrollDismissesKeyboard(.immediately)
@@ -328,12 +330,13 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, chatBottomInset + 8)
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-            } // end GeometryReader
+            } // end ScrollViewReader
         }
+        .coordinateSpace(name: "CHATOUTER")
     }
 
     // MARK: - Input bar
