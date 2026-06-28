@@ -19,7 +19,9 @@ struct DirectMessageView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var showStarred = false
+    @State private var showThemePicker = false
     @State private var scrollTarget: UUID? = nil
+    @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var input = ""
@@ -47,9 +49,11 @@ struct DirectMessageView: View {
         input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+
     var body: some View {
         ZStack {
-            appBackground.ignoresSafeArea()
+            chatTheme.background
             VStack(spacing: 0) {
                 messageList
                 inputBar
@@ -104,6 +108,9 @@ struct DirectMessageView: View {
                     Button { showStarred = true } label: {
                         Label("Starred messages", systemImage: "flag")
                     }
+                    Button { showThemePicker = true } label: {
+                        Label("Conversation theme", systemImage: "paintpalette")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.system(size: 16, weight: .semibold))
@@ -126,6 +133,9 @@ struct DirectMessageView: View {
                 showStarred = false
                 scrollTarget = id
             }
+        }
+        .sheet(isPresented: $showThemePicker) {
+            ChatThemePicker()
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
             DMCameraPickerView(isPresented: $showCameraPicker) { img in
@@ -271,6 +281,7 @@ struct DirectMessageView: View {
                                     isOwn: isOwn,
                                     showSenderBubbleTail: !prevSameSender || showDate,
                                     myName: myName,
+                                    outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
                                     repliedMessage: msg.replyTo.flatMap { rid in
                                         conversationMessages.first { $0.id == rid }
                                     },
@@ -820,6 +831,7 @@ private struct DMBubble: View {
     let isOwn: Bool
     let showSenderBubbleTail: Bool
     var myName: String = ""
+    var outgoingColor: Color? = nil
     var repliedMessage: DirectMessage? = nil
     var onReact: ((String) -> Void)? = nil
     var onReply: (() -> Void)? = nil
@@ -1065,7 +1077,7 @@ private struct DMBubble: View {
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
             .background(
-                isOwn ? Color.accentColor : Color.primary.opacity(0.09),
+                isOwn ? (outgoingColor ?? Color.accentColor) : Color.primary.opacity(0.09),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

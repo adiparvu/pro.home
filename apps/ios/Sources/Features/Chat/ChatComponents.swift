@@ -206,6 +206,7 @@ struct MessageBubble: View {
     let message: Message
     let isOwn: Bool
     let members: [FamilyMember]
+    var outgoingColor: Color? = nil
     var readers: [MessageRead] = []
     var onDelete: (() -> Void)? = nil
     /// Aggregated reaction counts from DB (emoji → count). When provided, overrides local state.
@@ -226,6 +227,7 @@ struct MessageBubble: View {
     var onDeleteForMe: (() -> Void)? = nil
 
     private var isDeleted: Bool { message.deletedForAll == true }
+    private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
     private var linkURL: URL? {
         guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }
         return firstDetectedURL(in: body)
@@ -541,7 +543,7 @@ struct MessageBubble: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background(
-                isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+                isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .frame(maxWidth: 240)
@@ -563,7 +565,7 @@ struct MessageBubble: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+                .background(isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }

@@ -47,7 +47,11 @@ struct ChatView: View {
     @State var sendError: String? = nil
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
+    @State private var showThemePicker = false
     @StateObject private var audioRecorder = ChatAudioRecorder()
+
+    private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
 
     var propertyId: UUID? { propertyService.primary?.id }
 
@@ -95,7 +99,7 @@ struct ChatView: View {
     var body: some View {
         messageList
             .overlay(alignment: .bottom) { inputBar }
-            .background(appBackground.ignoresSafeArea())
+            .background(chatTheme.background)
         .sheet(item: $forwardingMessage) { msg in
             ForwardPicker(members: familyService.members) { dest in
                 Task { await forward(msg, to: dest) }
@@ -168,6 +172,9 @@ struct ChatView: View {
                 Menu {
                     Button { showStarred = true } label: {
                         Label("Starred messages", systemImage: "flag")
+                    }
+                    Button { showThemePicker = true } label: {
+                        Label("Conversation theme", systemImage: "paintpalette")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -245,6 +252,9 @@ struct ChatView: View {
                 showStarred = false
                 scrollTarget = id
             }
+        }
+        .sheet(isPresented: $showThemePicker) {
+            ChatThemePicker()
         }
         .alert("Edit message", isPresented: .init(
             get: { editingMessage != nil },
@@ -375,6 +385,7 @@ struct ChatView: View {
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
+                            outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
                             readers: messageService.reads[msg.id] ?? [],
                             persistedReactions: {
                                 let rows = messageService.reactions[msg.id] ?? []
