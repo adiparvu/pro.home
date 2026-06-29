@@ -199,7 +199,7 @@ struct ConversationsView: View {
                 navTarget = id
             } onAddMember: {
                 showNewConversation = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddMember = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddContact = true }
             }
         }
         .fullScreenCover(isPresented: $showStoryCamera) {
