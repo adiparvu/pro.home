@@ -234,10 +234,8 @@ struct MessageBubble: View {
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
 
     private var showsQuickForward: Bool {
-        guard onForward != nil, !isDeleted else { return false }
-        // Quick-forward arrow: on the leading (left) side of your own messages —
-        // "from where the message begins", like WhatsApp — and on received links.
-        return isOwn || linkURL != nil
+        // Forwarding is available only from the long-press menu — no inline arrow.
+        return false
     }
 
     private var forwardButton: some View {
