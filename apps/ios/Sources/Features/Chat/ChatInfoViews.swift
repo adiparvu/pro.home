@@ -1,6 +1,119 @@
 import SwiftUI
 import UIKit
 import LocalAuthentication
+import CoreImage.CIFilterBuiltins
+
+// MARK: - Invite via link / QR
+
+struct InviteLinkView: View {
+    let title: String
+    let link: String
+    @Environment(\.dismiss) private var dismiss
+
+    private func qrImage() -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(link.utf8)
+        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)) else { return nil }
+        let ctx = CIContext()
+        guard let cg = ctx.createCGImage(output, from: output.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 18) {
+                Text("Anyone with this link or QR code can join \(title).")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24).padding(.top, 8)
+
+                if let qr = qrImage() {
+                    Image(uiImage: qr)
+                        .interpolation(.none)
+                        .resizable()
+                        .frame(width: 220, height: 220)
+                        .padding(16)
+                        .liquidGlass(cornerRadius: 20)
+                }
+
+                Text(link)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+
+                HStack(spacing: 12) {
+                    Button {
+                        UIPasteboard.general.string = link; HapticFeedback.success()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .font(.system(size: 15, weight: .medium))
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .liquidGlass(cornerRadius: 14)
+                    }
+                    .buttonStyle(.plain)
+                    ShareLink(item: link) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                }
+                .padding(.horizontal, 16)
+
+                Spacer(minLength: 20)
+            }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Invite via link")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Media gallery (images shared in a conversation)
+
+struct MediaGalleryView: View {
+    let urls: [URL]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 3)
+    @State private var viewer: ImageViewerItem?
+
+    var body: some View {
+        Group {
+            if urls.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: "photo.on.rectangle.angled").font(.system(size: 34)).foregroundStyle(.secondary)
+                    Text("No media yet").font(.system(size: 14)).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 3) {
+                        ForEach(urls, id: \.self) { url in
+                            AsyncImage(url: url) { phase in
+                                if case .success(let img) = phase {
+                                    img.resizable().scaledToFill()
+                                } else {
+                                    Rectangle().fill(Color.primary.opacity(0.06))
+                                }
+                            }
+                            .frame(height: 120)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .onTapGesture { viewer = ImageViewerItem(url: url) }
+                        }
+                    }
+                    .padding(2)
+                }
+            }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Media")
+        .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(item: $viewer) { item in FullScreenImageViewer(url: item.url) }
+    }
+}
 
 // MARK: - Shared info bits
 
@@ -101,6 +214,7 @@ struct ContactDetailsView: View {
     var onSearch: () -> Void
     var onStarred: () -> Void
     var onTheme: () -> Void
+    var mediaURLs: [URL] = []
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
@@ -135,7 +249,13 @@ struct ContactDetailsView: View {
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 0) {
-                        InfoRow(icon: "photo.on.rectangle", label: "Media, links, docs") {}
+                        NavigationLink {
+                            MediaGalleryView(urls: mediaURLs)
+                        } label: {
+                            InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
+                                         value: mediaURLs.isEmpty ? nil : "\(mediaURLs.count)")
+                        }
+                        .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                     }
@@ -250,6 +370,8 @@ struct GroupDetailsView: View {
     var onSearch: () -> Void
     var onStarred: () -> Void
     var onTheme: () -> Void
+    var mediaURLs: [URL] = []
+    var inviteLink: String = ""
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
 
@@ -295,6 +417,23 @@ struct GroupDetailsView: View {
                     }
 
                     VStack(spacing: 0) {
+                        NavigationLink {
+                            MediaGalleryView(urls: mediaURLs)
+                        } label: {
+                            InfoRowLabel(icon: "photo.on.rectangle", label: "Media, links, docs",
+                                         value: mediaURLs.isEmpty ? nil : "\(mediaURLs.count)")
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
+                        if !inviteLink.isEmpty {
+                            NavigationLink {
+                                InviteLinkView(title: groupName, link: inviteLink)
+                            } label: {
+                                InfoRowLabel(icon: "link", label: "Invite via link or QR")
+                            }
+                            .buttonStyle(.plain)
+                            Divider().padding(.leading, 52)
+                        }
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                         Divider().padding(.leading, 52)
                         NavigationLink {

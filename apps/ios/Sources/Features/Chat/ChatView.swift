@@ -93,6 +93,12 @@ struct ChatView: View {
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
     }
+    private var sharedMediaURLs: [URL] {
+        messageService.messages.compactMap { m in
+            guard m.isImageMessage, let s = m.attachmentUrl else { return nil }
+            return URL(string: s)
+        }
+    }
     private var exportTranscript: String {
         ChatExport.transcript(title: "Group", lines: messageService.messages.map {
             (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
@@ -335,7 +341,9 @@ struct ChatView: View {
                 onAddMember: { showAddMember = true },
                 onSearch: { withAnimation(.spring(response: 0.3)) { showSearch = true } },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true }
+                onTheme: { showThemePicker = true },
+                mediaURLs: sharedMediaURLs,
+                inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")"
             )
         }
         .sheet(isPresented: $showAddMember) {

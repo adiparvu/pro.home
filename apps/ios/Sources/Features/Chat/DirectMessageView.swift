@@ -165,7 +165,8 @@ struct DirectMessageView: View {
                 onVideo: { showVideoSheet = true },
                 onSearch: { withAnimation { showSearch = true } },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true }
+                onTheme: { showThemePicker = true },
+                mediaURLs: sharedMediaURLs
             )
         }
         .sheet(isPresented: $showCallSheet) {
@@ -552,6 +553,15 @@ struct DirectMessageView: View {
     }
 
     // MARK: - Input Bar
+
+    private var sharedMediaURLs: [URL] {
+        conversationMessages.compactMap { m in
+            let b = m.body.lowercased()
+            guard b.contains("/dm-images/") || b.hasSuffix(".jpg") || b.hasSuffix(".jpeg") || b.hasSuffix(".png")
+            else { return nil }
+            return URL(string: m.body)
+        }
+    }
 
     private var exportTranscript: String {
         ChatExport.transcript(title: member.name, lines: conversationMessages.map {
