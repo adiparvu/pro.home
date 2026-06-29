@@ -409,20 +409,37 @@ struct DirectMessageView: View {
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in
-                                HStack {
-                                    Spacer(minLength: 72)
-                                    HStack(spacing: 6) {
-                                        Text(pm.body ?? "")
-                                            .font(.system(size: 15))
-                                            .foregroundStyle(.white)
-                                        Image(systemName: "clock")
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(.white.opacity(0.75))
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    HStack {
+                                        Spacer(minLength: 72)
+                                        HStack(spacing: 6) {
+                                            Text(pm.body ?? "")
+                                                .font(.system(size: 15))
+                                                .foregroundStyle(.white)
+                                            Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(.white.opacity(0.75))
+                                        }
+                                        .padding(.horizontal, 13).padding(.vertical, 9)
+                                        .background(chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+                                                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                        .opacity(0.85)
+                                        .onTapGesture { Task { await flushOutbox() } }
+                                        .contextMenu {
+                                            Button { Task { await flushOutbox() } } label: {
+                                                Label("Retry", systemImage: "arrow.clockwise")
+                                            }
+                                            Button(role: .destructive) { outbox.remove(pm.id) } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                     }
-                                    .padding(.horizontal, 13).padding(.vertical, 9)
-                                    .background(chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
-                                                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                    .opacity(0.85)
+                                    if !outbox.isOnline {
+                                        Text("Not delivered · tap to retry")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(Color.primary.opacity(0.45))
+                                            .padding(.trailing, 4)
+                                    }
                                 }
                             }
                             Color.clear.frame(height: 1).id("DM_BOTTOM")

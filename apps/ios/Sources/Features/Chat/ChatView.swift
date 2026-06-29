@@ -551,20 +551,37 @@ struct ChatView: View {
                     }
                     // Pending (offline) messages — shown optimistically with a clock.
                     ForEach(pendingOutbox) { pm in
-                        HStack {
-                            Spacer(minLength: 60)
-                            HStack(spacing: 6) {
-                                Text(pm.body ?? "")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
-                                Image(systemName: "clock")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.75))
+                        VStack(alignment: .trailing, spacing: 2) {
+                            HStack {
+                                Spacer(minLength: 60)
+                                HStack(spacing: 6) {
+                                    Text(pm.body ?? "")
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(.white)
+                                    Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.white.opacity(0.75))
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 9)
+                                .background(chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+                                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .opacity(0.85)
+                                .onTapGesture { Task { await flushOutbox() } }
+                                .contextMenu {
+                                    Button { Task { await flushOutbox() } } label: {
+                                        Label("Retry", systemImage: "arrow.clockwise")
+                                    }
+                                    Button(role: .destructive) { outbox.remove(pm.id) } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 9)
-                            .background(chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
-                                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .opacity(0.85)
+                            if !outbox.isOnline {
+                                Text("Not delivered · tap to retry")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color.primary.opacity(0.45))
+                                    .padding(.trailing, 4)
+                            }
                         }
                     }
                     // Clearance so the newest message rests above the overlaid
