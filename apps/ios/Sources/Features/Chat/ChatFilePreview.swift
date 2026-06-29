@@ -1,11 +1,10 @@
 import SwiftUI
-import QuickLook
-import UIKit
 
-// MARK: - File preview sheet
+// MARK: - Chat file preview sheet
 //
 // QuickLook can only preview *local* files, so a remote (Supabase Storage)
-// file is downloaded to a temp location first, then handed to QLPreviewController.
+// file is downloaded to a temp location first, then handed to the shared
+// QuickLookPreview representable (defined in Features/Blueprints).
 
 struct FilePreviewSheet: View {
     let url: URL
@@ -19,7 +18,7 @@ struct FilePreviewSheet: View {
         NavigationStack {
             ZStack {
                 if let localURL {
-                    QuickLookView(url: localURL)
+                    QuickLookPreview(url: localURL)
                         .ignoresSafeArea(edges: .bottom)
                 } else if failed {
                     VStack(spacing: 10) {
@@ -57,36 +56,6 @@ struct FilePreviewSheet: View {
             localURL = dest
         } catch {
             failed = true
-        }
-    }
-}
-
-// MARK: - QLPreviewController bridge
-
-private struct QuickLookView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
-
-    func makeUIViewController(context: Context) -> QLPreviewController {
-        let controller = QLPreviewController()
-        controller.dataSource = context.coordinator
-        return controller
-    }
-
-    func updateUIViewController(_ controller: QLPreviewController, context: Context) {
-        context.coordinator.url = url
-        controller.reloadData()
-    }
-
-    final class Coordinator: NSObject, QLPreviewControllerDataSource {
-        var url: URL
-        init(url: URL) { self.url = url }
-
-        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
-
-        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
-            url as NSURL
         }
     }
 }
