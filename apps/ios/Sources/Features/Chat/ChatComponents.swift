@@ -208,6 +208,7 @@ struct MessageBubble: View {
     let members: [FamilyMember]
     var outgoingColor: Color? = nil
     var readers: [MessageRead] = []
+    var deliverers: [MessageDelivery] = []
     var onDelete: (() -> Void)? = nil
     /// Aggregated reaction counts from DB (emoji → count). When provided, overrides local state.
     var persistedReactions: [String: Int] = [:]
@@ -274,6 +275,12 @@ struct MessageBubble: View {
         members.first { $0.name == message.senderName }
     }
     private var seen: Bool { !readers.isEmpty }
+    /// 3-state tick: read (someone read) > delivered (someone received) > sent.
+    private var tickStatus: ReadCheck.Status {
+        if !readers.isEmpty { return .read }
+        if !deliverers.isEmpty { return .delivered }
+        return .sent
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -492,7 +499,7 @@ struct MessageBubble: View {
                             .font(.system(size: 10))
                             .foregroundStyle(Color.primary.opacity(0.3))
                     }
-                    if !isDeleted { ReadCheck(seen: seen) }
+                    if !isDeleted { ReadCheck(status: tickStatus) }
                 }
                 .padding(.horizontal, 4)
             }
@@ -612,18 +619,22 @@ struct MessageBubble: View {
 // MARK: - Read Receipt Check
 
 private struct ReadCheck: View {
-    let seen: Bool
+    enum Status { case sent, delivered, read }
+    let status: Status
 
     var body: some View {
         ZStack(alignment: .leading) {
             Image(systemName: "checkmark")
                 .font(.system(size: 8, weight: .bold))
-            Image(systemName: "checkmark")
-                .font(.system(size: 8, weight: .bold))
-                .offset(x: 3.5)
+            // Single tick = sent; second tick appears once delivered/read.
+            if status != .sent {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .offset(x: 3.5)
+            }
         }
         .frame(width: 14, alignment: .leading)
-        .foregroundStyle(seen ? Color.blue : Color.primary.opacity(0.4))
+        .foregroundStyle(status == .read ? Color.blue : Color.primary.opacity(0.4))
     }
 }
 

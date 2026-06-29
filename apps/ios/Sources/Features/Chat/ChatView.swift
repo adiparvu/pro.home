@@ -216,7 +216,9 @@ struct ChatView: View {
             await messageService.load(propertyId: pid)
             messageService.resetUnread()
             await messageService.loadReads(propertyId: pid)
+            await messageService.loadDeliveries(propertyId: pid)
             await messageService.loadReactions(propertyId: pid)
+            await messageService.markDelivered(propertyId: pid, delivererName: senderName)
             await messageService.markRead(propertyId: pid, readerName: senderName)
         }
         .task {
@@ -227,6 +229,10 @@ struct ChatView: View {
         .task {
             guard let pid = propertyId else { return }
             await messageService.subscribeReads(propertyId: pid)
+        }
+        .task {
+            guard let pid = propertyId else { return }
+            await messageService.subscribeDeliveries(propertyId: pid)
         }
         .task {
             guard let pid = propertyId else { return }
@@ -250,6 +256,7 @@ struct ChatView: View {
             Task {
                 await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
+                await messageService.unsubscribeDeliveries()
                 await messageService.unsubscribeReactions()
             }
         }
@@ -492,6 +499,7 @@ struct ChatView: View {
                             members: familyService.members,
                             outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
                             readers: messageService.reads[msg.id] ?? [],
+                            deliverers: messageService.deliveries[msg.id] ?? [],
                             persistedReactions: {
                                 let rows = messageService.reactions[msg.id] ?? []
                                 return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
@@ -570,7 +578,10 @@ struct ChatView: View {
                     withAnimation { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
                 }
                 if let pid = propertyId {
-                    Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
+                    Task {
+                        await messageService.markDelivered(propertyId: pid, delivererName: senderName)
+                        await messageService.markRead(propertyId: pid, readerName: senderName)
+                    }
                 }
             }
             .onAppear {

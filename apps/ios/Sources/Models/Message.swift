@@ -117,3 +117,21 @@ struct MessageRead: Identifiable, Codable, Hashable {
         return out.string(from: d)
     }
 }
+
+struct MessageDelivery: Identifiable, Codable, Hashable {
+    let id: UUID
+    var messageId: UUID
+    var propertyId: UUID?
+    var userId: UUID?
+    var delivererName: String
+    var deliveredAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case messageId    = "message_id"
+        case propertyId   = "property_id"
+        case userId       = "user_id"
+        case delivererName = "deliverer_name"
+        case deliveredAt  = "delivered_at"
+    }
+}

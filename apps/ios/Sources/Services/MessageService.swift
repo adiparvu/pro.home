@@ -9,11 +9,14 @@ final class MessageService: ObservableObject {
     @Published var unreadCount = 0
     /// Read receipts grouped by message id (excludes the receipts I created for myself).
     @Published var reads: [UUID: [MessageRead]] = [:]
+    /// Delivery receipts grouped by message id (excludes my own device's receipts).
+    @Published var deliveries: [UUID: [MessageDelivery]] = [:]
     /// Emoji reactions grouped by message id.
     @Published var reactions: [UUID: [MessageReaction]] = [:]
 
     private var realtimeChannel: RealtimeChannelV2?
     private var readsChannel: RealtimeChannelV2?
+    private var deliveriesChannel: RealtimeChannelV2?
     private var reactionsChannel: RealtimeChannelV2?
 
     // MARK: - Typing indicator
@@ -261,6 +264,73 @@ final class MessageService: ObservableObject {
         if let ch = readsChannel {
             await supabase.realtimeV2.removeChannel(ch)
             readsChannel = nil
+        }
+    }
+
+    // MARK: - Delivery receipts
+
+    /// Loads delivery receipts for the property, grouped by message id
+    /// (excludes my own device's receipts so they count as "delivered to others").
+    func loadDeliveries(propertyId: UUID) async {
+        let myId = supabase.auth.currentSession?.user.id
+        guard let rows: [MessageDelivery] = try? await supabase
+            .from("message_deliveries")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        else { return }
+        let others = rows.filter { $0.userId != myId }
+        deliveries = Dictionary(grouping: others, by: { $0.messageId })
+    }
+
+    /// Records that my device received every message I didn't send (upsert, idempotent).
+    func markDelivered(propertyId: UUID, delivererName: String) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        let toMark = messages.filter { $0.senderId != uid }
+        guard !toMark.isEmpty else { return }
+
+        struct DeliveryUpsert: Encodable {
+            let message_id: String
+            let property_id: String
+            let user_id: String
+            let deliverer_name: String
+        }
+        let payload = toMark.map {
+            DeliveryUpsert(
+                message_id: $0.id.uuidString,
+                property_id: propertyId.uuidString,
+                user_id: uid.uuidString,
+                deliverer_name: delivererName
+            )
+        }
+        try? await supabase
+            .from("message_deliveries")
+            .upsert(payload, onConflict: "message_id,user_id", ignoreDuplicates: true)
+            .execute()
+    }
+
+    /// Subscribes to delivery changes so the sender's ticks advance live.
+    func subscribeDeliveries(propertyId: UUID) async {
+        let channel = await supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString)")
+        let changes = await channel.postgresChange(
+            InsertAction.self,
+            schema: "public",
+            table: "message_deliveries",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        )
+        await channel.subscribe()
+        deliveriesChannel = channel
+
+        for await _ in changes {
+            await loadDeliveries(propertyId: propertyId)
+        }
+    }
+
+    func unsubscribeDeliveries() async {
+        if let ch = deliveriesChannel {
+            await supabase.realtimeV2.removeChannel(ch)
+            deliveriesChannel = nil
         }
     }
 
