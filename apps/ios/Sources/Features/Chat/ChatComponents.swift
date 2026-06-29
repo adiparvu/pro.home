@@ -337,7 +337,8 @@ struct MessageBubble: View {
                 if !displayReactions.isEmpty, !isDeleted {
                     reactionPills
                 }
-                statusRow
+                // Audio bubbles render their own time + ticks inside.
+                if !message.isAudioMessage { statusRow }
             }
 
             if !isOwn {
@@ -575,7 +576,14 @@ struct MessageBubble: View {
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-            AudioBubble(url: url, isOwn: isOwn)
+            AudioBubble(
+                url: url, isOwn: isOwn,
+                avatarURL: sender?.avatarUrl.flatMap { URL(string: $0) },
+                initials: sender?.initials ?? String(message.senderName.prefix(2)).uppercased(),
+                avatarColor: sender?.swiftColor ?? Color.gray,
+                timeText: message.timeDisplay,
+                tick: isOwn ? (tickStatus == .read ? .read : (tickStatus == .delivered ? .delivered : .sent)) : .none
+            )
         } else if message.isFileMessage {
             HStack(spacing: 10) {
                 Image(systemName: "doc.fill")

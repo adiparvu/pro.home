@@ -390,6 +390,8 @@ struct DirectMessageView: View {
                                     isOwn: isOwn,
                                     showSenderBubbleTail: !prevSameSender || showDate,
                                     myName: myName,
+                                    partner: member,
+                                    myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                                     outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
                                     repliedMessage: msg.replyTo.flatMap { rid in
                                         conversationMessages.first { $0.id == rid }
@@ -1057,6 +1059,8 @@ private struct DMBubble: View {
     let isOwn: Bool
     let showSenderBubbleTail: Bool
     var myName: String = ""
+    var partner: FamilyMember? = nil
+    var myAvatarURL: URL? = nil
     var outgoingColor: Color? = nil
     var repliedMessage: DirectMessage? = nil
     var onReact: ((String) -> Void)? = nil
@@ -1127,7 +1131,18 @@ private struct DMBubble: View {
                 Group {
                     switch messageType {
                     case .deleted: deletedBubble
-                    case .audio: AudioBubble(url: URL(string: message.body), isOwn: isOwn)
+                    case .audio:
+                        AudioBubble(
+                            url: URL(string: message.body), isOwn: isOwn,
+                            avatarURL: isOwn ? myAvatarURL : partner?.avatarUrl.flatMap { URL(string: $0) },
+                            initials: isOwn
+                                ? String(myName.prefix(2)).uppercased()
+                                : (partner?.initials ?? String(message.senderName.prefix(2)).uppercased()),
+                            avatarColor: isOwn ? Color.accentColor : (partner?.swiftColor ?? Color.gray),
+                            timeText: message.timeDisplay,
+                            tick: isOwn ? (message.readAt != nil ? .read
+                                           : (message.deliveredAt != nil ? .delivered : .sent)) : .none
+                        )
                     case .image: imageBubble
                     case .text:  textBubble
                     }
@@ -1153,7 +1168,8 @@ private struct DMBubble: View {
 
                 if !reactionCounts.isEmpty { reactionPills }
 
-                statusRow
+                // Audio bubbles render their own time + ticks inside.
+                if messageType != .audio { statusRow }
             }
 
             if !isOwn {

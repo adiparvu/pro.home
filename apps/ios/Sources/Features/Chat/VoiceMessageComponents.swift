@@ -165,56 +165,34 @@ struct VoiceRecordButton: View {
 struct AudioBubble: View {
     let url: URL?
     let isOwn: Bool
+    var avatarURL: URL? = nil
+    var initials: String = ""
+    var avatarColor: Color = .secondary
+    var timeText: String = ""
+    var tick: AudioTick = .none
+
+    enum AudioTick { case none, sent, delivered, read }
 
     @StateObject private var player = AudioPlayer()
     @State private var loadedDuration: TimeInterval = 0
 
+    private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(0.5) }
+
     var body: some View {
         HStack(spacing: 10) {
-            Button {
-                if player.isPlaying { player.pause() }
-                else if let url { player.play(url: url) }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(isOwn ? Color.white.opacity(0.25) : Color.accentColor.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isOwn ? .white : Color.accentColor)
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(url == nil)
-
-            VoiceWaveform(progress: player.progress, isOwn: isOwn, seed: Self.seed(for: url))
-                .frame(height: 22)
-
-            Text(player.isPlaying ? player.positionText : durationText)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(isOwn ? Color.white.opacity(0.75) : Color.primary.opacity(0.5))
-                .frame(width: 34, alignment: .trailing)
-
-            if player.isPlaying {
-                Button { player.cycleRate() } label: {
-                    Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(isOwn ? .white : Color.accentColor)
-                        .padding(.horizontal, 6).padding(.vertical, 3)
-                        .background(
-                            (isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)),
-                            in: Capsule()
-                        )
-                }
-                .buttonStyle(.plain)
+            avatar
+            playButton
+            VStack(alignment: .leading, spacing: 5) {
+                waveform
+                bottomRow
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 9)
         .background(
             isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
-        .frame(minWidth: 180, maxWidth: 240)
+        .frame(minWidth: 230, maxWidth: 290)
         .task {
             guard let url, loadedDuration == 0 else { return }
             let asset = AVURLAsset(url: url)
@@ -227,6 +205,123 @@ struct AudioBubble: View {
             }
         }
         .onDisappear { player.stop() }
+    }
+
+    // Sender avatar with the WhatsApp-style mic badge.
+    private var avatar: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if let avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if case .success(let img) = phase {
+                            img.resizable().scaledToFill()
+                        } else {
+                            avatarPlaceholder
+                        }
+                    }
+                } else {
+                    avatarPlaceholder
+                }
+            }
+            .frame(width: 46, height: 46)
+            .clipShape(Circle())
+
+            Image(systemName: "mic.fill")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(isOwn ? Color.blue : Color.accentColor)
+                .padding(4)
+                .background(Circle().fill(.white))
+                .offset(x: 3, y: 3)
+        }
+    }
+
+    private var avatarPlaceholder: some View {
+        Circle().fill(avatarColor.opacity(0.25))
+            .overlay(
+                Text(initials)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(avatarColor)
+            )
+    }
+
+    private var playButton: some View {
+        Button {
+            if player.isPlaying { player.pause() }
+            else if let url { player.play(url: url) }
+        } label: {
+            Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(isOwn ? .white : Color.accentColor)
+                .frame(width: 26)
+        }
+        .buttonStyle(.plain)
+        .disabled(url == nil)
+    }
+
+    // Waveform with a draggable scrubber dot.
+    private var waveform: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                VoiceWaveform(progress: player.progress, isOwn: isOwn, seed: Self.seed(for: url))
+                Circle()
+                    .fill(isOwn ? Color.white : Color.accentColor)
+                    .frame(width: 11, height: 11)
+                    .offset(x: max(0, min(geo.size.width - 11, geo.size.width * player.progress - 5.5)))
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { v in
+                        guard geo.size.width > 0 else { return }
+                        player.seek(toFraction: Double(v.location.x / geo.size.width))
+                    }
+            )
+        }
+        .frame(height: 26)
+    }
+
+    private var bottomRow: some View {
+        HStack(spacing: 6) {
+            Text(player.isPlaying ? player.positionText : durationText)
+                .font(.system(size: 11))
+                .foregroundStyle(subFg)
+            if player.isPlaying {
+                Button { player.cycleRate() } label: {
+                    Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(isOwn ? .white : Color.accentColor)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 4)
+            if !timeText.isEmpty {
+                Text(timeText)
+                    .font(.system(size: 10))
+                    .foregroundStyle(subFg)
+            }
+            tickView
+        }
+    }
+
+    @ViewBuilder private var tickView: some View {
+        switch tick {
+        case .none:
+            EmptyView()
+        case .sent:
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(subFg)
+        case .delivered, .read:
+            ZStack(alignment: .leading) {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).offset(x: 3.5)
+            }
+            .frame(width: 14, alignment: .leading)
+            .foregroundStyle(tick == .read ? .white : subFg)
+        }
     }
 
     private var durationText: String {
@@ -332,6 +427,15 @@ final class AudioPlayer: ObservableObject {
 
         avPlayer.playImmediately(atRate: rate)
         isPlaying = true
+    }
+
+    /// Seeks to a 0...1 fraction of the clip (used by the waveform scrubber).
+    func seek(toFraction f: Double) {
+        let frac = Swift.min(Swift.max(f, 0), 1)
+        progress = frac
+        position = totalDuration * frac
+        guard let player, totalDuration > 0 else { return }
+        player.seek(to: CMTime(seconds: totalDuration * frac, preferredTimescale: 600))
     }
 
     /// Cycles playback speed 1× → 1.5× → 2× → 1×, applying it live if playing.
