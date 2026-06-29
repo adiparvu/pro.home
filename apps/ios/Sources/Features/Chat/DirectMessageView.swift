@@ -27,6 +27,8 @@ struct DirectMessageView: View {
     @State private var showThemePicker = false
     @State private var scrollTarget: UUID? = nil
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
+    @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
+    @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
@@ -62,7 +64,7 @@ struct DirectMessageView: View {
         input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
     private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
     private var pendingOutbox: [PendingMessage] {
         outbox.pending
@@ -272,7 +274,7 @@ struct DirectMessageView: View {
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
             isOwn: own,
-            bubbleColor: chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+            bubbleColor: chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
             myReaction: m.reactions?[myName],
             onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
             actions: dmMessageActions(m, own: own),
@@ -392,7 +394,7 @@ struct DirectMessageView: View {
                                     myName: myName,
                                     partner: member,
                                     myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
-                                    outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
+                                    outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
                                     repliedMessage: msg.replyTo.flatMap { rid in
                                         conversationMessages.first { $0.id == rid }
                                     },
@@ -423,7 +425,7 @@ struct DirectMessageView: View {
                                                 .foregroundStyle(.white.opacity(0.75))
                                         }
                                         .padding(.horizontal, 13).padding(.vertical, 9)
-                                        .background(chatThemeID == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+                                        .background(chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
                                                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                         .opacity(0.85)
                                         .onTapGesture { Task { await flushOutbox() } }

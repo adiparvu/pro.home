@@ -56,11 +56,13 @@ struct ChatView: View {
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
+    @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
+    @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
     @StateObject private var audioRecorder = ChatAudioRecorder()
     @StateObject var outbox = OfflineOutbox()
 
-    private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
     private var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
         return outbox.pending(for: pid)
@@ -99,7 +101,7 @@ struct ChatView: View {
         ChatActionOverlay(
             previewText: pinnedSnippet(m),
             isOwn: own,
-            bubbleColor: chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+            bubbleColor: chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
             myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
             onReact: { e in
                 if let pid = propertyId {
@@ -514,7 +516,7 @@ struct ChatView: View {
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
-                            outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
+                            outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
                             readers: messageService.reads[msg.id] ?? [],
                             deliverers: messageService.deliveries[msg.id] ?? [],
                             persistedReactions: {
@@ -563,7 +565,7 @@ struct ChatView: View {
                                         .foregroundStyle(.white.opacity(0.75))
                                 }
                                 .padding(.horizontal, 14).padding(.vertical, 9)
-                                .background(chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+                                .background(chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
                                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 .opacity(0.85)
                                 .onTapGesture { Task { await flushOutbox() } }
