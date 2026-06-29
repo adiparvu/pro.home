@@ -50,6 +50,7 @@ private struct DetailsCard<Header: View>: View {
     let themeID: String
     let createdAt: String
     let readTime: String?
+    var deliveredTime: String?
     @ViewBuilder let header: () -> Header
     @Environment(\.dismiss) private var dismiss
 
@@ -76,7 +77,7 @@ private struct DetailsCard<Header: View>: View {
                 VStack(spacing: 0) {
                     DetailRow(read: true, label: "Read", dateTime: readTime)
                     Divider().padding(.leading, 50)
-                    DetailRow(read: false, label: "Delivered", dateTime: detailDateTime(createdAt))
+                    DetailRow(read: false, label: "Delivered", dateTime: deliveredTime)
                 }
                 .background(Color(.secondarySystemGroupedBackground),
                             in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -123,7 +124,8 @@ struct MessageDetailsView: View {
     }
 
     var body: some View {
-        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime) {
+        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
+                    deliveredTime: detailDateTime(message.createdAt)) {
             HStack {
                 Spacer(minLength: 50)
                 VStack(alignment: .trailing, spacing: 3) {
@@ -160,6 +162,9 @@ struct DMMessageDetailsView: View {
         guard let r = message.readAt else { return nil }
         return detailDateTime(r)
     }
+    private var deliveredTime: String? {
+        message.deliveredAt.map(detailDateTime)
+    }
     private var summary: String {
         let lower = message.body.lowercased()
         if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
@@ -168,7 +173,8 @@ struct DMMessageDetailsView: View {
     }
 
     var body: some View {
-        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime) {
+        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
+                    deliveredTime: deliveredTime) {
             HStack {
                 if isOwn { Spacer(minLength: 50) }
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {

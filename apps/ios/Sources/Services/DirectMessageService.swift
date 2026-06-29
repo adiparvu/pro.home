@@ -16,6 +16,7 @@ struct DirectMessage: Identifiable, Codable {
     var isMarked: Bool?
     var reactions: [String: String]?
     var readAt: String?
+    var deliveredAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, body, pinned, reactions
@@ -27,6 +28,7 @@ struct DirectMessage: Identifiable, Codable {
         case editedAt      = "edited_at"
         case isMarked      = "is_marked"
         case readAt        = "read_at"
+        case deliveredAt   = "delivered_at"
     }
 
     var timeDisplay: String {
@@ -120,9 +122,32 @@ final class DirectMessageService: ObservableObject {
                 .limit(1000)
                 .execute()
                 .value
+            // Anything addressed to us that this device just fetched counts as
+            // delivered — stamp it so the sender's ticks advance to "delivered".
+            await markDelivered(myName: myName)
         } catch {
             // table may not exist yet — fail silently
         }
+    }
+
+    /// Marks all messages addressed to `myName` as delivered (best-effort).
+    /// Idempotent: only touches rows that have no delivered_at yet, so the
+    /// realtime update it triggers settles after one extra reload.
+    func markDelivered(myName: String) async {
+        let undelivered = dms.filter {
+            $0.recipientName == myName && $0.deliveredAt == nil
+        }
+        guard !undelivered.isEmpty else { return }
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        for m in undelivered {
+            try? await supabase
+                .from("direct_messages")
+                .update(["delivered_at": nowISO])
+                .eq("id", value: m.id.uuidString)
+                .execute()
+            if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].deliveredAt = nowISO }
+        }
+        objectWillChange.send()
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
@@ -281,12 +306,19 @@ final class DirectMessageService: ObservableObject {
         guard !unread.isEmpty else { return }
         let nowISO = ISO8601DateFormatter().string(from: Date())
         for m in unread {
+            // Read implies delivered — backfill delivered_at if it was never set
+            // so the ticks/details never show "read" without a "delivered".
+            var payload = ["read_at": nowISO]
+            if m.deliveredAt == nil { payload["delivered_at"] = nowISO }
             try? await supabase
                 .from("direct_messages")
-                .update(["read_at": nowISO])
+                .update(payload)
                 .eq("id", value: m.id.uuidString)
                 .execute()
-            if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].readAt = nowISO }
+            if let i = dms.firstIndex(where: { $0.id == m.id }) {
+                dms[i].readAt = nowISO
+                if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
+            }
         }
         objectWillChange.send()
     }

@@ -1255,7 +1255,8 @@ private struct DMBubble: View {
                     .foregroundStyle(.orange.opacity(0.7))
             }
             if isOwn, messageType != .deleted {
-                DMReadCheck(seen: message.readAt != nil)
+                DMReadCheck(status: message.readAt != nil ? .read
+                                    : (message.deliveredAt != nil ? .delivered : .sent))
             }
         }
         .padding(.horizontal, 2)
@@ -1344,15 +1345,19 @@ private struct DMBubble: View {
 // MARK: - DM Read Receipt Check
 
 private struct DMReadCheck: View {
-    let seen: Bool
+    enum Status { case sent, delivered, read }
+    let status: Status
 
     var body: some View {
         ZStack(alignment: .leading) {
             Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
-            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).offset(x: 3.5)
+            // Single tick = sent; second tick appears once delivered/read.
+            if status != .sent {
+                Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).offset(x: 3.5)
+            }
         }
         .frame(width: 14, alignment: .leading)
-        .foregroundStyle(seen ? Color.blue : Color.primary.opacity(0.4))
+        .foregroundStyle(status == .read ? Color.blue : Color.primary.opacity(0.4))
     }
 }
 
