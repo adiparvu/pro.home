@@ -3,6 +3,7 @@ import UIKit
 import PhotosUI
 import LocalAuthentication
 import CoreImage.CIFilterBuiltins
+import AudioToolbox
 
 // MARK: - Group description + member labels (local)
 
@@ -1220,12 +1221,12 @@ struct ConversationNotificationsView: View {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     Divider().padding(.leading, 52)
                     tonePicker(icon: "bell.badge", label: "Alert tone",
-                               options: ChatToneStore.alertTones, selection: $alertTone)
+                               options: ChatToneStore.alertTones, selection: $alertTone, isCall: false)
                 }
 
                 section("Calls") {
                     tonePicker(icon: "phone.badge.waveform", label: "Ringtone",
-                               options: ChatToneStore.callTones, selection: $callTone)
+                               options: ChatToneStore.callTones, selection: $callTone, isCall: true)
                 }
             }
             .padding(.top, 8)
@@ -1256,27 +1257,93 @@ struct ConversationNotificationsView: View {
         }
     }
 
-    private func tonePicker(icon: String, label: String, options: [String], selection: Binding<String>) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
-            Text(LocalizedStringKey(label)).font(.system(size: 16))
-            Spacer()
-            Menu {
-                ForEach(options, id: \.self) { opt in
-                    Button(opt) { selection.wrappedValue = opt }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(0.45))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.3))
-                }
-                .font(.system(size: 15))
+    private func tonePicker(icon: String, label: String, options: [String], selection: Binding<String>, isCall: Bool) -> some View {
+        NavigationLink {
+            TonePickerView(title: label, options: options, selection: selection, isCall: isCall)
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                Text(LocalizedStringKey(label)).font(.system(size: 16)).foregroundStyle(.primary)
+                Spacer()
+                Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(0.45)).font(.system(size: 15))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.25))
             }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Tone preview + picker
+
+enum ChatTonePreview {
+    // Short iOS system sounds used as previews. Each id is a distinct built-in
+    // alert so the user can tell the options apart before saving.
+    private static let alertIDs: [String: SystemSoundID] = [
+        "Default": 1007, "Note": 1005, "Chime": 1008, "Glass": 1009, "Bamboo": 1013
+    ]
+    private static let callIDs: [String: SystemSoundID] = [
+        "Default": 1151, "Classic": 1152, "Reflection": 1153, "Radar": 1154
+    ]
+    static func play(_ name: String, isCall: Bool) {
+        guard name != "None" else { return }
+        let id = (isCall ? callIDs[name] : alertIDs[name]) ?? 1007
+        AudioServicesPlaySystemSound(id)
+    }
+}
+
+/// Tone list where tapping a row plays a preview and selects it. The selection
+/// binding is persisted by the parent's onChange, so there is no separate save.
+struct TonePickerView: View {
+    let title: String
+    let options: [String]
+    @Binding var selection: String
+    var isCall: Bool = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                ForEach(options, id: \.self) { opt in
+                    Button {
+                        selection = opt
+                        ChatTonePreview.play(opt, isCall: isCall)
+                        HapticFeedback.selection()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: opt == "None" ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                                .font(.system(size: 15))
+                                .foregroundStyle(opt == "None" ? Color.primary.opacity(0.4) : Color.accentColor)
+                                .frame(width: 24)
+                            Text(LocalizedStringKey(opt)).font(.system(size: 16)).foregroundStyle(.primary)
+                            Spacer()
+                            if selection == opt {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if opt != options.last { Divider().padding(.leading, 52) }
+                }
+            }
+            .liquidGlass(cornerRadius: 16)
+            .padding(16)
+
+            Text("Atinge un ton ca să-l asculți. Selecția se salvează automat.")
+                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 22)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle(LocalizedStringKey(title))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

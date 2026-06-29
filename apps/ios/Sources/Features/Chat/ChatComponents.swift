@@ -313,16 +313,18 @@ struct MessageBubble: View {
                         }
                     }
                     .gesture(
-                        DragGesture(minimumDistance: 18)
+                        DragGesture(minimumDistance: 12)
                             .onChanged { v in
                                 guard !isDeleted else { return }
-                                // right = reply, left = details; clamp the rubber-band
+                                // Only engage on a clearly horizontal drag so the
+                                // vertical scroll keeps working. Right = reply, left = details.
+                                guard abs(v.translation.width) > abs(v.translation.height) else { return }
                                 swipeOffset = max(-70, min(70, v.translation.width))
                             }
                             .onEnded { v in
                                 guard !isDeleted else { return }
-                                if v.translation.width > 55 { onReply?(); HapticFeedback.impact(.light) }
-                                else if v.translation.width < -55 { showDetails = true; HapticFeedback.impact(.light) }
+                                if v.translation.width > 44 { onReply?(); HapticFeedback.impact(.light) }
+                                else if v.translation.width < -60 { showDetails = true; HapticFeedback.impact(.light) }
                                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                             }
                     )
