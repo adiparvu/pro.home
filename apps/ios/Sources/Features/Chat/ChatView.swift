@@ -349,7 +349,8 @@ struct ChatView: View {
                 onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
                 inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
-                propertyId: propertyId
+                propertyId: propertyId,
+                exportText: exportTranscript
             )
             .environmentObject(propertyService)
         }

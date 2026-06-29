@@ -586,12 +586,14 @@ struct GroupDetailsView: View {
     var mediaURLs: [URL] = []
     var inviteLink: String = ""
     var propertyId: UUID? = nil
+    var exportText: String = ""
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var photoItem: PhotosPickerItem?
     @State private var description = ""
     @State private var showEditDescription = false
+    @State private var showEditDetails = false
     @State private var editingLabelId: String?
     @State private var labelRefresh = false
 
@@ -744,7 +746,40 @@ struct GroupDetailsView: View {
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 14) {
+                        if !inviteLink.isEmpty {
+                            NavigationLink {
+                                InviteLinkView(title: groupName, link: inviteLink)
+                            } label: {
+                                Image(systemName: "qrcode").font(.system(size: 16, weight: .semibold))
+                            }
+                        }
+                        Menu {
+                            Button { showEditDetails = true } label: {
+                                Label("Editează numele și imaginea", systemImage: "pencil")
+                            }
+                            Button { showEditDescription = true } label: {
+                                Label("Editează descrierea", systemImage: "square.and.pencil")
+                            }
+                            if !exportText.isEmpty {
+                                ShareLink(item: exportText) {
+                                    Label("Exportă conversația", systemImage: "square.and.arrow.up")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showEditDetails) {
+                EditGroupDetailsSheet(currentName: groupName, photoUrl: photoUrl,
+                                      members: members, propertyId: propertyId)
+                    .environmentObject(propertyService)
+            }
             .onAppear {
                 muted = ChatMuteStore.isMuted("group")
                 description = GroupDescriptionStore.text()
@@ -807,6 +842,115 @@ struct GroupDetailsView: View {
                 MemberLabelStore.set(labelId, newText); labelRefresh.toggle()
             }
         }
+    }
+}
+
+// MARK: - Edit group name + image (WhatsApp "Editează numele și imaginea")
+
+struct EditGroupDetailsSheet: View {
+    let currentName: String
+    let photoUrl: String?
+    let members: [FamilyMember]
+    var propertyId: UUID?
+    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String
+    @State private var photoItem: PhotosPickerItem?
+    @State private var pickedImage: UIImage?
+    @State private var saving = false
+    @FocusState private var focused: Bool
+
+    init(currentName: String, photoUrl: String?, members: [FamilyMember], propertyId: UUID?) {
+        self.currentName = currentName
+        self.photoUrl = photoUrl
+        self.members = members
+        self.propertyId = propertyId
+        _name = State(initialValue: currentName)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        ZStack(alignment: .bottomTrailing) {
+                            Group {
+                                if let pickedImage {
+                                    Image(uiImage: pickedImage).resizable().scaledToFill()
+                                } else {
+                                    GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                                }
+                            }
+                            .frame(width: 120, height: 120)
+                            .clipShape(Circle())
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 13)).foregroundStyle(.white)
+                                .padding(8).background(Circle().fill(Color.accentColor))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 16)
+
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Text("Editează").font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+
+                    HStack(spacing: 8) {
+                        TextField("Numele grupului", text: $name)
+                            .font(.system(size: 17))
+                            .focused($focused)
+                        if !name.isEmpty {
+                            Button { name = "" } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(Color.primary.opacity(0.3))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 14)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, 16)
+
+                    Spacer(minLength: 40)
+                }
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Editează detaliile grupului")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button { Task { await save() } } label: {
+                        if saving { ProgressView() }
+                        else { Image(systemName: "checkmark").fontWeight(.semibold) }
+                    }
+                    .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onChange(of: photoItem) { _, item in
+                guard let item else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let img = UIImage(data: data) { pickedImage = img }
+                }
+            }
+        }
+    }
+
+    private func save() async {
+        saving = true
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if var p = propertyService.primary, !trimmed.isEmpty, trimmed != p.name {
+            p.name = trimmed
+            await propertyService.update(p)
+        }
+        if let img = pickedImage, let pid = propertyId {
+            await propertyService.uploadPhoto(propertyId: pid, image: img)
+        }
+        saving = false
+        dismiss()
     }
 }
 
