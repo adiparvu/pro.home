@@ -343,8 +343,10 @@ struct ChatView: View {
                 onStarred: { showStarred = true },
                 onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
-                inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")"
+                inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
+                propertyId: propertyId
             )
+            .environmentObject(propertyService)
         }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)

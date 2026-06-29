@@ -1,7 +1,52 @@
 import SwiftUI
 import UIKit
+import PhotosUI
 import LocalAuthentication
 import CoreImage.CIFilterBuiltins
+
+// MARK: - Group description + member labels (local)
+
+enum GroupDescriptionStore {
+    static func text() -> String { UserDefaults.standard.string(forKey: "group.description") ?? "" }
+    static func set(_ t: String) { UserDefaults.standard.set(t, forKey: "group.description") }
+}
+
+enum MemberLabelStore {
+    static func label(_ memberId: String) -> String { UserDefaults.standard.string(forKey: "member.label.\(memberId)") ?? "" }
+    static func set(_ memberId: String, _ t: String) { UserDefaults.standard.set(t, forKey: "member.label.\(memberId)") }
+}
+
+/// Reusable editor sheet for short text (group description, member label, …).
+struct EditTextSheet: View {
+    let title: String
+    @State var text: String
+    let onSave: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .topLeading) {
+                appBackground.ignoresSafeArea()
+                TextEditor(text: $text)
+                    .focused($focused)
+                    .font(.system(size: 16))
+                    .scrollContentBackground(.hidden)
+                    .padding(16)
+            }
+            .navigationTitle(LocalizedStringKey(title))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
+                }
+            }
+            .onAppear { focused = true }
+        }
+        .presentationDetents([.medium])
+    }
+}
 
 // MARK: - Group permissions
 
@@ -502,19 +547,48 @@ struct GroupDetailsView: View {
     var onTheme: () -> Void
     var mediaURLs: [URL] = []
     var inviteLink: String = ""
+    var propertyId: UUID? = nil
+    @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var description = ""
+    @State private var showEditDescription = false
+    @State private var editingLabelId: String?
+    @State private var labelRefresh = false
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     VStack(spacing: 10) {
-                        GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
-                            .frame(width: 110, height: 110)
+                        PhotosPicker(selection: $photoItem, matching: .images) {
+                            ZStack(alignment: .bottomTrailing) {
+                                GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                                    .frame(width: 110, height: 110)
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 13)).foregroundStyle(.white)
+                                    .padding(8).background(Circle().fill(Color.accentColor))
+                            }
+                        }
+                        .buttonStyle(.plain)
                         Text(groupName)
                             .font(.system(size: 24, weight: .bold))
                             .multilineTextAlignment(.center)
+
+                        Button { showEditDescription = true } label: {
+                            if description.isEmpty {
+                                Label("Add group description", systemImage: "pencil")
+                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                            } else {
+                                Text(description)
+                                    .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 24)
+
                         Text("Group · \(members.count + 1) members")
                             .font(.system(size: 15))
                             .foregroundStyle(Color.primary.opacity(0.5))
@@ -539,7 +613,7 @@ struct GroupDetailsView: View {
                             memberRow(name: "You", member: nil, admin: true)
                             ForEach(members) { m in
                                 Divider().padding(.leading, 64)
-                                memberRow(name: m.name, member: m, admin: false)
+                                memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
                             }
                         }
                         .liquidGlass(cornerRadius: 14)
@@ -633,30 +707,68 @@ struct GroupDetailsView: View {
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .onAppear { muted = ChatMuteStore.isMuted("group") }
+            .onAppear {
+                muted = ChatMuteStore.isMuted("group")
+                description = GroupDescriptionStore.text()
+            }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted("group", m) }
+            .onChange(of: photoItem) { _, item in
+                guard let item, let pid = propertyId else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let img = UIImage(data: data) {
+                        await propertyService.uploadPhoto(propertyId: pid, image: img)
+                    }
+                }
+            }
+            .sheet(isPresented: $showEditDescription) {
+                EditTextSheet(title: "Group description", text: description) { newText in
+                    description = newText
+                    GroupDescriptionStore.set(newText)
+                }
+            }
         }
     }
 
     @ViewBuilder
     private func memberRow(name: String, member: FamilyMember?, admin: Bool) -> some View {
-        HStack(spacing: 12) {
-            if let m = member {
-                MemberCircleAvatarLarge(member: m).frame(width: 44, height: 44)
-            } else {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.18))
-                    Image(systemName: "person.fill").foregroundStyle(Color.accentColor)
+        let labelId = member?.id.uuidString ?? "you"
+        let label = MemberLabelStore.label(labelId)
+        Button { editingLabelId = labelId } label: {
+            HStack(spacing: 12) {
+                if let m = member {
+                    MemberCircleAvatarLarge(member: m).frame(width: 44, height: 44)
+                } else {
+                    ZStack {
+                        Circle().fill(Color.accentColor.opacity(0.18))
+                        Image(systemName: "person.fill").foregroundStyle(Color.accentColor)
+                    }
+                    .frame(width: 44, height: 44)
                 }
-                .frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name).font(.system(size: 16, weight: .medium)).foregroundStyle(.primary)
+                    if label.isEmpty {
+                        Text("Add a member label")
+                            .font(.system(size: 12)).foregroundStyle(Color.accentColor)
+                    } else {
+                        Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    }
+                }
+                Spacer()
+                if admin {
+                    Text("Admin").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
+                }
             }
-            Text(name).font(.system(size: 16, weight: .medium))
-            Spacer()
-            if admin {
-                Text("Admin").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .id(labelRefresh)
+        .sheet(isPresented: Binding(get: { editingLabelId == labelId }, set: { if !$0 { editingLabelId = nil } })) {
+            EditTextSheet(title: "Member label", text: label) { newText in
+                MemberLabelStore.set(labelId, newText); labelRefresh.toggle()
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 }
 
