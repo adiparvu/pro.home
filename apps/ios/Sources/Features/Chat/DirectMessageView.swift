@@ -1194,7 +1194,8 @@ private struct DMBubble: View {
                             avatarColor: isOwn ? Color.accentColor : (partner?.swiftColor ?? Color.gray),
                             timeText: message.timeDisplay,
                             tick: isOwn ? (message.readAt != nil ? .read
-                                           : (message.deliveredAt != nil ? .delivered : .sent)) : .none
+                                           : (message.deliveredAt != nil ? .delivered : .sent)) : .none,
+                            bubbleColor: outgoingColor ?? Color.accentColor
                         )
                     case .image: imageBubble
                     case .text:  textBubble
@@ -1210,7 +1211,7 @@ private struct DMBubble: View {
                     }
                 }
                 .gesture(swipeGesture)
-                .onLongPressGesture(minimumDuration: 0.35) {
+                .onLongPressGesture(minimumDuration: 0.22) {
                     HapticFeedback.impact(.medium)
                     onLongPress?()
                 }

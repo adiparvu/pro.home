@@ -170,6 +170,8 @@ struct AudioBubble: View {
     var avatarColor: Color = .secondary
     var timeText: String = ""
     var tick: AudioTick = .none
+    /// Outgoing-bubble fill — driven by the selected chat theme.
+    var bubbleColor: Color = Color.blue.opacity(0.75)
 
     enum AudioTick { case none, sent, delivered, read }
 
@@ -189,7 +191,7 @@ struct AudioBubble: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
         .background(
-            isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+            isOwn ? bubbleColor : Color.primary.opacity(0.08),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
         .frame(minWidth: 230, maxWidth: 290)
@@ -228,7 +230,7 @@ struct AudioBubble: View {
 
             Image(systemName: "mic.fill")
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(isOwn ? Color.blue : Color.accentColor)
+                .foregroundStyle(isOwn ? bubbleColor.opacity(1) : Color.accentColor)
                 .padding(4)
                 .background(Circle().fill(.white))
                 .offset(x: 3, y: 3)

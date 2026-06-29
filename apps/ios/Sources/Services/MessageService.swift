@@ -243,17 +243,28 @@ final class MessageService: ObservableObject {
     func togglePin(_ message: Message) async {
         let newValue = !(message.pinned ?? false)
         if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].pinned = newValue }
-        struct P: Encodable { let pinned: Bool }
-        try? await supabase.from("messages").update(P(pinned: newValue))
-            .eq("id", value: message.id.uuidString).execute()
+        // Pins are group-wide, so go through a SECURITY DEFINER RPC that authorises
+        // on property membership — the table's RLS only lets you update your own rows.
+        struct P: Encodable { let p_message_id: String; let p_pinned: Bool }
+        do {
+            try await supabase.rpc("set_message_pinned",
+                                   params: P(p_message_id: message.id.uuidString, p_pinned: newValue)).execute()
+        } catch {
+            // Roll back the optimistic toggle if the write was rejected.
+            if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].pinned = !newValue }
+        }
     }
 
     func toggleMark(_ message: Message) async {
         let newValue = !(message.isMarked ?? false)
         if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].isMarked = newValue }
-        struct M: Encodable { let is_marked: Bool }
-        try? await supabase.from("messages").update(M(is_marked: newValue))
-            .eq("id", value: message.id.uuidString).execute()
+        struct M: Encodable { let p_message_id: String; let p_marked: Bool }
+        do {
+            try await supabase.rpc("set_message_marked",
+                                   params: M(p_message_id: message.id.uuidString, p_marked: newValue)).execute()
+        } catch {
+            if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].isMarked = !newValue }
+        }
     }
 
     // MARK: - Read receipts
@@ -410,52 +421,60 @@ final class MessageService: ObservableObject {
         guard let uid = supabase.auth.currentSession?.user.id else { return }
 
         let existing = reactions[messageId]?.first(where: { $0.userId == uid })
+        let removing = existing?.emoji == emoji
+        // Snapshot for rollback if the network write fails.
+        let snapshot = reactions[messageId]
 
-        if existing?.emoji == emoji {
-            // Remove — user tapped their own existing reaction
-            try? await supabase
-                .from("message_reactions")
-                .delete()
-                .eq("message_id", value: messageId.uuidString)
-                .eq("user_id", value: uid.uuidString)
-                .execute()
-            reactions[messageId]?.removeAll { $0.userId == uid }
-            if reactions[messageId]?.isEmpty == true { reactions.removeValue(forKey: messageId) }
-        } else {
-            // Remove old emoji first (if switching)
+        // --- Optimistic local update so the reaction appears instantly ---
+        reactions[messageId]?.removeAll { $0.userId == uid }
+        if !removing {
+            let local = MessageReaction(
+                id: UUID(),
+                messageId: messageId,
+                propertyId: propertyId,
+                userId: uid,
+                reactorName: reactorName,
+                emoji: emoji,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            )
+            reactions[messageId, default: []].append(local)
+        }
+        if reactions[messageId]?.isEmpty == true { reactions.removeValue(forKey: messageId) }
+
+        // --- Persist ---
+        do {
             if existing != nil {
-                try? await supabase
+                try await supabase
                     .from("message_reactions")
                     .delete()
                     .eq("message_id", value: messageId.uuidString)
                     .eq("user_id", value: uid.uuidString)
                     .execute()
-                reactions[messageId]?.removeAll { $0.userId == uid }
             }
-            // Insert new reaction
-            struct ReactPayload: Encodable {
-                let message_id: String
-                let property_id: String
-                let user_id: String
-                let reactor_name: String
-                let emoji: String
+            if !removing {
+                struct ReactPayload: Encodable {
+                    let message_id: String
+                    let property_id: String
+                    let user_id: String
+                    let reactor_name: String
+                    let emoji: String
+                }
+                let payload = ReactPayload(
+                    message_id: messageId.uuidString,
+                    property_id: propertyId.uuidString,
+                    user_id: uid.uuidString,
+                    reactor_name: reactorName,
+                    emoji: emoji
+                )
+                try await supabase
+                    .from("message_reactions")
+                    .insert(payload)
+                    .execute()
             }
-            let payload = ReactPayload(
-                message_id: messageId.uuidString,
-                property_id: propertyId.uuidString,
-                user_id: uid.uuidString,
-                reactor_name: reactorName,
-                emoji: emoji
-            )
-            if let r: MessageReaction = try? await supabase
-                .from("message_reactions")
-                .insert(payload)
-                .select()
-                .single()
-                .execute()
-                .value {
-                reactions[messageId, default: []].append(r)
-            }
+        } catch {
+            // Roll back the optimistic change on failure.
+            if let snapshot { reactions[messageId] = snapshot }
+            else { reactions.removeValue(forKey: messageId) }
         }
     }
 

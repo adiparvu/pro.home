@@ -136,7 +136,11 @@ struct ChatView: View {
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
         ]
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
-            items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body ?? "" })
+            items.append(ChatActionItem("Edit", "pencil") {
+                editingMessage = m; editText = m.body ?? ""
+                replyingTo = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
+            })
         }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
@@ -183,8 +187,9 @@ struct ChatView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 10) {
-                    MemberAvatarStack(
+                    GroupHeaderAvatar(
                         members: familyService.members,
+                        photoUrl: propertyService.primary?.photoUrl,
                         ownerAvatarUrl: profileService.profile?.avatarUrl,
                         ownerInitial: ownerInitial,
                         ringColor: avatarRingColor(for: avatarRingColorName)
@@ -396,22 +401,6 @@ struct ChatView: View {
                 Button("Cancel", role: .cancel) { deleteCandidate = nil }
             }
         }
-        .alert("Edit message", isPresented: .init(
-            get: { editingMessage != nil },
-            set: { if !$0 { editingMessage = nil } }
-        )) {
-            TextField("Message", text: $editText)
-            Button("Cancel", role: .cancel) { editingMessage = nil }
-            Button("Save") {
-                if let m = editingMessage {
-                    let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !newText.isEmpty {
-                        Task { await messageService.editMessage(id: m.id, newBody: newText) }
-                    }
-                }
-                editingMessage = nil
-            }
-        }
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
@@ -562,7 +551,11 @@ struct ChatView: View {
                             onPin: { Task { await messageService.togglePin(msg) } },
                             onMark: { Task { await messageService.toggleMark(msg) } },
                             onForward: { forwardingMessage = msg },
-                            onEdit: { editingMessage = msg; editText = msg.body ?? "" },
+                            onEdit: {
+                                editingMessage = msg; editText = msg.body ?? ""
+                                replyingTo = nil
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
+                            },
                             onDeleteForEveryone: { Task { await messageService.deleteForEveryone(id: msg.id) } },
                             onDeleteForMe: { messageService.deleteForMe(id: msg.id) },
                             pollVotes: messageService.pollVotes[msg.id] ?? [],
@@ -686,21 +679,43 @@ struct ChatView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
-            if let replyingTo {
+            if editingMessage != nil {
                 HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 18)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
+                        Text("Edit message")
                             .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.accentColor)
-                        Text(replyingTo.body?.isEmpty == false ? (replyingTo.body ?? "") : String(localized: "Attachment"))
+                        Text(editingMessage?.body ?? "")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
                     }
                     Spacer()
-                    Button { withAnimation { self.replyingTo = nil } } label: {
+                    Button {
+                        withAnimation { editingMessage = nil; editText = "" }
+                    } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
                     }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Color.primary.opacity(0.05))
+            }
+            if let replyingTo {
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 40)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        Text(replyingTo.body?.isEmpty == false ? (replyingTo.body ?? "") : String(localized: "Attachment"))
+                            .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.65)).lineLimit(1)
+                    }
+                    Spacer()
+                    Button { withAnimation { self.replyingTo = nil } } label: {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundStyle(Color.primary.opacity(0.4))
+                    }.buttonStyle(.plain)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(Color.primary.opacity(0.05))
             }
             if !mentionedNames.isEmpty {
@@ -785,7 +800,7 @@ struct ChatView: View {
                 .padding(.bottom, 6)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    TextField("Message…", text: $text, axis: .vertical)
+                    TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
@@ -818,7 +833,26 @@ struct ChatView: View {
 
                         Spacer()
 
-                        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if editingMessage != nil {
+                            // Confirm edit (WhatsApp-style inline edit)
+                            Button {
+                                guard let m = editingMessage else { return }
+                                let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !newText.isEmpty, newText != (m.body ?? "") {
+                                    Task { await messageService.editMessage(id: m.id, newBody: newText) }
+                                }
+                                editingMessage = nil; editText = ""; focused = false
+                            } label: {
+                                ZStack {
+                                    Circle().fill(Color.accentColor).frame(width: 30, height: 30)
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             // Mic button — hold to record
                             ZStack {
                                 Circle()

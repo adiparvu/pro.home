@@ -95,6 +95,7 @@ struct PollBubble: View {
     let votes: [PollVote]
     let myUserId: UUID?
     let isOwn: Bool
+    var bubbleColor: Color = Color.blue.opacity(0.75)
     let onVote: (Int) -> Void
 
     @State private var showVotes = false
@@ -142,7 +143,7 @@ struct PollBubble: View {
         }
         .padding(14)
         .frame(maxWidth: 260, alignment: .leading)
-        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+        .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .sheet(isPresented: $showVotes) {
             PollVotesSheet(poll: poll, votes: votes)
@@ -220,6 +221,7 @@ struct PollVotesSheet: View {
 struct EventBubble: View {
     let event: ChatEvent
     let isOwn: Bool
+    var bubbleColor: Color = Color.blue.opacity(0.75)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -262,7 +264,7 @@ struct EventBubble: View {
         }
         .padding(14)
         .frame(maxWidth: 260, alignment: .leading)
-        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+        .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 

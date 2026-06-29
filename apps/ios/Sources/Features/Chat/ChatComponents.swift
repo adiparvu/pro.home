@@ -327,7 +327,7 @@ struct MessageBubble: View {
                                 withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                             }
                     )
-                    .onLongPressGesture(minimumDuration: 0.35) {
+                    .onLongPressGesture(minimumDuration: 0.22) {
                         HapticFeedback.impact(.medium)
                         onLongPress?()
                     }
@@ -429,25 +429,25 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private func quotedReply(_ replied: Message) -> some View {
-        HStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 28)
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 36)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(replied.senderName)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(replied.body?.isEmpty == false ? (replied.body ?? "") :
                         (replied.isAudioMessage ? "🎤 Voice message" :
                          replied.isImageMessage ? "📷 Photo" :
                          replied.isLocationMessage ? "📍 Location" : "Attachment"))
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.primary.opacity(0.65))
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8).padding(.vertical, 5)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .frame(maxWidth: 240, alignment: .leading)
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .frame(maxWidth: 250, alignment: .leading)
     }
 
     private var reactionPills: some View {
@@ -568,9 +568,9 @@ struct MessageBubble: View {
             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else if message.isPollMessage, let poll = ChatPoll.decode(message.body) {
             PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
-                       onVote: { onPollVote?($0) })
+                       bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
         } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
-            EventBubble(event: event, isOwn: isOwn)
+            EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor)
         } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
@@ -582,7 +582,8 @@ struct MessageBubble: View {
                 initials: sender?.initials ?? String(message.senderName.prefix(2)).uppercased(),
                 avatarColor: sender?.swiftColor ?? Color.gray,
                 timeText: message.timeDisplay,
-                tick: isOwn ? (tickStatus == .read ? .read : (tickStatus == .delivered ? .delivered : .sent)) : .none
+                tick: isOwn ? (tickStatus == .read ? .read : (tickStatus == .delivered ? .delivered : .sent)) : .none,
+                bubbleColor: ownBubbleColor
             )
         } else if message.isFileMessage {
             HStack(spacing: 10) {

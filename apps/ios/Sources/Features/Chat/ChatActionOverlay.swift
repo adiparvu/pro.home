@@ -25,6 +25,7 @@ struct ChatActionOverlay: View {
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
+    @State private var showEmojiPicker = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -64,15 +65,27 @@ struct ChatActionOverlay: View {
                 }
                 .buttonStyle(.plain)
             }
-            Image(systemName: "plus")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
-                .frame(width: 34, height: 34)
-                .background(Color.primary.opacity(0.08), in: Circle())
+            Button {
+                HapticFeedback.impact(.light); showEmojiPicker = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .frame(width: 34, height: 34)
+                    .background(Color.primary.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(.regularMaterial, in: Capsule())
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
+        .sheet(isPresented: $showEmojiPicker) {
+            EmojiGridPicker { e in
+                onReact(e)
+                showEmojiPicker = false
+                onDismiss()
+            }
+        }
     }
 
     private var bubble: some View {
@@ -110,5 +123,55 @@ struct ChatActionOverlay: View {
         .frame(width: 240)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+    }
+}
+
+// MARK: - Full emoji picker (opened from the reaction pill "+")
+
+struct EmojiGridPicker: View {
+    let onSelect: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    // Curated set grouped like the system picker — covers the common reactions.
+    private static let groups: [(String, [String])] = [
+        ("Smileys", ["😀","😃","😄","😁","😆","😅","😂","🤣","🥲","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳","🤗","🤔","🤭","🤫","😏","😒","🙄","😬","😯","😪","😴"]),
+        ("Gestures", ["👍","👎","👏","🙌","👐","🤲","🤝","🙏","✌️","🤞","🤟","🤘","👌","🤌","🤏","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","👋","💪","🦾","✍️","💅"]),
+        ("Hearts", ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","♥️"]),
+        ("Emotion", ["😢","😭","😤","😠","😡","🤬","😳","🥵","🥶","😱","😨","😰","😥","😓","🤯","😵","🥴","🤢","🤮","🤧","😷","🤒","🤕","🥱","😈","👿","💀","☠️","👻","🎉","🔥","⭐","✨","💯","🙈","🙉","🙊"]),
+    ]
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(Self.groups, id: \.0) { title, emojis in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(title.uppercased())
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.4))
+                            LazyVGrid(columns: columns, spacing: 6) {
+                                ForEach(emojis, id: \.self) { e in
+                                    Button {
+                                        HapticFeedback.impact(.light); onSelect(e)
+                                    } label: {
+                                        Text(e).font(.system(size: 30))
+                                            .frame(maxWidth: .infinity, minHeight: 42)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Reactions")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

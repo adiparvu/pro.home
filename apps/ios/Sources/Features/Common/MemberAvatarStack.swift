@@ -85,6 +85,102 @@ struct MemberAvatarStack: View {
     }
 }
 
+// MARK: - Group header avatar (single circle: group photo, else a montage)
+
+/// One circular group avatar for the chat header. Shows the uploaded group
+/// photo when set; otherwise composes a montage of the owner + members'
+/// avatars, like WhatsApp's default group icon.
+struct GroupHeaderAvatar: View {
+    let members: [FamilyMember]
+    var photoUrl: String?
+    var ownerAvatarUrl: String?
+    var ownerInitial: String
+    var ringColor: Color
+    var size: CGFloat = 34
+    var onTap: (() -> Void)? = nil
+
+    var body: some View {
+        Button { onTap?() } label: {
+            ZStack {
+                if let urlStr = photoUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let img) = phase {
+                            img.resizable().scaledToFill()
+                        } else { montage }
+                    }
+                } else {
+                    montage
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder(ringColor.opacity(0.9), lineWidth: 2))
+            .overlay(Circle().strokeBorder(.black.opacity(0.08), lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder private var montage: some View {
+        if let first = members.first {
+            let s = size * 0.64
+            ZStack {
+                Circle().fill(Color.accentColor.opacity(0.12))
+                memberCircle(first, s)
+                    .offset(x: size * 0.16, y: size * 0.16)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1)
+                        .frame(width: s, height: s)
+                        .offset(x: size * 0.16, y: size * 0.16))
+                ownerCircle(s)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1))
+                    .offset(x: -size * 0.16, y: -size * 0.16)
+            }
+        } else {
+            ownerCircle(size)
+        }
+    }
+
+    private func ownerCircle(_ s: CGFloat) -> some View {
+        Group {
+            if let urlStr = ownerAvatarUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase { img.resizable().scaledToFill() }
+                    else { initialBadge(ownerInitial, ringColor, s) }
+                }
+            } else {
+                initialBadge(ownerInitial, ringColor, s)
+            }
+        }
+        .frame(width: s, height: s)
+        .clipShape(Circle())
+    }
+
+    private func memberCircle(_ m: FamilyMember, _ s: CGFloat) -> some View {
+        Group {
+            if let urlStr = m.avatarUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase { img.resizable().scaledToFill() }
+                    else { initialBadge(m.initials, m.swiftColor, s) }
+                }
+            } else {
+                initialBadge(m.initials, m.swiftColor, s)
+            }
+        }
+        .frame(width: s, height: s)
+        .clipShape(Circle())
+    }
+
+    private func initialBadge(_ text: String, _ color: Color, _ s: CGFloat) -> some View {
+        ZStack {
+            Circle().fill(LinearGradient(colors: [color, color.opacity(0.65)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+            Text(text)
+                .font(.system(size: s * 0.38, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: s, height: s)
+    }
+}
+
 // MARK: - Ring color helper
 
 func avatarRingColor(for name: String) -> Color {
