@@ -57,7 +57,8 @@ struct DirectMessageView: View {
     }
 
     private var conversationMessages: [DirectMessage] {
-        directMessageService.messages(with: member.name, myName: myName)
+        let all = directMessageService.messages(with: member.name, myName: myName)
+        return ChatDisappearStore.filter(all, convId: member.id.uuidString) { $0.date }
     }
 
     private var isTextEmpty: Bool {

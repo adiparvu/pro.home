@@ -44,6 +44,12 @@ struct Message: Identifiable, Codable {
         return out.string(from: d)
     }
 
+    var date: Date? {
+        let f  = ISO8601DateFormatter(); f.formatOptions  = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        return f.date(from: createdAt) ?? f2.date(from: createdAt)
+    }
+
     var isLocationMessage: Bool { attachmentType == "location" }
     var isImageMessage: Bool    { attachmentType == "image" }
     var isVideoMessage: Bool    { attachmentType == "video" }

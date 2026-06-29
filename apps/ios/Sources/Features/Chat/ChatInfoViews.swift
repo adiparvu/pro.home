@@ -147,6 +147,14 @@ struct ContactDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
+                        NavigationLink {
+                            DisappearingMessagesView(convId: convId)
+                        } label: {
+                            InfoRowLabel(icon: "timer", label: "Disappearing messages",
+                                         value: ChatDisappearStore.label(convId))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
@@ -233,6 +241,14 @@ struct GroupDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
+                        NavigationLink {
+                            DisappearingMessagesView(convId: "group")
+                        } label: {
+                            InfoRowLabel(icon: "timer", label: "Disappearing messages",
+                                         value: ChatDisappearStore.label("group"))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
@@ -301,6 +317,89 @@ enum ChatToneStore {
     }
     static func setCallTone(_ id: String, _ tone: String) {
         UserDefaults.standard.set(tone, forKey: "chat.calltone.\(id)")
+    }
+}
+
+// MARK: - Disappearing messages (per-conversation TTL)
+
+enum ChatDisappearStore {
+    /// Duration options in seconds (0 = Off), matching WhatsApp.
+    static let options: [(label: String, seconds: TimeInterval)] = [
+        ("Off", 0),
+        ("24 hours", 86_400),
+        ("7 days", 604_800),
+        ("90 days", 7_776_000),
+    ]
+
+    static func ttl(_ id: String) -> TimeInterval {
+        UserDefaults.standard.double(forKey: "chat.disappear.\(id)")
+    }
+    static func setTTL(_ id: String, _ seconds: TimeInterval) {
+        UserDefaults.standard.set(seconds, forKey: "chat.disappear.\(id)")
+    }
+    static func label(_ id: String) -> String {
+        let t = ttl(id)
+        return options.first { $0.seconds == t }?.label ?? "Off"
+    }
+
+    /// Filters out messages older than the conversation's TTL (view-level
+    /// disappearing). `date` extracts each item's timestamp.
+    static func filter<T>(_ items: [T], convId: String, date: (T) -> Date?) -> [T] {
+        let t = ttl(convId)
+        guard t > 0 else { return items }
+        let cutoff = Date().addingTimeInterval(-t)
+        return items.filter { (date($0) ?? .distantFuture) >= cutoff }
+    }
+}
+
+struct DisappearingMessagesView: View {
+    let convId: String
+    @State private var ttl: TimeInterval = 0
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("New messages in this chat will disappear after the selected duration. This only affects messages from now on.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .padding(.horizontal, 20)
+
+                VStack(spacing: 0) {
+                    ForEach(Array(ChatDisappearStore.options.enumerated()), id: \.offset) { idx, opt in
+                        Button {
+                            ttl = opt.seconds
+                            ChatDisappearStore.setTTL(convId, opt.seconds)
+                            HapticFeedback.impact(.light)
+                        } label: {
+                            HStack(spacing: 14) {
+                                Text(LocalizedStringKey(opt.label))
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if ttl == opt.seconds {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 15, weight: .bold))
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if idx < ChatDisappearStore.options.count - 1 {
+                            Divider().padding(.leading, 16)
+                        }
+                    }
+                }
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+            }
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Disappearing messages")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { ttl = ChatDisappearStore.ttl(convId) }
     }
 }
 
