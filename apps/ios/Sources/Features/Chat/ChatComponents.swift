@@ -344,7 +344,7 @@ struct MessageBubble: View {
             }
         }
         .sheet(isPresented: $showReaders) {
-            SeenBySheet(readers: readers, members: members)
+            SeenBySheet(readers: readers, deliverers: deliverers, members: members)
         }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)
@@ -488,7 +488,7 @@ struct MessageBubble: View {
     private var statusRow: some View {
         if isOwn {
             Button {
-                if seen { showReaders = true }
+                if seen || !deliverers.isEmpty { showReaders = true }
             } label: {
                 HStack(spacing: 4) {
                     Text(message.timeDisplay)
@@ -504,7 +504,7 @@ struct MessageBubble: View {
                 .padding(.horizontal, 4)
             }
             .buttonStyle(.plain)
-            .disabled(!seen)
+            .disabled(!seen && deliverers.isEmpty)
         } else {
             HStack(spacing: 4) {
                 Text(message.timeDisplay)
@@ -642,11 +642,20 @@ private struct ReadCheck: View {
 
 private struct SeenBySheet: View {
     let readers: [MessageRead]
+    var deliverers: [MessageDelivery] = []
     let members: [FamilyMember]
     @Environment(\.dismiss) private var dismiss
 
     private func member(for name: String) -> FamilyMember? {
         members.first { $0.name == name }
+    }
+
+    /// Members who received the message but have not read it yet.
+    private var deliveredOnly: [MessageDelivery] {
+        let readerNames = Set(readers.map { $0.readerName })
+        return deliverers
+            .filter { !readerNames.contains($0.delivererName) }
+            .sorted { $0.deliveredAt > $1.deliveredAt }
     }
 
     var body: some View {
@@ -673,6 +682,28 @@ private struct SeenBySheet: View {
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                        }
+                        if !deliveredOnly.isEmpty {
+                            HStack {
+                                Text("Delivered")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color.primary.opacity(0.45))
+                                Spacer()
+                            }
+                            .padding(.top, 6)
+                            ForEach(deliveredOnly) { d in
+                                HStack(spacing: 12) {
+                                    Text(d.delivererName.isEmpty ? "Member" : d.delivererName)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(Color.primary.opacity(0.4))
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 12)
+                                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                            }
                         }
                     }
                     .padding(.horizontal, 20).padding(.top, 8)
