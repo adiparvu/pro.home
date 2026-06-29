@@ -59,6 +59,33 @@ private struct InfoRow: View {
     }
 }
 
+/// The visual content of an InfoRow without the Button — for use inside a NavigationLink.
+struct InfoRowLabel: View {
+    let icon: String
+    let label: String
+    var value: String? = nil
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 17))
+                .foregroundStyle(Color.primary.opacity(0.7))
+                .frame(width: 26)
+            Text(LocalizedStringKey(label))
+                .foregroundStyle(.primary)
+            Spacer()
+            if let value {
+                Text(value).foregroundStyle(Color.primary.opacity(0.4))
+            }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.25))
+        }
+        .font(.system(size: 16))
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .contentShape(Rectangle())
+    }
+}
+
 private func infoCardBackground<V: View>(_ content: V) -> some View {
     content.background(Color(.secondarySystemGroupedBackground),
                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -114,13 +141,14 @@ struct ContactDetailsView: View {
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 0) {
-                        HStack(spacing: 14) {
-                            Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
-                                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
-                            Toggle("Mute notifications", isOn: $muted)
-                                .font(.system(size: 16))
+                        NavigationLink {
+                            ConversationNotificationsView(convId: convId, subtitle: member.name)
+                        } label: {
+                            InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
+                                         label: "Notifications",
+                                         value: muted ? "Off" : nil)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
@@ -201,12 +229,14 @@ struct GroupDetailsView: View {
                     VStack(spacing: 0) {
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                         Divider().padding(.leading, 52)
-                        HStack(spacing: 14) {
-                            Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
-                                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
-                            Toggle("Mute notifications", isOn: $muted).font(.system(size: 16))
+                        NavigationLink {
+                            ConversationNotificationsView(convId: "group", subtitle: groupName)
+                        } label: {
+                            InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
+                                         label: "Notifications",
+                                         value: muted ? "Off" : nil)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
@@ -257,6 +287,108 @@ enum ChatMuteStore {
         var s = muted()
         if on { s.insert(id) } else { s.remove(id) }
         UserDefaults.standard.set(Array(s), forKey: "chat.muted")
+    }
+}
+
+// MARK: - Per-conversation notification tones (stored preference)
+
+enum ChatToneStore {
+    static let alertTones = ["Default", "Note", "Chime", "Glass", "Bamboo", "None"]
+    static let callTones  = ["Default", "Classic", "Reflection", "Radar", "None"]
+
+    static func alertTone(_ id: String) -> String {
+        UserDefaults.standard.string(forKey: "chat.alerttone.\(id)") ?? "Default"
+    }
+    static func setAlertTone(_ id: String, _ tone: String) {
+        UserDefaults.standard.set(tone, forKey: "chat.alerttone.\(id)")
+    }
+    static func callTone(_ id: String) -> String {
+        UserDefaults.standard.string(forKey: "chat.calltone.\(id)") ?? "Default"
+    }
+    static func setCallTone(_ id: String, _ tone: String) {
+        UserDefaults.standard.set(tone, forKey: "chat.calltone.\(id)")
+    }
+}
+
+// MARK: - Per-conversation notifications screen (WhatsApp-style)
+
+struct ConversationNotificationsView: View {
+    let convId: String
+    let subtitle: String
+
+    @State private var muted = false
+    @State private var alertTone = "Default"
+    @State private var callTone = "Default"
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 22) {
+                section("Messages") {
+                    HStack(spacing: 14) {
+                        Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                        Toggle("Mute notifications", isOn: $muted).font(.system(size: 16))
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    Divider().padding(.leading, 52)
+                    tonePicker(icon: "bell.badge", label: "Alert tone",
+                               options: ChatToneStore.alertTones, selection: $alertTone)
+                }
+
+                section("Calls") {
+                    tonePicker(icon: "phone.badge.waveform", label: "Ringtone",
+                               options: ChatToneStore.callTones, selection: $callTone)
+                }
+            }
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            muted = ChatMuteStore.isMuted(convId)
+            alertTone = ChatToneStore.alertTone(convId)
+            callTone = ChatToneStore.callTone(convId)
+        }
+        .onChange(of: muted)     { _, v in ChatMuteStore.setMuted(convId, v) }
+        .onChange(of: alertTone) { _, v in ChatToneStore.setAlertTone(convId, v) }
+        .onChange(of: callTone)  { _, v in ChatToneStore.setCallTone(convId, v) }
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(LocalizedStringKey(title))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.primary.opacity(0.5))
+                .padding(.horizontal, 20)
+            VStack(spacing: 0) { content() }
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+        }
+    }
+
+    private func tonePicker(icon: String, label: String, options: [String], selection: Binding<String>) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+            Text(LocalizedStringKey(label)).font(.system(size: 16))
+            Spacer()
+            Menu {
+                ForEach(options, id: \.self) { opt in
+                    Button(opt) { selection.wrappedValue = opt }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(0.45))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.primary.opacity(0.3))
+                }
+                .font(.system(size: 15))
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
     }
 }
 
