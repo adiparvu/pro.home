@@ -25,6 +25,7 @@ struct ConversationsView: View {
     @State private var pinnedIds: Set<String> = []
     @State private var mutedIds: Set<String> = []
     @State private var manualUnreadIds: Set<String> = []
+    @State private var lockedIds: Set<String> = []
     @State private var showArchived = false
     @State private var lockedRevealed = false
     @State private var searchText = ""
@@ -107,6 +108,18 @@ struct ConversationsView: View {
         pinnedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.pinned") ?? [])
         mutedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.muted") ?? [])
         manualUnreadIds = Set(UserDefaults.standard.stringArray(forKey: "chat.manualUnread") ?? [])
+        lockedIds = ChatLockStore.locked()
+    }
+    private func toggleLocked(_ id: String) {
+        let newVal = !lockedIds.contains(id)
+        ChatLockStore.setLocked(id, newVal)
+        if newVal { lockedIds.insert(id) } else { lockedIds.remove(id) }
+        HapticFeedback.selection()
+    }
+    private func toggleBlock(_ member: FamilyMember) {
+        let id = member.id.uuidString
+        ChatBlockStore.setBlocked(id, !ChatBlockStore.isBlocked(id))
+        HapticFeedback.warning()
     }
     private func toggle(_ id: String, in set: inout Set<String>, key: String) {
         if set.contains(id) { set.remove(id) } else { set.insert(id) }
@@ -204,6 +217,8 @@ struct ConversationsView: View {
         }
         .fullScreenCover(isPresented: $showStoryCamera) {
             CameraPickerView { img in Task { await sendStory(img) } }
+                .ignoresSafeArea()
+                .background(Color.black.ignoresSafeArea())
         }
     }
 
@@ -327,21 +342,7 @@ struct ConversationsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .contextMenu {
-                                Button { toggleFavorite(entry.id) } label: {
-                                    Label(favoriteIds.contains(entry.id) ? "Unfavorite" : "Favorite",
-                                          systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
-                                }
-                                Button { togglePinned(entry.id) } label: {
-                                    Label(pinnedIds.contains(entry.id) ? "Unpin" : "Pin", systemImage: "pin")
-                                }
-                                Button { toggleMuted(entry.id) } label: {
-                                    Label(mutedIds.contains(entry.id) ? "Unmute" : "Mute", systemImage: "bell.slash")
-                                }
-                                Button { toggleArchived(entry.id) } label: {
-                                    Label(archivedIds.contains(entry.id) ? "Unarchive" : "Archive", systemImage: "archivebox")
-                                }
-                            }
+                            .contextMenu { conversationMenu(entry) }
                         }
                     }
 
@@ -356,6 +357,43 @@ struct ConversationsView: View {
             }
             .padding(.top, 8)
             .padding(.bottom, 24)
+        }
+    }
+
+    @ViewBuilder
+    private func conversationMenu(_ entry: ConversationEntry) -> some View {
+        let unread = isUnread(entry)
+        Button {
+            if unread { markConversationRead(entry) } else { markConversationUnread(entry) }
+        } label: {
+            Label(unread ? "Marchează citit" : "Marchează necitit",
+                  systemImage: unread ? "checkmark.message" : "message.badge")
+        }
+        Button { togglePinned(entry.id) } label: {
+            Label(pinnedIds.contains(entry.id) ? "Detașează" : "Fixează", systemImage: "pin")
+        }
+        Button { toggleMuted(entry.id) } label: {
+            Label(mutedIds.contains(entry.id) ? "Pornește sunetul" : "Oprește sunetul",
+                  systemImage: mutedIds.contains(entry.id) ? "bell" : "bell.slash")
+        }
+        Button { toggleLocked(entry.id) } label: {
+            Label(lockedIds.contains(entry.id) ? "Anulează secretizarea" : "Secretizează conversația",
+                  systemImage: lockedIds.contains(entry.id) ? "lock.open" : "lock")
+        }
+        Button { toggleFavorite(entry.id) } label: {
+            Label(favoriteIds.contains(entry.id) ? "Scoate din listă" : "Adaugă în listă",
+                  systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
+        }
+        Button { toggleArchived(entry.id) } label: {
+            Label(archivedIds.contains(entry.id) ? "Dezarhivează" : "Arhivează", systemImage: "archivebox")
+        }
+        if !entry.isGroup, let m = entry.member {
+            Divider()
+            let blocked = ChatBlockStore.isBlocked(m.id.uuidString)
+            Button(role: .destructive) { toggleBlock(m) } label: {
+                Label(blocked ? "Deblochează pe \(m.name)" : "Blochează pe \(m.name)",
+                      systemImage: blocked ? "hand.raised.slash" : "hand.raised")
+            }
         }
     }
 

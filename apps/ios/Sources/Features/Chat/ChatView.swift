@@ -405,6 +405,8 @@ struct ChatView: View {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
             }
+            .ignoresSafeArea()
+            .background(Color.black.ignoresSafeArea())
         }
         .fileImporter(
             isPresented: $showFileImporter,

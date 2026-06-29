@@ -205,6 +205,7 @@ struct DirectMessageView: View {
                 Task { @MainActor in await sendCameraImage(img) }
             }
             .ignoresSafeArea()
+            .background(Color.black.ignoresSafeArea())
         }
         .onAppear {
             directMessageService.markRead(partner: member.name)
