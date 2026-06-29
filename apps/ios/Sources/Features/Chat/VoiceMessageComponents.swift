@@ -187,18 +187,8 @@ struct AudioBubble: View {
             .buttonStyle(.plain)
             .disabled(url == nil)
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
-                        .frame(height: 3)
-                    Capsule()
-                        .fill(isOwn ? Color.white : Color.accentColor)
-                        .frame(width: geo.size.width * player.progress, height: 3)
-                }
-                .frame(maxHeight: .infinity)
-            }
-            .frame(height: 20)
+            VoiceWaveform(progress: player.progress, isOwn: isOwn, seed: Self.seed(for: url))
+                .frame(height: 22)
 
             Text(player.isPlaying ? player.positionText : durationText)
                 .font(.system(size: 11, design: .monospaced))
@@ -243,6 +233,59 @@ struct AudioBubble: View {
         guard loadedDuration > 0 else { return "-:--" }
         let s = Int(loadedDuration)
         return String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    /// Stable seed from the URL so each clip gets a consistent waveform shape.
+    static func seed(for url: URL?) -> UInt64 {
+        guard let s = url?.absoluteString else { return 1 }
+        var hash: UInt64 = 1469598103934665603 // FNV-1a
+        for byte in s.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 1099511628211
+        }
+        return hash
+    }
+}
+
+// MARK: - Voice waveform (stylized; deterministic from the clip URL)
+
+private struct VoiceWaveform: View {
+    let progress: Double
+    let isOwn: Bool
+    let seed: UInt64
+    private let barCount = 34
+
+    private var heights: [CGFloat] {
+        var state = seed | 1
+        return (0..<barCount).map { _ in
+            // xorshift for a deterministic pseudo-random 0.25...1.0 height
+            state ^= state << 13
+            state ^= state >> 7
+            state ^= state << 17
+            return 0.25 + CGFloat(state % 1000) / 1000.0 * 0.75
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let bars = heights
+            let played = Int((Double(barCount) * progress).rounded())
+            HStack(alignment: .center, spacing: 2) {
+                ForEach(0..<barCount, id: \.self) { i in
+                    Capsule()
+                        .fill(color(for: i, played: played))
+                        .frame(height: max(3, geo.size.height * bars[i]))
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+    }
+
+    private func color(for index: Int, played: Int) -> Color {
+        if index < played {
+            return isOwn ? Color.white : Color.accentColor
+        }
+        return isOwn ? Color.white.opacity(0.35) : Color.primary.opacity(0.2)
     }
 }
 
