@@ -46,6 +46,7 @@ struct Message: Identifiable, Codable {
 
     var isLocationMessage: Bool { attachmentType == "location" }
     var isImageMessage: Bool    { attachmentType == "image" }
+    var isVideoMessage: Bool    { attachmentType == "video" }
     var isFileMessage: Bool     { attachmentType == "file" }
     var isStickerMessage: Bool  { attachmentType == "sticker" }
     var isAudioMessage: Bool    { attachmentType == "audio" }

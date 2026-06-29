@@ -260,6 +260,8 @@ struct MessageBubble: View {
     @State private var showReactionPicker = false
     @State private var swipeOffset: CGFloat = 0
     @State private var viewerItem: ImageViewerItem? = nil
+    @State private var videoItem: ImageViewerItem? = nil
+    @State private var filePreview: FilePreviewItem? = nil
     @State private var showDetails = false
 
     private var displayReactions: [String: Int] {
@@ -348,6 +350,12 @@ struct MessageBubble: View {
         }
         .fullScreenCover(item: $viewerItem) { item in
             FullScreenImageViewer(url: item.url)
+        }
+        .sheet(item: $filePreview) { item in
+            FilePreviewSheet(url: item.url, filename: item.name)
+        }
+        .fullScreenCover(item: $videoItem) { item in
+            VideoPlayerSheet(url: item.url)
         }
         .sheet(isPresented: $showDetails) {
             MessageDetailsView(message: message, readers: readers)
@@ -579,11 +587,18 @@ struct MessageBubble: View {
                     .lineLimit(2)
                 if let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
                     Spacer()
-                    Link(destination: url) {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
-                    }
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
+                        .onTapGesture {
+                            filePreview = FilePreviewItem(url: url, name: message.body ?? url.lastPathComponent)
+                        }
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
+                    filePreview = FilePreviewItem(url: url, name: message.body ?? url.lastPathComponent)
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
@@ -593,18 +608,44 @@ struct MessageBubble: View {
             )
             .frame(maxWidth: 240)
         } else if message.isImageMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
-                if case .success(let img) = phase {
-                    img.resizable().scaledToFill()
-                        .frame(maxWidth: 220, maxHeight: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                } else {
-                    RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(0.07))
-                        .frame(width: 160, height: 120)
-                        .overlay(ProgressView().tint(.white))
+            VStack(alignment: .leading, spacing: 0) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                            .frame(maxWidth: 220, maxHeight: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    } else {
+                        RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(0.07))
+                            .frame(width: 160, height: 120)
+                            .overlay(ProgressView().tint(.white))
+                    }
+                }
+                .onTapGesture { viewerItem = ImageViewerItem(url: url) }
+                // Optional caption stored in the message body.
+                if let caption = message.body, !caption.isEmpty {
+                    Text(caption)
+                        .font(.system(size: 15))
+                        .foregroundStyle(isOwn ? .white : .primary)
+                        .padding(.horizontal, 10).padding(.top, 6)
+                        .frame(maxWidth: 220, alignment: .leading)
                 }
             }
-            .onTapGesture { viewerItem = ImageViewerItem(url: url) }
+            .padding(message.body?.isEmpty == false ? 4 : 0)
+            .background(
+                (message.body?.isEmpty == false) ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            )
+        } else if message.isVideoMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.black.opacity(0.85))
+                    .frame(width: 200, height: 140)
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+            .onTapGesture { videoItem = ImageViewerItem(url: url) }
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))

@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UserNotifications
 import Supabase
+import UniformTypeIdentifiers
 
 // MARK: - ChatView send actions
 
@@ -120,17 +121,26 @@ extension ChatView {
         guard let pid = propertyId, !items.isEmpty else { return }
         isSending = true
         defer { isSending = false }
-        // Send each selected image as its own message (preserves order).
-        for item in items {
+        // A caption typed in the composer is attached to the first image, then cleared.
+        let caption = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        text = ""
+        // Send each selected item as its own message (preserves order). Images
+        // and videos are both supported by the picker.
+        for (index, item) in items.enumerated() {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-            let fileName = "\(UUID().uuidString).jpg"
+            let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
+            let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
+            let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
+            let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
+            let fileName = "\(UUID().uuidString).\(ext)"
             let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
             try? await supabase.storage.from("documents")
-                .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+                .upload(filePath, data: data, options: FileOptions(contentType: contentType, upsert: false))
             let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
             try? await messageService.send(
-                propertyId: pid, senderName: senderName, body: nil,
-                attachmentUrl: url?.absoluteString, attachmentType: "image",
+                propertyId: pid, senderName: senderName,
+                body: (index == 0 && !caption.isEmpty) ? caption : nil,
+                attachmentUrl: url?.absoluteString, attachmentType: isVideo ? "video" : "image",
                 mentionedIds: mentionedIds
             )
         }

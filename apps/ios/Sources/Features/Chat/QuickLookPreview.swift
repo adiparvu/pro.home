@@ -1,0 +1,92 @@
+import SwiftUI
+import QuickLook
+import UIKit
+
+// MARK: - File preview sheet
+//
+// QuickLook can only preview *local* files, so a remote (Supabase Storage)
+// file is downloaded to a temp location first, then handed to QLPreviewController.
+
+struct FilePreviewSheet: View {
+    let url: URL
+    let filename: String
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var localURL: URL?
+    @State private var failed = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                if let localURL {
+                    QuickLookView(url: localURL)
+                        .ignoresSafeArea(edges: .bottom)
+                } else if failed {
+                    VStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.secondary)
+                        Text("Couldn't open this file")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                        Link("Open in browser", destination: url)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                } else {
+                    ProgressView()
+                }
+            }
+            .navigationTitle(filename)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .task { await download() }
+        }
+    }
+
+    private func download() async {
+        guard localURL == nil else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let dir = FileManager.default.temporaryDirectory
+            let dest = dir.appendingPathComponent(filename.isEmpty ? url.lastPathComponent : filename)
+            try data.write(to: dest, options: .atomic)
+            localURL = dest
+        } catch {
+            failed = true
+        }
+    }
+}
+
+// MARK: - QLPreviewController bridge
+
+private struct QuickLookView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator { Coordinator(url: url) }
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ controller: QLPreviewController, context: Context) {
+        context.coordinator.url = url
+        controller.reloadData()
+    }
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        var url: URL
+        init(url: URL) { self.url = url }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            url as NSURL
+        }
+    }
+}

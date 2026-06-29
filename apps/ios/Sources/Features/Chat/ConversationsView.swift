@@ -487,6 +487,7 @@ struct ConversationsView: View {
             if let body = m.body, !body.isEmpty { return prefix + body }
             switch m.attachmentType {
             case "image":    return prefix + "📷 Imagine"
+            case "video":    return prefix + "🎥 Videoclip"
             case "audio":    return prefix + "🎤 Mesaj vocal"
             case "location": return prefix + "📍 Locație"
             case "file":     return prefix + "📎 Fișier"

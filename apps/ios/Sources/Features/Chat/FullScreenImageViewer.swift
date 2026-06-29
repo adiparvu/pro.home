@@ -1,10 +1,38 @@
 import SwiftUI
+import AVKit
+
+// MARK: - Full-screen video player
+
+struct VideoPlayerSheet: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            VideoPlayer(player: AVPlayer(url: url))
+                .ignoresSafeArea()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(16)
+            }
+        }
+    }
+}
 
 // MARK: - Full-screen image viewer (pinch zoom + pan + swipe to dismiss)
 
 struct ImageViewerItem: Identifiable {
     let id = UUID()
     let url: URL
+}
+
+struct FilePreviewItem: Identifiable {
+    let id = UUID()
+    let url: URL
+    let name: String
 }
 
 struct FullScreenImageViewer: View {
