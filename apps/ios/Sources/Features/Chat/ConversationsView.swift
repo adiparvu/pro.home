@@ -16,6 +16,8 @@ struct ConversationsView: View {
     @State private var showAddMember = false
     @State private var showNewConversation = false
     @State private var showAddContact = false
+    @State private var showStatus = false
+    @State private var showCommunities = false
     @State private var showStoryCamera = false
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
@@ -182,6 +184,14 @@ struct ConversationsView: View {
                 .environmentObject(familyService)
                 .environmentObject(propertyService)
         }
+        .sheet(isPresented: $showStatus) {
+            StatusView(members: familyService.members,
+                       myInitial: String(myName.prefix(1)).uppercased(),
+                       onAddStatus: { showStatus = false; showStoryCamera = true })
+        }
+        .sheet(isPresented: $showCommunities) {
+            CommunitiesView()
+        }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
                                  groupName: propertyService.primary?.name) { id in
@@ -203,6 +213,8 @@ struct ConversationsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
                 Menu {
+                    Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
+                    Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
                     Button { showAddContact = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {

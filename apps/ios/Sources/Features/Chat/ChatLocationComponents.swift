@@ -62,6 +62,23 @@ struct LocationShareSheet: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 20)
+
+                        Menu {
+                            Button("15 minutes") { onShare(loc.coordinate.latitude, loc.coordinate.longitude); dismiss() }
+                            Button("1 hour")     { onShare(loc.coordinate.latitude, loc.coordinate.longitude); dismiss() }
+                            Button("8 hours")    { onShare(loc.coordinate.latitude, loc.coordinate.longitude); dismiss() }
+                        } label: {
+                            Label("Share live location", systemImage: "location.circle.fill")
+                                .font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor)
+                                .frame(maxWidth: .infinity).padding(.vertical, 13)
+                                .liquidGlass(cornerRadius: 14)
+                        }
+                        .padding(.horizontal, 20)
+
+                        Text("Live updates require continuous background location (coming soon); for now your current location is shared.")
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 30)
                     } else {
                         Spacer()
                         ProgressView().tint(.white)
