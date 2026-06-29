@@ -74,7 +74,21 @@ struct ConversationsView: View {
     private var searchedConversations: [ConversationEntry] {
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return visibleConversations }
-        return nonArchived.filter { $0.name.localizedCaseInsensitiveContains(q) }
+        // Global search: match the conversation name, its last-message preview,
+        // or the body of any loaded message in that conversation.
+        return nonArchived.filter { entry in
+            if entry.name.localizedCaseInsensitiveContains(q) { return true }
+            if entry.preview.localizedCaseInsensitiveContains(q) { return true }
+            if entry.isGroup {
+                return messageService.messages.contains {
+                    ($0.body ?? "").localizedCaseInsensitiveContains(q)
+                }
+            } else if let member = entry.member {
+                return directMessageService.messages(with: member.name, myName: myName)
+                    .contains { $0.body.localizedCaseInsensitiveContains(q) }
+            }
+            return false
+        }
     }
 
     private func loadFlags() {
