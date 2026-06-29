@@ -15,6 +15,7 @@ final class LiveActivityService: ObservableObject {
     // MARK: - Shopping
 
     func startShoppingActivity(listName: String, totalItems: Int, propertyName: String) {
+        guard LiveActivityPrefs.isEnabled, LiveActivityPrefs.autoStart(for: .shopping) else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
         let state = ShoppingActivityAttributes.ContentState(itemsBought: 0, totalItems: totalItems, listName: listName)
@@ -43,6 +44,7 @@ final class LiveActivityService: ObservableObject {
     // MARK: - Maintenance
 
     func startMaintenanceActivity(taskTitle: String, category: String) {
+        guard LiveActivityPrefs.isEnabled, LiveActivityPrefs.autoStart(for: .maintenance) else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let attrs = MaintenanceActivityAttributes(taskTitle: taskTitle, category: category)
         let state = MaintenanceActivityAttributes.ContentState(progress: 0, stepDescription: "Început", isComplete: false)
@@ -72,6 +74,7 @@ final class LiveActivityService: ObservableObject {
 
     func startDeliveryActivity(deliveryId: UUID, trackingNumber: String, carrier: String, description: String) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard LiveActivityPrefs.isEnabled, LiveActivityPrefs.autoStart(for: .delivery) else { return }
         guard deliveryActivities[deliveryId] == nil else { return }
         let attrs = DeliveryActivityAttributes(trackingNumber: trackingNumber, carrier: carrier, description: description)
         let state = DeliveryActivityAttributes.ContentState(status: "in_transit", statusLabel: String(localized: "In transit"), eta: nil)
@@ -100,6 +103,7 @@ final class LiveActivityService: ObservableObject {
     // MARK: - Plant Care
 
     func startPlantCareActivity(totalCount: Int, propertyName: String) {
+        guard LiveActivityPrefs.isEnabled, LiveActivityPrefs.autoStart(for: .plantCare) else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled, totalCount > 0 else { return }
         let attrs = PlantCareActivityAttributes(propertyName: propertyName)
         let state = PlantCareActivityAttributes.ContentState(wateredCount: 0, totalCount: totalCount, lastWateredName: nil)

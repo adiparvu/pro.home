@@ -345,6 +345,9 @@ struct SettingsView: View {
             NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()
             }
+            NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
+                LiveActivitySettingsView()
+            }
             NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
                 QuickActionsSettingsView()
                     .environmentObject(appSettings)

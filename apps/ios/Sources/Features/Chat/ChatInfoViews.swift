@@ -314,12 +314,24 @@ private struct InfoActionCard: View {
     }
 }
 
+/// Small pill shown on settings rows that only group admins can change.
+struct AdminBadge: View {
+    var body: some View {
+        Text("Admin")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Color.accentColor.opacity(0.14), in: Capsule())
+    }
+}
+
 private struct InfoRow: View {
     let icon: String
     let label: String
     var value: String? = nil
     var tint: Color = .primary
     var showChevron: Bool = true
+    var adminBadge: Bool = false
     let action: () -> Void
     var body: some View {
         Button(action: action) {
@@ -334,6 +346,7 @@ private struct InfoRow: View {
                 if let value {
                     Text(value).foregroundStyle(Color.primary.opacity(0.4))
                 }
+                if adminBadge { AdminBadge() }
                 if showChevron {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
@@ -353,6 +366,7 @@ struct InfoRowLabel: View {
     let icon: String
     let label: String
     var value: String? = nil
+    var adminBadge: Bool = false
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
@@ -365,6 +379,7 @@ struct InfoRowLabel: View {
             if let value {
                 Text(value).foregroundStyle(Color.primary.opacity(0.4))
             }
+            if adminBadge { AdminBadge() }
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.primary.opacity(0.25))
@@ -395,6 +410,8 @@ struct ContactDetailsView: View {
     @State private var blocked = false
     @State private var showReport = false
     @State private var reported = false
+    @State private var showEditLabel = false
+    @State private var memberLabel = ""
 
     private var convId: String { member.id.uuidString }
 
@@ -413,6 +430,17 @@ struct ContactDetailsView: View {
                         if let phone = member.phone, !phone.isEmpty {
                             Text(phone).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         }
+                        Button { showEditLabel = true } label: {
+                            if memberLabel.isEmpty {
+                                Label("Add a member label", systemImage: "tag")
+                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                            } else {
+                                Label(memberLabel, systemImage: "tag.fill")
+                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
                     }
                     .padding(.top, 8)
 
@@ -517,8 +545,17 @@ struct ContactDetailsView: View {
             .navigationTitle("Contact details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .onAppear { muted = ChatMuteStore.isMuted(convId) }
+            .onAppear {
+                muted = ChatMuteStore.isMuted(convId)
+                memberLabel = MemberLabelStore.label(convId)
+            }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
+            .sheet(isPresented: $showEditLabel) {
+                EditTextSheet(title: "Member label", text: memberLabel) { newText in
+                    memberLabel = newText
+                    MemberLabelStore.set(convId, newText)
+                }
+            }
         }
     }
 
@@ -621,7 +658,7 @@ struct GroupDetailsView: View {
 
                         VStack(spacing: 0) {
                             NavigationLink { MemberChangesView() } label: {
-                                InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes")
+                                InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes", adminBadge: true)
                             }
                             .buttonStyle(.plain)
                         }
@@ -654,7 +691,7 @@ struct GroupDetailsView: View {
                                 adminNames: ["You"] + members.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
                             )
                         } label: {
-                            InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions")
+                            InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions", adminBadge: true)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -671,7 +708,7 @@ struct GroupDetailsView: View {
                             DisappearingMessagesView(convId: "group")
                         } label: {
                             InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: ChatDisappearStore.label("group"))
+                                         value: ChatDisappearStore.label("group"), adminBadge: true)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -679,7 +716,7 @@ struct GroupDetailsView: View {
                             AdvancedPrivacyView(convId: "group")
                         } label: {
                             InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
-                                         value: ChatPrivacyStore.label("group"))
+                                         value: ChatPrivacyStore.label("group"), adminBadge: true)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
