@@ -235,8 +235,9 @@ struct MessageBubble: View {
 
     private var showsQuickForward: Bool {
         guard onForward != nil, !isDeleted else { return false }
-        // Quick-forward button only on link messages.
-        return linkURL != nil
+        // Quick-forward arrow: on the leading (left) side of your own messages —
+        // "from where the message begins", like WhatsApp — and on received links.
+        return isOwn || linkURL != nil
     }
 
     private var forwardButton: some View {
