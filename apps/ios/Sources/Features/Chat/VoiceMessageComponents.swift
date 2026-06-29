@@ -185,7 +185,7 @@ struct AudioBubble: View {
                 }
             }
             .buttonStyle(.plain)
-            .disabled(url == nil || loadedDuration == 0)
+            .disabled(url == nil)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {

@@ -194,6 +194,11 @@ struct DirectMessageView: View {
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
         }
+        .onChange(of: propertyService.primary?.id) { _, id in
+            // The property can load after onAppear; retry any queued messages
+            // once we finally have an id to attach them to.
+            if id != nil { Task { await flushOutbox() } }
+        }
         .alert("Message Not Sent", isPresented: .init(
             get: { sendError != nil },
             set: { if !$0 { sendError = nil } }
@@ -369,7 +374,10 @@ struct DirectMessageView: View {
                         LazyVStack(spacing: 2) {
                             ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
                                 let isOwn = msg.senderName == myName
-                                let prevSameSender = idx > 0 && shown[idx - 1].senderName == msg.senderName
+                                // While searching, `shown` is a sparse subset, so adjacency-based
+                                // grouping is meaningless — show each result as a standalone bubble.
+                                let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                let prevSameSender = !isSearching && idx > 0 && shown[idx - 1].senderName == msg.senderName
                                 let showDate = idx == 0 || !sameDay(shown[idx - 1], msg)
 
                                 if showDate {
@@ -434,6 +442,10 @@ struct DirectMessageView: View {
                         }
                     }
                     .onChange(of: conversationMessages.count) { _, _ in
+                        let isOwnLatest = conversationMessages.last?.senderName == myName
+                        // Only auto-scroll & mark read when the user is already at the
+                        // bottom, or when the new message is one we just sent ourselves.
+                        guard !showJumpToLatest || isOwnLatest else { return }
                         if let last = conversationMessages.last {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                         }
@@ -1425,49 +1437,5 @@ private struct DMStarredView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - DM Message Details
-
-private struct DMDetailsSheet: View {
-    let message: DirectMessage
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                VStack(alignment: .leading, spacing: 14) {
-                    detailRow("From", message.senderName)
-                    detailRow("To", message.recipientName)
-                    detailRow("Sent", message.timeDisplay)
-                    detailRow("Read", message.readAt != nil ? "Yes" : "No")
-                    if message.editedAt != nil { detailRow("Edited", "Yes") }
-                    Spacer()
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .navigationTitle("Message info")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-
-    private func detailRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(LocalizedStringKey(label))
-                .foregroundStyle(Color.primary.opacity(0.5))
-            Spacer()
-            Text(value)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.trailing)
-        }
-        .font(.system(size: 15))
     }
 }

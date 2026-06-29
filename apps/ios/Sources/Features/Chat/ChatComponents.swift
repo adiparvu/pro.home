@@ -218,7 +218,6 @@ struct MessageBubble: View {
     /// The message this one replies to (for the quoted snippet), if any.
     var repliedMessage: Message? = nil
     var onReply: (() -> Void)? = nil
-    var onDetails: (() -> Void)? = nil
     var onPin: (() -> Void)? = nil
     var onMark: (() -> Void)? = nil
     var onForward: (() -> Void)? = nil
@@ -373,8 +372,10 @@ struct MessageBubble: View {
             if let onForward {
                 Button { onForward() } label: { Label("Forward", systemImage: "arrowshape.turn.up.right") }
             }
-            Button { UIPasteboard.general.string = message.body } label: {
-                Label("Copy", systemImage: "doc.on.doc")
+            if message.attachmentType == nil, let body = message.body, !body.isEmpty {
+                Button { UIPasteboard.general.string = body } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
             }
             if isOwn, message.body?.isEmpty == false, message.attachmentType == nil, let onEdit {
                 Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }

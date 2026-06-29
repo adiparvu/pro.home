@@ -22,18 +22,22 @@ func firstDetectedURL(in text: String) -> URL? {
 final class LinkMetadataCache {
     static let shared = LinkMetadataCache()
     private var cache: [URL: LPLinkMetadata] = [:]
-    private var inProgress: Set<URL> = []
+    private var waiters: [URL: [(LPLinkMetadata?) -> Void]] = [:]
 
     func fetch(_ url: URL, completion: @escaping (LPLinkMetadata?) -> Void) {
         if let m = cache[url] { completion(m); return }
-        guard !inProgress.contains(url) else { completion(nil); return }
-        inProgress.insert(url)
+        // A fetch is already running for this URL: queue this caller so it gets
+        // the same result instead of being dropped with nil.
+        if waiters[url] != nil { waiters[url]?.append(completion); return }
+        waiters[url] = [completion]
         let provider = LPMetadataProvider()
         provider.startFetchingMetadata(for: url) { [weak self] meta, _ in
             DispatchQueue.main.async {
-                self?.inProgress.remove(url)
-                if let meta { self?.cache[url] = meta }
-                completion(meta)
+                guard let self else { return }
+                if let meta { self.cache[url] = meta }
+                let pending = self.waiters[url] ?? []
+                self.waiters[url] = nil
+                pending.forEach { $0(meta) }
             }
         }
     }
@@ -84,7 +88,7 @@ struct LinkPreviewView: View {
         guard !loaded else { return }
         loaded = true
         LinkMetadataCache.shared.fetch(url) { meta in
-            guard let meta else { return }
+            guard let meta else { loaded = false; return }
             title = meta.title
             if let provider = meta.imageProvider {
                 provider.loadObject(ofClass: UIImage.self) { obj, _ in

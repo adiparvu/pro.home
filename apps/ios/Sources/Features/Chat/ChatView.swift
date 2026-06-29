@@ -771,9 +771,15 @@ struct ChatView: View {
                                     Circle()
                                         .fill(Color.accentColor)
                                         .frame(width: 30, height: 30)
-                                    Image(systemName: isSending ? "stop.fill" : "arrow.up")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(.white)
+                                    if isSending {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: "arrow.up")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
                                 }
                             }
                             .buttonStyle(.plain)

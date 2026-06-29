@@ -58,11 +58,16 @@ struct ConversationsView: View {
             case .family:    return !e.isGroup
             }
         }
-        // pinned conversations float to the top
+        // pinned conversations float to the top, otherwise keep newest-first order
         return filtered.sorted { a, b in
             let pa = pinnedIds.contains(a.id), pb = pinnedIds.contains(b.id)
             if pa != pb { return pa }
-            return false
+            switch (a.date, b.date) {
+            case (.some(let da), .some(let db)): return da > db
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return false
+            }
         }
     }
 
@@ -513,7 +518,7 @@ struct ConversationsView: View {
             case (.some(let da), .some(let db)): return da > db
             case (.some, .none): return true
             case (.none, .some): return false
-            case (.none, .none): return a.isGroup
+            case (.none, .none): return a.isGroup && !b.isGroup
             }
         }
     }

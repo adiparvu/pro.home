@@ -64,14 +64,23 @@ struct PollVote: Identifiable, Codable {
 // MARK: - Poll tally (pure, testable)
 
 enum PollTally {
-    static func totalVoters(_ votes: [PollVote]) -> Int {
-        Set(votes.map { $0.userId }).count
+    /// Stable per-voter identity. Falls back to the voter name when there is no
+    /// user id, so multiple anonymous/guest voters are not collapsed into one.
+    static func voterKey(_ v: PollVote) -> String {
+        if let id = v.userId { return "id:\(id.uuidString)" }
+        return "name:\(v.voterName)"
     }
+    static func totalVoters(_ votes: [PollVote]) -> Int {
+        Set(votes.map(voterKey)).count
+    }
+    /// Distinct voters who picked this option (deduped against repeated votes).
     static func count(_ votes: [PollVote], option: Int) -> Int {
-        votes.filter { $0.optionIndex == option }.count
+        Set(votes.filter { $0.optionIndex == option }.map(voterKey)).count
     }
     static func didVote(_ votes: [PollVote], option: Int, userId: UUID?) -> Bool {
-        votes.contains { $0.optionIndex == option && $0.userId == userId }
+        // Without a resolved identity we cannot claim the current user voted.
+        guard let userId else { return false }
+        return votes.contains { $0.optionIndex == option && $0.userId == userId }
     }
     static func fraction(_ votes: [PollVote], option: Int) -> Double {
         let total = totalVoters(votes)
@@ -261,16 +270,23 @@ struct EventBubble: View {
         guard let start = event.parsedDate else { return }
         let store = EKEventStore()
         store.requestWriteOnlyAccessToEvents { granted, _ in
-            guard granted else { return }
+            guard granted, let calendar = store.defaultCalendarForNewEvents else {
+                DispatchQueue.main.async { HapticFeedback.warning() }
+                return
+            }
             let ek = EKEvent(eventStore: store)
             ek.title = event.t
             ek.startDate = start
             ek.endDate = start.addingTimeInterval(3600)
             ek.notes = event.d
             ek.location = event.loc
-            ek.calendar = store.defaultCalendarForNewEvents
-            try? store.save(ek, span: .thisEvent)
-            DispatchQueue.main.async { HapticFeedback.success() }
+            ek.calendar = calendar
+            do {
+                try store.save(ek, span: .thisEvent)
+                DispatchQueue.main.async { HapticFeedback.success() }
+            } catch {
+                DispatchQueue.main.async { HapticFeedback.warning() }
+            }
         }
     }
 }
