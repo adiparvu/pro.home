@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import LocalAuthentication
 
 // MARK: - Shared info bits
@@ -156,14 +157,30 @@ struct ContactDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
+                        NavigationLink {
+                            AdvancedPrivacyView(convId: convId)
+                        } label: {
+                            InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
+                                         value: ChatPrivacyStore.label(convId))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
-                    VStack(spacing: 0) { SecureChatToggle(convId: convId) }
-                        .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16)
+                    VStack(spacing: 0) {
+                        SecureChatToggle(convId: convId)
+                        Divider().padding(.leading, 52)
+                        NavigationLink { EncryptionInfoView() } label: {
+                            InfoRowLabel(icon: "lock.fill", label: "Encryption",
+                                         value: "Encrypted")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .liquidGlass(cornerRadius: 14)
+                    .padding(.horizontal, 16)
 
                     Spacer(minLength: 30)
                 }
@@ -254,14 +271,30 @@ struct GroupDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
+                        NavigationLink {
+                            AdvancedPrivacyView(convId: "group")
+                        } label: {
+                            InfoRowLabel(icon: "shield.lefthalf.filled", label: "Advanced privacy",
+                                         value: ChatPrivacyStore.label("group"))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
-                    VStack(spacing: 0) { SecureChatToggle(convId: "group") }
-                        .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16)
+                    VStack(spacing: 0) {
+                        SecureChatToggle(convId: "group")
+                        Divider().padding(.leading, 52)
+                        NavigationLink { EncryptionInfoView() } label: {
+                            InfoRowLabel(icon: "lock.fill", label: "Encryption",
+                                         value: "Encrypted")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .liquidGlass(cornerRadius: 14)
+                    .padding(.horizontal, 16)
 
                     Spacer(minLength: 30)
                 }
@@ -371,6 +404,207 @@ struct SecureChatToggle: View {
         .padding(.horizontal, 16).padding(.vertical, 10)
         .onAppear { secured = ChatLockStore.isLocked(convId) }
         .onChange(of: secured) { _, on in ChatLockStore.setLocked(convId, on) }
+    }
+}
+
+// MARK: - Add contact
+
+struct AddContactView: View {
+    @EnvironmentObject private var familyService: FamilyService
+    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var email = ""
+    @State private var colorHex = "#3B82F6"
+    @State private var saving = false
+    @State private var error: String?
+
+    private let swatches = ["#3B82F6", "#22C55E", "#A855F7", "#EF4444",
+                            "#F59E0B", "#14B8A6", "#EC4899", "#6366F1"]
+
+    private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && !saving }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    ZStack {
+                        Circle().fill((Color(hex: colorHex) ?? .blue).opacity(0.2))
+                        Text(name.isEmpty ? "?" : String(name.prefix(1)).uppercased())
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(Color(hex: colorHex) ?? .blue)
+                    }
+                    .frame(width: 96, height: 96)
+                    .padding(.top, 8)
+
+                    VStack(spacing: 0) {
+                        field("Name", text: $name, icon: "person.fill")
+                        Divider().padding(.leading, 52)
+                        field("Phone", text: $phone, icon: "phone.fill", keyboard: .phonePad)
+                        Divider().padding(.leading, 52)
+                        field("Email", text: $email, icon: "envelope.fill", keyboard: .emailAddress)
+                    }
+                    .liquidGlass(cornerRadius: 16)
+                    .padding(.horizontal, 16)
+
+                    HStack(spacing: 12) {
+                        ForEach(swatches, id: \.self) { hex in
+                            Circle().fill(Color(hex: hex) ?? .gray)
+                                .frame(width: 30, height: 30)
+                                .overlay { if colorHex == hex { Circle().strokeBorder(Color.primary, lineWidth: 3) } }
+                                .onTapGesture { colorHex = hex }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+
+                    if let error {
+                        Text(error).font(.system(size: 13)).foregroundStyle(.red)
+                    }
+                    Spacer(minLength: 20)
+                }
+                .padding(.top, 8)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Add contact")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { Task { await save() } }.disabled(!canSave)
+                }
+            }
+        }
+    }
+
+    private func field(_ label: String, text: Binding<String>, icon: String,
+                       keyboard: UIKeyboardType = .default) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.6)).frame(width: 26)
+            TextField(LocalizedStringKey(label), text: text)
+                .font(.system(size: 16))
+                .keyboardType(keyboard)
+                .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+    }
+
+    private func save() async {
+        saving = true
+        defer { saving = false }
+        do {
+            try await familyService.add(
+                name: name.trimmingCharacters(in: .whitespaces),
+                role: "member",
+                email: email.isEmpty ? nil : email,
+                phone: phone.isEmpty ? nil : phone,
+                color: colorHex,
+                propertyId: propertyService.primary?.id,
+                birthday: nil,
+                socialLinks: []
+            )
+            dismiss()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Encryption info
+
+struct EncryptionInfoView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 18) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 54))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.top, 24)
+
+                Text("Your messages are encrypted")
+                    .font(.system(size: 20, weight: .bold))
+                    .multilineTextAlignment(.center)
+
+                VStack(alignment: .leading, spacing: 14) {
+                    encRow("network", "Encrypted in transit",
+                           "Messages, calls and media travel over TLS between your device and the servers.")
+                    encRow("externaldrive.fill.badge.checkmark", "Protected at rest",
+                           "Stored data is encrypted on the server and protected by per-user access rules.")
+                    encRow("hand.raised.fill", "Private by access control",
+                           "Only the people in a conversation can read its messages.")
+                }
+                .padding(16)
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+
+                Text("End-to-end encryption is on our roadmap. Until then, conversations are secured in transit and by strict access control.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+
+                Spacer(minLength: 20)
+            }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Encryption")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func encRow(_ icon: String, _ title: String, _ body: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18)).foregroundStyle(Color.accentColor).frame(width: 28)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(LocalizedStringKey(title)).font(.system(size: 15, weight: .semibold))
+                Text(LocalizedStringKey(body)).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.55))
+            }
+        }
+    }
+}
+
+// MARK: - Advanced chat privacy (per-conversation)
+
+enum ChatPrivacyStore {
+    static func isOn(_ id: String) -> Bool { UserDefaults.standard.bool(forKey: "chat.advprivacy.\(id)") }
+    static func setOn(_ id: String, _ on: Bool) { UserDefaults.standard.set(on, forKey: "chat.advprivacy.\(id)") }
+    static func label(_ id: String) -> String { isOn(id) ? "On" : "Off" }
+}
+
+struct AdvancedPrivacyView: View {
+    let convId: String
+    @State private var on = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(spacing: 0) {
+                    HStack(spacing: 14) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                        Text("Advanced chat privacy").font(.system(size: 16))
+                        Spacer()
+                        Toggle("", isOn: $on).labelsHidden()
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                }
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+
+                Text("When on, others are blocked from exporting this chat, auto-saving its media, and using its messages for AI features. Best for sensitive conversations.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .padding(.horizontal, 20)
+            }
+            .padding(.top, 8)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Advanced privacy")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { on = ChatPrivacyStore.isOn(convId) }
+        .onChange(of: on) { _, v in ChatPrivacyStore.setOn(convId, v) }
     }
 }
 

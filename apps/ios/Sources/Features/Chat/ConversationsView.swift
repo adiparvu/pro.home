@@ -15,6 +15,7 @@ struct ConversationsView: View {
 
     @State private var showAddMember = false
     @State private var showNewConversation = false
+    @State private var showAddContact = false
     @State private var showStoryCamera = false
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
@@ -176,6 +177,11 @@ struct ConversationsView: View {
                                  propertyName: propertyService.primary?.name)
                 .environmentObject(familyService)
         }
+        .sheet(isPresented: $showAddContact) {
+            AddContactView()
+                .environmentObject(familyService)
+                .environmentObject(propertyService)
+        }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
                                  groupName: propertyService.primary?.name) { id in
@@ -197,6 +203,7 @@ struct ConversationsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
                 Menu {
+                    Button { showAddContact = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
                         Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
