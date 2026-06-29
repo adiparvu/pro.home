@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import UIKit
 
 struct NotificationsSettingsView: View {
     @EnvironmentObject private var scheduler: NotificationScheduler
@@ -233,7 +234,11 @@ struct NotificationsSettingsView: View {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .badge, .sound])
             authStatus = granted ? .authorized : .denied
-            if granted { reschedule() }
+            if granted {
+                reschedule()
+                // Now that the user opted in, register for APNs push too.
+                UIApplication.shared.registerForRemoteNotifications()
+            }
         } catch {
             #if DEBUG
             print("[Notifications] permission error: \(error)")
