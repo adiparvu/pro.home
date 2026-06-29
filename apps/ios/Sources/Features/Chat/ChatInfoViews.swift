@@ -18,8 +18,7 @@ private struct InfoActionCard: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .liquidGlass(cornerRadius: 14)
         }
         .buttonStyle(.plain)
     }
@@ -87,8 +86,7 @@ struct InfoRowLabel: View {
 }
 
 private func infoCardBackground<V: View>(_ content: V) -> some View {
-    content.background(Color(.secondarySystemGroupedBackground),
-                       in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    content.liquidGlass(cornerRadius: 14)
         .padding(.horizontal, 16)
 }
 
@@ -136,8 +134,7 @@ struct ContactDetailsView: View {
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                     }
-                    .background(Color(.secondarySystemGroupedBackground),
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 0) {
@@ -152,8 +149,7 @@ struct ContactDetailsView: View {
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
-                    .background(Color(.secondarySystemGroupedBackground),
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
                     Spacer(minLength: 30)
@@ -221,8 +217,7 @@ struct GroupDetailsView: View {
                                 memberRow(name: m.name, member: m, admin: false)
                             }
                         }
-                        .background(Color(.secondarySystemGroupedBackground),
-                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .liquidGlass(cornerRadius: 14)
                         .padding(.horizontal, 16)
                     }
 
@@ -240,8 +235,7 @@ struct GroupDetailsView: View {
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
-                    .background(Color(.secondarySystemGroupedBackground),
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
                     Spacer(minLength: 30)
