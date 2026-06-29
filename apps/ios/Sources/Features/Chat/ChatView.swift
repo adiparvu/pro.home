@@ -274,7 +274,7 @@ struct ChatView: View {
             if newValue.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(newValue, forKey: draftKey) }
         }
-        .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
+        .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .images)
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
         .sheet(isPresented: $showLocationSheet) {
             LocationShareSheet { lat, lon in

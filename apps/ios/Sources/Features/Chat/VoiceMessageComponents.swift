@@ -204,6 +204,20 @@ struct AudioBubble: View {
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(isOwn ? Color.white.opacity(0.75) : Color.primary.opacity(0.5))
                 .frame(width: 34, alignment: .trailing)
+
+            if player.isPlaying {
+                Button { player.cycleRate() } label: {
+                    Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(isOwn ? .white : Color.accentColor)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(
+                            (isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)),
+                            in: Capsule()
+                        )
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(
@@ -241,6 +255,7 @@ final class AudioPlayer: ObservableObject {
     @Published var isPlaying = false
     @Published var progress: Double = 0
     @Published var position: TimeInterval = 0
+    @Published var rate: Float = 1.0
     var totalDuration: TimeInterval = 0
 
     private var player: AVPlayer?
@@ -272,8 +287,18 @@ final class AudioPlayer: ObservableObject {
             self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
         }
 
-        avPlayer.play()
+        avPlayer.playImmediately(atRate: rate)
         isPlaying = true
+    }
+
+    /// Cycles playback speed 1× → 1.5× → 2× → 1×, applying it live if playing.
+    func cycleRate() {
+        switch rate {
+        case 1.0: rate = 1.5
+        case 1.5: rate = 2.0
+        default:  rate = 1.0
+        }
+        if isPlaying { player?.rate = rate }
     }
 
     private func didFinishPlaying() {

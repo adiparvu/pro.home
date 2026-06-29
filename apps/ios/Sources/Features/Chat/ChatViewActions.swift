@@ -117,20 +117,23 @@ extension ChatView {
     }
 
     func sendPhoto(_ items: [PhotosPickerItem]) async {
-        guard let pid = propertyId, let item = items.first else { return }
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        guard let pid = propertyId, !items.isEmpty else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString).jpg"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image",
-            mentionedIds: mentionedIds
-        )
+        // Send each selected image as its own message (preserves order).
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            let fileName = "\(UUID().uuidString).jpg"
+            let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
+            try? await supabase.storage.from("documents")
+                .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
+            let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+            try? await messageService.send(
+                propertyId: pid, senderName: senderName, body: nil,
+                attachmentUrl: url?.absoluteString, attachmentType: "image",
+                mentionedIds: mentionedIds
+            )
+        }
         HapticFeedback.success()
         photoPickerItems = []
         mentionedIds = []; mentionedNames = []

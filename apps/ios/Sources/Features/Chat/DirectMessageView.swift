@@ -611,7 +611,7 @@ struct DirectMessageView: View {
         .animation(.spring(duration: 0.3), value: replyingTo?.id)
         .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
         .photosPicker(isPresented: $showPhotoPicker, selection: $photoPickerItems,
-                      maxSelectionCount: 1, matching: .images)
+                      maxSelectionCount: 10, matching: .images)
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
     }
 
@@ -898,10 +898,13 @@ struct DirectMessageView: View {
 
     @MainActor
     private func sendPhoto(_ items: [PhotosPickerItem]) async {
-        guard let item = items.first else { return }
+        guard !items.isEmpty else { return }
         photoPickerItems = []
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-        await uploadAndSendImage(data: data)
+        // Send each selected image as its own message (preserves order).
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            await uploadAndSendImage(data: data)
+        }
     }
 
     @MainActor
