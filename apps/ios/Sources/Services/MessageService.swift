@@ -46,18 +46,77 @@ final class MessageService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
+            // Load the most recent page (newest first from the DB, shown oldest→newest).
             let rows: [Message] = try await supabase
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .limit(200)
+                .order("created_at", ascending: false)
+                .limit(Self.pageSize)
                 .execute()
                 .value
             let hidden = hiddenIds()
-            messages = rows.filter { !hidden.contains($0.id) }
+            messages = rows.reversed().filter { !hidden.contains($0.id) }
+            hasMoreOlder = rows.count == Self.pageSize
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// Page size for chat history loads / pagination.
+    static let pageSize = 50
+    /// True while older messages remain to be loaded.
+    @Published var hasMoreOlder = false
+    @Published var isLoadingOlder = false
+
+    /// Loads the next older page and prepends it (for "load older" / scroll-to-top).
+    func loadOlder(propertyId: UUID) async {
+        guard hasMoreOlder, !isLoadingOlder, let oldest = messages.first?.createdAt else { return }
+        isLoadingOlder = true
+        defer { isLoadingOlder = false }
+        do {
+            let rows: [Message] = try await supabase
+                .from("messages")
+                .select()
+                .eq("property_id", value: propertyId.uuidString)
+                .lt("created_at", value: oldest)
+                .order("created_at", ascending: false)
+                .limit(Self.pageSize)
+                .execute()
+                .value
+            let hidden = hiddenIds()
+            let existing = Set(messages.map { $0.id })
+            let older = rows.reversed().filter { !hidden.contains($0.id) && !existing.contains($0.id) }
+            messages.insert(contentsOf: older, at: 0)
+            hasMoreOlder = rows.count == Self.pageSize
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Appends messages newer than the newest loaded (used on realtime insert so
+    /// expanded older history isn't collapsed by a full reload).
+    func loadNewer(propertyId: UUID) async -> Int {
+        do {
+            var query = supabase
+                .from("messages")
+                .select()
+                .eq("property_id", value: propertyId.uuidString)
+            if let newest = messages.last?.createdAt {
+                query = query.gt("created_at", value: newest)
+            }
+            let rows: [Message] = try await query
+                .order("created_at", ascending: true)
+                .limit(Self.pageSize)
+                .execute()
+                .value
+            let hidden = hiddenIds()
+            let existing = Set(messages.map { $0.id })
+            let fresh = rows.filter { !hidden.contains($0.id) && !existing.contains($0.id) }
+            messages.append(contentsOf: fresh)
+            return fresh.count
+        } catch {
+            return 0
         }
     }
 
@@ -78,8 +137,8 @@ final class MessageService: ObservableObject {
         realtimeChannel = channel
 
         for await _ in changes {
-            await load(propertyId: propertyId)
-            unreadCount += 1
+            let added = await loadNewer(propertyId: propertyId)
+            unreadCount += max(added, 1)
         }
     }
 

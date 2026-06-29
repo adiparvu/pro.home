@@ -489,6 +489,23 @@ struct ChatView: View {
 
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 6) {
+                    if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
+                        Button {
+                            if let pid = propertyId { Task { await messageService.loadOlder(propertyId: pid) } }
+                        } label: {
+                            if messageService.isLoadingOlder {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Text("Load older messages")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .disabled(messageService.isLoadingOlder)
+                    }
                     ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
                         if idx == 0 || !sameDay(filteredMessages[idx - 1], msg) {
                             ChatDateSeparator(dateStr: msg.createdAt)

@@ -113,15 +113,19 @@ final class DirectMessageService: ObservableObject {
         defer { isLoading = false }
         guard !myName.isEmpty else { return }
         do {
-            dms = try await supabase
+            // Fetch the most recent 1000 (newest first), then show oldest→newest.
+            // Previously this ordered ascending, which returned the *oldest* 1000
+            // and could hide recent messages once a property had many DMs.
+            let rows: [DirectMessage] = try await supabase
                 .from("direct_messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
                 .or("sender_name.eq.\(myName),recipient_name.eq.\(myName)")
-                .order("created_at", ascending: true)
+                .order("created_at", ascending: false)
                 .limit(1000)
                 .execute()
                 .value
+            dms = rows.reversed()
             // Anything addressed to us that this device just fetched counts as
             // delivered — stamp it so the sender's ticks advance to "delivered".
             await markDelivered(myName: myName)
