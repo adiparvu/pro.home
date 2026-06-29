@@ -88,6 +88,8 @@ struct PollBubble: View {
     let isOwn: Bool
     let onVote: (Int) -> Void
 
+    @State private var showVotes = false
+
     private var totalVoters: Int { PollTally.totalVoters(votes) }
     private func count(_ i: Int) -> Int { PollTally.count(votes, option: i) }
     private func didVote(_ i: Int) -> Bool { PollTally.didVote(votes, option: i, userId: myUserId) }
@@ -96,7 +98,7 @@ struct PollBubble: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill").font(.system(size: 12))
-                Text(poll.multi ? "Poll · multiple choice" : "Poll")
+                Text(poll.multi ? "Selectează una sau mai multe" : "Selectează una")
                     .font(.system(size: 11, weight: .semibold))
             }
             .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.accentColor)
@@ -112,14 +114,30 @@ struct PollBubble: View {
                 }
             }
 
-            Text(totalVoters == 1 ? "1 vote" : "\(totalVoters) votes")
+            Text(totalVoters == 1 ? "1 vot" : "\(totalVoters) voturi")
                 .font(.system(size: 11))
                 .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(0.45))
+
+            Divider().overlay(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
+
+            Button { showVotes = true } label: {
+                Text("Afișează voturile")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(isOwn ? .white : Color.accentColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 2)
+            }
+            .buttonStyle(.plain)
+            .disabled(totalVoters == 0)
+            .opacity(totalVoters == 0 ? 0.45 : 1)
         }
         .padding(14)
         .frame(maxWidth: 260, alignment: .leading)
         .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .sheet(isPresented: $showVotes) {
+            PollVotesSheet(poll: poll, votes: votes)
+        }
     }
 
     private func optionRow(_ i: Int, _ opt: String) -> some View {
@@ -147,6 +165,43 @@ struct PollBubble: View {
                 }
             }
             .frame(height: 5)
+        }
+    }
+}
+
+// MARK: - Poll votes sheet
+
+struct PollVotesSheet: View {
+    let poll: ChatPoll
+    let votes: [PollVote]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                List {
+                    ForEach(Array(poll.opts.enumerated()), id: \.offset) { i, opt in
+                        let voters = votes.filter { $0.optionIndex == i }
+                        Section("\(opt) · \(voters.count)") {
+                            if voters.isEmpty {
+                                Text("Niciun vot")
+                                    .foregroundStyle(Color.primary.opacity(0.4))
+                            } else {
+                                ForEach(voters) { v in
+                                    Text(v.voterName.isEmpty ? "Membru" : v.voterName)
+                                }
+                            }
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+            }
+            .navigationTitle("Voturi")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
         }
     }
 }
