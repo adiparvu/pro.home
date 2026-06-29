@@ -103,6 +103,9 @@ struct ContactDetailsView: View {
     var onTheme: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
+    @State private var blocked = false
+    @State private var showReport = false
+    @State private var reported = false
 
     private var convId: String { member.id.uuidString }
 
@@ -182,16 +185,56 @@ struct ContactDetailsView: View {
                     .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
+                    VStack(spacing: 0) {
+                        Button {
+                            blocked.toggle()
+                            ChatBlockStore.setBlocked(convId, blocked)
+                            HapticFeedback.warning()
+                        } label: {
+                            destructiveRow(icon: blocked ? "hand.raised.slash.fill" : "hand.raised.fill",
+                                           label: blocked ? "Unblock \(member.name)" : "Block \(member.name)")
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
+                        Button { showReport = true } label: {
+                            destructiveRow(icon: "exclamationmark.bubble.fill",
+                                           label: reported ? "Reported" : "Report \(member.name)")
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(reported)
+                    }
+                    .liquidGlass(cornerRadius: 14)
+                    .padding(.horizontal, 16)
+
                     Spacer(minLength: 30)
                 }
             }
             .background(appBackground.ignoresSafeArea())
+            .confirmationDialog("Report \(member.name)?", isPresented: $showReport, titleVisibility: .visible) {
+                Button("Report", role: .destructive) {
+                    ChatBlockStore.report(convId); reported = true; HapticFeedback.success()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("The last messages from this contact will be forwarded for review.")
+            }
+            .onAppear { blocked = ChatBlockStore.isBlocked(convId) }
             .navigationTitle("Contact details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .onAppear { muted = ChatMuteStore.isMuted(convId) }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
         }
+    }
+
+    private func destructiveRow(icon: String, label: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(.red).frame(width: 26)
+            Text(label).font(.system(size: 16)).foregroundStyle(.red)
+            Spacer()
+        }
+        .padding(.horizontal, 16).padding(.vertical, 13)
+        .contentShape(Rectangle())
     }
 }
 
@@ -359,6 +402,34 @@ enum ChatToneStore {
     }
     static func setCallTone(_ id: String, _ tone: String) {
         UserDefaults.standard.set(tone, forKey: "chat.calltone.\(id)")
+    }
+}
+
+// MARK: - Block / report
+
+enum ChatBlockStore {
+    static func blocked() -> Set<String> { Set(UserDefaults.standard.stringArray(forKey: "chat.blocked") ?? []) }
+    static func isBlocked(_ id: String) -> Bool { blocked().contains(id) }
+    static func setBlocked(_ id: String, _ on: Bool) {
+        var s = blocked()
+        if on { s.insert(id) } else { s.remove(id) }
+        UserDefaults.standard.set(Array(s), forKey: "chat.blocked")
+    }
+    static func report(_ id: String) {
+        var s = Set(UserDefaults.standard.stringArray(forKey: "chat.reported") ?? [])
+        s.insert(id)
+        UserDefaults.standard.set(Array(s), forKey: "chat.reported")
+    }
+}
+
+/// Builds a plain-text transcript of a conversation for export/share.
+enum ChatExport {
+    static func transcript(title: String, lines: [(sender: String, time: String, body: String)]) -> String {
+        var out = "Chat export — \(title)\n\n"
+        for l in lines {
+            out += "[\(l.time)] \(l.sender): \(l.body)\n"
+        }
+        return out
     }
 }
 

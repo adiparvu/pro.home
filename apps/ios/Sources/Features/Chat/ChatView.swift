@@ -93,6 +93,11 @@ struct ChatView: View {
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
     }
+    private var exportTranscript: String {
+        ChatExport.transcript(title: "Group", lines: messageService.messages.map {
+            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
+        })
+    }
     private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
 
@@ -212,6 +217,16 @@ struct ChatView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    ShareLink(item: exportTranscript) {
+                        Label("Export chat", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+                }
+                .accessibilityLabel("More")
             }
         }
         .task {

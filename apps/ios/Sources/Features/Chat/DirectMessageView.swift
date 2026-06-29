@@ -51,6 +51,7 @@ struct DirectMessageView: View {
     @StateObject private var audioRecorder = ChatAudioRecorder()
     @StateObject private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
     @State private var recordingCancelled = false
+    @State private var blockRefresh = false
 
     private var myName: String {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
@@ -78,7 +79,11 @@ struct DirectMessageView: View {
             chatTheme.background
             VStack(spacing: 0) {
                 messageList
-                inputBar
+                if ChatBlockStore.isBlocked(member.id.uuidString) {
+                    blockedBanner
+                } else {
+                    inputBar
+                }
             }
         }
         .overlay {
@@ -139,6 +144,18 @@ struct DirectMessageView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    ShareLink(item: exportTranscript) {
+                        Label("Export chat", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .accessibilityLabel("More")
             }
         }
         .sheet(isPresented: $showProfile) {
@@ -535,6 +552,29 @@ struct DirectMessageView: View {
     }
 
     // MARK: - Input Bar
+
+    private var exportTranscript: String {
+        ChatExport.transcript(title: member.name, lines: conversationMessages.map {
+            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body)
+        })
+    }
+
+    private var blockedBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "hand.raised.fill").font(.system(size: 13))
+            Text("You blocked this contact.")
+                .font(.system(size: 14))
+            Button("Unblock") {
+                ChatBlockStore.setBlocked(member.id.uuidString, false)
+                blockRefresh.toggle()
+            }
+            .font(.system(size: 14, weight: .semibold))
+        }
+        .foregroundStyle(Color.primary.opacity(0.7))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(.regularMaterial)
+    }
 
     private var inputBar: some View {
         VStack(spacing: 0) {
