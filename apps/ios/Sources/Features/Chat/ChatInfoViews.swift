@@ -6,70 +6,130 @@ import CoreImage.CIFilterBuiltins
 // MARK: - Group permissions
 
 enum GroupPermissionStore {
-    // Each key stores true = "Only admins", false = "All members".
-    static func onlyAdmins(_ key: String) -> Bool { UserDefaults.standard.bool(forKey: "group.perm.\(key)") }
-    static func set(_ key: String, _ onlyAdmins: Bool) { UserDefaults.standard.set(onlyAdmins, forKey: "group.perm.\(key)") }
+    // Each key stores the toggle value: true = members allowed, false = only admins.
+    // Defaults: members can send (true); edit info / add members are admins-only
+    // (false); approve new members on (true).
+    static func value(_ key: String, default def: Bool) -> Bool {
+        UserDefaults.standard.object(forKey: "group.perm.\(key)") as? Bool ?? def
+    }
+    static func set(_ key: String, _ on: Bool) { UserDefaults.standard.set(on, forKey: "group.perm.\(key)") }
 }
 
 struct GroupPermissionsView: View {
+    var adminNames: [String] = []
+
     @State private var editInfo = false
-    @State private var sendMessages = false
+    @State private var sendMessages = true
     @State private var addMembers = false
+    @State private var approveNew = true
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Choose who can manage and participate in this group.")
-                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
-                    .padding(.horizontal, 20).padding(.top, 8)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Member permissions")
+                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, 20).padding(.top, 6)
 
                 VStack(spacing: 0) {
-                    permRow("Edit group info", "Name, icon and description", $editInfo)
-                    Divider().padding(.leading, 16)
-                    permRow("Send messages", "Who can post in this group", $sendMessages)
-                    Divider().padding(.leading, 16)
-                    permRow("Add other members", nil, $addMembers)
+                    toggleRow("pencil", "Edit group settings",
+                              "Includes the group name, icon and description, the disappearing-messages timer, and the options to pin and keep or unkeep messages.",
+                              $editInfo)
+                    Divider().padding(.leading, 56)
+                    toggleRow("megaphone.fill", "Send messages", nil, $sendMessages)
+                    Divider().padding(.leading, 56)
+                    toggleRow("person.badge.plus", "Add other members", nil, $addMembers)
                 }
                 .liquidGlass(cornerRadius: 16)
                 .padding(.horizontal, 16)
+
+                Text("Turning these settings off means only group admins can do this.")
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .padding(.horizontal, 20)
+
+                Text("Admin permissions")
+                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, 20).padding(.top, 12)
+
+                VStack(spacing: 0) {
+                    toggleRow("person.badge.clock.fill", "Approve new members", nil, $approveNew)
+                }
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+
+                Text("When on, any request to join the group must be approved by an admin.")
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .padding(.horizontal, 20)
+
+                if !adminNames.isEmpty {
+                    VStack(spacing: 0) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Group admins").font(.system(size: 16))
+                                Text(adminNames.joined(separator: ", "))
+                                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.45)).lineLimit(1)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 12)
+                    }
+                    .liquidGlass(cornerRadius: 16)
+                    .padding(.horizontal, 16).padding(.top, 8)
+                }
+
+                Spacer(minLength: 20)
             }
+            .padding(.top, 8)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Group permissions")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            editInfo = GroupPermissionStore.onlyAdmins("editInfo")
-            sendMessages = GroupPermissionStore.onlyAdmins("sendMessages")
-            addMembers = GroupPermissionStore.onlyAdmins("addMembers")
+            editInfo = GroupPermissionStore.value("editInfo", default: false)
+            sendMessages = GroupPermissionStore.value("sendMessages", default: true)
+            addMembers = GroupPermissionStore.value("addMembers", default: false)
+            approveNew = GroupPermissionStore.value("approveNew", default: true)
         }
         .onChange(of: editInfo) { _, v in GroupPermissionStore.set("editInfo", v) }
         .onChange(of: sendMessages) { _, v in GroupPermissionStore.set("sendMessages", v) }
         .onChange(of: addMembers) { _, v in GroupPermissionStore.set("addMembers", v) }
+        .onChange(of: approveNew) { _, v in GroupPermissionStore.set("approveNew", v) }
     }
 
-    private func permRow(_ title: String, _ subtitle: String?, _ binding: Binding<Bool>) -> some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
+    private func toggleRow(_ icon: String, _ title: String, _ subtitle: String?, _ binding: Binding<Bool>) -> some View {
+        HStack(alignment: subtitle == nil ? .center : .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 28)
+                .padding(.top, subtitle == nil ? 0 : 2)
+            VStack(alignment: .leading, spacing: 4) {
                 Text(LocalizedStringKey(title)).font(.system(size: 16))
                 if let subtitle {
-                    Text(LocalizedStringKey(subtitle)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    Text(LocalizedStringKey(subtitle)).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
                 }
             }
             Spacer()
-            Menu {
-                Button("All members") { binding.wrappedValue = false }
-                Button("Only admins") { binding.wrappedValue = true }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(binding.wrappedValue ? "Only admins" : "All members")
-                        .foregroundStyle(Color.primary.opacity(0.45))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.3))
-                }
-                .font(.system(size: 14))
-            }
+            Toggle("", isOn: binding).labelsHidden()
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
+    }
+}
+
+// MARK: - Member list changes (history shell)
+
+struct MemberChangesView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("See changes from the last 60 days, such as members who left or were removed.")
+                .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+                .padding(20)
+            Spacer()
+            Text("No changes")
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Member list changes")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -484,6 +544,15 @@ struct GroupDetailsView: View {
                         }
                         .liquidGlass(cornerRadius: 14)
                         .padding(.horizontal, 16)
+
+                        VStack(spacing: 0) {
+                            NavigationLink { MemberChangesView() } label: {
+                                InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .liquidGlass(cornerRadius: 14)
+                        .padding(.horizontal, 16)
                     }
 
                     VStack(spacing: 0) {
@@ -507,7 +576,9 @@ struct GroupDetailsView: View {
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            GroupPermissionsView()
+                            GroupPermissionsView(
+                                adminNames: ["You"] + members.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
+                            )
                         } label: {
                             InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions")
                         }
