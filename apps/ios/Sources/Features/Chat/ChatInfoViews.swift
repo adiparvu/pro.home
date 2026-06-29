@@ -3,6 +3,76 @@ import UIKit
 import LocalAuthentication
 import CoreImage.CIFilterBuiltins
 
+// MARK: - Group permissions
+
+enum GroupPermissionStore {
+    // Each key stores true = "Only admins", false = "All members".
+    static func onlyAdmins(_ key: String) -> Bool { UserDefaults.standard.bool(forKey: "group.perm.\(key)") }
+    static func set(_ key: String, _ onlyAdmins: Bool) { UserDefaults.standard.set(onlyAdmins, forKey: "group.perm.\(key)") }
+}
+
+struct GroupPermissionsView: View {
+    @State private var editInfo = false
+    @State private var sendMessages = false
+    @State private var addMembers = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Choose who can manage and participate in this group.")
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .padding(.horizontal, 20).padding(.top, 8)
+
+                VStack(spacing: 0) {
+                    permRow("Edit group info", "Name, icon and description", $editInfo)
+                    Divider().padding(.leading, 16)
+                    permRow("Send messages", "Who can post in this group", $sendMessages)
+                    Divider().padding(.leading, 16)
+                    permRow("Add other members", nil, $addMembers)
+                }
+                .liquidGlass(cornerRadius: 16)
+                .padding(.horizontal, 16)
+            }
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("Group permissions")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            editInfo = GroupPermissionStore.onlyAdmins("editInfo")
+            sendMessages = GroupPermissionStore.onlyAdmins("sendMessages")
+            addMembers = GroupPermissionStore.onlyAdmins("addMembers")
+        }
+        .onChange(of: editInfo) { _, v in GroupPermissionStore.set("editInfo", v) }
+        .onChange(of: sendMessages) { _, v in GroupPermissionStore.set("sendMessages", v) }
+        .onChange(of: addMembers) { _, v in GroupPermissionStore.set("addMembers", v) }
+    }
+
+    private func permRow(_ title: String, _ subtitle: String?, _ binding: Binding<Bool>) -> some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(LocalizedStringKey(title)).font(.system(size: 16))
+                if let subtitle {
+                    Text(LocalizedStringKey(subtitle)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                }
+            }
+            Spacer()
+            Menu {
+                Button("All members") { binding.wrappedValue = false }
+                Button("Only admins") { binding.wrappedValue = true }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(binding.wrappedValue ? "Only admins" : "All members")
+                        .foregroundStyle(Color.primary.opacity(0.45))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.3))
+                }
+                .font(.system(size: 14))
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+    }
+}
+
 // MARK: - Invite via link / QR
 
 struct InviteLinkView: View {
@@ -435,6 +505,13 @@ struct GroupDetailsView: View {
                             Divider().padding(.leading, 52)
                         }
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
+                        Divider().padding(.leading, 52)
+                        NavigationLink {
+                            GroupPermissionsView()
+                        } label: {
+                            InfoRowLabel(icon: "person.2.badge.gearshape.fill", label: "Group permissions")
+                        }
+                        .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         NavigationLink {
                             ConversationNotificationsView(convId: "group", subtitle: groupName)
