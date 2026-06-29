@@ -417,7 +417,6 @@ struct ContactDetailsView: View {
     private var convId: String { member.id.uuidString }
 
     var body: some View {
-        NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     VStack(spacing: 10) {
@@ -545,7 +544,6 @@ struct ContactDetailsView: View {
             .onAppear { blocked = ChatBlockStore.isBlocked(convId) }
             .navigationTitle("Contact details")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .onAppear {
                 muted = ChatMuteStore.isMuted(convId)
                 memberLabel = MemberLabelStore.label(convId)
@@ -557,7 +555,6 @@ struct ContactDetailsView: View {
                     MemberLabelStore.set(convId, newText)
                 }
             }
-        }
     }
 
     private func destructiveRow(icon: String, label: String) -> some View {
@@ -598,7 +595,6 @@ struct GroupDetailsView: View {
     @State private var labelRefresh = false
 
     var body: some View {
-        NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     VStack(spacing: 10) {
@@ -747,7 +743,6 @@ struct GroupDetailsView: View {
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 14) {
                         if !inviteLink.isEmpty {
@@ -800,7 +795,6 @@ struct GroupDetailsView: View {
                     GroupDescriptionStore.set(newText)
                 }
             }
-        }
     }
 
     @ViewBuilder

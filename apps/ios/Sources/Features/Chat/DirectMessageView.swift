@@ -158,7 +158,7 @@ struct DirectMessageView: View {
                 .accessibilityLabel("More")
             }
         }
-        .sheet(isPresented: $showProfile) {
+        .navigationDestination(isPresented: $showProfile) {
             ContactDetailsView(
                 member: member,
                 onAudio: { showCallSheet = true },

@@ -336,7 +336,7 @@ struct ChatView: View {
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker()
         }
-        .sheet(isPresented: $showGroupInfo) {
+        .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
                 groupName: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup"),
                 members: familyService.members,
