@@ -23,8 +23,11 @@ struct ConversationsView: View {
     @State private var mutedIds: Set<String> = []
     @State private var manualUnreadIds: Set<String> = []
     @State private var showArchived = false
+    @State private var lockedRevealed = false
     @State private var searchText = ""
     @State private var navTarget: String? = nil
+
+    private var hasLockedChats: Bool { nonArchived.contains { ChatLockStore.isLocked($0.id) } }
 
     enum ConvFilter: CaseIterable {
         case all, unread, favorites, groups, family
@@ -50,6 +53,8 @@ struct ConversationsView: View {
 
     private var visibleConversations: [ConversationEntry] {
         let filtered = nonArchived.filter { e in
+            // Secured conversations stay hidden until unlocked with Face ID.
+            if ChatLockStore.isLocked(e.id) && !lockedRevealed { return false }
             switch filter {
             case .all:       return true
             case .unread:    return isUnread(e)
@@ -77,6 +82,8 @@ struct ConversationsView: View {
         // Global search: match the conversation name, its last-message preview,
         // or the body of any loaded message in that conversation.
         return nonArchived.filter { entry in
+            // Don't surface secured chats in search until unlocked.
+            if ChatLockStore.isLocked(entry.id) && !lockedRevealed { return false }
             if entry.name.localizedCaseInsensitiveContains(q) { return true }
             if entry.preview.localizedCaseInsensitiveContains(q) { return true }
             if entry.isGroup {
@@ -251,6 +258,37 @@ struct ConversationsView: View {
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
                                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+
+                    if hasLockedChats && !showArchived && searchText.isEmpty {
+                        Button {
+                            if lockedRevealed {
+                                withAnimation { lockedRevealed = false }
+                            } else {
+                                Task {
+                                    if await BiometricAuth.authenticate(reason: "Unlock secured chats") {
+                                        withAnimation { lockedRevealed = true }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: lockedRevealed ? "lock.open.fill" : "lock.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Color.primary.opacity(0.6))
+                                    .frame(width: 40)
+                                Text(lockedRevealed ? "Locked chats (visible)" : "Locked chats")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.primary.opacity(0.25))
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+                        .liquidGlass(cornerRadius: 16)
                     }
 
                     ForEach(entries) { entry in

@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 
 // MARK: - Shared info bits
 
@@ -160,6 +161,10 @@ struct ContactDetailsView: View {
                     .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
+                    VStack(spacing: 0) { SecureChatToggle(convId: convId) }
+                        .liquidGlass(cornerRadius: 14)
+                        .padding(.horizontal, 16)
+
                     Spacer(minLength: 30)
                 }
             }
@@ -254,6 +259,10 @@ struct GroupDetailsView: View {
                     .liquidGlass(cornerRadius: 14)
                     .padding(.horizontal, 16)
 
+                    VStack(spacing: 0) { SecureChatToggle(convId: "group") }
+                        .liquidGlass(cornerRadius: 14)
+                        .padding(.horizontal, 16)
+
                     Spacer(minLength: 30)
                 }
             }
@@ -317,6 +326,51 @@ enum ChatToneStore {
     }
     static func setCallTone(_ id: String, _ tone: String) {
         UserDefaults.standard.set(tone, forKey: "chat.calltone.\(id)")
+    }
+}
+
+// MARK: - Secured (locked + hidden) conversations
+
+enum ChatLockStore {
+    static func locked() -> Set<String> { Set(UserDefaults.standard.stringArray(forKey: "chat.locked") ?? []) }
+    static func isLocked(_ id: String) -> Bool { locked().contains(id) }
+    static func setLocked(_ id: String, _ on: Bool) {
+        var s = locked()
+        if on { s.insert(id) } else { s.remove(id) }
+        UserDefaults.standard.set(Array(s), forKey: "chat.locked")
+    }
+}
+
+enum BiometricAuth {
+    /// Prompts Face ID / Touch ID (passcode fallback). Returns true on success.
+    static func authenticate(reason: String) async -> Bool {
+        let ctx = LAContext()
+        var error: NSError?
+        guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { return false }
+        return (try? await ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) ?? false
+    }
+}
+
+/// Toggle row that locks + hides a conversation on this device (WhatsApp-style).
+struct SecureChatToggle: View {
+    let convId: String
+    @State private var secured = false
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Secure conversation").font(.system(size: 16))
+                Text("Lock and hide this chat on this device.")
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+            }
+            Spacer()
+            Toggle("", isOn: $secured).labelsHidden()
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .onAppear { secured = ChatLockStore.isLocked(convId) }
+        .onChange(of: secured) { _, on in ChatLockStore.setLocked(convId, on) }
     }
 }
 
