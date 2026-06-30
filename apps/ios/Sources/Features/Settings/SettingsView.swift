@@ -311,7 +311,11 @@ struct SettingsView: View {
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
                 Group {
                     if propertyService.primary?.id != nil {
-                        ConversationsView()
+                        ChatSettingsView()
+                            .environmentObject(propertyService)
+                            .environmentObject(familyService)
+                            .environmentObject(profileService)
+                            .environmentObject(messageService)
                     } else {
                         SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Chat", description: "Adaugă o proprietate pentru a putea trimite mesaje.")
                     }
