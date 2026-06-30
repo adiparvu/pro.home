@@ -235,7 +235,6 @@ struct CommunitiesView: View {
     var myName: String = "Me"
 
     @State private var showCreate = false
-    @State private var detailGroup: ChatGroup?
 
     var body: some View {
         NavigationStack {
@@ -248,7 +247,13 @@ struct CommunitiesView: View {
                     } else {
                         VStack(spacing: 10) {
                             ForEach(service.groups) { group in
-                                Button { detailGroup = group } label: {
+                                NavigationLink {
+                                    GroupChatView(group: group,
+                                                  propertyId: propertyId,
+                                                  myName: myName,
+                                                  members: members,
+                                                  groupMembers: service.members(for: group))
+                                } label: {
                                     CommunityRow(group: group, memberCount: service.members(for: group).count)
                                 }
                                 .buttonStyle(.plain)
@@ -272,9 +277,6 @@ struct CommunitiesView: View {
                     Task { await service.create(propertyId: pid, name: name, kind: kind,
                                                 selected: selected, myName: myName) }
                 }
-            }
-            .sheet(item: $detailGroup) { group in
-                GroupMembersSheet(group: group, members: service.members(for: group))
             }
             .task { if let pid = propertyId { await service.load(propertyId: pid) } }
         }
@@ -311,6 +313,88 @@ struct CommunitiesView: View {
                 .padding(.horizontal, 32)
         }
         .padding(.top, 40)
+    }
+}
+
+// Lean, self-contained group chat thread. Owns its own MessageService instance
+// scoped to the group's group_id (so it never collides with the main chat) and
+// takes everything as plain params — no @EnvironmentObject, so it can't crash on
+// a missing ancestor when pushed from the Communities sheet.
+private struct GroupChatView: View {
+    let group: ChatGroup
+    let propertyId: UUID?
+    let myName: String
+    let members: [FamilyMember]
+    let groupMembers: [ChatGroupMember]
+
+    @StateObject private var svc = MessageService()
+    @State private var text = ""
+    @State private var showMembers = false
+
+    private var myId: UUID? { supabase.auth.currentSession?.user.id }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(svc.messages) { m in
+                            MessageBubble(message: m,
+                                          isOwn: m.senderId == myId,
+                                          members: members)
+                                .id(m.id)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                }
+                .onChange(of: svc.messages.count) { _, _ in
+                    if let last = svc.messages.last?.id {
+                        withAnimation { proxy.scrollTo(last, anchor: .bottom) }
+                    }
+                }
+            }
+            composer
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle(group.name.isEmpty ? group.kindLabel : group.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showMembers = true } label: { Image(systemName: "person.2.fill") }
+                    .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showMembers) {
+            GroupMembersSheet(group: group, members: groupMembers)
+        }
+        .task {
+            guard let pid = propertyId else { return }
+            svc.myName = myName
+            await svc.load(propertyId: pid, groupId: group.id)
+        }
+    }
+
+    private var composer: some View {
+        HStack(spacing: 10) {
+            TextField("Mesaj", text: $text, axis: .vertical)
+                .font(.system(size: 16))
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .liquidGlass(cornerRadius: 20)
+            Button {
+                let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !body.isEmpty, let pid = propertyId else { return }
+                text = ""
+                Task { try? await svc.send(propertyId: pid, senderName: myName, body: body) }
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
     }
 }
 
