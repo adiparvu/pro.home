@@ -112,6 +112,37 @@ struct ConversationsView: View {
         manualUnreadIds = Set(UserDefaults.standard.stringArray(forKey: "chat.manualUnread") ?? [])
         lockedIds = ChatLockStore.locked()
     }
+
+    /// Reconciles pin/mute/archive + block with Supabase so they sync across
+    /// devices. Supabase is the source of truth; if it has no rows yet (first run
+    /// for this user) the existing local prefs are migrated up instead of wiped.
+    private func syncRemotePrefs() async {
+        let pid = propertyService.primary?.id
+        let prefs = await ChatPrefsSync.load()
+        if prefs.isEmpty {
+            let ids = pinnedIds.union(mutedIds).union(archivedIds)
+            for id in ids {
+                await ChatPrefsSync.upsert(convId: id,
+                                           pinned: pinnedIds.contains(id),
+                                           muted: mutedIds.contains(id),
+                                           archived: archivedIds.contains(id),
+                                           propertyId: pid)
+            }
+        } else {
+            pinnedIds   = Set(prefs.filter { $0.pinned }.map { $0.convId })
+            mutedIds    = Set(prefs.filter { $0.muted }.map { $0.convId })
+            archivedIds = Set(prefs.filter { $0.archived }.map { $0.convId })
+            UserDefaults.standard.set(Array(pinnedIds),   forKey: "chat.pinned")
+            UserDefaults.standard.set(Array(mutedIds),    forKey: "chat.muted")
+            UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
+        }
+
+        // Reflect server-side blocks locally (chat_blocks is keyed by name).
+        let blockedNames = await ChatBlockSync.load()
+        for m in familyService.members {
+            ChatBlockStore.setBlocked(m.id.uuidString, blockedNames.contains(m.name))
+        }
+    }
     private func toggleLocked(_ id: String) {
         let newVal = !lockedIds.contains(id)
         ChatLockStore.setLocked(id, newVal)
@@ -120,18 +151,33 @@ struct ConversationsView: View {
     }
     private func toggleBlock(_ member: FamilyMember) {
         let id = member.id.uuidString
-        ChatBlockStore.setBlocked(id, !ChatBlockStore.isBlocked(id))
+        let willBlock = !ChatBlockStore.isBlocked(id)
+        ChatBlockStore.setBlocked(id, willBlock)
+        // Enforce server-side: chat_blocks is keyed by the blocked person's display
+        // name (so the dm_insert policy can reject them by sender_name).
+        let pid = propertyService.primary?.id
+        Task {
+            if willBlock { await ChatBlockSync.block(name: member.name, myName: myName, propertyId: pid) }
+            else { await ChatBlockSync.unblock(name: member.name) }
+        }
         HapticFeedback.warning()
     }
     private func toggle(_ id: String, in set: inout Set<String>, key: String) {
         if set.contains(id) { set.remove(id) } else { set.insert(id) }
         UserDefaults.standard.set(Array(set), forKey: key)
     }
-    private func toggleArchived(_ id: String) { toggle(id, in: &archivedIds, key: "chat.archived") }
+    private func toggleArchived(_ id: String) { toggle(id, in: &archivedIds, key: "chat.archived"); syncPrefs(id) }
     private func toggleFavorite(_ id: String) { toggle(id, in: &favoriteIds, key: "chat.favorites") }
-    private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned") }
-    private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted") }
+    private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned"); syncPrefs(id) }
+    private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted"); syncPrefs(id) }
     private func toggleUnread(_ id: String)   { toggle(id, in: &manualUnreadIds, key: "chat.manualUnread") }
+
+    /// Pushes the current pin/mute/archive state of one conversation to Supabase.
+    private func syncPrefs(_ id: String) {
+        let pid = propertyService.primary?.id
+        let pinned = pinnedIds.contains(id), muted = mutedIds.contains(id), archived = archivedIds.contains(id)
+        Task { await ChatPrefsSync.upsert(convId: id, pinned: pinned, muted: muted, archived: archived, propertyId: pid) }
+    }
 
     private func markAllRead() {
         manualUnreadIds.removeAll()
@@ -168,6 +214,7 @@ struct ConversationsView: View {
             directMessageService.myName = myName
             await directMessageService.load(propertyId: pid, myName: myName)
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+            await syncRemotePrefs()
         }
         .onAppear { loadFlags() }
         .navigationDestination(item: $navTarget) { id in
