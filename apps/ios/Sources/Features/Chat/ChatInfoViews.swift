@@ -546,25 +546,7 @@ struct ContactDetailsView: View {
             .onAppear { blocked = ChatBlockStore.isBlocked(convId) }
             .navigationTitle("Contact details")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showEditLabel = true } label: {
-                            Label("Editează eticheta", systemImage: "tag")
-                        }
-                        if !exportText.isEmpty {
-                            ShareLink(item: exportText) {
-                                Label("Exportă conversația", systemImage: "square.and.arrow.up")
-                            }
-                        }
-                        Button(role: .destructive) { showClearConfirm = true } label: {
-                            Label("Golește conversația", systemImage: "xmark.circle")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
-                    }
-                }
-            }
+            .toolbar { infoToolbar }
             .confirmationDialog("Golești conversația?", isPresented: $showClearConfirm, titleVisibility: .visible) {
                 Button("Golește", role: .destructive) {
                     ConversationClearStore.clear(convId); HapticFeedback.success(); dismiss()
@@ -584,6 +566,27 @@ struct ContactDetailsView: View {
                     MemberLabelStore.set(convId, newText)
                 }
             }
+    }
+
+    @ToolbarContentBuilder
+    private var infoToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                Button { showEditLabel = true } label: {
+                    Label("Editează eticheta", systemImage: "tag")
+                }
+                if !exportText.isEmpty {
+                    ShareLink(item: exportText) {
+                        Label("Exportă conversația", systemImage: "square.and.arrow.up")
+                    }
+                }
+                Button(role: .destructive) { showClearConfirm = true } label: {
+                    Label("Golește conversația", systemImage: "xmark.circle")
+                }
+            } label: {
+                Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+            }
+        }
     }
 
     private func destructiveRow(icon: String, label: String) -> some View {

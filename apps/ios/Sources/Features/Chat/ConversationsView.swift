@@ -222,36 +222,17 @@ struct ConversationsView: View {
                 .ignoresSafeArea()
                 .background(Color.black.ignoresSafeArea())
         }
-        .confirmationDialog("Golești conversația?",
-                            isPresented: Binding(get: { clearCandidate != nil },
-                                                 set: { if !$0 { clearCandidate = nil } }),
-                            titleVisibility: .visible) {
-            Button("Golește", role: .destructive) {
-                if let e = clearCandidate {
-                    ConversationClearStore.clear(e.id); markConversationRead(e); HapticFeedback.success()
-                }
-                clearCandidate = nil
-            }
-            Button("Anulează", role: .cancel) { clearCandidate = nil }
-        } message: {
-            Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
-        }
-        .confirmationDialog("Ștergi conversația?",
-                            isPresented: Binding(get: { deleteCandidate != nil },
-                                                 set: { if !$0 { deleteCandidate = nil } }),
-                            titleVisibility: .visible) {
-            Button("Șterge", role: .destructive) {
-                if let e = deleteCandidate {
-                    ConversationClearStore.clear(e.id)
-                    if !archivedIds.contains(e.id) { toggleArchived(e.id) }
-                    markConversationRead(e); HapticFeedback.success()
-                }
-                deleteCandidate = nil
-            }
-            Button("Anulează", role: .cancel) { deleteCandidate = nil }
-        } message: {
-            Text("Conversația va fi golită și arhivată pe acest dispozitiv.")
-        }
+        .modifier(ConversationDestructiveDialogs(
+            clearCandidate: $clearCandidate,
+            deleteCandidate: $deleteCandidate,
+            onClear: { e in
+                ConversationClearStore.clear(e.id); markConversationRead(e); HapticFeedback.success()
+            },
+            onDelete: { e in
+                ConversationClearStore.clear(e.id)
+                if !archivedIds.contains(e.id) { toggleArchived(e.id) }
+                markConversationRead(e); HapticFeedback.success()
+            }))
     }
 
     // MARK: - Custom header (independent round buttons + title + search)
@@ -420,6 +401,11 @@ struct ConversationsView: View {
             Label(archivedIds.contains(entry.id) ? "Dezarhivează" : "Arhivează", systemImage: "archivebox")
         }
         Divider()
+        conversationDestructiveItems(entry)
+    }
+
+    @ViewBuilder
+    private func conversationDestructiveItems(_ entry: ConversationEntry) -> some View {
         if !entry.isGroup, let m = entry.member {
             let blocked = ChatBlockStore.isBlocked(m.id.uuidString)
             Button(role: .destructive) { toggleBlock(m) } label: {
@@ -677,6 +663,43 @@ struct ConversationsView: View {
         let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
         return f1.date(from: s) ?? f2.date(from: s)
+    }
+}
+
+// MARK: - Destructive conversation dialogs (kept off the main body chain)
+
+private struct ConversationDestructiveDialogs: ViewModifier {
+    @Binding var clearCandidate: ConversationEntry?
+    @Binding var deleteCandidate: ConversationEntry?
+    let onClear: (ConversationEntry) -> Void
+    let onDelete: (ConversationEntry) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog("Golești conversația?",
+                                isPresented: Binding(get: { clearCandidate != nil },
+                                                     set: { if !$0 { clearCandidate = nil } }),
+                                titleVisibility: .visible) {
+                Button("Golește", role: .destructive) {
+                    if let e = clearCandidate { onClear(e) }
+                    clearCandidate = nil
+                }
+                Button("Anulează", role: .cancel) { clearCandidate = nil }
+            } message: {
+                Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
+            }
+            .confirmationDialog("Ștergi conversația?",
+                                isPresented: Binding(get: { deleteCandidate != nil },
+                                                     set: { if !$0 { deleteCandidate = nil } }),
+                                titleVisibility: .visible) {
+                Button("Șterge", role: .destructive) {
+                    if let e = deleteCandidate { onDelete(e) }
+                    deleteCandidate = nil
+                }
+                Button("Anulează", role: .cancel) { deleteCandidate = nil }
+            } message: {
+                Text("Conversația va fi golită și arhivată pe acest dispozitiv.")
+            }
     }
 }
 
