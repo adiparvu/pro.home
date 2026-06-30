@@ -26,6 +26,8 @@ struct ConversationsView: View {
     @State private var mutedIds: Set<String> = []
     @State private var manualUnreadIds: Set<String> = []
     @State private var lockedIds: Set<String> = []
+    @State private var clearCandidate: ConversationEntry?
+    @State private var deleteCandidate: ConversationEntry?
     @State private var showArchived = false
     @State private var lockedRevealed = false
     @State private var searchText = ""
@@ -220,6 +222,36 @@ struct ConversationsView: View {
                 .ignoresSafeArea()
                 .background(Color.black.ignoresSafeArea())
         }
+        .confirmationDialog("Golești conversația?",
+                            isPresented: Binding(get: { clearCandidate != nil },
+                                                 set: { if !$0 { clearCandidate = nil } }),
+                            titleVisibility: .visible) {
+            Button("Golește", role: .destructive) {
+                if let e = clearCandidate {
+                    ConversationClearStore.clear(e.id); markConversationRead(e); HapticFeedback.success()
+                }
+                clearCandidate = nil
+            }
+            Button("Anulează", role: .cancel) { clearCandidate = nil }
+        } message: {
+            Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
+        }
+        .confirmationDialog("Ștergi conversația?",
+                            isPresented: Binding(get: { deleteCandidate != nil },
+                                                 set: { if !$0 { deleteCandidate = nil } }),
+                            titleVisibility: .visible) {
+            Button("Șterge", role: .destructive) {
+                if let e = deleteCandidate {
+                    ConversationClearStore.clear(e.id)
+                    if !archivedIds.contains(e.id) { toggleArchived(e.id) }
+                    markConversationRead(e); HapticFeedback.success()
+                }
+                deleteCandidate = nil
+            }
+            Button("Anulează", role: .cancel) { deleteCandidate = nil }
+        } message: {
+            Text("Conversația va fi golită și arhivată pe acest dispozitiv.")
+        }
     }
 
     // MARK: - Custom header (independent round buttons + title + search)
@@ -387,12 +419,20 @@ struct ConversationsView: View {
         Button { toggleArchived(entry.id) } label: {
             Label(archivedIds.contains(entry.id) ? "Dezarhivează" : "Arhivează", systemImage: "archivebox")
         }
+        Divider()
         if !entry.isGroup, let m = entry.member {
-            Divider()
             let blocked = ChatBlockStore.isBlocked(m.id.uuidString)
             Button(role: .destructive) { toggleBlock(m) } label: {
                 Label(blocked ? "Deblochează pe \(m.name)" : "Blochează pe \(m.name)",
                       systemImage: blocked ? "hand.raised.slash" : "hand.raised")
+            }
+        }
+        Button(role: .destructive) { clearCandidate = entry } label: {
+            Label("Golește conversația", systemImage: "xmark.circle")
+        }
+        if !entry.isGroup {
+            Button(role: .destructive) { deleteCandidate = entry } label: {
+                Label("Șterge conversația", systemImage: "trash")
             }
         }
     }

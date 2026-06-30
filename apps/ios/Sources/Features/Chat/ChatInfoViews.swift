@@ -948,6 +948,30 @@ struct EditGroupDetailsSheet: View {
     }
 }
 
+// MARK: - Clear conversation (local "Golește conversația")
+//
+// Stores a per-conversation cutoff timestamp; messages at/before it are hidden
+// from that device's view (WhatsApp "clear chat" semantics — local only).
+
+enum ConversationClearStore {
+    private static func key(_ id: String) -> String { "chat.clearedAt.\(id)" }
+    static func clearedAt(_ id: String) -> Date? {
+        let t = UserDefaults.standard.double(forKey: key(id))
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
+    }
+    static func clear(_ id: String) {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: key(id))
+    }
+    static func reset(_ id: String) {
+        UserDefaults.standard.removeObject(forKey: key(id))
+    }
+    /// Keeps only items strictly newer than the cutoff.
+    static func filter<T>(_ items: [T], convId: String, date: (T) -> Date) -> [T] {
+        guard let cutoff = clearedAt(convId) else { return items }
+        return items.filter { date($0) > cutoff }
+    }
+}
+
 // MARK: - Mute store (shared with conversation list)
 
 enum ChatMuteStore {

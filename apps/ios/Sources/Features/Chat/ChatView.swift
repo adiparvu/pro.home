@@ -81,7 +81,8 @@ struct ChatView: View {
     }
 
     private var filteredMessages: [Message] {
-        let visible = ChatDisappearStore.filter(messageService.messages, convId: "group") { $0.date }
+        let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
+        let visible = ChatDisappearStore.filter(kept, convId: "group") { $0.date }
         guard showSearch && !searchText.isEmpty else { return visible }
         return visible.filter {
             ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
