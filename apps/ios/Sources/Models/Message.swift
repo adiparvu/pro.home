@@ -18,11 +18,14 @@ struct Message: Identifiable, Codable {
     var deletedForAll: Bool?
     /// Communities: the chat group this message belongs to. nil = property-wide main group.
     var groupId: UUID?
+    /// Disappearing messages: when set, the server sweep deletes this row after it.
+    var expiresAt: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, body, latitude, longitude, pinned
         case groupId       = "group_id"
+        case expiresAt     = "expires_at"
         case propertyId    = "property_id"
         case senderId      = "sender_id"
         case senderName    = "sender_name"
@@ -76,6 +79,7 @@ struct NewMessage: Encodable {
     let mentioned_ids: [String]
     var reply_to: UUID? = nil
     var group_id: UUID? = nil
+    var expires_at: String? = nil
 }
 
 // MARK: - Emoji reactions

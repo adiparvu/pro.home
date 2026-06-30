@@ -22,6 +22,7 @@ struct DirectMessage: Identifiable, Codable {
     var senderId: UUID?
     var senderMemberId: UUID?
     var recipientMemberId: UUID?
+    var expiresAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, body, pinned, reactions
@@ -30,6 +31,7 @@ struct DirectMessage: Identifiable, Codable {
         case senderId           = "sender_id"
         case senderMemberId     = "sender_member_id"
         case recipientMemberId  = "recipient_member_id"
+        case expiresAt          = "expires_at"
         case createdAt     = "created_at"
         case replyTo       = "reply_to"
         case deletedForAll = "deleted_for_all"

@@ -234,6 +234,14 @@ final class MessageService: ObservableObject {
               mentionedIds: [String] = [], replyTo: UUID? = nil) async throws {
         guard let senderId = supabase.auth.currentSession?.user.id else { return }
 
+        // Disappearing messages: stamp expires_at from the conversation's TTL so
+        // the server sweep deletes the row (enforcement, not just view-hiding).
+        let convKey = currentGroupId?.uuidString ?? "group"
+        let ttl = ChatDisappearStore.ttl(convKey)
+        let expiresAt: String? = ttl > 0
+            ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl))
+            : nil
+
         let payload = NewMessage(
             property_id: propertyId,
             sender_id: senderId,
@@ -245,7 +253,8 @@ final class MessageService: ObservableObject {
             longitude: longitude,
             mentioned_ids: mentionedIds,
             reply_to: replyTo,
-            group_id: currentGroupId
+            group_id: currentGroupId,
+            expires_at: expiresAt
         )
 
         let sent: Message = try await supabase

@@ -57,6 +57,13 @@ struct DirectMessageView: View {
         profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
     }
 
+    /// Disappearing-message expiry for this conversation (nil = off). Stamped on
+    /// outgoing DMs so the server sweep deletes them; keyed by the partner name.
+    private var dmExpiresAt: String? {
+        let ttl = ChatDisappearStore.ttl(member.name)
+        return ttl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(ttl)) : nil
+    }
+
     private var conversationMessages: [DirectMessage] {
         let all = directMessageService.messages(with: member.name, myName: myName)
         let kept = ConversationClearStore.filter(all, convId: member.id.uuidString) { $0.date }
@@ -844,6 +851,7 @@ struct DirectMessageView: View {
             let reply_to: String?
             let sender_id: String?
             let recipient_member_id: String?
+            let expires_at: String?
         }
 
         let replyId = replyingTo?.id.uuidString
@@ -854,7 +862,8 @@ struct DirectMessageView: View {
                                 body: text, property_id: propertyService.primary?.id.uuidString,
                                 reply_to: replyId,
                                 sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                recipient_member_id: member.id.uuidString))
+                                recipient_member_id: member.id.uuidString,
+                                expires_at: dmExpiresAt))
                 .select()
                 .single()
                 .execute()
@@ -882,15 +891,18 @@ struct DirectMessageView: View {
             struct P: Encodable {
                 let sender_name, recipient_name, body, property_id: String
                 let reply_to: String?
-                let sender_id: String?
+                let sender_id, expires_at: String?
             }
+            let obTtl = ChatDisappearStore.ttl(recipient)
+            let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
             do {
                 let sent: DirectMessage = try await supabase
                     .from("direct_messages")
                     .insert(P(sender_name: pm.senderName, recipient_name: recipient,
                               body: pm.body ?? "", property_id: pid.uuidString,
                               reply_to: pm.replyTo?.uuidString,
-                              sender_id: supabase.auth.currentSession?.user.id.uuidString))
+                              sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                              expires_at: obExpires))
                     .select().single().execute().value
                 directMessageService.dms.append(sent)
                 return true
@@ -921,14 +933,17 @@ struct DirectMessageView: View {
         case .member(let m):
             struct Payload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id: String?
+                let sender_id, recipient_member_id, expires_at: String?
             }
+            let fwdTtl = ChatDisappearStore.ttl(m.name)
+            let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
             if let sent: DirectMessage = try? await supabase
                 .from("direct_messages")
                 .insert(Payload(sender_name: myName, recipient_name: m.name,
                                 body: message.body, property_id: propId.uuidString,
                                 sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                recipient_member_id: m.id.uuidString))
+                                recipient_member_id: m.id.uuidString,
+                                expires_at: fwdExpires))
                 .select().single().execute().value {
                 directMessageService.dms.append(sent)
             }
@@ -941,14 +956,15 @@ struct DirectMessageView: View {
         guard let pid = propertyService.primary?.id else { return }
         struct Payload: Encodable {
             let sender_name, recipient_name, body, property_id: String
-            let sender_id, recipient_member_id: String?
+            let sender_id, recipient_member_id, expires_at: String?
         }
         if let sent: DirectMessage = try? await supabase
             .from("direct_messages")
             .insert(Payload(sender_name: myName, recipient_name: member.name,
                             body: "👤 \(formatted)", property_id: pid.uuidString,
                             sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                            recipient_member_id: member.id.uuidString))
+                            recipient_member_id: member.id.uuidString,
+                            expires_at: dmExpiresAt))
             .select().single().execute().value {
             directMessageService.dms.append(sent)
             HapticFeedback.success()
@@ -985,7 +1001,7 @@ struct DirectMessageView: View {
 
             struct PhotoPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id: String?
+                let sender_id, recipient_member_id, expires_at: String?
             }
 
             let sent: DirectMessage = try await supabase
@@ -993,7 +1009,8 @@ struct DirectMessageView: View {
                 .insert(PhotoPayload(sender_name: myName, recipient_name: member.name,
                                      body: urlStr, property_id: propId.uuidString,
                                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                     recipient_member_id: member.id.uuidString))
+                                     recipient_member_id: member.id.uuidString,
+                                     expires_at: dmExpiresAt))
                 .select()
                 .single()
                 .execute()
@@ -1021,7 +1038,7 @@ struct DirectMessageView: View {
 
             struct AudioPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id: String?
+                let sender_id, recipient_member_id, expires_at: String?
             }
 
             let sent: DirectMessage = try await supabase
@@ -1029,7 +1046,8 @@ struct DirectMessageView: View {
                 .insert(AudioPayload(sender_name: myName, recipient_name: member.name,
                                      body: urlStr, property_id: propId.uuidString,
                                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                     recipient_member_id: member.id.uuidString))
+                                     recipient_member_id: member.id.uuidString,
+                                     expires_at: dmExpiresAt))
                 .select()
                 .single()
                 .execute()
