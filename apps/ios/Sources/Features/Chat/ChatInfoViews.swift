@@ -61,6 +61,7 @@ enum MemberLabelStore {
 struct EditTextSheet: View {
     let title: String
     @State var text: String
+    var note: String? = nil
     let onSave: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focused: Bool
@@ -69,23 +70,68 @@ struct EditTextSheet: View {
         NavigationStack {
             ZStack(alignment: .topLeading) {
                 appBackground.ignoresSafeArea()
-                TextEditor(text: $text)
-                    .focused($focused)
-                    .font(.system(size: 16))
-                    .scrollContentBackground(.hidden)
-                    .padding(16)
+                VStack(alignment: .leading, spacing: 12) {
+                    TextEditor(text: $text)
+                        .focused($focused)
+                        .font(.system(size: 16))
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 90, maxHeight: 200)
+                        .padding(.horizontal, 8)
+                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+                    if let note {
+                        Text(note)
+                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    }
+                    Spacer()
+                }
+                .padding(16)
             }
             .navigationTitle(LocalizedStringKey(title))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
+                    Button("Salvează") { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
+                        .fontWeight(.semibold)
                 }
             }
             .onAppear { focused = true }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Read-only group description viewer (WhatsApp-style)
+
+struct GroupDescriptionSheet: View {
+    let text: String
+    var onEdit: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                Text(text)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Descrierea grupului")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button { onEdit() } label: { Image(systemName: "pencil") }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 
@@ -676,6 +722,7 @@ struct GroupDetailsView: View {
     @State private var photoItem: PhotosPickerItem?
     @State private var description = ""
     @State private var showEditDescription = false
+    @State private var showDescriptionView = false
     @State private var showEditDetails = false
     @State private var editingLabelId: String?
     @State private var labelRefresh = false
@@ -690,14 +737,16 @@ struct GroupDetailsView: View {
                             .font(.system(size: 24, weight: .bold))
                             .multilineTextAlignment(.center)
 
-                        Button { showEditDescription = true } label: {
+                        Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
                             if description.isEmpty {
                                 Label("Add group description", systemImage: "pencil")
                                     .font(.system(size: 14)).foregroundStyle(Color.accentColor)
                             } else {
-                                Text(description)
-                                    .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7))
+                                (Text(description).foregroundStyle(Color.primary.opacity(0.7))
+                                 + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
+                                    .font(.system(size: 14))
                                     .multilineTextAlignment(.center)
+                                    .lineLimit(2)
                             }
                         }
                         .buttonStyle(.plain)
@@ -876,9 +925,16 @@ struct GroupDetailsView: View {
                 }
             }
             .sheet(isPresented: $showEditDescription) {
-                EditTextSheet(title: "Group description", text: description) { newText in
+                EditTextSheet(title: "Descrierea grupului", text: description,
+                              note: "Descrierea grupului poate fi văzută de membrii acestuia și de persoanele invitate în grup.") { newText in
                     description = newText
                     GroupDescriptionStore.set(newText, propertyId: propertyId)
+                }
+            }
+            .sheet(isPresented: $showDescriptionView) {
+                GroupDescriptionSheet(text: description) {
+                    showDescriptionView = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showEditDescription = true }
                 }
             }
     }
