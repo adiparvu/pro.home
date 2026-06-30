@@ -136,6 +136,8 @@ struct ConversationsView: View {
             UserDefaults.standard.set(Array(mutedIds),    forKey: "chat.muted")
             UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
         }
+        // Bring the "clear conversation" cutoff across from other devices.
+        for r in prefs { ConversationClearStore.applyRemote(r.convId, iso: r.clearedAt) }
 
         // Reflect server-side blocks locally (chat_blocks is keyed by name).
         let blockedNames = await ChatBlockSync.load()

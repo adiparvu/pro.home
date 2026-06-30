@@ -1103,9 +1103,22 @@ enum ConversationClearStore {
     }
     static func clear(_ id: String) {
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: key(id))
+        // Sync the cutoff so the conversation stays cleared on every device.
+        Task { await ChatPrefsSync.setCleared(convId: id, propertyId: nil) }
     }
     static func reset(_ id: String) {
         UserDefaults.standard.removeObject(forKey: key(id))
+    }
+    /// Applies a cutoff pulled from Supabase (another device). Only advances the
+    /// local cutoff forward, never backward.
+    static func applyRemote(_ id: String, iso: String?) {
+        guard let iso else { return }
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        guard let d = f.date(from: iso) ?? f2.date(from: iso) else { return }
+        if d.timeIntervalSince1970 > UserDefaults.standard.double(forKey: key(id)) {
+            UserDefaults.standard.set(d.timeIntervalSince1970, forKey: key(id))
+        }
     }
     /// Keeps only items strictly newer than the cutoff. Items without a date
     /// (date closure returns nil) are kept.

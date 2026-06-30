@@ -44,6 +44,23 @@ enum ChatPrefsSync {
         try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
+
+    /// Records the "clear conversation" cutoff. Upserts only cleared_at, so the
+    /// pin/mute/archive flags on the same row are preserved.
+    static func setCleared(convId: String, propertyId: UUID?) async {
+        guard let uid = supabase.auth.currentSession?.user.id else { return }
+        struct Payload: Encodable {
+            let user_id: String
+            let conv_id: String
+            let property_id: String?
+            let cleared_at: String
+        }
+        let p = Payload(user_id: uid.uuidString, conv_id: convId,
+                        property_id: propertyId?.uuidString,
+                        cleared_at: ISO8601DateFormatter().string(from: Date()))
+        try? await supabase.from("chat_user_prefs")
+            .upsert(p, onConflict: "user_id,conv_id").execute()
+    }
 }
 
 enum ChatBlockSync {
