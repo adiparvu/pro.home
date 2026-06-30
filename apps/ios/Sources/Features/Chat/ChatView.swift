@@ -307,7 +307,7 @@ struct ChatView: View {
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
         .sheet(isPresented: $showLocationSheet) {
-            LocationShareSheet { lat, lon in
+            LocationShareSheet(propertyId: propertyId, myName: senderName) { lat, lon in
                 Task { await sendLocation(lat: lat, lon: lon) }
             }
         }
