@@ -132,15 +132,23 @@ extension ChatView {
             let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
             let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
             let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
-            let fileName = "\(UUID().uuidString).\(ext)"
-            let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-            try? await supabase.storage.from("documents")
-                .upload(filePath, data: data, options: FileOptions(contentType: contentType, upsert: false))
-            let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+            // Images → private chat-media bucket (signed URL at display).
+            // Videos stay on the public bucket until their player is wired to signed URLs.
+            let attachmentValue: String?
+            if isVideo {
+                let fileName = "\(UUID().uuidString).\(ext)"
+                let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
+                try? await supabase.storage.from("documents")
+                    .upload(filePath, data: data, options: FileOptions(contentType: contentType, upsert: false))
+                attachmentValue = try? supabase.storage.from("documents").getPublicURL(path: filePath).absoluteString
+            } else {
+                attachmentValue = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                                         ext: ext, contentType: contentType)
+            }
             try? await messageService.send(
                 propertyId: pid, senderName: senderName,
                 body: (index == 0 && !caption.isEmpty) ? caption : nil,
-                attachmentUrl: url?.absoluteString, attachmentType: isVideo ? "video" : "image",
+                attachmentUrl: attachmentValue, attachmentType: isVideo ? "video" : "image",
                 mentionedIds: mentionedIds
             )
         }
@@ -154,14 +162,12 @@ extension ChatView {
               let data = image.jpegData(compressionQuality: 0.8) else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString).jpg"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at display via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                          ext: "jpg", contentType: "image/jpeg")
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image",
+            attachmentUrl: path, attachmentType: "image",
             mentionedIds: mentionedIds
         )
         HapticFeedback.success()

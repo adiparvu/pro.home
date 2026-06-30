@@ -633,34 +633,11 @@ struct MessageBubble: View {
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
             .frame(maxWidth: 240)
-        } else if message.isImageMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-            VStack(alignment: .leading, spacing: 0) {
-                AsyncImage(url: url) { phase in
-                    if case .success(let img) = phase {
-                        img.resizable().scaledToFill()
-                            .frame(maxWidth: 220, maxHeight: 160)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    } else {
-                        RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(0.07))
-                            .frame(width: 160, height: 120)
-                            .overlay(ProgressView().tint(.white))
-                    }
-                }
-                .onTapGesture { viewerItem = ImageViewerItem(url: url) }
-                // Optional caption stored in the message body.
-                if let caption = message.body, !caption.isEmpty {
-                    Text(caption)
-                        .font(.system(size: 15))
-                        .foregroundStyle(isOwn ? .white : .primary)
-                        .padding(.horizontal, 10).padding(.top, 6)
-                        .frame(maxWidth: 220, alignment: .leading)
-                }
+        } else if message.isImageMessage, let urlStr = message.attachmentUrl {
+            ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
+                            ownBubbleColor: ownBubbleColor) { resolved in
+                viewerItem = ImageViewerItem(url: resolved)
             }
-            .padding(message.body?.isEmpty == false ? 4 : 0)
-            .background(
-                (message.body?.isEmpty == false) ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-            )
         } else if message.isVideoMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
@@ -830,5 +807,48 @@ struct ReactionPickerView: View {
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(appBackground.ignoresSafeArea())
+    }
+}
+
+// MARK: - Chat image bubble (resolves private signed URLs; passes legacy URLs through)
+
+struct ChatImageBubble: View {
+    let stored: String
+    let caption: String?
+    let isOwn: Bool
+    let ownBubbleColor: Color
+    let onTap: (URL) -> Void
+    @State private var url: URL?
+
+    private var hasCaption: Bool { (caption?.isEmpty == false) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            AsyncImage(url: url) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                        .frame(maxWidth: 220, maxHeight: 160)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                } else {
+                    RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(0.07))
+                        .frame(width: 160, height: 120)
+                        .overlay(ProgressView().tint(.white))
+                }
+            }
+            .onTapGesture { if let url { onTap(url) } }
+            if let caption, !caption.isEmpty {
+                Text(caption)
+                    .font(.system(size: 15))
+                    .foregroundStyle(isOwn ? .white : .primary)
+                    .padding(.horizontal, 10).padding(.top, 6)
+                    .frame(maxWidth: 220, alignment: .leading)
+            }
+        }
+        .padding(hasCaption ? 4 : 0)
+        .background(
+            hasCaption ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
