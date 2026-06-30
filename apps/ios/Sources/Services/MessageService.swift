@@ -40,17 +40,25 @@ final class MessageService: ObservableObject {
         }
     }
 
-    func load(propertyId: UUID) async {
+    /// Communities: the group this service instance is scoped to. nil = main group.
+    /// Set on load() and reused by pagination / send so a group chat stays inside
+    /// its group_id without threading it through every call site.
+    private(set) var currentGroupId: UUID?
+
+    func load(propertyId: UUID, groupId: UUID? = nil) async {
         // Unsubscribe from any previous property's channels before loading new data.
         await unsubscribeAll()
+        currentGroupId = groupId
         isLoading = true
         defer { isLoading = false }
         do {
             // Load the most recent page (newest first from the DB, shown oldest→newest).
-            let rows: [Message] = try await supabase
+            var query = supabase
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+            if let gid = groupId { query = query.eq("group_id", value: gid.uuidString) }
+            let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
                 .execute()
@@ -75,11 +83,13 @@ final class MessageService: ObservableObject {
         isLoadingOlder = true
         defer { isLoadingOlder = false }
         do {
-            let rows: [Message] = try await supabase
+            var query = supabase
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
                 .lt("created_at", value: oldest)
+            if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
+            let rows: [Message] = try await query
                 .order("created_at", ascending: false)
                 .limit(Self.pageSize)
                 .execute()
@@ -102,6 +112,7 @@ final class MessageService: ObservableObject {
                 .from("messages")
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
+            if let gid = currentGroupId { query = query.eq("group_id", value: gid.uuidString) }
             if let newest = messages.last?.createdAt {
                 query = query.gt("created_at", value: newest)
             }
@@ -225,7 +236,8 @@ final class MessageService: ObservableObject {
             latitude: latitude,
             longitude: longitude,
             mentioned_ids: mentionedIds,
-            reply_to: replyTo
+            reply_to: replyTo,
+            group_id: currentGroupId
         )
 
         let sent: Message = try await supabase

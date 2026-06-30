@@ -16,10 +16,13 @@ struct Message: Identifiable, Codable {
     var isMarked: Bool?
     var editedAt: String?
     var deletedForAll: Bool?
+    /// Communities: the chat group this message belongs to. nil = property-wide main group.
+    var groupId: UUID?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, body, latitude, longitude, pinned
+        case groupId       = "group_id"
         case propertyId    = "property_id"
         case senderId      = "sender_id"
         case senderName    = "sender_name"
@@ -72,6 +75,7 @@ struct NewMessage: Encodable {
     let longitude: Double?
     let mentioned_ids: [String]
     var reply_to: UUID? = nil
+    var group_id: UUID? = nil
 }
 
 // MARK: - Emoji reactions
