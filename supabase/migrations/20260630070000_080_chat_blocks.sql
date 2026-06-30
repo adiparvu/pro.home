@@ -5,17 +5,22 @@
 -- and the dm_insert policy is tightened so a blocked sender is rejected by the
 -- database. Identity is name-based to match the existing DM model (sender_name /
 -- recipient_name); it migrates to user ids with S8.
+--
+-- NOTE: the live direct_messages table has no property_id column (it drifted
+-- from migration 049 and DMs are global by name), so blocks are keyed on the
+-- name pair alone and the dm_insert check does not reference a property.
+-- property_id is kept nullable purely as management context for the client.
 
 CREATE TABLE IF NOT EXISTS public.chat_blocks (
     blocker_name text        NOT NULL,                                  -- the user doing the blocking
     blocked_name text        NOT NULL,                                  -- the user being blocked
-    property_id  uuid        NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
+    property_id  uuid        REFERENCES public.properties(id) ON DELETE CASCADE,
     created_at   timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (blocker_name, blocked_name, property_id)
+    PRIMARY KEY (blocker_name, blocked_name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_blocks_pair
-    ON public.chat_blocks(blocker_name, blocked_name, property_id);
+    ON public.chat_blocks(blocker_name, blocked_name);
 
 ALTER TABLE public.chat_blocks ENABLE ROW LEVEL SECURITY;
 
@@ -32,7 +37,7 @@ CREATE POLICY blocks_write ON public.chat_blocks
     WITH CHECK (blocker_name = public.current_user_display_name());
 
 -- Tighten DM insert (extends migration 076 dm_insert): you still must be the
--- sender, AND the recipient must not have blocked you.
+-- sender, AND the recipient must not have blocked you (name pair only).
 DROP POLICY IF EXISTS "dm_insert" ON public.direct_messages;
 CREATE POLICY "dm_insert" ON public.direct_messages
     FOR INSERT TO authenticated
@@ -42,6 +47,5 @@ CREATE POLICY "dm_insert" ON public.direct_messages
             SELECT 1 FROM public.chat_blocks b
             WHERE b.blocker_name = direct_messages.recipient_name
               AND b.blocked_name = direct_messages.sender_name
-              AND b.property_id  = direct_messages.property_id
         )
     );
