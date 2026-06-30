@@ -146,17 +146,8 @@ struct ConversationsView: View {
 
     @MainActor
     private func sendStory(_ image: UIImage) async {
-        guard let pid = propertyService.primary?.id,
-              let data = image.jpegData(compressionQuality: 0.85) else { return }
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(UUID().uuidString).jpg"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
-        try? await messageService.send(
-            propertyId: pid, senderName: myName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image"
-        )
-        HapticFeedback.success()
+        guard let pid = propertyService.primary?.id else { return }
+        await StatusService.shared.post(propertyId: pid, authorName: myName, image: image, caption: nil)
     }
 
     var body: some View {
@@ -200,8 +191,9 @@ struct ConversationsView: View {
                 .environmentObject(propertyService)
         }
         .sheet(isPresented: $showStatus) {
-            StatusView(members: familyService.members,
-                       myInitial: String(myName.prefix(1)).uppercased(),
+            StatusView(propertyId: propertyService.primary?.id,
+                       myName: myName,
+                       members: familyService.members,
                        onAddStatus: { showStatus = false; showStoryCamera = true })
         }
         .sheet(isPresented: $showCommunities) {
