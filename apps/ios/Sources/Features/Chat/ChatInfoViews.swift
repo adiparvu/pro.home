@@ -447,12 +447,14 @@ struct ContactDetailsView: View {
     var mediaURLs: [URL] = []
     var exportText: String = ""
     var propertyId: UUID? = nil
+    @EnvironmentObject private var familyService: FamilyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
     @State private var showReport = false
     @State private var reported = false
     @State private var showEditLabel = false
+    @State private var showEditContact = false
     @State private var showClearConfirm = false
     @State private var memberLabel = ""
 
@@ -603,6 +605,10 @@ struct ContactDetailsView: View {
                 }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
+            .sheet(isPresented: $showEditContact) {
+                EditFamilyMemberSheet(member: member)
+                    .environmentObject(familyService)
+            }
             .sheet(isPresented: $showEditLabel) {
                 EditTextSheet(title: "Member label", text: memberLabel) { newText in
                     memberLabel = newText
@@ -615,6 +621,9 @@ struct ContactDetailsView: View {
     private var infoToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigationBarTrailing) {
             Menu {
+                Button { showEditContact = true } label: {
+                    Label("Editează contactul", systemImage: "person.crop.circle")
+                }
                 Button { showEditLabel = true } label: {
                     Label("Editează eticheta", systemImage: "tag")
                 }
