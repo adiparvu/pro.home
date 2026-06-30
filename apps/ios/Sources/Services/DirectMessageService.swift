@@ -17,11 +17,19 @@ struct DirectMessage: Identifiable, Codable {
     var reactions: [String: String]?
     var readAt: String?
     var deliveredAt: String?
+    // S8: stable identity (migration 081). sender_id is the authenticated sender's
+    // auth.users id; the member ids are the parties' family_members ids.
+    var senderId: UUID?
+    var senderMemberId: UUID?
+    var recipientMemberId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, body, pinned, reactions
-        case senderName    = "sender_name"
-        case recipientName = "recipient_name"
+        case senderName        = "sender_name"
+        case recipientName      = "recipient_name"
+        case senderId           = "sender_id"
+        case senderMemberId     = "sender_member_id"
+        case recipientMemberId  = "recipient_member_id"
         case createdAt     = "created_at"
         case replyTo       = "reply_to"
         case deletedForAll = "deleted_for_all"

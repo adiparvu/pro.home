@@ -842,6 +842,8 @@ struct DirectMessageView: View {
             let body: String
             let property_id: String?
             let reply_to: String?
+            let sender_id: String?
+            let recipient_member_id: String?
         }
 
         let replyId = replyingTo?.id.uuidString
@@ -850,7 +852,9 @@ struct DirectMessageView: View {
                 .from("direct_messages")
                 .insert(Payload(sender_name: myName, recipient_name: member.name,
                                 body: text, property_id: propertyService.primary?.id.uuidString,
-                                reply_to: replyId))
+                                reply_to: replyId,
+                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                recipient_member_id: member.id.uuidString))
                 .select()
                 .single()
                 .execute()
@@ -878,13 +882,15 @@ struct DirectMessageView: View {
             struct P: Encodable {
                 let sender_name, recipient_name, body, property_id: String
                 let reply_to: String?
+                let sender_id: String?
             }
             do {
                 let sent: DirectMessage = try await supabase
                     .from("direct_messages")
                     .insert(P(sender_name: pm.senderName, recipient_name: recipient,
                               body: pm.body ?? "", property_id: pid.uuidString,
-                              reply_to: pm.replyTo?.uuidString))
+                              reply_to: pm.replyTo?.uuidString,
+                              sender_id: supabase.auth.currentSession?.user.id.uuidString))
                     .select().single().execute().value
                 directMessageService.dms.append(sent)
                 return true
@@ -915,11 +921,14 @@ struct DirectMessageView: View {
         case .member(let m):
             struct Payload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
+                let sender_id, recipient_member_id: String?
             }
             if let sent: DirectMessage = try? await supabase
                 .from("direct_messages")
                 .insert(Payload(sender_name: myName, recipient_name: m.name,
-                                body: message.body, property_id: propId.uuidString))
+                                body: message.body, property_id: propId.uuidString,
+                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                recipient_member_id: m.id.uuidString))
                 .select().single().execute().value {
                 directMessageService.dms.append(sent)
             }
@@ -932,11 +941,14 @@ struct DirectMessageView: View {
         guard let pid = propertyService.primary?.id else { return }
         struct Payload: Encodable {
             let sender_name, recipient_name, body, property_id: String
+            let sender_id, recipient_member_id: String?
         }
         if let sent: DirectMessage = try? await supabase
             .from("direct_messages")
             .insert(Payload(sender_name: myName, recipient_name: member.name,
-                            body: "👤 \(formatted)", property_id: pid.uuidString))
+                            body: "👤 \(formatted)", property_id: pid.uuidString,
+                            sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                            recipient_member_id: member.id.uuidString))
             .select().single().execute().value {
             directMessageService.dms.append(sent)
             HapticFeedback.success()
@@ -973,12 +985,15 @@ struct DirectMessageView: View {
 
             struct PhotoPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
+                let sender_id, recipient_member_id: String?
             }
 
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(PhotoPayload(sender_name: myName, recipient_name: member.name,
-                                     body: urlStr, property_id: propId.uuidString))
+                                     body: urlStr, property_id: propId.uuidString,
+                                     sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                     recipient_member_id: member.id.uuidString))
                 .select()
                 .single()
                 .execute()
@@ -1006,12 +1021,15 @@ struct DirectMessageView: View {
 
             struct AudioPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
+                let sender_id, recipient_member_id: String?
             }
 
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(AudioPayload(sender_name: myName, recipient_name: member.name,
-                                     body: urlStr, property_id: propId.uuidString))
+                                     body: urlStr, property_id: propId.uuidString,
+                                     sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                     recipient_member_id: member.id.uuidString))
                 .select()
                 .single()
                 .execute()
