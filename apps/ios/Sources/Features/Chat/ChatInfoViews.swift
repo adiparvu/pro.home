@@ -406,12 +406,14 @@ struct ContactDetailsView: View {
     var onStarred: () -> Void
     var onTheme: () -> Void
     var mediaURLs: [URL] = []
+    var exportText: String = ""
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
     @State private var showReport = false
     @State private var reported = false
     @State private var showEditLabel = false
+    @State private var showClearConfirm = false
     @State private var memberLabel = ""
 
     private var convId: String { member.id.uuidString }
@@ -544,6 +546,33 @@ struct ContactDetailsView: View {
             .onAppear { blocked = ChatBlockStore.isBlocked(convId) }
             .navigationTitle("Contact details")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button { showEditLabel = true } label: {
+                            Label("Editează eticheta", systemImage: "tag")
+                        }
+                        if !exportText.isEmpty {
+                            ShareLink(item: exportText) {
+                                Label("Exportă conversația", systemImage: "square.and.arrow.up")
+                            }
+                        }
+                        Button(role: .destructive) { showClearConfirm = true } label: {
+                            Label("Golește conversația", systemImage: "xmark.circle")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+                    }
+                }
+            }
+            .confirmationDialog("Golești conversația?", isPresented: $showClearConfirm, titleVisibility: .visible) {
+                Button("Golește", role: .destructive) {
+                    ConversationClearStore.clear(convId); HapticFeedback.success(); dismiss()
+                }
+                Button("Anulează", role: .cancel) {}
+            } message: {
+                Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
+            }
             .onAppear {
                 muted = ChatMuteStore.isMuted(convId)
                 memberLabel = MemberLabelStore.label(convId)

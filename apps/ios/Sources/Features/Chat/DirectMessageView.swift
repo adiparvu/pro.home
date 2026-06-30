@@ -167,7 +167,8 @@ struct DirectMessageView: View {
                 onSearch: { withAnimation { showSearch = true } },
                 onStarred: { showStarred = true },
                 onTheme: { showThemePicker = true },
-                mediaURLs: sharedMediaURLs
+                mediaURLs: sharedMediaURLs,
+                exportText: exportTranscript
             )
         }
         .sheet(isPresented: $showCallSheet) {
