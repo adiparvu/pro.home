@@ -197,7 +197,9 @@ struct ConversationsView: View {
                        onAddStatus: { showStatus = false; showStoryCamera = true })
         }
         .sheet(isPresented: $showCommunities) {
-            CommunitiesView()
+            CommunitiesView(propertyId: propertyService.primary?.id,
+                            members: familyService.members,
+                            myName: myName)
         }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,

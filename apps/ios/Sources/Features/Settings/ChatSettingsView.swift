@@ -80,6 +80,10 @@ struct ChatSettingsView: View {
                        members: familyService.members,
                        onAddStatus: { showStatus = false })
         }
-        .sheet(isPresented: $showCommunities) { CommunitiesView() }
+        .sheet(isPresented: $showCommunities) {
+            CommunitiesView(propertyId: propertyService.primary?.id,
+                            members: familyService.members,
+                            myName: myName)
+        }
     }
 }

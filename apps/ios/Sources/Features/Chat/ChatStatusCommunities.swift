@@ -222,49 +222,40 @@ struct StoryViewer: View {
 
 // MARK: - Communities (UI shell)
 //
-// Visual shell only. A real Communities feature needs a backend: a
-// `communities` table, community↔group membership, an announcement group,
-// and admin roles.
+// Communities — multiple named chat groups per property (workers, family, …),
+// backed by chat_groups / chat_group_members (migration 078). This screen lists
+// and creates groups and manages their members.
 
 struct CommunitiesView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var service = ChatGroupService()
+
+    var propertyId: UUID? = nil
+    var members: [FamilyMember] = []
+    var myName: String = "Me"
+
+    @State private var showCreate = false
+    @State private var detailGroup: ChatGroup?
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    Button {} label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.15)).frame(width: 56, height: 56)
-                                Image(systemName: "person.3.fill").font(.system(size: 22)).foregroundStyle(Color.accentColor)
+                VStack(spacing: 14) {
+                    newGroupButton
+
+                    if service.groups.isEmpty {
+                        emptyState
+                    } else {
+                        VStack(spacing: 10) {
+                            ForEach(service.groups) { group in
+                                Button { detailGroup = group } label: {
+                                    CommunityRow(group: group, memberCount: service.members(for: group).count)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            Text("New community").font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 12)
-                        .liquidGlass(cornerRadius: 16)
                         .padding(.horizontal, 16)
                     }
-                    .buttonStyle(.plain)
-
-                    VStack(spacing: 12) {
-                        Image(systemName: "person.3.sequence.fill")
-                            .font(.system(size: 44)).foregroundStyle(Color.accentColor.opacity(0.6))
-                        Text("Organize related groups")
-                            .font(.system(size: 17, weight: .semibold))
-                        Text("Communities bring members together in topic groups, with one place for announcements.")
-                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
-                    }
-                    .padding(.top, 30)
-
-                    Text("Creating and joining communities is coming soon.")
-                        .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
-                        .padding(.top, 8)
 
                     Spacer(minLength: 20)
                 }
@@ -274,6 +265,192 @@ struct CommunitiesView: View {
             .navigationTitle("Communities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showCreate) {
+                CreateGroupSheet(members: members) { name, kind, selected in
+                    showCreate = false
+                    guard let pid = propertyId else { return }
+                    Task { await service.create(propertyId: pid, name: name, kind: kind,
+                                                selected: selected, myName: myName) }
+                }
+            }
+            .sheet(item: $detailGroup) { group in
+                GroupMembersSheet(group: group, members: service.members(for: group))
+            }
+            .task { if let pid = propertyId { await service.load(propertyId: pid) } }
+        }
+    }
+
+    private var newGroupButton: some View {
+        Button { showCreate = true } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.15)).frame(width: 52, height: 52)
+                    Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Color.accentColor)
+                }
+                Text("Grup nou").font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(.horizontal, 16).padding(.vertical, 12)
+            .liquidGlass(cornerRadius: 16)
+            .padding(.horizontal, 16)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.3.sequence.fill")
+                .font(.system(size: 44)).foregroundStyle(Color.accentColor.opacity(0.6))
+            Text("Organizează grupuri")
+                .font(.system(size: 17, weight: .semibold))
+            Text("Creează grupuri separate pentru muncitori, familie sau orice altă echipă.")
+                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .padding(.top, 40)
+    }
+}
+
+private struct CommunityRow: View {
+    let group: ChatGroup
+    let memberCount: Int
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 48, height: 48)
+                Image(systemName: group.kindIcon).font(.system(size: 20)).foregroundStyle(Color.accentColor)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(group.name.isEmpty ? group.kindLabel : group.name)
+                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                Text("\(group.kindLabel) · \(memberCount) membri")
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+            }
+            Spacer()
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .liquidGlass(cornerRadius: 16)
+    }
+}
+
+private struct GroupMembersSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let group: ChatGroup
+    let members: [ChatGroupMember]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 10) {
+                    ForEach(members) { m in
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
+                                Text(String(m.memberName.prefix(1)).uppercased())
+                                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            }
+                            Text(m.memberName).font(.system(size: 15, weight: .medium))
+                            Spacer()
+                            if m.role == "admin" {
+                                Text("Admin").font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .liquidGlass(cornerRadius: 14)
+                    }
+                }
+                .padding(16)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle(group.name.isEmpty ? group.kindLabel : group.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+}
+
+private struct CreateGroupSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let members: [FamilyMember]
+    let onCreate: (String, String, [FamilyMember]) -> Void
+
+    @State private var name = ""
+    @State private var kind = "custom"
+    @State private var selectedIds: Set<UUID> = []
+
+    private let kinds: [(String, String, String)] = [
+        ("family", "Familie", "house.fill"),
+        ("work",   "Muncă",   "hammer.fill"),
+        ("custom", "Custom",  "person.3.fill")
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    TextField("Nume grup", text: $name)
+                        .font(.system(size: 16))
+                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .liquidGlass(cornerRadius: 14)
+
+                    HStack(spacing: 10) {
+                        ForEach(kinds, id: \.0) { k in
+                            Button { kind = k.0 } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: k.2).font(.system(size: 20))
+                                    Text(k.1).font(.system(size: 13, weight: .medium))
+                                }
+                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .background(kind == k.0 ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.04),
+                                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .foregroundStyle(kind == k.0 ? Color.accentColor : Color.primary.opacity(0.6))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Text("Membri").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                    VStack(spacing: 8) {
+                        ForEach(members) { m in
+                            Button {
+                                if selectedIds.contains(m.id) { selectedIds.remove(m.id) }
+                                else { selectedIds.insert(m.id) }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(m.name).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
+                                }
+                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                .liquidGlass(cornerRadius: 14)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Grup nou")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Creează") {
+                        let selected = members.filter { selectedIds.contains($0.id) }
+                        onCreate(name.trimmingCharacters(in: .whitespaces), kind, selected)
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
         }
     }
 }
