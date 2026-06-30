@@ -5,16 +5,55 @@ import LocalAuthentication
 import CoreImage.CIFilterBuiltins
 import AudioToolbox
 
-// MARK: - Group description + member labels (local)
+// MARK: - Group description + member labels (local cache + Supabase sync)
 
 enum GroupDescriptionStore {
     static func text() -> String { UserDefaults.standard.string(forKey: "group.description") ?? "" }
-    static func set(_ t: String) { UserDefaults.standard.set(t, forKey: "group.description") }
+    static func set(_ t: String, propertyId: UUID? = nil) {
+        UserDefaults.standard.set(t, forKey: "group.description")
+        guard let pid = propertyId else { return }
+        Task {
+            struct P: Encodable { let property_id: String; let description: String }
+            _ = try? await supabase.from("chat_group_settings")
+                .upsert(P(property_id: pid.uuidString, description: t), onConflict: "property_id")
+                .execute()
+        }
+    }
+    /// Pull the shared description into the local cache.
+    static func loadRemote(_ propertyId: UUID) async {
+        struct Row: Decodable { let description: String? }
+        guard let rows: [Row] = try? await supabase.from("chat_group_settings")
+            .select("description").eq("property_id", value: propertyId.uuidString)
+            .execute().value else { return }
+        if let desc = rows.first?.description {
+            UserDefaults.standard.set(desc, forKey: "group.description")
+        }
+    }
 }
 
 enum MemberLabelStore {
     static func label(_ memberId: String) -> String { UserDefaults.standard.string(forKey: "member.label.\(memberId)") ?? "" }
-    static func set(_ memberId: String, _ t: String) { UserDefaults.standard.set(t, forKey: "member.label.\(memberId)") }
+    static func set(_ memberId: String, _ t: String, propertyId: UUID? = nil) {
+        UserDefaults.standard.set(t, forKey: "member.label.\(memberId)")
+        guard let pid = propertyId else { return }
+        Task {
+            struct R: Encodable { let property_id: String; let member_id: String; let label: String }
+            _ = try? await supabase.from("chat_member_labels")
+                .upsert(R(property_id: pid.uuidString, member_id: memberId, label: t),
+                        onConflict: "property_id,member_id")
+                .execute()
+        }
+    }
+    /// Pull all shared member labels for the property into the local cache.
+    static func loadRemote(_ propertyId: UUID) async {
+        struct Row: Decodable { let member_id: String; let label: String? }
+        guard let rows: [Row] = try? await supabase.from("chat_member_labels")
+            .select("member_id,label").eq("property_id", value: propertyId.uuidString)
+            .execute().value else { return }
+        for r in rows {
+            UserDefaults.standard.set(r.label ?? "", forKey: "member.label.\(r.member_id)")
+        }
+    }
 }
 
 /// Reusable editor sheet for short text (group description, member label, …).
@@ -407,6 +446,7 @@ struct ContactDetailsView: View {
     var onTheme: () -> Void
     var mediaURLs: [URL] = []
     var exportText: String = ""
+    var propertyId: UUID? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
@@ -558,12 +598,15 @@ struct ContactDetailsView: View {
             .onAppear {
                 muted = ChatMuteStore.isMuted(convId)
                 memberLabel = MemberLabelStore.label(convId)
+                if let pid = propertyId {
+                    Task { await MemberLabelStore.loadRemote(pid); memberLabel = MemberLabelStore.label(convId) }
+                }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
             .sheet(isPresented: $showEditLabel) {
                 EditTextSheet(title: "Member label", text: memberLabel) { newText in
                     memberLabel = newText
-                    MemberLabelStore.set(convId, newText)
+                    MemberLabelStore.set(convId, newText, propertyId: propertyId)
                 }
             }
     }
@@ -810,6 +853,14 @@ struct GroupDetailsView: View {
             .onAppear {
                 muted = ChatMuteStore.isMuted("group")
                 description = GroupDescriptionStore.text()
+                if let pid = propertyId {
+                    Task {
+                        await GroupDescriptionStore.loadRemote(pid)
+                        await MemberLabelStore.loadRemote(pid)
+                        description = GroupDescriptionStore.text()
+                        labelRefresh.toggle()
+                    }
+                }
             }
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted("group", m) }
             .onChange(of: photoItem) { _, item in
@@ -824,7 +875,7 @@ struct GroupDetailsView: View {
             .sheet(isPresented: $showEditDescription) {
                 EditTextSheet(title: "Group description", text: description) { newText in
                     description = newText
-                    GroupDescriptionStore.set(newText)
+                    GroupDescriptionStore.set(newText, propertyId: propertyId)
                 }
             }
     }
@@ -865,7 +916,7 @@ struct GroupDetailsView: View {
         .id(labelRefresh)
         .sheet(isPresented: Binding(get: { editingLabelId == labelId }, set: { if !$0 { editingLabelId = nil } })) {
             EditTextSheet(title: "Member label", text: label) { newText in
-                MemberLabelStore.set(labelId, newText); labelRefresh.toggle()
+                MemberLabelStore.set(labelId, newText, propertyId: propertyId); labelRefresh.toggle()
             }
         }
     }

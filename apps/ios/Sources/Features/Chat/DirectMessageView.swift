@@ -168,7 +168,8 @@ struct DirectMessageView: View {
                 onStarred: { showStarred = true },
                 onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
-                exportText: exportTranscript
+                exportText: exportTranscript,
+                propertyId: propertyService.primary?.id
             )
         }
         .sheet(isPresented: $showCallSheet) {
