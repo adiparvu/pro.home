@@ -40,7 +40,8 @@ struct Message: Identifiable, Codable {
         f2.formatOptions = [.withInternetDateTime]
         let d = f.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
         let out = DateFormatter()
-        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        // Only the time, like WhatsApp — the date is shown by the day separators.
+        out.dateFormat = "HH:mm"
         return out.string(from: d)
     }
 

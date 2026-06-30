@@ -148,12 +148,16 @@ struct ChatView: View {
     }
 
     private func pinnedSnippet(_ m: Message) -> String {
-        if let b = m.body, !b.isEmpty { return b }
+        // Structured types first, so a poll/event never shows its JSON body.
+        if m.isPollMessage { return "📊 Poll" }
+        if m.isEventMessage { return "📅 Event" }
         if m.isImageMessage { return "📷 Photo" }
+        if m.isVideoMessage { return "🎥 Video" }
         if m.isAudioMessage { return "🎤 Voice message" }
         if m.isLocationMessage { return "📍 Location" }
         if m.isFileMessage { return "📎 File" }
         if m.isStickerMessage { return "😀 Sticker" }
+        if let b = m.body, !b.isEmpty { return b }
         return String(localized: "Attachment")
     }
     var senderName: String {
@@ -229,16 +233,6 @@ struct ChatView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    ShareLink(item: exportTranscript) {
-                        Label("Export chat", systemImage: "square.and.arrow.up")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
-                }
-                .accessibilityLabel("More")
             }
         }
         .task {
@@ -564,6 +558,7 @@ struct ChatView: View {
                             onDeleteForMe: { messageService.deleteForMe(id: msg.id) },
                             pollVotes: messageService.pollVotes[msg.id] ?? [],
                             myUserId: supabase.auth.currentSession?.user.id,
+                            myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                             onPollVote: { idx in
                                 guard let pid = propertyId, let poll = ChatPoll.decode(msg.body) else { return }
                                 Task { await messageService.togglePollVote(
@@ -711,7 +706,7 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
                             .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
-                        Text(replyingTo.body?.isEmpty == false ? (replyingTo.body ?? "") : String(localized: "Attachment"))
+                        Text(pinnedSnippet(replyingTo))
                             .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.65)).lineLimit(1)
                     }
                     Spacer()

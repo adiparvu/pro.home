@@ -4,6 +4,7 @@ import PhotosUI
 import LocalAuthentication
 import CoreImage.CIFilterBuiltins
 import AudioToolbox
+import AVFoundation
 
 // MARK: - Group description + member labels (local cache + Supabase sync)
 
@@ -682,16 +683,8 @@ struct GroupDetailsView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     VStack(spacing: 10) {
-                        PhotosPicker(selection: $photoItem, matching: .images) {
-                            ZStack(alignment: .bottomTrailing) {
-                                GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
-                                    .frame(width: 110, height: 110)
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 13)).foregroundStyle(.white)
-                                    .padding(8).background(Circle().fill(Color.accentColor))
-                            }
-                        }
-                        .buttonStyle(.plain)
+                        GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                            .frame(width: 110, height: 110)
                         Text(groupName)
                             .font(.system(size: 24, weight: .bold))
                             .multilineTextAlignment(.center)
@@ -1549,6 +1542,10 @@ enum ChatTonePreview {
     ]
     static func play(_ name: String, isCall: Bool) {
         guard name != "None" else { return }
+        // Route through a playback session so the preview is audible even with
+        // the ringer off / after recording a voice message.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
         let id = (isCall ? callIDs[name] : alertIDs[name]) ?? 1007
         AudioServicesPlaySystemSound(id)
     }

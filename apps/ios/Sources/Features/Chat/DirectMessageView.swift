@@ -146,18 +146,6 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    ShareLink(item: exportTranscript) {
-                        Label("Export chat", systemImage: "square.and.arrow.up")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
-                .accessibilityLabel("More")
-            }
         }
         .navigationDestination(isPresented: $showProfile) {
             ContactDetailsView(
@@ -1367,12 +1355,13 @@ private struct DMBubble: View {
             if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
             return replied.body
         }()
+        let accent = outgoingColor ?? Color.accentColor
         HStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 28)
+            RoundedRectangle(cornerRadius: 2).fill(accent).frame(width: 3, height: 28)
             VStack(alignment: .leading, spacing: 1) {
                 Text(replied.senderName)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(accent)
                 Text(preview)
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.6))

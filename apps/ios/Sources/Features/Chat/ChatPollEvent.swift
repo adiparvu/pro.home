@@ -33,8 +33,9 @@ struct ChatEvent: Codable {
         return String(data: data, encoding: .utf8)
     }
     var parsedDate: Date? {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
-        return f.date(from: date)
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
+        return f.date(from: date) ?? f2.date(from: date)
     }
     var dateDisplay: String {
         guard let d = parsedDate else { return date }
@@ -269,13 +270,15 @@ struct EventBubble: View {
     }
 
     private func addToCalendar() {
-        guard let start = event.parsedDate else { return }
+        guard let start = event.parsedDate else { HapticFeedback.warning(); return }
         let store = EKEventStore()
-        store.requestWriteOnlyAccessToEvents { granted, _ in
-            guard granted, let calendar = store.defaultCalendarForNewEvents else {
-                DispatchQueue.main.async { HapticFeedback.warning() }
-                return
-            }
+        // Full access so we can resolve a writable calendar (write-only access
+        // hides defaultCalendarForNewEvents, which is why saving used to fail).
+        store.requestFullAccessToEvents { granted, _ in
+            guard granted else { DispatchQueue.main.async { HapticFeedback.warning() }; return }
+            let calendar = store.defaultCalendarForNewEvents
+                ?? store.calendars(for: .event).first(where: { $0.allowsContentModifications })
+            guard let calendar else { DispatchQueue.main.async { HapticFeedback.warning() }; return }
             let ek = EKEvent(eventStore: store)
             ek.title = event.t
             ek.startDate = start

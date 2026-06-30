@@ -227,6 +227,7 @@ struct MessageBubble: View {
     var onDeleteForMe: (() -> Void)? = nil
     var pollVotes: [PollVote] = []
     var myUserId: UUID? = nil
+    var myAvatarURL: URL? = nil
     var onPollVote: ((Int) -> Void)? = nil
     var onLongPress: (() -> Void)? = nil
 
@@ -431,16 +432,14 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private func quotedReply(_ replied: Message) -> some View {
+        let accent = outgoingColor ?? Color.accentColor
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 36)
+            RoundedRectangle(cornerRadius: 2.5).fill(accent).frame(width: 4, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(replied.senderName)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                Text(replied.body?.isEmpty == false ? (replied.body ?? "") :
-                        (replied.isAudioMessage ? "🎤 Voice message" :
-                         replied.isImageMessage ? "📷 Photo" :
-                         replied.isLocationMessage ? "📍 Location" : "Attachment"))
+                    .foregroundStyle(accent)
+                Text(Self.replyPreview(replied))
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.65))
                     .lineLimit(1)
@@ -450,6 +449,22 @@ struct MessageBubble: View {
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .frame(maxWidth: 250, alignment: .leading)
+    }
+
+    /// A short, human-readable preview for a replied/pinned message — checks
+    /// the structured types (poll/event/attachments) before falling back to the
+    /// raw body so a poll/event never shows its JSON payload.
+    static func replyPreview(_ m: Message) -> String {
+        if m.isPollMessage { return "📊 Poll" }
+        if m.isEventMessage { return "📅 Event" }
+        if m.isAudioMessage { return "🎤 Voice message" }
+        if m.isImageMessage { return "📷 Photo" }
+        if m.isVideoMessage { return "🎥 Video" }
+        if m.isLocationMessage { return "📍 Location" }
+        if m.isStickerMessage { return "😀 Sticker" }
+        if m.isFileMessage { return "📎 File" }
+        if let b = m.body, !b.isEmpty { return b }
+        return "Attachment"
     }
 
     private var reactionPills: some View {
@@ -580,7 +595,7 @@ struct MessageBubble: View {
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
             AudioBubble(
                 url: url, isOwn: isOwn,
-                avatarURL: sender?.avatarUrl.flatMap { URL(string: $0) },
+                avatarURL: isOwn ? myAvatarURL : sender?.avatarUrl.flatMap { URL(string: $0) },
                 initials: sender?.initials ?? String(message.senderName.prefix(2)).uppercased(),
                 avatarColor: sender?.swiftColor ?? Color.gray,
                 timeText: message.timeDisplay,

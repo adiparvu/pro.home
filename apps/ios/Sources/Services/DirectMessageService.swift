@@ -36,7 +36,7 @@ struct DirectMessage: Identifiable, Codable {
         let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
         let d = f1.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
         let out = DateFormatter()
-        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
+        out.dateFormat = "HH:mm"
         return out.string(from: d)
     }
 
