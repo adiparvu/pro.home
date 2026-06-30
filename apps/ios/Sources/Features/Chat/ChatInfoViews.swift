@@ -339,17 +339,18 @@ private struct InfoActionCard: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            VStack(spacing: 7) {
+                // Native iOS Contacts-style circular action button.
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
+                    .frame(width: 52, height: 52)
+                    .background(Color.accentColor.opacity(0.15), in: Circle())
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.75))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .liquidGlass(cornerRadius: 14)
         }
         .buttonStyle(.plain)
     }
