@@ -997,10 +997,14 @@ enum ConversationClearStore {
     static func reset(_ id: String) {
         UserDefaults.standard.removeObject(forKey: key(id))
     }
-    /// Keeps only items strictly newer than the cutoff.
-    static func filter<T>(_ items: [T], convId: String, date: (T) -> Date) -> [T] {
+    /// Keeps only items strictly newer than the cutoff. Items without a date
+    /// (date closure returns nil) are kept.
+    static func filter<T>(_ items: [T], convId: String, date: (T) -> Date?) -> [T] {
         guard let cutoff = clearedAt(convId) else { return items }
-        return items.filter { date($0) > cutoff }
+        return items.filter { item in
+            guard let d = date(item) else { return true }
+            return d > cutoff
+        }
     }
 }
 
