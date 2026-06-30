@@ -24,6 +24,10 @@ final class MessageService: ObservableObject {
     var myName: String = ""
     private var typingSub: RealtimeSubscription?
     private var typingTasks: [String: Task<Void, Never>] = [:]
+    /// Coalesces bursts of realtime events so a flurry of changes triggers a
+    /// single reload per quiet window instead of one reload per event (C2). Same
+    /// reload code runs — just debounced — so the displayed data stays correct.
+    private var reloadTasks: [String: Task<Void, Never>] = [:]
 
     func sendTyping() {
         guard let ch = realtimeChannel, !myName.isEmpty else { return }
@@ -342,7 +346,12 @@ final class MessageService: ObservableObject {
         readsChannel = channel
 
         for await _ in changes {
-            await loadReads(propertyId: propertyId)
+            reloadTasks["reads"]?.cancel()
+            reloadTasks["reads"] = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled else { return }
+                await self?.loadReads(propertyId: propertyId)
+            }
         }
     }
 
@@ -409,7 +418,12 @@ final class MessageService: ObservableObject {
         deliveriesChannel = channel
 
         for await _ in changes {
-            await loadDeliveries(propertyId: propertyId)
+            reloadTasks["deliveries"]?.cancel()
+            reloadTasks["deliveries"] = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled else { return }
+                await self?.loadDeliveries(propertyId: propertyId)
+            }
         }
     }
 
@@ -506,7 +520,12 @@ final class MessageService: ObservableObject {
         reactionsChannel = channel
 
         for await _ in changes {
-            await loadReactions(propertyId: propertyId)
+            reloadTasks["reactions"]?.cancel()
+            reloadTasks["reactions"] = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled else { return }
+                await self?.loadReactions(propertyId: propertyId)
+            }
         }
     }
 
@@ -575,7 +594,12 @@ final class MessageService: ObservableObject {
         pollVotesChannel = channel
 
         for await _ in changes {
-            await loadPollVotes(propertyId: propertyId)
+            reloadTasks["pollVotes"]?.cancel()
+            reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled else { return }
+                await self?.loadPollVotes(propertyId: propertyId)
+            }
         }
     }
 
@@ -587,6 +611,8 @@ final class MessageService: ObservableObject {
     }
 
     func unsubscribeAll() async {
+        reloadTasks.values.forEach { $0.cancel() }
+        reloadTasks.removeAll()
         await unsubscribe()
         await unsubscribeReads()
         await unsubscribeReactions()
