@@ -149,7 +149,11 @@ final class MessageService: ObservableObject {
 
         for await _ in changes {
             let added = await loadNewer(propertyId: propertyId)
-            unreadCount += max(added, 1)
+            guard added > 0 else { continue }
+            // Count only messages from others as unread — not my own echoes, and
+            // not a forced +1 when loadNewer found nothing new (the old drift bug).
+            let myId = supabase.auth.currentSession?.user.id
+            unreadCount += messages.suffix(added).filter { $0.senderId != myId }.count
         }
     }
 

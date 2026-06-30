@@ -80,11 +80,16 @@ struct ChatView: View {
         return Calendar.current.isDate(dA, inSameDayAs: dB)
     }
 
-    private var filteredMessages: [Message] {
+    /// Messages after the "clear conversation" cutoff and disappearing-message
+    /// rules, before any search filter. Shared by the list, pins and counts so
+    /// none of them show messages the user has cleared or that have expired.
+    private var visibleMessages: [Message] {
         let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
-        let visible = ChatDisappearStore.filter(kept, convId: "group") { $0.date }
-        guard showSearch && !searchText.isEmpty else { return visible }
-        return visible.filter {
+        return ChatDisappearStore.filter(kept, convId: "group") { $0.date }
+    }
+    private var filteredMessages: [Message] {
+        guard showSearch && !searchText.isEmpty else { return visibleMessages }
+        return visibleMessages.filter {
             ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -105,7 +110,7 @@ struct ChatView: View {
             (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
         })
     }
-    private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
+    private var pinnedMessages: [Message] { visibleMessages.filter { $0.pinned == true && $0.deletedForAll != true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
 
     @ViewBuilder
