@@ -1211,7 +1211,6 @@ private struct DMBubble: View {
                             .offset(x: swipeOffset > 0 ? -28 : 28)
                     }
                 }
-                .gesture(swipeGesture)
                 .onLongPressGesture(minimumDuration: 0.22) {
                     HapticFeedback.impact(.medium)
                     onLongPress?()
@@ -1233,6 +1232,8 @@ private struct DMBubble: View {
             }
         }
         .padding(.vertical, 1)
+        .contentShape(Rectangle())
+        .simultaneousGesture(swipeGesture)
         .sheet(isPresented: $showDetails) {
             DMMessageDetailsView(message: message, isOwn: isOwn)
         }
