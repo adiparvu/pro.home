@@ -991,13 +991,11 @@ struct DirectMessageView: View {
     @MainActor
     private func uploadAndSendImage(data: Data) async {
         guard let propId = propertyService.primary?.id else { return }
-        let filename = "dm-images/\(UUID().uuidString).jpg"
 
         do {
-            try await supabase.storage.from("documents")
-                .upload(filename, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-            guard let urlStr = try? supabase.storage.from("documents").getPublicURL(path: filename).absoluteString,
-                  !urlStr.isEmpty else { return }
+            // Private bucket + signed URL at display (via ChatMedia / DMImageBubble).
+            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm",
+                                                    ext: "jpg", contentType: "image/jpeg") else { return }
 
             struct PhotoPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
@@ -1007,7 +1005,7 @@ struct DirectMessageView: View {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(PhotoPayload(sender_name: myName, recipient_name: member.name,
-                                     body: urlStr, property_id: propId.uuidString,
+                                     body: path, property_id: propId.uuidString,
                                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
                                      recipient_member_id: member.id.uuidString,
                                      expires_at: dmExpiresAt))
@@ -1438,16 +1436,26 @@ private struct DMBubble: View {
     }
 
     private var imageBubble: some View {
-        AsyncImage(url: URL(string: message.body)) { phase in
+        DMImageBubble(stored: message.body) { u in viewerItem = ImageViewerItem(url: u) }
+    }
+}
+
+// MARK: - DM image bubble (resolves private signed URLs; legacy URLs pass through)
+
+private struct DMImageBubble: View {
+    let stored: String
+    let onTap: (URL) -> Void
+    @State private var url: URL?
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
             switch phase {
             case .success(let img):
                 img.resizable()
                     .scaledToFill()
                     .frame(maxWidth: 220, maxHeight: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .onTapGesture {
-                        if let u = URL(string: message.body) { viewerItem = ImageViewerItem(url: u) }
-                    }
+                    .onTapGesture { if let url { onTap(url) } }
             case .failure:
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.primary.opacity(0.08))
@@ -1460,6 +1468,7 @@ private struct DMBubble: View {
                     .overlay(ProgressView())
             }
         }
+        .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
 
