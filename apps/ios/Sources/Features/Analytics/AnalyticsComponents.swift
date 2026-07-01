@@ -84,6 +84,7 @@ struct FinancesSection: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Previous month")
 
             Spacer()
 
@@ -113,6 +114,7 @@ struct FinancesSection: View {
             }
             .buttonStyle(.plain)
             .disabled(isCurrentMonth)
+            .accessibilityLabel("Next month")
         }
         .padding(.horizontal, 8)
     }
