@@ -34,7 +34,7 @@ struct PRVIOApp: App {
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)
                 .environmentObject(auth)
-                .environmentObject(lock)
+                .environment(lock)
 
                 if auth.session != nil {
                     if lock.isLocked {
