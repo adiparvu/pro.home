@@ -101,6 +101,7 @@ struct TasksView: View {
                         .font(.system(size: 18))
                         .foregroundStyle(Color.primary.opacity(0.85))
                 }
+                .accessibilityLabel("Calendar")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 0) {
@@ -120,6 +121,7 @@ struct TasksView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .frame(width: 38, height: 32)
                     }
+                    .accessibilityLabel("Filter tasks")
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))
                         .frame(width: 0.5, height: 18)
@@ -132,6 +134,7 @@ struct TasksView: View {
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Add task")
                 }
             }
         }
@@ -322,6 +325,7 @@ struct TaskRowView: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)

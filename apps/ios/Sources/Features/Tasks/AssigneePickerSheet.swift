@@ -54,6 +54,7 @@ struct AssigneePickerSheet: View {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.system(size: 28)).foregroundStyle(Color.accentColor)
                                     }
+                                    .accessibilityLabel("Confirm assignee")
                                 }
                             } else {
                                 Button {
@@ -84,6 +85,7 @@ struct AssigneePickerSheet: View {
                                         } label: {
                                             Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                                         }
+                                        .accessibilityLabel("Remove \(name)")
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 10)
                                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))

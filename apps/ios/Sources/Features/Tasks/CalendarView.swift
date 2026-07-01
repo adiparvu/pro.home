@@ -38,6 +38,7 @@ struct CalendarView: View {
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(0.07), in: Circle())
             }
+            .accessibilityLabel("Previous month")
             Spacer()
             Text(LocalizedStringKey(monthTitle))
                 .font(.system(size: 17, weight: .semibold))
@@ -54,6 +55,7 @@ struct CalendarView: View {
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(0.07), in: Circle())
             }
+            .accessibilityLabel("Next month")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
