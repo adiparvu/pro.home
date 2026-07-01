@@ -104,6 +104,7 @@ struct AddReceiptSheet: View {
                         .font(.system(size: 16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Add item")
             }
 
             if !items.isEmpty {

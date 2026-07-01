@@ -54,6 +54,7 @@ struct SupplyListDetailView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddItem) {
@@ -87,6 +88,7 @@ struct SupplyListDetailView: View {
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

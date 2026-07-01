@@ -181,6 +181,7 @@ struct SpendingReportView: View {
                     .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Previous month")
             Spacer()
             Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(.system(size: 15, weight: .semibold))
             Spacer()
@@ -195,6 +196,7 @@ struct SpendingReportView: View {
             }
             .buttonStyle(.plain)
             .disabled(selectedMonth == receiptService.currentMonthKey)
+            .accessibilityLabel("Next month")
         }
     }
 

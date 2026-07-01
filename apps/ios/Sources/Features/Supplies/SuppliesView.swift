@@ -85,6 +85,7 @@ struct SuppliesView: View {
                     Button { showAddList = true; HapticFeedback.impact(.light) } label: {
                         Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Add list")
                 } else {
                     Menu {
                         Button { showScanner = true; HapticFeedback.impact(.light) } label: {
