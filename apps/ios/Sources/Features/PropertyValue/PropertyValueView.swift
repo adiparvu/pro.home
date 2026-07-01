@@ -48,6 +48,7 @@ struct PropertyValueView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add entry")
             }
         }
         .sheet(isPresented: $showAdd) {
