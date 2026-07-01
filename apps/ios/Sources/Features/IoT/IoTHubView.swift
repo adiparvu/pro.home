@@ -55,12 +55,14 @@ struct IoTHubView: View {
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(.primary)
                         }
+                        .accessibilityLabel("Refresh devices")
                     }
                     Button { addAction() } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Add item")
                 }
             }
         }
@@ -192,6 +194,7 @@ struct IoTHubView: View {
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Show device options")
             }
         }
         .swipeActions(edge: .trailing) {
