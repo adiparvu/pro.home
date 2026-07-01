@@ -247,13 +247,13 @@ struct UtilityView: View {
                     .annotation(position: .top) {
                         Text("€\(String(format: "%.0f", e.amount))")
                             .font(.system(size: 9))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
                 .frame(height: 130)
                 .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(.secondary) } }
                 .chartYAxis { AxisMarks { _ in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.primary.opacity(0.06))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.primary.opacity(AppOpacity.hairline))
                     AxisValueLabel().foregroundStyle(.secondary)
                 }}
                 HStack {
@@ -301,7 +301,7 @@ struct UtilityView: View {
             Image(systemName: type?.icon ?? "bolt.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
             Text(String(format: String(localized: "No %@ bills yet"), type?.label ?? ""))
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.45))
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Tap + to add manually or scan an invoice to extract data automatically.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
@@ -343,7 +343,7 @@ private struct UtilitySummaryCard: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(isSelected ? type.color : Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .background(isSelected ? type.color : Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isSelected ? .clear : type.color.opacity(0.25), lineWidth: 1)

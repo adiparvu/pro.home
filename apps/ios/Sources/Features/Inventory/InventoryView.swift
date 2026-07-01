@@ -172,7 +172,7 @@ struct InventoryView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }

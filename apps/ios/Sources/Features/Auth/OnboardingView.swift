@@ -75,10 +75,10 @@ struct OnboardingView: View {
                 } label: {
                     Text("Back")
                         .font(AppFont.body)
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -231,7 +231,7 @@ private struct PropertyStep: View {
                     .foregroundStyle(.primary)
                 Text("Tell us a bit about your property.")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
 
             VStack(spacing: 0) {
@@ -240,7 +240,7 @@ private struct PropertyStep: View {
                 fieldRow(icon: "mappin.circle.fill", placeholder: "Address (optional)", text: $address)
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -300,7 +300,7 @@ private struct FeaturesStep: View {
                     .foregroundStyle(.primary)
                 Text("Packed with smart features to manage your property effortlessly.")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
             }
 
@@ -310,14 +310,14 @@ private struct FeaturesStep: View {
                         ColoredIconBadge(icon: f.icon, color: f.color, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(LocalizedStringKey(f.title)).font(AppFont.subheadline).foregroundStyle(.primary)
-                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         Spacer()
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
                 }
             }
             Spacer()

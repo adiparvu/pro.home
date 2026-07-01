@@ -198,7 +198,7 @@ struct PropertyElementDetailView: View {
                 ForEach(urls, id: \.self) { u in
                     AsyncImage(url: URL(string: u)) { phase in
                         if case .success(let img) = phase { img.resizable().scaledToFill() }
-                        else { Color.primary.opacity(0.06) }
+                        else { Color.primary.opacity(AppOpacity.hairline) }
                     }
                     .clipped()
                 }

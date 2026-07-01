@@ -67,7 +67,7 @@ struct BudgetView: View {
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.07)).frame(height: 8)
+                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 8)
                         Capsule()
                             .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : Color.blue)
                             .frame(width: geo.size.width * progress, height: 8)
@@ -98,7 +98,7 @@ struct BudgetView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("PER CATEGORY")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             VStack(spacing: 8) {
@@ -130,7 +130,7 @@ struct BudgetView: View {
                                         if budget > 0 {
                                             Text(String(format: "%.0f%%", progress * 100))
                                                 .font(.system(size: 10))
-                                                .foregroundStyle(Color.primary.opacity(0.35))
+                                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                         }
                                     }
                                 }
@@ -138,7 +138,7 @@ struct BudgetView: View {
                                 if budget > 0 {
                                     GeometryReader { geo in
                                         ZStack(alignment: .leading) {
-                                            Capsule().fill(Color.primary.opacity(0.07)).frame(height: 5)
+                                            Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
                                             Capsule()
                                                 .fill(progress > 0.9 ? Color.red : progress > 0.7 ? Color.orange : categoryColor(cat))
                                                 .frame(width: geo.size.width * progress, height: 5)
@@ -209,11 +209,11 @@ private struct EditBudgetSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("MONTHLY BUDGET")
                                 .font(AppFont.label)
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             HStack(spacing: 8) {
                                 Text("€")
                                     .font(.system(size: 32, weight: .light))
-                                    .foregroundStyle(Color.primary.opacity(0.5))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 TextField(current > 0 ? String(Int(current)) : "0", text: $amount)
                                     .font(.system(size: 40, weight: .light))
                                     .foregroundStyle(.primary)
@@ -232,7 +232,7 @@ private struct EditBudgetSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {

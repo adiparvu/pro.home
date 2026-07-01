@@ -98,7 +98,7 @@ struct TOTPEnrollView: View {
                 .accessibilityLabel("Copy secret code")
             }
             .padding(14)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -110,7 +110,7 @@ struct TOTPEnrollView: View {
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .padding(14)
-                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .onChange(of: code) { _, v in
                     code = String(v.filter(\.isNumber).prefix(6))
                 }

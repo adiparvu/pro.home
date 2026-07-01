@@ -15,7 +15,7 @@ struct LoginView: View {
             // Background
             Color.black.ignoresSafeArea()
             RadialGradient(
-                colors: [Color.primary.opacity(0.06), .clear],
+                colors: [Color.primary.opacity(AppOpacity.hairline), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 400

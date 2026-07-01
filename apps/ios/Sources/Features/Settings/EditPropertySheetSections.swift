@@ -17,7 +17,7 @@ extension EditPropertySheet {
             }
             .padding(.horizontal, 16).padding(.vertical, 13)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -69,11 +69,11 @@ extension EditPropertySheet {
 
     var storySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("STORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+            Text("STORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 0)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.primary.opacity(0.04))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 if story.isEmpty {
                     Text("Write a story about this property…").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.28))
                         .padding(.horizontal, 16).padding(.vertical, 13)
@@ -90,7 +90,7 @@ extension EditPropertySheet {
     var renovationsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("RENOVATIONS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+                Text("RENOVATIONS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Spacer()
                 Button { withAnimation { showRenovationForm.toggle() } } label: {
                     Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
@@ -119,7 +119,7 @@ extension EditPropertySheet {
                     }
                 }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
             }
 
             if showRenovationForm {
@@ -151,7 +151,7 @@ extension EditPropertySheet {
     var ownersSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("OWNERS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+                Text("OWNERS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Spacer()
                 Button { withAnimation { showOwnerForm.toggle() } } label: {
                     Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
@@ -180,7 +180,7 @@ extension EditPropertySheet {
                     }
                 }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
             }
 
             if showOwnerForm {

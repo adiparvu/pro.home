@@ -200,7 +200,7 @@ struct AddPropertyElementView: View {
                                             .keyboardType(.decimalPad)
                                             .font(.subheadline)
                                             .padding(10)
-                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Currency")
@@ -212,7 +212,7 @@ struct AddPropertyElementView: View {
                                         }
                                         .pickerStyle(.menu)
                                         .padding(6)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     .frame(width: 80)
                                 }
@@ -245,7 +245,7 @@ struct AddPropertyElementView: View {
                                                     .padding(.horizontal, 10)
                                                     .padding(.vertical, 6)
                                                     .background(
-                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
                                                     )
                                             }
                                             .buttonStyle(.plain)
@@ -264,7 +264,7 @@ struct AddPropertyElementView: View {
                                     .scrollContentBackground(.hidden)
                                     .font(.subheadline)
                                     .padding(8)
-                                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 
@@ -344,7 +344,7 @@ struct AddPropertyElementView: View {
                         if let coverURL, let url = URL(string: coverURL) {
                             AsyncImage(url: url) { phase in
                                 if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                else { Color.primary.opacity(0.06) }
+                                else { Color.primary.opacity(AppOpacity.hairline) }
                             }
                         } else {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -377,7 +377,7 @@ struct AddPropertyElementView: View {
                             if let url = URL(string: urlStr) {
                                 AsyncImage(url: url) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 78, height: 78)
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -424,7 +424,7 @@ struct AddPropertyElementView: View {
                                         .foregroundStyle(automationSystem == brandName ? Color.white : Color.secondary)
                                         .padding(.horizontal, 12).padding(.vertical, 6)
                                         .background(
-                                            Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                                            Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
                                         )
                                 }
                                 .buttonStyle(.plain)
@@ -520,7 +520,7 @@ struct AddPropertyElementView: View {
             TextField(placeholder, text: text)
                 .font(.subheadline)
                 .padding(10)
-                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
         }
     }
 }
@@ -540,7 +540,7 @@ private struct TypeChip: View {
                     .foregroundStyle(isSelected ? type.accentColor : Color.secondary)
                     .frame(width: 32, height: 32)
                     .background(
-                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(0.06))
+                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline))
                     )
                 Text(LocalizedStringKey(type.displayName))
                     .font(.system(size: 10))

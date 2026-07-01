@@ -80,7 +80,7 @@ struct EditTextSheet: View {
                         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
                     if let note {
                         Text(note)
-                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                 }
@@ -177,7 +177,7 @@ struct GroupPermissionsView: View {
                 .padding(.horizontal, 16)
 
                 Text("Turning these settings off means only group admins can do this.")
-                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, 20)
 
                 Text("Admin permissions")
@@ -190,7 +190,7 @@ struct GroupPermissionsView: View {
                 .padding(.horizontal, 16)
 
                 Text("When on, any request to join the group must be approved by an admin.")
-                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, 20)
 
                 if !adminNames.isEmpty {
@@ -199,7 +199,7 @@ struct GroupPermissionsView: View {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Group admins").font(.system(size: 16))
                                 Text(adminNames.joined(separator: ", "))
-                                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.45)).lineLimit(1)
+                                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText)).lineLimit(1)
                             }
                             Spacer()
                             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
@@ -232,12 +232,12 @@ struct GroupPermissionsView: View {
     private func toggleRow(_ icon: String, _ title: String, _ subtitle: String?, _ binding: Binding<Bool>) -> some View {
         HStack(alignment: subtitle == nil ? .center : .top, spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 28)
+                .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 28)
                 .padding(.top, subtitle == nil ? 0 : 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(LocalizedStringKey(title)).font(.system(size: 16))
                 if let subtitle {
-                    Text(LocalizedStringKey(subtitle)).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    Text(LocalizedStringKey(subtitle)).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
             }
             Spacer()
@@ -253,7 +253,7 @@ struct MemberChangesView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text("See changes from the last 60 days, such as members who left or were removed.")
-                .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(20)
             Spacer()
             Text("No changes")
@@ -289,7 +289,7 @@ struct InviteLinkView: View {
             VStack(spacing: 18) {
                 Text("Anyone with this link or QR code can join \(title).")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24).padding(.top, 8)
 
@@ -360,7 +360,7 @@ struct MediaGalleryView: View {
                                 if case .success(let img) = phase {
                                     img.resizable().scaledToFill()
                                 } else {
-                                    Rectangle().fill(Color.primary.opacity(0.06))
+                                    Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
                                 }
                             }
                             .frame(height: 120)
@@ -429,7 +429,7 @@ private struct InfoRow: View {
             HStack(spacing: 14) {
                 Image(systemName: icon)
                     .font(.system(size: 17))
-                    .foregroundStyle(tint == .primary ? Color.primary.opacity(0.7) : tint)
+                    .foregroundStyle(tint == .primary ? Color.primary.opacity(AppOpacity.emphasis) : tint)
                     .frame(width: 26)
                 Text(LocalizedStringKey(label))
                     .foregroundStyle(tint)
@@ -462,7 +462,7 @@ struct InfoRowLabel: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 17))
-                .foregroundStyle(Color.primary.opacity(0.7))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 .frame(width: 26)
             Text(LocalizedStringKey(label))
                 .foregroundStyle(.primary)
@@ -521,7 +521,7 @@ struct ContactDetailsView: View {
                             .font(.system(size: 24, weight: .bold))
                         Text(member.roleLabel)
                             .font(.system(size: 15))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         if let phone = member.phone, !phone.isEmpty {
                             Text(phone).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         }
@@ -745,7 +745,7 @@ struct GroupDetailsView: View {
                                 Label("Add group description", systemImage: "pencil")
                                     .font(.system(size: 14)).foregroundStyle(Color.accentColor)
                             } else {
-                                (Text(description).foregroundStyle(Color.primary.opacity(0.7))
+                                (Text(description).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                  + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
                                     .font(.system(size: 14))
                                     .multilineTextAlignment(.center)
@@ -757,7 +757,7 @@ struct GroupDetailsView: View {
 
                         Text("Group · \(members.count + 1) members")
                             .font(.system(size: 15))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     .padding(.top, 8)
 
@@ -772,7 +772,7 @@ struct GroupDetailsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(members.count + 1) members")
                             .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 20)
 
                         VStack(spacing: 0) {
@@ -963,7 +963,7 @@ struct GroupDetailsView: View {
                         Text("Add a member label")
                             .font(.system(size: 12)).foregroundStyle(Color.accentColor)
                     } else {
-                        Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                        Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -1048,7 +1048,7 @@ struct EditGroupDetailsSheet: View {
                         }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 14)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .padding(.horizontal, 16)
 
                     Spacer(minLength: 40)
@@ -1223,11 +1223,11 @@ struct SecureChatToggle: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Secure conversation").font(.system(size: 16))
                 Text("Lock and hide this chat on this device.")
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
             Spacer()
             Toggle("", isOn: $secured).labelsHidden()
@@ -1372,7 +1372,7 @@ struct EncryptionInfoView: View {
 
                 Text("End-to-end encryption is on our roadmap. Until then, conversations are secured in transit and by strict access control.")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
 
@@ -1414,7 +1414,7 @@ struct AdvancedPrivacyView: View {
                 VStack(spacing: 0) {
                     HStack(spacing: 14) {
                         Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
                         Text("Advanced chat privacy").font(.system(size: 16))
                         Spacer()
                         Toggle("", isOn: $on).labelsHidden()
@@ -1426,7 +1426,7 @@ struct AdvancedPrivacyView: View {
 
                 Text("When on, others are blocked from exporting this chat, auto-saving its media, and using its messages for AI features. Best for sensitive conversations.")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, 20)
             }
             .padding(.top, 8)
@@ -1480,7 +1480,7 @@ struct DisappearingMessagesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text("New messages in this chat will disappear after the selected duration. This only affects messages from now on.")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, 20)
 
                 VStack(spacing: 0) {
@@ -1538,7 +1538,7 @@ struct ConversationNotificationsView: View {
                 section("Messages") {
                     HStack(spacing: 14) {
                         Image(systemName: muted ? "bell.slash.fill" : "bell.fill")
-                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
                         Toggle("Mute notifications", isOn: $muted).font(.system(size: 16))
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
@@ -1572,7 +1572,7 @@ struct ConversationNotificationsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey(title))
                 .font(AppFont.captionEmphasis)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, 20)
             VStack(spacing: 0) { content() }
                 .liquidGlass(cornerRadius: 16)
@@ -1586,10 +1586,10 @@ struct ConversationNotificationsView: View {
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                    .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
                 Text(LocalizedStringKey(label)).font(.system(size: 16)).foregroundStyle(.primary)
                 Spacer()
-                Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(0.45)).font(.system(size: 15))
+                Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText)).font(.system(size: 15))
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.25))

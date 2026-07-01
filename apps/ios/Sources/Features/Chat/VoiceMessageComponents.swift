@@ -182,7 +182,7 @@ struct AudioBubble: View {
     /// Signed URL resolved from `audioValue` (nil while resolving).
     @State private var url: URL?
 
-    private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(0.5) }
+    private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(AppOpacity.mediumText) }
 
     var body: some View {
         HStack(spacing: 10) {

@@ -86,11 +86,11 @@ private struct StarredRow: View {
                     .foregroundStyle(sender?.swiftColor ?? .primary)
                 Text(snippet)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(2)
                 Text(message.timeDisplay)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             Spacer()
             Image(systemName: "chevron.right")

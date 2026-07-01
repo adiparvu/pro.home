@@ -73,7 +73,7 @@ struct BackupCodesView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("CODURI DE REZERVĂ")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             LazyVGrid(columns: columns, spacing: 0) {
@@ -81,7 +81,7 @@ struct BackupCodesView: View {
                     HStack {
                         Text("\(idx + 1).")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(width: 20, alignment: .trailing)
                         Text(code)
                             .font(.system(size: 15, weight: .semibold, design: .monospaced))
@@ -94,14 +94,14 @@ struct BackupCodesView: View {
                     .overlay(alignment: .bottom) {
                         if idx < codes.count - 2 {
                             Rectangle()
-                                .fill(Color.primary.opacity(0.06))
+                                .fill(Color.primary.opacity(AppOpacity.hairline))
                                 .frame(height: 0.4)
                         }
                     }
                     .overlay(alignment: .trailing) {
                         if idx % 2 == 0 {
                             Rectangle()
-                                .fill(Color.primary.opacity(0.06))
+                                .fill(Color.primary.opacity(AppOpacity.hairline))
                                 .frame(width: 0.4)
                         }
                     }
@@ -121,7 +121,7 @@ struct BackupCodesView: View {
                     .foregroundStyle(showCopyConfirm ? Color(red: 0.3, green: 0.82, blue: 0.45) : .primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)
@@ -132,7 +132,7 @@ struct BackupCodesView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)

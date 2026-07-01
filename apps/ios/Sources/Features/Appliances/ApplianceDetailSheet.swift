@@ -84,7 +84,7 @@ struct ApplianceDetailSheet: View {
                         .foregroundStyle(.primary)
                     Text(appliance.category.displayName)
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     Text(appliance.warrantyStatus)
                         .font(AppFont.captionStrong)
                         .foregroundStyle(appliance.warrantyColor)

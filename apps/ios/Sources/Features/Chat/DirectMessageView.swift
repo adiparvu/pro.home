@@ -458,7 +458,7 @@ struct DirectMessageView: View {
                                     if !outbox.isOnline {
                                         Text("Not delivered · tap to retry")
                                             .font(.system(size: 10))
-                                            .foregroundStyle(Color.primary.opacity(0.45))
+                                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                             .padding(.trailing, 4)
                                     }
                                 }
@@ -578,7 +578,7 @@ struct DirectMessageView: View {
             }
             .font(AppFont.footnoteEmphasis)
         }
-        .foregroundStyle(Color.primary.opacity(0.7))
+        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .background(.regularMaterial)
@@ -707,11 +707,11 @@ struct DirectMessageView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.07))
+                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
                     .frame(width: 34, height: 34)
                 Image(systemName: "plus")
                     .font(AppFont.headline)
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
         }
         .buttonStyle(.plain)
@@ -749,7 +749,7 @@ struct DirectMessageView: View {
                 .font(AppFont.subheadline)
                 .foregroundStyle(Color.primary.opacity(0.55))
                 .frame(width: 34, height: 34)
-                .background(Color.primary.opacity(0.07), in: Circle())
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
         }
         .buttonStyle(.plain)
     }
@@ -776,7 +776,7 @@ struct DirectMessageView: View {
     private var micButton: some View {
         ZStack {
             Circle()
-                .fill(audioRecorder.isRecording ? Color.red.opacity(0.12) : Color.primary.opacity(0.07))
+                .fill(audioRecorder.isRecording ? Color.red.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill))
                 .frame(width: 34, height: 34)
             Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
                 .font(AppFont.subheadline)
@@ -1341,7 +1341,7 @@ private struct DMBubble: View {
                         }
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
+                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule())
                     .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
                 }
@@ -1354,7 +1354,7 @@ private struct DMBubble: View {
         HStack(spacing: 4) {
             Text(message.timeDisplay)
                 .font(.system(size: 10))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             if message.editedAt != nil, messageType != .deleted {
                 Text("· edited")
                     .font(.system(size: 10))
@@ -1363,7 +1363,7 @@ private struct DMBubble: View {
             if message.pinned == true {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 8))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             if message.isMarked == true {
                 Image(systemName: "flag.fill")
@@ -1402,7 +1402,7 @@ private struct DMBubble: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 8).padding(.vertical, 5)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .frame(maxWidth: 240, alignment: .leading)
     }
 
@@ -1414,10 +1414,10 @@ private struct DMBubble: View {
             Text("This message was deleted")
                 .font(.system(size: 14))
                 .italic()
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
         }
         .padding(.horizontal, 13).padding(.vertical, 9)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var textBubble: some View {
@@ -1461,7 +1461,7 @@ private struct DMImageBubble: View {
                     .overlay(Image(systemName: "photo").foregroundStyle(Color.primary.opacity(0.3)))
             default:
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 220, height: 140)
                     .overlay(ProgressView())
             }
@@ -1541,11 +1541,11 @@ private struct DMStarredView: View {
                                                 .foregroundStyle(.primary)
                                             Text(snippet(msg))
                                                 .font(.system(size: 14))
-                                                .foregroundStyle(Color.primary.opacity(0.7))
+                                                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                                 .lineLimit(2)
                                             Text(msg.timeDisplay)
                                                 .font(.system(size: 11))
-                                                .foregroundStyle(Color.primary.opacity(0.35))
+                                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right")

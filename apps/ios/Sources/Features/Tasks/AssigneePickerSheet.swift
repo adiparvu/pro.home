@@ -21,7 +21,7 @@ struct AssigneePickerSheet: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("FAMILY MEMBERS")
                                     .font(AppFont.label)
-                                    .foregroundStyle(Color.primary.opacity(0.35))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                     .padding(.leading, 4)
                                 MemberPickerView(selectedIds: $assigneeIds, selectedNames: $assigneeNames)
                             }
@@ -30,7 +30,7 @@ struct AssigneePickerSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("SOMEONE ELSE")
                                 .font(AppFont.label)
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, 4)
 
                             if showCustom {
@@ -38,7 +38,7 @@ struct AssigneePickerSheet: View {
                                     TextField("Name", text: $customName)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .padding(.horizontal, 14).padding(.vertical, 11)
-                                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
                                     Button {
                                         let n = customName.trimmingCharacters(in: .whitespaces)
                                         guard !n.isEmpty else { return }

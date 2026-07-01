@@ -95,7 +95,7 @@ struct PropertyValueView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Current Value")
                             .font(AppFont.caption)
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .tracking(0.3)
 
                         if let latest = latestValue {
@@ -182,7 +182,7 @@ struct PropertyValueView: View {
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 .chartYAxis {
@@ -191,7 +191,7 @@ struct PropertyValueView: View {
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 .frame(height: 180)
@@ -243,13 +243,13 @@ struct PropertyValueView: View {
                         if let date = entry.enteredDate {
                             Text(Self.dateFormatter.string(from: date))
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let source = entry.source, !source.isEmpty {
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                             Text(source)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
                     }
@@ -257,7 +257,7 @@ struct PropertyValueView: View {
                     if let notes = entry.notes, !notes.isEmpty {
                         Text(notes)
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .lineLimit(2)
                     }
                 }
@@ -280,7 +280,7 @@ struct PropertyValueView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Log manual estimates and bank appraisals to see how your property value changes over time.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {

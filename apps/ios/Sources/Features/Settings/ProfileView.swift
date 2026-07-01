@@ -127,7 +127,7 @@ struct ProfileView: View {
                 .foregroundStyle(.primary)
             Text(auth.session?.user.email ?? "")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
 
             ringColorPicker
         }
@@ -231,7 +231,7 @@ struct ProfileView: View {
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
         }
@@ -239,7 +239,7 @@ struct ProfileView: View {
     }
 
     private var div: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 16)
     }
 
     // MARK: - Account actions

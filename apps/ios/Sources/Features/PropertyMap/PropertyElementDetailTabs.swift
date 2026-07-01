@@ -135,7 +135,7 @@ extension PropertyElementDetailView {
                                         if case .success(let img) = phase {
                                             img.resizable().scaledToFill()
                                         } else {
-                                            Rectangle().fill(Color.primary.opacity(0.06))
+                                            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
                                                 .overlay(ProgressView().scaleEffect(0.6))
                                         }
                                     }

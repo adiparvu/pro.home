@@ -119,7 +119,7 @@ struct BuriedUtilitiesView: View {
                     HStack(spacing: 5) {
                         Circle().fill(BuriedUtilityKind.color(t)).frame(width: 8, height: 8)
                         Text(LocalizedStringKey(BuriedUtilityKind.label(t)))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
             }
@@ -133,9 +133,9 @@ struct BuriedUtilitiesView: View {
             Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.16))
             Text("No buried lines mapped")
-                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35))
+                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center).padding(.horizontal, 28)
             Spacer(minLength: 40)
         }

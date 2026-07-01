@@ -16,7 +16,7 @@ private struct DeliveryCheck: View {
             Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).offset(x: 5)
         }
         .frame(width: 22, alignment: .leading)
-        .foregroundStyle(read ? Color.blue : Color.primary.opacity(0.45))
+        .foregroundStyle(read ? Color.blue : Color.primary.opacity(AppOpacity.secondaryText))
     }
 }
 
@@ -35,7 +35,7 @@ private struct DetailRow: View {
             if let dateTime {
                 Text(dateTime)
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             } else {
                 Text("—").foregroundStyle(Color.primary.opacity(0.3))
             }
@@ -61,7 +61,7 @@ private struct DetailsCard<Header: View>: View {
                     if let cols = theme.backgroundColors {
                         LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
                     } else {
-                        Color.primary.opacity(0.06)
+                        Color.primary.opacity(AppOpacity.hairline)
                     }
                     VStack(spacing: 8) {
                         ChatDateSeparator(dateStr: createdAt)

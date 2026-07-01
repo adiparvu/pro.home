@@ -194,7 +194,7 @@ struct LocalAssistantView: View {
                 .lineLimit(1...4)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
 
             Button {
                 guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -320,7 +320,7 @@ private struct ThinkingBubble: View {
             HStack(spacing: 5) {
                 ForEach(0..<3) { i in
                     Circle()
-                        .fill(Color.primary.opacity(0.5))
+                        .fill(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(width: 7, height: 7)
                         .scaleEffect(phase == Double(i) ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)

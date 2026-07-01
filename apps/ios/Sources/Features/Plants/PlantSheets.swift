@@ -107,7 +107,7 @@ struct AddPlantSheet: View {
                                 .background(
                                     selectedEmoji == emoji
                                         ? Color.accentColor.opacity(0.15)
-                                        : Color.primary.opacity(0.06),
+                                        : Color.primary.opacity(AppOpacity.hairline),
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 )
                                 .overlay(
@@ -149,7 +149,7 @@ struct AddPlantSheet: View {
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
                                         .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
                     }
@@ -203,7 +203,7 @@ struct AddPlantSheet: View {
                 .tint(.accentColor)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -218,7 +218,7 @@ struct AddPlantSheet: View {
                 .tint(.accentColor)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -233,7 +233,7 @@ struct AddPlantSheet: View {
                 .tint(.accentColor)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -249,7 +249,7 @@ struct AddPlantSheet: View {
                 .lineLimit(3...5)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -276,7 +276,7 @@ struct AddPlantSheet: View {
                             .background(
                                 healthStatus == opt.id
                                     ? healthColorFor(opt.id)
-                                    : Color.primary.opacity(0.07),
+                                    : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                             )
                     }
@@ -306,7 +306,7 @@ struct AddPlantSheet: View {
             }
             .padding(14)
             .background(
-                Color.primary.opacity(0.07),
+                Color.primary.opacity(AppOpacity.subtleFill),
                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)
             )
         }

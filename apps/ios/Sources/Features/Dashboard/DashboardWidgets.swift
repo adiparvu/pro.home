@@ -84,7 +84,7 @@ extension DashboardView {
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(0.07))
+                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
                 }
                 .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
             } header: {
@@ -110,7 +110,7 @@ extension DashboardView {
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(0.07))
+                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
                 }
                 .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
             } header: {
@@ -127,7 +127,7 @@ extension DashboardView {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
 

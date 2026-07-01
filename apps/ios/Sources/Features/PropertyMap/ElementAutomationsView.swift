@@ -140,7 +140,7 @@ struct AddElementAutomationSheet: View {
                                                     .font(.caption.weight(trigger == t ? .semibold : .regular))
                                                     .foregroundStyle(trigger == t ? .white : .secondary)
                                                     .padding(.horizontal, 12).padding(.vertical, 7)
-                                                    .background(Capsule().fill(trigger == t ? Color.accentColor : Color.primary.opacity(0.07)))
+                                                    .background(Capsule().fill(trigger == t ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill)))
                                             }
                                             .buttonStyle(.plain)
                                         }
@@ -155,7 +155,7 @@ struct AddElementAutomationSheet: View {
                                 TextField("e.g. Service the boiler", text: $name)
                                     .font(.subheadline)
                                     .padding(10)
-                                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 

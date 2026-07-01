@@ -59,7 +59,7 @@ struct NotificationsSettingsView: View {
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                 }
@@ -161,12 +161,12 @@ struct NotificationsSettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
             VStack(spacing: 0) { content() }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                    .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

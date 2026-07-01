@@ -59,7 +59,7 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
 func formFieldGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     VStack(spacing: 0) { content() }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 }
 
 func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
@@ -182,7 +182,7 @@ struct AddressAutocompleteField: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(s.title).font(AppFont.footnote).foregroundStyle(.primary)
                             if !s.subtitle.isEmpty {
-                                Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                                Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
                         Spacer(minLength: 0)
@@ -195,7 +195,7 @@ struct AddressAutocompleteField: View {
             }
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         .padding(.top, 6)
     }
 
@@ -306,12 +306,12 @@ struct AddPropertySheet: View {
                             }
                             .padding(.horizontal, 16).padding(.vertical, 13)
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                         }.buttonStyle(.plain).padding(.top, 12)
 
                         if showMap { mapPickerSection.padding(.top, 8) }
 
-                        Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+                        Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -319,7 +319,7 @@ struct AddPropertySheet: View {
                                     Button { propertyType = type } label: {
                                         Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
-                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(0.7))
+                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                                             .padding(.horizontal, 14).padding(.vertical, 8)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
@@ -338,7 +338,7 @@ struct AddPropertySheet: View {
             }
             .navigationTitle("Add Property").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }

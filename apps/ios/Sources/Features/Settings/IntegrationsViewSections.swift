@@ -364,12 +364,12 @@ struct IntegrationGroup<Content: View>: View {
             Text(title)
                 .textCase(.uppercase)
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) { content }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 }
@@ -440,7 +440,7 @@ struct IntegrationRow: View {
                 .font(AppFont.caption2)
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(Color.primary.opacity(0.06), in: Capsule())
+                .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
 
         case .active(let label):
             Text(label)

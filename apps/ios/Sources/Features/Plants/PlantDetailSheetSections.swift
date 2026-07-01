@@ -119,7 +119,7 @@ extension PlantDetailSheet {
             Spacer()
             Text(value)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, 14)
@@ -180,7 +180,7 @@ extension PlantDetailSheet {
                                 .background(
                                     editedPlant.emoji == emoji
                                         ? Color.accentColor.opacity(0.18)
-                                        : Color.primary.opacity(0.06),
+                                        : Color.primary.opacity(AppOpacity.hairline),
                                     in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 )
                                 .overlay(
@@ -203,7 +203,7 @@ extension PlantDetailSheet {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .padding(14)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -216,7 +216,7 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -229,7 +229,7 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -250,7 +250,7 @@ extension PlantDetailSheet {
                                 .background(
                                     editedPlant.healthStatus == opt.id
                                         ? plantHealthColor(opt.id)
-                                        : Color.primary.opacity(0.07),
+                                        : Color.primary.opacity(AppOpacity.subtleFill),
                                     in: Capsule()
                                 )
                         }
@@ -271,7 +271,7 @@ extension PlantDetailSheet {
                         .labelsHidden()
                 }
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -285,7 +285,7 @@ extension PlantDetailSheet {
                 .tint(.accentColor)
                 .lineLimit(3...6)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
     }

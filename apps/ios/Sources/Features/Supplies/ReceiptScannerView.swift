@@ -105,7 +105,7 @@ struct ReceiptScannerView: View {
 
                 Text(String(localized: "scanner_body"))
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }
@@ -149,10 +149,10 @@ struct ReceiptScannerView: View {
                         } label: {
                             Label(String(localized: "Din fișiere"), systemImage: "doc.fill")
                                 .font(AppFont.footnoteEmphasis)
-                                .foregroundStyle(Color.primary.opacity(0.7))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
-                                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
@@ -265,7 +265,7 @@ private struct ReceiptReviewView: View {
                     TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
                         .font(.system(size: 16))
                         .padding(14)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -289,10 +289,10 @@ private struct ReceiptReviewView: View {
                                         Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
                                         Text(cat.label).font(.system(size: 13))
                                     }
-                                    .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(0.7))
+                                    .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(parsed.category == cat.id
-                                        ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(0.07),
+                                        ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(AppOpacity.subtleFill),
                                                 in: Capsule())
                                 }
                                 .buttonStyle(.plain)
@@ -333,7 +333,7 @@ private struct ReceiptReviewView: View {
                             .keyboardType(.decimalPad)
                     }
                     .padding(14)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 Button {

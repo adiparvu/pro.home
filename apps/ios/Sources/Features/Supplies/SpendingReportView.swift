@@ -141,7 +141,7 @@ struct SpendingReportView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                        .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -155,7 +155,7 @@ struct SpendingReportView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.captionEmphasis)
                         .foregroundStyle(selectedYear < Calendar.current.component(.year, from: Date()) ? .secondary : Color.primary.opacity(0.2))
-                        .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                        .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                 }
                 .buttonStyle(.plain)
             }
@@ -178,7 +178,7 @@ struct SpendingReportView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                    .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Previous month")
@@ -192,7 +192,7 @@ struct SpendingReportView: View {
                 Image(systemName: "chevron.right")
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(selectedMonth == receiptService.currentMonthKey ? Color.primary.opacity(0.2) : .secondary)
-                    .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                    .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .buttonStyle(.plain)
             .disabled(selectedMonth == receiptService.currentMonthKey)
@@ -302,7 +302,7 @@ struct SpendingReportView: View {
                         GeometryReader { geo in
                             let pct = total > 0 ? cat.total / total : 0
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(0.07)).frame(height: 5)
+                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
                                 RoundedRectangle(cornerRadius: 3, style: .continuous).fill(cat.color).frame(width: geo.size.width * pct, height: 5)
                             }
                         }

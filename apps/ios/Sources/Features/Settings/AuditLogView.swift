@@ -72,14 +72,14 @@ struct AuditLogView: View {
             Text(day)
                 .textCase(.uppercase)
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 8)
 
             VStack(spacing: 0) {
                 ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
                         Rectangle()
-                            .fill(Color.primary.opacity(0.06))
+                            .fill(Color.primary.opacity(AppOpacity.hairline))
                             .frame(height: 0.4)
                             .padding(.leading, 52)
                     }
@@ -129,7 +129,7 @@ struct AuditLogView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 64, height: 64)
                 Image(systemName: "clock.badge.checkmark")
                     .font(.system(size: 28))
@@ -171,7 +171,7 @@ struct AuditLogView: View {
         case "logout":                   return .orange
         case "export":                   return .cyan
         case "biometric_enabled":        return .blue
-        case "biometric_disabled":       return Color.primary.opacity(0.5)
+        case "biometric_disabled":       return Color.primary.opacity(AppOpacity.mediumText)
         case "totp_enabled":             return .indigo
         case "totp_disabled":            return .gray
         case "password_reset_requested": return .orange

@@ -125,7 +125,7 @@ struct ElementNotesSection: View {
                             ForEach(note.photos, id: \.self) { u in
                                 AsyncImage(url: URL(string: u)) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 64, height: 64)
                                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -284,7 +284,7 @@ struct ElementNoteEditorSheet: View {
                             ForEach(photoURLs, id: \.self) { u in
                                 AsyncImage(url: URL(string: u)) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 70, height: 70)
                                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

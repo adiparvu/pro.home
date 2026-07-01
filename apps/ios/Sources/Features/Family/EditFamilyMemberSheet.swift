@@ -62,7 +62,7 @@ struct EditFamilyMemberSheet: View {
             .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
@@ -119,7 +119,7 @@ struct EditFamilyMemberSheet: View {
             birthdayRow
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
@@ -129,7 +129,7 @@ struct EditFamilyMemberSheet: View {
                     Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
                         .font(.system(size: 15))
-                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(0.45))
+                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
@@ -147,7 +147,7 @@ struct EditFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -155,7 +155,7 @@ struct EditFamilyMemberSheet: View {
                         .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -168,13 +168,13 @@ struct EditFamilyMemberSheet: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
@@ -212,7 +212,7 @@ struct EditFamilyMemberSheet: View {
                 .buttonStyle(.plain)
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

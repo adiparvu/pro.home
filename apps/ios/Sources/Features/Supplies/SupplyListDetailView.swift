@@ -85,14 +85,14 @@ struct SupplyListDetailView: View {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: Category chips
@@ -129,7 +129,7 @@ struct SupplyListDetailView: View {
                         .background(Color.primary.opacity(0.12), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
+            .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
             .padding(.horizontal, 13).padding(.vertical, 6)
             .background(isSelected ? list.swiftColor : Color.primary.opacity(0.08), in: Capsule())
         }
@@ -229,7 +229,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "cart")
                 .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No items in this list")
-                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tap + to add the first item.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)

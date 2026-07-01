@@ -49,7 +49,7 @@ struct AddUtilitySheet: View {
                                 Spacer()
                                 Picker("", selection: $type) {
                                     ForEach(types, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) }
-                                }.tint(Color.primary.opacity(0.5))
+                                }.tint(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
 
@@ -85,7 +85,7 @@ struct AddUtilitySheet: View {
             .navigationTitle("Add Bill").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -165,14 +165,14 @@ struct AddUtilitySheet: View {
             }
             Text("Auto-extracts amount, consumption, and month from your bill")
                 .font(.system(size: 11))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
     }
 
     private func scanResultBanner(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.7))
+            Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)

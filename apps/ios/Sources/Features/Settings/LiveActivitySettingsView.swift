@@ -157,7 +157,7 @@ struct LiveActivitySettingsView: View {
                     // Per-activity auto-start
                     Text("AUTOMATICALLY START")
                         .font(AppFont.label)
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 4)
 
@@ -224,7 +224,7 @@ struct LiveActivitySettingsView: View {
                         .font(AppFont.footnoteEmphasis)
                     Text("Enable them in Settings › Face ID & Passcode and per-app to see them here.")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
@@ -317,9 +317,9 @@ struct LiveActivityPreview: View {
                             .font(AppFont.subheadline).foregroundStyle(.primary)
                         if showProperty {
                             Text("Lakeside House · DHL")
-                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         } else {
-                            Text("DHL").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                            Text("DHL").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     Spacer()
@@ -328,7 +328,7 @@ struct LiveActivityPreview: View {
                             .font(.system(size: 13, weight: .medium)).foregroundStyle(.orange)
                         if showETA {
                             Text("ETA 14:30")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                     }
                 }
@@ -362,7 +362,7 @@ struct LiveActivityAppearanceView: View {
 
                 Text("SHOW IN")
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                 group {
                     LAToggleRow(icon: "lock.fill", color: .blue,
@@ -378,7 +378,7 @@ struct LiveActivityAppearanceView: View {
 
                 Text("DISPLAY OPTIONS")
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                 group {
                     LAToggleRow(icon: "chart.bar.fill", color: .green,
@@ -400,7 +400,7 @@ struct LiveActivityAppearanceView: View {
                 if dynamicIsland {
                     Text("DYNAMIC ISLAND")
                         .font(AppFont.label)
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                     VStack(spacing: 12) {
                         Picker("", selection: $islandStyle) {

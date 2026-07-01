@@ -54,7 +54,7 @@ struct AddReceiptSheet: View {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
                 .font(.system(size: 16))
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -77,11 +77,11 @@ struct AddReceiptSheet: View {
                                 Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
                                 Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
                             }
-                            .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.7))
+                            .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, 12).padding(.vertical, 7)
                             .background(category == cat.id
                                 ? ReceiptCategory.color(for: cat.id)
-                                : Color.primary.opacity(0.07), in: Capsule())
+                                : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -157,7 +157,7 @@ struct AddReceiptSheet: View {
                 .font(AppFont.title2)
                 .keyboardType(.decimalPad)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -167,7 +167,7 @@ struct AddReceiptSheet: View {
                 .font(.system(size: 15))
                 .lineLimit(2...4)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 

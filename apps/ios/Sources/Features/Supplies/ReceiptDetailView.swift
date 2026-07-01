@@ -151,7 +151,7 @@ struct ReceiptDetailView: View {
                 GlassCard(padding: 14) {
                     Text(notes)
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }

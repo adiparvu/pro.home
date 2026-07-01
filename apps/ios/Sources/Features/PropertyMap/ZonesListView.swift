@@ -101,7 +101,7 @@ struct ZonesListView: View {
                     } label: {
                         Image(systemName: "map.fill")
                             .font(AppFont.subheadline)
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 34, height: 34)
                     }
                     .buttonStyle(.plain)
@@ -136,7 +136,7 @@ struct ZonesListView: View {
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No zones")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Open the Digital Twin to draw your first zone")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -179,7 +179,7 @@ struct ZoneListRow: View {
                     .foregroundStyle(.primary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 
             Spacer()

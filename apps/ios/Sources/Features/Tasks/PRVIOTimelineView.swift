@@ -128,7 +128,7 @@ struct PRVIOTimelineView: View {
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No events")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("No activity in this time range")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -140,7 +140,7 @@ struct PRVIOTimelineView: View {
         Text(label)
             .textCase(.uppercase)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(0.35))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .kerning(0.8)
     }
 
@@ -265,7 +265,7 @@ struct TimelineEventCard: View {
                     .lineLimit(2)
                 Text(LocalizedStringKey(event.subtitle))
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 
             Spacer()

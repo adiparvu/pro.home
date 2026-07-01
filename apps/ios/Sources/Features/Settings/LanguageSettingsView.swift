@@ -35,7 +35,7 @@ struct LanguageSettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "lang_select_section"))
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             GlassCard(padding: 0) {

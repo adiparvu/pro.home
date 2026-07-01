@@ -89,7 +89,7 @@ struct PhotoJournalView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Capture before and after photos, track progress, and document every improvement to your home.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {

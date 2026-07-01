@@ -17,11 +17,11 @@ struct ChangeEmailSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         emailField("envelope.fill", "New email address", $email, keyboard: .emailAddress)
-                        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
                         emailField("checkmark.circle.fill", "Confirm new email", $confirm, keyboard: .emailAddress)
                     }
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
                     Text("A verification link will be sent to your new address. Your email will only change after you confirm it.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
@@ -33,7 +33,7 @@ struct ChangeEmailSheet: View {
             .navigationTitle("Change Email").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Send") {
@@ -74,11 +74,11 @@ struct ChangePasswordSheet: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         passField("lock.fill", "New password", $password)
-                        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+                        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
                         passField("lock.rotation", "Confirm password", $confirm)
                     }
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
                     if !password.isEmpty && password.count < 6 {
                         Text("Password must be at least 6 characters")
@@ -95,7 +95,7 @@ struct ChangePasswordSheet: View {
             .navigationTitle("Change Password").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Update") {

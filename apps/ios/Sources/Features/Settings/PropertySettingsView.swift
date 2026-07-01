@@ -143,7 +143,7 @@ struct PropDetailRow: View {
         HStack {
             Text(label)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)
                 .font(AppFont.footnote)

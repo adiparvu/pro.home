@@ -20,7 +20,7 @@ private let categoryIcons: [String: (icon: String, color: Color)] = [
 ]
 
 private func catStyle(_ category: String) -> (icon: String, color: Color) {
-    categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(0.5))
+    categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(AppOpacity.mediumText))
 }
 
 // MARK: - FinancesView sections
@@ -39,7 +39,7 @@ extension FinancesView {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
@@ -59,7 +59,7 @@ extension FinancesView {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.15) : Color.primary.opacity(0.45))
+                        .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.15) : Color.primary.opacity(AppOpacity.secondaryText))
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
@@ -71,7 +71,7 @@ extension FinancesView {
             VStack(spacing: 4) {
                 Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Text(fmtSigned(net))
                     .font(.system(size: 44, weight: .bold, design: .rounded))
@@ -217,7 +217,7 @@ extension FinancesView {
         VStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 72, height: 72)
                 Image(systemName: "banknote")
                     .font(.system(size: 28))
@@ -228,7 +228,7 @@ extension FinancesView {
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("Add your first transaction by tapping +")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 48)
@@ -299,7 +299,7 @@ struct FinancialRecordRow: View {
                     .foregroundStyle(record.isIncome ? Color(red: 0.25, green: 0.82, blue: 0.5) : .primary)
                 Text(record.dateFormatted)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
         }
         .padding(.horizontal, 14)

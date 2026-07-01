@@ -36,7 +36,7 @@ struct MemberProfileSheet: View {
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Edit") { showEdit = true }
@@ -142,7 +142,7 @@ struct MemberProfileSheet: View {
                 }
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -186,7 +186,7 @@ struct MemberProfileSheet: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(0.35))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .padding(.leading, 4)
     }
 

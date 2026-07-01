@@ -29,7 +29,7 @@ struct InterAppChatView: View {
 
                     Text("Permite să ți se trimită mesaje pe PRV HOUSE din aplicațiile terțe selectate.")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .padding(.horizontal, 6)
                 }
 
@@ -46,7 +46,7 @@ struct InterAppChatView: View {
 
                         Text("Primești notificare când cineva vrea să-ți trimită mesaj din altă aplicație.")
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 6)
                     }
                 }
@@ -70,7 +70,7 @@ struct InterAppChatView: View {
 
                 Text("Mesageria între aplicații este în pregătire — necesită un serviciu de interoperabilitate. Preferințele tale sunt salvate de pe acum.")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 6)
 
@@ -100,7 +100,7 @@ struct InterAppChatView: View {
 
                     Text("Conversațiile inter-aplicații îți permit să primești și să trimiți mesaje către persoane care folosesc alte aplicații de mesagerie compatibile, fără să părăsești PRV HOUSE.")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
 
                     aboutPoint("lock.fill", "Criptare", "Mesajele rămân criptate de la un capăt la altul atunci când aplicația terță acceptă acest lucru.")
                     aboutPoint("bell.badge.fill", "Control", "Primești o solicitare înainte ca cineva dintr-o altă aplicație să-ți poată scrie.")

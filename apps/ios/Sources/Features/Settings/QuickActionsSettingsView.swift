@@ -47,7 +47,7 @@ struct QuickActionsSettingsView: View {
                         .foregroundStyle(.primary)
                     Text("Choose which actions appear on each page — or hide the button entirely.")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
@@ -126,7 +126,7 @@ private struct FabVisibilityRow: View {
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 0.4)
                     .padding(.leading, 58)
             }
@@ -156,7 +156,7 @@ private struct QuickActionToggleRow: View {
                         .foregroundStyle(.primary)
                     Text(action.subtitle)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()
                 Toggle("", isOn: $isOn)
@@ -168,7 +168,7 @@ private struct QuickActionToggleRow: View {
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 0.4)
                     .padding(.leading, 58)
             }

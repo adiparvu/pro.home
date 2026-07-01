@@ -208,7 +208,7 @@ struct PlantsView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add plants to track\nwatering and their health status.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
             Button { showAddPlant = true } label: {
                 Label("Add first plant", systemImage: "plus")
@@ -245,7 +245,7 @@ struct PlantsView: View {
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No property added")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

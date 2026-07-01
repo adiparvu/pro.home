@@ -15,7 +15,7 @@ struct CalendarView: View {
                 monthHeader
                 weekdayRow
                 daysGrid
-                Divider().background(Color.primary.opacity(0.06)).padding(.top, 8)
+                Divider().background(Color.primary.opacity(AppOpacity.hairline)).padding(.top, 8)
                 dayDetail
             }
         }
@@ -36,7 +36,7 @@ struct CalendarView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.07), in: Circle())
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .accessibilityLabel("Previous month")
             Spacer()
@@ -53,7 +53,7 @@ struct CalendarView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.07), in: Circle())
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .accessibilityLabel("Next month")
         }
@@ -117,7 +117,7 @@ struct CalendarView: View {
                         .foregroundStyle(Color.primary.opacity(0.2))
                     Text("Nothing scheduled")
                         .font(.subheadline)
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     Spacer()
                 }
             } else {
@@ -268,6 +268,6 @@ private struct CalendarEventRow: View {
         .padding(.vertical, 10)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+            .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
     }
 }

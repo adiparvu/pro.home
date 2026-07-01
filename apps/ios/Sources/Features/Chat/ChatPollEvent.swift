@@ -123,7 +123,7 @@ struct PollBubble: View {
 
             Text(totalVoters == 1 ? "1 vot" : "\(totalVoters) voturi")
                 .font(.system(size: 11))
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(0.45))
+                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
 
             Divider().overlay(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
 
@@ -162,7 +162,7 @@ struct PollBubble: View {
                 Spacer()
                 Text("\(c)")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(0.5))
+                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(AppOpacity.mediumText))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -234,7 +234,7 @@ struct EventBubble: View {
 
             if let d = event.d, !d.isEmpty {
                 Text(d).font(.system(size: 13))
-                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.7))
+                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(3)
             }
 

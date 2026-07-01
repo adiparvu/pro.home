@@ -102,11 +102,11 @@ struct AppearanceView: View {
                         HStack(spacing: 14) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
+                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
                                     .frame(width: 40, height: 40)
                                 Text(cur.symbol)
                                     .font(AppFont.subheadline)
-                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
+                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -124,7 +124,7 @@ struct AppearanceView: View {
                             Spacer()
 
                             if currencyService.isLoading && isSelected {
-                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(0.5))
+                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(AppOpacity.mediumText))
                             } else if isSelected {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 20))
@@ -147,7 +147,7 @@ struct AppearanceView: View {
                 }
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -208,7 +208,7 @@ struct AppearanceView: View {
                 .padding(.horizontal, 14).padding(.vertical, 13)
 
                 if appSettings.accentEnabled {
-                    Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
 
                 HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
@@ -285,7 +285,7 @@ struct AppearanceView: View {
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(AppFont.label)
-            .foregroundStyle(Color.primary.opacity(0.35))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .padding(.leading, 4)
             .textCase(.uppercase)
     }

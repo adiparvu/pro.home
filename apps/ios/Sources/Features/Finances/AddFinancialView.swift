@@ -43,7 +43,7 @@ struct AddFinancialView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -83,7 +83,7 @@ struct AddFinancialView: View {
                             Text(LocalizedStringKey(t.capitalized))
                                 .font(AppFont.footnoteEmphasis)
                         }
-                        .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.5))
+                        .foregroundStyle(type == t ? Color.black : Color.primary.opacity(AppOpacity.mediumText))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
@@ -106,12 +106,12 @@ struct AddFinancialView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AMOUNT")
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
 
                 HStack(alignment: .center, spacing: 8) {
                     Text(currencyService.symbol(for: appSettings.preferredCurrency))
                         .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     TextField("0", text: $amount)
                         .font(.system(size: 40, weight: .light))
                         .foregroundStyle(.primary)
@@ -152,7 +152,7 @@ struct AddFinancialView: View {
                         Text(LocalizedStringKey(cat.capitalized)).tag(cat)
                     }
                 }
-                .tint(Color.primary.opacity(0.5))
+                .tint(Color.primary.opacity(AppOpacity.mediumText))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -173,7 +173,7 @@ struct AddFinancialView: View {
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
 
@@ -194,7 +194,7 @@ struct AddFinancialView: View {
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
 

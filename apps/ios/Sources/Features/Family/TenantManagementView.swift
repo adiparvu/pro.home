@@ -103,7 +103,7 @@ struct TenantManagementView: View {
                     .foregroundStyle(.primary)
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -137,13 +137,13 @@ struct TenantManagementView: View {
                         if let email = tenant.email, !email.isEmpty {
                             Label(email, systemImage: "envelope.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.5))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .lineLimit(1)
                         }
 
                         Label(memberSinceLabel(tenant), systemImage: "calendar")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
 
                     Spacer()
@@ -239,10 +239,10 @@ struct TenantManagementView: View {
             }
             Text("No tenants yet")
                 .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Add tenants to manage their contact info\nand lease details in one place.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button {

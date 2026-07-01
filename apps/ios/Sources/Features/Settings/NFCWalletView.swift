@@ -307,10 +307,10 @@ struct NFCWalletView: View {
             }
             Text("No NFC tags yet")
                 .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Scan an NFC tag to link it to a room,\nappliance, or element in your property.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button { scanForNewTag() } label: {
@@ -375,7 +375,7 @@ struct NFCTagNameSheet: View {
                                     .frame(width: 26)
                                 Text("Tag ID: \(uid.prefix(16))…")
                                     .font(.system(size: 13, design: .monospaced))
-                                    .foregroundStyle(Color.primary.opacity(0.5))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -436,12 +436,12 @@ struct NFCTagNameSheet: View {
                                         } label: {
                                             Image(systemName: icon)
                                                 .font(.system(size: 18, weight: .medium))
-                                                .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(0.5))
+                                                .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(AppOpacity.mediumText))
                                                 .frame(width: 44, height: 44)
                                                 .background(
                                                     selectedIcon == icon
                                                         ? Color.blue.opacity(0.14)
-                                                        : Color.primary.opacity(0.06),
+                                                        : Color.primary.opacity(AppOpacity.hairline),
                                                     in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                                                 )
                                         }
@@ -461,7 +461,7 @@ struct NFCTagNameSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {

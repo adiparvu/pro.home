@@ -199,7 +199,7 @@ struct DocumentsView: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Category filter menu
@@ -271,7 +271,7 @@ struct DocumentsView: View {
                     Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
                         .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Text("Review and renew before they expire")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
@@ -291,7 +291,7 @@ struct DocumentsView: View {
                     .font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
                 if search.isEmpty {
                     Text("Tap + to add your first document")
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35))
+                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
             Spacer()
@@ -338,7 +338,7 @@ struct DocumentRow: View {
                                 .background(categoryColor.opacity(0.12), in: Capsule())
                             if !doc.fileSizeDisplay.isEmpty {
                                 Text(doc.fileSizeDisplay)
-                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
+                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             }
                         }
                         if let expiry = doc.expiresDisplay {

@@ -190,7 +190,7 @@ struct AIInsightsView: View {
                     .foregroundStyle(.primary)
                 Text(String(localized: "ai_insights_property_intelligence"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
     }
@@ -208,7 +208,7 @@ struct AIInsightsView: View {
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text(String(localized: "ai_insights_healthy"))
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -364,7 +364,7 @@ struct AIInsightRow: View {
                 } else {
                     Text(LocalizedStringKey(insight.elapsed))
                         .font(AppFont.caption2)
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
             .padding(.horizontal, 16)

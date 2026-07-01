@@ -93,7 +93,7 @@ private struct StyleCard: View {
                         .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     Text(subtitle)
                         .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .lineLimit(1)
                 }
                 .padding(.top, 8)

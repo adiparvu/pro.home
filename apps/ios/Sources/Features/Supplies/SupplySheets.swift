@@ -79,7 +79,7 @@ struct AddSupplyListSheet: View {
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -90,7 +90,7 @@ struct AddSupplyListSheet: View {
             TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...4).padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -104,7 +104,7 @@ struct AddSupplyListSheet: View {
                     Button { selectedIcon = icon; HapticFeedback.selection() } label: {
                         ZStack {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(selectedIcon == icon ? color.opacity(0.18) : Color.primary.opacity(0.07))
+                                .fill(selectedIcon == icon ? color.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
                                 .frame(height: 52)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -112,7 +112,7 @@ struct AddSupplyListSheet: View {
                                 )
                             Image(systemName: icon)
                                 .font(.system(size: 22, weight: .medium))
-                                .foregroundStyle(selectedIcon == icon ? color : Color.primary.opacity(0.5))
+                                .foregroundStyle(selectedIcon == icon ? color : Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     .buttonStyle(.plain)

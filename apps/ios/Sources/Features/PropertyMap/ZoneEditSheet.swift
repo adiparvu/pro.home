@@ -51,7 +51,7 @@ struct ZoneEditSheet: View {
                         TextField("Zone name", text: $name)
                             .font(.system(size: 16))
                             .padding(14)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     field("PHOTO") { photoPickerSection }
                     field("COLOR") { paletteRow }
@@ -118,7 +118,7 @@ struct ZoneEditSheet: View {
                         .scaledToFill()
                 } else if let urlStr = photoUrl, let url = URL(string: urlStr) {
                     AsyncImage(url: url) { img in img.resizable().scaledToFill() }
-                        placeholder: { Color.primary.opacity(0.06) }
+                        placeholder: { Color.primary.opacity(AppOpacity.hairline) }
                 } else {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         VStack(spacing: 8) {
@@ -127,7 +127,7 @@ struct ZoneEditSheet: View {
                             Text("Add cover photo")
                                 .font(AppFont.caption)
                         }
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity)
                         .frame(height: 90)
                     }
@@ -136,7 +136,7 @@ struct ZoneEditSheet: View {
             .frame(maxWidth: .infinity)
             .frame(height: pendingPhotoData != nil || photoUrl != nil ? 110 : 90)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             if pendingPhotoData != nil || photoUrl != nil {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
@@ -239,7 +239,7 @@ struct ZoneEditSheet: View {
                     .font(AppFont.headline)
                     .foregroundStyle(icon == sym ? .white : .primary)
                     .frame(width: 44, height: 44)
-                    .background(icon == sym ? tint : Color.primary.opacity(0.06),
+                    .background(icon == sym ? tint : Color.primary.opacity(AppOpacity.hairline),
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { icon = sym }
@@ -260,7 +260,7 @@ struct ZoneEditSheet: View {
                     }
                     .foregroundStyle(active ? .white : .primary)
                     .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(active ? l.color : Color.primary.opacity(0.06), in: Capsule())
+                    .background(active ? l.color : Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { layer = l }
                         HapticFeedback.selection()

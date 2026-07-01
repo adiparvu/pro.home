@@ -318,7 +318,7 @@ struct ActivityFeedView: View {
                         .foregroundStyle(isSelected ? cat.color : Color.primary.opacity(0.6))
                         .padding(.horizontal, 11).padding(.vertical, 6)
                         .background(
-                            isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(0.07),
+                            isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(AppOpacity.subtleFill),
                             in: Capsule()
                         )
                         .overlay(
@@ -354,7 +354,7 @@ struct ActivityFeedView: View {
                         .background(
                             selectedMember == name
                                 ? Color.accentColor.opacity(0.12)
-                                : Color.primary.opacity(0.07),
+                                : Color.primary.opacity(AppOpacity.subtleFill),
                             in: Capsule()
                         )
                     }
@@ -369,7 +369,7 @@ struct ActivityFeedView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.primary.opacity(0.07), in: Capsule())
+                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -442,7 +442,7 @@ struct ActivityFeedView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(timeString(event.date))
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     memberAvatar(name: event.member, size: 18)
                 }
             }
@@ -467,7 +467,7 @@ struct ActivityFeedView: View {
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No activity in this period")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Activities appear automatically as you\nadd tasks, documents, and transactions.")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))

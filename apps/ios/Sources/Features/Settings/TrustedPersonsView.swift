@@ -60,14 +60,14 @@ struct TrustedPersonsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("PERSOANE DE ÎNCREDERE")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
                 ForEach(Array(persons.enumerated()), id: \.element.id) { idx, person in
                     if idx > 0 {
                         Rectangle()
-                            .fill(Color.primary.opacity(0.06))
+                            .fill(Color.primary.opacity(AppOpacity.hairline))
                             .frame(height: 0.4)
                             .padding(.leading, 62)
                     }
@@ -148,7 +148,7 @@ struct TrustedPersonsView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.2.badge.key.fill")
                     .font(.system(size: 26))
@@ -178,7 +178,7 @@ struct TrustedPersonsView: View {
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
@@ -234,7 +234,7 @@ private struct AddTrustedPersonSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("DETALII")
                                 .font(AppFont.label)
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, 4)
 
                             VStack(spacing: 0) {
@@ -249,7 +249,7 @@ private struct AddTrustedPersonSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("PERMISIUNI")
                                 .font(AppFont.label)
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .padding(.leading, 4)
 
                             VStack(spacing: 0) {
@@ -282,7 +282,7 @@ private struct AddTrustedPersonSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Anulează") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") {
@@ -341,7 +341,7 @@ private struct AddTrustedPersonSheet: View {
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 54)
     }

@@ -69,7 +69,7 @@ struct SearchView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
             }
             .onAppear { focused = true }
@@ -106,7 +106,7 @@ struct SearchView: View {
             } else if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .accessibilityLabel("Clear search")
             } else {
@@ -116,7 +116,7 @@ struct SearchView: View {
                 } label: {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .accessibilityLabel("Voice search")
             }
@@ -126,7 +126,7 @@ struct SearchView: View {
         .background(
             speech.isListening
                 ? .red.opacity(0.08)
-                : Color.primary.opacity(0.07),
+                : Color.primary.opacity(AppOpacity.subtleFill),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
         .overlay(
@@ -173,7 +173,7 @@ struct SearchView: View {
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("No results for \"\(query)\"")
                 .font(.subheadline)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Spacer()
         }
     }
@@ -290,11 +290,11 @@ private struct SearchSection<Content: View>: View {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Text(title)
                     .textCase(.uppercase)
                     .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Text("(\(count))")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(0.2))
@@ -342,6 +342,6 @@ private struct SearchRow: View {
         .padding(.vertical, 10)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+            .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
     }
 }

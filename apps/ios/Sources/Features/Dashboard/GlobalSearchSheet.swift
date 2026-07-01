@@ -185,7 +185,7 @@ struct GlobalSearchSheet: View {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
@@ -193,7 +193,7 @@ struct GlobalSearchSheet: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .background(Color.primary.opacity(0.06),
+        .background(Color.primary.opacity(AppOpacity.hairline),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -207,7 +207,7 @@ struct GlobalSearchSheet: View {
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("Search the entire app")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tasks · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -226,7 +226,7 @@ struct GlobalSearchSheet: View {
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No results for")
                 .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("\"\(query)\"")
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))

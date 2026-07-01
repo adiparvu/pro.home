@@ -81,7 +81,7 @@ struct SettingsView: View {
                             .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -112,7 +112,7 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "house.fill", color: .blue)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Property")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             if let name = propertyService.primary?.name {
                                 Text(name)
                                     .font(AppFont.footnote).foregroundStyle(.primary)
@@ -139,7 +139,7 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "person.circle.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Account")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             Text(auth.session?.user.email ?? "—")
                                 .font(AppFont.footnote).foregroundStyle(.primary)
                                 .lineLimit(1)

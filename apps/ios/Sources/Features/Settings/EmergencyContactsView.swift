@@ -65,14 +65,14 @@ struct EmergencyContactsView: View {
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
 
     private func sectionHeader(_ t: LocalizedStringKey) -> some View {
-        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -150,13 +150,13 @@ private struct AddEmergencySheet: View {
                     fieldRow("phone.fill", "Phone number", $phone, keyboard: .phonePad)
                 }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 .padding(.horizontal, 20).padding(.top, 8)
                 Spacer()
             }
             .navigationTitle("Add Contact").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(EmergencyContact(name: name, role: role, phone: phone))

@@ -163,7 +163,7 @@ private struct MapBackground: View {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(
                         LinearGradient(
-                            colors: [Color.primary.opacity(0.18), Color.primary.opacity(0.06)],
+                            colors: [Color.primary.opacity(0.18), Color.primary.opacity(AppOpacity.hairline)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         ),
                         style: StrokeStyle(lineWidth: 1.5, dash: [8, 6])

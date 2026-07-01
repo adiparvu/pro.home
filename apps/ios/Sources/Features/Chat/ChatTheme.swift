@@ -133,7 +133,7 @@ struct ChatThemePicker: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Themes")
                             .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 20)
 
                         LazyVGrid(columns: columns, spacing: 10) {
@@ -154,12 +154,12 @@ struct ChatThemePicker: View {
 
                         Text("Both the chat bubble and the conversation background will change.")
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 20).padding(.top, 2)
 
                         Text("Customize")
                             .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 20).padding(.top, 8)
 
                         VStack(spacing: 0) {
@@ -209,7 +209,7 @@ struct ChatThemePicker: View {
                                             @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.7)).frame(width: 26)
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
             Text(LocalizedStringKey(label)).font(.system(size: 16)).foregroundStyle(.primary)
             Spacer()
             trailing()

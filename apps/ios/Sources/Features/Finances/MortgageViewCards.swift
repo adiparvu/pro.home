@@ -15,7 +15,7 @@ extension MortgageView {
                     .foregroundStyle(.primary)
                 Text("Enter your mortgage details to track payments, remaining balance, and equity buildup.")
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
                 Button { isEditing = true } label: {
                     Text("Set Up Mortgage")
@@ -48,9 +48,9 @@ extension MortgageView {
 
                 HStack(spacing: 0) {
                     MortgageStat(label: "Principal", value: "€\(Int(loanAmount))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Interest", value: "€\(Int(totalInterest))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Cost", value: "€\(Int(loanAmount + totalInterest))")
                 }
             }
@@ -71,7 +71,7 @@ extension MortgageView {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
                             .fill(LinearGradient(colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
                                                  startPoint: .leading, endPoint: .trailing))
@@ -144,7 +144,7 @@ extension MortgageView {
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
                             .fill(Color(red: 0.3, green: 0.85, blue: 0.5))
                             .frame(width: geo.size.width * equityPercent, height: 10)
@@ -155,9 +155,9 @@ extension MortgageView {
 
                 HStack {
                     MortgageStat(label: "Property Value", value: "€\(Int(propertyValue))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Your Equity", value: "€\(Int(max(0, propertyValue - remainingLoanBalance)))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Owed", value: "€\(Int(remainingLoanBalance))")
                 }
             }
@@ -214,7 +214,7 @@ struct BreakdownRow: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle().fill(color).frame(width: 7, height: 7)
-                    Text(label).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.7))
+                    Text(label).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 Spacer()
                 Text(String(format: "%.1f%%", percent * 100))
@@ -223,7 +223,7 @@ struct BreakdownRow: View {
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.primary.opacity(0.07)).frame(height: 6)
+                    Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 6)
                     Capsule().fill(color.opacity(0.7)).frame(width: geo.size.width * percent, height: 6)
                 }
             }.frame(height: 6)
@@ -274,7 +274,7 @@ struct MortgageSetupSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }

@@ -21,7 +21,7 @@ struct EditPropertyElementView: View {
                                     Text("Name").font(.caption).foregroundStyle(.secondary)
                                     TextField("Element name", text: $element.name)
                                         .font(.subheadline).padding(10)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Status").font(.caption).foregroundStyle(.secondary)
@@ -45,7 +45,7 @@ struct EditPropertyElementView: View {
                                     Text("Notes").font(.caption).foregroundStyle(.secondary)
                                     TextField("Notes...", text: .init(get: { element.notes ?? "" }, set: { element.notes = $0.isEmpty ? nil : $0 }))
                                         .font(.subheadline).padding(10)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }
@@ -110,33 +110,33 @@ struct AddElementRecordView: View {
                                     Text("Title *").font(.caption).foregroundStyle(.secondary)
                                     TextField("e.g. Annual inspection", text: $title)
                                         .font(.subheadline).padding(10)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Details").font(.caption).foregroundStyle(.secondary)
                                     TextField("Work description...", text: $content)
                                         .font(.subheadline).padding(10)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Performed by").font(.caption).foregroundStyle(.secondary)
                                     TextField("Company / person", text: $performedBy)
                                         .font(.subheadline).padding(10)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                 }
                                 HStack(spacing: 8) {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Cost").font(.caption).foregroundStyle(.secondary)
                                         TextField("0", text: $cost).keyboardType(.decimalPad)
                                             .font(.subheadline).padding(10)
-                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Currency").font(.caption).foregroundStyle(.secondary)
                                         Picker("", selection: $currency) {
                                             ForEach(["EUR", "RON", "USD"], id: \.self) { Text($0).tag($0) }
                                         }.pickerStyle(.menu).padding(6)
-                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }.frame(width: 90)
                                 }
                                 HStack {

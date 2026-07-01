@@ -65,7 +65,7 @@ struct PropertyTabView: View {
                         Text(LocalizedStringKey(seg.rawValue))
                             .font(.system(size: 13, weight: segment == seg ? .semibold : .medium))
                     }
-                    .foregroundStyle(segment == seg ? .primary : Color.primary.opacity(0.45))
+                    .foregroundStyle(segment == seg ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
                     .background {
@@ -82,7 +82,7 @@ struct PropertyTabView: View {
         .padding(3)
         .background {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(AppOpacity.hairline))
         }
     }
 }

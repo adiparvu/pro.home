@@ -165,7 +165,7 @@ struct SupervisionView: View {
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("No members added")
                             .font(AppFont.footnote)
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         Text("Add members in the Family Members section to configure supervision.")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.3))
@@ -207,7 +207,7 @@ struct SupervisionView: View {
                         .font(AppFont.label)
                         .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
                         .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(0.06),
+                        .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(AppOpacity.hairline),
                                     in: Capsule())
 
                     Image(systemName: "chevron.right")

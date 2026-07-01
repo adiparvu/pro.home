@@ -21,7 +21,7 @@ extension View {
             self
                 .background(thick ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.ultraThinMaterial),
                             in: shape)
-                .shadow(color: Color.primary.opacity(0.07), radius: 20, y: 5)
+                .shadow(color: Color.primary.opacity(AppOpacity.subtleFill), radius: 20, y: 5)
                 .shadow(color: Color.primary.opacity(0.03), radius: 3, y: 1)
                 .contentShape(shape)
         }

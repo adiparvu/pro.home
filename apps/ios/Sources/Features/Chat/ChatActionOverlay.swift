@@ -72,7 +72,7 @@ struct ChatActionOverlay: View {
             } label: {
                 Image(systemName: "plus")
                     .font(AppFont.title3)
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .frame(width: 34, height: 34)
                     .background(Color.primary.opacity(0.08), in: Circle())
             }

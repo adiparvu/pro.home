@@ -31,11 +31,11 @@ struct BuriedUtilityRow: View {
                             .foregroundStyle(utility.swiftColor)
                         Text("·").foregroundStyle(Color.primary.opacity(0.3))
                         Text(LocalizedStringKey(utility.depthDisplay))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         if utility.lengthM > 0 {
                             Text("·").foregroundStyle(Color.primary.opacity(0.3))
                             Text(LocalizedStringKey(utility.lengthDisplay))
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                     }
                 }
@@ -100,7 +100,7 @@ struct BuriedUtilityDetailSheet: View {
                         if !utility.notes.isEmpty {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("NOTES").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+                                    Text("NOTES").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                     Text(utility.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -136,7 +136,7 @@ struct BuriedUtilityDetailSheet: View {
 
     private func detailRow(_ label: LocalizedStringKey, _ value: String, color: Color = .white) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(LocalizedStringKey(value)).font(AppFont.footnoteEmphasis).foregroundStyle(color)
         }
@@ -189,7 +189,7 @@ struct AddBuriedUtilitySheet: View {
             .navigationTitle("Add Buried Line").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
@@ -212,7 +212,7 @@ struct AddBuriedUtilitySheet: View {
 
     private var typePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(BuriedUtilityKind.all, id: \.self) { t in
@@ -221,7 +221,7 @@ struct AddBuriedUtilitySheet: View {
                                 Image(systemName: BuriedUtilityKind.icon(t)).font(.system(size: 11))
                                 Text(LocalizedStringKey(BuriedUtilityKind.label(t))).font(.system(size: 13, weight: type == t ? .semibold : .regular))
                             }
-                            .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.7))
+                            .foregroundStyle(type == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             .background(type == t ? BuriedUtilityKind.color(t) : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
@@ -256,7 +256,7 @@ struct AddBuriedUtilitySheet: View {
             fieldRow("note.text", "Notes (distances, landmarks…)", $notes)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var locationCard: some View {
@@ -279,7 +279,7 @@ struct AddBuriedUtilitySheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         Text(LocalizedStringKey(locMgr.denied ? "Location denied — enable in Settings." : "Getting location…"))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }

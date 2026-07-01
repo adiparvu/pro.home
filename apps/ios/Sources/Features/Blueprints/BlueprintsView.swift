@@ -127,7 +127,7 @@ struct BlueprintsView: View {
                             .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     if !service.utilities.isEmpty {
@@ -150,7 +150,7 @@ struct BlueprintsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SAVED PLANS & MODELS")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             LazyVGrid(columns: columns, spacing: 12) {
@@ -180,10 +180,10 @@ struct BlueprintsView: View {
                 .foregroundStyle(Color.primary.opacity(0.16))
             Text("No plans yet")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
             Spacer(minLength: 30)

@@ -103,7 +103,7 @@ struct AddTaskView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -115,7 +115,7 @@ struct AddTaskView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -129,7 +129,7 @@ struct AddTaskView: View {
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
                             .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
                             .padding(.horizontal, 13).padding(.vertical, 8)
-                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(0.07), in: Capsule())
+                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -148,7 +148,7 @@ struct AddTaskView: View {
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
                                 .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
                                 .padding(.horizontal, 13).padding(.vertical, 8)
-                                .background(category == cat ? Color.white : Color.primary.opacity(0.07), in: Capsule())
+                                .background(category == cat ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -175,10 +175,10 @@ struct AddTaskView: View {
                     } label: {
                         Label(hasDueTime ? "Remove time" : "Add time", systemImage: "clock")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(0.45))
+                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(AppOpacity.secondaryText))
                             .labelStyle(.iconOnly)
                             .padding(8)
-                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.07),
+                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -221,7 +221,7 @@ struct AddTaskView: View {
                         }
                         Text(assigneeNames.joined(separator: ", "))
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .lineLimit(1)
                     }
                     Spacer()
@@ -230,7 +230,7 @@ struct AddTaskView: View {
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
         }
@@ -272,7 +272,7 @@ struct AddTaskView: View {
             .padding(.horizontal, 14).padding(.vertical, 12)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         .opacity(hasDueDate ? 1 : 0.5)
     }
 
@@ -290,7 +290,7 @@ struct AddTaskView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(canSave ? Color.white : Color.primary.opacity(0.35))
+            .background(canSave ? Color.white : Color.primary.opacity(AppOpacity.disabled))
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
@@ -419,7 +419,7 @@ struct AddTaskView: View {
     // MARK: - Helpers
 
     private func fieldLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.5))
+        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
     }
 
     private func priorityColor(_ p: String) -> Color {

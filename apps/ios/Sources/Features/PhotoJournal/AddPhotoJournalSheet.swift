@@ -69,7 +69,7 @@ struct AddPhotoJournalSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .disabled(isUploading)
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -88,7 +88,7 @@ struct AddPhotoJournalSheet: View {
         VStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 200)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -135,7 +135,7 @@ struct AddPhotoJournalSheet: View {
                         .font(.system(size: 13, weight: .medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .foregroundStyle(.primary)
                 }
 
@@ -146,7 +146,7 @@ struct AddPhotoJournalSheet: View {
                         .font(.system(size: 13, weight: .medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
@@ -208,7 +208,7 @@ struct AddPhotoJournalSheet: View {
                 content()
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

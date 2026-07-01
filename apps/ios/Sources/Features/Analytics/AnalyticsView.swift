@@ -43,7 +43,7 @@ struct AnalyticsView: View {
                     }
                 }
                 .padding(4)
-                .background(Color.primary.opacity(0.07), in: Capsule())
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                 .padding(.horizontal, 20)
                 .padding(.bottom, 16)
 

@@ -50,7 +50,7 @@ struct NavSettingsRow<D: View>: View {
             .buttonStyle(.plain)
 
             Rectangle()
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(AppOpacity.hairline))
                 .frame(height: 0.4)
                 .padding(.leading, 52)
         }
@@ -151,7 +151,7 @@ struct ColoredIconBadge: View {
                 .frame(width: size, height: size)
                 .overlay {
                     RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                        .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
                 }
             Image(systemName: icon)
                 .font(.system(size: size * 0.44, weight: .medium))
@@ -180,15 +180,15 @@ struct SettingsPlaceholder: View {
                 .foregroundStyle(.primary)
             Text(description)
                 .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Text("Coming soon")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color.primary.opacity(0.07), in: Capsule())
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
             Spacer()
         }
         .background(appBackground.ignoresSafeArea())

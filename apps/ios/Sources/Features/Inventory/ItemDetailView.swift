@@ -72,7 +72,7 @@ struct ItemDetailView: View {
             HStack(spacing: 8) {
                 conditionBadge
                 Text(LocalizedStringKey(live.location.capitalized))
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, 10).padding(.vertical, 4)
                     .background(Color.primary.opacity(0.08), in: Capsule())
             }
@@ -109,7 +109,7 @@ struct ItemDetailView: View {
                         ForEach(live.loanHistory) { loan in
                             rowDiv
                             HStack(spacing: 12) {
-                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).frame(width: 28)
+                                Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 28)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(loan.borrowerName).font(.system(size: 13)).foregroundStyle(.primary)
                                     Text("\(loan.daysOut) days · returned \(loan.returnedAt?.formatted(date: .abbreviated, time: .omitted) ?? "-")")
@@ -156,7 +156,7 @@ struct ItemDetailView: View {
         case .valid:        return Color(red: 0.3, green: 0.85, blue: 0.5)
         case .expiringSoon: return .orange
         case .expired:      return .red
-        case .none:         return Color.primary.opacity(0.35)
+        case .none:         return Color.primary.opacity(AppOpacity.disabled)
         }
     }
 
@@ -207,10 +207,10 @@ struct ItemDetailView: View {
 
     private func loanRow(_ label: LocalizedStringKey, _ value: String, highlight: Bool = false) -> some View {
         HStack {
-            Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+            Text(label).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Spacer()
             Text(value).font(.system(size: 13, weight: highlight ? .semibold : .regular))
-                .foregroundStyle(highlight ? .orange : Color.primary.opacity(0.7))
+                .foregroundStyle(highlight ? .orange : Color.primary.opacity(AppOpacity.emphasis))
         }
     }
 
@@ -220,14 +220,14 @@ struct ItemDetailView: View {
                 HStack {
                     Label("QR Code", systemImage: "qrcode").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
-                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
+                    Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 QRCodeImage(content: live.qrContent, size: 160).frame(maxWidth: .infinity)
                 Button { shareQR() } label: {
                     Label("Share / Print", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.7))
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)
             }
         }
@@ -316,7 +316,7 @@ struct ItemDetailView: View {
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     } else {
                         Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
-                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color.primary.opacity(0.07), in: Capsule())
+                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                 }
                 Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")
@@ -342,7 +342,7 @@ struct ItemDetailView: View {
 
     private func publicRow(_ icon: String, _ text: String) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35)).frame(width: 16)
+            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).frame(width: 16)
             Text(text).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.65))
             Spacer()
         }
@@ -351,7 +351,7 @@ struct ItemDetailView: View {
     private var notesCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Notes", systemImage: "note.text").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
+                Label("Notes", systemImage: "note.text").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 Text(live.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
             }
         }

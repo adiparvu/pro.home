@@ -151,7 +151,7 @@ struct CalendarLargeWidget: View {
                             .animation(.spring(response: 0.5), value: dayNumber(ctx.date))
                         Text(monthYear(ctx.date))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     .padding(.leading, 20)
 

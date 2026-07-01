@@ -84,7 +84,7 @@ struct AddDocumentSheet: View {
                                         Text(LocalizedStringKey(c.capitalized)).tag(c)
                                     }
                                 }
-                                .tint(Color.primary.opacity(0.7))
+                                .tint(Color.primary.opacity(AppOpacity.emphasis))
                             }
                             .padding(.horizontal, 16).padding(.vertical, 13)
                         }
@@ -144,7 +144,7 @@ struct AddDocumentSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
@@ -233,7 +233,7 @@ struct AddDocumentSheet: View {
         content()
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private func rowField<Content: View>(_ icon: String, _ placeholder: String, @ViewBuilder content: () -> Content) -> some View {
@@ -254,7 +254,7 @@ struct AddDocumentSheet: View {
     }
 
     private var div: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
     }
 }
 

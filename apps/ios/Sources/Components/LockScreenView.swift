@@ -24,7 +24,7 @@ struct LockScreenView: View {
                     } else {
                         Text("Authenticate to continue")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -64,7 +64,7 @@ struct PrivacyCoverView: View {
                 PRVIOLogoView(size: 72)
                 Image(systemName: "lock.fill")
                     .font(AppFont.title3)
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
         }
     }

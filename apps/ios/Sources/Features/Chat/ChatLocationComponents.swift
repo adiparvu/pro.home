@@ -201,7 +201,7 @@ struct LocationShareSheet: View {
                         Spacer()
                         ProgressView().tint(.white)
                         Text(LocalizedStringKey(locMgr.denied ? "Location access denied. Enable in Settings." : "Getting your location…"))
-                            .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                     }
                 }
@@ -209,7 +209,7 @@ struct LocationShareSheet: View {
             .navigationTitle("Trimitere locație").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark").foregroundStyle(Color.primary.opacity(0.7)) }
+                    Button { dismiss() } label: { Image(systemName: "xmark").foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                         .accessibilityLabel("Cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -246,7 +246,7 @@ struct LocationShareSheet: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal, 16).padding(.vertical, 10)
     }
 
@@ -265,7 +265,7 @@ struct LocationShareSheet: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(r.title).font(AppFont.body).foregroundStyle(.primary)
                         if !r.subtitle.isEmpty {
-                            Text(r.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                            Text(r.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -290,7 +290,7 @@ struct LocationShareSheet: View {
                     .buttonStyle(.plain)
                     if let exp = live.sharingExpiresAt {
                         Text("Sharing live until \(exp, style: .time)")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
             } else {
@@ -317,7 +317,7 @@ struct LocationShareSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Locuri din apropiere")
                 .font(AppFont.captionEmphasis)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
 
             Button {
                 pickedPlace = nil
@@ -333,7 +333,7 @@ struct LocationShareSheet: View {
                         Text("Trimite locația curentă").font(AppFont.body).foregroundStyle(.primary)
                         if let acc = locMgr.location?.horizontalAccuracy, acc > 0 {
                             Text("Cu o aproximație de \(Int(acc))m")
-                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     Spacer()
@@ -355,7 +355,7 @@ struct LocationShareSheet: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(item.name ?? "").font(AppFont.body).foregroundStyle(.primary)
                             if let addr = item.placemark.title {
-                                Text(addr).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5)).lineLimit(1)
+                                Text(addr).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).lineLimit(1)
                             }
                         }
                         Spacer()

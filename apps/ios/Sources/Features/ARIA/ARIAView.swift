@@ -188,7 +188,7 @@ struct ARIAView: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 16))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         }
                         .buttonStyle(.plain)
                     }
@@ -559,7 +559,7 @@ private struct ARIAMessageBubble: View {
                     Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                     Image(systemName: "sparkles")
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
             }
 
@@ -597,12 +597,12 @@ private struct ThinkingBubble: View {
                 Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                 Image(systemName: "sparkles")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
-                        .fill(Color.primary.opacity(0.5))
+                        .fill(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(width: 6, height: 6)
                         .scaleEffect(phase == i ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
@@ -662,7 +662,7 @@ private struct ARIAActionBanner: View {
                 Button(action: onCancel) {
                     Text("Cancel")
                         .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))

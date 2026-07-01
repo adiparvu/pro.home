@@ -202,7 +202,7 @@ struct DeliveriesView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add packages to track\nyour deliveries.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
             Button { showAddDelivery = true } label: {
                 Label("Add first delivery", systemImage: "plus")
@@ -260,7 +260,7 @@ struct DeliveryRow: View {
                                 .foregroundStyle(Color.primary.opacity(0.3))
                             Text(tn)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
                     }
@@ -269,7 +269,7 @@ struct DeliveryRow: View {
                         HStack(spacing: 4) {
                             Image(systemName: "calendar")
                                 .font(.system(size: 10))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             Text(expected)
                                 .font(.system(size: 11))
                                 .foregroundStyle(

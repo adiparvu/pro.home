@@ -77,8 +77,8 @@ struct FamilyView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
-            Text("No members").font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.5))
-            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
+            Text("No members").font(AppFont.title3).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
@@ -102,7 +102,7 @@ struct FamilyMemberRow: View {
                     HStack(spacing: 6) {
                         Text(LocalizedStringKey(member.roleLabel))
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         if let bd = member.birthdayDate {
                             let calendar = Calendar.current
                             let comps = calendar.dateComponents([.month, .day], from: bd)

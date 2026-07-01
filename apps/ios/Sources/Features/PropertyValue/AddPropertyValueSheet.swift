@@ -89,7 +89,7 @@ struct AddPropertyValueSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
@@ -131,10 +131,10 @@ struct AddPropertyValueSheet: View {
                             } label: {
                                 Text(LocalizedStringKey(s))
                                     .font(.system(size: 12))
-                                    .foregroundStyle(Color.primary.opacity(0.7))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
-                                    .background(Color.primary.opacity(0.07), in: Capsule())
+                                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
@@ -157,7 +157,7 @@ struct AddPropertyValueSheet: View {
                 content()
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

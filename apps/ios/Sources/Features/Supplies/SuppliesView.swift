@@ -170,7 +170,7 @@ struct SuppliesView: View {
             }
         }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 1)
         }
     }
 
@@ -280,7 +280,7 @@ struct SuppliesView: View {
                     Image(systemName: "cart.badge.checkmark")
                         .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_all_done"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -318,7 +318,7 @@ struct SuppliesView: View {
                     Image(systemName: "tray")
                         .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_empty_title"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -354,7 +354,7 @@ struct SuppliesView: View {
             Spacer()
             Image(systemName: "cart.badge.plus").font(.system(size: 56)).foregroundStyle(Color.primary.opacity(0.12))
             Text(String(localized: "supply_empty_title")).font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
-            Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center)
+            Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center)
             Button { showAddList = true } label: {
                 Label(String(localized: "supply_add_first"), systemImage: "plus")
                     .font(AppFont.subheadline).foregroundStyle(.white)
@@ -375,7 +375,7 @@ struct SuppliesView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "house.slash").font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("No property added").font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No property added").font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -404,7 +404,7 @@ struct SupplyListCard: View {
                     let pending = supplyService.pendingCount(for: list.id)
                     Text(pending == 0 ? String(localized: "supply_all_done") : "\(pending) \(String(localized: "supply_to_buy_short"))")
                         .font(.system(size: 11))
-                        .foregroundStyle(pending == 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.45))
+                        .foregroundStyle(pending == 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
             }
@@ -437,7 +437,7 @@ struct SupplyItemRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.name)
-                            .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(0.35) : .primary)
+                            .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
                             Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
@@ -445,7 +445,7 @@ struct SupplyItemRow: View {
                         }
                     }
                     if let loc = item.location, !loc.isEmpty {
-                        Label(loc, systemImage: "mappin.circle").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
+                        Label(loc, systemImage: "mappin.circle").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
                 Spacer()

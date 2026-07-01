@@ -174,7 +174,7 @@ struct PropertyHealthDetailView: View {
                 .frame(height: 5)
                 Text(detail)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
     }

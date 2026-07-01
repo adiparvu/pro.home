@@ -28,7 +28,7 @@ struct StatusView: View {
 
                     if !others.isEmpty {
                         Text("Recent updates")
-                            .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .padding(.horizontal, 20)
 
                         VStack(spacing: 0) {
@@ -85,7 +85,7 @@ struct StatusView: View {
                     Text(myGroup == nil
                          ? "Tap to add status update"
                          : (myGroup!.items.count == 1 ? "1 update" : "\(myGroup!.items.count) updates"))
-                        .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
                 if myGroup != nil {
@@ -317,7 +317,7 @@ struct CommunitiesView: View {
             Text("Organizează grupuri")
                 .font(.system(size: 17, weight: .semibold))
             Text("Creează grupuri separate pentru muncitori, familie sau orice altă echipă.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -471,7 +471,7 @@ private struct CommunityRow: View {
                 Text(group.name.isEmpty ? group.kindLabel : group.name)
                     .font(AppFont.headline).foregroundStyle(.primary)
                 Text("\(group.kindLabel) · \(memberCount) membri")
-                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
+                    .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             Spacer()
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
@@ -530,7 +530,7 @@ private struct GroupSettingsSheet: View {
 
                     HStack {
                         Text("Membri").font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                         Button { showAddMembers = true } label: {
                             Label("Adaugă", systemImage: "person.badge.plus")
@@ -692,7 +692,7 @@ private struct CreateGroupSheet: View {
                         }
                     }
 
-                    Text("Membri").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
+                    Text("Membri").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     VStack(spacing: 8) {
                         ForEach(members) { m in
                             Button {

@@ -92,7 +92,7 @@ struct DeliveryFormSheet: View {
                 .tint(.accentColor)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -109,7 +109,7 @@ struct DeliveryFormSheet: View {
                 .textInputAutocapitalization(.characters)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -125,7 +125,7 @@ struct DeliveryFormSheet: View {
                 .lineLimit(2...4)
                 .padding(14)
                 .background(
-                    Color.primary.opacity(0.07),
+                    Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }
@@ -149,7 +149,7 @@ struct DeliveryFormSheet: View {
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(
-                                    carrier == c ? Color.accentColor : Color.primary.opacity(0.07),
+                                    carrier == c ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                     in: Capsule()
                                 )
                         }

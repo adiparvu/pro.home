@@ -159,7 +159,7 @@ extension PropertyDetailView {
             }
             Text(label)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)
                 .font(AppFont.footnote)
@@ -257,7 +257,7 @@ extension PropertyDetailView {
                                         .frame(width: 36, height: 36)
                                     Image(systemName: "person.fill")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(owner.name)

@@ -103,7 +103,7 @@ struct EditPropertySheet: View {
                         if showMap { mapPickerSection.padding(.top, 8) }
 
                         Text("TYPE")
-                            .font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
+                            .font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
 
@@ -113,7 +113,7 @@ struct EditPropertySheet: View {
                                     Button { propertyType = type } label: {
                                         Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
-                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(0.7))
+                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                                             .padding(.horizontal, 14).padding(.vertical, 8)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
@@ -140,7 +140,7 @@ struct EditPropertySheet: View {
             }
             .navigationTitle("Edit Property").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }

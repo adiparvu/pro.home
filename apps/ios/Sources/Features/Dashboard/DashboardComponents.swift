@@ -47,7 +47,7 @@ struct HomeWidget: View {
                         .lineLimit(1)
                     Text(subtitle)
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
                 Text(title)
@@ -282,7 +282,7 @@ struct HealthScoreCard: View {
                         .foregroundStyle(color)
                     Text(isLoading ? " " : healthMessage)
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .lineLimit(2)
                 }
                 Spacer()
@@ -306,7 +306,7 @@ struct DashStatCard: View {
                     .foregroundStyle(color)
                 Text(label)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -331,7 +331,7 @@ struct DashTaskRow: View {
                 Text(task.title)
                     .font(AppFont.footnote)
                     .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.white)
-                    .strikethrough(task.isCompleted, color: Color.primary.opacity(0.35))
+                    .strikethrough(task.isCompleted, color: Color.primary.opacity(AppOpacity.disabled))
                     .lineLimit(1)
                 Text(task.dueDateDisplay)
                     .font(.system(size: 11))
@@ -342,10 +342,10 @@ struct DashTaskRow: View {
 
             Text(task.statusDisplay)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.primary.opacity(0.07), in: Capsule())
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
@@ -406,7 +406,7 @@ private struct FinStat: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.system(size: 11))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
         }
         .frame(maxWidth: .infinity)
     }
@@ -500,7 +500,7 @@ struct StatChip: View {
                         .foregroundStyle(.primary)
                     Text(label)
                         .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
             }
             .padding(.horizontal, 12)
@@ -530,7 +530,7 @@ struct CategoryFilterChip: View {
         .buttonStyle(.plain)
         .background {
             Capsule()
-                .fill(isActive ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.primary.opacity(0.06)))
+                .fill(isActive ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(Color.primary.opacity(AppOpacity.hairline)))
                 .overlay {
                     if isActive {
                         Capsule().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
@@ -624,7 +624,7 @@ struct PropertyHealthDashCard: View {
             .frame(height: 4)
             Text("\(pct)%")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .frame(width: 28, alignment: .trailing)
         }
     }
@@ -658,7 +658,7 @@ struct DashStatsStrip: View {
                             .foregroundStyle(.primary)
                         Text(item.label)
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -694,7 +694,7 @@ struct ProactiveInsightsStrip: View {
                         .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
                     Text("Property Insights")
                         .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                     Text("\(engine.activeInsights.count)")
                         .font(.system(size: 11, weight: .bold))
@@ -736,7 +736,7 @@ private struct InsightRow: View {
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             .accessibilityLabel("Dismiss")
         }

@@ -269,7 +269,7 @@ struct ZoneDetailView: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Color.primary.opacity(0.07), in: Capsule())
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                 }
             }
             .padding(.leading, 4)

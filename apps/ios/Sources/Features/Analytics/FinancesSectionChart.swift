@@ -86,7 +86,7 @@ extension FinancesSection {
                             .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
                             .padding(.horizontal, 11)
                             .padding(.vertical, 5)
-                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(0.07),
+                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)

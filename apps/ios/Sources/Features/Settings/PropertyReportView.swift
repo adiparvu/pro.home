@@ -126,22 +126,22 @@ struct PropertyReportView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("INCLUDE IN REPORT")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Financial summary", $includesFinances)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("map.fill", .indigo, "Digital Twin & Zones", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

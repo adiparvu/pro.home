@@ -174,7 +174,7 @@ struct IoTHubView: View {
                     }
                     Text("\(device.host):\(device.port) · \(device.connectionProtocol.rawValue)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     HStack(spacing: 4) {
                         Image(systemName: "sensor.tag.radiowaves.forward.fill")
                             .font(.system(size: 9))
@@ -273,7 +273,7 @@ struct IoTHubView: View {
                     } else if let updated = sensor.lastUpdated {
                         Text(relativeTime(updated))
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
             }
@@ -323,7 +323,7 @@ struct IoTHubView: View {
                         .foregroundStyle(.primary)
                     Text("IF \(auto.conditionDescription)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Text("THEN \(auto.action.rawValue)")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.accentColor.opacity(0.7))
@@ -360,10 +360,10 @@ struct IoTHubView: View {
             }
             Text(title)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text(body)
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button { addAction() } label: {

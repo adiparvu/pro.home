@@ -43,7 +43,7 @@ struct ElementTagsSection: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .padding(10)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             .onSubmit { add(el) }
                         Button { add(el) } label: {
                             Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Color.accentColor)

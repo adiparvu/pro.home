@@ -84,7 +84,7 @@ struct TrustedContactView: View {
 
             Text("This person can be notified in emergency situations related to your home. Information is stored locally on the device.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
         .padding(.vertical, 20)
@@ -123,7 +123,7 @@ struct TrustedContactView: View {
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 54)
     }

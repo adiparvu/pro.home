@@ -137,7 +137,7 @@ struct ARIASettingsView: View {
 
             Text("Your AI assistant's identity is private to you")
                 .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
         }
@@ -176,7 +176,7 @@ struct ARIASettingsView: View {
                     )
                 Text(option.label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.5))
+                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(AppOpacity.mediumText))
             }
         }
         .buttonStyle(.plain)
@@ -269,7 +269,7 @@ struct ARIASettingsView: View {
 
             Text("Disable to prevent \(assistantName) from accessing this data type in conversations")
                 .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .padding(.leading, 8)
                 .padding(.top, 2)
         }
@@ -337,7 +337,7 @@ struct ARIASettingsView: View {
                     Text(LocalizedStringKey(customApiKey.isEmpty ? "Not set" : "Configured"))
                         .font(.system(size: 13))
                         .foregroundStyle(customApiKey.isEmpty
-                            ? Color.primary.opacity(0.35)
+                            ? Color.primary.opacity(AppOpacity.disabled)
                             : Color(red: 0.3, green: 0.85, blue: 0.5))
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption)
@@ -432,7 +432,7 @@ struct ARIASettingsView: View {
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 52)
     }
@@ -504,7 +504,7 @@ private struct ApiKeyEditorSheet: View {
                                 .frame(width: 64, height: 64)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                                        .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
                                 )
                             Image(systemName: "key.fill")
                                 .font(.system(size: 26, weight: .semibold))
@@ -514,7 +514,7 @@ private struct ApiKeyEditorSheet: View {
                             .font(.system(size: 20, weight: .bold))
                         Text("Bring your own Anthropic API key")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     .padding(.top, 16)
 

@@ -36,7 +36,7 @@ struct InventoryRow: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(0.5))
+                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
                     case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
@@ -140,7 +140,7 @@ struct AddInventorySheet: View {
             }
             .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") { Task { await save() } }
                         .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
@@ -193,7 +193,7 @@ struct AddInventorySheet: View {
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
                                         .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
                     }
@@ -259,7 +259,7 @@ struct AddInventorySheet: View {
     private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 0) { content() }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
@@ -272,7 +272,7 @@ struct AddInventorySheet: View {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(0.5))
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
         }.padding(.horizontal, 16).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
@@ -300,7 +300,7 @@ struct QRScannerSheet: View {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 16) {
                     Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.25))
-                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.5)).multilineTextAlignment(.center)
+                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
                 }
             }
             VStack {

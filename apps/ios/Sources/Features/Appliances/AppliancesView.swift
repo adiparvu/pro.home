@@ -104,7 +104,7 @@ struct AppliancesView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var warrantyBanner: some View {
@@ -148,7 +148,7 @@ struct AppliancesView: View {
         Button(action: action) {
             Text(verbatim: label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
+                .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(
@@ -192,7 +192,7 @@ struct AppliancesView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Track warranties, model numbers, and maintenance for all your home appliances.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
@@ -242,7 +242,7 @@ private struct ApplianceRow: View {
                         if let brand = appliance.brand, !brand.isEmpty {
                             Text(brand)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let model = appliance.modelNumber, !model.isEmpty {
                             if appliance.brand?.isEmpty == false {
@@ -250,7 +250,7 @@ private struct ApplianceRow: View {
                             }
                             Text(model)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         }
                     }
 
@@ -268,7 +268,7 @@ private struct ApplianceRow: View {
                                 .foregroundStyle(Color.primary.opacity(0.4))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Color.primary.opacity(0.06), in: Capsule())
+                                .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                         }
                     }
                 }

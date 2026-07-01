@@ -141,11 +141,11 @@ struct ForecastSection: View {
                         ForecastRow(label: "Projected income",
                                     value: "\(sym)\(Int(projectedIncome))",
                                     sub: "annual", positive: true)
-                        Divider().background(Color.primary.opacity(0.07))
+                        Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Projected expenses",
                                     value: "\(sym)\(Int(projectedExpenses))",
                                     sub: "annual", positive: false)
-                        Divider().background(Color.primary.opacity(0.07))
+                        Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Estimated net profit",
                                     value: "\(netProfit >= 0 ? "+" : "")\(sym)\(Int(netProfit))",
                                     sub: "estimated", positive: netProfit >= 0)

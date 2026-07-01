@@ -146,7 +146,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(dateString)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 Text(displayName.isEmpty ? greetingText : "\(greetingText), \(displayName)")
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(.primary)
@@ -340,7 +340,7 @@ struct DashboardView: View {
         HStack {
             Text("OVERVIEW")
                 .font(AppFont.label)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Spacer()
             if isEditingWidgets {
                 Button {
@@ -369,7 +369,7 @@ struct DashboardView: View {
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
                             .font(AppFont.captionStrong)
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
@@ -382,7 +382,7 @@ struct DashboardView: View {
                     } label: {
                         Image(systemName: "plus")
                             .font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)

@@ -100,7 +100,7 @@ struct GuestModeView: View {
                     if let address = propertyService.primary?.addressLine1, !address.isEmpty {
                         Text(address)
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .lineLimit(2)
                     }
                     Text("Guest information sheet")
@@ -142,7 +142,7 @@ struct GuestModeView: View {
                             .frame(width: 24)
                         Text("Rules")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
                         "e.g. No smoking indoors, quiet hours after 10pm, please recycle…",
@@ -172,7 +172,7 @@ struct GuestModeView: View {
                             .frame(width: 24)
                         Text("Notes")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
                         "e.g. Trash pickup is Monday, parking spot #4, call me if anything…",

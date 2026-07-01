@@ -178,7 +178,7 @@ struct ObjectsListView: View {
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No objects")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Add objects to your property zones from the Digital Twin")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -218,11 +218,11 @@ struct ObjectListRow: View {
                 if let zone = zoneName {
                     Text(zone)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 } else {
                     Text(element.elementType.displayName)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
 

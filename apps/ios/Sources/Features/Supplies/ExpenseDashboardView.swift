@@ -99,7 +99,7 @@ struct ExpenseDashboardView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.secondary)
                             .frame(width: 32, height: 32)
-                            .background(Color.primary.opacity(0.07), in: Circle())
+                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                     }
                     .buttonStyle(.plain)
 
@@ -168,7 +168,7 @@ struct ExpenseDashboardView: View {
                 if count == 0 {
                     Text(String(localized: "expense_no_receipts_month"))
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .multilineTextAlignment(.center)
                 }
             }

@@ -526,7 +526,7 @@ struct ConversationsView: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.06), in: Capsule())
+        .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
     }
 
     private var filterChips: some View {
@@ -538,7 +538,7 @@ struct ConversationsView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06),
+                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -568,7 +568,7 @@ struct ConversationsView: View {
                 Circle().fill(Color.primary.opacity(0.08))
                 Image(systemName: "archivebox.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .frame(width: 52, height: 52)
             Text("Conversații arhivate")
@@ -799,17 +799,17 @@ private struct ConversationRowView: View {
                     if muted {
                         Image(systemName: "bell.slash.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Spacer()
                     if pinned {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Text(entry.formattedTime)
                         .font(.system(size: 12))
-                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(0.35))
+                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(AppOpacity.disabled))
                 }
                 HStack {
                     Text(entry.preview)
@@ -823,7 +823,7 @@ private struct ConversationRowView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(muted ? Color.primary.opacity(0.35) : Color.accentColor, in: Capsule())
+                            .background(muted ? Color.primary.opacity(AppOpacity.disabled) : Color.accentColor, in: Capsule())
                             .fixedSize()
                     } else if forceUnread {
                         Circle()

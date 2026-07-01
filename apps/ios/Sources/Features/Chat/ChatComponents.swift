@@ -53,7 +53,7 @@ struct CallPickerSheet: View {
                         Image(systemName: isVideo ? "video.slash.fill" : "phone.slash.fill")
                             .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
                         Text("No family members yet")
-                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         Spacer()
                     }
                 } else {
@@ -71,7 +71,7 @@ struct CallPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
             }
         }
@@ -131,7 +131,7 @@ private struct MemberCallRow: View {
                         Text(member.name)
                             .font(AppFont.subheadline).foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.roleLabel))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
 
@@ -159,7 +159,7 @@ private struct MemberCallRow: View {
                                         .foregroundStyle(Color.primary.opacity(0.3))
                                 }
                                 .padding(.horizontal, 12).padding(.vertical, 8)
-                                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
@@ -189,7 +189,7 @@ struct ChatDateSeparator: View {
             Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
             Text(label)
                 .font(AppFont.caption2)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .fixedSize()
             Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
         }
@@ -296,7 +296,7 @@ struct MessageBubble: View {
                 if !isOwn {
                     Text(message.senderName)
                         .font(AppFont.label)
-                        .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(0.45))
+                        .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(AppOpacity.secondaryText))
                         .padding(.leading, 4)
                 }
                 if let replied = repliedMessage, !isDeleted {
@@ -446,7 +446,7 @@ struct MessageBubble: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         .frame(maxWidth: 250, alignment: .leading)
     }
 
@@ -483,7 +483,7 @@ struct MessageBubble: View {
                         }
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(displayMyReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(0.07),
+                    .background(displayMyReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule())
                     .overlay(Capsule().strokeBorder(displayMyReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
                 }
@@ -578,10 +578,10 @@ struct MessageBubble: View {
                 Text("This message was deleted")
                     .font(.system(size: 15))
                     .italic()
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else if message.isPollMessage, let poll = ChatPoll.decode(message.body) {
             PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
                        bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
@@ -681,7 +681,7 @@ private struct SeenBySheet: View {
                                         .foregroundStyle(.primary)
                                     Text("Seen \(read.readTimeDisplay)")
                                         .font(.system(size: 12))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 Spacer()
                                 Image(systemName: "checkmark.seal.fill")
@@ -695,7 +695,7 @@ private struct SeenBySheet: View {
                             HStack {
                                 Text("Delivered")
                                     .font(AppFont.captionStrong)
-                                    .foregroundStyle(Color.primary.opacity(0.45))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 Spacer()
                             }
                             .padding(.top, 6)
@@ -853,7 +853,7 @@ struct ChatImageBubble: View {
                         .frame(maxWidth: 220, maxHeight: 160)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 } else {
-                    RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(0.07))
+                    RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(AppOpacity.subtleFill))
                         .frame(width: 160, height: 120)
                         .overlay(ProgressView().tint(.white))
                 }

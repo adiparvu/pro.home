@@ -116,7 +116,7 @@ struct PaintColorsView: View {
         }) {
             Text(label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
+                .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
                 .background(
@@ -178,7 +178,7 @@ struct PaintColorsView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Save paint colors for each room so you can easily reorder or touch up later.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
@@ -231,7 +231,7 @@ private struct PaintSwatch: View {
 
             Text(LocalizedStringKey(paintColor.finishDisplay))
                 .font(.system(size: 10))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(width: 70)
         }
     }

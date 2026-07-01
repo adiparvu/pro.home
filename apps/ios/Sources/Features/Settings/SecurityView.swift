@@ -351,7 +351,7 @@ struct SecurityView: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
     }
 
     private var autoLockLabel: String {

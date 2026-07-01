@@ -602,7 +602,7 @@ struct ChatView: View {
                             if !outbox.isOnline {
                                 Text("Not delivered · tap to retry")
                                     .font(.system(size: 10))
-                                    .foregroundStyle(Color.primary.opacity(0.45))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                     .padding(.trailing, 4)
                             }
                         }
@@ -735,7 +735,7 @@ struct ChatView: View {
                                     mentionedIds.removeAll { $0 == id }
                                     mentionedNames.removeAll { $0 == name }
                                 } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(0.5))
+                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 }
                                 .accessibilityLabel("Remove mention of \(name)")
                             }
@@ -870,7 +870,7 @@ struct ChatView: View {
                                     .frame(width: 30, height: 30)
                                 Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
                                     .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(0.45))
+                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.secondaryText))
                                     .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
                             }
                             .onLongPressGesture(minimumDuration: 0.3) {

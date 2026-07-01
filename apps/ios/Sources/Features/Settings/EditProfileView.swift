@@ -65,14 +65,14 @@ struct EditProfileView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
     private func fieldLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(Color.primary.opacity(0.5))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -92,7 +92,7 @@ struct EditProfileView: View {
                     Button { withAnimation { hasBirthDate = true } } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundStyle(.tint)
-                            Text("Add date of birth").foregroundStyle(Color.primary.opacity(0.5))
+                            Text("Add date of birth").foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             Spacer()
                         }
                     }
@@ -100,7 +100,7 @@ struct EditProfileView: View {
                 }
             }
             .padding(14)
-            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -112,7 +112,7 @@ struct EditProfileView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
                 .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -142,7 +142,7 @@ struct EditProfileView: View {
             if socialLinks.isEmpty {
                 Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .padding(.vertical, 4)
             } else {
                 ForEach($socialLinks) { $link in

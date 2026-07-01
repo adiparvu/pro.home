@@ -146,7 +146,7 @@ struct PropertyHealthDashboardView: View {
                             }
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
-                                    Capsule().fill(Color.primary.opacity(0.06)).frame(height: 5)
+                                    Capsule().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 5)
                                     Capsule()
                                         .fill(scoreColor(avg))
                                         .frame(width: geo.size.width * CGFloat(avg) / 100, height: 5)

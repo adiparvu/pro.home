@@ -37,7 +37,7 @@ struct StickerPicker: View {
             categoryTabs
 
             Divider()
-                .background(Color.primary.opacity(0.06))
+                .background(Color.primary.opacity(AppOpacity.hairline))
 
             if displayedStickers.isEmpty {
                 emptyState
@@ -105,7 +105,7 @@ struct StickerPicker: View {
             let selected = selectedCategoryId == id
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(selected ? color.opacity(0.16) : Color.primary.opacity(0.06))
+                    .fill(selected ? color.opacity(0.16) : Color.primary.opacity(AppOpacity.hairline))
                 Image(systemName: icon)
                     .font(.system(size: 15, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? color : Color.primary.opacity(0.4))

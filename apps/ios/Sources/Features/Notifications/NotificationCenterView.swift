@@ -124,7 +124,7 @@ struct NotificationCenterView: View {
                 .foregroundStyle(Color.primary.opacity(0.18))
             Text("No notifications")
                 .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("You're all caught up!")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -226,13 +226,13 @@ private struct NotificationRow: View {
         .padding(.vertical, 12)
         .background(
             notification.isUnread
-                ? Color.primary.opacity(0.06)
+                ? Color.primary.opacity(AppOpacity.hairline)
                 : Color.primary.opacity(0.03),
             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
         )
     }
 }

@@ -197,7 +197,7 @@ struct SiriShortcutsView: View {
 
             Text("Activate once — Siri learns all \(shortcuts.count) commands. To remove, go to iPhone Settings › Siri.")
                 .font(.system(size: 11))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
         }

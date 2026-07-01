@@ -227,11 +227,11 @@ struct TasksView: View {
                     } label: {
                         Text(LocalizedStringKey(period.rawValue))
                             .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
-                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(0.7))
+                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
-                                historyPeriod == period ? Color.white : Color.primary.opacity(0.07),
+                                historyPeriod == period ? Color.white : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule()
                             )
                     }
@@ -291,10 +291,10 @@ struct FilterChip: View {
                         .background(isSelected ? .black.opacity(0.12) : Color.primary.opacity(0.1), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(0.7))
+            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(isSelected ? Color.white : Color.primary.opacity(0.07), in: Capsule())
+            .background(isSelected ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -367,7 +367,7 @@ struct TaskRowView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(
-                    task.isOverdue ? .red.opacity(0.22) : Color.primary.opacity(0.06),
+                    task.isOverdue ? .red.opacity(0.22) : Color.primary.opacity(AppOpacity.hairline),
                     lineWidth: 0.5
                 )
         )
