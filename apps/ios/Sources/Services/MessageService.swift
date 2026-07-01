@@ -138,8 +138,8 @@ final class MessageService {
     }
 
     func subscribeRealtime(propertyId: UUID) async {
-        let channel = await supabase.realtimeV2.channel("messages:\(propertyId.uuidString)")
-        let changes = await channel.postgresChange(
+        let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString)")
+        let changes = channel.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "messages",
@@ -150,7 +150,7 @@ final class MessageService {
                 Task { @MainActor in self?.handleTyping(name) }
             }
         }
-        await channel.subscribe()
+        try? await channel.subscribeWithError()
         realtimeChannel = channel
 
         for await _ in changes {
@@ -346,14 +346,14 @@ final class MessageService {
 
     /// Subscribes to read receipt changes so the sender sees "seen" updates live.
     func subscribeReads(propertyId: UUID) async {
-        let channel = await supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString)")
-        let changes = await channel.postgresChange(
+        let channel = supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString)")
+        let changes = channel.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reads",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
-        await channel.subscribe()
+        try? await channel.subscribeWithError()
         readsChannel = channel
 
         for await _ in changes {
@@ -418,14 +418,14 @@ final class MessageService {
 
     /// Subscribes to delivery changes so the sender's ticks advance live.
     func subscribeDeliveries(propertyId: UUID) async {
-        let channel = await supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString)")
-        let changes = await channel.postgresChange(
+        let channel = supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString)")
+        let changes = channel.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_deliveries",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
-        await channel.subscribe()
+        try? await channel.subscribeWithError()
         deliveriesChannel = channel
 
         for await _ in changes {
@@ -520,14 +520,14 @@ final class MessageService {
     }
 
     func subscribeReactions(propertyId: UUID) async {
-        let channel = await supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
-        let changes = await channel.postgresChange(
+        let channel = supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
+        let changes = channel.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reactions",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
-        await channel.subscribe()
+        try? await channel.subscribeWithError()
         reactionsChannel = channel
 
         for await _ in changes {
@@ -594,14 +594,14 @@ final class MessageService {
     }
 
     func subscribePollVotes(propertyId: UUID) async {
-        let channel = await supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString)")
-        let changes = await channel.postgresChange(
+        let channel = supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString)")
+        let changes = channel.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_poll_votes",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
-        await channel.subscribe()
+        try? await channel.subscribeWithError()
         pollVotesChannel = channel
 
         for await _ in changes {

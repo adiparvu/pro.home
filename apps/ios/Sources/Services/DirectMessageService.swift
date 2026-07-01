@@ -166,14 +166,14 @@ final class DirectMessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
-        let ch = await supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
-        let inserts = await ch.postgresChange(
+        let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
+        let inserts = ch.postgresChange(
             InsertAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         )
-        let updates = await ch.postgresChange(
+        let updates = ch.postgresChange(
             UpdateAction.self,
             schema: "public",
             table: "direct_messages",
@@ -184,7 +184,7 @@ final class DirectMessageService {
                 Task { @MainActor in self?.handleTyping(name) }
             }
         }
-        await ch.subscribe()
+        try? await ch.subscribeWithError()
         channel = ch
 
         // Updates (reactions, read receipts, pin/mark, edit, delete-for-all) on a side task.
