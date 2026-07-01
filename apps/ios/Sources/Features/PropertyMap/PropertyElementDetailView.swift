@@ -110,8 +110,9 @@ struct PropertyElementDetailView: View {
                                   systemImage: localElement.isFavorite ? "star.slash" : "star")
                         }
                         Button {
+                            let element = localElement
                             Task {
-                                if let u = await Task.detached(priority: .userInitiated, operation: { ElementPDFExporter.makePDF(for: localElement) }).value {
+                                if let u = await Task.detached(priority: .userInitiated, operation: { ElementPDFExporter.makePDF(for: element) }).value {
                                     exportURL = ShareURL(url: u)
                                 }
                             }

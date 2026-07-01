@@ -90,9 +90,11 @@ final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
 
     deinit {
         // Timer was scheduled on the main RunLoop — must be invalidated there.
-        // Capture both so we don't reference self in the async block.
-        let t = timer
-        let r = recorder
+        // Capture both so we don't reference self in the async block. Timer and
+        // AVAudioRecorder aren't Sendable; nonisolated(unsafe) is sound here
+        // because deinit holds the last reference — no concurrent access exists.
+        nonisolated(unsafe) let t = timer
+        nonisolated(unsafe) let r = recorder
         DispatchQueue.main.async { t?.invalidate(); r?.stop() }
     }
 
@@ -428,15 +430,19 @@ final class AudioPlayer {
             object: item,
             queue: .main
         ) { [weak self] _ in
-            self?.didFinishPlaying()
+            // Delivered on .main (queue above), so main-actor access is valid.
+            MainActor.assumeIsolated { self?.didFinishPlaying() }
         }
 
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
         timeObserverToken = avPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self else { return }
-            let secs = CMTimeGetSeconds(time)
-            self.position = secs.isFinite ? secs : 0
-            self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
+            // Delivered on .main (queue above), so main-actor access is valid.
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let secs = CMTimeGetSeconds(time)
+                self.position = secs.isFinite ? secs : 0
+                self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
+            }
         }
 
         avPlayer.playImmediately(atRate: rate)

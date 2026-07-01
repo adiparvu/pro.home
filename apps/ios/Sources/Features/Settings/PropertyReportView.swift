@@ -204,9 +204,11 @@ struct PropertyReportView: View {
     private func generate() async {
         isGenerating = true
         let twinImage = includesTwin ? await twinSnapshot() : nil
-        let url = await Task.detached(priority: .userInitiated) { [self] in
-            return generatePDF(twinImage: twinImage)
-        }.value
+        // generatePDF reads main-actor service/view state (properties, zones,
+        // elements, toggles), so it must run on the main actor — detaching it
+        // was a latent data race. The render is fast and the spinner is
+        // already visible from the awaited snapshot above.
+        let url = generatePDF(twinImage: twinImage)
         pdfURL = url
         isGenerating = false
         HapticFeedback.success()
