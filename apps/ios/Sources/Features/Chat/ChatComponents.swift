@@ -603,52 +603,17 @@ struct MessageBubble: View {
                 bubbleColor: ownBubbleColor
             )
         } else if message.isFileMessage {
-            HStack(spacing: 10) {
-                Image(systemName: "doc.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(isOwn ? .white : Color.accentColor)
-                Text(message.body ?? "File")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isOwn ? .white : .primary)
-                    .lineLimit(2)
-                if let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-                    Spacer()
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
-                        .onTapGesture {
-                            filePreview = FilePreviewItem(url: url, name: message.body ?? url.lastPathComponent)
-                        }
-                }
+            ChatFileBubble(stored: message.attachmentUrl, name: message.body,
+                           isOwn: isOwn, ownBubbleColor: ownBubbleColor) { u, n in
+                filePreview = FilePreviewItem(url: u, name: n)
             }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                if let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-                    filePreview = FilePreviewItem(url: url, name: message.body ?? url.lastPathComponent)
-                }
-            }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(
-                isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-            )
-            .frame(maxWidth: 240)
         } else if message.isImageMessage, let urlStr = message.attachmentUrl {
             ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
                             ownBubbleColor: ownBubbleColor) { resolved in
                 viewerItem = ImageViewerItem(url: resolved)
             }
-        } else if message.isVideoMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.85))
-                    .frame(width: 200, height: 140)
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(.white.opacity(0.9))
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 16))
-            .onTapGesture { videoItem = ImageViewerItem(url: url) }
+        } else if message.isVideoMessage, let urlStr = message.attachmentUrl {
+            ChatVideoBubble(stored: urlStr) { resolved in videoItem = ImageViewerItem(url: resolved) }
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))
@@ -807,6 +772,65 @@ struct ReactionPickerView: View {
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(appBackground.ignoresSafeArea())
+    }
+}
+
+// MARK: - Chat file / video bubbles (resolve private signed URLs; legacy URLs pass through)
+
+struct ChatFileBubble: View {
+    let stored: String?
+    let name: String?
+    let isOwn: Bool
+    let ownBubbleColor: Color
+    let onPreview: (URL, String) -> Void
+    @State private var url: URL?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "doc.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(isOwn ? .white : Color.accentColor)
+            Text(name ?? "File")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isOwn ? .white : .primary)
+                .lineLimit(2)
+            if url != nil {
+                Spacer()
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
+                    .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(
+            isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .frame(maxWidth: 240)
+        .task(id: stored ?? "") { if let stored { url = await ChatMedia.resolve(stored) } }
+    }
+}
+
+struct ChatVideoBubble: View {
+    let stored: String
+    let onTap: (URL) -> Void
+    @State private var url: URL?
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.85))
+                .frame(width: 200, height: 140)
+            Image(systemName: "play.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .onTapGesture { if let url { onTap(url) } }
+        .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
 

@@ -82,10 +82,10 @@ final class StatusService: ObservableObject {
 
     func post(propertyId: UUID, authorName: String, image: UIImage, caption: String?) async {
         guard let uid, let data = image.jpegData(compressionQuality: 0.85) else { return }
-        let path = "\(uid.uuidString)/status/\(UUID().uuidString).jpg"
-        try? await supabase.storage.from("documents")
-            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: path)
+        // Private bucket + signed URL at display (resolved via ChatMedia). Path is
+        // scoped by property so chat-media RLS admits property members.
+        let mediaPath = await ChatMedia.upload(data, propertyId: propertyId, subdir: "status",
+                                               ext: "jpg", contentType: "image/jpeg")
         struct Payload: Encodable {
             let property_id: String
             let author_id: String
@@ -97,7 +97,7 @@ final class StatusService: ObservableObject {
             property_id: propertyId.uuidString,
             author_id: uid.uuidString,
             author_name: authorName,
-            media_url: url?.absoluteString,
+            media_url: mediaPath,
             caption: (caption?.isEmpty == false) ? caption : nil
         )).execute()
         await load(propertyId: propertyId)

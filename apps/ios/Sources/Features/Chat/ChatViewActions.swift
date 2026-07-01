@@ -132,19 +132,9 @@ extension ChatView {
             let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
             let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
             let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
-            // Images → private chat-media bucket (signed URL at display).
-            // Videos stay on the public bucket until their player is wired to signed URLs.
-            let attachmentValue: String?
-            if isVideo {
-                let fileName = "\(UUID().uuidString).\(ext)"
-                let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-                try? await supabase.storage.from("documents")
-                    .upload(filePath, data: data, options: FileOptions(contentType: contentType, upsert: false))
-                attachmentValue = try? supabase.storage.from("documents").getPublicURL(path: filePath).absoluteString
-            } else {
-                attachmentValue = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+            // Images and videos → private chat-media bucket (signed URL at display).
+            let attachmentValue = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
                                                          ext: ext, contentType: contentType)
-            }
             try? await messageService.send(
                 propertyId: pid, senderName: senderName,
                 body: (index == 0 && !caption.isEmpty) ? caption : nil,
@@ -211,16 +201,15 @@ extension ChatView {
         guard let data = try? Data(contentsOf: url) else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString)_\(url.lastPathComponent)"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/files/\(fileName)"
+        let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
         let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: mime, upsert: false))
-        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at preview via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "files",
+                                          ext: ext, contentType: mime)
         try? await messageService.send(
             propertyId: pid, senderName: senderName,
             body: url.lastPathComponent,
-            attachmentUrl: remoteURL?.absoluteString, attachmentType: "file",
+            attachmentUrl: path, attachmentType: "file",
             mentionedIds: []
         )
         HapticFeedback.success()

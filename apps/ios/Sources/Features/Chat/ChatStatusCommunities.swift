@@ -138,6 +138,7 @@ struct StoryViewer: View {
     @State private var index = 0
     @State private var viewers: [String] = []
     @State private var showViewers = false
+    @State private var mediaURL: URL?
 
     private var item: StatusUpdate? { group.items.indices.contains(index) ? group.items[index] : nil }
     private var isMine: Bool { supabase.auth.currentSession?.user.id == group.authorId }
@@ -146,8 +147,8 @@ struct StoryViewer: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let item, let urlStr = item.mediaUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+            if item?.mediaUrl != nil {
+                AsyncImage(url: mediaURL) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFit()
                     } else {
@@ -204,6 +205,7 @@ struct StoryViewer: View {
         }
         .task(id: index) {
             if let item, propertyId != nil { await status.markViewed(item, viewerName: myName) }
+            if let m = item?.mediaUrl { mediaURL = await ChatMedia.resolve(m) } else { mediaURL = nil }
         }
         .confirmationDialog("Seen by", isPresented: $showViewers, titleVisibility: .visible) {
             // listed in the message below
