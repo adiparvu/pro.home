@@ -42,6 +42,7 @@ struct PaintColorsView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add paint color")
             }
         }
         .sheet(isPresented: $showAdd) {
