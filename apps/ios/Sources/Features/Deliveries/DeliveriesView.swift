@@ -151,11 +151,10 @@ struct DeliveriesView: View {
 
     // MARK: - Completed section
 
+    @ViewBuilder
     private var completedSection: some View {
         let completed = deliveryService.deliveries.filter { !$0.isActive }
-        guard !completed.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !completed.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Button {
                     withAnimation(.spring(response: 0.35)) { showCompleted.toggle() }
@@ -186,7 +185,7 @@ struct DeliveriesView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-        )
+        }
     }
 
     // MARK: - Empty state

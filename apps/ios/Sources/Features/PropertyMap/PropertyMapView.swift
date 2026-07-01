@@ -19,7 +19,7 @@ struct PropertyMapView: View {
             PageHeader(
                 titleKey: "Map",
                 subtitleKey: "PROPERTY",
-                trailing: AnyView(
+                trailing: {
                     HStack(spacing: 10) {
                         Button {
                             HapticFeedback.selection()
@@ -42,7 +42,7 @@ struct PropertyMapView: View {
                         .buttonStyle(.plain)
                         .glassRoundedRect(12)
                     }
-                )
+                }
             )
 
             layerFilterBar

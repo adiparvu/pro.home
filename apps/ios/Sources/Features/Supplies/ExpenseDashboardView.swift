@@ -177,11 +177,10 @@ struct ExpenseDashboardView: View {
 
     // MARK: - Daily chart
 
+    @ViewBuilder
     private var dailyChartCard: some View {
         let days = receiptService.spendByDay(in: selectedMonth)
-        guard !days.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !days.isEmpty {
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(String(localized: "expense_section_daily"))
@@ -229,7 +228,7 @@ struct ExpenseDashboardView: View {
                     }
                 }
             }
-        )
+        }
     }
 
     // MARK: - Quick actions
@@ -272,12 +271,11 @@ struct ExpenseDashboardView: View {
 
     // MARK: - Category breakdown
 
+    @ViewBuilder
     private var categoryBreakdownCard: some View {
         let cats = receiptService.spendByCategory(in: selectedMonth)
-        guard !cats.isEmpty else { return AnyView(EmptyView()) }
-        let total = cats.reduce(0) { $0 + $1.total }
-
-        return AnyView(
+        if !cats.isEmpty {
+            let total = cats.reduce(0) { $0 + $1.total }
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(String(localized: "expense_section_categories"))
@@ -324,7 +322,7 @@ struct ExpenseDashboardView: View {
                     }
                 }
             }
-        )
+        }
     }
 
     // MARK: - Budget progress
@@ -388,11 +386,10 @@ struct ExpenseDashboardView: View {
 
     // MARK: - Recent receipts
 
+    @ViewBuilder
     private var recentReceiptsSection: some View {
         let recent = receiptService.receiptsForMonth(selectedMonth)
-        guard !recent.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !recent.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "expense_section_recent"))
                     .font(AppFont.captionStrong)
@@ -425,7 +422,7 @@ struct ExpenseDashboardView: View {
                     .buttonStyle(.plain)
                 }
             }
-        )
+        }
     }
 
     private func receiptRow(_ receipt: Receipt, isLast: Bool) -> some View {
