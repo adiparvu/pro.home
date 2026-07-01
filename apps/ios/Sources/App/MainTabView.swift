@@ -35,7 +35,8 @@ struct MainTabView: View {
     @Environment(AppRouter.self) private var router
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
+        @Bindable var router = router
+        return TabView(selection: $router.selectedTab) {
             NavigationStack { DashboardView() }
                 .tabItem { Image(systemName: "house.fill") }
                 .tag(AppTab.home)

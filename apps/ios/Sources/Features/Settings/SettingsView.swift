@@ -28,7 +28,8 @@ struct SettingsView: View {
     @State private var showAddAccount = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        @Bindable var router = router
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 profileCard
                 switchCard

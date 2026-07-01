@@ -76,7 +76,8 @@ struct DigitalTwinView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        @Bindable var elementService = elementService
+        return ZStack(alignment: .bottomTrailing) {
             if let prop = propertyService.primary {
                 AerialCanvasView(
                     property: prop,

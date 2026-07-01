@@ -69,7 +69,8 @@ struct AppIconPickerView: View {
     // MARK: - Auto-switch toggle
 
     private var autoSwitchToggle: some View {
-        GlassCard(padding: 16) {
+        @Bindable var iconManager = iconManager
+        return GlassCard(padding: 16) {
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(Color.purple.opacity(0.15)).frame(width: 36, height: 36)

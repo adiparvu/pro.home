@@ -174,7 +174,7 @@ struct PropertyElementDetailView: View {
         .task {
             await elementService.loadRecords(elementId: localElement.id)
         }
-        .onReceive(elementService.$elements) { updated in
+        .onChange(of: elementService.elements) { _, updated in
             if let fresh = updated.first(where: { $0.id == localElement.id }) {
                 localElement = fresh
             }
