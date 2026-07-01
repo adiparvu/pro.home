@@ -121,14 +121,12 @@ struct DirectMessageView: View {
                             Text(member.name)
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(.primary)
+                            // Header is avatar + name only; the role-label subtitle is
+                            // gone. Typing status still surfaces here since it's transient.
                             if directMessageService.typingNames.contains(member.name) {
                                 Text("typing…")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.accentColor)
-                            } else {
-                                Text(member.roleLabel)
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color.primary.opacity(0.4))
                             }
                         }
                     }

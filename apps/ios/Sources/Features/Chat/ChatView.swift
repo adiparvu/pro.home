@@ -207,14 +207,12 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(String(localized: "Chat Grup"))
                             .font(.system(size: 16, weight: .semibold))
+                        // Header is avatar + name only; the member-count subtitle is
+                        // gone. Typing status still surfaces here since it's transient.
                         if let t = typingText {
                             Text(t)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.accentColor)
-                        } else {
-                            Text("Grup · \(familyService.members.count + 1) membri")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.primary.opacity(0.45))
                         }
                     }
                     .contentShape(Rectangle())

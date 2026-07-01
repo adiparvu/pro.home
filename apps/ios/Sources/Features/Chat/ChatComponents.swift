@@ -311,7 +311,7 @@ struct MessageBubble: View {
                                 .offset(x: swipeOffset > 0 ? -28 : 28)
                         }
                     }
-                    .onLongPressGesture(minimumDuration: 0.22) {
+                    .onLongPressGesture(minimumDuration: 0.15) {
                         HapticFeedback.impact(.medium)
                         onLongPress?()
                     }
@@ -589,7 +589,7 @@ struct MessageBubble: View {
         } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
-            LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
+            LocationBubble(lat: lat, lon: lon, isOwn: isOwn, label: message.senderName)
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl {
             AudioBubble(
                 audioValue: urlStr, isOwn: isOwn,

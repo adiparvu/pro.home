@@ -47,7 +47,7 @@ struct ChatActionOverlay: View {
         }
         .onAppear {
             if reduceMotion { appear = true }
-            else { withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) { appear = true } }
+            else { withAnimation(.spring(response: 0.2, dampingFraction: 0.82)) { appear = true } }
         }
     }
 
