@@ -160,4 +160,54 @@ final class ChatGroupService: ObservableObject {
             self.error = error.localizedDescription
         }
     }
+
+    /// Renames a group in place.
+    func rename(_ group: ChatGroup, to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try await supabase.from("chat_groups")
+                .update(["name": trimmed])
+                .eq("id", value: group.id.uuidString)
+                .execute()
+            if let i = groups.firstIndex(where: { $0.id == group.id }) { groups[i].name = trimmed }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Adds family members to a group (each as a regular member).
+    func addMembers(_ selected: [FamilyMember], to group: ChatGroup) async {
+        guard !selected.isEmpty else { return }
+        struct NewMember: Encodable {
+            let group_id: String
+            let member_id: String
+            let member_name: String
+            let role: String
+        }
+        let rows = selected.map {
+            NewMember(group_id: group.id.uuidString, member_id: $0.id.uuidString,
+                      member_name: $0.name, role: "member")
+        }
+        do {
+            try await supabase.from("chat_group_members").insert(rows).execute()
+            await loadAllMembers()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Removes one member from a group.
+    func removeMember(_ member: ChatGroupMember, from group: ChatGroup) async {
+        do {
+            try await supabase.from("chat_group_members")
+                .delete()
+                .eq("group_id", value: group.id.uuidString)
+                .eq("member_id", value: member.memberId)
+                .execute()
+            membersByGroup[group.id]?.removeAll { $0.memberId == member.memberId }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 }

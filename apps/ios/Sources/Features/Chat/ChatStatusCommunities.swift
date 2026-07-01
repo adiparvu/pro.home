@@ -254,7 +254,7 @@ struct CommunitiesView: View {
                                                   propertyId: propertyId,
                                                   myName: myName,
                                                   members: members,
-                                                  groupMembers: service.members(for: group))
+                                                  service: service)
                                 } label: {
                                     CommunityRow(group: group, memberCount: service.members(for: group).count)
                                 }
@@ -318,6 +318,11 @@ struct CommunitiesView: View {
     }
 }
 
+private struct GroupChatBottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 // Lean, self-contained group chat thread. Owns its own MessageService instance
 // scoped to the group's group_id (so it never collides with the main chat) and
 // takes everything as plain params — no @EnvironmentObject, so it can't crash on
@@ -327,48 +332,90 @@ private struct GroupChatView: View {
     let propertyId: UUID?
     let myName: String
     let members: [FamilyMember]
-    let groupMembers: [ChatGroupMember]
+    /// Passed by reference from CommunitiesView (not @EnvironmentObject) so this
+    /// view stays crash-safe while still sharing live group/member state.
+    /// @ObservedObject so a rename in the settings sheet updates the title live.
+    @ObservedObject var service: ChatGroupService
 
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var svc = MessageService()
     @State private var text = ""
-    @State private var showMembers = false
+    @State private var showSettings = false
 
     private var myId: UUID? { supabase.auth.currentSession?.user.id }
+    private var currentGroup: ChatGroup { service.groups.first(where: { $0.id == group.id }) ?? group }
+
+    /// Shown when the user has scrolled away from the latest message (WhatsApp-
+    /// style jump-to-bottom button), mirroring ChatView/DirectMessageView.
+    @State private var showJumpToLatest = false
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(svc.messages) { m in
-                            MessageBubble(message: m,
-                                          isOwn: m.senderId == myId,
-                                          members: members)
-                                .id(m.id)
+            GeometryReader { outer in
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(svc.messages) { m in
+                                MessageBubble(message: m,
+                                              isOwn: m.senderId == myId,
+                                              members: members)
+                                    .id(m.id)
+                            }
+                            Color.clear.frame(height: 1).id("GROUP_CHAT_BOTTOM")
+                                .background(GeometryReader { g in
+                                    Color.clear.preference(key: GroupChatBottomKey.self,
+                                                           value: g.frame(in: .named("GROUPCHATOUTER")).maxY)
+                                })
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                    }
+                    .onPreferenceChange(GroupChatBottomKey.self) { maxY in
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showJumpToLatest = maxY > outer.size.height + 40
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                }
-                .onChange(of: svc.messages.count) { _, _ in
-                    if let last = svc.messages.last?.id {
-                        withAnimation { proxy.scrollTo(last, anchor: .bottom) }
+                    .onChange(of: svc.messages.count) { _, _ in
+                        withAnimation { proxy.scrollTo("GROUP_CHAT_BOTTOM", anchor: .bottom) }
+                    }
+                    .overlay(alignment: .bottom) {
+                        if showJumpToLatest {
+                            Button {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    proxy.scrollTo("GROUP_CHAT_BOTTOM", anchor: .bottom)
+                                }
+                                HapticFeedback.impact(.light)
+                            } label: {
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                    .frame(width: 40, height: 40)
+                            }
+                            .buttonStyle(.plain)
+                            .glassCircle()
+                            .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+                            .padding(.bottom, 8)
+                            .transition(.scale.combined(with: .opacity))
+                        }
                     }
                 }
             }
+            .coordinateSpace(name: "GROUPCHATOUTER")
             composer
         }
         .background(appBackground.ignoresSafeArea())
-        .navigationTitle(group.name.isEmpty ? group.kindLabel : group.name)
+        .navigationTitle(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showMembers = true } label: { Image(systemName: "person.2.fill") }
+                Button { showSettings = true } label: { Image(systemName: "gearshape.fill") }
                     .buttonStyle(.plain)
             }
         }
-        .sheet(isPresented: $showMembers) {
-            GroupMembersSheet(group: group, members: groupMembers)
+        .sheet(isPresented: $showSettings) {
+            GroupSettingsSheet(group: currentGroup, service: service, availableMembers: members) {
+                dismiss()
+            }
         }
         .task {
             guard let pid = propertyId else { return }
@@ -424,39 +471,172 @@ private struct CommunityRow: View {
     }
 }
 
-private struct GroupMembersSheet: View {
+// Group management: rename, add/remove members, delete group.
+private struct GroupSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     let group: ChatGroup
-    let members: [ChatGroupMember]
+    @ObservedObject var service: ChatGroupService
+    let availableMembers: [FamilyMember]
+    /// Called after the group is deleted, so the presenting chat screen pops.
+    let onDeleted: () -> Void
+
+    @State private var name: String
+    @State private var showAddMembers = false
+    @State private var showDeleteConfirm = false
+
+    init(group: ChatGroup, service: ChatGroupService, availableMembers: [FamilyMember],
+         onDeleted: @escaping () -> Void) {
+        self.group = group
+        self.service = service
+        self.availableMembers = availableMembers
+        self.onDeleted = onDeleted
+        _name = State(initialValue: group.name)
+    }
+
+    private var currentGroup: ChatGroup { service.groups.first(where: { $0.id == group.id }) ?? group }
+    private var currentMembers: [ChatGroupMember] { service.members(for: group) }
+    /// Family members not already in this group, for the "add" picker.
+    private var addableMembers: [FamilyMember] {
+        let existingIds = Set(currentMembers.map { $0.memberId })
+        return availableMembers.filter { !existingIds.contains($0.id.uuidString) }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 10) {
-                    ForEach(members) { m in
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
-                                Text(String(m.memberName.prefix(1)).uppercased())
-                                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.accentColor)
-                            }
-                            Text(m.memberName).font(.system(size: 15, weight: .medium))
-                            Spacer()
-                            if m.role == "admin" {
-                                Text("Admin").font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Color.accentColor)
-                            }
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(spacing: 10) {
+                        TextField("Nume grup", text: $name)
+                            .font(.system(size: 16))
+                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .liquidGlass(cornerRadius: 14)
+                        Button("Salvează") {
+                            Task { await service.rename(group, to: name) }
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .liquidGlass(cornerRadius: 14)
+                        .font(.system(size: 14, weight: .semibold))
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty
+                                  || name == group.name)
+                    }
+
+                    HStack {
+                        Text("Membri").font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary.opacity(0.5))
+                        Spacer()
+                        Button { showAddMembers = true } label: {
+                            Label("Adaugă", systemImage: "person.badge.plus")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .disabled(addableMembers.isEmpty)
+                    }
+
+                    VStack(spacing: 8) {
+                        ForEach(currentMembers) { m in
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
+                                    Text(String(m.memberName.prefix(1)).uppercased())
+                                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.accentColor)
+                                }
+                                Text(m.memberName).font(.system(size: 15, weight: .medium))
+                                Spacer()
+                                if m.role == "admin" {
+                                    Text("Admin").font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(Color.accentColor)
+                                } else {
+                                    Button {
+                                        Task { await service.removeMember(m, from: group) }
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundStyle(.red.opacity(0.85))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .liquidGlass(cornerRadius: 14)
+                        }
+                    }
+
+                    Button(role: .destructive) { showDeleteConfirm = true } label: {
+                        Label("Șterge grupul", systemImage: "trash")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.red)
+                    .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.top, 10)
+                }
+                .padding(16)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Gata") { dismiss() } } }
+            .sheet(isPresented: $showAddMembers) {
+                AddGroupMembersSheet(members: addableMembers) { selected in
+                    showAddMembers = false
+                    Task { await service.addMembers(selected, to: group) }
+                }
+            }
+            .confirmationDialog("Ștergi acest grup?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("Șterge grupul", role: .destructive) {
+                    Task {
+                        await service.delete(group)
+                        dismiss()
+                        onDeleted()
+                    }
+                }
+                Button("Anulează", role: .cancel) {}
+            } message: {
+                Text("Mesajele acestui grup vor fi șterse definitiv.")
+            }
+        }
+    }
+}
+
+private struct AddGroupMembersSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let members: [FamilyMember]
+    let onAdd: ([FamilyMember]) -> Void
+
+    @State private var selectedIds: Set<UUID> = []
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 8) {
+                    ForEach(members) { m in
+                        Button {
+                            if selectedIds.contains(m.id) { selectedIds.remove(m.id) }
+                            else { selectedIds.insert(m.id) }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(m.name).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .liquidGlass(cornerRadius: 14)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(16)
             }
             .background(appBackground.ignoresSafeArea())
-            .navigationTitle(group.name.isEmpty ? group.kindLabel : group.name)
+            .navigationTitle("Adaugă membri")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Adaugă") { onAdd(members.filter { selectedIds.contains($0.id) }) }
+                        .disabled(selectedIds.isEmpty)
+                }
+            }
         }
     }
 }
