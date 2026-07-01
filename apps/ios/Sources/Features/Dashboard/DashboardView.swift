@@ -164,6 +164,7 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .glassCircle()
+            .accessibilityLabel("Search")
 
             Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
                 Image(systemName: "bell.fill")
@@ -182,6 +183,7 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .glassCircle()
+            .accessibilityLabel(hasNotifications ? "Notifications, new" : "Notifications")
 
             Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
                 avatarCircle
@@ -271,6 +273,7 @@ struct DashboardView: View {
                     .glassCircle()
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Expand Digital Twin")
             .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
@@ -371,6 +374,7 @@ struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Reorder widgets")
 
                     Button {
                         HapticFeedback.impact(.light)
@@ -383,6 +387,7 @@ struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Add widget")
                 }
             }
         }

@@ -188,6 +188,7 @@ struct GlobalSearchSheet: View {
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 14)

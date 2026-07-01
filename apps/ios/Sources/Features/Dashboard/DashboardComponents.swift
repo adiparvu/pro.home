@@ -738,6 +738,7 @@ private struct InsightRow: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Color.primary.opacity(0.35))
             }
+            .accessibilityLabel("Dismiss")
         }
     }
 
