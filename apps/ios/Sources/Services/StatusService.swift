@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import UIKit
 import Supabase
 
@@ -39,14 +40,15 @@ struct StatusGroup: Identifiable {
 // MARK: - Status service (singleton)
 
 @MainActor
-final class StatusService: ObservableObject {
+@Observable
+final class StatusService {
     static let shared = StatusService()
     private init() {}
 
     /// Active (non-expired) updates for the property.
-    @Published var updates: [StatusUpdate] = []
+    var updates: [StatusUpdate] = []
     /// Ids of statuses the current user has already viewed.
-    @Published var viewedIds: Set<UUID> = []
+    var viewedIds: Set<UUID> = []
 
     private var uid: UUID? { supabase.auth.currentSession?.user.id }
 

@@ -34,7 +34,7 @@ struct ARIAView: View {
     @AppStorage("prvio.voiceInput")        private var voiceInputEnabled: Bool = true
     @AppStorage("prvio.locale")            private var currentLocale: String = "en"
     @AppStorage("prvio.followSystemLang")  private var followSystemLanguage: Bool = true
-    @StateObject private var speech = SpeechRecognizer()
+    @State private var speech = SpeechRecognizer()
     @State private var showJumpToLatest = false
 
     var body: some View {

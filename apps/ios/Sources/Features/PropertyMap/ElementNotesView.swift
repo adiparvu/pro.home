@@ -10,7 +10,7 @@ struct ElementNotesSection: View {
     let element: PropertyElement
 
     @StateObject private var noteService = ElementNoteService()
-    @ObservedObject private var lock = NoteLockManager.shared
+    private let lock = NoteLockManager.shared
 
     @State private var editorNote: ElementNote?      // existing note being edited
     @State private var showNewEditor = false
@@ -155,7 +155,7 @@ struct ElementNoteEditorSheet: View {
     let existing: ElementNote?
 
     @EnvironmentObject private var noteService: ElementNoteService
-    @ObservedObject private var lock = NoteLockManager.shared
+    private let lock = NoteLockManager.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var body_ = ""
@@ -341,7 +341,7 @@ struct NotePINSheet: View {
     let mode: Mode
     let onDone: () -> Void
 
-    @ObservedObject private var lock = NoteLockManager.shared
+    private let lock = NoteLockManager.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var pin = ""

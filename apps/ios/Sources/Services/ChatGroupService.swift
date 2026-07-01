@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Supabase
 
 // MARK: - Communities: multiple chat groups per property (workers, family, …)
@@ -56,11 +57,12 @@ struct ChatGroupMember: Identifiable, Codable, Hashable {
 }
 
 @MainActor
-final class ChatGroupService: ObservableObject {
-    @Published var groups: [ChatGroup] = []
-    @Published var membersByGroup: [UUID: [ChatGroupMember]] = [:]
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class ChatGroupService {
+    var groups: [ChatGroup] = []
+    var membersByGroup: [UUID: [ChatGroupMember]] = [:]
+    var isLoading = false
+    var error: String?
 
     func load(propertyId: UUID) async {
         isLoading = true

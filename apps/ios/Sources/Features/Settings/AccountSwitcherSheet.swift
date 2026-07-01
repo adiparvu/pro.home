@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AccountSwitcherSheet: View {
     @EnvironmentObject private var auth: AuthService
-    @ObservedObject private var store = AccountsStore.shared
+    private let store = AccountsStore.shared
     @Binding var showAddAccount: Bool
     @Environment(\.dismiss) private var dismiss
     @State private var switchError: String?

@@ -4,7 +4,7 @@ import CoreLocation
 import PhotosUI
 
 struct BuriedUtilitiesView: View {
-    @ObservedObject var service: BlueprintService
+    var service: BlueprintService
     @State private var showAdd = false
     @State private var detailItem: BuriedUtility?
 

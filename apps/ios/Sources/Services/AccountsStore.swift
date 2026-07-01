@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Security
 import Supabase
 
@@ -18,10 +19,11 @@ struct SavedAccount: Codable, Identifiable, Equatable {
 }
 
 @MainActor
-final class AccountsStore: ObservableObject {
+@Observable
+final class AccountsStore {
     static let shared = AccountsStore()
 
-    @Published private(set) var accounts: [SavedAccount] = []
+    private(set) var accounts: [SavedAccount] = []
 
     private let keychainKey = "prvio.saved.accounts"
     private let keychainService = "com.prvio.app"

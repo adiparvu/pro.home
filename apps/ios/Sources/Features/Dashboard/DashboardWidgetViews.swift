@@ -8,7 +8,7 @@ struct WeatherWidget: View {
     var coordinate: CLLocationCoordinate2D?
     var action: () -> Void
 
-    @StateObject private var weatherService = WeatherKitService.shared
+    @State private var weatherService = WeatherKitService.shared
     @State private var shimmer = false
 
     var body: some View {

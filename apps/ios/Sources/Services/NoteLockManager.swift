@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import CryptoKit
 import LocalAuthentication
 import Security
@@ -15,10 +16,11 @@ import Security
 //   (A biometric-bound key is a future hardening step.)
 
 @MainActor
-final class NoteLockManager: ObservableObject {
+@Observable
+final class NoteLockManager {
     static let shared = NoteLockManager()
 
-    @Published private(set) var isUnlocked = false
+    private(set) var isUnlocked = false
 
     private let service = "com.prvio.notes"
     private let keyAccount = "masterkey"

@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - IoT Hub (Controllers / Sensors / Automations)
 
 struct IoTHubView: View {
-    @StateObject private var service = IoTService.shared
+    @State private var service = IoTService.shared
     @State private var tab: HubTab = .controllers
     @State private var showAddController = false
     @State private var showAddSensor = false

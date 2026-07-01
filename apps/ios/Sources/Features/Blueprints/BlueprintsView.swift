@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct BlueprintsView: View {
     @EnvironmentObject private var propertyService: PropertyService
     @EnvironmentObject private var zoneService: PropertyZoneService
-    @StateObject private var service = BlueprintService()
+    @State private var service = BlueprintService()
     @State private var showRoomScan = false
     @State private var showAddPlan = false
     @State private var previewItem: HomeScan?

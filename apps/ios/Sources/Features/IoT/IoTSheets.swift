@@ -275,7 +275,7 @@ struct AddSensorSheet: View {
 
 struct DeviceDetailSheet: View {
     let device: IoTDevice
-    @ObservedObject var service: IoTService
+    var service: IoTService
     @Environment(\.dismiss) private var dismiss
     @State private var testing = false
     @State private var testResult: Bool?
@@ -391,7 +391,7 @@ struct DeviceDetailSheet: View {
 
 struct SensorDetailSheet: View {
     let sensor: IoTSensor
-    @ObservedObject var service: IoTService
+    var service: IoTService
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
 

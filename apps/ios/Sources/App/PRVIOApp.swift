@@ -5,7 +5,7 @@ struct PRVIOApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var auth        = AuthService.shared
     @StateObject private var appSettings = AppSettings()
-    @StateObject private var lock        = AppLockManager()
+    @State private var lock        = AppLockManager()
     @StateObject private var router      = AppRouter()
     @StateObject private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase

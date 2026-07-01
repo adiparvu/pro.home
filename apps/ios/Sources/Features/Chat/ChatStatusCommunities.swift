@@ -11,7 +11,7 @@ struct StatusView: View {
     let members: [FamilyMember]
     var onAddStatus: () -> Void = {}
 
-    @ObservedObject private var status = StatusService.shared
+    private let status = StatusService.shared
     @Environment(\.dismiss) private var dismiss
     @State private var viewing: StatusGroup?
 
@@ -134,7 +134,7 @@ struct StoryViewer: View {
     let myName: String
     var propertyId: UUID?
 
-    @ObservedObject private var status = StatusService.shared
+    private let status = StatusService.shared
     @Environment(\.dismiss) private var dismiss
     @State private var index = 0
     @State private var viewers: [String] = []
@@ -237,7 +237,7 @@ struct StoryViewer: View {
 
 struct CommunitiesView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var service = ChatGroupService()
+    @State private var service = ChatGroupService()
 
     var propertyId: UUID? = nil
     var members: [FamilyMember] = []
@@ -342,7 +342,7 @@ private struct GroupChatView: View {
     /// Passed by reference from CommunitiesView (not @EnvironmentObject) so this
     /// view stays crash-safe while still sharing live group/member state.
     /// @ObservedObject so a rename in the settings sheet updates the title live.
-    @ObservedObject var service: ChatGroupService
+    var service: ChatGroupService
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var svc = MessageService()
@@ -485,7 +485,7 @@ private struct CommunityRow: View {
 private struct GroupSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     let group: ChatGroup
-    @ObservedObject var service: ChatGroupService
+    var service: ChatGroupService
     let availableMembers: [FamilyMember]
     /// Called after the group is deleted, so the presenting chat screen pops.
     let onDeleted: () -> Void

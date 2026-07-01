@@ -4,7 +4,7 @@ import SwiftUI
 /// for Face ID / Touch ID / passcode (triggered by AppLockManager) and offers
 /// a manual retry button.
 struct LockScreenView: View {
-    @ObservedObject var manager: AppLockManager
+    var manager: AppLockManager
 
     var body: some View {
         ZStack {

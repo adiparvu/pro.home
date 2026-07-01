@@ -1,16 +1,18 @@
 import Foundation
+import Observation
 import WeatherKit
 import CoreLocation
 
 @MainActor
-final class WeatherKitService: ObservableObject {
+@Observable
+final class WeatherKitService {
     static let shared = WeatherKitService()
 
-    @Published var currentWeather: CurrentWeather?
-    @Published var hourlyForecast: [HourWeather] = []
-    @Published var dailyForecast: [DayWeather] = []
-    @Published var isLoading = false
-    @Published var error: String?
+    var currentWeather: CurrentWeather?
+    var hourlyForecast: [HourWeather] = []
+    var dailyForecast: [DayWeather] = []
+    var isLoading = false
+    var error: String?
 
     private let service = WeatherService.shared
 

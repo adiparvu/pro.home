@@ -11,7 +11,7 @@ struct SearchView: View {
 
     @State private var query = ""
     @FocusState private var focused: Bool
-    @StateObject private var speech = SpeechRecognizer()
+    @State private var speech = SpeechRecognizer()
 
     private var results: SearchResults {
         guard query.count >= 2 else { return .empty }

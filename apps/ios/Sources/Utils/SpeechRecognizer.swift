@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 import Speech
 import AVFoundation
 
 @MainActor
-final class SpeechRecognizer: ObservableObject {
-    @Published var transcript = ""
-    @Published var isListening = false
+@Observable
+final class SpeechRecognizer {
+    var transcript = ""
+    var isListening = false
 
     private var recognizer: SFSpeechRecognizer?
     private var recognitionTask: SFSpeechRecognitionTask?
