@@ -21,6 +21,7 @@ struct ElementObjectsSection: View {
                     Button { showLink = true } label: {
                         Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Link object")
                 }
 
                 if linked.isEmpty {

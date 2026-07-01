@@ -106,6 +106,7 @@ struct ZonesListView: View {
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Open Digital Twin")
                 }
             }
         }

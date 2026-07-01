@@ -23,6 +23,7 @@ struct ElementAutomationsSection: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add automation")
                 }
 
                 if items.isEmpty {

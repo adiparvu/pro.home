@@ -32,6 +32,7 @@ struct ElementNotesSection: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add note")
                 }
 
                 if notes.isEmpty {

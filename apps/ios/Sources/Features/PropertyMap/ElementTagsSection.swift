@@ -27,6 +27,7 @@ struct ElementTagsSection: View {
                                             Image(systemName: "xmark.circle.fill").font(.system(size: 12))
                                         }
                                         .buttonStyle(.plain)
+                                        .accessibilityLabel("Remove tag \(tag)")
                                     }
                                     .foregroundStyle(Color.accentColor)
                                     .padding(.horizontal, 10).padding(.vertical, 6)
@@ -49,6 +50,7 @@ struct ElementTagsSection: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(newTag.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Add tag")
                     }
                 }
             }

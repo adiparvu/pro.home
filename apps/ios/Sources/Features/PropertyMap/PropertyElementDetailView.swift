@@ -94,6 +94,7 @@ struct PropertyElementDetailView: View {
                             .foregroundStyle(.secondary)
                             .font(.system(size: 22))
                     }
+                    .accessibilityLabel("Close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
