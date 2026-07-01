@@ -155,7 +155,7 @@ struct BuriedUtilityDetailSheet: View {
 struct AddBuriedUtilitySheet: View {
     let onSave: (BuriedUtility, Data?) -> Void
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var locMgr = LocationManager()
+    @State private var locMgr = LocationManager()
 
     @State private var name = ""
     @State private var type = "electrical"

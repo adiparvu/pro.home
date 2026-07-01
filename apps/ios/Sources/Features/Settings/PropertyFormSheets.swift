@@ -1,12 +1,14 @@
 import SwiftUI
+import Observation
 import MapKit
 import CoreLocation
 
 // MARK: - Address Autocomplete
 
 @MainActor
-final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate, @unchecked Sendable {
-    @Published var suggestions: [MKLocalSearchCompletion] = []
+@Observable
+final class AddressCompleter: NSObject, MKLocalSearchCompleterDelegate, @unchecked Sendable {
+    var suggestions: [MKLocalSearchCompletion] = []
     private let completer = MKLocalSearchCompleter()
 
     // Bounding boxes for supported countries
@@ -116,7 +118,7 @@ struct AddressAutocompleteField: View {
     @Binding var longitude: Double?
     var onPicked: () -> Void = {}
 
-    @StateObject private var completer = AddressCompleter()
+    @State private var completer = AddressCompleter()
     @State private var showSuggestions = false
     @State private var isApplying = false
     @FocusState private var focused: Bool

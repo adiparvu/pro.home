@@ -1,13 +1,15 @@
 import SwiftUI
+import Observation
 import AVFoundation
 import CoreMedia
 
 // MARK: - Audio Recorder
 
 @MainActor
-final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
-    @Published var isRecording = false
-    @Published var duration: TimeInterval = 0
+@Observable
+final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
+    var isRecording = false
+    var duration: TimeInterval = 0
 
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
@@ -103,7 +105,7 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
 // MARK: - Hold-to-record button
 
 struct VoiceRecordButton: View {
-    @ObservedObject var recorder: ChatAudioRecorder
+    var recorder: ChatAudioRecorder
     let onSend: (URL) -> Void
 
     @State private var cancelled = false
@@ -177,7 +179,7 @@ struct AudioBubble: View {
 
     enum AudioTick { case none, sent, delivered, read }
 
-    @StateObject private var player = AudioPlayer()
+    @State private var player = AudioPlayer()
     @State private var loadedDuration: TimeInterval = 0
     /// Signed URL resolved from `audioValue` (nil while resolving).
     @State private var url: URL?
@@ -400,11 +402,12 @@ private struct VoiceWaveform: View {
 // Storage (HTTPS), so AVPlayer is required here.
 
 @MainActor
-final class AudioPlayer: ObservableObject {
-    @Published var isPlaying = false
-    @Published var progress: Double = 0
-    @Published var position: TimeInterval = 0
-    @Published var rate: Float = 1.0
+@Observable
+final class AudioPlayer {
+    var isPlaying = false
+    var progress: Double = 0
+    var position: TimeInterval = 0
+    var rate: Float = 1.0
     var totalDuration: TimeInterval = 0
 
     private var player: AVPlayer?

@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import CoreLocation
 import Supabase
 
@@ -36,12 +37,13 @@ struct LiveLocation: Identifiable, Codable, Hashable {
 // updates additionally require the "Always" location permission.
 
 @MainActor
-final class LiveLocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
+@Observable
+final class LiveLocationService: NSObject, CLLocationManagerDelegate {
     static let shared = LiveLocationService()
 
-    @Published var active: [LiveLocation] = []
-    @Published var isSharing = false
-    @Published private(set) var sharingExpiresAt: Date?
+    var active: [LiveLocation] = []
+    var isSharing = false
+    private(set) var sharingExpiresAt: Date?
 
     private let mgr = CLLocationManager()
     private var propertyId: UUID?

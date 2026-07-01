@@ -154,7 +154,7 @@ struct ItemLocationSheet: View {
     let item: InventoryItem
     let onSave: (InventoryItem) -> Void
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var locMgr = LocationManager()
+    @State private var locMgr = LocationManager()
 
     @State private var latText: String
     @State private var lonText: String

@@ -48,7 +48,7 @@ struct DirectMessageView: View {
     @FocusState private var focused: Bool
     @State private var isSending = false
     @State private var lastTypingSent = Date.distantPast
-    @StateObject private var audioRecorder = ChatAudioRecorder()
+    @State private var audioRecorder = ChatAudioRecorder()
     @State private var outbox = OfflineOutbox(filename: "chat_outbox_dm.json")
     @State private var recordingCancelled = false
     @State private var blockRefresh = false

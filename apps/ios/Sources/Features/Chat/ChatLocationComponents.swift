@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import MapKit
 import CoreLocation
 
@@ -92,8 +93,9 @@ struct LocationBubble: View {
 
 // MARK: - Address search (live suggestions as you type)
 
-final class AddressSearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
-    @Published var results: [MKLocalSearchCompletion] = []
+@Observable
+final class AddressSearchCompleter: NSObject, MKLocalSearchCompleterDelegate {
+    var results: [MKLocalSearchCompletion] = []
     private let completer = MKLocalSearchCompleter()
 
     override init() {
@@ -123,8 +125,9 @@ final class AddressSearchCompleter: NSObject, ObservableObject, MKLocalSearchCom
 // MARK: - Nearby places (no query needed — points of interest around a coordinate)
 
 @MainActor
-final class NearbyPlacesFinder: ObservableObject {
-    @Published var places: [MKMapItem] = []
+@Observable
+final class NearbyPlacesFinder {
+    var places: [MKMapItem] = []
 
     func search(around coordinate: CLLocationCoordinate2D) {
         let request = MKLocalPointsOfInterestRequest(center: coordinate, radius: 800)
@@ -146,10 +149,10 @@ struct LocationShareSheet: View {
     var myName: String = ""
     let onShare: (Double, Double) -> Void
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var locMgr = LocationManager()
-    @ObservedObject private var live = LiveLocationService.shared
-    @StateObject private var completer = AddressSearchCompleter()
-    @StateObject private var nearby = NearbyPlacesFinder()
+    @State private var locMgr = LocationManager()
+    private let live = LiveLocationService.shared
+    @State private var completer = AddressSearchCompleter()
+    @State private var nearby = NearbyPlacesFinder()
 
     @State private var searchText = ""
     /// A place picked from search or the nearby list; nil = share current location.
@@ -405,9 +408,10 @@ struct MentionPickerSheet: View {
 
 // MARK: - Location Manager
 
-final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var location: CLLocation?
-    @Published var denied = false
+@Observable
+final class LocationManager: NSObject, CLLocationManagerDelegate {
+    var location: CLLocation?
+    var denied = false
     /// Fires once a location arrives. CLLocation isn't Equatable, so callers
     /// that need to react to updates (e.g. nearby-places search) hook this
     /// instead of using SwiftUI's onChange(of:).
