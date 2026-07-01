@@ -9,7 +9,7 @@ import Supabase
 struct ElementNotesSection: View {
     let element: PropertyElement
 
-    @StateObject private var noteService = ElementNoteService()
+    @State private var noteService = ElementNoteService()
     private let lock = NoteLockManager.shared
 
     @State private var editorNote: ElementNote?      // existing note being edited
@@ -50,11 +50,11 @@ struct ElementNotesSection: View {
         .task { await noteService.load(elementId: element.id) }
         .sheet(isPresented: $showNewEditor) {
             ElementNoteEditorSheet(element: element, existing: nil)
-                .environmentObject(noteService)
+                .environment(noteService)
         }
         .sheet(item: $editorNote) { note in
             ElementNoteEditorSheet(element: element, existing: note)
-                .environmentObject(noteService)
+                .environment(noteService)
         }
         .sheet(isPresented: $showPINSheet) {
             NotePINSheet(mode: pinPurpose == .setup ? .setup : .enter) {
@@ -154,7 +154,7 @@ struct ElementNoteEditorSheet: View {
     let element: PropertyElement
     let existing: ElementNote?
 
-    @EnvironmentObject private var noteService: ElementNoteService
+    @Environment(ElementNoteService.self) private var noteService
     private let lock = NoteLockManager.shared
     @Environment(\.dismiss) private var dismiss
 
