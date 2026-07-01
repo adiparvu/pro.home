@@ -64,6 +64,8 @@ struct ChatActionOverlay: View {
                         .background(myReaction == e ? Color.accentColor.opacity(0.18) : Color.clear, in: Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("React with \(e)")
+                .accessibilityAddTraits(myReaction == e ? [.isButton, .isSelected] : .isButton)
             }
             Button {
                 HapticFeedback.impact(.light); showEmojiPicker = true
@@ -75,6 +77,7 @@ struct ChatActionOverlay: View {
                     .background(Color.primary.opacity(0.08), in: Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("More reactions")
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(.regularMaterial, in: Capsule())

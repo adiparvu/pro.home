@@ -18,6 +18,7 @@ struct VideoPlayerSheet: View {
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(16)
             }
+            .accessibilityLabel("Close")
         }
     }
 }
@@ -82,6 +83,7 @@ struct FullScreenImageViewer: View {
                             .padding(12)
                             .background(.ultraThinMaterial, in: Circle())
                     }
+                    .accessibilityLabel("Close")
                     .padding(.trailing, 18)
                     .padding(.top, 8)
                 }

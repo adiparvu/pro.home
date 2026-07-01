@@ -454,6 +454,7 @@ struct ChatView: View {
                                     .foregroundStyle(Color.primary.opacity(0.4))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Clear search")
                         }
                     }
                     .padding(.horizontal, 14)
@@ -494,6 +495,7 @@ struct ChatView: View {
                                     .frame(width: 26, height: 26)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Unpin message")
                         }
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .liquidGlass(cornerRadius: 14)
@@ -668,6 +670,7 @@ struct ChatView: View {
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.bottom, chatBottomInset + 8)
                     .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel("Jump to latest message")
                 }
             }
             } // end ScrollViewReader
@@ -697,6 +700,7 @@ struct ChatView: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
                     }.buttonStyle(.plain)
+                    .accessibilityLabel("Cancel edit")
                 }
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 .background(Color.primary.opacity(0.05))
@@ -714,6 +718,7 @@ struct ChatView: View {
                     Button { withAnimation { self.replyingTo = nil } } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundStyle(Color.primary.opacity(0.4))
                     }.buttonStyle(.plain)
+                    .accessibilityLabel("Cancel reply")
                 }
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(Color.primary.opacity(0.05))
@@ -732,6 +737,7 @@ struct ChatView: View {
                                 } label: {
                                     Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(0.5))
                                 }
+                                .accessibilityLabel("Remove mention of \(name)")
                             }
                             .padding(.horizontal, 8).padding(.vertical, 4)
                             .background(.blue.opacity(0.15), in: Capsule())
@@ -755,6 +761,7 @@ struct ChatView: View {
                             .background(Circle().fill(Color.primary.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Cancel recording")
 
                     HStack(spacing: 8) {
                         Circle()
@@ -818,6 +825,7 @@ struct ChatView: View {
                                 .frame(width: 30, height: 30)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Add attachment")
 
                         Button {
                             focused = false
@@ -830,6 +838,7 @@ struct ChatView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.leading, 2)
+                        .accessibilityLabel("Stickers")
 
                         Spacer()
 
@@ -852,6 +861,7 @@ struct ChatView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityLabel("Confirm edit")
                         } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             // Mic button — hold to record
                             ZStack {
@@ -868,6 +878,9 @@ struct ChatView: View {
                                 audioRecorder.start()
                                 HapticFeedback.impact(.medium)
                             }
+                            .accessibilityLabel("Record voice message")
+                            .accessibilityHint("Double-tap and hold to record")
+                            .accessibilityAddTraits(.isButton)
                         } else {
                             // Send button
                             Button {
@@ -891,6 +904,7 @@ struct ChatView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(isSending)
+                            .accessibilityLabel("Send")
                         }
                     }
                 }

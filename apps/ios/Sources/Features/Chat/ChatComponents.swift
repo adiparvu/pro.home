@@ -246,6 +246,7 @@ struct MessageBubble: View {
         }
         .buttonStyle(.plain)
         .glassCircle()
+        .accessibilityLabel("Forward")
     }
     private var linkURL: URL? {
         guard !isDeleted, message.attachmentType == nil, let body = message.body else { return nil }

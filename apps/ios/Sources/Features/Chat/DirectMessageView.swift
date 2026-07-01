@@ -332,6 +332,7 @@ struct DirectMessageView: View {
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
@@ -1176,6 +1177,7 @@ private struct DMBubble: View {
         }
         .buttonStyle(.plain)
         .glassCircle()
+        .accessibilityLabel("Forward")
     }
 
     private enum DMMessageType { case text, image, audio, deleted }

@@ -74,6 +74,12 @@ struct LocationBubble: View {
                 .padding(8)
         }
         .onTapGesture { showAppChooser = true }
+        // Collapse the map + badge into one VoiceOver stop — otherwise it exposes
+        // MapKit's own complex accessibility tree, which reads poorly here.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label.isEmpty ? Text("Shared location") : Text(label))
+        .accessibilityHint("Choose a navigation app to get directions")
+        .accessibilityAddTraits(.isButton)
         .confirmationDialog("Alege aplicația", isPresented: $showAppChooser, titleVisibility: .visible) {
             ForEach(NavigationAppLauncher.availableOptions()) { opt in
                 Button(opt.label) {
@@ -204,9 +210,11 @@ struct LocationShareSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark").foregroundStyle(Color.primary.opacity(0.7)) }
+                        .accessibilityLabel("Cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { locMgr.requestLocation() } label: { Image(systemName: "arrow.clockwise") }
+                        .accessibilityLabel("Refresh location")
                 }
             }
         }
@@ -234,6 +242,7 @@ struct LocationShareSheet: View {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

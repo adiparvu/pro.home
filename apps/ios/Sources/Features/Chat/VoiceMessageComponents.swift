@@ -266,6 +266,7 @@ struct AudioBubble: View {
         }
         .buttonStyle(.plain)
         .disabled(url == nil)
+        .accessibilityLabel(player.isPlaying ? "Pause" : "Play voice message")
     }
 
     // Waveform with a draggable scrubber dot.

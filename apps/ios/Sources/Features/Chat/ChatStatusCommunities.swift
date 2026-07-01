@@ -95,6 +95,7 @@ struct StatusView: View {
                             .background(Color.accentColor.opacity(0.12), in: Circle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Add status")
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
@@ -159,10 +160,15 @@ struct StoryViewer: View {
             }
 
             // Tap zones (below the controls so the X / Seen-by buttons stay tappable):
-            // left = previous, right = next.
+            // left = previous, right = next. Invisible zones need explicit
+            // accessibility traits/labels — VoiceOver has nothing else to read here.
             HStack(spacing: 0) {
                 Color.clear.contentShape(Rectangle()).onTapGesture { prev() }
+                    .accessibilityLabel("Previous story")
+                    .accessibilityAddTraits(.isButton)
                 Color.clear.contentShape(Rectangle()).onTapGesture { next() }
+                    .accessibilityLabel("Next story")
+                    .accessibilityAddTraits(.isButton)
             }
 
             VStack {
@@ -182,6 +188,7 @@ struct StoryViewer: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
                     }
+                    .accessibilityLabel("Close")
                 }
                 .padding(.horizontal, 16).padding(.top, 8)
 
@@ -396,6 +403,7 @@ private struct GroupChatView: View {
                             .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                             .padding(.bottom, 8)
                             .transition(.scale.combined(with: .opacity))
+                            .accessibilityLabel("Jump to latest message")
                         }
                     }
                 }
@@ -410,6 +418,7 @@ private struct GroupChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showSettings = true } label: { Image(systemName: "gearshape.fill") }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Group settings")
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -442,6 +451,7 @@ private struct GroupChatView: View {
             }
             .buttonStyle(.plain)
             .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
+            .accessibilityLabel("Send")
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
     }
@@ -550,6 +560,7 @@ private struct GroupSettingsSheet: View {
                                             .foregroundStyle(.red.opacity(0.85))
                                     }
                                     .buttonStyle(.plain)
+                                    .accessibilityLabel("Remove \(m.memberName)")
                                 }
                             }
                             .padding(.horizontal, 16).padding(.vertical, 8)

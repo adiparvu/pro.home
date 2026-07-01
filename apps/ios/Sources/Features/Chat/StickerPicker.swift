@@ -70,6 +70,7 @@ struct StickerPicker: View {
                     .symbolRenderingMode(.hierarchical)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close")
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 8)

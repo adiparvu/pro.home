@@ -91,6 +91,7 @@ struct EditTextSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") { onSave(text.trimmingCharacters(in: .whitespacesAndNewlines)); dismiss() }
@@ -125,9 +126,11 @@ struct GroupDescriptionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Close")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { onEdit() } label: { Image(systemName: "pencil") }
+                        .accessibilityLabel("Edit description")
                 }
             }
         }
@@ -1041,6 +1044,7 @@ struct EditGroupDetailsSheet: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
+                            .accessibilityLabel("Clear name")
                         }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 14)
@@ -1056,6 +1060,7 @@ struct EditGroupDetailsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel("Cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
