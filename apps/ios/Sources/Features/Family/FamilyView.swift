@@ -52,6 +52,7 @@ struct FamilyView: View {
                         .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add member")
             }
         }
         .task { await familyService.load() }
@@ -145,6 +146,7 @@ struct FamilyMemberRow: View {
                 .frame(width: 34, height: 34)
         }
         .glassCircle()
+        .accessibilityLabel(icon == "phone.fill" ? "Call member" : "Email member")
     }
 }
 

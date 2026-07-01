@@ -58,6 +58,7 @@ struct TenantManagementView: View {
                         .font(.system(size: 19, weight: .medium))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add tenant")
             }
         }
         .task { await familyService.load() }
@@ -208,6 +209,11 @@ struct TenantManagementView: View {
                 .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(
+            icon == "phone.fill" ? "Call tenant"
+            : icon == "message.fill" ? "Send SMS"
+            : "Email tenant"
+        )
     }
 
     private func memberSinceLabel(_ tenant: FamilyMember) -> String {

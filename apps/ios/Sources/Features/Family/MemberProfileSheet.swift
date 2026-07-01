@@ -164,6 +164,7 @@ struct MemberProfileSheet: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(link.platformLabel) profile")
                 }
             }
         }
