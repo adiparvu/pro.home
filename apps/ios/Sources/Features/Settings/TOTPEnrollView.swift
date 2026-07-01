@@ -95,6 +95,7 @@ struct TOTPEnrollView: View {
                     Image(systemName: "doc.on.doc").foregroundStyle(.tint)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Copy secret code")
             }
             .padding(14)
             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))

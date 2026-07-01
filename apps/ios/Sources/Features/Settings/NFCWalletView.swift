@@ -162,6 +162,7 @@ struct NFCWalletView: View {
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Rescan tag")
 
                 Button(role: .destructive) {
                     HapticFeedback.warning()

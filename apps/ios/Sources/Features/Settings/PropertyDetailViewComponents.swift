@@ -90,6 +90,7 @@ extension PropertyDetailView {
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Change photo")
                 }
             }
             .padding(16)

@@ -144,6 +144,7 @@ struct AddressAutocompleteField: View {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.3))
                         }.buttonStyle(.plain)
+                        .accessibilityLabel("Clear address")
                     }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 13)
@@ -386,6 +387,7 @@ struct AddPropertySheet: View {
                 Button { applyManualCoords() } label: {
                     Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
                 }.buttonStyle(.plain)
+                .accessibilityLabel("Apply coordinates")
             }
         }
     }

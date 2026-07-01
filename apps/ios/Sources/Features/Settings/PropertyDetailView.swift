@@ -32,6 +32,7 @@ struct PropertyDetailView: View {
                     Image(systemName: "pencil")
                         .font(.system(size: 15, weight: .semibold))
                 }
+                .accessibilityLabel("Edit property")
             }
         }
         .sheet(isPresented: $showEdit) {

@@ -38,6 +38,7 @@ struct PropertySettingsView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
                 }
+                .accessibilityLabel("Add property")
             }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }

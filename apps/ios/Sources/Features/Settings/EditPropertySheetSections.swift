@@ -61,6 +61,7 @@ extension EditPropertySheet {
             Button { applyManualCoords() } label: {
                 Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
             }.buttonStyle(.plain)
+            .accessibilityLabel("Apply coordinates")
         }.padding(.top, 8)
     }
 
