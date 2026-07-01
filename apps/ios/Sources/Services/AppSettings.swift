@@ -130,7 +130,7 @@ final class AppSettings {
                     case locale, theme; case updatedAt = "updated_at"
                 }
             }
-            try? await supabase
+            _ = try? await supabase
                 .from("profiles")
                 .update(Prefs(locale: locale, theme: theme, updatedAt: ISO8601DateFormatter().string(from: Date())))
                 .eq("id", value: userId.uuidString)

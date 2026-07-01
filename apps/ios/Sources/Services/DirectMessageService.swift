@@ -156,7 +156,7 @@ final class DirectMessageService {
         guard !undelivered.isEmpty else { return }
         let nowISO = ISO8601DateFormatter().string(from: Date())
         for m in undelivered {
-            try? await supabase
+            _ = try? await supabase
                 .from("direct_messages")
                 .update(["delivered_at": nowISO])
                 .eq("id", value: m.id.uuidString)

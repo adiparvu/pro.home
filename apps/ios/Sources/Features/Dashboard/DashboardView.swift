@@ -306,7 +306,6 @@ struct DashboardView: View {
 
     private var propertyHealthCard: some View {
         let score = propertyService.primary?.healthScore ?? 87
-        let overdueTasks = taskService.overdueCount
         let tasksPct = taskService.tasks.isEmpty ? 0 :
             Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
         return PropertyHealthDashCard(

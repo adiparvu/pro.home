@@ -70,7 +70,7 @@ extension ChatView {
                 let sender_name: String; let recipient_name: String
                 let body: String; let property_id: String?
             }
-            try? await supabase.from("direct_messages").insert(
+            _ = try? await supabase.from("direct_messages").insert(
                 DMForward(sender_name: senderName, recipient_name: m.name,
                           body: message.body ?? "📎", property_id: pid.uuidString)
             ).execute()

@@ -49,7 +49,7 @@ final class BudgetService {
     private func persist(category: String, amount: Double) async {
         guard let propertyId = currentPropertyId else { return }
         if amount <= 0 {
-            try? await supabase
+            _ = try? await supabase
                 .from("property_budgets")
                 .delete()
                 .eq("property_id", value: propertyId.uuidString)
@@ -61,7 +61,7 @@ final class BudgetService {
                 let category: String
                 let amount: Double
             }
-            try? await supabase
+            _ = try? await supabase
                 .from("property_budgets")
                 .upsert(Payload(property_id: propertyId.uuidString, category: category, amount: amount),
                         onConflict: "property_id,category")

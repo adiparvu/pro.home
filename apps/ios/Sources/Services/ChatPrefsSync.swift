@@ -41,7 +41,7 @@ enum ChatPrefsSync {
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
                         pinned: pinned, muted: muted, archived: archived)
-        try? await supabase.from("chat_user_prefs")
+        _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
 
@@ -58,7 +58,7 @@ enum ChatPrefsSync {
         let p = Payload(user_id: uid.uuidString, conv_id: convId,
                         property_id: propertyId?.uuidString,
                         cleared_at: ISO8601DateFormatter().string(from: Date()))
-        try? await supabase.from("chat_user_prefs")
+        _ = try? await supabase.from("chat_user_prefs")
             .upsert(p, onConflict: "user_id,conv_id").execute()
     }
 }
@@ -84,12 +84,12 @@ enum ChatBlockSync {
         }
         let p = Payload(blocker_name: myName, blocked_name: name,
                         property_id: propertyId?.uuidString)
-        try? await supabase.from("chat_blocks")
+        _ = try? await supabase.from("chat_blocks")
             .upsert(p, onConflict: "blocker_name,blocked_name").execute()
     }
 
     static func unblock(name: String) async {
-        try? await supabase.from("chat_blocks")
+        _ = try? await supabase.from("chat_blocks")
             .delete().eq("blocked_name", value: name).execute()
     }
 }

@@ -93,8 +93,8 @@ final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
         // Capture both so we don't reference self in the async block. Timer and
         // AVAudioRecorder aren't Sendable; nonisolated(unsafe) is sound here
         // because deinit holds the last reference — no concurrent access exists.
-        nonisolated(unsafe) let t = timer
-        nonisolated(unsafe) let r = recorder
+        nonisolated(unsafe) let t = timer   // Timer isn't Sendable; recorder is
+        let r = recorder
         DispatchQueue.main.async { t?.invalidate(); r?.stop() }
     }
 

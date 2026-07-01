@@ -29,7 +29,7 @@ final class AuthService {
     }
 
     private func listenToAuthChanges() async {
-        for await (event, session) in await supabase.auth.authStateChanges {
+        for await (event, session) in supabase.auth.authStateChanges {
             switch event {
             case .initialSession, .signedIn, .userUpdated:
                 self.session = session
