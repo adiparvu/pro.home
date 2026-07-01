@@ -6,7 +6,7 @@ import VisionKit
 struct InventoryView: View {
     var autoScan: Bool = false
     var autoAdd: Bool = false
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) private var router
     @Environment(InventoryService.self) private var service
     @State private var filter: InvFilter = .all

@@ -120,7 +120,6 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
 // MARK: - Widget picker sheet
 
 struct WidgetPickerSheet: View {
-    @EnvironmentObject private var appSettings: AppSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var active: [HomeWidgetType] = HomeWidgetType.load()
@@ -184,7 +183,6 @@ struct WidgetPickerSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Gata") {
                         HomeWidgetType.save(active)
-                        appSettings.objectWillChange.send()
                         HapticFeedback.success()
                         dismiss()
                     }

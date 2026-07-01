@@ -7,7 +7,7 @@ struct ZonesListView: View {
     @Environment(PropertyElementService.self) var elementService
     @Environment(PropertyService.self) var propertyService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
     @Environment(AppRouter.self) var router
@@ -62,7 +62,7 @@ struct ZonesListView: View {
                                     .environment(elementService)
                                     .environment(taskService)
                                     .environment(currencyService)
-                                    .environmentObject(appSettings)
+                                    .environment(appSettings)
                                     .environment(documentService)
                                     .environment(router)
                                     .environment(zoneService)

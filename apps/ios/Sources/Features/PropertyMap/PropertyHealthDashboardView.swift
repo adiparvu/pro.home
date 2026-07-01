@@ -3,7 +3,7 @@ import SwiftUI
 struct PropertyHealthDashboardView: View {
     @Environment(PropertyElementService.self) private var elementService
     @Environment(CurrencyService.self) private var currencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 

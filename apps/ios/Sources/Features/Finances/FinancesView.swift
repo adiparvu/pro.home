@@ -7,7 +7,7 @@ struct FinancesView: View {
     @Environment(FinancialService.self) var financialService
     @Environment(BudgetService.self) var budgetService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(AppRouter.self) private var router
 

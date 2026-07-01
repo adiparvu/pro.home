@@ -12,7 +12,7 @@ struct DashboardView: View {
     @Environment(ProfileService.self) var profileService
     @Environment(DocumentService.self) var documentService
     @Environment(FamilyService.self) var familyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) var router
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PlantService.self) var plantService
@@ -122,7 +122,6 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()
-                .environmentObject(appSettings)
         }
         .sheet(isPresented: $showHealthDetail) {
             let score = propertyService.primary?.healthScore ?? 87

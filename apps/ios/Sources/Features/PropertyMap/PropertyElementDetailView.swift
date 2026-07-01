@@ -8,7 +8,7 @@ struct PropertyElementDetailView: View {
 
     @Environment(PropertyElementService.self) var elementService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
     @Environment(PropertyService.self) var propertyService

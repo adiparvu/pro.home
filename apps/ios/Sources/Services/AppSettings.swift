@@ -1,15 +1,45 @@
 import SwiftUI
+import Observation
 
 @MainActor
-final class AppSettings: ObservableObject {
-    @AppStorage("prvio.theme")              var theme:                 String = "dark"
-    @AppStorage("prvio.locale")             var locale:                String = "ro"
-    @AppStorage("prvio.followSystemLang")   var followSystemLanguage:  Bool   = false
-    @AppStorage("prvio.currency")           var preferredCurrency:     String = "EUR"
-    @AppStorage("prvio.accentColor")        var accentColor:           String = "blue"
-    @AppStorage("prvio.accentOn")           var accentEnabled:         Bool   = true
-    @AppStorage("prvio.hapticOn")           var hapticEnabled:         Bool   = true
-    @AppStorage("prvio.voiceInput")         var voiceInputEnabled:     Bool   = true
+@Observable
+final class AppSettings {
+    // Each setting is an observation-tracked stored property that persists to
+    // UserDefaults in its didSet. This replaces @AppStorage, which the
+    // @Observable macro can't wrap (it's already a computed wrapper) and which
+    // — inside a reference type — never drove SwiftUI updates anyway. Tracked
+    // properties give proper fine-grained observation: reading e.g. `theme`
+    // now establishes a dependency, so changes refresh consumers directly,
+    // with no manual objectWillChange broadcast.
+    var theme: String = UserDefaults.standard.string(forKey: "prvio.theme") ?? "dark" {
+        didSet { UserDefaults.standard.set(theme, forKey: "prvio.theme") }
+    }
+    var locale: String = UserDefaults.standard.string(forKey: "prvio.locale") ?? "ro" {
+        didSet { UserDefaults.standard.set(locale, forKey: "prvio.locale") }
+    }
+    var followSystemLanguage: Bool = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? false {
+        didSet { UserDefaults.standard.set(followSystemLanguage, forKey: "prvio.followSystemLang") }
+    }
+    var preferredCurrency: String = UserDefaults.standard.string(forKey: "prvio.currency") ?? "EUR" {
+        didSet { UserDefaults.standard.set(preferredCurrency, forKey: "prvio.currency") }
+    }
+    var accentColor: String = UserDefaults.standard.string(forKey: "prvio.accentColor") ?? "blue" {
+        didSet { UserDefaults.standard.set(accentColor, forKey: "prvio.accentColor") }
+    }
+    var accentEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.accentOn") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(accentEnabled, forKey: "prvio.accentOn") }
+    }
+    var hapticEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.hapticOn") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(hapticEnabled, forKey: "prvio.hapticOn") }
+    }
+    var voiceInputEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.voiceInput") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(voiceInputEnabled, forKey: "prvio.voiceInput") }
+    }
+
+    /// Bumped when the per-page floating-button config changes. Those live in
+    /// UserDefaults under dynamic keys (not observable stored properties), so
+    /// the speed-dial reads touch this to register a dependency and refresh.
+    private var fabRevision = 0
 
     init() {
         // Restore language on every launch so the bundle swizzle is always active.
@@ -44,18 +74,20 @@ final class AppSettings: ObservableObject {
     }
 
     func fabActions(_ host: FloatingButtonHost) -> [DashboardQuickAction] {
+        _ = fabRevision  // observe floating-button config changes
         let raw = UserDefaults.standard.string(forKey: actionsKey(host)) ?? host.defaultActionsRaw
         return raw.split(separator: ",").compactMap { DashboardQuickAction(rawValue: String($0)) }
     }
 
     func fabVisible(_ host: FloatingButtonHost) -> Bool {
+        _ = fabRevision  // observe floating-button config changes
         if UserDefaults.standard.object(forKey: visibleKey(host)) == nil { return host.defaultVisible }
         return UserDefaults.standard.bool(forKey: visibleKey(host))
     }
 
     func setFabVisible(_ host: FloatingButtonHost, _ on: Bool) {
-        // Direct UserDefaults writes don't auto-publish, so notify observers explicitly.
-        objectWillChange.send()
+        // Direct UserDefaults writes aren't observable, so bump the revision.
+        fabRevision &+= 1
         UserDefaults.standard.set(on, forKey: visibleKey(host))
     }
 
@@ -75,7 +107,7 @@ final class AppSettings: ObservableObject {
             .filter { current.contains($0) }
             .map(\.rawValue)
             .joined(separator: ",")
-        objectWillChange.send()
+        fabRevision &+= 1
         UserDefaults.standard.set(raw, forKey: actionsKey(host))
     }
 

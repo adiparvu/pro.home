@@ -7,7 +7,7 @@ struct PropertyValueView: View {
     @Environment(PropertyValueService.self) private var propertyValueService
     @Environment(PropertyService.self) private var propertyService
     @Environment(CurrencyService.self) private var currencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
 
     @State private var showAdd = false
 

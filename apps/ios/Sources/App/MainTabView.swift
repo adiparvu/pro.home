@@ -5,7 +5,7 @@ import WidgetKit
 
 struct MainTabView: View {
     @Environment(AuthService.self) private var auth
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @State private var taskService = TaskService()
     @State private var propertyService = PropertyService()
     @State private var profileService = ProfileService()
@@ -140,7 +140,7 @@ struct MainTabView: View {
                     .environment(propertyService)
                     .environment(budgetService)
                     .environment(currencyService)
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
                     .environment(tabBarVis)
             }
             .presentationDragIndicator(.visible)

@@ -116,7 +116,7 @@ extension View {
 private struct FloatingSpeedDialModifier: ViewModifier {
     let host: FloatingButtonHost
     var bottomPadding: CGFloat
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(AppRouter.self) private var router
 
     func body(content: Content) -> some View {

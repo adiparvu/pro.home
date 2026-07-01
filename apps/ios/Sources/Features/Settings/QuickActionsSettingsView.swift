@@ -3,7 +3,7 @@ import SwiftUI
 /// Lets the user customize the floating (speed-dial) button on each page:
 /// which quick actions appear, and whether the button shows at all.
 struct QuickActionsSettingsView: View {
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
         ScrollView(showsIndicators: false) {

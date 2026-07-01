@@ -4,7 +4,7 @@ struct PropertyMapView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyElementService.self) var elementService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showHealthDashboard = false
@@ -121,7 +121,7 @@ struct PropertyMapView: View {
             PropertyElementDetailView(element: element)
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
         }
         .sheet(isPresented: $showAddElement) {
             AddPropertyElementView(defaultPosition: addPosition) { payload in
@@ -133,7 +133,7 @@ struct PropertyMapView: View {
             PropertyHealthDashboardView()
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
         }
         .task {
             guard let pid = propertyService.primary?.id else { return }

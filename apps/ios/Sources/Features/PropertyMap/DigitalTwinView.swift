@@ -12,7 +12,7 @@ struct DigitalTwinView: View {
     @Environment(PropertyElementService.self) var elementService
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
 
@@ -176,7 +176,7 @@ struct DigitalTwinView: View {
             PropertyElementDetailView(element: element)
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
                 .environment(documentService)
                 .environment(taskService)
         }
@@ -195,13 +195,13 @@ struct DigitalTwinView: View {
                 .environment(zoneService)
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
         }
         .sheet(isPresented: $showHealth) {
             PropertyHealthDashboardView()
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
         }
         .sheet(item: $editZone) { zone in
             ZoneEditSheet(

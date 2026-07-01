@@ -12,7 +12,7 @@ struct ZoneBottomSheet: View {
 
     @Environment(PropertyElementService.self) private var elementService
     @Environment(CurrencyService.self) private var currencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(DocumentService.self) private var documentService
     @Environment(TaskService.self) private var taskService
     @State private var selectedObject: PropertyElement?
@@ -55,7 +55,7 @@ struct ZoneBottomSheet: View {
             PropertyElementDetailView(element: obj)
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
                 .environment(documentService)
                 .environment(taskService)
         }

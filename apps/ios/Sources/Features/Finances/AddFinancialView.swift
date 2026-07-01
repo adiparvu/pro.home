@@ -4,7 +4,7 @@ struct AddFinancialView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(PropertyService.self) private var propertyService
     @Environment(CurrencyService.self) private var currencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
 
     let onSaved: () async -> Void
 

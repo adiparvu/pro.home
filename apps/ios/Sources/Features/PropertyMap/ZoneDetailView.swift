@@ -53,7 +53,7 @@ struct ZoneDetailView: View {
     @Environment(PropertyElementService.self) var elementService
     @Environment(TaskService.self) var taskService
     @Environment(CurrencyService.self) var currencyService
-    @EnvironmentObject var appSettings: AppSettings
+    @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(AppRouter.self) var router
     @Environment(PropertyZoneService.self) var zoneService
@@ -522,7 +522,7 @@ struct ZoneDetailView: View {
             PropertyElementDetailView(element: element)
                 .environment(elementService)
                 .environment(currencyService)
-                .environmentObject(appSettings)
+                .environment(appSettings)
                 .environment(documentService)
                 .environment(taskService)
         }

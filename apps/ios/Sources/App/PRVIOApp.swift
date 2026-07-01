@@ -4,7 +4,7 @@ import SwiftUI
 struct PRVIOApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @State private var auth        = AuthService.shared
-    @StateObject private var appSettings = AppSettings()
+    @State private var appSettings = AppSettings()
     @State private var lock        = AppLockManager()
     @State private var router      = AppRouter()
     @State private var iconManager = IconManager()
@@ -22,7 +22,7 @@ struct PRVIOApp: App {
                         SplashView()
                     } else if auth.session != nil {
                         MainTabView()
-                            .environmentObject(appSettings)
+                            .environment(appSettings)
                             .environment(router)
                             .environment(iconManager)
                             .environment(\.appLanguage, appSettings.currentLanguage)

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LanguageSettingsView: View {
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
 
     // Incrementing this forces the entire content subtree to rebuild after a
     // language change, so all String(localized:) calls re-evaluate through the

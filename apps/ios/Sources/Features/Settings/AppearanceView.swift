@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AppearanceView: View {
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(CurrencyService.self) private var currencyService
     @Environment(AuthService.self) private var auth
 
@@ -197,7 +197,6 @@ struct AppearanceView: View {
                     Toggle("", isOn: Binding(
                         get: { appSettings.accentEnabled },
                         set: { newVal in
-                            appSettings.objectWillChange.send()
                             appSettings.accentEnabled = newVal
                             HapticFeedback.selection()
                             if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
@@ -262,7 +261,8 @@ struct AppearanceView: View {
     // MARK: - Haptic
 
     private var hapticSection: some View {
-        SettingsGroup(title: "General") {
+        @Bindable var appSettings = appSettings
+        return SettingsGroup(title: "General") {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
                 VStack(alignment: .leading, spacing: 2) {

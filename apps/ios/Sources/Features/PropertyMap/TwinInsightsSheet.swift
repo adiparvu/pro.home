@@ -7,7 +7,7 @@ struct TwinInsightsSheet: View {
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PropertyElementService.self) private var elementService
     @Environment(CurrencyService.self) private var currencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var aiReply: String?

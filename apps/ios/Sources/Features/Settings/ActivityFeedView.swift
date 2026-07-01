@@ -67,7 +67,7 @@ struct ActivityFeedView: View {
     @Environment(FinancialService.self) private var financialService
     @Environment(DocumentService.self) private var documentService
     @Environment(FamilyService.self) private var familyService
-    @EnvironmentObject private var appSettings:       AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(TaskService.self) private var taskService
     @Environment(PropertyElementService.self) private var elementService
     @Environment(ApplianceService.self) private var applianceService

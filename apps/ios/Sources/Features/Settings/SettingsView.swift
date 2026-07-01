@@ -7,7 +7,7 @@ struct SettingsView: View {
     @Environment(ProfileService.self) private var profileService
     @Environment(FinancialService.self) private var financialService
     @Environment(DocumentService.self) private var documentService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
     @Environment(NotificationScheduler.self) private var notificationScheduler
     @Environment(BudgetService.self) private var budgetService
     @Environment(FamilyService.self) private var familyService
@@ -278,7 +278,7 @@ struct SettingsView: View {
                     .environment(propertyValueService)
                     .environment(propertyService)
                     .environment(currencyService)
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
             }
             NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
                 GuestModeView()
@@ -332,20 +332,20 @@ struct SettingsView: View {
         SettingsGroup(title: "App") {
             NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
                 AppearanceView()
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
                     .environment(auth)
                     .environment(currencyService)
             }
             NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
                 LanguageSettingsView()
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
             }
             NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activity") {
                 ActivityFeedView()
                     .environment(financialService)
                     .environment(documentService)
                     .environment(familyService)
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
                     .environment(taskService)
                     .environment(applianceService)
                     .environment(plantService)
@@ -358,7 +358,7 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
                 QuickActionsSettingsView()
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
             }
             NavSettingsRow(icon: "mic.fill", color: Color(red: 0.55, green: 0.35, blue: 0.95), label: "Siri & Shortcuts") {
                 SiriShortcutsView()
