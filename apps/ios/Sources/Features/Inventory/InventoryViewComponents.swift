@@ -210,6 +210,7 @@ struct AddInventorySheet: View {
                                         .shadow(radius: 2)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Clear photo")
                                 .padding(10)
                             }
                             Spacer()
@@ -308,7 +309,9 @@ struct QRScannerSheet: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 30))
                             .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
-                    }.padding(20)
+                    }
+                    .accessibilityLabel("Close scanner")
+                    .padding(20)
                 }
                 Spacer()
                 Text("Point at an item's QR code")

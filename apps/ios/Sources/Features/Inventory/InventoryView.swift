@@ -114,10 +114,12 @@ struct InventoryView: View {
                         Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
                             .font(.system(size: 15, weight: .semibold)).frame(width: 38, height: 32)
                     }
+                    .accessibilityLabel("Filter inventory")
                     Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                         Image(systemName: "plus").font(.system(size: 15, weight: .semibold)).frame(width: 38, height: 32)
                     }.buttonStyle(.plain)
+                    .accessibilityLabel("Add item")
                 }
             }
         }
