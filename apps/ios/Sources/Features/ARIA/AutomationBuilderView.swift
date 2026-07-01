@@ -385,6 +385,7 @@ struct AutomationBuilderView: View {
                         .font(.system(size: 20))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add automation")
             }
         }
         .sheet(isPresented: $showAdd) {

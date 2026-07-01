@@ -150,6 +150,7 @@ struct LocalAssistantView: View {
                     .frame(width: 36, height: 36)
             }
             .glassCircle()
+            .accessibilityLabel("Reset conversation")
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)

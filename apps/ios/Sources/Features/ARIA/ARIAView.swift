@@ -58,6 +58,7 @@ struct ARIAView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Close")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 MemberAvatarStack(
@@ -75,6 +76,7 @@ struct ARIAView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Reset messages")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { ARIASettingsView() } label: {
@@ -82,6 +84,7 @@ struct ARIAView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Settings")
             }
         }
         .task { await loadHistory() }
@@ -142,6 +145,7 @@ struct ARIAView: View {
                             .frame(width: 40, height: 40)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Jump to latest")
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.bottom, 10)
@@ -222,6 +226,7 @@ struct ARIAView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(speech.isListening ? "Stop voice input" : "Voice input")
 
                         // Waveform / equalizer button
                         Button {
@@ -237,6 +242,7 @@ struct ARIAView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Audio mode")
 
                         // Cloud / AI mode button
                         Button {
@@ -252,6 +258,7 @@ struct ARIAView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Cloud mode")
                     }
 
                     Spacer()
