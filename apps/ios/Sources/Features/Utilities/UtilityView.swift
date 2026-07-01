@@ -221,6 +221,7 @@ struct UtilityView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add utility bill")
             }
         }
         .sheet(isPresented: $showAdd) {
