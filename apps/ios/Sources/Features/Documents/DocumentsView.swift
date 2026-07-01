@@ -95,6 +95,7 @@ struct DocumentsView: View {
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Add document")
                 }
             }
         }
@@ -194,6 +195,7 @@ struct DocumentsView: View {
                 Button { search = "" } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
                 }
+                .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -225,6 +227,7 @@ struct DocumentsView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.primary)
         }
+        .accessibilityLabel("Filter documents")
     }
 
     private func categoryIcon(for cat: String) -> String {
