@@ -50,6 +50,7 @@ struct AppliancesView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add appliance")
             }
         }
         .sheet(isPresented: $showAdd) {
