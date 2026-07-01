@@ -36,6 +36,7 @@ struct PhotoJournalView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add photo")
             }
         }
         .sheet(isPresented: $showAdd) {
