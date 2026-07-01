@@ -3,9 +3,7 @@ import SwiftUI
 // MARK: - Shared bits
 
 private func detailDateTime(_ iso: String) -> String {
-    let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-    let d = f1.date(from: iso) ?? f2.date(from: iso) ?? Date()
+    let d = ISODate.date(from: iso) ?? Date()
     let out = DateFormatter(); out.dateFormat = "dd.MM.yyyy HH:mm"; out.locale = .current
     return out.string(from: d)
 }

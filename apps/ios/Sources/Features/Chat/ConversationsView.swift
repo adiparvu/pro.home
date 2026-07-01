@@ -702,11 +702,7 @@ struct ConversationsView: View {
         }
     }
 
-    private func parseISODate(_ s: String) -> Date? {
-        let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        return f1.date(from: s) ?? f2.date(from: s)
-    }
+    private func parseISODate(_ s: String) -> Date? { ISODate.date(from: s) }
 }
 
 // MARK: - Destructive conversation dialogs (kept off the main body chain)

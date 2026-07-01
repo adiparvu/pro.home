@@ -32,11 +32,7 @@ struct ChatEvent: Codable {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
         return String(data: data, encoding: .utf8)
     }
-    var parsedDate: Date? {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        return f.date(from: date) ?? f2.date(from: date)
-    }
+    var parsedDate: Date? { ISODate.date(from: date) }
     var dateDisplay: String {
         guard let d = parsedDate else { return date }
         let out = DateFormatter(); out.dateFormat = "EEE, d MMM • HH:mm"; out.locale = .current

@@ -176,9 +176,7 @@ struct ChatDateSeparator: View {
     let dateStr: String
 
     private var label: String {
-        let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        let d  = f.date(from: dateStr) ?? f2.date(from: dateStr) ?? Date()
+        let d = ISODate.date(from: dateStr) ?? Date()
         let cal = Calendar.current
         if cal.isDateInToday(d)     { return String(localized: "Today") }
         if cal.isDateInYesterday(d) { return String(localized: "Yesterday") }

@@ -24,10 +24,7 @@ struct StatusUpdate: Identifiable, Codable, Hashable {
         case expiresAt  = "expires_at"
     }
 
-    var date: Date? {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: createdAt) ?? ISO8601DateFormatter().date(from: createdAt)
-    }
+    var date: Date? { ISODate.date(from: createdAt) }
 }
 
 /// One author's active statuses, grouped for the list/ring UI.

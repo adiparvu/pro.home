@@ -40,22 +40,12 @@ struct Message: Identifiable, Codable {
     }
 
     var timeDisplay: String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        let d = f.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
-        let out = DateFormatter()
+        let d = ISODate.date(from: createdAt) ?? Date()
         // Only the time, like WhatsApp — the date is shown by the day separators.
-        out.dateFormat = "HH:mm"
-        return out.string(from: d)
+        return ISODate.timeOnly.string(from: d)
     }
 
-    var date: Date? {
-        let f  = ISO8601DateFormatter(); f.formatOptions  = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        return f.date(from: createdAt) ?? f2.date(from: createdAt)
-    }
+    var date: Date? { ISODate.date(from: createdAt) }
 
     var isLocationMessage: Bool { attachmentType == "location" }
     var isImageMessage: Bool    { attachmentType == "image" }
@@ -123,11 +113,7 @@ struct MessageRead: Identifiable, Codable, Hashable {
     }
 
     var readTimeDisplay: String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        let d = f.date(from: readAt) ?? f2.date(from: readAt) ?? Date()
+        let d = ISODate.date(from: readAt) ?? Date()
         let out = DateFormatter()
         out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
         return out.string(from: d)

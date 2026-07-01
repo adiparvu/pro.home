@@ -73,10 +73,8 @@ struct ChatView: View {
     private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none")" }
 
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
-        let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        let dA = f.date(from: a.createdAt) ?? f2.date(from: a.createdAt) ?? Date()
-        let dB = f.date(from: b.createdAt) ?? f2.date(from: b.createdAt) ?? Date()
+        let dA = a.date ?? Date()
+        let dB = b.date ?? Date()
         return Calendar.current.isDate(dA, inSameDayAs: dB)
     }
 

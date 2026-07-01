@@ -42,19 +42,11 @@ struct DirectMessage: Identifiable, Codable {
     }
 
     var timeDisplay: String {
-        let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        let d = f1.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
-        let out = DateFormatter()
-        out.dateFormat = "HH:mm"
-        return out.string(from: d)
+        let d = ISODate.date(from: createdAt) ?? Date()
+        return ISODate.timeOnly.string(from: d)
     }
 
-    var date: Date? {
-        let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        return f1.date(from: createdAt) ?? f2.date(from: createdAt)
-    }
+    var date: Date? { ISODate.date(from: createdAt) }
 }
 
 // MARK: - DirectMessageService
