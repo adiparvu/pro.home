@@ -79,6 +79,25 @@ supported devices, low memory/CPU/GPU usage, and minimal battery consumption.
 - Sheets, popovers, transitions, keyboard presentation, gestures, and
   scrolling must never stutter; navigation should feel instantaneous.
 
+### Design system tokens
+
+`Components/DesignSystem.swift` defines the app's typography (`AppFont`),
+color-opacity tiers (`AppOpacity`, plus `Color.hairline`/`.subtleFill`/
+`.secondaryTextColor`), brand accent colors (`Color.brandSuccess`,
+`.brandPrimaryBlue`, `.brandPurple`, `.brandWarning`), spacing (`AppSpacing`),
+and corner radius (`AppRadius`) scales. These codify the de facto values
+already used hundreds of times across the app into one source of truth.
+
+- All new SwiftUI code must use these tokens instead of hand-picking
+  `.font(.system(size:...))`, `Color.primary.opacity(...)`,
+  `Color(red:green:blue:)`, `.padding(...)`, or `cornerRadius:` literals.
+- Any file touched for other reasons should have its literals migrated to
+  the matching token as part of that change, when it doesn't expand the
+  scope of the task unreasonably.
+- If a design need doesn't fit an existing token, add a new token to
+  `DesignSystem.swift` rather than hardcoding a one-off value — the system
+  should grow deliberately, not get bypassed.
+
 ### Profiling mindset — before calling anything done
 
 Look for bottlenecks; remove unnecessary work; reduce allocations, layout
