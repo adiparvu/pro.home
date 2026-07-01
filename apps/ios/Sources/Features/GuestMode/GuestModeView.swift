@@ -77,6 +77,7 @@ struct GuestModeView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Share guest info")
             }
         }
     }

@@ -51,6 +51,7 @@ struct SeasonalChecklistView: View {
                         .font(.system(size: 17, weight: .semibold))
                 }
                 .tint(.accentColor)
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddSheet) {

@@ -102,11 +102,13 @@ struct SearchView: View {
                         .foregroundStyle(.red)
                         .symbolEffect(.pulse)
                 }
+                .accessibilityLabel("Stop listening")
             } else if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
+                .accessibilityLabel("Clear search")
             } else {
                 Button {
                     focused = false
@@ -116,6 +118,7 @@ struct SearchView: View {
                         .font(.system(size: 22))
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
+                .accessibilityLabel("Voice search")
             }
         }
         .padding(.horizontal, 14)

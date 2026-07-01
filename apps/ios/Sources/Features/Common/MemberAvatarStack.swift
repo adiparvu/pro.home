@@ -50,6 +50,7 @@ struct MemberAvatarStack: View {
                    height: size)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Family members")
     }
 
     private func avatarCircle(_ item: Item) -> some View {
@@ -118,6 +119,7 @@ struct GroupHeaderAvatar: View {
             .overlay(Circle().strokeBorder(.black.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Group info")
     }
 
     @ViewBuilder private var montage: some View {
