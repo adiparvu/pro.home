@@ -14,13 +14,13 @@ private struct ChatBottomKey: PreferenceKey {
 }
 
 struct ChatView: View {
-    @EnvironmentObject var messageService: MessageService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(MessageService.self) var messageService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var stickerService: StickerService
-    @EnvironmentObject private var router: AppRouter
+    @Environment(ProfileService.self) private var profileService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(StickerService.self) private var stickerService
+    @Environment(AppRouter.self) private var router
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State private var searchText = ""
@@ -319,7 +319,7 @@ struct ChatView: View {
             StickerPicker { sticker in
                 Task { await sendSticker(sticker) }
             }
-            .environmentObject(stickerService)
+            .environment(stickerService)
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)
         }
@@ -352,7 +352,7 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .sheet(isPresented: $showAttachmentSheet) {
             ChatAttachmentSheet(

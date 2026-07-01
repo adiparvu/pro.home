@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class PaintColorService: ObservableObject {
-    @Published var colors: [PaintColor] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PaintColorService {
+    var colors: [PaintColor] = []
+    var isLoading = false
+    var error: String?
 
     var byRoom: [String: [PaintColor]] {
         Dictionary(grouping: colors, by: { $0.roomName })

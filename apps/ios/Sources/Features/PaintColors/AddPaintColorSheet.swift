@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AddPaintColorSheet: View {
-    @EnvironmentObject private var paintColorService: PaintColorService
+    @Environment(PaintColorService.self) private var paintColorService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

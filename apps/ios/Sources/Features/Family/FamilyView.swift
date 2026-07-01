@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Main view
 
 struct FamilyView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var propertyService: PropertyService
     @State private var showAdd = false
     @State private var selectedMember: FamilyMember?
@@ -184,7 +184,7 @@ struct MemberAvatar: View {
 // MARK: - Member picker (shared for tasks/chat)
 
 struct MemberPickerView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Binding var selectedIds: [String]
     @Binding var selectedNames: [String]
 

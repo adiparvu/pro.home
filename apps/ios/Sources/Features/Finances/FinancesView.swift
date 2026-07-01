@@ -4,12 +4,12 @@ import Charts
 // MARK: - Main View
 
 struct FinancesView: View {
-    @EnvironmentObject var financialService: FinancialService
-    @EnvironmentObject var budgetService: BudgetService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(FinancialService.self) var financialService
+    @Environment(BudgetService.self) var budgetService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var router: AppRouter
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddSheet    = false
     @State private var selectedType: String? = nil

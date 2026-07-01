@@ -117,7 +117,7 @@ private struct FloatingSpeedDialModifier: ViewModifier {
     let host: FloatingButtonHost
     var bottomPadding: CGFloat
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var router: AppRouter
+    @Environment(AppRouter.self) private var router
 
     func body(content: Content) -> some View {
         content.overlay(alignment: .bottomTrailing) {

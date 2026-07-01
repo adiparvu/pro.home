@@ -2,11 +2,11 @@ import SwiftUI
 import CoreSpotlight
 
 struct SearchView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(PlantService.self) private var plantService
+    @Environment(DeliveryService.self) private var deliveryService
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""

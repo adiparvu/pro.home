@@ -6,7 +6,7 @@ import SwiftUI
 struct ElementObjectsSection: View {
     let element: PropertyElement
 
-    @StateObject private var inv = InventoryService()
+    @State private var inv = InventoryService()
     @State private var showLink = false
 
     private var linked: [InventoryItem] { inv.items.filter { $0.elementId == element.id } }
@@ -63,7 +63,7 @@ struct ElementObjectsSection: View {
 // Pick inventory items to attach to this element.
 private struct LinkObjectsSheet: View {
     let elementId: UUID
-    @ObservedObject var inv: InventoryService
+    var inv: InventoryService
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 

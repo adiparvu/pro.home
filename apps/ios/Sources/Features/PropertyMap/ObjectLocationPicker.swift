@@ -7,8 +7,8 @@ import CoreLocation
 struct ObjectLocationPicker: View {
     let element: PropertyElement
 
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
     @Environment(\.dismiss) private var dismiss
 
     @State private var camera: MapCameraPosition

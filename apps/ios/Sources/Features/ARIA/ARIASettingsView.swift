@@ -31,7 +31,7 @@ struct ARIASettingsView: View {
     @State private var exportURL: URL? = nil
     @State private var isDeletingHistory = false
 
-    @EnvironmentObject var taskService: TaskService
+    @Environment(TaskService.self) var taskService
     @Environment(\.dismiss) var dismiss
 
     var body: some View {

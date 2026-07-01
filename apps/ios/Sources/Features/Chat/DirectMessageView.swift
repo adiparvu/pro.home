@@ -14,10 +14,10 @@ struct DirectMessageView: View {
     let member: FamilyMember
 
     @EnvironmentObject private var directMessageService: DirectMessageService
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(ProfileService.self) private var profileService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var messageService: MessageService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(MessageService.self) private var messageService
 
     @State private var replyingTo: DirectMessage? = nil
     @State private var forwarding: DirectMessage? = nil

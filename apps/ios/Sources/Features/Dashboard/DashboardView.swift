@@ -5,23 +5,23 @@ import CoreLocation
 // MARK: - Dashboard — matches dark mockup exactly
 
 struct DashboardView: View {
-    @EnvironmentObject var auth: AuthService
-    @EnvironmentObject var taskService: TaskService
+    @Environment(AuthService.self) var auth
+    @Environment(TaskService.self) var taskService
     @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var financialService: FinancialService
-    @EnvironmentObject var profileService: ProfileService
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var familyService: FamilyService
+    @Environment(FinancialService.self) var financialService
+    @Environment(ProfileService.self) var profileService
+    @Environment(DocumentService.self) var documentService
+    @Environment(FamilyService.self) var familyService
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject var inventoryService: InventoryService
-    @EnvironmentObject var contractorService: ContractorService
-    @EnvironmentObject var proactiveEngine: ProactiveEngine
+    @Environment(AppRouter.self) var router
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PlantService.self) var plantService
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(InventoryService.self) var inventoryService
+    @Environment(ContractorService.self) var contractorService
+    @Environment(ProactiveEngine.self) var proactiveEngine
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -99,26 +99,26 @@ struct DashboardView: View {
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
                 NotificationCenterView()
-                    .environmentObject(auth)
+                    .environment(auth)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
                 EditProfileView()
-                    .environmentObject(profileService)
+                    .environment(profileService)
             }
         }
         .sheet(isPresented: $showSearch) {
             GlobalSearchSheet()
-                .environmentObject(taskService)
-                .environmentObject(documentService)
-                .environmentObject(plantService)
-                .environmentObject(deliveryService)
-                .environmentObject(familyService)
-                .environmentObject(financialService)
-                .environmentObject(elementService)
-                .environmentObject(router)
+                .environment(taskService)
+                .environment(documentService)
+                .environment(plantService)
+                .environment(deliveryService)
+                .environment(familyService)
+                .environment(financialService)
+                .environment(elementService)
+                .environment(router)
         }
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()

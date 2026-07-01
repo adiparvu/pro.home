@@ -17,11 +17,11 @@ struct ARIAView: View {
     var onDismiss: (() -> Void)? = nil
 
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PlantService.self) private var plantService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(ProfileService.self) private var profileService
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"

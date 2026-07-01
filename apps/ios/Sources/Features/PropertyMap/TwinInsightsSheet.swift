@@ -4,9 +4,9 @@ import SwiftUI
 /// property plus an on-demand AI analysis via the aria-chat edge function.
 struct TwinInsightsSheet: View {
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var currencyService: CurrencyService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(CurrencyService.self) private var currencyService
     @EnvironmentObject private var appSettings: AppSettings
     @Environment(\.dismiss) private var dismiss
 

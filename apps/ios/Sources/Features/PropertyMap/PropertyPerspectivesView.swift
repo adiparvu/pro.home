@@ -26,12 +26,12 @@ private struct PerspectiveHighlight: Identifiable {
 
 struct PropertyPerspectivesView: View {
     @EnvironmentObject private var propertyService:  PropertyService
-    @EnvironmentObject private var taskService:      TaskService
-    @EnvironmentObject private var documentService:  DocumentService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var familyService:    FamilyService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var router:           AppRouter
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(AppRouter.self) private var router
 
     @State private var selectedRole = "owner"
 

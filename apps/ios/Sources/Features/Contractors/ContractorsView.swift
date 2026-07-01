@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 struct ContractorModel: Identifiable, Codable {
     let id: UUID
@@ -34,10 +35,11 @@ struct ContractorModel: Identifiable, Codable {
 }
 
 @MainActor
-final class ContractorService: ObservableObject {
-    @Published var contractors: [ContractorModel] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class ContractorService {
+    var contractors: [ContractorModel] = []
+    var isLoading = false
+    var error: String?
 
     func load() async {
         isLoading = true
@@ -115,8 +117,8 @@ struct NewContractor: Encodable {
 }
 
 struct ContractorsView: View {
-    @EnvironmentObject private var service: ContractorService
-    @EnvironmentObject private var auth: AuthService
+    @Environment(ContractorService.self) private var service
+    @Environment(AuthService.self) private var auth
     @EnvironmentObject private var propertyService: PropertyService
     @State private var showAdd = false
     @State private var selectedContractor: ContractorModel? = nil
@@ -240,7 +242,7 @@ private struct ContractorRow: View {
 }
 
 private struct AddContractorSheet: View {
-    @ObservedObject var service: ContractorService
+    var service: ContractorService
     let propertyId: UUID?
     let userId: UUID?
     @Environment(\.dismiss) private var dismiss

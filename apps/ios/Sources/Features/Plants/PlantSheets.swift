@@ -4,7 +4,7 @@ import PhotosUI
 // MARK: - AddPlantSheet
 
 struct AddPlantSheet: View {
-    @EnvironmentObject private var plantService: PlantService
+    @Environment(PlantService.self) private var plantService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

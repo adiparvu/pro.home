@@ -4,7 +4,7 @@ import Charts
 // MARK: - Tasks Section
 
 struct TasksSection: View {
-    @ObservedObject var service: TaskService
+    var service: TaskService
 
     var tasksByPriority: [(priority: String, count: Int, color: Color)] {
         let urgentCount = service.tasks.filter { $0.priority == "urgent" }.count
@@ -102,7 +102,7 @@ struct TasksSection: View {
 // MARK: - Forecast Section
 
 struct ForecastSection: View {
-    @ObservedObject var financialService: FinancialService
+    var financialService: FinancialService
 
     var projectedIncome: Double {
         let months = financialService.monthlyData

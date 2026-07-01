@@ -7,8 +7,8 @@ struct InventoryView: View {
     var autoScan: Bool = false
     var autoAdd: Bool = false
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var service: InventoryService
+    @Environment(AppRouter.self) private var router
+    @Environment(InventoryService.self) private var service
     @State private var filter: InvFilter = .all
     @State private var showAdd = false
     @State private var showScanner = false

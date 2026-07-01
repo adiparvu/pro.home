@@ -1,13 +1,15 @@
 import Foundation
+import Observation
 import Supabase
 import Combine
 
 @MainActor
-final class AuthService: ObservableObject {
+@Observable
+final class AuthService {
     static let shared = AuthService()
 
-    @Published var session: Session?
-    @Published var isLoading = true
+    var session: Session?
+    var isLoading = true
 
     private var sessionTask: Task<Void, Never>?
     private var authChangesTask: Task<Void, Never>?

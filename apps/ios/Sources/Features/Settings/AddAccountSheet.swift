@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AddAccountSheet: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @Environment(\.dismiss) private var dismiss
     @State private var email = ""
     @State private var password = ""

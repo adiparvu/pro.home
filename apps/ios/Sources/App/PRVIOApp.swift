@@ -3,11 +3,11 @@ import SwiftUI
 @main
 struct PRVIOApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var auth        = AuthService.shared
+    @State private var auth        = AuthService.shared
     @StateObject private var appSettings = AppSettings()
     @State private var lock        = AppLockManager()
-    @StateObject private var router      = AppRouter()
-    @StateObject private var iconManager = IconManager()
+    @State private var router      = AppRouter()
+    @State private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -23,8 +23,8 @@ struct PRVIOApp: App {
                     } else if auth.session != nil {
                         MainTabView()
                             .environmentObject(appSettings)
-                            .environmentObject(router)
-                            .environmentObject(iconManager)
+                            .environment(router)
+                            .environment(iconManager)
                             .environment(\.appLanguage, appSettings.currentLanguage)
                     } else {
                         LoginView()
@@ -33,7 +33,7 @@ struct PRVIOApp: App {
                 .preferredColorScheme(appSettings.resolvedColorScheme)
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)
-                .environmentObject(auth)
+                .environment(auth)
                 .environment(lock)
 
                 if auth.session != nil {

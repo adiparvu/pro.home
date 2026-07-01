@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct CalendarView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
     @State private var displayedMonth = Date()
     @State private var selectedDay: Date? = nil
 

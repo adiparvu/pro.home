@@ -1,10 +1,12 @@
 import SwiftUI
+import Observation
 
 @MainActor
-final class StickerService: ObservableObject {
-    @Published private(set) var recents: [Sticker] = []
-    @Published private(set) var favorites: Set<String> = []
-    @Published private(set) var useCounts: [String: Int] = [:]
+@Observable
+final class StickerService {
+    private(set) var recents: [Sticker] = []
+    private(set) var favorites: Set<String> = []
+    private(set) var useCounts: [String: Int] = [:]
 
     private let recentsKey   = "prvio.stickers.recents"
     private let favoritesKey = "prvio.stickers.favorites"

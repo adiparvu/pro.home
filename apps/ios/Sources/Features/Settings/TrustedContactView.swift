@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TrustedContactView: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var relationship: String = ""

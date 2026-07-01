@@ -3,7 +3,7 @@ import SwiftUI
 struct AddFinancialView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var currencyService: CurrencyService
+    @Environment(CurrencyService.self) private var currencyService
     @EnvironmentObject private var appSettings: AppSettings
 
     let onSaved: () async -> Void

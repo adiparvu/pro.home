@@ -1,8 +1,10 @@
 import SwiftUI
+import Observation
 
-final class TabBarVisibility: ObservableObject {
-    @Published var isHidden = false
-    @Published var scrollOffset: CGFloat = 0
+@Observable
+final class TabBarVisibility {
+    var isHidden = false
+    var scrollOffset: CGFloat = 0
 
     // 0 = fully shown, 1 = fully hidden — drives continuous zoom-out
     var hideProgress: CGFloat {
@@ -58,7 +60,7 @@ enum AppTab: String, CaseIterable {
 // MARK: - Scroll-direction tracker (Instagram-style tab hide)
 
 struct TabScrollDetector: ViewModifier {
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     func body(content: Content) -> some View {
         content
@@ -93,7 +95,7 @@ struct AnimatedTabBar: View {
     let bottomPad: CGFloat
     let hideProgress: CGFloat
 
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(ProfileService.self) private var profileService
 
     var body: some View {
         if #available(iOS 26, *) {

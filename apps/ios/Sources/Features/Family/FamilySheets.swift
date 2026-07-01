@@ -17,7 +17,7 @@ let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok
 // MARK: - Add sheet
 
 struct AddFamilyMemberSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     let propertyId: UUID?
     var propertyName: String? = nil

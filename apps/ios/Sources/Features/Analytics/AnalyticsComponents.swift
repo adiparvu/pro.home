@@ -4,7 +4,7 @@ import Charts
 // MARK: - Finances Section
 
 struct FinancesSection: View {
-    @ObservedObject var service: FinancialService
+    var service: FinancialService
     @Binding var displayedMonth: Date
 
     @State var chartRange: ChartRange = .sixMonths

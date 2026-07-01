@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class ApplianceService: ObservableObject {
-    @Published var appliances: [Appliance] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class ApplianceService {
+    var appliances: [Appliance] = []
+    var isLoading = false
+    var error: String?
 
     var appliancesExpiringWarranty: [Appliance] {
         appliances.filter { $0.isWarrantyExpiringSoon || $0.isWarrantyExpired }

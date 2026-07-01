@@ -80,7 +80,7 @@ struct SupervisionSettings {
 // MARK: - Main supervision view
 
 struct SupervisionView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @State private var selectedMember: FamilyMember? = nil
     @State private var tick = false
 
@@ -103,7 +103,7 @@ struct SupervisionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $selectedMember) { member in
             MemberSupervisionDetailView(member: member, tick: $tick)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .task { await familyService.load() }
     }

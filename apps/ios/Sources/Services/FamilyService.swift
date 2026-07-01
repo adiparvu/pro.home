@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 import EventKit
 
 @MainActor
-final class FamilyService: ObservableObject {
-    @Published var members: [FamilyMember] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class FamilyService {
+    var members: [FamilyMember] = []
+    var isLoading = false
+    var error: String?
 
     func load() async {
         isLoading = true

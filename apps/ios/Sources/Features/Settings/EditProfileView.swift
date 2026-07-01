@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EditProfileView: View {
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(ProfileService.self) private var profileService
     @Environment(\.dismiss) private var dismiss
 
     @State private var displayName = ""

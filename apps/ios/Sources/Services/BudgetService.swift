@@ -1,8 +1,10 @@
 import Foundation
+import Observation
 
 @MainActor
-final class BudgetService: ObservableObject {
-    @Published var budgets: [String: Double] = [:]
+@Observable
+final class BudgetService {
+    var budgets: [String: Double] = [:]
 
     static let categories = ["rent", "utilities", "maintenance", "insurance", "taxes", "mortgage", "supplies", "other"]
 

@@ -10,11 +10,11 @@ struct ZoneBottomSheet: View {
     var onDelete: () -> Void
     var onFocus: () -> Void
 
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(CurrencyService.self) private var currencyService
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(TaskService.self) private var taskService
     @State private var selectedObject: PropertyElement?
 
     private var objects: [PropertyElement] { elementService.elements(inZone: zone.id) }
@@ -53,11 +53,11 @@ struct ZoneBottomSheet: View {
         }
         .sheet(item: $selectedObject) { obj in
             PropertyElementDetailView(element: obj)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(documentService)
+                .environment(taskService)
         }
     }
 

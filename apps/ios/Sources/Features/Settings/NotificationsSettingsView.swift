@@ -3,9 +3,9 @@ import UserNotifications
 import UIKit
 
 struct NotificationsSettingsView: View {
-    @EnvironmentObject private var scheduler: NotificationScheduler
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(NotificationScheduler.self) private var scheduler
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
 
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showOpenSettings = false

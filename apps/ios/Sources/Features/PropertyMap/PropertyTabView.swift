@@ -3,15 +3,15 @@ import SwiftUI
 // MARK: - Property Tab — Zones | Objects | Map segment picker
 
 struct PropertyTabView: View {
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var elementService: PropertyElementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PropertyElementService.self) var elementService
     @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(AppRouter.self) var router
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum Segment: String, CaseIterable {
         case zones   = "Zones"

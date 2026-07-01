@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 // MARK: - Receipt Scanner (OCR)
 
 struct ReceiptScannerView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 
@@ -26,7 +26,7 @@ struct ReceiptScannerView: View {
                     ReceiptReviewView(parsed: parsed, onSave: { p in
                         Task { await saveReceipt(p) }
                     })
-                    .environmentObject(receiptService)
+                    .environment(receiptService)
                     .environmentObject(propertyService)
                 } else {
                     pickPhotoState
@@ -247,7 +247,7 @@ struct ReceiptScannerView: View {
 // MARK: - Receipt Review
 
 private struct ReceiptReviewView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

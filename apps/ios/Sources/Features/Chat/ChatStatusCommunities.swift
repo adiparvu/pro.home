@@ -345,7 +345,7 @@ private struct GroupChatView: View {
     var service: ChatGroupService
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var svc = MessageService()
+    @State private var svc = MessageService()
     @State private var text = ""
     @State private var showSettings = false
 

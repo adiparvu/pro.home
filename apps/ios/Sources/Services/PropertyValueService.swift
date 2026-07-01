@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class PropertyValueService: ObservableObject {
-    @Published var entries: [PropertyValueEntry] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PropertyValueService {
+    var entries: [PropertyValueEntry] = []
+    var isLoading = false
+    var error: String?
 
     var latestValue: PropertyValueEntry? {
         sortedEntries.first

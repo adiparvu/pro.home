@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import BackgroundTasks
 import UserNotifications
 
@@ -29,8 +30,9 @@ struct ProactiveInsight: Identifiable, Codable {
 // MARK: - ProactiveEngine
 
 @MainActor
-final class ProactiveEngine: ObservableObject {
-    @Published var insights: [ProactiveInsight] = []
+@Observable
+final class ProactiveEngine {
+    var insights: [ProactiveInsight] = []
 
     @MainActor static var shared: ProactiveEngine?
 

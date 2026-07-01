@@ -6,11 +6,11 @@ import Supabase
 struct PropertyElementDetailView: View {
     let element: PropertyElement
 
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
     @EnvironmentObject var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 
@@ -154,11 +154,11 @@ struct PropertyElementDetailView: View {
         }
         .sheet(isPresented: $showLinkDocument) {
             DocumentLinkPicker(elementId: localElement.id)
-                .environmentObject(documentService)
+                .environment(documentService)
         }
         .sheet(isPresented: $showLinkTask) {
             TaskLinkPicker(elementId: localElement.id)
-                .environmentObject(taskService)
+                .environment(taskService)
         }
         .onChange(of: photoItems) { _, items in
             Task { await uploadPhotos(items) }

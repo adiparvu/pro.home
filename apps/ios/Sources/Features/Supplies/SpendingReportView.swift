@@ -4,7 +4,7 @@ import Charts
 // MARK: - Spending Report View
 
 struct SpendingReportView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @Environment(\.dismiss) private var dismiss
 
     enum ReportPeriod: String, CaseIterable {

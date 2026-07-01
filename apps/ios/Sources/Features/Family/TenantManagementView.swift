@@ -4,7 +4,7 @@ import Foundation
 // MARK: - Tenant Management
 
 struct TenantManagementView: View {
-    @EnvironmentObject private var familyService:   FamilyService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var showAdd        = false
@@ -68,11 +68,11 @@ struct TenantManagementView: View {
                 propertyName: propertyService.primary?.name,
                 preselectedRole: "tenant"
             )
-            .environmentObject(familyService)
+            .environment(familyService)
         }
         .sheet(item: $selectedTenant) { tenant in
             MemberProfileSheet(member: tenant)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
     }
 

@@ -2,11 +2,11 @@ import SwiftUI
 import PhotosUI
 
 struct ProfileView: View {
-    @EnvironmentObject private var auth: AuthService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var notificationScheduler: NotificationScheduler
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(AuthService.self) private var auth
+    @Environment(ProfileService.self) private var profileService
+    @Environment(NotificationScheduler.self) private var notificationScheduler
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
 
     @State private var showEdit = false
     @State private var showChangeEmail = false
@@ -37,7 +37,7 @@ struct ProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showEdit) {
-            EditProfileView().environmentObject(profileService)
+            EditProfileView().environment(profileService)
         }
         .sheet(isPresented: $showChangeEmail) {
             ChangeEmailSheet { newEmail in
@@ -247,7 +247,7 @@ struct ProfileView: View {
     private var accountSection: some View {
         SettingsGroup(title: "Account") {
             NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit profile") {
-                EditProfileView().environmentObject(profileService)
+                EditProfileView().environment(profileService)
             }
             TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change email") {
                 showChangeEmail = true
@@ -256,16 +256,16 @@ struct ProfileView: View {
                 showChangePassword = true
             }
             NavSettingsRow(icon: "shield.fill", color: .purple, label: "Safety and security") {
-                SecurityView().environmentObject(auth)
+                SecurityView().environment(auth)
             }
             NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Trusted contact") {
-                TrustedContactView().environmentObject(auth)
+                TrustedContactView().environment(auth)
             }
             NavSettingsRow(icon: "bell.fill", color: .red, label: "Notifications") {
                 NotificationsSettingsView()
-                    .environmentObject(notificationScheduler)
-                    .environmentObject(taskService)
-                    .environmentObject(documentService)
+                    .environment(notificationScheduler)
+                    .environment(taskService)
+                    .environment(documentService)
             }
         }
     }

@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct BudgetView: View {
-    @EnvironmentObject private var budgetService: BudgetService
-    @EnvironmentObject private var financialService: FinancialService
+    @Environment(BudgetService.self) private var budgetService
+    @Environment(FinancialService.self) private var financialService
     @State private var editingCategory: String? = nil
     @State private var editAmount = ""
 

@@ -498,7 +498,7 @@ struct ContactDetailsView: View {
     var mediaURLs: [URL] = []
     var exportText: String = ""
     var propertyId: UUID? = nil
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
@@ -658,7 +658,7 @@ struct ContactDetailsView: View {
             .onChange(of: muted) { _, m in ChatMuteStore.setMuted(convId, m) }
             .sheet(isPresented: $showEditContact) {
                 EditFamilyMemberSheet(member: member)
-                    .environmentObject(familyService)
+                    .environment(familyService)
             }
             .sheet(isPresented: $showEditLabel) {
                 EditTextSheet(title: "Member label", text: memberLabel) { newText in
@@ -1241,7 +1241,7 @@ struct SecureChatToggle: View {
 // MARK: - Add contact
 
 struct AddContactView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

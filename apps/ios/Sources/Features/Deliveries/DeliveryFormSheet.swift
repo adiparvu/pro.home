@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - DeliveryFormSheet (Add + Edit)
 
 struct DeliveryFormSheet: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(DeliveryService.self) private var deliveryService
     @Environment(\.dismiss) private var dismiss
 
     let editingDelivery: Delivery?

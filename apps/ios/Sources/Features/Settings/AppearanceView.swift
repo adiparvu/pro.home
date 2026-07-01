@@ -2,8 +2,8 @@ import SwiftUI
 
 struct AppearanceView: View {
     @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var auth: AuthService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AuthService.self) private var auth
 
     private let accentOptions: [(name: String, color: Color, labelKey: LocalizedStringKey)] = [
         ("blue",   .blue,                                              "Blue"),

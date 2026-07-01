@@ -8,7 +8,7 @@ struct AddDocumentSheet: View {
     let propertyId: UUID
     let onSaved: () async -> Void
 
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(DocumentService.self) private var documentService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""

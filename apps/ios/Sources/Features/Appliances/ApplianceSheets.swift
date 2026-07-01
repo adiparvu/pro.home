@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 // MARK: - AddApplianceSheet
 
 struct AddApplianceSheet: View {
-    @EnvironmentObject private var applianceService: ApplianceService
+    @Environment(ApplianceService.self) private var applianceService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

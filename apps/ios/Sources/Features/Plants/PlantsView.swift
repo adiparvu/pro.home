@@ -3,9 +3,9 @@ import SwiftUI
 // MARK: - PlantsView
 
 struct PlantsView: View {
-    @EnvironmentObject private var plantService: PlantService
+    @Environment(PlantService.self) private var plantService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
@@ -42,12 +42,12 @@ struct PlantsView: View {
         }
         .sheet(isPresented: $showAddPlant) {
             AddPlantSheet()
-                .environmentObject(plantService)
+                .environment(plantService)
                 .environmentObject(propertyService)
         }
         .sheet(item: $selectedPlant) { plant in
             PlantDetailSheet(plant: plant)
-                .environmentObject(plantService)
+                .environment(plantService)
         }
         .alert("Error", isPresented: Binding(
             get: { plantService.error != nil },
@@ -190,7 +190,7 @@ struct PlantsView: View {
                     PlantCard(plant: plant) {
                         selectedPlant = plant
                     }
-                    .environmentObject(plantService)
+                    .environment(plantService)
                 }
             }
         }
@@ -255,7 +255,7 @@ struct PlantsView: View {
 // MARK: - PlantCard
 
 struct PlantCard: View {
-    @EnvironmentObject private var plantService: PlantService
+    @Environment(PlantService.self) private var plantService
     let plant: Plant
     let onTap: () -> Void
 

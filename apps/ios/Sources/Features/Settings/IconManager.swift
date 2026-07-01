@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 // MARK: - Theme group (what the user picks — one entry per style)
 
@@ -107,7 +108,7 @@ enum AppIconThemeGroup: String, CaseIterable, Identifiable {
 // MARK: - Color scheme watcher (placed as .background() in root view)
 
 struct IconColorSchemeWatcher: View {
-    @ObservedObject var iconManager: IconManager
+    var iconManager: IconManager
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -124,8 +125,9 @@ struct IconColorSchemeWatcher: View {
 // MARK: - Icon Manager
 
 @MainActor
-final class IconManager: ObservableObject {
-    @Published var selectedGroup: AppIconThemeGroup
+@Observable
+final class IconManager {
+    var selectedGroup: AppIconThemeGroup
 
     @AppStorage("prvio.selectedIconGroup") private var savedGroupId: String = "clasic"
     @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true

@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import SwiftUI
 import CoreLocation
 
 @MainActor
-final class PropertyZoneService: ObservableObject {
-    @Published var zones: [PropertyZone] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PropertyZoneService {
+    var zones: [PropertyZone] = []
+    var isLoading = false
+    var error: String?
 
     func load(propertyId: UUID) async {
         isLoading = true

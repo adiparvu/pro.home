@@ -3,7 +3,7 @@ import LocalAuthentication
 import Supabase
 
 struct SecurityView: View {
-    @EnvironmentObject var auth: AuthService
+    @Environment(AuthService.self) var auth
     @AppStorage("prvio.biometrics") var biometricsEnabled = false
     @AppStorage("prvio.lockMode") private var lockModeEnabled = false
     @State var biometricType: LABiometryType = .none

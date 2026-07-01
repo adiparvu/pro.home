@@ -1,28 +1,30 @@
 import SwiftUI
+import Observation
 
 @MainActor
-final class AppRouter: ObservableObject {
-    @Published var selectedTab: AppTab = .home
+@Observable
+final class AppRouter {
+    var selectedTab: AppTab = .home
 
     // Global quick-action presentations (handled at the MainTabView level).
-    @Published var showARIA = false
-    @Published var showAddTask = false
-    @Published var showFamilyChat = false
-    @Published var showAddExpense = false
-    @Published var showInventoryScan = false
-    @Published var showInventoryAdd = false
-    @Published var showInventoryView = false
-    @Published var showAddSupply = false
-    @Published var showWaterPlant = false
-    @Published var showSuppliesView = false
-    @Published var showDocuments = false
-    @Published var showFamily = false
-    @Published var showContractors = false
-    @Published var showFinances = false
+    var showARIA = false
+    var showAddTask = false
+    var showFamilyChat = false
+    var showAddExpense = false
+    var showInventoryScan = false
+    var showInventoryAdd = false
+    var showInventoryView = false
+    var showAddSupply = false
+    var showWaterPlant = false
+    var showSuppliesView = false
+    var showDocuments = false
+    var showFamily = false
+    var showContractors = false
+    var showFinances = false
 
     // Deep link destinations
-    @Published var deepLinkTaskId: UUID?
-    @Published var deepLinkPlantId: UUID?
+    var deepLinkTaskId: UUID?
+    var deepLinkPlantId: UUID?
 
     func perform(_ action: DashboardQuickAction) {
         switch action {

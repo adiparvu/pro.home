@@ -3,9 +3,9 @@ import SwiftUI
 // MARK: - PRVIO Timeline — matches dark mockup (chronological events + filter chips)
 
 struct PRVIOTimelineView: View {
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum TimeFilter: String, CaseIterable {
         case today  = "Today"

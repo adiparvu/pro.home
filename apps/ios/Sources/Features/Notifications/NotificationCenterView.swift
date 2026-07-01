@@ -55,7 +55,7 @@ struct AppNotification: Identifiable, Codable {
 }
 
 struct NotificationCenterView: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @State private var notifications: [AppNotification] = []
     @State private var isLoading = false
     @State private var errorMsg: String?

@@ -3,15 +3,15 @@ import SwiftUI
 // MARK: - Zones List — matches dark mockup (filter chips + zone rows)
 
 struct ZonesListView: View {
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var elementService: PropertyElementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PropertyElementService.self) var elementService
     @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(AppRouter.self) var router
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ZoneFilter = .all
 
@@ -59,13 +59,13 @@ struct ZonesListView: View {
                         ForEach(filteredZones) { zone in
                             NavigationLink {
                                 ZoneDetailView(zone: zone)
-                                    .environmentObject(elementService)
-                                    .environmentObject(taskService)
-                                    .environmentObject(currencyService)
+                                    .environment(elementService)
+                                    .environment(taskService)
+                                    .environment(currencyService)
                                     .environmentObject(appSettings)
-                                    .environmentObject(documentService)
-                                    .environmentObject(router)
-                                    .environmentObject(zoneService)
+                                    .environment(documentService)
+                                    .environment(router)
+                                    .environment(zoneService)
                             } label: {
                                 ZoneListRow(
                                     zone: zone,

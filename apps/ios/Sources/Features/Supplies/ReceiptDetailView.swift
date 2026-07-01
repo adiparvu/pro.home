@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Receipt Detail
 
 struct ReceiptDetailView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

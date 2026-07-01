@@ -3,13 +3,13 @@ import SwiftUI
 // MARK: - Objects List — matches dark mockup (filter chips + object rows)
 
 struct ObjectsListView: View {
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ObjectFilter = .all
     @State private var favoritesOnly = false
@@ -108,11 +108,11 @@ struct ObjectsListView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(documentService)
+                .environment(taskService)
         }
     }
 

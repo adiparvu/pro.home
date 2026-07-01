@@ -1,18 +1,20 @@
 import Foundation
+import Observation
 import Supabase
 
 @MainActor
-final class MessageService: ObservableObject {
-    @Published var messages: [Message] = []
-    @Published var isLoading = false
-    @Published var error: String?
-    @Published var unreadCount = 0
+@Observable
+final class MessageService {
+    var messages: [Message] = []
+    var isLoading = false
+    var error: String?
+    var unreadCount = 0
     /// Read receipts grouped by message id (excludes the receipts I created for myself).
-    @Published var reads: [UUID: [MessageRead]] = [:]
+    var reads: [UUID: [MessageRead]] = [:]
     /// Delivery receipts grouped by message id (excludes my own device's receipts).
-    @Published var deliveries: [UUID: [MessageDelivery]] = [:]
+    var deliveries: [UUID: [MessageDelivery]] = [:]
     /// Emoji reactions grouped by message id.
-    @Published var reactions: [UUID: [MessageReaction]] = [:]
+    var reactions: [UUID: [MessageReaction]] = [:]
 
     private var realtimeChannel: RealtimeChannelV2?
     private var readsChannel: RealtimeChannelV2?
@@ -20,7 +22,7 @@ final class MessageService: ObservableObject {
     private var reactionsChannel: RealtimeChannelV2?
 
     // MARK: - Typing indicator
-    @Published var typingNames: Set<String> = []
+    var typingNames: Set<String> = []
     var myName: String = ""
     private var typingSub: RealtimeSubscription?
     private var typingTasks: [String: Task<Void, Never>] = [:]
@@ -78,8 +80,8 @@ final class MessageService: ObservableObject {
     /// Page size for chat history loads / pagination.
     static let pageSize = 50
     /// True while older messages remain to be loaded.
-    @Published var hasMoreOlder = false
-    @Published var isLoadingOlder = false
+    var hasMoreOlder = false
+    var isLoadingOlder = false
 
     /// Loads the next older page and prepends it (for "load older" / scroll-to-top).
     func loadOlder(propertyId: UUID) async {
@@ -547,7 +549,7 @@ final class MessageService: ObservableObject {
 
     // MARK: - Poll votes
 
-    @Published var pollVotes: [UUID: [PollVote]] = [:]
+    var pollVotes: [UUID: [PollVote]] = [:]
     private var pollVotesChannel: RealtimeChannelV2?
 
     func loadPollVotes(propertyId: UUID) async {

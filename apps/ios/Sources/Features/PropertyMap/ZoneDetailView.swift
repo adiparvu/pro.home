@@ -50,13 +50,13 @@ enum ZoneType {
 
 struct ZoneDetailView: View {
     let zone: PropertyZone
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(TaskService.self) var taskService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject var zoneService: PropertyZoneService
+    @Environment(DocumentService.self) var documentService
+    @Environment(AppRouter.self) var router
+    @Environment(PropertyZoneService.self) var zoneService
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingZone: PropertyZone? = nil
@@ -520,11 +520,11 @@ struct ZoneDetailView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(documentService)
+                .environment(taskService)
         }
     }
 }

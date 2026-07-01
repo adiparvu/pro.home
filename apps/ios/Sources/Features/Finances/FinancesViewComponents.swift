@@ -128,8 +128,8 @@ extension FinancesView {
         HStack(spacing: 12) {
             NavigationLink {
                 BudgetView()
-                    .environmentObject(budgetService)
-                    .environmentObject(financialService)
+                    .environment(budgetService)
+                    .environment(financialService)
             } label: {
                 actionTile(icon: "chart.pie.fill", label: "Budget", color: .blue)
             }

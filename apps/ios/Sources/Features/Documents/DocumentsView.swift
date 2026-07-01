@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import QuickLook
 
 struct DocumentsView: View {
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(DocumentService.self) private var documentService
     @EnvironmentObject private var propertyService: PropertyService
     @State private var search = ""
     @State private var selectedCategory: String? = nil
@@ -103,7 +103,7 @@ struct DocumentsView: View {
         .sheet(isPresented: $showAdd) {
             if let propertyId = propertyService.primary?.id {
                 AddDocumentSheet(propertyId: propertyId) { await documentService.load() }
-                    .environmentObject(documentService)
+                    .environment(documentService)
             }
         }
         .confirmationDialog("Delete \"\(docToDelete?.name ?? String(localized: "document"))\"?",

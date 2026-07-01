@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - PaintColorsView
 
 struct PaintColorsView: View {
-    @EnvironmentObject private var paintColorService: PaintColorService
+    @Environment(PaintColorService.self) private var paintColorService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var showAdd = false
@@ -47,7 +47,7 @@ struct PaintColorsView: View {
         }
         .sheet(isPresented: $showAdd) {
             AddPaintColorSheet()
-                .environmentObject(paintColorService)
+                .environment(paintColorService)
                 .environmentObject(propertyService)
         }
         .confirmationDialog(

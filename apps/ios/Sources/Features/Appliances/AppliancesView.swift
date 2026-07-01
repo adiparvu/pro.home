@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - AppliancesView
 
 struct AppliancesView: View {
-    @EnvironmentObject private var applianceService: ApplianceService
+    @Environment(ApplianceService.self) private var applianceService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var showAdd = false
@@ -55,12 +55,12 @@ struct AppliancesView: View {
         }
         .sheet(isPresented: $showAdd) {
             AddApplianceSheet()
-                .environmentObject(applianceService)
+                .environment(applianceService)
                 .environmentObject(propertyService)
         }
         .sheet(item: $selectedAppliance) { appliance in
             ApplianceDetailSheet(appliance: appliance)
-                .environmentObject(applianceService)
+                .environment(applianceService)
         }
         .task {
             if let id = propertyService.primary?.id {

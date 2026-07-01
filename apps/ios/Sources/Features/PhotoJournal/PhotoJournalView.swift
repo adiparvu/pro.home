@@ -5,7 +5,7 @@ import Supabase
 // MARK: - PhotoJournalView
 
 struct PhotoJournalView: View {
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
+    @Environment(PhotoJournalService.self) private var photoJournalService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var showAdd = false
@@ -41,12 +41,12 @@ struct PhotoJournalView: View {
         }
         .sheet(isPresented: $showAdd) {
             AddPhotoJournalSheet()
-                .environmentObject(photoJournalService)
+                .environment(photoJournalService)
                 .environmentObject(propertyService)
         }
         .sheet(item: $selectedEntry) { entry in
             PhotoEntryDetailSheet(entry: entry)
-                .environmentObject(photoJournalService)
+                .environment(photoJournalService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -187,7 +187,7 @@ private struct PhotoGridCell: View {
 
 private struct PhotoEntryDetailSheet: View {
     let entry: PhotoJournalEntry
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
+    @Environment(PhotoJournalService.self) private var photoJournalService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirm = false

@@ -4,9 +4,9 @@ import Charts
 // MARK: - Expense Dashboard (Revolut-style)
 
 struct ExpenseDashboardView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var supplyService: SupplyService
+    @Environment(SupplyService.self) private var supplyService
 
     @Binding var activeTab: ExpenseTab
     @Binding var showScanner: Bool
@@ -43,7 +43,7 @@ struct ExpenseDashboardView: View {
         }
         .sheet(item: $selectedReceipt) { receipt in
             ReceiptDetailView(receipt: receipt)
-                .environmentObject(receiptService)
+                .environment(receiptService)
                 .environmentObject(propertyService)
         }
         .onAppear {

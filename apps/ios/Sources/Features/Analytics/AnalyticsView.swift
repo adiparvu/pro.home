@@ -2,9 +2,9 @@ import SwiftUI
 import Charts
 
 struct AnalyticsView: View {
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(FinancialService.self) private var financialService
+    @Environment(TaskService.self) private var taskService
+    @Environment(TabBarVisibility.self) private var tabBarVis
     @State private var selectedTab: AnalyticsTab = .finances
     @State private var displayedMonth: Date = Calendar.current.startOfMonth(Date())
 

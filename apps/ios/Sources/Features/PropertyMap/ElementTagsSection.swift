@@ -5,7 +5,7 @@ import SwiftUI
 struct ElementTagsSection: View {
     let elementId: UUID
 
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyElementService.self) private var elementService
     @State private var newTag = ""
 
     private var element: PropertyElement? { elementService.elements.first { $0.id == elementId } }

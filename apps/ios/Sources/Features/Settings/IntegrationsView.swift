@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct IntegrationsView: View {
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @StateObject var vm = IntegrationsViewModel()
 
     var body: some View {

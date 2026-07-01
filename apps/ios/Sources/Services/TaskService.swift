@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class TaskService: ObservableObject {
-    @Published var tasks: [MaintenanceTask] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class TaskService {
+    var tasks: [MaintenanceTask] = []
+    var isLoading = false
+    var error: String?
 
     var openCount: Int {
         tasks.filter { $0.status == "pending" || $0.status == "in_progress" }.count

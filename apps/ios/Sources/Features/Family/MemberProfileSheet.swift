@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MemberProfileSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     let member: FamilyMember
     @State private var showEdit = false

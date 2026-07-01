@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct TasksView: View {
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DocumentService.self) private var documentService
+    @Environment(TabBarVisibility.self) private var tabBarVis
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
@@ -94,8 +94,8 @@ struct TasksView: View {
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink {
                     CalendarView()
-                        .environmentObject(taskService)
-                        .environmentObject(documentService)
+                        .environment(taskService)
+                        .environment(documentService)
                 } label: {
                     Image(systemName: "calendar")
                         .font(.system(size: 18))
@@ -140,7 +140,7 @@ struct TasksView: View {
         }
         .sheet(isPresented: $showAdd) {
             AddTaskView()
-                .environmentObject(taskService)
+                .environment(taskService)
                 .environmentObject(propertyService)
         }
         .alert("Error", isPresented: Binding(
@@ -303,9 +303,9 @@ struct FilterChip: View {
 // MARK: - Task Row
 
 struct TaskRowView: View {
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     let task: MaintenanceTask
 
     @State private var showEdit = false
@@ -395,9 +395,9 @@ struct TaskRowView: View {
         }
         .sheet(isPresented: $showEdit) {
             AddTaskView(editing: task)
-                .environmentObject(taskService)
+                .environment(taskService)
                 .environmentObject(propertyService)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
     }
 }

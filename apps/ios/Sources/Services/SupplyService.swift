@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 
 @MainActor
-final class SupplyService: ObservableObject {
-    @Published var lists: [SupplyList] = []
-    @Published var items: [SupplyItem] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class SupplyService {
+    var lists: [SupplyList] = []
+    var items: [SupplyItem] = []
+    var isLoading = false
+    var error: String?
 
     // MARK: Computed
 

@@ -25,8 +25,8 @@ let supplyPriorities: [(id: String, label: String)] = [
 enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
 
 struct SuppliesView: View {
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(ReceiptService.self) private var receiptService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var activeTab: ExpenseTab = .overview
@@ -65,9 +65,9 @@ struct SuppliesView: View {
                     showBudgets: $showBudgets,
                     showReports: $showReports
                 )
-                .environmentObject(receiptService)
+                .environment(receiptService)
                 .environmentObject(propertyService)
-                .environmentObject(supplyService)
+                .environment(supplyService)
             case .lists:
                 shoppingListsContent
             case .toBuy:
@@ -108,19 +108,19 @@ struct SuppliesView: View {
             }
         }
         .sheet(isPresented: $showAddList) {
-            AddSupplyListSheet().environmentObject(supplyService).environmentObject(propertyService)
+            AddSupplyListSheet().environment(supplyService).environmentObject(propertyService)
         }
         .sheet(isPresented: $showScanner) {
-            ReceiptScannerView().environmentObject(receiptService).environmentObject(propertyService)
+            ReceiptScannerView().environment(receiptService).environmentObject(propertyService)
         }
         .sheet(isPresented: $showAddReceipt) {
-            AddReceiptSheet().environmentObject(receiptService).environmentObject(propertyService)
+            AddReceiptSheet().environment(receiptService).environmentObject(propertyService)
         }
         .sheet(isPresented: $showBudgets) {
-            BudgetManagementView().environmentObject(receiptService).environmentObject(propertyService)
+            BudgetManagementView().environment(receiptService).environmentObject(propertyService)
         }
         .sheet(isPresented: $showReports) {
-            SpendingReportView().environmentObject(receiptService)
+            SpendingReportView().environment(receiptService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -215,10 +215,10 @@ struct SuppliesView: View {
                 ForEach(supplyService.lists) { list in
                     NavigationLink(destination:
                         SupplyListDetailView(list: list)
-                            .environmentObject(supplyService)
+                            .environment(supplyService)
                             .environmentObject(propertyService)
                     ) {
-                        SupplyListCard(list: list).environmentObject(supplyService)
+                        SupplyListCard(list: list).environment(supplyService)
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -385,7 +385,7 @@ struct SuppliesView: View {
 // MARK: - List card
 
 struct SupplyListCard: View {
-    @EnvironmentObject private var supplyService: SupplyService
+    @Environment(SupplyService.self) private var supplyService
     let list: SupplyList
 
     var body: some View {

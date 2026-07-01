@@ -2,10 +2,10 @@ import SwiftUI
 
 struct PropertyMapView: View {
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showHealthDashboard = false
     @State var selectedLayer: PropertyLayer? = nil
@@ -119,8 +119,8 @@ struct PropertyMapView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
         }
         .sheet(isPresented: $showAddElement) {
@@ -131,8 +131,8 @@ struct PropertyMapView: View {
         }
         .sheet(isPresented: $showHealthDashboard) {
             PropertyHealthDashboardView()
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
         }
         .task {

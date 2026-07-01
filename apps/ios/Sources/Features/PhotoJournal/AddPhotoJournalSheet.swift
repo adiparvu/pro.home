@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import Supabase
 
 struct AddPhotoJournalSheet: View {
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
+    @Environment(PhotoJournalService.self) private var photoJournalService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

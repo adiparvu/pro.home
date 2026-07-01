@@ -1,7 +1,9 @@
 import Foundation
+import Observation
 
 @MainActor
-final class CurrencyService: ObservableObject {
+@Observable
+final class CurrencyService {
 
     // Currencies shown in the picker
     static let supported: [(code: String, name: String, symbol: String)] = [
@@ -12,9 +14,9 @@ final class CurrencyService: ObservableObject {
         ("CHF", "Swiss Franc",    "CHF"),
     ]
 
-    @Published var rates: [String: Double] = ["RON": 1.0]   // RON per 1 unit of foreign currency
-    @Published var lastUpdated: Date?
-    @Published var isLoading = false
+    var rates: [String: Double] = ["RON": 1.0]   // RON per 1 unit of foreign currency
+    var lastUpdated: Date?
+    var isLoading = false
 
     private let ratesKey = "prvio.bnr.rates"
     private let dateKey  = "prvio.bnr.ratesDate"

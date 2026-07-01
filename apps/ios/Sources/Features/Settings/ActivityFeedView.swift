@@ -64,14 +64,14 @@ private struct ActivityEvent: Identifiable {
 // MARK: - View
 
 struct ActivityFeedView: View {
-    @EnvironmentObject private var financialService:  FinancialService
-    @EnvironmentObject private var documentService:   DocumentService
-    @EnvironmentObject private var familyService:     FamilyService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var appSettings:       AppSettings
-    @EnvironmentObject private var taskService:       TaskService
-    @EnvironmentObject private var elementService:    PropertyElementService
-    @EnvironmentObject private var applianceService:  ApplianceService
-    @EnvironmentObject private var plantService:      PlantService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(PlantService.self) private var plantService
 
     @State private var period:           ActivityPeriod   = .month
     @State private var selectedMember:   String?          = nil

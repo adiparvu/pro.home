@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Assignee picker sheet
 
 struct AssigneePickerSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Binding var assigneeIds: [String]
     @Binding var assigneeNames: [String]
     @Environment(\.dismiss) private var dismiss

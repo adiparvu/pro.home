@@ -80,9 +80,9 @@ struct PropertyBotEngine {
 }
 
 struct LocalAssistantView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(TaskService.self) private var taskService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
     @EnvironmentObject private var propertyService: PropertyService
 
     @State private var messages: [ChatMessage] = []

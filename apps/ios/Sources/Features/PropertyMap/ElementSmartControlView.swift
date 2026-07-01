@@ -7,7 +7,7 @@ import HomeKit
 struct ElementSmartControlSection: View {
     let elementId: UUID
 
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyElementService.self) private var elementService
     @ObservedObject private var homeKit = HomeKitService.shared
     @State private var showPicker = false
 

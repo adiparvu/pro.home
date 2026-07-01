@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - DeliveriesView
 
 struct DeliveriesView: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showAddDelivery = false
     @State private var editingDelivery: Delivery? = nil
@@ -38,11 +38,11 @@ struct DeliveriesView: View {
         }
         .sheet(isPresented: $showAddDelivery) {
             DeliveryFormSheet(editingDelivery: nil)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
         .sheet(item: $editingDelivery) { delivery in
             DeliveryFormSheet(editingDelivery: delivery)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
     }
 
@@ -143,7 +143,7 @@ struct DeliveriesView: View {
                     DeliveryRow(delivery: delivery) {
                         editingDelivery = delivery
                     }
-                    .environmentObject(deliveryService)
+                    .environment(deliveryService)
                 }
             }
         }
@@ -180,7 +180,7 @@ struct DeliveriesView: View {
                             DeliveryRow(delivery: delivery) {
                                 editingDelivery = delivery
                             }
-                            .environmentObject(deliveryService)
+                            .environment(deliveryService)
                         }
                     }
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -226,7 +226,7 @@ struct DeliveriesView: View {
 // MARK: - DeliveryRow
 
 struct DeliveryRow: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(DeliveryService.self) private var deliveryService
     let delivery: Delivery
     let onEdit: () -> Void
 

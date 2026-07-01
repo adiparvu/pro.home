@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - App Icon Picker
 
 struct AppIconPickerView: View {
-    @EnvironmentObject private var iconManager: IconManager
+    @Environment(IconManager.self) private var iconManager
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var showError = false

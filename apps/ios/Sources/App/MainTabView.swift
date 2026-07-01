@@ -4,35 +4,35 @@ import WidgetKit
 // MARK: - Main tab view
 
 struct MainTabView: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @EnvironmentObject private var appSettings: AppSettings
-    @StateObject private var taskService = TaskService()
+    @State private var taskService = TaskService()
     @StateObject private var propertyService = PropertyService()
-    @StateObject private var profileService = ProfileService()
-    @StateObject private var financialService = FinancialService()
-    @StateObject private var documentService = DocumentService()
-    @StateObject private var notificationScheduler = NotificationScheduler()
-    @StateObject private var budgetService = BudgetService()
-    @StateObject private var familyService = FamilyService()
-    @StateObject private var messageService = MessageService()
-    @StateObject private var currencyService = CurrencyService()
-    @StateObject private var elementService = PropertyElementService()
-    @StateObject private var zoneService = PropertyZoneService()
-    @StateObject private var supplyService = SupplyService()
-    @StateObject private var receiptService = ReceiptService()
-    @StateObject private var stickerService = StickerService()
-    @StateObject private var plantService = PlantService()
-    @StateObject private var deliveryService = DeliveryService()
-    @StateObject private var applianceService = ApplianceService()
-    @StateObject private var inventoryService = InventoryService()
-    @StateObject private var photoJournalService = PhotoJournalService()
-    @StateObject private var paintColorService = PaintColorService()
-    @StateObject private var propertyValueService = PropertyValueService()
-    @StateObject private var contractorService = ContractorService()
+    @State private var profileService = ProfileService()
+    @State private var financialService = FinancialService()
+    @State private var documentService = DocumentService()
+    @State private var notificationScheduler = NotificationScheduler()
+    @State private var budgetService = BudgetService()
+    @State private var familyService = FamilyService()
+    @State private var messageService = MessageService()
+    @State private var currencyService = CurrencyService()
+    @State private var elementService = PropertyElementService()
+    @State private var zoneService = PropertyZoneService()
+    @State private var supplyService = SupplyService()
+    @State private var receiptService = ReceiptService()
+    @State private var stickerService = StickerService()
+    @State private var plantService = PlantService()
+    @State private var deliveryService = DeliveryService()
+    @State private var applianceService = ApplianceService()
+    @State private var inventoryService = InventoryService()
+    @State private var photoJournalService = PhotoJournalService()
+    @State private var paintColorService = PaintColorService()
+    @State private var propertyValueService = PropertyValueService()
+    @State private var contractorService = ContractorService()
     @StateObject private var directMessageService = DirectMessageService()
-    @StateObject private var proactiveEngine = ProactiveEngine()
-    @StateObject private var tabBarVis = TabBarVisibility()
-    @EnvironmentObject private var router: AppRouter
+    @State private var proactiveEngine = ProactiveEngine()
+    @State private var tabBarVis = TabBarVisibility()
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -51,14 +51,14 @@ struct MainTabView: View {
 
             NavigationStack {
                 ConversationsView()
-                    .environmentObject(messageService)
+                    .environment(messageService)
                     .environmentObject(directMessageService)
-                    .environmentObject(familyService)
+                    .environment(familyService)
                     .environmentObject(propertyService)
-                    .environmentObject(profileService)
-                    .environmentObject(stickerService)
-                    .environmentObject(tabBarVis)
-                    .environmentObject(router)
+                    .environment(profileService)
+                    .environment(stickerService)
+                    .environment(tabBarVis)
+                    .environment(router)
             }
             .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
             .tag(AppTab.chat)
@@ -72,9 +72,9 @@ struct MainTabView: View {
             NavigationStack {
                 ARIAView(onDismiss: { router.showARIA = false })
                     .environmentObject(propertyService)
-                    .environmentObject(familyService)
-                    .environmentObject(profileService)
-                    .environmentObject(taskService)
+                    .environment(familyService)
+                    .environment(profileService)
+                    .environment(taskService)
             }
         }
         .sheet(isPresented: $router.showAddTask) { AddTaskView() }
@@ -84,34 +84,34 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showInventoryView) { NavigationStack { InventoryView() } }
         .sheet(isPresented: $router.showAddSupply) {
             AddSupplyItemSheet(list: nil, editingItem: nil)
-                .environmentObject(supplyService)
+                .environment(supplyService)
                 .environmentObject(propertyService)
         }
         .sheet(isPresented: $router.showWaterPlant) {
             NavigationStack {
                 PlantsView()
-                    .environmentObject(plantService)
+                    .environment(plantService)
                     .environmentObject(propertyService)
             }
         }
         .sheet(isPresented: $router.showFamilyChat) {
             NavigationStack {
                 ConversationsView()
-                    .environmentObject(messageService)
+                    .environment(messageService)
                     .environmentObject(directMessageService)
-                    .environmentObject(familyService)
+                    .environment(familyService)
                     .environmentObject(propertyService)
-                    .environmentObject(profileService)
-                    .environmentObject(stickerService)
-                    .environmentObject(tabBarVis)
-                    .environmentObject(router)
+                    .environment(profileService)
+                    .environment(stickerService)
+                    .environment(tabBarVis)
+                    .environment(router)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showDocuments) {
             NavigationStack {
                 DocumentsView()
-                    .environmentObject(documentService)
+                    .environment(documentService)
                     .environmentObject(propertyService)
             }
             .presentationDragIndicator(.visible)
@@ -119,7 +119,7 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showFamily) {
             NavigationStack {
                 FamilyView()
-                    .environmentObject(familyService)
+                    .environment(familyService)
                     .environmentObject(propertyService)
             }
             .presentationDragIndicator(.visible)
@@ -127,7 +127,7 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showContractors) {
             NavigationStack {
                 ContractorsView()
-                    .environmentObject(contractorService)
+                    .environment(contractorService)
                     .environmentObject(propertyService)
             }
             .presentationDragIndicator(.visible)
@@ -135,12 +135,12 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showFinances) {
             NavigationStack {
                 FinancesView()
-                    .environmentObject(financialService)
+                    .environment(financialService)
                     .environmentObject(propertyService)
-                    .environmentObject(budgetService)
-                    .environmentObject(currencyService)
+                    .environment(budgetService)
+                    .environment(currencyService)
                     .environmentObject(appSettings)
-                    .environmentObject(tabBarVis)
+                    .environment(tabBarVis)
             }
             .presentationDragIndicator(.visible)
         }
@@ -160,33 +160,33 @@ struct MainTabView: View {
             guard NFCScanService.isSupported else { return }
             NFCScanService.shared.scan(prompt: "Apropie iPhone-ul de tag-ul NFC") { _ in }
         }
-        .environmentObject(router)
-        .environmentObject(tabBarVis)
-        .environmentObject(taskService)
+        .environment(router)
+        .environment(tabBarVis)
+        .environment(taskService)
         .environmentObject(propertyService)
-        .environmentObject(profileService)
-        .environmentObject(financialService)
-        .environmentObject(documentService)
-        .environmentObject(notificationScheduler)
-        .environmentObject(budgetService)
-        .environmentObject(familyService)
-        .environmentObject(messageService)
-        .environmentObject(currencyService)
-        .environmentObject(elementService)
-        .environmentObject(zoneService)
-        .environmentObject(supplyService)
-        .environmentObject(receiptService)
-        .environmentObject(stickerService)
-        .environmentObject(plantService)
-        .environmentObject(deliveryService)
-        .environmentObject(applianceService)
-        .environmentObject(inventoryService)
-        .environmentObject(photoJournalService)
-        .environmentObject(paintColorService)
-        .environmentObject(propertyValueService)
-        .environmentObject(contractorService)
+        .environment(profileService)
+        .environment(financialService)
+        .environment(documentService)
+        .environment(notificationScheduler)
+        .environment(budgetService)
+        .environment(familyService)
+        .environment(messageService)
+        .environment(currencyService)
+        .environment(elementService)
+        .environment(zoneService)
+        .environment(supplyService)
+        .environment(receiptService)
+        .environment(stickerService)
+        .environment(plantService)
+        .environment(deliveryService)
+        .environment(applianceService)
+        .environment(inventoryService)
+        .environment(photoJournalService)
+        .environment(paintColorService)
+        .environment(propertyValueService)
+        .environment(contractorService)
         .environmentObject(directMessageService)
-        .environmentObject(proactiveEngine)
+        .environment(proactiveEngine)
         .task {
             await currencyService.refresh()
             await propertyService.load()

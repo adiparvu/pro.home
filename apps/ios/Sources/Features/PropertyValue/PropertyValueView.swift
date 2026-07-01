@@ -4,9 +4,9 @@ import Charts
 // MARK: - PropertyValueView
 
 struct PropertyValueView: View {
-    @EnvironmentObject private var propertyValueService: PropertyValueService
+    @Environment(PropertyValueService.self) private var propertyValueService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var currencyService: CurrencyService
+    @Environment(CurrencyService.self) private var currencyService
     @EnvironmentObject private var appSettings: AppSettings
 
     @State private var showAdd = false
@@ -53,9 +53,9 @@ struct PropertyValueView: View {
         }
         .sheet(isPresented: $showAdd) {
             AddPropertyValueSheet()
-                .environmentObject(propertyValueService)
+                .environment(propertyValueService)
                 .environmentObject(propertyService)
-                .environmentObject(currencyService)
+                .environment(currencyService)
         }
         .task {
             if let id = propertyService.primary?.id {

@@ -683,7 +683,7 @@ struct DashStatsStrip: View {
 // MARK: - Proactive Insights Strip
 
 struct ProactiveInsightsStrip: View {
-    @ObservedObject var engine: ProactiveEngine
+    var engine: ProactiveEngine
 
     var body: some View {
         GlassCard {

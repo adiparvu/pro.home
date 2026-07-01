@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class PlantService: ObservableObject {
-    @Published var plants: [Plant] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PlantService {
+    var plants: [Plant] = []
+    var isLoading = false
+    var error: String?
 
     // MARK: Computed
 

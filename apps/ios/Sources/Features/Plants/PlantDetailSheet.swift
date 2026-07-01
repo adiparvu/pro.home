@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - PlantDetailSheet
 
 struct PlantDetailSheet: View {
-    @EnvironmentObject var plantService: PlantService
+    @Environment(PlantService.self) var plantService
     @Environment(\.dismiss) var dismiss
 
     let plant: Plant

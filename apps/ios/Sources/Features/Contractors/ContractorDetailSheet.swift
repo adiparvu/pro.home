@@ -2,8 +2,8 @@ import SwiftUI
 
 struct ContractorDetailSheet: View {
     let contractor: ContractorModel
-    @ObservedObject var service: ContractorService
-    @EnvironmentObject private var router: AppRouter
+    var service: ContractorService
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEdit = false
@@ -259,7 +259,7 @@ struct ContractorDetailSheet: View {
 
 private struct EditContractorSheet: View {
     let contractor: ContractorModel
-    @ObservedObject var service: ContractorService
+    var service: ContractorService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String

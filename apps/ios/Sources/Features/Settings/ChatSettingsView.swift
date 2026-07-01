@@ -8,9 +8,9 @@ import SwiftUI
 
 struct ChatSettingsView: View {
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var messageService: MessageService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(MessageService.self) private var messageService
 
     @State private var showTheme = false
     @State private var showStarred = false

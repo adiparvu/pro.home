@@ -1,17 +1,17 @@
 import SwiftUI
 
 struct GlobalSearchSheet: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var inventoryService: InventoryService
-    @EnvironmentObject private var router: AppRouter
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(PlantService.self) private var plantService
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(InventoryService.self) private var inventoryService
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
@@ -144,27 +144,27 @@ struct GlobalSearchSheet: View {
         .onAppear { focused = true }
         .sheet(item: $selectedMember) { m in
             MemberProfileSheet(member: m)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .sheet(item: $selectedAppliance) { a in
             ApplianceDetailSheet(appliance: a)
-                .environmentObject(applianceService)
+                .environment(applianceService)
         }
         .sheet(item: $selectedElement) { e in
             PropertyElementDetailView(element: e)
-                .environmentObject(elementService)
-                .environmentObject(documentService)
+                .environment(elementService)
+                .environment(documentService)
         }
         .sheet(item: $selectedInventoryItem) { i in
             ItemDetailView(item: i, service: inventoryService)
         }
         .sheet(item: $selectedPlant) { p in
             PlantDetailSheet(plant: p)
-                .environmentObject(plantService)
+                .environment(plantService)
         }
         .sheet(item: $selectedDelivery) { d in
             DeliveryFormSheet(editingDelivery: d)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
     }
 

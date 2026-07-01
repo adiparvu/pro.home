@@ -1,8 +1,10 @@
 import Foundation
+import Observation
 
 @MainActor
-final class DeliveryService: ObservableObject {
-    @Published var deliveries: [Delivery] = []
+@Observable
+final class DeliveryService {
+    var deliveries: [Delivery] = []
     private(set) var currentPropertyId: UUID?
 
     // MARK: Computed

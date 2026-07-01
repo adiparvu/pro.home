@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 import UserNotifications
 
 @MainActor
-final class InventoryService: ObservableObject {
-    @Published var items: [InventoryItem] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class InventoryService {
+    var items: [InventoryItem] = []
+    var isLoading = false
+    var error: String?
 
     private(set) var currentPropertyId: UUID?
     private(set) var currentUserId: UUID?

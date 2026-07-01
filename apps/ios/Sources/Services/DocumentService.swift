@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import Supabase
 
 @MainActor
-final class DocumentService: ObservableObject {
-    @Published var documents: [DocumentModel] = []
-    @Published var isLoading = false
-    @Published var isSaving = false
-    @Published var error: String?
+@Observable
+final class DocumentService {
+    var documents: [DocumentModel] = []
+    var isLoading = false
+    var isSaving = false
+    var error: String?
 
     var criticalDocs: [DocumentModel] { documents.filter { $0.isCritical } }
     var expiringDocs: [DocumentModel] { documents.filter { $0.isExpiringSoon } }

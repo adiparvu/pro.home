@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Add supply item sheet
 
 struct AddSupplyItemSheet: View {
-    @EnvironmentObject private var supplyService: SupplyService
+    @Environment(SupplyService.self) private var supplyService
     @EnvironmentObject private var propertyService: PropertyService
     @Environment(\.dismiss) private var dismiss
 

@@ -4,14 +4,14 @@ import Supabase
 // MARK: - Conversations list (WhatsApp-style main chat screen)
 
 struct ConversationsView: View {
-    @EnvironmentObject private var messageService: MessageService
+    @Environment(MessageService.self) private var messageService
     @EnvironmentObject private var directMessageService: DirectMessageService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var stickerService: StickerService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var router: AppRouter
+    @Environment(ProfileService.self) private var profileService
+    @Environment(StickerService.self) private var stickerService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddMember = false
     @State private var showNewConversation = false
@@ -232,11 +232,11 @@ struct ConversationsView: View {
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
                                  propertyName: propertyService.primary?.name)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .sheet(isPresented: $showAddContact) {
             AddContactView()
-                .environmentObject(familyService)
+                .environment(familyService)
                 .environmentObject(propertyService)
         }
         .sheet(isPresented: $showStatus) {

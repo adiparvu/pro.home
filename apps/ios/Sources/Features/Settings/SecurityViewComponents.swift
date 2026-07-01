@@ -5,7 +5,7 @@ import Supabase
 
 struct ActiveSessionsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
 
     var body: some View {
         NavigationStack {

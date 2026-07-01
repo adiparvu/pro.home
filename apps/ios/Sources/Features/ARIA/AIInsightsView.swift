@@ -3,13 +3,13 @@ import SwiftUI
 // MARK: - AI Insights — matches dark mockup (blue orb + proactive recommendations)
 
 struct AIInsightsView: View {
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var plantService: PlantService
+    @Environment(AppRouter.self) var router
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PlantService.self) var plantService
     @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TabBarVisibility.self) private var tabBarVis
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     @State private var orbPulse = false
@@ -87,9 +87,9 @@ struct AIInsightsView: View {
                 // View Full Timeline — outline button
                 NavigationLink {
                     PRVIOTimelineView()
-                        .environmentObject(taskService)
-                        .environmentObject(elementService)
-                        .environmentObject(tabBarVis)
+                        .environment(taskService)
+                        .environment(elementService)
+                        .environment(tabBarVis)
                 } label: {
                     Text(String(localized: "ai_insights_timeline"))
                         .font(AppFont.footnoteEmphasis)

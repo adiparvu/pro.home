@@ -6,7 +6,7 @@ import CoreLocation
 
 struct ItemDetailView: View {
     let item: InventoryItem
-    @ObservedObject var service: InventoryService
+    var service: InventoryService
     @Environment(\.dismiss) private var dismiss
     @State private var showLoan = false
     @State private var showReturnConfirm = false

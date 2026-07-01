@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Sticker Picker (bottom sheet)
 
 struct StickerPicker: View {
-    @EnvironmentObject private var stickerService: StickerService
+    @Environment(StickerService.self) private var stickerService
     let onSelect: (Sticker) -> Void
 
     @State private var selectedCategoryId: String = "recent"

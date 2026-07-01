@@ -380,7 +380,7 @@ struct LocationShareSheet: View {
 // MARK: - Mention Picker Sheet
 
 struct MentionPickerSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Binding var selectedIds: [String]
     @Binding var selectedNames: [String]
     @Environment(\.dismiss) private var dismiss

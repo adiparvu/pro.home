@@ -73,7 +73,7 @@ struct LinkedDocumentRow: View {
 
 struct DocumentLinkPicker: View {
     let elementId: UUID
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(DocumentService.self) private var documentService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -169,7 +169,7 @@ struct LinkedTaskRow: View {
 
 struct TaskLinkPicker: View {
     let elementId: UUID
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

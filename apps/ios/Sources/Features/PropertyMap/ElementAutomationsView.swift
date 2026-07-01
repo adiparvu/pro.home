@@ -7,7 +7,7 @@ struct ElementAutomationsSection: View {
     let element: PropertyElement
 
     @State private var service = AutomationService()
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @State private var showAdd = false
 
     private var items: [ElementAutomation] { service.automations(for: element.id) }

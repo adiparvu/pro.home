@@ -3,12 +3,12 @@ import PDFKit
 import MapKit
 
 struct PropertyReportView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(TaskService.self) private var taskService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
     @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
 
     @State private var isGenerating = false
     @State private var pdfURL: URL? = nil

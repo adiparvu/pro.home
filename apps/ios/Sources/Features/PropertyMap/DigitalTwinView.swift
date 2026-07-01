@@ -9,12 +9,12 @@ import SwiftUI
 
 struct DigitalTwinView: View {
     @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var currencyService: CurrencyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
 
     @State private var selectedElement: PropertyElement?
     @State private var pinMode = false
@@ -173,11 +173,11 @@ struct DigitalTwinView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(documentService)
+                .environment(taskService)
         }
         .sheet(isPresented: Binding(
             get: { pendingPin != nil },
@@ -191,15 +191,15 @@ struct DigitalTwinView: View {
         .sheet(isPresented: $showInsights) {
             TwinInsightsSheet()
                 .environmentObject(propertyService)
-                .environmentObject(zoneService)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(zoneService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
         }
         .sheet(isPresented: $showHealth) {
             PropertyHealthDashboardView()
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
+                .environment(elementService)
+                .environment(currencyService)
                 .environmentObject(appSettings)
         }
         .sheet(item: $editZone) { zone in

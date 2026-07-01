@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ApplianceDetailSheet: View {
     let appliance: Appliance
-    @EnvironmentObject private var applianceService: ApplianceService
+    @Environment(ApplianceService.self) private var applianceService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirm = false
