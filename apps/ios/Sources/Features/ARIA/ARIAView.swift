@@ -16,7 +16,7 @@ struct ARIAProposedAction {
 struct ARIAView: View {
     var onDismiss: (() -> Void)? = nil
 
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(TaskService.self) private var taskService
     @Environment(PlantService.self) private var plantService
     @Environment(ApplianceService.self) private var applianceService

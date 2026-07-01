@@ -4,7 +4,7 @@ import SwiftUI
 
 struct PlantsView: View {
     @Environment(PlantService.self) private var plantService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showAddPlant = false
@@ -43,7 +43,7 @@ struct PlantsView: View {
         .sheet(isPresented: $showAddPlant) {
             AddPlantSheet()
                 .environment(plantService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .sheet(item: $selectedPlant) { plant in
             PlantDetailSheet(plant: plant)

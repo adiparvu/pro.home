@@ -6,7 +6,7 @@ import Supabase
 
 struct PhotoJournalView: View {
     @Environment(PhotoJournalService.self) private var photoJournalService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd = false
     @State private var selectedEntry: PhotoJournalEntry? = nil
@@ -42,7 +42,7 @@ struct PhotoJournalView: View {
         .sheet(isPresented: $showAdd) {
             AddPhotoJournalSheet()
                 .environment(photoJournalService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .sheet(item: $selectedEntry) { entry in
             PhotoEntryDetailSheet(entry: entry)

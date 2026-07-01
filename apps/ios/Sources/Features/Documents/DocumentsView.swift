@@ -4,7 +4,7 @@ import QuickLook
 
 struct DocumentsView: View {
     @Environment(DocumentService.self) private var documentService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var search = ""
     @State private var selectedCategory: String? = nil
     @State private var showAdd = false

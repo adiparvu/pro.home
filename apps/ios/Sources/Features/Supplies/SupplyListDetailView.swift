@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SupplyListDetailView: View {
     @Environment(SupplyService.self) private var supplyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     var list: SupplyList
 
     @State private var searchText = ""
@@ -60,12 +60,12 @@ struct SupplyListDetailView: View {
         .sheet(isPresented: $showAddItem) {
             AddSupplyItemSheet(list: list, editingItem: nil)
                 .environment(supplyService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .sheet(item: $editingItem) { item in
             AddSupplyItemSheet(list: list, editingItem: item)
                 .environment(supplyService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .floatingSpeedDial(.supplies)
     }

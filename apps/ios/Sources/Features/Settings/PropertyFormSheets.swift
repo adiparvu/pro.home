@@ -248,7 +248,7 @@ struct AddressAutocompleteField: View {
 
 struct AddPropertySheet: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var name = ""
     @State private var addressLine1 = ""

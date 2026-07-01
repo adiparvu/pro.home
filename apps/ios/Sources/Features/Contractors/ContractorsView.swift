@@ -119,7 +119,7 @@ struct NewContractor: Encodable {
 struct ContractorsView: View {
     @Environment(ContractorService.self) private var service
     @Environment(AuthService.self) private var auth
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedContractor: ContractorModel? = nil
     @State private var search = ""

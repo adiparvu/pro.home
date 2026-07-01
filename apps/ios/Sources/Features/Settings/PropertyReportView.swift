@@ -6,7 +6,7 @@ struct PropertyReportView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(FinancialService.self) private var financialService
     @Environment(DocumentService.self) private var documentService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PropertyElementService.self) private var elementService
 

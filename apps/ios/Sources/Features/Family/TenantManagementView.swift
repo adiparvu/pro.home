@@ -5,7 +5,7 @@ import Foundation
 
 struct TenantManagementView: View {
     @Environment(FamilyService.self) private var familyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd        = false
     @State private var selectedTenant: FamilyMember?

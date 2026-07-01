@@ -1,17 +1,27 @@
 import Foundation
+import Observation
 import Supabase
 import UIKit
 
 @MainActor
-final class PropertyService: ObservableObject {
-    @Published var properties: [PropertyModel] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PropertyService {
+    var properties: [PropertyModel] = []
+    var isLoading = false
+    var error: String?
+
+    /// Bumped when the UserDefaults-backed selection changes. Since
+    /// `selectedPropertyId` isn't an observable stored property, its getter
+    /// touches this so consumers (and `primary`) refresh when it changes.
+    private var selectionRevision = 0
 
     var selectedPropertyId: UUID? {
-        get { UUID(uuidString: UserDefaults.standard.string(forKey: "prvio.selectedPropertyId") ?? "") }
+        get {
+            _ = selectionRevision
+            return UUID(uuidString: UserDefaults.standard.string(forKey: "prvio.selectedPropertyId") ?? "")
+        }
         set {
-            objectWillChange.send()
+            selectionRevision &+= 1
             UserDefaults.standard.set(newValue?.uuidString, forKey: "prvio.selectedPropertyId")
         }
     }

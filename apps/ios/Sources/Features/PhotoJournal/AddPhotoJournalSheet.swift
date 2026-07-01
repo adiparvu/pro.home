@@ -5,7 +5,7 @@ import Supabase
 
 struct AddPhotoJournalSheet: View {
     @Environment(PhotoJournalService.self) private var photoJournalService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedItem: PhotosPickerItem? = nil

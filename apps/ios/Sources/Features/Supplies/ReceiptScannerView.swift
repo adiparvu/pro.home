@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 
 struct ReceiptScannerView: View {
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
@@ -27,7 +27,7 @@ struct ReceiptScannerView: View {
                         Task { await saveReceipt(p) }
                     })
                     .environment(receiptService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                 } else {
                     pickPhotoState
                 }
@@ -248,7 +248,7 @@ struct ReceiptScannerView: View {
 
 private struct ReceiptReviewView: View {
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State var parsed: ParsedReceipt

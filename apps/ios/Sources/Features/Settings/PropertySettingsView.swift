@@ -4,7 +4,7 @@ import CoreLocation
 import PhotosUI
 
 struct PropertySettingsView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
 
     var body: some View {
@@ -16,7 +16,7 @@ struct PropertySettingsView: View {
                     ForEach(propertyService.properties) { p in
                         NavigationLink {
                             PropertyDetailView(propertyId: p.id)
-                                .environmentObject(propertyService)
+                                .environment(propertyService)
                         } label: {
                             propertyCard(p)
                         }

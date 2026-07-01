@@ -5,7 +5,7 @@ import Charts
 
 struct ExpenseDashboardView: View {
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(SupplyService.self) private var supplyService
 
     @Binding var activeTab: ExpenseTab
@@ -44,7 +44,7 @@ struct ExpenseDashboardView: View {
         .sheet(item: $selectedReceipt) { receipt in
             ReceiptDetailView(receipt: receipt)
                 .environment(receiptService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .onAppear {
             if selectedMonth.isEmpty { selectedMonth = receiptService.currentMonthKey }

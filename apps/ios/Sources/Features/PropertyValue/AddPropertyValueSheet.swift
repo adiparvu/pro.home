@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AddPropertyValueSheet: View {
     @Environment(PropertyValueService.self) private var propertyValueService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(CurrencyService.self) private var currencyService
     @Environment(\.dismiss) private var dismiss
 

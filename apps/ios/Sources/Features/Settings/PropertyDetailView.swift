@@ -3,7 +3,7 @@ import PhotosUI
 
 struct PropertyDetailView: View {
     let propertyId: UUID
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showEdit = false
     @State var showPhotoMenu = false
@@ -40,7 +40,7 @@ struct PropertyDetailView: View {
                 EditPropertySheet(property: property) { updated in
                     await propertyService.update(updated)
                 }
-                .environmentObject(propertyService)
+                .environment(propertyService)
             }
         }
         .confirmationDialog("Property photo", isPresented: $showPhotoMenu, titleVisibility: .visible) {

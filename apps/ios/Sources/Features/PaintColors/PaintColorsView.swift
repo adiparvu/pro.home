@@ -4,7 +4,7 @@ import SwiftUI
 
 struct PaintColorsView: View {
     @Environment(PaintColorService.self) private var paintColorService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd = false
     @State private var selectedRoom: String? = nil
@@ -48,7 +48,7 @@ struct PaintColorsView: View {
         .sheet(isPresented: $showAdd) {
             AddPaintColorSheet()
                 .environment(paintColorService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .confirmationDialog(
             "Delete \"\(colorToDelete?.colorName ?? "")\"?",

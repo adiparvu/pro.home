@@ -4,7 +4,7 @@ import PhotosUI
 import UniformTypeIdentifiers
 
 struct BlueprintsView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @State private var service = BlueprintService()
     @State private var showRoomScan = false

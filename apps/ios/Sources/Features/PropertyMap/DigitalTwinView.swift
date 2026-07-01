@@ -8,7 +8,7 @@ import SwiftUI
 // to open the element detail.
 
 struct DigitalTwinView: View {
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyService.self) var propertyService
     @Environment(PropertyElementService.self) var elementService
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(CurrencyService.self) var currencyService
@@ -156,7 +156,7 @@ struct DigitalTwinView: View {
                 EditPropertyElementView(element: $elementService.elements[idx]) {
                     Task { await elementService.update(elementService.elements[idx]) }
                 }
-                .environmentObject(propertyService)
+                .environment(propertyService)
             }
         }
         .confirmationDialog(
@@ -187,11 +187,11 @@ struct DigitalTwinView: View {
             AddPropertyElementView(defaultPosition: pendingPin ?? CGPoint(x: 0.5, y: 0.5)) { payload in
                 Task { await elementService.add(payload) }
             }
-            .environmentObject(propertyService)
+            .environment(propertyService)
         }
         .sheet(isPresented: $showInsights) {
             TwinInsightsSheet()
-                .environmentObject(propertyService)
+                .environment(propertyService)
                 .environment(zoneService)
                 .environment(elementService)
                 .environment(currencyService)

@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ReceiptDetailView: View {
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     let receipt: Receipt

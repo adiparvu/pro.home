@@ -3,7 +3,7 @@ import SwiftUI
 /// ARIA insights for the Digital Twin — a quick rule-based summary of the
 /// property plus an on-demand AI analysis via the aria-chat edge function.
 struct TwinInsightsSheet: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(PropertyElementService.self) private var elementService
     @Environment(CurrencyService.self) private var currencyService

@@ -719,7 +719,7 @@ struct GroupDetailsView: View {
     var inviteLink: String = ""
     var propertyId: UUID? = nil
     var exportText: String = ""
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var photoItem: PhotosPickerItem?
@@ -903,7 +903,7 @@ struct GroupDetailsView: View {
             .sheet(isPresented: $showEditDetails) {
                 EditGroupDetailsSheet(currentName: groupName, photoUrl: photoUrl,
                                       members: members, propertyId: propertyId)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             .onAppear {
                 muted = ChatMuteStore.isMuted("group")
@@ -991,7 +991,7 @@ struct EditGroupDetailsSheet: View {
     let photoUrl: String?
     let members: [FamilyMember]
     var propertyId: UUID?
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
     @State private var photoItem: PhotosPickerItem?
@@ -1242,7 +1242,7 @@ struct SecureChatToggle: View {
 
 struct AddContactView: View {
     @Environment(FamilyService.self) private var familyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""

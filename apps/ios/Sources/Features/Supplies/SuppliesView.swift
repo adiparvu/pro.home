@@ -27,7 +27,7 @@ enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
 struct SuppliesView: View {
     @Environment(SupplyService.self) private var supplyService
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var activeTab: ExpenseTab = .overview
     @State private var showAddList = false
@@ -66,7 +66,7 @@ struct SuppliesView: View {
                     showReports: $showReports
                 )
                 .environment(receiptService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
                 .environment(supplyService)
             case .lists:
                 shoppingListsContent
@@ -108,16 +108,16 @@ struct SuppliesView: View {
             }
         }
         .sheet(isPresented: $showAddList) {
-            AddSupplyListSheet().environment(supplyService).environmentObject(propertyService)
+            AddSupplyListSheet().environment(supplyService).environment(propertyService)
         }
         .sheet(isPresented: $showScanner) {
-            ReceiptScannerView().environment(receiptService).environmentObject(propertyService)
+            ReceiptScannerView().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showAddReceipt) {
-            AddReceiptSheet().environment(receiptService).environmentObject(propertyService)
+            AddReceiptSheet().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showBudgets) {
-            BudgetManagementView().environment(receiptService).environmentObject(propertyService)
+            BudgetManagementView().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showReports) {
             SpendingReportView().environment(receiptService)
@@ -216,7 +216,7 @@ struct SuppliesView: View {
                     NavigationLink(destination:
                         SupplyListDetailView(list: list)
                             .environment(supplyService)
-                            .environmentObject(propertyService)
+                            .environment(propertyService)
                     ) {
                         SupplyListCard(list: list).environment(supplyService)
                     }

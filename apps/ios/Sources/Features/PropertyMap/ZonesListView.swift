@@ -5,7 +5,7 @@ import SwiftUI
 struct ZonesListView: View {
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(PropertyElementService.self) var elementService
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyService.self) var propertyService
     @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
     @Environment(DocumentService.self) var documentService

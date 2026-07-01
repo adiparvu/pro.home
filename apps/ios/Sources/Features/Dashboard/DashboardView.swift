@@ -7,7 +7,7 @@ import CoreLocation
 struct DashboardView: View {
     @Environment(AuthService.self) var auth
     @Environment(TaskService.self) var taskService
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyService.self) var propertyService
     @Environment(FinancialService.self) var financialService
     @Environment(ProfileService.self) var profileService
     @Environment(DocumentService.self) var documentService

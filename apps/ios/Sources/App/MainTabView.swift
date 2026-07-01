@@ -7,7 +7,7 @@ struct MainTabView: View {
     @Environment(AuthService.self) private var auth
     @EnvironmentObject private var appSettings: AppSettings
     @State private var taskService = TaskService()
-    @StateObject private var propertyService = PropertyService()
+    @State private var propertyService = PropertyService()
     @State private var profileService = ProfileService()
     @State private var financialService = FinancialService()
     @State private var documentService = DocumentService()
@@ -29,7 +29,7 @@ struct MainTabView: View {
     @State private var paintColorService = PaintColorService()
     @State private var propertyValueService = PropertyValueService()
     @State private var contractorService = ContractorService()
-    @StateObject private var directMessageService = DirectMessageService()
+    @State private var directMessageService = DirectMessageService()
     @State private var proactiveEngine = ProactiveEngine()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
@@ -53,9 +53,9 @@ struct MainTabView: View {
             NavigationStack {
                 ConversationsView()
                     .environment(messageService)
-                    .environmentObject(directMessageService)
+                    .environment(directMessageService)
                     .environment(familyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(profileService)
                     .environment(stickerService)
                     .environment(tabBarVis)
@@ -72,7 +72,7 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
                 ARIAView(onDismiss: { router.showARIA = false })
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(familyService)
                     .environment(profileService)
                     .environment(taskService)
@@ -86,22 +86,22 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showAddSupply) {
             AddSupplyItemSheet(list: nil, editingItem: nil)
                 .environment(supplyService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .sheet(isPresented: $router.showWaterPlant) {
             NavigationStack {
                 PlantsView()
                     .environment(plantService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
         }
         .sheet(isPresented: $router.showFamilyChat) {
             NavigationStack {
                 ConversationsView()
                     .environment(messageService)
-                    .environmentObject(directMessageService)
+                    .environment(directMessageService)
                     .environment(familyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(profileService)
                     .environment(stickerService)
                     .environment(tabBarVis)
@@ -113,7 +113,7 @@ struct MainTabView: View {
             NavigationStack {
                 DocumentsView()
                     .environment(documentService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             .presentationDragIndicator(.visible)
         }
@@ -121,7 +121,7 @@ struct MainTabView: View {
             NavigationStack {
                 FamilyView()
                     .environment(familyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             .presentationDragIndicator(.visible)
         }
@@ -129,7 +129,7 @@ struct MainTabView: View {
             NavigationStack {
                 ContractorsView()
                     .environment(contractorService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             .presentationDragIndicator(.visible)
         }
@@ -137,7 +137,7 @@ struct MainTabView: View {
             NavigationStack {
                 FinancesView()
                     .environment(financialService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(budgetService)
                     .environment(currencyService)
                     .environmentObject(appSettings)
@@ -164,7 +164,7 @@ struct MainTabView: View {
         .environment(router)
         .environment(tabBarVis)
         .environment(taskService)
-        .environmentObject(propertyService)
+        .environment(propertyService)
         .environment(profileService)
         .environment(financialService)
         .environment(documentService)
@@ -186,7 +186,7 @@ struct MainTabView: View {
         .environment(paintColorService)
         .environment(propertyValueService)
         .environment(contractorService)
-        .environmentObject(directMessageService)
+        .environment(directMessageService)
         .environment(proactiveEngine)
         .task {
             await currencyService.refresh()

@@ -5,9 +5,9 @@ import Supabase
 
 struct ConversationsView: View {
     @Environment(MessageService.self) private var messageService
-    @EnvironmentObject private var directMessageService: DirectMessageService
+    @Environment(DirectMessageService.self) private var directMessageService
     @Environment(FamilyService.self) private var familyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(StickerService.self) private var stickerService
     @Environment(TabBarVisibility.self) private var tabBarVis
@@ -237,7 +237,7 @@ struct ConversationsView: View {
         .sheet(isPresented: $showAddContact) {
             AddContactView()
                 .environment(familyService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .sheet(isPresented: $showStatus) {
             StatusView(propertyId: propertyService.primary?.id,

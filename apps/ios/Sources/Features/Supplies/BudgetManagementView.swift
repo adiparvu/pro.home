@@ -4,7 +4,7 @@ import SwiftUI
 
 struct BudgetManagementView: View {
     @Environment(ReceiptService.self) private var receiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingCategoryItem: BudgetCategoryItem? = nil

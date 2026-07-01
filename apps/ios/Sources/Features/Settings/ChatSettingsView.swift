@@ -7,7 +7,7 @@ import SwiftUI
 // on the Chat tab; this screen is for settings/features.
 
 struct ChatSettingsView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
     @Environment(MessageService.self) private var messageService

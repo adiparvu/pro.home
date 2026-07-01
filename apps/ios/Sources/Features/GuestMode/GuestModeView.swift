@@ -38,7 +38,7 @@ private enum GuestWiFiKeychain {
 // MARK: - GuestModeView
 
 struct GuestModeView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @AppStorage("prvio.guest.wifi_name") private var wifiName = ""
     @State private var wifiPass: String = GuestWiFiKeychain.load()

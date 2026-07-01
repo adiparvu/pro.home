@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PropertyMapView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyElementService.self) var elementService
     @Environment(CurrencyService.self) var currencyService
     @EnvironmentObject var appSettings: AppSettings
@@ -127,7 +127,7 @@ struct PropertyMapView: View {
             AddPropertyElementView(defaultPosition: addPosition) { payload in
                 Task { await elementService.add(payload) }
             }
-            .environmentObject(propertyService)
+            .environment(propertyService)
         }
         .sheet(isPresented: $showHealthDashboard) {
             PropertyHealthDashboardView()

@@ -75,7 +75,7 @@ struct AddElementRecordView: View {
     let element: PropertyElement
     let onAdd: (NewElementRecord) -> Void
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var title = ""
     @State private var recordType: ElementRecordType = .maintenance

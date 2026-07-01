@@ -5,7 +5,7 @@ import Charts
 
 struct PropertyValueView: View {
     @Environment(PropertyValueService.self) private var propertyValueService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(CurrencyService.self) private var currencyService
     @EnvironmentObject private var appSettings: AppSettings
 
@@ -54,7 +54,7 @@ struct PropertyValueView: View {
         .sheet(isPresented: $showAdd) {
             AddPropertyValueSheet()
                 .environment(propertyValueService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
                 .environment(currencyService)
         }
         .task {

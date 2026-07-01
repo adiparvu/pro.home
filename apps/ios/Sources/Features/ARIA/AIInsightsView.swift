@@ -8,7 +8,7 @@ struct AIInsightsView: View {
     @Environment(PropertyElementService.self) var elementService
     @Environment(PropertyZoneService.self) var zoneService
     @Environment(PlantService.self) var plantService
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyService.self) var propertyService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 

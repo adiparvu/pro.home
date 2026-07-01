@@ -16,7 +16,7 @@ private struct ChatBottomKey: PreferenceKey {
 struct ChatView: View {
     @Environment(MessageService.self) var messageService
     @Environment(FamilyService.self) private var familyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(StickerService.self) private var stickerService
@@ -348,7 +348,7 @@ struct ChatView: View {
                 propertyId: propertyId,
                 exportText: exportTranscript
             )
-            .environmentObject(propertyService)
+            .environment(propertyService)
         }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)

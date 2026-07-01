@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 struct AddApplianceSheet: View {
     @Environment(ApplianceService.self) private var applianceService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""

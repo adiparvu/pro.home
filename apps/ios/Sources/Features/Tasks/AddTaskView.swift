@@ -4,7 +4,7 @@ import UserNotifications
 
 struct AddTaskView: View {
     @Environment(TaskService.self) private var taskService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
 

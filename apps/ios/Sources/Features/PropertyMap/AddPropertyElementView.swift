@@ -7,7 +7,7 @@ struct AddPropertyElementView: View {
     let defaultPosition: CGPoint
     let onAdd: (NewPropertyElement) -> Void
 
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""

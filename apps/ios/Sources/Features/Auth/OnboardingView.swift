@@ -3,7 +3,7 @@ import Supabase
 
 struct OnboardingView: View {
     @AppStorage("prvio.onboarding.done") private var onboardingDone = false
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(PropertyZoneService.self) private var zoneService
     @Environment(AuthService.self) private var auth
 

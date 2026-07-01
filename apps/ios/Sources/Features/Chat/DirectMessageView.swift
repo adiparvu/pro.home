@@ -13,9 +13,9 @@ private struct DMBottomKey: PreferenceKey {
 struct DirectMessageView: View {
     let member: FamilyMember
 
-    @EnvironmentObject private var directMessageService: DirectMessageService
+    @Environment(DirectMessageService.self) private var directMessageService
     @Environment(ProfileService.self) private var profileService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
 

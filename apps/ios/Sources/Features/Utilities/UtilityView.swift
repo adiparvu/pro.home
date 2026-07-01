@@ -141,7 +141,7 @@ final class UtilityService {
 
 struct UtilityView: View {
     @State private var service = UtilityService()
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedType = "electricity"
 

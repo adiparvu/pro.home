@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TasksView: View {
     @Environment(TaskService.self) private var taskService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(DocumentService.self) private var documentService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @State private var filter: TaskFilter = .all
@@ -141,7 +141,7 @@ struct TasksView: View {
         .sheet(isPresented: $showAdd) {
             AddTaskView()
                 .environment(taskService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
         }
         .alert("Error", isPresented: Binding(
             get: { taskService.error != nil },
@@ -304,7 +304,7 @@ struct FilterChip: View {
 
 struct TaskRowView: View {
     @Environment(TaskService.self) private var taskService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     let task: MaintenanceTask
 
@@ -396,7 +396,7 @@ struct TaskRowView: View {
         .sheet(isPresented: $showEdit) {
             AddTaskView(editing: task)
                 .environment(taskService)
-                .environmentObject(propertyService)
+                .environment(propertyService)
                 .environment(familyService)
         }
     }

@@ -25,7 +25,7 @@ private struct PerspectiveHighlight: Identifiable {
 // MARK: - PropertyPerspectivesView
 
 struct PropertyPerspectivesView: View {
-    @EnvironmentObject private var propertyService:  PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(TaskService.self) private var taskService
     @Environment(DocumentService.self) private var documentService
     @Environment(FinancialService.self) private var financialService

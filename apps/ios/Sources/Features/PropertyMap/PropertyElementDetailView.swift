@@ -11,7 +11,7 @@ struct PropertyElementDetailView: View {
     @EnvironmentObject var appSettings: AppSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyService.self) var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info

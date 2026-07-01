@@ -3,7 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AuthService.self) private var auth
     @Environment(TaskService.self) private var taskService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(ProfileService.self) private var profileService
     @Environment(FinancialService.self) private var financialService
     @Environment(DocumentService.self) private var documentService
@@ -200,12 +200,12 @@ struct SettingsView: View {
         SettingsGroup(title: "Property") {
             NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
                 PropertySettingsView()
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
                 DocumentsView()
                     .environment(documentService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
                 BlueprintsView()
@@ -213,7 +213,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
                 FinancesView()
                     .environment(financialService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(budgetService)
             }
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
@@ -222,12 +222,12 @@ struct SettingsView: View {
             NavSettingsRow(icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), label: "Supplies") {
                 SuppliesView()
                     .environment(supplyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
                 PlantsView()
                     .environment(plantService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
                 DeliveriesView()
@@ -248,22 +248,22 @@ struct SettingsView: View {
                     .environment(taskService)
                     .environment(financialService)
                     .environment(documentService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 TenantManagementView()
                     .environment(familyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "washer.fill", color: Color(red: 0.2, green: 0.55, blue: 0.95), label: "Appliances") {
                 AppliancesView()
                     .environment(applianceService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
                 PhotoJournalView()
                     .environment(photoJournalService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
                 SeasonalChecklistView()
@@ -271,23 +271,23 @@ struct SettingsView: View {
             NavSettingsRow(icon: "paintpalette.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15), label: "Paint Colors") {
                 PaintColorsView()
                     .environment(paintColorService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
                 PropertyValueView()
                     .environment(propertyValueService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(currencyService)
                     .environmentObject(appSettings)
             }
             NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
                 GuestModeView()
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(familyService)
             }
             NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color(red: 0.35, green: 0.55, blue: 1.0), label: "Perspectives") {
                 PropertyPerspectivesView()
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(taskService)
                     .environment(documentService)
                     .environment(financialService)
@@ -303,7 +303,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Family Members") {
                 FamilyView()
                     .environment(familyService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supervision") {
                 SupervisionView()
@@ -313,7 +313,7 @@ struct SettingsView: View {
                 Group {
                     if propertyService.primary?.id != nil {
                         ChatSettingsView()
-                            .environmentObject(propertyService)
+                            .environment(propertyService)
                             .environment(familyService)
                             .environment(profileService)
                             .environment(messageService)
@@ -369,7 +369,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 IntegrationsView()
                     .environment(taskService)
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
                     .environment(familyService)
             }
         }

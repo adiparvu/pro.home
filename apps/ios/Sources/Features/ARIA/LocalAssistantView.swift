@@ -83,7 +83,7 @@ struct LocalAssistantView: View {
     @Environment(TaskService.self) private var taskService
     @Environment(FinancialService.self) private var financialService
     @Environment(DocumentService.self) private var documentService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var messages: [ChatMessage] = []
     @State private var input = ""

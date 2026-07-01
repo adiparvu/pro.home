@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Supabase
 
 // MARK: - DirectMessage model
@@ -52,17 +53,24 @@ struct DirectMessage: Identifiable, Codable {
 // MARK: - DirectMessageService
 
 @MainActor
-final class DirectMessageService: ObservableObject {
-    @Published var dms: [DirectMessage] = []
-    @Published var isLoading = false
+@Observable
+final class DirectMessageService {
+    var dms: [DirectMessage] = []
+    var isLoading = false
 
-    private var channel: RealtimeChannelV2?
+    /// Bumped whenever UserDefaults-backed local state (last-seen timestamps,
+    /// hidden message ids) changes. Those aren't observable stored properties,
+    /// so the derived reads (`messages`, `unreadCount`) touch this value to
+    /// register an observation dependency and refresh when it changes.
+    private var localRevision = 0
+
+    @ObservationIgnored private var channel: RealtimeChannelV2?
 
     // MARK: - Typing indicator
-    @Published var typingNames: Set<String> = []
+    var typingNames: Set<String> = []
     var myName: String = ""
-    private var typingSub: RealtimeSubscription?
-    private var typingTasks: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var typingSub: RealtimeSubscription?
+    @ObservationIgnored private var typingTasks: [String: Task<Void, Never>] = [:]
 
     func sendTyping() {
         guard let ch = channel, !myName.isEmpty else { return }
@@ -82,6 +90,7 @@ final class DirectMessageService: ObservableObject {
     // MARK: - Queries
 
     func messages(with partner: String, myName: String) -> [DirectMessage] {
+        _ = localRevision  // observe local-state changes (hidden ids)
         let hidden = hiddenIds()
         return dms.filter {
             (($0.senderName == partner && $0.recipientName == myName) ||
@@ -95,6 +104,7 @@ final class DirectMessageService: ObservableObject {
     }
 
     func unreadCount(from partner: String, myName: String) -> Int {
+        _ = localRevision  // observe local-state changes (last-seen timestamps)
         let lastSeen = lastSeenDate(for: partner)
         return dms.filter {
             $0.senderName == partner &&
@@ -105,7 +115,7 @@ final class DirectMessageService: ObservableObject {
 
     func markRead(partner: String) {
         UserDefaults.standard.set(Date(), forKey: "dm.lastseen.\(partner)")
-        objectWillChange.send()
+        localRevision &+= 1
     }
 
     // MARK: - Persistence
@@ -153,7 +163,6 @@ final class DirectMessageService: ObservableObject {
                 .execute()
             if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].deliveredAt = nowISO }
         }
-        objectWillChange.send()
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
@@ -233,7 +242,7 @@ final class DirectMessageService: ObservableObject {
         var h = hiddenIds()
         h.insert(id)
         UserDefaults.standard.set(h.map(\.uuidString), forKey: Self.hiddenKey)
-        objectWillChange.send()
+        localRevision &+= 1
     }
 
     func togglePin(_ msg: DirectMessage) async {
@@ -326,7 +335,6 @@ final class DirectMessageService: ObservableObject {
                 if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
             }
         }
-        objectWillChange.send()
     }
 
     // MARK: - Private helpers

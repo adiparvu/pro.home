@@ -4,7 +4,7 @@ import SwiftUI
 
 struct AddSupplyItemSheet: View {
     @Environment(SupplyService.self) private var supplyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     let list: SupplyList?
