@@ -592,9 +592,9 @@ struct MessageBubble: View {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn)
-        } else if message.isAudioMessage, let urlStr = message.attachmentUrl, let url = URL(string: urlStr) {
+        } else if message.isAudioMessage, let urlStr = message.attachmentUrl {
             AudioBubble(
-                url: url, isOwn: isOwn,
+                audioValue: urlStr, isOwn: isOwn,
                 avatarURL: isOwn ? myAvatarURL : sender?.avatarUrl.flatMap { URL(string: $0) },
                 initials: sender?.initials ?? String(message.senderName.prefix(2)).uppercased(),
                 avatarColor: sender?.swiftColor ?? Color.gray,

@@ -193,14 +193,12 @@ extension ChatView {
         guard let data = try? Data(contentsOf: url) else { return }
         isSending = true
         defer { isSending = false; try? FileManager.default.removeItem(at: url) }
-        let fileName = "\(UUID().uuidString).m4a"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/audio/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "audio/mp4", upsert: false))
-        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at playback via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "audio",
+                                          ext: "m4a", contentType: "audio/mp4")
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: remoteURL?.absoluteString, attachmentType: "audio",
+            attachmentUrl: path, attachmentType: "audio",
             mentionedIds: []
         )
         HapticFeedback.success()

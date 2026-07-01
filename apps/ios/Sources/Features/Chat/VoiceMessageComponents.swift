@@ -163,7 +163,9 @@ struct VoiceRecordButton: View {
 // MARK: - Audio playback bubble
 
 struct AudioBubble: View {
-    let url: URL?
+    /// Stored attachment value — a chat-media path or a legacy public URL. It is
+    /// resolved to a short-lived signed URL for playback.
+    let audioValue: String?
     let isOwn: Bool
     var avatarURL: URL? = nil
     var initials: String = ""
@@ -177,6 +179,8 @@ struct AudioBubble: View {
 
     @StateObject private var player = AudioPlayer()
     @State private var loadedDuration: TimeInterval = 0
+    /// Signed URL resolved from `audioValue` (nil while resolving).
+    @State private var url: URL?
 
     private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(0.5) }
 
@@ -195,7 +199,11 @@ struct AudioBubble: View {
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
         .frame(minWidth: 230, maxWidth: 290)
-        .task {
+        .task(id: audioValue ?? "") {
+            guard let audioValue else { url = nil; return }
+            url = await ChatMedia.resolve(audioValue)
+        }
+        .task(id: url) {
             guard let url, loadedDuration == 0 else { return }
             let asset = AVURLAsset(url: url)
             if let cmTime = try? await asset.load(.duration) {

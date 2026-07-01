@@ -1026,13 +1026,11 @@ struct DirectMessageView: View {
     private func sendAudio(_ fileURL: URL) async {
         guard let data = try? Data(contentsOf: fileURL),
               let propId = propertyService.primary?.id else { return }
-        let filename = "dm-audio/\(UUID().uuidString).m4a"
 
         do {
-            try await supabase.storage.from("documents")
-                .upload(filename, data: data, options: FileOptions(contentType: "audio/mp4", upsert: false))
-            guard let urlStr = try? supabase.storage.from("documents").getPublicURL(path: filename).absoluteString,
-                  !urlStr.isEmpty else { return }
+            // Private bucket + signed URL at playback (via ChatMedia / AudioBubble).
+            guard let path = await ChatMedia.upload(data, propertyId: propId, subdir: "dm-audio",
+                                                    ext: "m4a", contentType: "audio/mp4") else { return }
 
             struct AudioPayload: Encodable {
                 let sender_name, recipient_name, body, property_id: String
@@ -1042,7 +1040,7 @@ struct DirectMessageView: View {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(AudioPayload(sender_name: myName, recipient_name: member.name,
-                                     body: urlStr, property_id: propId.uuidString,
+                                     body: path, property_id: propId.uuidString,
                                      sender_id: supabase.auth.currentSession?.user.id.uuidString,
                                      recipient_member_id: member.id.uuidString,
                                      expires_at: dmExpiresAt))
@@ -1212,7 +1210,7 @@ private struct DMBubble: View {
                     case .deleted: deletedBubble
                     case .audio:
                         AudioBubble(
-                            url: URL(string: message.body), isOwn: isOwn,
+                            audioValue: message.body, isOwn: isOwn,
                             avatarURL: isOwn ? myAvatarURL : partner?.avatarUrl.flatMap { URL(string: $0) },
                             initials: isOwn
                                 ? String(myName.prefix(2)).uppercased()
