@@ -49,7 +49,7 @@ struct ReceiptDetailView: View {
         GlassCard(padding: 20) {
             HStack(spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .fill(receipt.categoryColor.opacity(0.15))
                         .frame(width: 60, height: 60)
                     Image(systemName: receipt.categoryIcon)

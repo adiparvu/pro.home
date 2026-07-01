@@ -108,10 +108,10 @@ struct AddPlantSheet: View {
                                     selectedEmoji == emoji
                                         ? Color.accentColor.opacity(0.15)
                                         : Color.primary.opacity(AppOpacity.hairline),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(
                                             selectedEmoji == emoji ? Color.accentColor : Color.clear,
                                             lineWidth: 2
@@ -175,9 +175,9 @@ struct AddPlantSheet: View {
                 }
             }
             .buttonStyle(.plain)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .strokeBorder(
                         selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5
@@ -204,7 +204,7 @@ struct AddPlantSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -219,7 +219,7 @@ struct AddPlantSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -234,7 +234,7 @@ struct AddPlantSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -250,7 +250,7 @@ struct AddPlantSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -307,7 +307,7 @@ struct AddPlantSheet: View {
             .padding(AppSpacing.base)
             .background(
                 Color.primary.opacity(AppOpacity.subtleFill),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             )
         }
     }
@@ -328,7 +328,7 @@ struct AddPlantSheet: View {
             .frame(height: 52)
             .background(
                 canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
             .foregroundStyle(
                 canSave ? Color.white : Color.primary.opacity(0.4)

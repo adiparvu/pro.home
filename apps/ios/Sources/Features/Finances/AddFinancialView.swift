@@ -170,9 +170,9 @@ struct AddFinancialView: View {
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.xs)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
@@ -191,9 +191,9 @@ struct AddFinancialView: View {
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }

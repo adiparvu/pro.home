@@ -103,7 +103,7 @@ struct AddTaskView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -115,7 +115,7 @@ struct AddTaskView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -230,7 +230,7 @@ struct AddTaskView: View {
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
             }
             .buttonStyle(.plain)
         }

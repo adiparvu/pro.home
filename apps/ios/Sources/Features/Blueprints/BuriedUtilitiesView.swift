@@ -79,8 +79,8 @@ struct BuriedUtilitiesView: View {
             }
         }
         .frame(height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
     private var region: MKCoordinateRegion {

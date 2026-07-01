@@ -51,7 +51,7 @@ struct ZoneEditSheet: View {
                         TextField("Zone name", text: $name)
                             .font(.system(size: 16))
                             .padding(AppSpacing.base)
-                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     }
                     field("PHOTO") { photoPickerSection }
                     field("COLOR") { paletteRow }
@@ -240,7 +240,7 @@ struct ZoneEditSheet: View {
                     .foregroundStyle(icon == sym ? .white : .primary)
                     .frame(width: 44, height: 44)
                     .background(icon == sym ? tint : Color.primary.opacity(AppOpacity.hairline),
-                                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { icon = sym }
                         HapticFeedback.selection()

@@ -255,8 +255,8 @@ struct AddBuriedUtilitySheet: View {
             div
             fieldRow("note.text", "Notes (distances, landmarks…)", $notes)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var locationCard: some View {
@@ -309,7 +309,7 @@ struct AddBuriedUtilitySheet: View {
             VStack(spacing: 10) {
                 if let img = photoImage {
                     Image(uiImage: img).resizable().scaledToFit()
-                        .frame(maxHeight: 160).clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxHeight: 160).clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
                 }
                 Button { showPhotoPicker = true } label: {
                     Label(LocalizedStringKey(photoImage == nil ? "Add reference photo" : "Change photo"), systemImage: "photo.badge.plus")

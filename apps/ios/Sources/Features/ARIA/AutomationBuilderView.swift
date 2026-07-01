@@ -415,8 +415,8 @@ struct AutomationBuilderView: View {
         }
         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
         .frame(maxWidth: .infinity)
-        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.2), lineWidth: 0.5))
+        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).strokeBorder(color.opacity(0.2), lineWidth: 0.5))
     }
 
     // MARK: - Flow canvas card
@@ -462,10 +462,10 @@ struct AutomationBuilderView: View {
             .padding(.horizontal, AppSpacing.lg).padding(.bottom, AppSpacing.lg)
         }
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                         .strokeBorder(rule.color.opacity(0.20), lineWidth: 1)
                 )
         }
@@ -540,8 +540,8 @@ struct AutomationBuilderView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(color.opacity(0.35))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(color.opacity(0.6), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous).strokeBorder(color.opacity(0.6), lineWidth: 1))
     }
 
     // MARK: - Test Automation
@@ -591,8 +591,8 @@ struct AutomationBuilderView: View {
                 .frame(maxWidth: .infinity).frame(height: 44)
                 .background(
                     (isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .strokeBorder((isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.30), lineWidth: 1))
                 .animation(.spring(response: 0.35), value: isDeployed)
             }
@@ -611,8 +611,8 @@ struct AutomationBuilderView: View {
             }
             .foregroundStyle(color)
             .frame(maxWidth: .infinity).frame(height: 44)
-            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.3), lineWidth: 1))
+            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).strokeBorder(color.opacity(0.3), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -672,8 +672,8 @@ struct AutomationBuilderView: View {
                 .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection(); persist() }
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             .strokeBorder(rule.isActive ? rule.color.opacity(0.20) : Color.white.opacity(0.06), lineWidth: 1))
         .opacity(rule.isActive ? 1.0 : 0.6)
         .onTapGesture {

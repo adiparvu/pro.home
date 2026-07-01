@@ -98,7 +98,7 @@ struct TOTPEnrollView: View {
                 .accessibilityLabel("Copy secret code")
             }
             .padding(AppSpacing.base)
-            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -110,7 +110,7 @@ struct TOTPEnrollView: View {
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 .onChange(of: code) { _, v in
                     code = String(v.filter(\.isNumber).prefix(6))
                 }
@@ -126,7 +126,7 @@ struct TOTPEnrollView: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.lg)
-            .background(code.count == 6 ? Color.blue : Color.gray, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(code.count == 6 ? Color.blue : Color.gray, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(code.count != 6 || isVerifying)

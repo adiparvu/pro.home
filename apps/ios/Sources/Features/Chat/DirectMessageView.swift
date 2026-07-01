@@ -611,7 +611,7 @@ struct DirectMessageView: View {
                         .focused($focused)
                         .padding(.horizontal, AppSpacing.base)
                         .padding(.vertical, 9)
-                        .liquidGlass(cornerRadius: 20)
+                        .liquidGlass(cornerRadius: AppRadius.xl)
                         .opacity(audioRecorder.isRecording ? 0 : 1)
                         .allowsHitTesting(!audioRecorder.isRecording)
                         .onChange(of: input) { _, val in
@@ -737,7 +737,7 @@ struct DirectMessageView: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 9)
-        .liquidGlass(cornerRadius: 20)
+        .liquidGlass(cornerRadius: AppRadius.xl)
     }
 
     private var cameraButton: some View {
@@ -1402,7 +1402,7 @@ private struct DMBubble: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppSpacing.sm).padding(.vertical, 5)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
         .frame(maxWidth: 240, alignment: .leading)
     }
 
@@ -1452,15 +1452,15 @@ private struct DMImageBubble: View {
                 img.resizable()
                     .scaledToFill()
                     .frame(maxWidth: 220, maxHeight: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     .onTapGesture { if let url { onTap(url) } }
             case .failure:
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
                     .fill(Color.primary.opacity(0.08))
                     .frame(width: 220, height: 140)
                     .overlay(Image(systemName: "photo").foregroundStyle(Color.primary.opacity(0.3)))
             default:
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: AppRadius.lg)
                     .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 220, height: 140)
                     .overlay(ProgressView())

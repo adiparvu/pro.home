@@ -23,7 +23,7 @@ extension MortgageView {
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppSpacing.md)
-                        .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(.blue, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }

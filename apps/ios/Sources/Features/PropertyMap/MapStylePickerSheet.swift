@@ -68,10 +68,10 @@ private struct StyleCard: View {
                         }
                     }
                     .frame(height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
 
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .strokeBorder(Color.accentColor, lineWidth: 2.5)
                         VStack {
                             HStack {

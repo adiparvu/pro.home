@@ -215,7 +215,7 @@ struct MemberPickerView: View {
                         }
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                    .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: AppRadius.md))
                 }
                 .buttonStyle(.plain)
             }

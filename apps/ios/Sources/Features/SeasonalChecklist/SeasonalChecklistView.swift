@@ -92,9 +92,9 @@ struct SeasonalChecklistView: View {
                         .padding(.vertical, 10)
                         .background {
                             if selectedSeason == season {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     .fill(.regularMaterial)
-                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(season.color.opacity(0.5), lineWidth: 1))
                             }
                         }
@@ -145,7 +145,7 @@ struct SeasonalChecklistView: View {
                 Spacer()
             }
         }
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
             .strokeBorder(selectedSeason.color.opacity(0.35), lineWidth: 1))
     }
 
@@ -276,7 +276,7 @@ struct AddCustomSeasonalItemSheet: View {
                                 .font(.system(size: 16))
                                 .padding(AppSpacing.base)
                                 .background(Color.primary.opacity(AppOpacity.subtleFill),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         }
 
                         // Description
@@ -291,7 +291,7 @@ struct AddCustomSeasonalItemSheet: View {
                                 .lineLimit(3...5)
                                 .padding(AppSpacing.base)
                                 .background(Color.primary.opacity(AppOpacity.subtleFill),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         }
 
                         // Category
@@ -305,7 +305,7 @@ struct AddCustomSeasonalItemSheet: View {
                                 .font(.system(size: 15))
                                 .padding(AppSpacing.base)
                                 .background(Color.primary.opacity(AppOpacity.subtleFill),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
 
                             // Quick picks
                             if !existingCategories.isEmpty {

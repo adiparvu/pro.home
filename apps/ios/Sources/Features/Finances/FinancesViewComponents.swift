@@ -99,7 +99,7 @@ extension FinancesView {
                     icon: "percent")
         }
         .padding(.vertical, AppSpacing.lg)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .padding(.horizontal, AppSpacing.xl)
     }
 
@@ -161,7 +161,7 @@ extension FinancesView {
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     // MARK: Transaction List
@@ -274,7 +274,7 @@ struct FinancialRecordRow: View {
         let style = catStyle(record.category)
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(style.color.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: style.icon)

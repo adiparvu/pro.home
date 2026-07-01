@@ -86,7 +86,7 @@ struct AuditLogView: View {
                     eventRow(event)
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 

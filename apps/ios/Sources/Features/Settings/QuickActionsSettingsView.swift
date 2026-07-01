@@ -91,7 +91,7 @@ struct QuickActionsSettingsView: View {
                     }
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 }

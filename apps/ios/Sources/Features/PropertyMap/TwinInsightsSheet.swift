@@ -95,7 +95,7 @@ struct TwinInsightsSheet: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.base)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     private var criticalCard: some View {

@@ -459,7 +459,7 @@ struct ChatView: View {
                     }
                     .padding(.horizontal, AppSpacing.base)
                     .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.top, AppSpacing.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))

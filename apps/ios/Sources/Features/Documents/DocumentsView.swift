@@ -199,7 +199,7 @@ struct DocumentsView: View {
             }
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: - Category filter menu
@@ -313,7 +313,7 @@ struct DocumentRow: View {
             GlassCard {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(Color.primary.opacity(0.08)).frame(width: 48, height: 48)
                         Image(systemName: doc.categoryIcon)
                             .font(.system(size: 18, weight: .medium))

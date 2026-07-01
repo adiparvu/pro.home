@@ -100,8 +100,8 @@ struct PropertyReportView: View {
             .padding(.vertical, AppSpacing.base)
             .background(Color.primary.opacity(0.04))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
             .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
@@ -139,8 +139,8 @@ struct PropertyReportView: View {
                 toggleRow("map.fill", .indigo, "Digital Twin & Zones", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }

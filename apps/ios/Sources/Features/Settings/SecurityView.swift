@@ -326,7 +326,7 @@ struct SecurityView: View {
                 .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
 
             if let footer {
                 Text(footer)

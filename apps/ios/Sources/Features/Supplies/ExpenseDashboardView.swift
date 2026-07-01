@@ -482,7 +482,7 @@ struct ExpenseDashboardView: View {
                         VStack(spacing: 0) {
                             HStack(spacing: 12) {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                                         .fill(Color.accentColor.opacity(0.12)).frame(width: 36, height: 36)
                                     Image(systemName: "arrow.triangle.2.circlepath")
                                         .font(AppFont.captionEmphasis).foregroundStyle(Color.accentColor)

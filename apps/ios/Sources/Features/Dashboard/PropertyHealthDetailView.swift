@@ -89,9 +89,9 @@ struct PropertyHealthDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(AppSpacing.xxl)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
                 .strokeBorder(scoreColor.opacity(0.20), lineWidth: 1)
         )
         .shadow(color: scoreColor.opacity(0.18), radius: 20, y: 6)
@@ -138,9 +138,9 @@ struct PropertyHealthDetailView: View {
             )
         }
         .padding(AppSpacing.xl)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
     }
@@ -151,7 +151,7 @@ struct PropertyHealthDetailView: View {
                 .font(AppFont.headline)
                 .foregroundStyle(color)
                 .frame(width: 32, height: 32)
-                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
@@ -219,9 +219,9 @@ struct PropertyHealthDetailView: View {
             }
         }
         .padding(AppSpacing.xl)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
     }
@@ -239,7 +239,7 @@ struct PropertyHealthDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(AppSpacing.lg)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     // MARK: - Computed helpers

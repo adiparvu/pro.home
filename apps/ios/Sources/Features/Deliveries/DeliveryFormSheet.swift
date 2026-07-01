@@ -93,7 +93,7 @@ struct DeliveryFormSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -110,7 +110,7 @@ struct DeliveryFormSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -126,7 +126,7 @@ struct DeliveryFormSheet: View {
                 .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -205,7 +205,7 @@ struct DeliveryFormSheet: View {
                     }
                 }
             }
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
         }
     }
 
@@ -285,7 +285,7 @@ struct DeliveryFormSheet: View {
             .frame(height: 52)
             .background(
                 canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
             .foregroundStyle(
                 canSave ? Color.white : Color.primary.opacity(0.4)

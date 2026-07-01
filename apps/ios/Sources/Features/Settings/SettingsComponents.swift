@@ -15,7 +15,7 @@ struct SettingsGroup<Content: View>: View {
                 .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) { content }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 }

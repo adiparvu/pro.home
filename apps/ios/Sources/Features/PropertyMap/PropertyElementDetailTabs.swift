@@ -140,7 +140,7 @@ extension PropertyElementDetailView {
                                         }
                                     }
                                     .frame(width: 96, height: 96)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                                     .contextMenu {
                                         Button(role: .destructive) {
                                             Task { await deletePhoto(urlStr) }

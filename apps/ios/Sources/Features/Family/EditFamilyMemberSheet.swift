@@ -118,8 +118,8 @@ struct EditFamilyMemberSheet: View {
             div
             birthdayRow
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
@@ -167,8 +167,8 @@ struct EditFamilyMemberSheet: View {
                 .pickerStyle(.menu).tint(.accentColor)
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -211,8 +211,8 @@ struct EditFamilyMemberSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -221,7 +221,7 @@ struct EditFamilyMemberSheet: View {
             Label("Remove member", systemImage: "trash")
                 .font(AppFont.footnote).foregroundStyle(.red)
                 .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.base)
-                .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.md))
         }
         .buttonStyle(.plain)
     }

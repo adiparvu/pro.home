@@ -21,7 +21,7 @@ struct ActiveSessionsSheet: View {
                             isCurrent: true
                         )
                     }
-                    .liquidGlass(cornerRadius: 20)
+                    .liquidGlass(cornerRadius: AppRadius.xl)
                     .padding(.horizontal, AppSpacing.xl)
                     .padding(.top, AppSpacing.lg)
 

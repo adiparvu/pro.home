@@ -236,7 +236,7 @@ struct LiveActivitySettingsView: View {
     @ViewBuilder
     private func settingsGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 0) { content() }
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
     }
 
     private var rowDivider: some View {
@@ -307,7 +307,7 @@ struct LiveActivityPreview: View {
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(Color.orange.opacity(0.2)).frame(width: 44, height: 44)
                         Image(systemName: "shippingbox.fill")
                             .font(.system(size: 20)).foregroundStyle(.orange)
@@ -338,7 +338,7 @@ struct LiveActivityPreview: View {
                 }
             }
             .padding(AppSpacing.lg)
-            .liquidGlass(cornerRadius: 20, thick: true)
+            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
         }
     }
 }
@@ -414,7 +414,7 @@ struct LiveActivityAppearanceView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(AppSpacing.lg)
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                 }
 
                 Spacer(minLength: 80)
@@ -429,7 +429,7 @@ struct LiveActivityAppearanceView: View {
 
     @ViewBuilder
     private func group<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 0) { content() }.liquidGlass(cornerRadius: 16)
+        VStack(spacing: 0) { content() }.liquidGlass(cornerRadius: AppRadius.lg)
     }
 
     private var divider: some View {

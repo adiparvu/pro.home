@@ -172,7 +172,7 @@ struct ARIASettingsView: View {
                         isSelected
                             ? AnyShapeStyle(Color.accentColor)
                             : AnyShapeStyle(.regularMaterial),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     )
                 Text(option.label)
                     .font(.system(size: 10, weight: .medium))
@@ -231,7 +231,7 @@ struct ARIASettingsView: View {
                 isActive
                     ? AnyShapeStyle(Color.accentColor)
                     : AnyShapeStyle(.regularMaterial),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -265,7 +265,7 @@ struct ARIASettingsView: View {
                                  color: Color(red: 0.3, green: 0.75, blue: 0.4),
                                  label: "Plants", value: $canSeePlants)
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
 
             Text("Disable to prevent \(assistantName) from accessing this data type in conversations")
                 .font(.system(size: 12))
@@ -426,7 +426,7 @@ struct ARIASettingsView: View {
                 .foregroundStyle(.secondary)
                 .padding(.leading, AppSpacing.sm)
             VStack(spacing: 0) { content() }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 

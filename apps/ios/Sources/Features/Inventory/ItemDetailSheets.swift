@@ -48,8 +48,8 @@ struct PublicContactSheet: View {
                                 div
                                 pField("building.fill", "Property name", $propertyName)
                             }
-                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                             Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
                                 .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                                 .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
@@ -123,8 +123,8 @@ struct LoanItemSheet: View {
                             }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
                         }
                     }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     Text("You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
                         .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
@@ -185,21 +185,21 @@ struct ItemLocationSheet: View {
                                 MapMarker(coordinate: pin.coordinate, tint: .blue)
                             }
                             .frame(maxWidth: .infinity).frame(height: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                         }
                         Button { locMgr.requestLocation() } label: {
                             Label("Use Current Location", systemImage: "location.fill")
                                 .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
                                 .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: AppRadius.md))
                         }.buttonStyle(.plain)
                         VStack(spacing: 0) {
                             coordRow("Latitude", $latText)
                             Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                             coordRow("Longitude", $lonText)
                         }
-                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                         VStack(alignment: .leading, spacing: 10) {
                             Text("TRACKER TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -224,8 +224,8 @@ struct ItemLocationSheet: View {
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                 }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }
-                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                             if trackerType == "airtag" {
                                 GlassCard(padding: 14) {
                                     HStack(spacing: 10) {

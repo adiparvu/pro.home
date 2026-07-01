@@ -347,7 +347,7 @@ struct ConversationsView: View {
                         Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
 
                     if hasLockedChats && !showArchived && searchText.isEmpty {
@@ -378,7 +378,7 @@ struct ConversationsView: View {
                             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                         }
                         .buttonStyle(.plain)
-                        .liquidGlass(cornerRadius: 16)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
                     }
 
                     ForEach(entries) { entry in
@@ -406,7 +406,7 @@ struct ConversationsView: View {
                         Button { withAnimation { showArchived = true } } label: { archivedRow }
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)

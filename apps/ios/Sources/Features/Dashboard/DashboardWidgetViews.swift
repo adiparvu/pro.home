@@ -85,9 +85,9 @@ struct WeatherWidget: View {
             }
         }
         .buttonStyle(.plain)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 1)
         )
         .shadow(color: gradientColors(for: Date())[0].opacity(0.55), radius: 20, y: 8)
@@ -180,7 +180,7 @@ struct CalendarLargeWidget: View {
                                 }
                                 .frame(width: 26, height: 36)
                                 .background(isToday ? Color.accentColor : Color.clear,
-                                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                            in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                             }
                         }
                     }
@@ -191,7 +191,7 @@ struct CalendarLargeWidget: View {
             }
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: 20)
+        .liquidGlass(cornerRadius: AppRadius.xl)
     }
 
     private func dayNumber(_ date: Date) -> String {

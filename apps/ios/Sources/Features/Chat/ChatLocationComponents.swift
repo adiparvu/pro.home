@@ -62,7 +62,7 @@ struct LocationBubble: View {
                 .tint(.blue)
         }
         .frame(width: 220, height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay(alignment: .bottomLeading) {
             // Car/ETA-style badge — tapping it (or the map) offers a choice of
             // navigation app, then hands off with turn-by-turn directions.
@@ -246,7 +246,7 @@ struct LocationShareSheet: View {
             }
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
 

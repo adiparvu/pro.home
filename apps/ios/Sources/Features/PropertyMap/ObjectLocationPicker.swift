@@ -104,7 +104,7 @@ struct ObjectLocationPicker: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 15)
                 .background(picked == nil ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.blue),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(picked == nil)

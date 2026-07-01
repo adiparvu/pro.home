@@ -215,7 +215,7 @@ struct ZoneDetailView: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .frame(height: 220)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .shadow(color: .black.opacity(0.3), radius: 16, y: 6)
     }
 
@@ -387,7 +387,7 @@ struct ZoneDetailView: View {
             Spacer(minLength: 0)
         }
         .padding(AppSpacing.base)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     // MARK: - Action Buttons Row

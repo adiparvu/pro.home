@@ -106,7 +106,7 @@ extension PlantDetailSheet {
     private func detailRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                     .fill(iconColor.opacity(0.12))
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
@@ -156,7 +156,7 @@ extension PlantDetailSheet {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -203,7 +203,7 @@ extension PlantDetailSheet {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
                     .padding(AppSpacing.base)
-                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -216,7 +216,7 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -229,7 +229,7 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -271,7 +271,7 @@ extension PlantDetailSheet {
                         .labelsHidden()
                 }
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -285,7 +285,7 @@ extension PlantDetailSheet {
                 .tint(.accentColor)
                 .lineLimit(3...6)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
         }
     }

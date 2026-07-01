@@ -380,7 +380,7 @@ struct AddPropertyElementView: View {
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 78, height: 78)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                                 .contextMenu {
                                     Button { coverURL = urlStr } label: { Label("Set as cover", systemImage: "star") }
                                     Button(role: .destructive) { galleryURLs.removeAll { $0 == urlStr } } label: { Label("Delete", systemImage: "trash") }
@@ -390,7 +390,7 @@ struct AddPropertyElementView: View {
                         Button {
                             mediaTarget = .gallery; showSourceDialog = true
                         } label: {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(width: 78, height: 78)
                                 .overlay(Image(systemName: "plus").font(.system(size: 20)).foregroundStyle(Color.accentColor))
@@ -551,10 +551,10 @@ private struct TypeChip: View {
             }
             .padding(AppSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppRadius.md)
                     .fill(isSelected ? type.accentColor.opacity(0.08) : Color.clear)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: AppRadius.md)
                             .strokeBorder(isSelected ? type.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 0.8)
                     )
             )

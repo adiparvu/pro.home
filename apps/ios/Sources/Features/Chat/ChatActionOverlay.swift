@@ -124,7 +124,7 @@ struct ChatActionOverlay: View {
             }
         }
         .frame(width: 240)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
     }
 }

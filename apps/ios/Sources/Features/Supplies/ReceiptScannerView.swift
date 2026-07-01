@@ -129,7 +129,7 @@ struct ReceiptScannerView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
                     .buttonStyle(.plain)
 
@@ -265,7 +265,7 @@ private struct ReceiptReviewView: View {
                     TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
                         .font(.system(size: 16))
                         .padding(AppSpacing.base)
-                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -333,7 +333,7 @@ private struct ReceiptReviewView: View {
                             .keyboardType(.decimalPad)
                     }
                     .padding(AppSpacing.base)
-                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
 
                 Button {
@@ -349,7 +349,7 @@ private struct ReceiptReviewView: View {
                     }
                     .foregroundStyle(Color(UIColor.systemBackground))
                     .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(isSaving)

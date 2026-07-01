@@ -181,7 +181,7 @@ struct ChatThemePicker: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .liquidGlass(cornerRadius: 16)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
                         .padding(.horizontal, AppSpacing.lg)
 
                         Spacer(minLength: 20)

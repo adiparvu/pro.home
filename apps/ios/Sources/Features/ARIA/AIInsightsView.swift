@@ -75,7 +75,7 @@ struct AIInsightsView: View {
                                      Color(red: 0.55, green: 0.30, blue: 0.90)],
                             startPoint: .leading, endPoint: .trailing
                         ),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     )
                     .shadow(color: Color(red: 0.35, green: 0.30, blue: 0.90).opacity(0.45), radius: 14, y: 4)
                 }

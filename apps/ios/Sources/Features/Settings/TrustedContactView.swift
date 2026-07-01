@@ -90,7 +90,7 @@ struct TrustedContactView: View {
         .padding(.vertical, AppSpacing.xl)
         .padding(.horizontal, AppSpacing.lg)
         .frame(maxWidth: .infinity)
-        .liquidGlass(cornerRadius: 20)
+        .liquidGlass(cornerRadius: AppRadius.xl)
     }
 
     // MARK: - Form
@@ -141,8 +141,8 @@ struct TrustedContactView: View {
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.base)
-            .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.red.opacity(0.15), lineWidth: 0.5))
+            .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.red.opacity(0.15), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }

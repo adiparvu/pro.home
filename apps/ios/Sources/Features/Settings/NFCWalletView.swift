@@ -159,7 +159,7 @@ struct NFCWalletView: View {
                         .foregroundStyle(.blue)
                         .frame(width: 44, height: 44)
                         .background(Color.blue.opacity(0.1),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Rescan tag")
@@ -176,7 +176,7 @@ struct NFCWalletView: View {
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                         .background(Color.red.opacity(0.1),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -246,7 +246,7 @@ struct NFCWalletView: View {
             .padding(22)
         }
         .frame(height: 175)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .shadow(color: (tag.cardGradient.first ?? .blue).opacity(0.45),
                 radius: 14, y: 7)
     }

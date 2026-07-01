@@ -80,7 +80,7 @@ struct AddSupplyItemSheet: View {
             TextField("What needs to be bought?", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -90,7 +90,7 @@ struct AddSupplyItemSheet: View {
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -100,7 +100,7 @@ struct AddSupplyItemSheet: View {
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -110,7 +110,7 @@ struct AddSupplyItemSheet: View {
             TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...5).padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -193,7 +193,7 @@ struct AddSupplyItemSheet: View {
             .frame(maxWidth: .infinity).frame(height: 52)
             .background(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.2) : Color.primary,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.4) : Color(UIColor.systemBackground))
         }

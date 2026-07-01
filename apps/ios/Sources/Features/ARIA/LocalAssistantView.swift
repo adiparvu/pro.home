@@ -194,7 +194,7 @@ struct LocalAssistantView: View {
                 .lineLimit(1...4)
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
 
             Button {
                 guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -208,7 +208,7 @@ struct LocalAssistantView: View {
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
-        .liquidGlass(cornerRadius: 16)
+        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 
     // MARK: - Send

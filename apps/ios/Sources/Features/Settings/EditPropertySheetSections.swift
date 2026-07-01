@@ -16,8 +16,8 @@ extension EditPropertySheet {
                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
             }
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -25,7 +25,7 @@ extension EditPropertySheet {
     @ViewBuilder var mapPickerSection: some View {
         ZStack {
             Map(position: $mapPosition)
-                .frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(height: 220).clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 .onMapCameraChange { ctx in
                     latitude = ctx.camera.centerCoordinate.latitude
                     longitude = ctx.camera.centerCoordinate.longitude
@@ -53,7 +53,7 @@ extension EditPropertySheet {
                 }.buttonStyle(.plain).padding(.trailing, 10).padding(.bottom, 10)
             }}
         }
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
 
         HStack(spacing: 8) {
             formCoordField("Latitude", text: $latText, placeholder: "e.g. 44.426800")
@@ -72,8 +72,8 @@ extension EditPropertySheet {
             Text("STORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl).padding(.bottom, 0)
             ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.primary.opacity(0.04))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).fill(Color.primary.opacity(0.04))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 if story.isEmpty {
                     Text("Write a story about this property…").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.28))
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)

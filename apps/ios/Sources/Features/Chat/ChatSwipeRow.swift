@@ -44,7 +44,7 @@ struct SwipeableRow<Content: View>: View {
 
             content()
                 .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 .offset(x: offset)
                 .overlay {
                     if offset != 0 {
@@ -71,7 +71,7 @@ struct SwipeableRow<Content: View>: View {
                         }
                 )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     private func actionButton(_ a: ConvSwipeAction) -> some View {

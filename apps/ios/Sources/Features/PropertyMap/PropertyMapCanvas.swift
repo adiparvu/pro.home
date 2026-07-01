@@ -26,9 +26,9 @@ struct PropertyMapCanvas: View {
                     // ── Background canvas ─────────────────────────────────
                     MapBackground()
                         .frame(width: canvasW, height: canvasH)
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                         )
                         .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
@@ -160,7 +160,7 @@ private struct MapBackground: View {
 
             // Property boundary hint
             GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppRadius.md)
                     .strokeBorder(
                         LinearGradient(
                             colors: [Color.primary.opacity(0.18), Color.primary.opacity(AppOpacity.hairline)],

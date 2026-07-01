@@ -65,7 +65,7 @@ struct EditProfileView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -100,7 +100,7 @@ struct EditProfileView: View {
                 }
             }
             .padding(AppSpacing.base)
-            .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -112,7 +112,7 @@ struct EditProfileView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -151,7 +151,7 @@ struct EditProfileView: View {
                             .font(.system(size: 14))
                             .foregroundStyle(link.platformColor)
                             .frame(width: 26, height: 26)
-                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                         TextField(link.platformLabel, text: $link.handle)
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
@@ -166,7 +166,7 @@ struct EditProfileView: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
             }
         }

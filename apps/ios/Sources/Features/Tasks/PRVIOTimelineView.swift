@@ -279,10 +279,10 @@ struct TimelineEventCard: View {
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, AppSpacing.md)
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
         }

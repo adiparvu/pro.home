@@ -58,8 +58,8 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
 
 func formFieldGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     VStack(spacing: 0) { content() }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 }
 
 func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
@@ -194,8 +194,8 @@ struct AddressAutocompleteField: View {
                 if idx < items.count - 1 { Divider().padding(.leading, 44) }
             }
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         .padding(.top, AppSpacing.xs)
     }
 
@@ -305,8 +305,8 @@ struct AddPropertySheet: View {
                                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
                             }
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
-                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                         }.buttonStyle(.plain).padding(.top, AppSpacing.md)
 
                         if showMap { mapPickerSection.padding(.top, AppSpacing.sm) }
@@ -352,7 +352,7 @@ struct AddPropertySheet: View {
     private var mapPickerSection: some View {
         VStack(spacing: 8) {
             ZStack {
-                Map(position: $mapPosition).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Map(position: $mapPosition).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     .onMapCameraChange { ctx in
                         latitude = ctx.camera.centerCoordinate.latitude; longitude = ctx.camera.centerCoordinate.longitude
                         latText = String(format: "%.6f", ctx.camera.centerCoordinate.latitude)
@@ -379,7 +379,7 @@ struct AddPropertySheet: View {
                     }.buttonStyle(.plain).padding(.trailing, 10).padding(.bottom, 10)
                 }}
             }
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
 
             HStack(spacing: 8) {
                 formCoordField("Latitude", text: $latText, placeholder: "e.g. 44.426800")

@@ -78,7 +78,7 @@ private struct DetailsCard<Header: View>: View {
                     DetailRow(read: false, label: "Delivered", dateTime: deliveredTime)
                 }
                 .background(Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 .padding(AppSpacing.lg)
 
                 Spacer()

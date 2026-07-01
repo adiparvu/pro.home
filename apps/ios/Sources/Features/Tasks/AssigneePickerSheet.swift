@@ -38,7 +38,7 @@ struct AssigneePickerSheet: View {
                                     TextField("Name", text: $customName)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
-                                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
+                                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
                                     Button {
                                         let n = customName.trimmingCharacters(in: .whitespaces)
                                         guard !n.isEmpty else { return }
@@ -67,7 +67,7 @@ struct AssigneePickerSheet: View {
                                         Spacer()
                                     }
                                     .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md))
                                 }
                                 .buttonStyle(.plain)
                             }

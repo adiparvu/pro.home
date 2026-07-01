@@ -77,7 +77,7 @@ struct EditTextSheet: View {
                         .scrollContentBackground(.hidden)
                         .frame(minHeight: 90, maxHeight: 200)
                         .padding(.horizontal, AppSpacing.sm)
-                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md))
                     if let note {
                         Text(note)
                             .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -173,7 +173,7 @@ struct GroupPermissionsView: View {
                     Divider().padding(.leading, 56)
                     toggleRow("person.badge.plus", "Add other members", nil, $addMembers)
                 }
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
 
                 Text("Turning these settings off means only group admins can do this.")
@@ -186,7 +186,7 @@ struct GroupPermissionsView: View {
                 VStack(spacing: 0) {
                     toggleRow("person.badge.clock.fill", "Approve new members", nil, $approveNew)
                 }
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
 
                 Text("When on, any request to join the group must be approved by an admin.")
@@ -206,7 +206,7 @@ struct GroupPermissionsView: View {
                         }
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                     }
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                     .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
                 }
 
@@ -299,7 +299,7 @@ struct InviteLinkView: View {
                         .resizable()
                         .frame(width: 220, height: 220)
                         .padding(AppSpacing.lg)
-                        .liquidGlass(cornerRadius: 20)
+                        .liquidGlass(cornerRadius: AppRadius.xl)
                 }
 
                 Text(link)
@@ -1277,7 +1277,7 @@ struct AddContactView: View {
                         Divider().padding(.leading, 52)
                         field("Email", text: $email, icon: "envelope.fill", keyboard: .emailAddress)
                     }
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                     .padding(.horizontal, AppSpacing.lg)
 
                     HStack(spacing: 12) {
@@ -1367,7 +1367,7 @@ struct EncryptionInfoView: View {
                            "Only the people in a conversation can read its messages.")
                 }
                 .padding(AppSpacing.lg)
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
 
                 Text("End-to-end encryption is on our roadmap. Until then, conversations are secured in transit and by strict access control.")
@@ -1421,7 +1421,7 @@ struct AdvancedPrivacyView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                 }
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
 
                 Text("When on, others are blocked from exporting this chat, auto-saving its media, and using its messages for AI features. Best for sensitive conversations.")
@@ -1510,7 +1510,7 @@ struct DisappearingMessagesView: View {
                         }
                     }
                 }
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
             }
             .padding(.top, AppSpacing.sm)
@@ -1575,7 +1575,7 @@ struct ConversationNotificationsView: View {
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .padding(.horizontal, AppSpacing.xl)
             VStack(spacing: 0) { content() }
-                .liquidGlass(cornerRadius: 16)
+                .liquidGlass(cornerRadius: AppRadius.lg)
                 .padding(.horizontal, AppSpacing.lg)
         }
     }
@@ -1660,7 +1660,7 @@ struct TonePickerView: View {
                     if opt != options.last { Divider().padding(.leading, 52) }
                 }
             }
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
             .padding(AppSpacing.lg)
 
             Text("Atinge un ton ca să-l asculți. Selecția se salvează automat.")

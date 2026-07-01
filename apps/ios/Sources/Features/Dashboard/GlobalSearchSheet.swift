@@ -616,7 +616,7 @@ struct GlobalSearchSheet: View {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                             .fill(color.opacity(0.14))
                             .frame(width: 30, height: 30)
                         Image(systemName: icon)

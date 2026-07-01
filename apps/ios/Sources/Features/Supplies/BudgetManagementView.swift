@@ -169,7 +169,7 @@ struct BudgetManagementView: View {
                     // Icon + label
                     VStack(spacing: 12) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                                 .fill(ReceiptCategory.color(for: category).opacity(0.15))
                                 .frame(width: 72, height: 72)
                             Image(systemName: ReceiptCategory.icon(for: category))
@@ -218,7 +218,7 @@ struct BudgetManagementView: View {
                             }
                             .foregroundStyle(Color(UIColor.systemBackground))
                             .frame(maxWidth: .infinity).frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                         }
                         .buttonStyle(.plain)
                         .disabled(isSaving)

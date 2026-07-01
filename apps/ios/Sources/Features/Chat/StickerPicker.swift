@@ -191,7 +191,7 @@ struct StickerCell: View {
                         .frame(height: 60)
                         .background(
                             Color.primary.opacity(pressed ? 0.10 : 0.04),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         )
 
                     if isFavorite {

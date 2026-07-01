@@ -267,7 +267,7 @@ struct ItemDetailView: View {
                         MapMarker(coordinate: pin.coordinate, tint: live.categoryColor)
                     }
                     .frame(maxWidth: .infinity).frame(height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
 
                     Button {
                         let q = "\(lat),\(lon)"

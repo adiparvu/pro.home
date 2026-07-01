@@ -114,7 +114,7 @@ struct BlueprintsView: View {
             GlassCard {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(LinearGradient(colors: [.orange, .brown], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 44, height: 44)
                         Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")

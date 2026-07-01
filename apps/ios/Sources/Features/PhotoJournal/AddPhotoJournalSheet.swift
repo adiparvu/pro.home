@@ -87,11 +87,11 @@ struct AddPhotoJournalSheet: View {
     private var photoPicker: some View {
         VStack(spacing: 10) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 200)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                             .strokeBorder(
                                 selectedImageData == nil ? Color.primary.opacity(0.15) : Color.accentColor.opacity(0.4),
                                 style: StrokeStyle(lineWidth: 1.5, dash: selectedImageData == nil ? [6, 3] : [])
@@ -103,7 +103,7 @@ struct AddPhotoJournalSheet: View {
                         .resizable()
                         .scaledToFill()
                         .frame(height: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 } else {
                     VStack(spacing: 10) {
                         Image(systemName: "photo.badge.plus")
@@ -191,7 +191,7 @@ struct AddPhotoJournalSheet: View {
                     .foregroundStyle(.white)
             }
             .padding(32)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         }
     }
 
@@ -207,8 +207,8 @@ struct AddPhotoJournalSheet: View {
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

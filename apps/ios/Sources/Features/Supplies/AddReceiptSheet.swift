@@ -54,7 +54,7 @@ struct AddReceiptSheet: View {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
                 .font(.system(size: 16))
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -157,7 +157,7 @@ struct AddReceiptSheet: View {
                 .font(AppFont.title2)
                 .keyboardType(.decimalPad)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -167,7 +167,7 @@ struct AddReceiptSheet: View {
                 .font(.system(size: 15))
                 .lineLimit(2...4)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -183,7 +183,7 @@ struct AddReceiptSheet: View {
             .foregroundStyle(Color(UIColor.systemBackground))
             .frame(maxWidth: .infinity).frame(height: 52)
             .background(canSave ? Color.accentColor : Color.primary.opacity(0.25),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!canSave || isSaving)

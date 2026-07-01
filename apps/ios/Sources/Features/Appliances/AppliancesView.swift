@@ -104,7 +104,7 @@ struct AppliancesView: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     private var warrantyBanner: some View {
@@ -119,9 +119,9 @@ struct AppliancesView: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
-        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .strokeBorder(Color.orange.opacity(0.25), lineWidth: 0.8)
         )
     }

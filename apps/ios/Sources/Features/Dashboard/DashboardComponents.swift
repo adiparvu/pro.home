@@ -58,7 +58,7 @@ struct HomeWidget: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: 16)
+        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 }
 
@@ -174,14 +174,14 @@ struct ThumbnailCard: View {
         Button(action: onTap) {
             VStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .fill(isSelected
                             ? LinearGradient(colors: [section.color, section.color.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
                             : LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
                         .frame(width: 72, height: 72)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                                 .strokeBorder(isSelected ? section.color.opacity(0.5) : .white.opacity(0.15), lineWidth: 1)
                         )
                         .shadow(color: isSelected ? section.color.opacity(0.4) : .black.opacity(0.2), radius: isSelected ? 12 : 4)
@@ -349,7 +349,7 @@ struct DashTaskRow: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 }
 
@@ -507,7 +507,7 @@ struct StatChip: View {
             .padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: 12)
+        .liquidGlass(cornerRadius: AppRadius.md)
         .allowsHitTesting(action != nil)
     }
 }
@@ -594,10 +594,10 @@ struct PropertyHealthDashCard: View {
         }
         .padding(AppSpacing.lg)
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
                 )
         }
@@ -669,10 +669,10 @@ struct DashStatsStrip: View {
             }
         }
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
                 )
         }

@@ -48,7 +48,7 @@ struct InventoryRow: View {
         }
         .overlay {
             if item.isLoaned {
-                RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
             }
         }
     }
@@ -219,9 +219,9 @@ struct AddInventorySheet: View {
                 }
             }
             .buttonStyle(.plain)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .strokeBorder(
                         selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5,
@@ -258,8 +258,8 @@ struct AddInventorySheet: View {
 
     private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 0) { content() }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {

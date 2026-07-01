@@ -46,7 +46,7 @@ struct SiriShortcutsView: View {
         GlassCard {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         .fill(LinearGradient(
                             colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .topLeading,
@@ -107,7 +107,7 @@ struct SiriShortcutsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                         .fill(color.opacity(0.14))
                         .frame(width: 32, height: 32)
                     Image(systemName: icon)
@@ -173,7 +173,7 @@ struct SiriShortcutsView: View {
                         : AnyShapeStyle(LinearGradient(
                             colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .leading, endPoint: .trailing)),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 )
             }
             .buttonStyle(.plain)

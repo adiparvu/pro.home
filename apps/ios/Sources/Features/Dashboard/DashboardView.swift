@@ -295,9 +295,9 @@ struct DashboardView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 20, y: 6)

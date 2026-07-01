@@ -38,7 +38,7 @@ struct StatusView: View {
                                 if g.id != others.last?.id { Divider().padding(.leading, 82) }
                             }
                         }
-                        .liquidGlass(cornerRadius: 16)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
                         .padding(.horizontal, AppSpacing.lg)
                     } else {
                         Text("No recent updates")
@@ -99,7 +99,7 @@ struct StatusView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
             .padding(.horizontal, AppSpacing.lg)
         }
         .buttonStyle(.plain)
@@ -196,7 +196,7 @@ struct StoryViewer: View {
 
                 if let cap = item?.caption, !cap.isEmpty {
                     Text(cap).font(.system(size: 16)).foregroundStyle(.white)
-                        .padding(AppSpacing.md).background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(AppSpacing.md).background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: AppRadius.md))
                         .padding(.horizontal, AppSpacing.xl)
                 }
 
@@ -295,7 +295,7 @@ struct CommunitiesView: View {
         Button { showCreate = true } label: {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .fill(Color.accentColor.opacity(0.15)).frame(width: 52, height: 52)
                     Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
@@ -304,7 +304,7 @@ struct CommunitiesView: View {
                 Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
             .padding(.horizontal, AppSpacing.lg)
         }
         .buttonStyle(.plain)
@@ -438,7 +438,7 @@ private struct GroupChatView: View {
             TextField("Mesaj", text: $text, axis: .vertical)
                 .font(.system(size: 16))
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
             Button {
                 let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !body.isEmpty, let pid = propertyId else { return }
@@ -477,7 +477,7 @@ private struct CommunityRow: View {
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
-        .liquidGlass(cornerRadius: 16)
+        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 }
 

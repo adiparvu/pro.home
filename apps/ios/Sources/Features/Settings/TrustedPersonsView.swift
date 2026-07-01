@@ -82,7 +82,7 @@ struct TrustedPersonsView: View {
                         }
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 
@@ -242,7 +242,7 @@ private struct AddTrustedPersonSheet: View {
                                 rowDivider
                                 fieldRow(icon: "envelope.fill", color: .indigo, placeholder: "Adresă email", text: $email, keyboard: .emailAddress)
                             }
-                            .liquidGlass(cornerRadius: 16)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
                         }
 
                         // Permissions
@@ -268,7 +268,7 @@ private struct AddTrustedPersonSheet: View {
                                           subtitle: "Poate prelua proprietatea contului",
                                           isOn: $canTransferOwnership)
                             }
-                            .liquidGlass(cornerRadius: 16)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
                         }
 
                         Spacer(minLength: 40)

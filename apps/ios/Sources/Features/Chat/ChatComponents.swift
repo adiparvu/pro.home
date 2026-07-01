@@ -820,14 +820,14 @@ struct ChatVideoBubble: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: AppRadius.lg)
                 .fill(Color.black.opacity(0.85))
                 .frame(width: 200, height: 140)
             Image(systemName: "play.circle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.white.opacity(0.9))
         }
-        .contentShape(RoundedRectangle(cornerRadius: 16))
+        .contentShape(RoundedRectangle(cornerRadius: AppRadius.lg))
         .onTapGesture { if let url { onTap(url) } }
         .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
@@ -851,9 +851,9 @@ struct ChatImageBubble: View {
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
                         .frame(maxWidth: 220, maxHeight: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                 } else {
-                    RoundedRectangle(cornerRadius: 16).fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    RoundedRectangle(cornerRadius: AppRadius.lg).fill(Color.primary.opacity(AppOpacity.subtleFill))
                         .frame(width: 160, height: 120)
                         .overlay(ProgressView().tint(.white))
                 }

@@ -228,10 +228,10 @@ private struct NotificationRow: View {
             notification.isUnread
                 ? Color.primary.opacity(AppOpacity.hairline)
                 : Color.primary.opacity(0.03),
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
         )
     }

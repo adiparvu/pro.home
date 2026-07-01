@@ -140,7 +140,7 @@ struct ContractorsView: View {
                         TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                     }
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     .padding(.horizontal, AppSpacing.xl).padding(.bottom, AppSpacing.md)
                 }
 
@@ -265,8 +265,8 @@ private struct AddContractorSheet: View {
                             fieldRow("note.text", "Notes (optional)", $notes)
                         }
                     }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }

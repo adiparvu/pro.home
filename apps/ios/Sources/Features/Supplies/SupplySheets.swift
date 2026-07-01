@@ -79,7 +79,7 @@ struct AddSupplyListSheet: View {
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -90,7 +90,7 @@ struct AddSupplyListSheet: View {
             TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...4).padding(AppSpacing.base)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -103,11 +103,11 @@ struct AddSupplyListSheet: View {
                 ForEach(iconOptions, id: \.self) { icon in
                     Button { selectedIcon = icon; HapticFeedback.selection() } label: {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 .fill(selectedIcon == icon ? color.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
                                 .frame(height: 52)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(selectedIcon == icon ? color : Color.clear, lineWidth: 2)
                                 )
                             Image(systemName: icon)
@@ -188,7 +188,7 @@ struct AddSupplyListSheet: View {
             .background(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.2)
                 : Color.primary,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.4)
                 : Color(UIColor.systemBackground))

@@ -266,8 +266,8 @@ private struct CalendarEventRow: View {
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
     }
 }

@@ -85,7 +85,7 @@ struct MemberSupervisionDetailView: View {
                         VStack(spacing: 0) {
                             HStack(spacing: 12) {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                                         .fill(section.color.opacity(0.14))
                                         .frame(width: 32, height: 32)
                                     Image(systemName: section.icon)
@@ -132,7 +132,7 @@ struct MemberSupervisionDetailView: View {
             GlassCard(padding: 0) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                             .fill(Color.blue.opacity(0.14))
                             .frame(width: 32, height: 32)
                         Image(systemName: "bell.badge.fill")

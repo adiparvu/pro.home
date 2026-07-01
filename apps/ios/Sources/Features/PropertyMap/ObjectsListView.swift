@@ -203,7 +203,7 @@ struct ObjectListRow: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(element.layer.color.opacity(0.18))
                     .frame(width: 46, height: 46)
                 Image(systemName: element.elementType.icon)
@@ -241,7 +241,7 @@ struct ObjectListRow: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(element.healthColor)
                 .frame(width: 36, height: 28)
-                .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
 
             Image(systemName: "chevron.right")
                 .font(AppFont.label)

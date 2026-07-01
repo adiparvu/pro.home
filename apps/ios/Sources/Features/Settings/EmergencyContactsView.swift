@@ -107,7 +107,7 @@ private struct EmergencyRow: View {
         GlassCard {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous).fill(color.opacity(0.18)).frame(width: 44, height: 44)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).fill(color.opacity(0.18)).frame(width: 44, height: 44)
                     Image(systemName: isSystem ? "phone.fill" : "person.fill").font(.system(size: 18)).foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
@@ -149,8 +149,8 @@ private struct AddEmergencySheet: View {
                     divider
                     fieldRow("phone.fill", "Phone number", $phone, keyboard: .phonePad)
                 }
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 Spacer()
             }

@@ -155,7 +155,7 @@ struct IoTHubView: View {
         GlassCard(padding: 16) {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         .fill(device.type.color.opacity(0.15))
                         .frame(width: 48, height: 48)
                     Image(systemName: device.type.icon)
@@ -371,7 +371,7 @@ struct IoTHubView: View {
                     .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 11)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(.plain)
             Spacer()

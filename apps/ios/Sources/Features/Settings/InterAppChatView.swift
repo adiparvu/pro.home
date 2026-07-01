@@ -25,7 +25,7 @@ struct InterAppChatView: View {
                             .foregroundStyle(.primary)
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
 
                     Text("Permite să ți se trimită mesaje pe PRV HOUSE din aplicațiile terțe selectate.")
                         .font(.system(size: 13))
@@ -42,7 +42,7 @@ struct InterAppChatView: View {
                                 .foregroundStyle(.primary)
                         }
                         .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-                        .liquidGlass(cornerRadius: 16)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
 
                         Text("Primești notificare când cineva vrea să-ți trimită mesaj din altă aplicație.")
                             .font(.system(size: 13))
@@ -63,7 +63,7 @@ struct InterAppChatView: View {
                             .foregroundStyle(Color.accentColor.opacity(0.5))
                     }
                     .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-                    .liquidGlass(cornerRadius: 16)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
