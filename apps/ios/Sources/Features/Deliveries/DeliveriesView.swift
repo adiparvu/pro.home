@@ -33,6 +33,7 @@ struct DeliveriesView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add delivery")
             }
         }
         .sheet(isPresented: $showAddDelivery) {
