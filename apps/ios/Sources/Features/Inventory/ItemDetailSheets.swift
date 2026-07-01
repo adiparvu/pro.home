@@ -178,11 +178,12 @@ struct ItemLocationSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if let lat = Double(latText), let lon = Double(lonText) {
-                            Map(coordinateRegion: .constant(MKCoordinateRegion(
+                            Map(initialPosition: .region(MKCoordinateRegion(
                                 center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                                 span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                            )), annotationItems: [InventoryMapPin(lat: lat, lon: lon)]) { pin in
-                                MapMarker(coordinate: pin.coordinate, tint: .blue)
+                            ))) {
+                                Marker("", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                                    .tint(.blue)
                             }
                             .frame(maxWidth: .infinity).frame(height: 200)
                             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))

@@ -66,16 +66,18 @@ struct BuriedUtilitiesView: View {
     }
 
     private var mapCard: some View {
-        Map(coordinateRegion: .constant(region), annotationItems: mapped) { u in
-            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0)) {
-                ZStack {
-                    Circle().fill(u.swiftColor).frame(width: 28, height: 28)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
-                    Image(systemName: u.icon)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.primary)
+        Map(initialPosition: .region(region)) {
+            ForEach(mapped) { u in
+                Annotation("", coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0)) {
+                    ZStack {
+                        Circle().fill(u.swiftColor).frame(width: 28, height: 28)
+                            .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                        Image(systemName: u.icon)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
+                    .shadow(radius: 3)
                 }
-                .shadow(radius: 3)
             }
         }
         .frame(height: 240)

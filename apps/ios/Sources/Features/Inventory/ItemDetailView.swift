@@ -260,11 +260,12 @@ struct ItemDetailView: View {
                     }
                 }
                 if live.hasLocation, let lat = live.latitude, let lon = live.longitude {
-                    Map(coordinateRegion: .constant(MKCoordinateRegion(
+                    Map(initialPosition: .region(MKCoordinateRegion(
                         center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                         span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                    )), annotationItems: [InventoryMapPin(lat: lat, lon: lon)]) { pin in
-                        MapMarker(coordinate: pin.coordinate, tint: live.categoryColor)
+                    ))) {
+                        Marker(live.name, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                            .tint(live.categoryColor)
                     }
                     .frame(maxWidth: .infinity).frame(height: 160)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))

@@ -95,15 +95,6 @@ struct InventoryItem: Identifiable, Codable {
     }
 }
 
-// MARK: - InventoryMapPin
-
-struct InventoryMapPin: Identifiable {
-    let id = UUID()
-    let lat: Double
-    let lon: Double
-    var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
-}
-
 // MARK: - DB-mapped types
 
 struct InventoryMetadata: Codable {

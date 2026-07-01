@@ -73,11 +73,12 @@ struct BuriedUtilityDetailSheet: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         if utility.hasLocation {
-                            Map(coordinateRegion: .constant(MKCoordinateRegion(
+                            Map(initialPosition: .region(MKCoordinateRegion(
                                 center: CLLocationCoordinate2D(latitude: utility.latitude ?? 0, longitude: utility.longitude ?? 0),
                                 span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
-                            )), annotationItems: [utility]) { u in
-                                MapMarker(coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0), tint: u.swiftColor)
+                            ))) {
+                                Marker("", coordinate: CLLocationCoordinate2D(latitude: utility.latitude ?? 0, longitude: utility.longitude ?? 0))
+                                    .tint(utility.swiftColor)
                             }
                             .frame(height: 200)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
