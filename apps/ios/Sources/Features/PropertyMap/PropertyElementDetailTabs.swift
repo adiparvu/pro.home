@@ -190,7 +190,7 @@ extension PropertyElementDetailView {
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
             let path = "\(uid)/elements/\(localElement.id.uuidString)/\(UUID().uuidString).jpg"
-            try? await supabase.storage.from("documents")
+            _ = try? await supabase.storage.from("documents")
                 .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
             if let url = try? supabase.storage.from("documents").getPublicURL(path: path) {
                 urls.append(url.absoluteString)

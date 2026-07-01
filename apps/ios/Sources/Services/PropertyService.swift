@@ -88,7 +88,7 @@ final class PropertyService {
                 .value
             properties.append(created)
             // Ensure creator is in property_members as owner (trigger handles this too)
-            try? await supabase
+            _ = try? await supabase
                 .from("property_members")
                 .upsert(MemberInsert(property_id: created.id, user_id: uid, role: "owner", status: "active"),
                         onConflict: "property_id,user_id")

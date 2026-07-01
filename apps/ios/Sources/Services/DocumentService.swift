@@ -122,7 +122,7 @@ final class DocumentService {
                 if let bucketIdx = components.firstIndex(of: "documents"),
                    bucketIdx + 1 < components.count {
                     let storagePath = components[(bucketIdx + 1)...].joined(separator: "/")
-                    try? await supabase.storage.from("documents").remove(paths: [storagePath])
+                    _ = try? await supabase.storage.from("documents").remove(paths: [storagePath])
                 }
             }
             try await supabase

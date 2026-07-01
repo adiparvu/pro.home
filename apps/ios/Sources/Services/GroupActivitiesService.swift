@@ -40,7 +40,7 @@ final class GroupActivitiesService: ObservableObject {
         let activity = TwinShareActivity(propertyId: propertyId, propertyName: propertyName)
         switch await activity.prepareForActivation() {
         case .activationPreferred:
-            try? await activity.activate()
+            _ = try? await activity.activate()
         case .activationDisabled:
             break
         default:

@@ -154,7 +154,7 @@ struct NotificationCenterView: View {
     private func markRead(_ notif: AppNotification) async {
         guard let idx = notifications.firstIndex(where: { $0.id == notif.id }) else { return }
         notifications[idx].status = "read"
-        try? await supabase
+        _ = try? await supabase
             .from("notifications")
             .update(["status": "read"])
             .eq("id", value: notif.id.uuidString)
@@ -164,7 +164,7 @@ struct NotificationCenterView: View {
     private func markAllRead() async {
         guard let uid = auth.session?.user.id else { return }
         for i in notifications.indices { notifications[i].status = "read" }
-        try? await supabase
+        _ = try? await supabase
             .from("notifications")
             .update(["status": "read"])
             .eq("user_id", value: uid.uuidString)
@@ -174,7 +174,7 @@ struct NotificationCenterView: View {
 
     private func dismiss(_ notif: AppNotification) async {
         notifications.removeAll { $0.id == notif.id }
-        try? await supabase
+        _ = try? await supabase
             .from("notifications")
             .update(["status": "dismissed"])
             .eq("id", value: notif.id.uuidString)

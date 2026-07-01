@@ -337,7 +337,7 @@ final class MessageService {
                 reader_name: readerName
             )
         }
-        try? await supabase
+        _ = try? await supabase
             .from("message_reads")
             .upsert(payload, onConflict: "message_id,user_id", ignoreDuplicates: true)
             .execute()
@@ -410,7 +410,7 @@ final class MessageService {
                 deliverer_name: delivererName
             )
         }
-        try? await supabase
+        _ = try? await supabase
             .from("message_deliveries")
             .upsert(payload, onConflict: "message_id,user_id", ignoreDuplicates: true)
             .execute()
@@ -569,14 +569,14 @@ final class MessageService {
         let already = mine.contains { $0.optionIndex == optionIndex }
 
         if already {
-            try? await supabase.from("message_poll_votes").delete()
+            _ = try? await supabase.from("message_poll_votes").delete()
                 .eq("message_id", value: messageId.uuidString)
                 .eq("user_id", value: uid.uuidString)
                 .eq("option_index", value: optionIndex)
                 .execute()
         } else {
             if !multi {
-                try? await supabase.from("message_poll_votes").delete()
+                _ = try? await supabase.from("message_poll_votes").delete()
                     .eq("message_id", value: messageId.uuidString)
                     .eq("user_id", value: uid.uuidString)
                     .execute()
@@ -585,7 +585,7 @@ final class MessageService {
                 let message_id: String; let property_id: String
                 let user_id: String; let voter_name: String; let option_index: Int
             }
-            try? await supabase.from("message_poll_votes").insert(
+            _ = try? await supabase.from("message_poll_votes").insert(
                 V(message_id: messageId.uuidString, property_id: propertyId.uuidString,
                   user_id: uid.uuidString, voter_name: voterName, option_index: optionIndex)
             ).execute()

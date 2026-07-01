@@ -107,30 +107,30 @@ extension SecurityView {
                 "contractors", "aria_messages", "audit_log"
             ]
             for table in userScopedTables {
-                try? await supabase.from(table).delete().eq("user_id", value: uid).execute()
+                _ = try? await supabase.from(table).delete().eq("user_id", value: uid).execute()
             }
 
             // Messaging tables (different column names).
-            try? await supabase.from("messages").delete().eq("sender_id", value: uid).execute()
-            try? await supabase.from("message_reads").delete().eq("user_id", value: uid).execute()
-            try? await supabase.from("message_reactions").delete().eq("user_id", value: uid).execute()
-            try? await supabase.from("direct_messages").delete().eq("sender_id", value: uid).execute()
-            try? await supabase.from("dm_participants").delete().eq("user_id", value: uid).execute()
+            _ = try? await supabase.from("messages").delete().eq("sender_id", value: uid).execute()
+            _ = try? await supabase.from("message_reads").delete().eq("user_id", value: uid).execute()
+            _ = try? await supabase.from("message_reactions").delete().eq("user_id", value: uid).execute()
+            _ = try? await supabase.from("direct_messages").delete().eq("sender_id", value: uid).execute()
+            _ = try? await supabase.from("dm_participants").delete().eq("user_id", value: uid).execute()
 
             // Properties — FK cascade should remove zones, elements, plants,
             // appliances, supplies, receipts, photo journals, paint colors,
             // property values, and inventory items.
-            try? await supabase.from("properties").delete().eq("owner_id", value: uid).execute()
+            _ = try? await supabase.from("properties").delete().eq("owner_id", value: uid).execute()
 
             // Revoke MFA factors before deleting the auth user.
             if let factors = try? await supabase.auth.mfa.listFactors() {
                 for factor in factors.totp {
-                    try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factor.id))
+                    _ = try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factor.id))
                 }
             }
 
             // Profile is keyed by the user id directly.
-            try? await supabase.from("profiles").delete().eq("id", value: uid).execute()
+            _ = try? await supabase.from("profiles").delete().eq("id", value: uid).execute()
 
             try? await supabase.auth.signOut()
         } catch { try? await supabase.auth.signOut() }

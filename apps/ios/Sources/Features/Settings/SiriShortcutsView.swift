@@ -148,7 +148,7 @@ struct SiriShortcutsView: View {
             Button {
                 guard !donated else { return }
                 Task {
-                    await PRVIOShortcutsProvider.updateAppShortcutParameters()
+                    PRVIOShortcutsProvider.updateAppShortcutParameters()
                     HapticFeedback.success()
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                         donated = true

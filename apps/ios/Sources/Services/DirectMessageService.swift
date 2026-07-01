@@ -325,7 +325,7 @@ final class DirectMessageService {
             // so the ticks/details never show "read" without a "delivered".
             var payload = ["read_at": nowISO]
             if m.deliveredAt == nil { payload["delivered_at"] = nowISO }
-            try? await supabase
+            _ = try? await supabase
                 .from("direct_messages")
                 .update(payload)
                 .eq("id", value: m.id.uuidString)
