@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - SeasonalChecklistView
 
 struct SeasonalChecklistView: View {
-    @StateObject var service = SeasonalChecklistService()
+    @State private var service = SeasonalChecklistService()
     @State var selectedSeason: Season = .current
     @State private var showAddSheet = false
     @State private var editingItem: CustomSeasonalItem?

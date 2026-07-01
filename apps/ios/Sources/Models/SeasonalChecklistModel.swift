@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 enum Season: String, CaseIterable, Codable {
     case spring
@@ -168,9 +169,10 @@ struct SeasonalChecklistData {
 }
 
 @MainActor
-final class SeasonalChecklistService: ObservableObject {
-    @Published var completedItemIds: Set<String> = []
-    @Published var customItems: [CustomSeasonalItem] = []
+@Observable
+final class SeasonalChecklistService {
+    var completedItemIds: Set<String> = []
+    var customItems: [CustomSeasonalItem] = []
 
     private let defaultsKey  = "seasonal_checklist_completed_v2"
     private let customKey    = "seasonal_checklist_custom_v1"
