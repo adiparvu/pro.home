@@ -110,12 +110,12 @@ struct LanguageSettingsView: View {
 
 #Preview("English") {
     NavigationStack { LanguageSettingsView() }
-        .environmentObject(AppSettings())
+        .environment(AppSettings())
         .previewLocalization(.english)
 }
 
 #Preview("Romanian") {
     NavigationStack { LanguageSettingsView() }
-        .environmentObject(AppSettings())
+        .environment(AppSettings())
         .previewLocalization(.romanian)
 }
