@@ -132,7 +132,7 @@ struct ChatThemePicker: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Themes")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.5))
                             .padding(.horizontal, 20)
 
@@ -158,7 +158,7 @@ struct ChatThemePicker: View {
                             .padding(.horizontal, 20).padding(.top, 2)
 
                         Text("Customize")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.5))
                             .padding(.horizontal, 20).padding(.top, 8)
 
@@ -214,7 +214,7 @@ struct ChatThemePicker: View {
             Spacer()
             trailing()
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+                .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
         .contentShape(Rectangle())

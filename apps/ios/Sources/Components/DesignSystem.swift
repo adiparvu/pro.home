@@ -21,10 +21,14 @@ enum AppFont {
     static let caption2 = Font.system(size: 11, weight: .medium)
     /// 12–13pt medium — secondary body text, list subtitles.
     static let caption = Font.system(size: 12, weight: .medium)
+    /// 12pt semibold — chip/tag labels, compact emphasized captions.
+    static let captionStrong = Font.system(size: 12, weight: .semibold)
     /// 13pt semibold — emphasized captions, chip labels.
     static let captionEmphasis = Font.system(size: 13, weight: .semibold)
     /// 14pt medium — standard secondary text.
     static let footnote = Font.system(size: 14, weight: .medium)
+    /// 14pt semibold — emphasized secondary text, compact buttons.
+    static let footnoteEmphasis = Font.system(size: 14, weight: .semibold)
     /// 14–15pt semibold — list row titles, form field values.
     static let subheadline = Font.system(size: 15, weight: .semibold)
     /// 15pt medium — default body text.

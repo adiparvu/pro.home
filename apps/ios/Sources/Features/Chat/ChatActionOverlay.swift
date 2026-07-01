@@ -71,7 +71,7 @@ struct ChatActionOverlay: View {
                 HapticFeedback.impact(.light); showEmojiPicker = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(Color.primary.opacity(0.5))
                     .frame(width: 34, height: 34)
                     .background(Color.primary.opacity(0.08), in: Circle())
@@ -152,7 +152,7 @@ struct EmojiGridPicker: View {
                     ForEach(Self.groups, id: \.0) { title, emojis in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(title.uppercased())
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(0.4))
                             LazyVGrid(columns: columns, spacing: 6) {
                                 ForEach(emojis, id: \.self) { e in

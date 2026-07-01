@@ -29,7 +29,7 @@ struct FilePreviewSheet: View {
                             .font(.system(size: 14))
                             .foregroundStyle(.secondary)
                         Link("Open in browser", destination: url)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                     }
                 } else {
                     ProgressView()

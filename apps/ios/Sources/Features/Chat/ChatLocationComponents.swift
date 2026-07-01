@@ -67,7 +67,7 @@ struct LocationBubble: View {
             // Car/ETA-style badge — tapping it (or the map) offers a choice of
             // navigation app, then hands off with turn-by-turn directions.
             Image(systemName: "car.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(.white)
                 .padding(8)
                 .background(Color.accentColor, in: Circle())
@@ -263,7 +263,7 @@ struct LocationShareSheet: View {
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(r.title).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                        Text(r.title).font(AppFont.body).foregroundStyle(.primary)
                         if !r.subtitle.isEmpty {
                             Text(r.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                         }
@@ -283,7 +283,7 @@ struct LocationShareSheet: View {
                 VStack(spacing: 6) {
                     Button(role: .destructive) { live.stop() } label: {
                         Label("Stop sharing live location", systemImage: "location.slash.fill")
-                            .font(.system(size: 15, weight: .medium)).foregroundStyle(.red)
+                            .font(AppFont.body).foregroundStyle(.red)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
                             .liquidGlass(cornerRadius: 14)
                     }
@@ -301,7 +301,7 @@ struct LocationShareSheet: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "location.circle.fill").font(.system(size: 18))
-                        Text("Distribuie locația în timp real").font(.system(size: 15, weight: .medium))
+                        Text("Distribuie locația în timp real").font(AppFont.body)
                         Spacer()
                     }
                     .foregroundStyle(Color.accentColor)
@@ -316,7 +316,7 @@ struct LocationShareSheet: View {
     private var nearbyPlacesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Locuri din apropiere")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.5))
 
             Button {
@@ -330,7 +330,7 @@ struct LocationShareSheet: View {
                     Image(systemName: "location.circle.fill")
                         .font(.system(size: 22)).foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Trimite locația curentă").font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                        Text("Trimite locația curentă").font(AppFont.body).foregroundStyle(.primary)
                         if let acc = locMgr.location?.horizontalAccuracy, acc > 0 {
                             Text("Cu o aproximație de \(Int(acc))m")
                                 .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
@@ -353,7 +353,7 @@ struct LocationShareSheet: View {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 22)).foregroundStyle(Color.primary.opacity(0.4))
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(item.name ?? "").font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                            Text(item.name ?? "").font(AppFont.body).foregroundStyle(.primary)
                             if let addr = item.placemark.title {
                                 Text(addr).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5)).lineLimit(1)
                             }
@@ -396,7 +396,7 @@ struct MentionPickerSheet: View {
             .navigationTitle("Mention").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }

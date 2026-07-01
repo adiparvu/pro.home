@@ -293,7 +293,7 @@ struct ConversationsView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.primary.opacity(0.75))
                         .frame(width: 40, height: 40)
                         .glassCircle()
@@ -302,7 +302,7 @@ struct ConversationsView: View {
                 Spacer()
                 Button { showStoryCamera = true } label: {
                     Image(systemName: "camera.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.primary.opacity(0.75))
                         .frame(width: 40, height: 40)
                         .glassCircle()
@@ -372,7 +372,7 @@ struct ConversationsView: View {
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.primary.opacity(0.25))
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
@@ -535,7 +535,7 @@ struct ConversationsView: View {
                 ForEach(ConvFilter.allCases, id: \.self) { f in
                     Button { filter = f } label: {
                         Text(f.label)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
                             .padding(.horizontal, 14).padding(.vertical, 7)
                             .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06),
@@ -552,7 +552,7 @@ struct ConversationsView: View {
         HStack(spacing: 10) {
             Button { withAnimation { showArchived = false } } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color.accentColor)
             }
             Text("Conversații arhivate")
@@ -572,13 +572,13 @@ struct ConversationsView: View {
             }
             .frame(width: 52, height: 52)
             Text("Conversații arhivate")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
             Spacer()
             Text("\(archivedList.count)")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
@@ -597,11 +597,11 @@ struct ConversationsView: View {
             }
             .frame(width: 52, height: 52)
             VStack(alignment: .leading, spacing: 3) {
-                Text("ARIA").font(.system(size: 16, weight: .semibold))
+                Text("ARIA").font(AppFont.headline)
                 Text("Asistent AI").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
         .contentShape(Rectangle())
@@ -627,7 +627,7 @@ struct ConversationsView: View {
                     .foregroundStyle(Color.accentColor)
             }
             Text("Nicio conversație")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
             Text("Adaugă membri familiei pentru a începe.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))

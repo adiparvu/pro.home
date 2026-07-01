@@ -28,7 +28,7 @@ struct StatusView: View {
 
                     if !others.isEmpty {
                         Text("Recent updates")
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
                             .padding(.horizontal, 20)
 
                         VStack(spacing: 0) {
@@ -81,7 +81,7 @@ struct StatusView: View {
                         .offset(x: 3, y: 3)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("My status").font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                    Text("My status").font(AppFont.headline).foregroundStyle(.primary)
                     Text(myGroup == nil
                          ? "Tap to add status update"
                          : (myGroup!.items.count == 1 ? "1 update" : "\(myGroup!.items.count) updates"))
@@ -90,7 +90,7 @@ struct StatusView: View {
                 Spacer()
                 if myGroup != nil {
                     Button { onAddStatus() } label: {
-                        Image(systemName: "plus").font(.system(size: 15, weight: .semibold))
+                        Image(systemName: "plus").font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor).frame(width: 34, height: 34)
                             .background(Color.accentColor.opacity(0.12), in: Circle())
                     }
@@ -113,7 +113,7 @@ struct StatusView: View {
                 .strokeBorder(seen ? Color.primary.opacity(0.2) : Color.accentColor, lineWidth: 2.5)
                 .background(Circle().fill((member?.swiftColor ?? .gray).opacity(0.15)))
                 .overlay(Text(member?.initials ?? String(g.authorName.prefix(2)).uppercased())
-                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(member?.swiftColor ?? .gray))
+                    .font(AppFont.headline).foregroundStyle(member?.swiftColor ?? .gray))
                 .frame(width: 52, height: 52)
             VStack(alignment: .leading, spacing: 2) {
                 Text(g.authorName).font(.system(size: 16)).foregroundStyle(.primary)
@@ -183,10 +183,10 @@ struct StoryViewer: View {
                 .padding(.horizontal, 10).padding(.top, 8)
 
                 HStack(spacing: 10) {
-                    Text(group.authorName).font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                    Text(group.authorName).font(AppFont.subheadline).foregroundStyle(.white)
                     Spacer()
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+                        Image(systemName: "xmark").font(AppFont.headline).foregroundStyle(.white)
                     }
                     .accessibilityLabel("Close")
                 }
@@ -203,7 +203,7 @@ struct StoryViewer: View {
                 if isMine {
                     Button { Task { viewers = await status.viewers(of: item?.id ?? group.id); showViewers = true } } label: {
                         Label("Seen by", systemImage: "eye.fill")
-                            .font(.system(size: 14, weight: .medium)).foregroundStyle(.white)
+                            .font(AppFont.footnote).foregroundStyle(.white)
                             .padding(.vertical, 10)
                     }
                 }
@@ -299,9 +299,9 @@ struct CommunitiesView: View {
                         .fill(Color.accentColor.opacity(0.15)).frame(width: 52, height: 52)
                     Image(systemName: "plus").font(.system(size: 22, weight: .semibold)).foregroundStyle(Color.accentColor)
                 }
-                Text("Grup nou").font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                Text("Grup nou").font(AppFont.headline).foregroundStyle(.primary)
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+                Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
             .liquidGlass(cornerRadius: 16)
@@ -394,7 +394,7 @@ private struct GroupChatView: View {
                                 HapticFeedback.impact(.light)
                             } label: {
                                 Image(systemName: "chevron.down")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(.primary)
                                     .frame(width: 40, height: 40)
                             }
@@ -469,12 +469,12 @@ private struct CommunityRow: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(group.name.isEmpty ? group.kindLabel : group.name)
-                    .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                    .font(AppFont.headline).foregroundStyle(.primary)
                 Text("\(group.kindLabel) · \(memberCount) membri")
                     .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.5))
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
         .liquidGlass(cornerRadius: 16)
@@ -523,18 +523,18 @@ private struct GroupSettingsSheet: View {
                         Button("Salvează") {
                             Task { await service.rename(group, to: name) }
                         }
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty
                                   || name == group.name)
                     }
 
                     HStack {
-                        Text("Membri").font(.system(size: 13, weight: .semibold))
+                        Text("Membri").font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.5))
                         Spacer()
                         Button { showAddMembers = true } label: {
                             Label("Adaugă", systemImage: "person.badge.plus")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                         }
                         .disabled(addableMembers.isEmpty)
                     }
@@ -545,12 +545,12 @@ private struct GroupSettingsSheet: View {
                                 ZStack {
                                     Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 40, height: 40)
                                     Text(String(m.memberName.prefix(1)).uppercased())
-                                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.accentColor)
+                                        .font(AppFont.headline).foregroundStyle(Color.accentColor)
                                 }
-                                Text(m.memberName).font(.system(size: 15, weight: .medium))
+                                Text(m.memberName).font(AppFont.body)
                                 Spacer()
                                 if m.role == "admin" {
-                                    Text("Admin").font(.system(size: 12, weight: .semibold))
+                                    Text("Admin").font(AppFont.captionStrong)
                                         .foregroundStyle(Color.accentColor)
                                 } else {
                                     Button {
@@ -570,7 +570,7 @@ private struct GroupSettingsSheet: View {
 
                     Button(role: .destructive) { showDeleteConfirm = true } label: {
                         Label("Șterge grupul", systemImage: "trash")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     }
@@ -624,7 +624,7 @@ private struct AddGroupMembersSheet: View {
                             else { selectedIds.insert(m.id) }
                         } label: {
                             HStack(spacing: 12) {
-                                Text(m.name).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                                Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
                                     .font(.system(size: 20))
@@ -692,7 +692,7 @@ private struct CreateGroupSheet: View {
                         }
                     }
 
-                    Text("Membri").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                    Text("Membri").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
                     VStack(spacing: 8) {
                         ForEach(members) { m in
                             Button {
@@ -700,7 +700,7 @@ private struct CreateGroupSheet: View {
                                 else { selectedIds.insert(m.id) }
                             } label: {
                                 HStack(spacing: 12) {
-                                    Text(m.name).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                                    Text(m.name).font(AppFont.body).foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: selectedIds.contains(m.id) ? "checkmark.circle.fill" : "circle")
                                         .font(.system(size: 20))

@@ -129,7 +129,7 @@ private struct MemberCallRow: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                            .font(AppFont.subheadline).foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.roleLabel))
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                     }
@@ -155,7 +155,7 @@ private struct MemberCallRow: View {
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "arrow.up.right")
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(AppFont.caption2)
                                         .foregroundStyle(Color.primary.opacity(0.3))
                                 }
                                 .padding(.horizontal, 12).padding(.vertical, 8)
@@ -188,7 +188,7 @@ struct ChatDateSeparator: View {
         HStack(spacing: 8) {
             Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .fixedSize()
             Rectangle().fill(Color.primary.opacity(0.1)).frame(height: 0.5)
@@ -240,7 +240,7 @@ struct MessageBubble: View {
     private var forwardButton: some View {
         Button { onForward?() } label: {
             Image(systemName: "arrowshape.turn.up.right.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .frame(width: 34, height: 34)
         }
@@ -295,7 +295,7 @@ struct MessageBubble: View {
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                 if !isOwn {
                     Text(message.senderName)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(0.45))
                         .padding(.leading, 4)
                 }
@@ -307,7 +307,7 @@ struct MessageBubble: View {
                     .overlay(alignment: isOwn ? .trailing : .leading) {
                         if abs(swipeOffset) > 12 {
                             Image(systemName: swipeOffset > 0 ? "arrowshape.turn.up.left.fill" : "info.circle.fill")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                                 .foregroundStyle(Color.accentColor)
                                 .offset(x: swipeOffset > 0 ? -28 : 28)
                         }
@@ -436,7 +436,7 @@ struct MessageBubble: View {
             RoundedRectangle(cornerRadius: 2.5).fill(accent).frame(width: 4, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(replied.senderName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(accent)
                 Text(Self.replyPreview(replied))
                     .font(.system(size: 14))
@@ -479,7 +479,7 @@ struct MessageBubble: View {
                     HStack(spacing: 3) {
                         Text(emoji).font(.system(size: 14))
                         if count > 1 {
-                            Text("\(count)").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary)
+                            Text("\(count)").font(AppFont.label).foregroundStyle(.primary)
                         }
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
@@ -677,7 +677,7 @@ private struct SeenBySheet: View {
                                 avatar(for: read)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(read.readerName.isEmpty ? "Member" : read.readerName)
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(AppFont.subheadline)
                                         .foregroundStyle(.primary)
                                     Text("Seen \(read.readTimeDisplay)")
                                         .font(.system(size: 12))
@@ -694,7 +694,7 @@ private struct SeenBySheet: View {
                         if !deliveredOnly.isEmpty {
                             HStack {
                                 Text("Delivered")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(Color.primary.opacity(0.45))
                                 Spacer()
                             }
@@ -702,7 +702,7 @@ private struct SeenBySheet: View {
                             ForEach(deliveredOnly) { d in
                                 HStack(spacing: 12) {
                                     Text(d.delivererName.isEmpty ? "Member" : d.delivererName)
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(AppFont.subheadline)
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "checkmark")
@@ -721,7 +721,7 @@ private struct SeenBySheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -790,7 +790,7 @@ struct ChatFileBubble: View {
                 .font(.system(size: 20))
                 .foregroundStyle(isOwn ? .white : Color.accentColor)
             Text(name ?? "File")
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(isOwn ? .white : .primary)
                 .lineLimit(2)
             if url != nil {

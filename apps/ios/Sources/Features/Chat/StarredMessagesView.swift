@@ -82,7 +82,7 @@ private struct StarredRow: View {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message.senderName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(sender?.swiftColor ?? .primary)
                 Text(snippet)
                     .font(.system(size: 14))
@@ -94,7 +94,7 @@ private struct StarredRow: View {
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(14)

@@ -85,7 +85,7 @@ struct SwipeableRow<Content: View>: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(LocalizedStringKey(a.label))
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

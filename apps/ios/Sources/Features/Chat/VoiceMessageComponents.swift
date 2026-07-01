@@ -128,7 +128,7 @@ struct VoiceRecordButton: View {
             }
 
             Image(systemName: recorder.isRecording ? "waveform" : "mic.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(recorder.isRecording ? Color.red : Color.primary.opacity(0.55))
                 .symbolEffect(.pulse, isActive: recorder.isRecording)
                 .frame(width: 30, height: 30)
@@ -249,7 +249,7 @@ struct AudioBubble: View {
         Circle().fill(avatarColor.opacity(0.25))
             .overlay(
                 Text(initials)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(avatarColor)
             )
     }

@@ -202,7 +202,7 @@ struct GroupPermissionsView: View {
                                     .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.45)).lineLimit(1)
                             }
                             Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+                            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
                         }
                         .padding(.horizontal, 16).padding(.vertical, 12)
                     }
@@ -313,14 +313,14 @@ struct InviteLinkView: View {
                         UIPasteboard.general.string = link; HapticFeedback.success()
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .liquidGlass(cornerRadius: 14)
                     }
                     .buttonStyle(.plain)
                     ShareLink(item: link) {
                         Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -396,7 +396,7 @@ private struct InfoActionCard: View {
                     .frame(width: 52, height: 52)
                     .background(Color.accentColor.opacity(0.15), in: Circle())
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(Color.primary.opacity(0.75))
             }
             .frame(maxWidth: .infinity)
@@ -409,7 +409,7 @@ private struct InfoActionCard: View {
 struct AdminBadge: View {
     var body: some View {
         Text("Admin")
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(Color.accentColor)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(Color.accentColor.opacity(0.14), in: Capsule())
@@ -440,7 +440,7 @@ private struct InfoRow: View {
                 if adminBadge { AdminBadge() }
                 if showChevron {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
             }
@@ -472,7 +472,7 @@ struct InfoRowLabel: View {
             }
             if adminBadge { AdminBadge() }
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .font(.system(size: 16))
@@ -687,7 +687,7 @@ struct ContactDetailsView: View {
                     Label("Golește conversația", systemImage: "xmark.circle")
                 }
             } label: {
-                Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+                Image(systemName: "ellipsis").font(AppFont.headline)
             }
         }
     }
@@ -771,7 +771,7 @@ struct GroupDetailsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(members.count + 1) members")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.5))
                             .padding(.horizontal, 20)
 
@@ -879,7 +879,7 @@ struct GroupDetailsView: View {
                             NavigationLink {
                                 InviteLinkView(title: groupName, link: inviteLink)
                             } label: {
-                                Image(systemName: "qrcode").font(.system(size: 16, weight: .semibold))
+                                Image(systemName: "qrcode").font(AppFont.headline)
                             }
                         }
                         Menu {
@@ -895,7 +895,7 @@ struct GroupDetailsView: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold))
+                            Image(systemName: "ellipsis").font(AppFont.headline)
                         }
                     }
                 }
@@ -1031,7 +1031,7 @@ struct EditGroupDetailsSheet: View {
                     .padding(.top, 16)
 
                     PhotosPicker(selection: $photoItem, matching: .images) {
-                        Text("Editează").font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor)
+                        Text("Editează").font(AppFont.body).foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
 
@@ -1389,7 +1389,7 @@ struct EncryptionInfoView: View {
             Image(systemName: icon)
                 .font(.system(size: 18)).foregroundStyle(Color.accentColor).frame(width: 28)
             VStack(alignment: .leading, spacing: 3) {
-                Text(LocalizedStringKey(title)).font(.system(size: 15, weight: .semibold))
+                Text(LocalizedStringKey(title)).font(AppFont.subheadline)
                 Text(LocalizedStringKey(body)).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.55))
             }
         }
@@ -1571,7 +1571,7 @@ struct ConversationNotificationsView: View {
     private func section<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey(title))
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.5))
                 .padding(.horizontal, 20)
             VStack(spacing: 0) { content() }
@@ -1591,7 +1591,7 @@ struct ConversationNotificationsView: View {
                 Spacer()
                 Text(selection.wrappedValue).foregroundStyle(Color.primary.opacity(0.45)).font(.system(size: 15))
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
@@ -1649,7 +1649,7 @@ struct TonePickerView: View {
                             Spacer()
                             if selection == opt {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(Color.accentColor)
                             }
                         }

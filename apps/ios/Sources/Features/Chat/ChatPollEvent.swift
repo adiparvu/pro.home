@@ -106,12 +106,12 @@ struct PollBubble: View {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill").font(.system(size: 12))
                 Text(poll.multi ? "Selectează una sau mai multe" : "Selectează una")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
             }
             .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.accentColor)
 
             Text(poll.q)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(isOwn ? .white : .primary)
 
             VStack(spacing: 8) {
@@ -129,7 +129,7 @@ struct PollBubble: View {
 
             Button { showVotes = true } label: {
                 Text("Afișează voturile")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(isOwn ? .white : Color.accentColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
@@ -161,7 +161,7 @@ struct PollBubble: View {
                     .foregroundStyle(isOwn ? .white : .primary)
                 Spacer()
                 Text("\(c)")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(0.5))
             }
             GeometryReader { geo in
@@ -224,12 +224,12 @@ struct EventBubble: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar").font(.system(size: 12))
-                Text("Event").font(.system(size: 11, weight: .semibold))
+                Text("Event").font(AppFont.label)
             }
             .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.red)
 
             Text(event.t)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(isOwn ? .white : .primary)
 
             if let d = event.d, !d.isEmpty {
@@ -251,7 +251,7 @@ struct EventBubble: View {
 
             Button { addToCalendar() } label: {
                 Text("Add to Calendar")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(isOwn ? .white : Color.accentColor)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())

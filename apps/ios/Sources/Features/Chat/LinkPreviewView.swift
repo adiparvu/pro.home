@@ -64,7 +64,7 @@ struct LinkPreviewView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title ?? (url.host ?? url.absoluteString))
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)

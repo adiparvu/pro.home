@@ -247,7 +247,7 @@ struct StickerBubble: View {
                 .opacity(appeared ? 1.0 : 0.0)
             if let label = sticker?.label {
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .opacity(appeared ? 1.0 : 0.0)
             }

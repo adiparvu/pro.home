@@ -206,7 +206,7 @@ struct ChatView: View {
                     }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(String(localized: "Chat Grup"))
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                         // Header is avatar + name only; the member-count subtitle is
                         // gone. Typing status still surfaces here since it's transient.
                         if let t = typingText {
@@ -222,7 +222,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showVideoSheet = true } label: {
                     Image(systemName: "video.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Video call")
@@ -230,7 +230,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCallSheet = true } label: {
                     Image(systemName: "phone.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
@@ -478,7 +478,7 @@ struct ChatView: View {
                                 Text(pinnedMessages.count > 1
                                      ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
                                      : String(localized: "Pinned message"))
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(Color.accentColor)
                                 Text(pinnedSnippet(pinned))
                                     .font(.system(size: 12))
@@ -661,7 +661,7 @@ struct ChatView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                             .frame(width: 40, height: 40)
                     }
@@ -685,12 +685,12 @@ struct ChatView: View {
             if editingMessage != nil {
                 HStack(spacing: 8) {
                     Image(systemName: "pencil")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 18)
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Edit message")
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.label).foregroundStyle(Color.accentColor)
                         Text(editingMessage?.body ?? "")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
                     }
@@ -710,7 +710,7 @@ struct ChatView: View {
                     RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 40)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
                         Text(pinnedSnippet(replyingTo))
                             .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.65)).lineLimit(1)
                     }
@@ -729,7 +729,7 @@ struct ChatView: View {
                         ForEach(Array(zip(mentionedIds, mentionedNames)), id: \.0) { id, name in
                             HStack(spacing: 4) {
                                 Text("@\(name)")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(AppFont.caption)
                                     .foregroundStyle(Color.accentColor)
                                 Button {
                                     mentionedIds.removeAll { $0 == id }
@@ -755,7 +755,7 @@ struct ChatView: View {
                         HapticFeedback.warning()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .frame(width: 30, height: 30)
                             .background(Circle().fill(Color.primary.opacity(0.1)))
@@ -820,7 +820,7 @@ struct ChatView: View {
                             showAttachmentSheet = true
                         } label: {
                             Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(Color.primary.opacity(0.55))
                                 .frame(width: 30, height: 30)
                         }
@@ -832,7 +832,7 @@ struct ChatView: View {
                             showStickerPicker = true
                         } label: {
                             Image(systemName: "face.smiling")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(Color.primary.opacity(0.55))
                                 .frame(width: 30, height: 30)
                         }

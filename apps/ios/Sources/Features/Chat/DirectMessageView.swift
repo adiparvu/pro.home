@@ -119,7 +119,7 @@ struct DirectMessageView: View {
                         }
                         VStack(alignment: .leading, spacing: 1) {
                             Text(member.name)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(.primary)
                             // Header is avatar + name only; the role-label subtitle is
                             // gone. Typing status still surfaces here since it's transient.
@@ -136,7 +136,7 @@ struct DirectMessageView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showVideoSheet = true } label: {
                     Image(systemName: "video.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
@@ -145,7 +145,7 @@ struct DirectMessageView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCallSheet = true } label: {
                     Image(systemName: "phone.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
@@ -358,7 +358,7 @@ struct DirectMessageView: View {
                         Text(pinnedMessages.count > 1
                              ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
                              : String(localized: "Pinned message"))
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(Color.accentColor)
                         Text(dmSnippet(pinned))
                             .font(.system(size: 12))
@@ -511,7 +511,7 @@ struct DirectMessageView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                             .frame(width: 40, height: 40)
                     }
@@ -576,7 +576,7 @@ struct DirectMessageView: View {
                 ChatBlockStore.setBlocked(member.id.uuidString, false)
                 blockRefresh.toggle()
             }
-            .font(.system(size: 14, weight: .semibold))
+            .font(AppFont.footnoteEmphasis)
         }
         .foregroundStyle(Color.primary.opacity(0.7))
         .frame(maxWidth: .infinity)
@@ -674,7 +674,7 @@ struct DirectMessageView: View {
             RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Replying to \(msg.senderName)")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.accentColor)
                 Text(replyPreviewText(msg))
                     .font(.system(size: 12))
@@ -710,7 +710,7 @@ struct DirectMessageView: View {
                     .fill(Color.primary.opacity(0.07))
                     .frame(width: 34, height: 34)
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color.primary.opacity(0.5))
             }
         }
@@ -746,7 +746,7 @@ struct DirectMessageView: View {
             showCameraPicker = true
         } label: {
             Image(systemName: "camera.fill")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(Color.primary.opacity(0.55))
                 .frame(width: 34, height: 34)
                 .background(Color.primary.opacity(0.07), in: Circle())
@@ -779,7 +779,7 @@ struct DirectMessageView: View {
                 .fill(audioRecorder.isRecording ? Color.red.opacity(0.12) : Color.primary.opacity(0.07))
                 .frame(width: 34, height: 34)
             Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(audioRecorder.isRecording ? .red : Color.primary.opacity(0.55))
                 .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
         }
@@ -1120,7 +1120,7 @@ private struct DMAttachmentOption: View {
                         .foregroundStyle(color)
                 }
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))
             }
         }
@@ -1171,7 +1171,7 @@ private struct DMBubble: View {
     private var forwardButton: some View {
         Button { onForward?() } label: {
             Image(systemName: "arrowshape.turn.up.right.fill")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .frame(width: 34, height: 34)
         }
@@ -1229,7 +1229,7 @@ private struct DMBubble: View {
                 .overlay(alignment: isOwn ? .trailing : .leading) {
                     if abs(swipeOffset) > 12 {
                         Image(systemName: swipeOffset > 0 ? "arrowshape.turn.up.left.fill" : "info.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .offset(x: swipeOffset > 0 ? -28 : 28)
                     }
@@ -1337,7 +1337,7 @@ private struct DMBubble: View {
                     HStack(spacing: 3) {
                         Text(emoji).font(.system(size: 14))
                         if count > 1 {
-                            Text("\(count)").font(.system(size: 11, weight: .semibold)).foregroundStyle(.primary)
+                            Text("\(count)").font(AppFont.label).foregroundStyle(.primary)
                         }
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
@@ -1392,7 +1392,7 @@ private struct DMBubble: View {
             RoundedRectangle(cornerRadius: 2).fill(accent).frame(width: 3, height: 28)
             VStack(alignment: .leading, spacing: 1) {
                 Text(replied.senderName)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(accent)
                 Text(preview)
                     .font(.system(size: 12))
@@ -1537,7 +1537,7 @@ private struct DMStarredView: View {
                                             .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(msg.senderName)
-                                                .font(.system(size: 13, weight: .semibold))
+                                                .font(AppFont.captionEmphasis)
                                                 .foregroundStyle(.primary)
                                             Text(snippet(msg))
                                                 .font(.system(size: 14))
@@ -1549,7 +1549,7 @@ private struct DMStarredView: View {
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(AppFont.captionStrong)
                                             .foregroundStyle(Color.primary.opacity(0.25))
                                     }
                                     .padding(14)

@@ -90,7 +90,7 @@ struct FullScreenImageViewer: View {
                 Spacer()
                 ShareLink(item: url) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.white)
                         .padding(14)
                         .background(.ultraThinMaterial, in: Circle())
