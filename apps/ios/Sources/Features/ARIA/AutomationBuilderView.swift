@@ -337,7 +337,7 @@ private struct AddAutomationSheet: View {
 
 struct AutomationBuilderView: View {
     @EnvironmentObject private var propertyService: PropertyService
-    @StateObject private var cloud = GlobalAutomationService()
+    @State private var cloud = GlobalAutomationService()
     @State private var automations: [AutomationRule] = AutomationRule.prvioTemplates
     @State private var activeFlowIndex = 0
     @State private var isDeployed      = false

@@ -60,7 +60,7 @@ struct ChatView: View {
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
     @StateObject private var audioRecorder = ChatAudioRecorder()
-    @StateObject var outbox = OfflineOutbox()
+    @State var outbox = OfflineOutbox()
 
     private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
     private var pendingOutbox: [PendingMessage] {

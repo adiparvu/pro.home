@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Observation
 
 struct UtilityEntry: Identifiable, Codable {
     var id: UUID
@@ -44,8 +45,9 @@ struct NewUtilityEntry: Encodable {
 }
 
 @MainActor
-final class UtilityService: ObservableObject {
-    @Published var entries: [UtilityEntry] = []
+@Observable
+final class UtilityService {
+    var entries: [UtilityEntry] = []
     private(set) var currentPropertyId: UUID?
 
     // MARK: Derived helpers
@@ -138,7 +140,7 @@ final class UtilityService: ObservableObject {
 // MARK: - Main View
 
 struct UtilityView: View {
-    @StateObject private var service = UtilityService()
+    @State private var service = UtilityService()
     @EnvironmentObject private var propertyService: PropertyService
     @State private var showAdd = false
     @State private var selectedType = "electricity"

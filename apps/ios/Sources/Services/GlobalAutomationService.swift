@@ -1,12 +1,14 @@
 import Foundation
 import SwiftUI
+import Observation
 
 // Server-backed storage for the global automations page (was UserDefaults).
 // Stores the AutomationRule list per property in `property_automations`.
 
 @MainActor
-final class GlobalAutomationService: ObservableObject {
-    @Published var error: String?
+@Observable
+final class GlobalAutomationService {
+    var error: String?
 
     private struct Row: Decodable {
         let name, triggerIcon, triggerLabel, conditionIcon, conditionLabel, actionIcon, actionLabel: String

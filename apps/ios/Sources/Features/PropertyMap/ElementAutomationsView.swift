@@ -6,7 +6,7 @@ import SwiftUI
 struct ElementAutomationsSection: View {
     let element: PropertyElement
 
-    @StateObject private var service = AutomationService()
+    @State private var service = AutomationService()
     @EnvironmentObject private var taskService: TaskService
     @State private var showAdd = false
 

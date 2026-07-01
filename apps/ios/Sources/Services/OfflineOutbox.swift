@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import Observation
 
 // MARK: - Offline outbox
 // Persists messages that failed to send (or were composed offline) and
@@ -29,9 +30,10 @@ struct PendingMessage: Identifiable, Codable, Equatable {
 }
 
 @MainActor
-final class OfflineOutbox: ObservableObject {
-    @Published private(set) var pending: [PendingMessage] = []
-    @Published private(set) var isOnline = true
+@Observable
+final class OfflineOutbox {
+    private(set) var pending: [PendingMessage] = []
+    private(set) var isOnline = true
 
     private let monitor = NWPathMonitor()
     private var flushing = false
