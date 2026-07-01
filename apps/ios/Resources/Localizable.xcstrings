@@ -35337,6 +35337,310 @@
           }
         }
       }
+    },
+    "+%lldpts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lldpts"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld pct"
+          }
+        }
+      }
+    },
+    "Activate once — Siri learns all %lld commands. To remove, go to iPhone Settings › Siri.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activate once — Siri learns all %lld commands. To remove, go to iPhone Settings › Siri."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează o singură dată — Siri învață toate cele %lld comenzi. Pentru a le elimina, mergi la Setări iPhone › Siri."
+          }
+        }
+      }
+    },
+    "All %lld shortcuts activated for Siri!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %lld shortcuts activated for Siri!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toate cele %lld comenzi rapide au fost activate pentru Siri!"
+          }
+        }
+      }
+    },
+    "Anyone with this link or QR code can join %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anyone with this link or QR code can join %@."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oricine are acest link sau cod QR se poate alătura %@."
+          }
+        }
+      }
+    },
+    "Cu o aproximație de %lldm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accurate to within %lldm"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cu o aproximație de %lldm"
+          }
+        }
+      }
+    },
+    "Full AI functionality — %@ integration coming in next version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full AI functionality — %@ integration coming in next version"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funcționalitate AI completă — integrarea %@ vine în versiunea următoare"
+          }
+        }
+      }
+    },
+    "Group · %lld members": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group · %lld members"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grup · %lld membri"
+          }
+        }
+      }
+    },
+    "IF %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IF %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DACĂ %@"
+          }
+        }
+      }
+    },
+    "IF %@ %@ %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IF %@ %@ %@ %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DACĂ %@ %@ %@ %@"
+          }
+        }
+      }
+    },
+    "No %@ tasks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No %@ tasks"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio sarcină %@"
+          }
+        }
+      }
+    },
+    "Replying to %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replying to %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Răspunzi lui %@"
+          }
+        }
+      }
+    },
+    "THEN %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "THEN %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ATUNCI %@"
+          }
+        }
+      }
+    },
+    "Tag ID: %@…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag ID: %@…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID tag: %@…"
+          }
+        }
+      }
+    },
+    "Tap to add corners (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to add corners (%lld)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atinge pentru a adăuga colțuri (%lld)"
+          }
+        }
+      }
+    },
+    "This will also remove all %lld sensors linked to this controller.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will also remove all %lld sensors linked to this controller."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceasta va elimina și cei %lld senzori conectați la acest controler."
+          }
+        }
+      }
+    },
+    "%@ is analyzing your property…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is analyzing your property…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ analizează proprietatea ta…"
+          }
+        }
+      }
+    },
+    "%@ · %lld membri": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld members"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld membri"
+          }
+        }
+      }
+    },
+    "%lld members": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld members"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld membri"
+          }
+        }
+      }
+    },
+    "%lld sensors": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld sensors"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld senzori"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
