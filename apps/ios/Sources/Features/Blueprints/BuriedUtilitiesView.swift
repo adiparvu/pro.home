@@ -52,6 +52,7 @@ struct BuriedUtilitiesView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add buried line")
             }
         }
         .sheet(isPresented: $showAdd) {
