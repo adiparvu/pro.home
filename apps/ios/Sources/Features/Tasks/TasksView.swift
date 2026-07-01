@@ -176,7 +176,7 @@ struct TasksView: View {
             VStack(spacing: 0) {
                 if filter == .done {
                     historyPeriodBar
-                        .padding(.top, 4)
+                        .padding(.top, AppSpacing.xxs)
                 }
                 LazyVStack(spacing: 10) {
                     ForEach(filtered) { task in
@@ -201,8 +201,8 @@ struct TasksView: View {
                             }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.xxs)
                 .padding(.bottom, 110)
             }
             .background(
@@ -228,8 +228,8 @@ struct TasksView: View {
                         Text(LocalizedStringKey(period.rawValue))
                             .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
                             .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, AppSpacing.md)
+                            .padding(.vertical, AppSpacing.xs)
                             .background(
                                 historyPeriod == period ? Color.white : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule()
@@ -238,8 +238,8 @@ struct TasksView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.xs)
         }
     }
 
@@ -292,8 +292,8 @@ struct FilterChip: View {
                 }
             }
             .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.sm)
             .background(isSelected ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -361,8 +361,8 @@ struct TaskRowView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.base)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

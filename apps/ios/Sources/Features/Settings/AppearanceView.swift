@@ -54,8 +54,8 @@ struct AppearanceView: View {
                 currencySection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -136,8 +136,8 @@ struct AppearanceView: View {
                                     .frame(width: 20, height: 20)
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
                     }
                     .buttonStyle(.plain)
 
@@ -156,7 +156,7 @@ struct AppearanceView: View {
                     .font(.system(size: 11))
             }
             .foregroundStyle(Color.primary.opacity(0.3))
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             Button {
                 Task { await forceFetch() }
@@ -168,7 +168,7 @@ struct AppearanceView: View {
                         .font(AppFont.caption)
                 }
                 .foregroundStyle(.tint)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
             }
             .buttonStyle(.plain)
             .disabled(currencyService.isLoading)
@@ -205,7 +205,7 @@ struct AppearanceView: View {
                     ))
                     .labelsHidden().tint(accentPreviewColor)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
 
                 if appSettings.accentEnabled {
                     Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
@@ -253,7 +253,7 @@ struct AppearanceView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 14)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.base)
                 }
             }
         }
@@ -278,7 +278,7 @@ struct AppearanceView: View {
                         if on { HapticFeedback.impact(.medium) }
                     }
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
     }
 
@@ -286,7 +286,7 @@ struct AppearanceView: View {
         Text(title)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
             .textCase(.uppercase)
     }
 }
@@ -316,7 +316,7 @@ private struct ThemeOptionRow: View {
                         .frame(width: 20, height: 20)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
         .buttonStyle(.plain)
     }

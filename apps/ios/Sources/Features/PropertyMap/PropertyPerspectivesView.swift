@@ -122,7 +122,7 @@ struct PropertyPerspectivesView: View {
                                         .font(AppFont.captionEmphasis)
                                 }
                                 .foregroundStyle(selectedRole == p.role ? .white : p.color)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(
                                     selectedRole == p.role ? AnyShapeStyle(p.color) : AnyShapeStyle(p.color.opacity(0.12)),
                                     in: Capsule()
@@ -133,7 +133,7 @@ struct PropertyPerspectivesView: View {
                         Spacer(minLength: 20)
                     }
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, AppSpacing.md)
 
                 ScrollView(showsIndicators: false) {
                     if let p = perspectives.first(where: { $0.role == selectedRole }) {
@@ -169,7 +169,7 @@ struct PropertyPerspectivesView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.xl)
 
             // Stats grid
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -207,11 +207,11 @@ struct PropertyPerspectivesView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.xl)
 
             // Perspective-specific tips
             tipCard(for: p)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.97)))
     }

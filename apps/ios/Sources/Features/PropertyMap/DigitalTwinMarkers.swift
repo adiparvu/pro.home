@@ -42,7 +42,7 @@ struct ZoneBadge: View {
                 Text(zone.name)
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                     .background(.black.opacity(0.45), in: Capsule())
             }
             .scaleEffect(selected ? 1.12 : 1.0)

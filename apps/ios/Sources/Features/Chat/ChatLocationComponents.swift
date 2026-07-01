@@ -69,9 +69,9 @@ struct LocationBubble: View {
             Image(systemName: "car.fill")
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(.white)
-                .padding(8)
+                .padding(AppSpacing.sm)
                 .background(Color.accentColor, in: Circle())
-                .padding(8)
+                .padding(AppSpacing.sm)
         }
         .onTapGesture { showAppChooser = true }
         // Collapse the map + badge into one VoiceOver stop — otherwise it exposes
@@ -193,8 +193,8 @@ struct LocationShareSheet: View {
                                     nearbyPlacesSection
                                 }
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 14)
+                            .padding(.horizontal, AppSpacing.xl)
+                            .padding(.top, AppSpacing.base)
                             .padding(.bottom, 30)
                         }
                     } else {
@@ -245,9 +245,9 @@ struct LocationShareSheet: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
 
     private var searchResultsList: some View {
@@ -305,7 +305,7 @@ struct LocationShareSheet: View {
                         Spacer()
                     }
                     .foregroundStyle(Color.accentColor)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13).padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13).padding(.horizontal, AppSpacing.base)
                     .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .disabled(propertyId == nil)
@@ -360,7 +360,7 @@ struct LocationShareSheet: View {
                         }
                         Spacer()
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                 }
                 .buttonStyle(.plain)
                 Divider().opacity(0.3)
@@ -389,7 +389,7 @@ struct MentionPickerSheet: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         MemberPickerView(selectedIds: $selectedIds, selectedNames: $selectedNames)
-                            .padding(.horizontal, 20).padding(.top, 8)
+                            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                     }
                 }
             }

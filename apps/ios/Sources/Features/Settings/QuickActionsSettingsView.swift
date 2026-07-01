@@ -17,12 +17,12 @@ struct QuickActionsSettingsView: View {
                 Text("If a page has a single active action, the button triggers it directly. With multiple actions, the button opens a menu.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Floating Buttons")
@@ -61,7 +61,7 @@ struct QuickActionsSettingsView: View {
                 .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
                 FabVisibilityRow(
@@ -121,7 +121,7 @@ private struct FabVisibilityRow: View {
                     .labelsHidden()
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
 
             if !isLast {
@@ -163,7 +163,7 @@ private struct QuickActionToggleRow: View {
                     .labelsHidden()
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
 
             if !isLast {

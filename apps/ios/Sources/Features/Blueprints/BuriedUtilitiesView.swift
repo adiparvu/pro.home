@@ -35,7 +35,7 @@ struct BuriedUtilitiesView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
                     .padding(.bottom, 110)
                 }
             }

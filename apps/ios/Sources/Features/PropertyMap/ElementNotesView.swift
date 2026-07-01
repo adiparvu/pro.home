@@ -75,7 +75,7 @@ struct ElementNotesSection: View {
                     Image(systemName: lock.biometryAvailable ? "faceid" : "key.fill")
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
             }
             .buttonStyle(.plain)
         } else {
@@ -93,7 +93,7 @@ struct ElementNotesSection: View {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 4)
+                        Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                     }
                 }
 
@@ -134,7 +134,7 @@ struct ElementNotesSection: View {
                     }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -201,7 +201,7 @@ struct ElementNoteEditorSheet: View {
                         }
                         Spacer(minLength: 20)
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                 }
             }
             .navigationTitle(existing == nil ? "New note" : "Edit note")
@@ -375,7 +375,7 @@ struct NotePINSheet: View {
                         .disabled(pin.count < 4)
                     Spacer()
                 }
-                .padding(24)
+                .padding(AppSpacing.xxl)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }

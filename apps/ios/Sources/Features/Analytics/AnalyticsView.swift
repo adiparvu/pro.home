@@ -35,17 +35,17 @@ struct AnalyticsView: View {
                             Text(tab.displayName)
                                 .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
                                 .foregroundStyle(selectedTab == tab ? Color.black : Color.primary.opacity(0.55))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.lg)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(selectedTab == tab ? Color.white : Color.clear, in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(4)
+                .padding(AppSpacing.xxs)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.bottom, AppSpacing.lg)
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
@@ -58,8 +58,8 @@ struct AnalyticsView: View {
                             ForecastSection(financialService: financialService)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     .padding(.bottom, 110)
                     .background(
                         GeometryReader { geo in

@@ -38,8 +38,8 @@ struct DocumentsView: View {
 
             VStack(spacing: 0) {
                 searchBar
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.bottom, AppSpacing.md)
 
                 if documentService.isLoading {
                     Spacer()
@@ -62,10 +62,10 @@ struct DocumentsView: View {
                                     docToDelete = doc
                                     showDeleteConfirm = true
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AppSpacing.xl)
                             }
                         }
-                        .padding(.top, 4)
+                        .padding(.top, AppSpacing.xxs)
                         .padding(.bottom, 120)
                     }
                     .refreshable { await documentService.load() }
@@ -177,9 +177,9 @@ struct DocumentsView: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(.red.opacity(0.85), in: Capsule())
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Search
@@ -198,7 +198,7 @@ struct DocumentsView: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -276,7 +276,7 @@ struct DocumentsView: View {
                 Spacer()
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: - Empty
@@ -334,7 +334,7 @@ struct DocumentRow: View {
                             Text(LocalizedStringKey(doc.category.capitalized))
                                 .font(AppFont.caption2)
                                 .foregroundStyle(categoryColor.opacity(0.8))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                                 .background(categoryColor.opacity(0.12), in: Capsule())
                             if !doc.fileSizeDisplay.isEmpty {
                                 Text(doc.fileSizeDisplay)

@@ -39,8 +39,8 @@ struct TenantManagementView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
                         Spacer(minLength: 100)
                     }
                 }
@@ -131,7 +131,7 @@ struct TenantManagementView: View {
                                 .font(AppFont.caption)
                                 .foregroundStyle(tenant.swiftColor)
                         }
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                         .background(tenant.swiftColor.opacity(0.12), in: Capsule())
 
                         if let email = tenant.email, !email.isEmpty {
@@ -252,7 +252,7 @@ struct TenantManagementView: View {
                 Label("Add Tenant", systemImage: "person.badge.plus")
                     .font(AppFont.subheadline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 24).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)

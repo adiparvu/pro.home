@@ -326,8 +326,8 @@ struct ConversationsView: View {
 
             searchField
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.top, AppSpacing.xs)
     }
 
     // MARK: - Conversation list
@@ -375,7 +375,7 @@ struct ConversationsView: View {
                                     .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.primary.opacity(0.25))
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                         }
                         .buttonStyle(.plain)
                         .liquidGlass(cornerRadius: 16)
@@ -409,10 +409,10 @@ struct ConversationsView: View {
                                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xxl)
         }
     }
 
@@ -525,7 +525,7 @@ struct ConversationsView: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
         .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
     }
 
@@ -537,14 +537,14 @@ struct ConversationsView: View {
                         Text(f.label)
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
                             .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
         }
     }
 
@@ -559,7 +559,7 @@ struct ConversationsView: View {
                 .font(.system(size: 17, weight: .bold))
             Spacer()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
     }
 
     private var archivedRow: some View {
@@ -581,7 +581,7 @@ struct ConversationsView: View {
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
         .contentShape(Rectangle())
     }
 
@@ -603,7 +603,7 @@ struct ConversationsView: View {
             Spacer()
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
         .contentShape(Rectangle())
     }
 
@@ -821,7 +821,7 @@ private struct ConversationRowView: View {
                         Text("\(entry.unread)")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, AppSpacing.xs)
                             .padding(.vertical, 2)
                             .background(muted ? Color.primary.opacity(AppOpacity.disabled) : Color.accentColor, in: Capsule())
                             .fixedSize()
@@ -833,7 +833,7 @@ private struct ConversationRowView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .contentShape(Rectangle())
     }

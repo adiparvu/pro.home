@@ -16,7 +16,7 @@ struct VideoPlayerSheet: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 30))
                     .foregroundStyle(.white.opacity(0.85))
-                    .padding(16)
+                    .padding(AppSpacing.lg)
             }
             .accessibilityLabel("Close")
         }
@@ -80,19 +80,19 @@ struct FullScreenImageViewer: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(AppSpacing.md)
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .accessibilityLabel("Close")
                     .padding(.trailing, 18)
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
                 }
                 Spacer()
                 ShareLink(item: url) {
                     Image(systemName: "square.and.arrow.up")
                         .font(AppFont.headline)
                         .foregroundStyle(.white)
-                        .padding(14)
+                        .padding(AppSpacing.base)
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .padding(.bottom, 30)

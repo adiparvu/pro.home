@@ -175,8 +175,8 @@ private struct PhotoGridCell: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.sm)
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -264,13 +264,13 @@ private struct PhotoEntryDetailSheet: View {
                                     .font(AppFont.body)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
+                                    .padding(.vertical, AppSpacing.base)
                                     .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
-                            .padding(.top, 8)
+                            .padding(.top, AppSpacing.sm)
                         }
-                        .padding(20)
+                        .padding(AppSpacing.xl)
 
                         Spacer(minLength: 40)
                     }

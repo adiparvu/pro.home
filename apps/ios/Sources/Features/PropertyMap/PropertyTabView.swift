@@ -32,9 +32,9 @@ struct PropertyTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             segmentPicker
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xxs)
 
             Divider().opacity(0.10)
 

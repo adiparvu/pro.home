@@ -110,8 +110,8 @@ struct NotificationCenterView: View {
                         }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.xxs)
             .padding(.bottom, 110)
         }
     }
@@ -222,8 +222,8 @@ private struct NotificationRow: View {
                     .padding(.top, 5)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         .background(
             notification.isUnread
                 ? Color.primary.opacity(AppOpacity.hairline)

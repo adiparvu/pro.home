@@ -13,8 +13,8 @@ struct BudgetView: View {
                 categoriesSection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Monthly Budget")
@@ -62,7 +62,7 @@ struct BudgetView: View {
                     Text("/ " + financialService.currencySymbol + String(format: "%.0f", total))
                         .font(.system(size: 15))
                         .foregroundStyle(Color.primary.opacity(0.4))
-                        .padding(.bottom, 4)
+                        .padding(.bottom, AppSpacing.xxs)
                 }
 
                 GeometryReader { geo in
@@ -99,7 +99,7 @@ struct BudgetView: View {
             Text("PER CATEGORY")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 8) {
                 ForEach(BudgetService.categories, id: \.self) { cat in
@@ -223,10 +223,10 @@ private struct EditBudgetSheet: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
                     Spacer()
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
             }
             .navigationTitle(LocalizedStringKey(category.capitalized))
             .navigationBarTitleDisplayMode(.inline)

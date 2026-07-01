@@ -42,8 +42,8 @@ struct AddPropertyValueSheet: View {
                                 .tint(.accentColor)
                                 .pickerStyle(.menu)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.base)
                         }
 
                         formSection("Details") {
@@ -57,8 +57,8 @@ struct AddPropertyValueSheet: View {
                             .tint(.accentColor)
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
                         }
 
                         formSection("Notes") {
@@ -74,14 +74,14 @@ struct AddPropertyValueSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Value Entry")
@@ -117,7 +117,7 @@ struct AddPropertyValueSheet: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, 13)
 
             if source.isEmpty {
@@ -133,14 +133,14 @@ struct AddPropertyValueSheet: View {
                                     .font(.system(size: 12))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                     .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
+                                    .padding(.vertical, AppSpacing.xs)
                                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.sm)
                 }
             }
         }
@@ -151,7 +151,7 @@ struct AddPropertyValueSheet: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()

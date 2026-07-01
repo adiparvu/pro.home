@@ -144,7 +144,7 @@ private struct AutomationPickerRow: View {
                         .foregroundStyle(Color.accentColor)
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(isSelected ? Color.accentColor.opacity(0.06) : Color.clear)
         }
         .buttonStyle(.plain)
@@ -210,7 +210,7 @@ private struct AddAutomationSheet: View {
                                     .tint(Color.accentColor)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Trigger picker
                         GlassCard(padding: 0) {
@@ -219,7 +219,7 @@ private struct AddAutomationSheet: View {
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<triggerOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: triggerOptions[i].icon,
@@ -234,10 +234,10 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Condition picker
                         GlassCard(padding: 0) {
@@ -246,7 +246,7 @@ private struct AddAutomationSheet: View {
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<conditionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: conditionOptions[i].icon,
@@ -261,10 +261,10 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Action picker
                         GlassCard(padding: 0) {
@@ -273,7 +273,7 @@ private struct AddAutomationSheet: View {
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<actionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: actionOptions[i].icon,
@@ -288,14 +288,14 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New Automation")
@@ -372,7 +372,7 @@ struct AutomationBuilderView: View {
                 savedSection
                 Spacer(minLength: 100)
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Automations")
@@ -413,7 +413,7 @@ struct AutomationBuilderView: View {
             Image(systemName: icon).font(AppFont.label).foregroundStyle(color)
             Text(label).font(AppFont.caption).foregroundStyle(.primary)
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
         .frame(maxWidth: .infinity)
         .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.2), lineWidth: 0.5))
@@ -439,7 +439,7 @@ struct AutomationBuilderView: View {
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(activeFlowIndex == i ? .white : .secondary)
                             }
-                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                             .background(
                                 activeFlowIndex == i
                                     ? AnyShapeStyle(a.color)
@@ -450,16 +450,16 @@ struct AutomationBuilderView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, 2)
             }
-            .padding(.top, 14).padding(.bottom, 8)
+            .padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
 
             GeometryReader { geo in
                 nodeRedCanvas(rule: rule, width: geo.size.width)
             }
             .frame(height: 260)
-            .padding(.horizontal, 16).padding(.bottom, 16)
+            .padding(.horizontal, AppSpacing.lg).padding(.bottom, AppSpacing.lg)
         }
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -531,12 +531,12 @@ struct AutomationBuilderView: View {
                 Text(LocalizedStringKey(headerLabel)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.9))
                 Spacer()
             }
-            .padding(.horizontal, 8).padding(.vertical, 5)
+            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 5)
             .background(color)
 
             Text(LocalizedStringKey(bodyText))
                 .font(AppFont.captionStrong).foregroundStyle(.white)
-                .padding(.horizontal, 8).padding(.vertical, 7)
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, 7)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(color.opacity(0.35))
@@ -627,7 +627,7 @@ struct AutomationBuilderView: View {
                 Spacer()
                 Text("\(automations.count)")
                     .font(AppFont.captionStrong).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                     .background(.regularMaterial, in: Capsule())
             }
 
@@ -671,7 +671,7 @@ struct AutomationBuilderView: View {
                 .labelsHidden().scaleEffect(0.8)
                 .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection(); persist() }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
             .strokeBorder(rule.isActive ? rule.color.opacity(0.20) : Color.white.opacity(0.06), lineWidth: 1))

@@ -23,7 +23,7 @@ struct HelpFAQView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
                 PageHeader(titleKey: "Help & FAQ")
-                    .padding(.bottom, 4)
+                    .padding(.bottom, AppSpacing.xxs)
                 ForEach(items.indices, id: \.self) { i in
                     FAQRow(item: $items[i])
                 }
@@ -41,17 +41,17 @@ struct HelpFAQView: View {
                             .font(AppFont.body)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, AppSpacing.base)
                             .glassRoundedRect(14)
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
 
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -79,8 +79,8 @@ private struct FAQRow: View {
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.base)
             }
             .buttonStyle(.plain)
 
@@ -89,8 +89,8 @@ private struct FAQRow: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.65))
                     .multilineTextAlignment(.leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.base)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

@@ -91,8 +91,8 @@ struct AddApplianceSheet: View {
                                 }
                             }
                             .tint(.accentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
 
                             if hasPurchaseDate {
                                 divider
@@ -100,7 +100,7 @@ struct AddApplianceSheet: View {
                                     .datePickerStyle(.compact)
                                     .labelsHidden()
                                     .tint(.accentColor)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppSpacing.lg)
                                     .padding(.vertical, 10)
                             }
 
@@ -118,8 +118,8 @@ struct AddApplianceSheet: View {
                                 }
                             }
                             .tint(.accentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
 
                             if hasWarrantyDate {
                                 divider
@@ -127,7 +127,7 @@ struct AddApplianceSheet: View {
                                     .datePickerStyle(.compact)
                                     .labelsHidden()
                                     .tint(.accentColor)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppSpacing.lg)
                                     .padding(.vertical, 10)
                             }
 
@@ -148,14 +148,14 @@ struct AddApplianceSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Appliance")
@@ -194,8 +194,8 @@ struct AddApplianceSheet: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
-                .padding(.bottom, 6)
+                .padding(.leading, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
@@ -217,7 +217,7 @@ struct AddApplianceSheet: View {
                 .tint(.accentColor)
                 .keyboardType(keyboard)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
@@ -235,7 +235,7 @@ struct AddApplianceSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 

@@ -52,7 +52,7 @@ struct WeatherWidget: View {
                                 }
                             }
                         }
-                        .padding(.leading, 20)
+                        .padding(.leading, AppSpacing.xl)
 
                         Spacer()
 
@@ -78,7 +78,7 @@ struct WeatherWidget: View {
                                     .foregroundStyle(.white.opacity(0.80))
                             }
                         }
-                        .padding(.trailing, 20)
+                        .padding(.trailing, AppSpacing.xl)
                     }
                 }
                 .frame(height: 120)
@@ -153,7 +153,7 @@ struct CalendarLargeWidget: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
-                    .padding(.leading, 20)
+                    .padding(.leading, AppSpacing.xl)
 
                     Rectangle()
                         .fill(Color.primary.opacity(0.08))
@@ -187,7 +187,7 @@ struct CalendarLargeWidget: View {
 
                     Spacer()
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, AppSpacing.lg)
             }
         }
         .buttonStyle(.plain)

@@ -25,8 +25,8 @@ struct PropertySettingsView: View {
                 }
                 Spacer(minLength: 80)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
@@ -71,7 +71,7 @@ struct PropertySettingsView: View {
                         Text(LocalizedStringKey(p.propertyType.capitalized))
                             .font(AppFont.caption2)
                             .foregroundStyle(.blue.opacity(0.8))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(.blue.opacity(0.15), in: Capsule())
                         if let score = p.healthScore {
                             HStack(spacing: 3) {
@@ -149,8 +149,8 @@ struct PropDetailRow: View {
                 .font(AppFont.footnote)
                 .foregroundStyle(.primary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
     }
 }

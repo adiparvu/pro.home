@@ -27,8 +27,8 @@ struct PropertyReportView: View {
                 generateButton
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.xxs)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -71,8 +71,8 @@ struct PropertyReportView: View {
                         .font(.system(size: 18))
                         .foregroundStyle(.white.opacity(0.5))
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
             }
             .frame(height: 88)
 
@@ -97,7 +97,7 @@ struct PropertyReportView: View {
                              : "\(documentService.expiringDocs.count) \(String(localized: "expiring"))",
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, AppSpacing.base)
             .background(Color.primary.opacity(0.04))
         }
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -127,7 +127,7 @@ struct PropertyReportView: View {
             Text("INCLUDE IN REPORT")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
@@ -156,8 +156,8 @@ struct PropertyReportView: View {
                 .labelsHidden()
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Generate Button

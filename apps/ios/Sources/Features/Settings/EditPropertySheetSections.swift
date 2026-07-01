@@ -15,7 +15,7 @@ extension EditPropertySheet {
                 Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
             }
-            .padding(.horizontal, 16).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
@@ -62,7 +62,7 @@ extension EditPropertySheet {
                 Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
             }.buttonStyle(.plain)
             .accessibilityLabel("Apply coordinates")
-        }.padding(.top, 8)
+        }.padding(.top, AppSpacing.sm)
     }
 
     // MARK: - Story
@@ -70,17 +70,17 @@ extension EditPropertySheet {
     var storySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("STORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 0)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl).padding(.bottom, 0)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.primary.opacity(0.04))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                 if story.isEmpty {
                     Text("Write a story about this property…").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.28))
-                        .padding(.horizontal, 16).padding(.vertical, 13)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                 }
                 TextEditor(text: $story).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                     .scrollContentBackground(.hidden).background(.clear).frame(minHeight: 100)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
             }
         }
     }
@@ -96,7 +96,7 @@ extension EditPropertySheet {
                     Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
                         .foregroundStyle(Color.accentColor).font(.system(size: 18))
                 }.buttonStyle(.plain)
-            }.padding(.leading, 4).padding(.top, 20)
+            }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
 
             if !renovations.isEmpty {
                 VStack(spacing: 0) {
@@ -112,7 +112,7 @@ extension EditPropertySheet {
                                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                         if r.id != renovations.last?.id {
                             Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 32)
                         }
@@ -138,7 +138,7 @@ extension EditPropertySheet {
                     } label: {
                         Text("Add renovation").font(AppFont.subheadline)
                             .foregroundStyle(newRenTitle.isEmpty || newRenFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }.buttonStyle(.plain).disabled(newRenTitle.isEmpty || newRenFrom.isEmpty)
                 }
@@ -157,7 +157,7 @@ extension EditPropertySheet {
                     Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
                         .foregroundStyle(Color.accentColor).font(.system(size: 18))
                 }.buttonStyle(.plain)
-            }.padding(.leading, 4).padding(.top, 20)
+            }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
 
             if !owners.isEmpty {
                 VStack(spacing: 0) {
@@ -173,7 +173,7 @@ extension EditPropertySheet {
                                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                         if o.id != owners.last?.id {
                             Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 40)
                         }
@@ -199,7 +199,7 @@ extension EditPropertySheet {
                     } label: {
                         Text("Add owner").font(AppFont.subheadline)
                             .foregroundStyle(newOwnerName.isEmpty || newOwnerFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }.buttonStyle(.plain).disabled(newOwnerName.isEmpty || newOwnerFrom.isEmpty)
                 }

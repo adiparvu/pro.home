@@ -16,12 +16,12 @@ struct MapStylePickerSheet: View {
                 .fill(Color.primary.opacity(0.18))
                 .frame(width: 36, height: 4)
                 .padding(.top, 10)
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
             Text("Map Style")
                 .font(AppFont.subheadline)
                 .foregroundStyle(.primary)
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
             HStack(spacing: 12) {
                 ForEach(styles, id: \.id) { style in
@@ -37,7 +37,7 @@ struct MapStylePickerSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
 
             Spacer()
         }
@@ -80,7 +80,7 @@ private struct StyleCard: View {
                                     .font(AppFont.headline)
                                     .foregroundStyle(.white)
                                     .background(Color.accentColor, in: Circle())
-                                    .padding(6)
+                                    .padding(AppSpacing.xs)
                             }
                             Spacer()
                         }
@@ -96,8 +96,8 @@ private struct StyleCard: View {
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .lineLimit(1)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xxs)
             }
         }
         .buttonStyle(.plain)

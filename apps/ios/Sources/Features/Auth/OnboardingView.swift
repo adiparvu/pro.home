@@ -22,7 +22,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 progressBar
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                     .padding(.horizontal, 32)
 
                 TabView(selection: $step) {
@@ -207,7 +207,7 @@ private struct WelcomeStep: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
             }
             Spacer()
             Spacer()
@@ -252,8 +252,8 @@ private struct PropertyStep: View {
                             Text(LocalizedStringKey(t.capitalized))
                                 .font(.system(size: 13, weight: type == t ? .semibold : .regular))
                                 .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.6))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.lg)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(type == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -278,8 +278,8 @@ private struct PropertyStep: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.base)
     }
 }
 
@@ -314,8 +314,8 @@ private struct FeaturesStep: View {
                         }
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.md)
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
                 }
@@ -348,7 +348,7 @@ private struct ReadyStep: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
             }
             Spacer()
             Spacer()

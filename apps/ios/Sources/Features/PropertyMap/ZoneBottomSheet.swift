@@ -49,7 +49,7 @@ struct ZoneBottomSheet: View {
                     emptyObjects
                 }
             }
-            .padding(20)
+            .padding(AppSpacing.xl)
         }
         .sheet(item: $selectedObject) { obj in
             PropertyElementDetailView(element: obj)
@@ -130,7 +130,7 @@ struct ZoneBottomSheet: View {
             Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, AppSpacing.md)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -156,7 +156,7 @@ struct ZoneBottomSheet: View {
             }
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppSpacing.md)
             .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -172,7 +172,7 @@ struct ZoneBottomSheet: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, AppSpacing.xxl)
     }
 }
 
@@ -203,7 +203,7 @@ private struct ObjectRow: View {
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
-            .padding(.horizontal, 12).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)

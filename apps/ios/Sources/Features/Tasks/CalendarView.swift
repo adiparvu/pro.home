@@ -15,7 +15,7 @@ struct CalendarView: View {
                 monthHeader
                 weekdayRow
                 daysGrid
-                Divider().background(Color.primary.opacity(AppOpacity.hairline)).padding(.top, 8)
+                Divider().background(Color.primary.opacity(AppOpacity.hairline)).padding(.top, AppSpacing.sm)
                 dayDetail
             }
         }
@@ -57,8 +57,8 @@ struct CalendarView: View {
             }
             .accessibilityLabel("Next month")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Weekday labels
@@ -72,7 +72,7 @@ struct CalendarView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppSpacing.md)
     }
 
     // MARK: - Days grid
@@ -97,8 +97,8 @@ struct CalendarView: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.xxs)
     }
 
     // MARK: - Day detail
@@ -140,8 +140,8 @@ struct CalendarView: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.vertical, AppSpacing.md)
                     .padding(.bottom, 100)
                 }
             }
@@ -264,7 +264,7 @@ private struct CalendarEventRow: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)

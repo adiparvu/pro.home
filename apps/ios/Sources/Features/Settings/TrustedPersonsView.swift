@@ -39,8 +39,8 @@ struct TrustedPersonsView: View {
                 footerText
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Persoane de încredere")
@@ -61,7 +61,7 @@ struct TrustedPersonsView: View {
             Text("PERSOANE DE ÎNCREDERE")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) {
                 ForEach(Array(persons.enumerated()), id: \.element.id) { idx, person in
@@ -115,8 +115,8 @@ struct TrustedPersonsView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private func permissionTags(_ person: TrustedPerson) -> some View {
@@ -137,7 +137,7 @@ struct TrustedPersonsView: View {
         Text(LocalizedStringKey(label))
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, AppSpacing.xs)
             .padding(.vertical, 2)
             .background(color.opacity(0.12), in: Capsule())
     }
@@ -189,7 +189,7 @@ struct TrustedPersonsView: View {
             .font(.system(size: 12))
             .foregroundStyle(Color.primary.opacity(0.38))
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, AppSpacing.sm)
     }
 
     // MARK: - Persistence
@@ -235,7 +235,7 @@ private struct AddTrustedPersonSheet: View {
                             Text("DETALII")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
 
                             VStack(spacing: 0) {
                                 fieldRow(icon: "person.fill", color: .blue, placeholder: "Nume complet", text: $name, keyboard: .default)
@@ -250,7 +250,7 @@ private struct AddTrustedPersonSheet: View {
                             Text("PERMISIUNI")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
 
                             VStack(spacing: 0) {
                                 toggleRow(icon: "exclamationmark.shield.fill", color: .orange,
@@ -273,8 +273,8 @@ private struct AddTrustedPersonSheet: View {
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Adaugă persoană")
@@ -315,7 +315,7 @@ private struct AddTrustedPersonSheet: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 
@@ -335,7 +335,7 @@ private struct AddTrustedPersonSheet: View {
                 .labelsHidden()
                 .tint(color)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 

@@ -21,8 +21,8 @@ struct BackupCodesView: View {
                         regenerateButton
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Coduri de rezervă")
@@ -58,7 +58,7 @@ struct BackupCodesView: View {
                     .foregroundStyle(Color.primary.opacity(0.55))
             }
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
@@ -74,7 +74,7 @@ struct BackupCodesView: View {
             Text("CODURI DE REZERVĂ")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 0) {
                 ForEach(Array(codes.enumerated()), id: \.offset) { idx, code in
@@ -89,7 +89,7 @@ struct BackupCodesView: View {
                             .tracking(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, AppSpacing.base)
                     .padding(.vertical, 13)
                     .overlay(alignment: .bottom) {
                         if idx < codes.count - 2 {

@@ -164,7 +164,7 @@ extension PropertyMapView {
                     .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
             .contentShape(Rectangle())
         }
@@ -214,7 +214,7 @@ extension PropertyMapView {
                     Text("Add first element")
                         .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, AppSpacing.xxl)
                         .padding(.vertical, 11)
                         .background(.blue, in: Capsule())
                 }
@@ -312,7 +312,7 @@ struct LayerChip: View {
                 }
             }
             .foregroundStyle(isSelected ? Color.white : Color.secondary)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, 7)
             .background(
                 Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))

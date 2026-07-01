@@ -78,7 +78,7 @@ struct FloatingSpeedDial: View {
                 Text(action.title)
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, 7)
                     .glassCapsule()
                     .allowsHitTesting(false)

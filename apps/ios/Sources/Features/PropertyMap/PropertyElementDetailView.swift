@@ -54,21 +54,21 @@ struct PropertyElementDetailView: View {
 
                 VStack(spacing: 0) {
                     coverHero
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.sm)
 
                     elementHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
+                        .padding(.bottom, AppSpacing.md)
 
                     healthSection
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.bottom, AppSpacing.lg)
 
                     DetailTabBar(selected: $selectedTab)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.bottom, AppSpacing.sm)
 
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 16) {
@@ -80,8 +80,8 @@ struct PropertyElementDetailView: View {
                             }
                             Spacer(minLength: 60)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.xxs)
                     }
                 }
             }

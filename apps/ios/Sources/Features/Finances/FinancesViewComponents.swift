@@ -66,7 +66,7 @@ extension FinancesView {
                 .disabled(isCurrentMonth)
                 .accessibilityLabel("Next month")
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
 
             VStack(spacing: 4) {
                 Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
@@ -79,10 +79,10 @@ extension FinancesView {
                     .contentTransition(.numericText(countsDown: net < 0))
                     .animation(.spring(response: 0.4), value: net)
             }
-            .padding(.top, 6)
-            .padding(.bottom, 24)
+            .padding(.top, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.xxl)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: KPI Strip
@@ -98,9 +98,9 @@ extension FinancesView {
                     color: savingsRate >= 20 ? Color(red: 0.25, green: 0.82, blue: 0.5) : savingsRate >= 10 ? .orange : .red,
                     icon: "percent")
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, AppSpacing.lg)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     private func kpiCell(label: LocalizedStringKey, value: String, color: Color, icon: String) -> some View {
@@ -160,7 +160,7 @@ extension FinancesView {
                 .font(.system(size: 11))
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -189,7 +189,7 @@ extension FinancesView {
                                 .font(AppFont.captionStrong)
                                 .foregroundStyle(dayTotal >= 0 ? Color(red: 0.25, green: 0.82, blue: 0.5) : .red)
                         }
-                        .padding(.bottom, 8)
+                        .padding(.bottom, AppSpacing.sm)
 
                         VStack(spacing: 0) {
                             ForEach(Array(group.records.enumerated()), id: \.element.id) { idx, record in
@@ -302,7 +302,7 @@ struct FinancialRecordRow: View {
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }

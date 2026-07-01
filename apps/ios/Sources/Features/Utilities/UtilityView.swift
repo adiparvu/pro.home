@@ -168,9 +168,9 @@ struct UtilityView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
                 }
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
@@ -199,7 +199,7 @@ struct UtilityView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.bottom, 110)
+                    .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                 }
             }
         }
@@ -342,7 +342,7 @@ private struct UtilitySummaryCard: View {
                     .foregroundStyle(isSelected ? .black.opacity(0.5) : Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
         .background(isSelected ? type.color : Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)

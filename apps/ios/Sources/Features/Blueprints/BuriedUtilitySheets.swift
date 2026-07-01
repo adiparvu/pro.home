@@ -115,14 +115,14 @@ struct BuriedUtilityDetailSheet: View {
                             } label: {
                                 Label("Open in Maps", systemImage: "map.fill")
                                     .font(AppFont.subheadline).foregroundStyle(.primary)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.base)
                                     .background(.blue, in: RoundedRectangle(cornerRadius: 14))
                             }
                             .buttonStyle(.plain)
                         }
                         Spacer(minLength: 30)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle(utility.name).navigationBarTitleDisplayMode(.inline)
@@ -183,7 +183,7 @@ struct AddBuriedUtilitySheet: View {
                         photoCard
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Buried Line").navigationBarTitleDisplayMode(.inline)
@@ -212,7 +212,7 @@ struct AddBuriedUtilitySheet: View {
 
     private var typePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(BuriedUtilityKind.all, id: \.self) { t in
@@ -222,7 +222,7 @@ struct AddBuriedUtilitySheet: View {
                                 Text(LocalizedStringKey(BuriedUtilityKind.label(t))).font(.system(size: 13, weight: type == t ? .semibold : .regular))
                             }
                             .foregroundStyle(type == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                             .background(type == t ? BuriedUtilityKind.color(t) : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }
@@ -242,7 +242,7 @@ struct AddBuriedUtilitySheet: View {
                 TextField("60", text: $depth)
                     .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
-            }.padding(.horizontal, 16).padding(.vertical, 13)
+            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             div
             HStack(spacing: 12) {
                 Image(systemName: "ruler").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
@@ -251,7 +251,7 @@ struct AddBuriedUtilitySheet: View {
                 TextField("0", text: $length)
                     .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
-            }.padding(.horizontal, 16).padding(.vertical, 13)
+            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             div
             fieldRow("note.text", "Notes (distances, landmarks…)", $notes)
         }
@@ -325,7 +325,7 @@ struct AddBuriedUtilitySheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(placeholder, text: text).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }

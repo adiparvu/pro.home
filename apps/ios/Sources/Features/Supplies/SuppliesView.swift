@@ -51,8 +51,8 @@ struct SuppliesView: View {
             )
 
             tabBar
-                .padding(.horizontal, 20)
-                .padding(.bottom, 4)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.bottom, AppSpacing.xxs)
 
             Divider().opacity(0.2)
 
@@ -164,7 +164,7 @@ struct SuppliesView: View {
                             .frame(height: 2).clipShape(Capsule())
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                 }
                 .buttonStyle(.plain)
             }
@@ -197,7 +197,7 @@ struct SuppliesView: View {
                 if supplyService.totalPending > 0 { urgentSection }
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20).padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -209,7 +209,7 @@ struct SuppliesView: View {
     private var listsGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "supply_section_lists"))
-                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                 ForEach(supplyService.lists) { list in
@@ -234,7 +234,7 @@ struct SuppliesView: View {
     private var urgentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("URGENT")
-                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     let urgent = supplyService.items
@@ -264,7 +264,7 @@ struct SuppliesView: View {
                 Spacer()
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(item.priorityColor).frame(width: 3, height: 22)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
             if !isLast { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 54) }
         }
     }
@@ -300,10 +300,10 @@ struct SuppliesView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
         }
@@ -338,10 +338,10 @@ struct SuppliesView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
         }
@@ -397,7 +397,7 @@ struct SupplyListCard: View {
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ).frame(height: 72)
                     Image(systemName: list.icon)
-                        .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(14)
+                        .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(AppSpacing.base)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(list.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
@@ -406,7 +406,7 @@ struct SupplyListCard: View {
                         .font(.system(size: 11))
                         .foregroundStyle(pending == 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(AppOpacity.secondaryText))
                 }
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             }
         }
     }
@@ -441,7 +441,7 @@ struct SupplyItemRow: View {
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
                             Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
-                                .padding(.horizontal, 6).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
+                                .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
                         }
                     }
                     if let loc = item.location, !loc.isEmpty {
@@ -452,7 +452,7 @@ struct SupplyItemRow: View {
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(item.isCompleted ? Color.clear : item.priorityColor).frame(width: 3, height: 24)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
             .contextMenu {
                 Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }

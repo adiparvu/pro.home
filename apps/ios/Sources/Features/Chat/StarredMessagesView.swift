@@ -27,7 +27,7 @@ struct StarredMessagesView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(16)
+                        .padding(AppSpacing.lg)
                     }
                 }
             }
@@ -97,7 +97,7 @@ private struct StarredRow: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

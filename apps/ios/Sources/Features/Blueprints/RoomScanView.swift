@@ -37,9 +37,9 @@ private struct UnsupportedScanView: View {
                 Button("Close") { onClose() }
                     .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
-                    .padding(.horizontal, 28).padding(.vertical, 12)
+                    .padding(.horizontal, 28).padding(.vertical, AppSpacing.md)
                     .background(Color.primary.opacity(0.12), in: Capsule())
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
             }
         }
     }

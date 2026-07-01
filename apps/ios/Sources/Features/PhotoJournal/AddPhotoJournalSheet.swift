@@ -41,7 +41,7 @@ struct AddPhotoJournalSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                             divider
                             fieldRow("number.sign", "Tags (comma-separated)", $tagsText)
@@ -51,13 +51,13 @@ struct AddPhotoJournalSheet: View {
                             Text(error)
                                 .font(.system(size: 13))
                                 .foregroundStyle(.red)
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AppSpacing.xl)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
 
                 if isUploading {
@@ -202,7 +202,7 @@ struct AddPhotoJournalSheet: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
@@ -223,7 +223,7 @@ struct AddPhotoJournalSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 

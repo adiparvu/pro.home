@@ -29,8 +29,8 @@ struct MemberProfileSheet: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
                 }
             }
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
@@ -66,7 +66,7 @@ struct MemberProfileSheet: View {
                 .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(resolvedMember.swiftColor)
-                .padding(.horizontal, 12).padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xxs)
                 .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
         }
     }
@@ -176,7 +176,7 @@ struct MemberProfileSheet: View {
             Text(value).font(.system(size: 14)).foregroundStyle(.primary)
             Spacer()
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
     }
 
     private var divider: some View {
@@ -187,7 +187,7 @@ struct MemberProfileSheet: View {
         Text(text)
             .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
     }
 
     private func formatted(_ date: Date) -> String {

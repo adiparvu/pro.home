@@ -71,7 +71,7 @@ struct PageHeader: View {
             Spacer()
             if let trailing { trailing }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.top, AppSpacing.sm)
     }
 }

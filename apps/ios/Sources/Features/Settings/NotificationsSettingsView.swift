@@ -20,8 +20,8 @@ struct NotificationsSettingsView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -72,7 +72,7 @@ struct NotificationsSettingsView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AppSpacing.md)
                             .glassRoundedRect(12)
                     }
                     .buttonStyle(.plain)
@@ -82,7 +82,7 @@ struct NotificationsSettingsView: View {
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AppSpacing.md)
                             .glassRoundedRect(12)
                     }
                     .buttonStyle(.plain)
@@ -153,7 +153,7 @@ struct NotificationsSettingsView: View {
             Text("Notifications are scheduled locally on the device and fire even when the app is closed.")
                 .font(.caption)
                 .foregroundStyle(Color.primary.opacity(0.3))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
         }
     }
 
@@ -162,7 +162,7 @@ struct NotificationsSettingsView: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) { content() }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -280,7 +280,7 @@ private struct NotifToggleRow: View {
             Toggle("", isOn: $value)
                 .labelsHidden()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }

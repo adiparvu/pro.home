@@ -35,8 +35,8 @@ struct SecurityView: View {
                 dataSection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -102,7 +102,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -122,7 +122,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -146,7 +146,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -161,7 +161,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -176,7 +176,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
         }
@@ -205,7 +205,7 @@ struct SecurityView: View {
                             .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -223,7 +223,7 @@ struct SecurityView: View {
                 Toggle("", isOn: $lockModeEnabled)
                     .labelsHidden().tint(.purple)
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
     }
 
@@ -250,7 +250,7 @@ struct SecurityView: View {
                             if newVal { Task { await authenticateBiometric() } }
                         }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
 
                 divider
             }
@@ -270,7 +270,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -294,7 +294,7 @@ struct SecurityView: View {
                             .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -309,7 +309,7 @@ struct SecurityView: View {
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
         }
@@ -322,7 +322,7 @@ struct SecurityView: View {
             Text(title)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
@@ -332,7 +332,7 @@ struct SecurityView: View {
                 Text(footer)
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.38))
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
                     .padding(.top, 2)
             }
         }
@@ -347,7 +347,7 @@ struct SecurityView: View {
             Text(status)
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
         }
-        .padding(.horizontal, 14).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
     }
 
     private var divider: some View {

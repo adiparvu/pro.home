@@ -71,7 +71,7 @@ struct AddDocumentSheet: View {
                                         await runOCR(on: uiImage)
                                     }
                                 }
-                                .padding(.trailing, 16)
+                                .padding(.trailing, AppSpacing.lg)
                             }
                         }
 
@@ -86,7 +86,7 @@ struct AddDocumentSheet: View {
                                 }
                                 .tint(Color.primary.opacity(AppOpacity.emphasis))
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
                         fieldGroup {
@@ -96,13 +96,13 @@ struct AddDocumentSheet: View {
                                     Spacer()
                                     Toggle("", isOn: $hasExpiry).labelsHidden().tint(.accentColor)
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 13)
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
 
                                 if hasExpiry {
                                     div
                                     DatePicker("", selection: $expiryDate, in: Date()..., displayedComponents: .date)
                                         .datePickerStyle(.compact)
-                                        .padding(.horizontal, 16).padding(.vertical, 10)
+                                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                                 }
                             }
                         }
@@ -113,7 +113,7 @@ struct AddDocumentSheet: View {
                                 Spacer()
                                 Toggle("", isOn: $isCritical).labelsHidden().tint(.red)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
                         fieldGroup {
@@ -125,19 +125,19 @@ struct AddDocumentSheet: View {
                                         .font(.system(size: 14))
                                         .foregroundStyle(pickedFileData != nil ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.primary.opacity(0.3))
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 13)
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }
                             .buttonStyle(.plain)
                         }
 
                         if let err = error {
                             Text(err).font(.system(size: 13)).foregroundStyle(.red)
-                                .multilineTextAlignment(.center).padding(.horizontal, 8)
+                                .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 20)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
                 }
             }
             .navigationTitle("Add Document")
@@ -241,7 +241,7 @@ struct AddDocumentSheet: View {
             iconLabel(icon, color: .blue)
             content()
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 
     private func iconLabel(_ icon: String, color: Color, text: LocalizedStringKey? = nil) -> some View {

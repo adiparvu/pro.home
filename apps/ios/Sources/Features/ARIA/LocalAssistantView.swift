@@ -152,8 +152,8 @@ struct LocalAssistantView: View {
             .glassCircle()
             .accessibilityLabel("Reset conversation")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.base)
     }
 
     // MARK: - Message list
@@ -170,9 +170,9 @@ struct LocalAssistantView: View {
                             .id("thinking")
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .padding(.bottom, 20)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.md)
+                .padding(.bottom, AppSpacing.xl)
             }
             .onChange(of: messages.count) { _, _ in
                 withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
@@ -192,7 +192,7 @@ struct LocalAssistantView: View {
                 .tint(.accentColor)
                 .focused($focused)
                 .lineLimit(1...4)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
 
@@ -206,7 +206,7 @@ struct LocalAssistantView: View {
             }
             .disabled(input.isEmpty || isThinking)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
         .liquidGlass(cornerRadius: 16)
     }
@@ -294,7 +294,7 @@ private struct LocalMessageBubble: View {
             Text(message.text)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(
                     isUser
@@ -326,7 +326,7 @@ private struct ThinkingBubble: View {
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             Spacer(minLength: 60)
         }

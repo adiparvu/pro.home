@@ -134,7 +134,7 @@ struct ChatThemePicker: View {
                         Text("Themes")
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
 
                         LazyVGrid(columns: columns, spacing: 10) {
                             ForEach(ChatTheme.all) { theme in
@@ -148,19 +148,19 @@ struct ChatThemePicker: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(12)
+                        .padding(AppSpacing.md)
                         .liquidGlass(cornerRadius: 18)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
 
                         Text("Both the chat bubble and the conversation background will change.")
                             .font(.system(size: 13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 20).padding(.top, 2)
+                            .padding(.horizontal, AppSpacing.xl).padding(.top, 2)
 
                         Text("Customize")
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 20).padding(.top, 8)
+                            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
 
                         VStack(spacing: 0) {
                             NavigationLink {
@@ -182,11 +182,11 @@ struct ChatThemePicker: View {
                             .buttonStyle(.plain)
                         }
                         .liquidGlass(cornerRadius: 16)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
 
                         Spacer(minLength: 20)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Conversation theme")
@@ -216,7 +216,7 @@ struct ChatThemePicker: View {
             Image(systemName: "chevron.right")
                 .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
         .contentShape(Rectangle())
     }
 
@@ -238,13 +238,13 @@ struct ChatThemePicker: View {
                     .frame(width: 42, height: 13)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(8)
+            .padding(AppSpacing.sm)
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white, theme.outgoingBubble)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                    .padding(6)
+                    .padding(AppSpacing.xs)
             }
         }
         .aspectRatio(0.62, contentMode: .fit)
@@ -289,7 +289,7 @@ struct BubbleColorPicker: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .padding(AppSpacing.xl)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Chat bubble")
@@ -326,7 +326,7 @@ struct BackgroundPicker: View {
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundStyle(.white, Color.accentColor)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                                    .padding(6)
+                                    .padding(AppSpacing.xs)
                             }
                         }
                         .aspectRatio(0.62, contentMode: .fit)
@@ -340,7 +340,7 @@ struct BackgroundPicker: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Background")

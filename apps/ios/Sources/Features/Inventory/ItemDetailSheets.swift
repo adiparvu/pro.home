@@ -36,7 +36,7 @@ struct PublicContactSheet: View {
                                 Text("Show on public QR page").font(.system(size: 15)).foregroundStyle(.primary)
                                 Spacer()
                                 Toggle("", isOn: $isEnabled).tint(.accentColor).labelsHidden()
-                            }.padding(.horizontal, 16).padding(.vertical, 12)
+                            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                         }
                         if isEnabled {
                             VStack(spacing: 0) {
@@ -52,11 +52,11 @@ struct PublicContactSheet: View {
                             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                             Text("This information will be visible to anyone who scans the QR code of this item. Only share what you are comfortable with.")
                                 .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                .multilineTextAlignment(.center).padding(.horizontal, 8)
+                                .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                         }
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Lost & Found Card").navigationBarTitleDisplayMode(.inline)
@@ -83,7 +83,7 @@ struct PublicContactSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
@@ -106,31 +106,31 @@ struct LoanItemSheet: View {
                         HStack(spacing: 12) {
                             Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                             TextField("Borrower's name", text: $borrower).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                        }.padding(.horizontal, 16).padding(.vertical, 14)
+                        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
                         HStack(spacing: 12) {
                             Image(systemName: "calendar.badge.clock").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                             Text("Expected return").font(.system(size: 15)).foregroundStyle(.primary)
                             Spacer()
                             Toggle("", isOn: $hasReturnDate).tint(.accentColor).labelsHidden()
-                        }.padding(.horizontal, 16).padding(.vertical, 12)
+                        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                         if hasReturnDate {
                             Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
                             HStack(spacing: 12) {
                                 Color.clear.frame(width: 28)
                                 DatePicker("Return by", selection: $returnDate, in: Date()..., displayedComponents: .date)
                                     .tint(.accentColor)
-                            }.padding(.horizontal, 16).padding(.vertical, 8)
+                            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
                         }
                     }
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                     Text("You'll get reminders after 1, 3, 7, 14, 30 and 90 days if the item isn't returned.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
-                        .multilineTextAlignment(.center).padding(.horizontal, 8)
+                        .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                     Spacer()
                 }
-                .padding(.horizontal, 20).padding(.top, 20)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
             }
             .navigationTitle("Loan Out Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -190,7 +190,7 @@ struct ItemLocationSheet: View {
                         Button { locMgr.requestLocation() } label: {
                             Label("Use Current Location", systemImage: "location.fill")
                                 .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                                 .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                         }.buttonStyle(.plain)
                         VStack(spacing: 0) {
@@ -201,7 +201,7 @@ struct ItemLocationSheet: View {
                         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("TRACKER TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+                            Text("TRACKER TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(trackerTypes, id: \.self) { t in
@@ -209,7 +209,7 @@ struct ItemLocationSheet: View {
                                             Text(LocalizedStringKey(t.isEmpty ? "None" : (t == "airtag" ? "AirTag" : (t == "gps" ? "GPS" : t.capitalized))))
                                                 .font(.system(size: 13, weight: trackerType == t ? .semibold : .regular))
                                                 .foregroundStyle(trackerType == t ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                                 .background(trackerType == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                         }.buttonStyle(.plain)
                                     }
@@ -222,7 +222,7 @@ struct ItemLocationSheet: View {
                                     Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                     TextField("Tracker name / serial (optional)", text: $trackerIdentifier)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                }.padding(.horizontal, 16).padding(.vertical, 13)
+                                }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
@@ -238,7 +238,7 @@ struct ItemLocationSheet: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Location & Tracker").navigationBarTitleDisplayMode(.inline)
@@ -272,6 +272,6 @@ struct ItemLocationSheet: View {
             Spacer()
             TextField("0.000000", text: binding).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).tint(.accentColor)
                 .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 110)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 }

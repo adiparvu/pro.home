@@ -257,8 +257,8 @@ struct DigitalTwinView: View {
                 }
             }
         }
-        .padding(.trailing, 16)
-        .padding(.top, 8)
+        .padding(.trailing, AppSpacing.lg)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var categoryMenu: some View {
@@ -330,7 +330,7 @@ struct DigitalTwinView: View {
             }
             .opacity(draftZonePoints.count < 3 ? 0.4 : 1)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
@@ -344,7 +344,7 @@ struct DigitalTwinView: View {
                 Text(LocalizedStringKey(title)).font(AppFont.footnoteEmphasis)
             }
             .foregroundStyle(tint)
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -379,7 +379,7 @@ struct DigitalTwinView: View {
             }
             .opacity(reshapePoints.count < 3 ? 0.4 : 1)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
@@ -436,7 +436,7 @@ struct DigitalTwinView: View {
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 14).padding(.vertical, 9)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
             .background(.ultraThinMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
             .shadow(color: .black.opacity(0.2), radius: 6, y: 2)

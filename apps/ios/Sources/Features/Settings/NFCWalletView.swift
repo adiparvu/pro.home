@@ -85,8 +85,8 @@ struct NFCWalletView: View {
                                 cardSection(tag)
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
                         Spacer(minLength: 100)
                     }
                 }
@@ -317,7 +317,7 @@ struct NFCWalletView: View {
                 Label("Scan First Tag", systemImage: "wave.3.right.circle.fill")
                     .font(AppFont.subheadline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 24).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -378,7 +378,7 @@ struct NFCTagNameSheet: View {
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Name
                         GlassCard(padding: 16) {
@@ -393,7 +393,7 @@ struct NFCTagNameSheet: View {
                                     .tint(.accentColor)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Linked type
                         GlassCard(padding: 16) {
@@ -415,11 +415,11 @@ struct NFCTagNameSheet: View {
                                         .font(.system(size: 15))
                                         .foregroundStyle(.primary)
                                         .tint(.accentColor)
-                                        .padding(.top, 4)
+                                        .padding(.top, AppSpacing.xxs)
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Icon picker
                         GlassCard(padding: 16) {
@@ -450,10 +450,10 @@ struct NFCTagNameSheet: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 40)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Register Tag")

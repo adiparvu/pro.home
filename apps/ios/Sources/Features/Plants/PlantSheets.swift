@@ -51,8 +51,8 @@ struct AddPlantSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New Plant")
@@ -201,7 +201,7 @@ struct AddPlantSheet: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -216,7 +216,7 @@ struct AddPlantSheet: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -231,7 +231,7 @@ struct AddPlantSheet: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -247,7 +247,7 @@ struct AddPlantSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...5)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -304,7 +304,7 @@ struct AddPlantSheet: View {
                 Stepper("", value: $wateringIntervalDays, in: 1...30)
                     .labelsHidden()
             }
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(
                 Color.primary.opacity(AppOpacity.subtleFill),
                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)

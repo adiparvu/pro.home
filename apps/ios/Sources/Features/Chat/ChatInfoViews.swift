@@ -76,7 +76,7 @@ struct EditTextSheet: View {
                         .font(.system(size: 16))
                         .scrollContentBackground(.hidden)
                         .frame(minHeight: 90, maxHeight: 200)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, AppSpacing.sm)
                         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
                     if let note {
                         Text(note)
@@ -84,7 +84,7 @@ struct EditTextSheet: View {
                     }
                     Spacer()
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
             }
             .navigationTitle(LocalizedStringKey(title))
             .navigationBarTitleDisplayMode(.inline)
@@ -118,7 +118,7 @@ struct GroupDescriptionSheet: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                    .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Descrierea grupului")
@@ -162,7 +162,7 @@ struct GroupPermissionsView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Member permissions")
-                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, 20).padding(.top, 6)
+                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xs)
 
                 VStack(spacing: 0) {
                     toggleRow("pencil", "Edit group settings",
@@ -174,24 +174,24 @@ struct GroupPermissionsView: View {
                     toggleRow("person.badge.plus", "Add other members", nil, $addMembers)
                 }
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Text("Turning these settings off means only group admins can do this.")
                     .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                 Text("Admin permissions")
-                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, 20).padding(.top, 12)
+                    .font(.system(size: 20, weight: .bold)).padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.md)
 
                 VStack(spacing: 0) {
                     toggleRow("person.badge.clock.fill", "Approve new members", nil, $approveNew)
                 }
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Text("When on, any request to join the group must be approved by an admin.")
                     .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                 if !adminNames.isEmpty {
                     VStack(spacing: 0) {
@@ -204,15 +204,15 @@ struct GroupPermissionsView: View {
                             Spacer()
                             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                     }
                     .liquidGlass(cornerRadius: 16)
-                    .padding(.horizontal, 16).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
                 }
 
                 Spacer(minLength: 20)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Group permissions")
@@ -243,7 +243,7 @@ struct GroupPermissionsView: View {
             Spacer()
             Toggle("", isOn: binding).labelsHidden()
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -254,7 +254,7 @@ struct MemberChangesView: View {
         VStack(spacing: 0) {
             Text("See changes from the last 60 days, such as members who left or were removed.")
                 .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .padding(20)
+                .padding(AppSpacing.xl)
             Spacer()
             Text("No changes")
                 .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
@@ -291,14 +291,14 @@ struct InviteLinkView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xxl).padding(.top, AppSpacing.sm)
 
                 if let qr = qrImage() {
                     Image(uiImage: qr)
                         .interpolation(.none)
                         .resizable()
                         .frame(width: 220, height: 220)
-                        .padding(16)
+                        .padding(AppSpacing.lg)
                         .liquidGlass(cornerRadius: 20)
                 }
 
@@ -306,7 +306,7 @@ struct InviteLinkView: View {
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(Color.primary.opacity(0.6))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppSpacing.xxl)
 
                 HStack(spacing: 12) {
                     Button {
@@ -314,7 +314,7 @@ struct InviteLinkView: View {
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
                             .font(AppFont.body)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .liquidGlass(cornerRadius: 14)
                     }
                     .buttonStyle(.plain)
@@ -322,11 +322,11 @@ struct InviteLinkView: View {
                         Label("Share", systemImage: "square.and.arrow.up")
                             .font(AppFont.subheadline)
                             .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer(minLength: 20)
             }
@@ -411,7 +411,7 @@ struct AdminBadge: View {
         Text("Admin")
             .font(AppFont.label)
             .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 8).padding(.vertical, 3)
+            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
             .background(Color.accentColor.opacity(0.14), in: Capsule())
     }
 }
@@ -445,7 +445,7 @@ private struct InfoRow: View {
                 }
             }
             .font(.system(size: 16))
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -476,14 +476,14 @@ struct InfoRowLabel: View {
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .font(.system(size: 16))
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
         .contentShape(Rectangle())
     }
 }
 
 private func infoCardBackground<V: View>(_ content: V) -> some View {
     content.liquidGlass(cornerRadius: 14)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
 }
 
 // MARK: - Contact details (DM)
@@ -537,14 +537,14 @@ struct ContactDetailsView: View {
                         .buttonStyle(.plain)
                         .padding(.top, 2)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
 
                     HStack(spacing: 12) {
                         InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
                         InfoActionCard(label: "Video", icon: "video.fill") { dismiss(); onVideo() }
                         InfoActionCard(label: "Search", icon: "magnifyingglass") { dismiss(); onSearch() }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(spacing: 0) {
                         NavigationLink {
@@ -558,7 +558,7 @@ struct ContactDetailsView: View {
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(spacing: 0) {
                         NavigationLink {
@@ -589,7 +589,7 @@ struct ContactDetailsView: View {
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(spacing: 0) {
                         SecureChatToggle(convId: convId)
@@ -601,7 +601,7 @@ struct ContactDetailsView: View {
                         .buttonStyle(.plain)
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(spacing: 0) {
                         Button {
@@ -622,7 +622,7 @@ struct ContactDetailsView: View {
                         .disabled(reported)
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     Spacer(minLength: 30)
                 }
@@ -698,7 +698,7 @@ struct ContactDetailsView: View {
             Text(label).font(.system(size: 16)).foregroundStyle(.red)
             Spacer()
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
         .contentShape(Rectangle())
     }
 }
@@ -753,13 +753,13 @@ struct GroupDetailsView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, AppSpacing.xxl)
 
                         Text("Group · \(members.count + 1) members")
                             .font(.system(size: 15))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
 
                     HStack(spacing: 12) {
                         InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
@@ -767,13 +767,13 @@ struct GroupDetailsView: View {
                         InfoActionCard(label: "Add", icon: "person.badge.plus") { dismiss(); onAddMember() }
                         InfoActionCard(label: "Search", icon: "magnifyingglass") { dismiss(); onSearch() }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("\(members.count + 1) members")
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
 
                         VStack(spacing: 0) {
                             memberRow(name: "You", member: nil, admin: true)
@@ -783,7 +783,7 @@ struct GroupDetailsView: View {
                             }
                         }
                         .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
 
                         VStack(spacing: 0) {
                             NavigationLink { MemberChangesView() } label: {
@@ -792,7 +792,7 @@ struct GroupDetailsView: View {
                             .buttonStyle(.plain)
                         }
                         .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                     }
 
                     VStack(spacing: 0) {
@@ -852,7 +852,7 @@ struct GroupDetailsView: View {
                         InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     VStack(spacing: 0) {
                         SecureChatToggle(convId: "group")
@@ -864,7 +864,7 @@ struct GroupDetailsView: View {
                         .buttonStyle(.plain)
                     }
                     .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     Spacer(minLength: 30)
                 }
@@ -971,7 +971,7 @@ struct GroupDetailsView: View {
                     Text("Admin").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1024,11 +1024,11 @@ struct EditGroupDetailsSheet: View {
                             .clipShape(Circle())
                             Image(systemName: "camera.fill")
                                 .font(.system(size: 13)).foregroundStyle(.white)
-                                .padding(8).background(Circle().fill(Color.accentColor))
+                                .padding(AppSpacing.sm).background(Circle().fill(Color.accentColor))
                         }
                     }
                     .buttonStyle(.plain)
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
 
                     PhotosPicker(selection: $photoItem, matching: .images) {
                         Text("Editează").font(AppFont.body).foregroundStyle(Color.accentColor)
@@ -1047,9 +1047,9 @@ struct EditGroupDetailsSheet: View {
                             .accessibilityLabel("Clear name")
                         }
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 14)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                     .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     Spacer(minLength: 40)
                 }
@@ -1232,7 +1232,7 @@ struct SecureChatToggle: View {
             Spacer()
             Toggle("", isOn: $secured).labelsHidden()
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
         .onAppear { secured = ChatLockStore.isLocked(convId) }
         .onChange(of: secured) { _, on in ChatLockStore.setLocked(convId, on) }
     }
@@ -1268,7 +1268,7 @@ struct AddContactView: View {
                             .foregroundStyle(Color(hex: colorHex) ?? .blue)
                     }
                     .frame(width: 96, height: 96)
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
 
                     VStack(spacing: 0) {
                         field("Name", text: $name, icon: "person.fill")
@@ -1278,7 +1278,7 @@ struct AddContactView: View {
                         field("Email", text: $email, icon: "envelope.fill", keyboard: .emailAddress)
                     }
                     .liquidGlass(cornerRadius: 16)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     HStack(spacing: 12) {
                         ForEach(swatches, id: \.self) { hex in
@@ -1288,14 +1288,14 @@ struct AddContactView: View {
                                 .onTapGesture { colorHex = hex }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     if let error {
                         Text(error).font(.system(size: 13)).foregroundStyle(.red)
                     }
                     Spacer(minLength: 20)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Add contact")
@@ -1319,7 +1319,7 @@ struct AddContactView: View {
                 .keyboardType(keyboard)
                 .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 
     private func save() async {
@@ -1352,7 +1352,7 @@ struct EncryptionInfoView: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 54))
                     .foregroundStyle(Color.accentColor)
-                    .padding(.top, 24)
+                    .padding(.top, AppSpacing.xxl)
 
                 Text("Your messages are encrypted")
                     .font(.system(size: 20, weight: .bold))
@@ -1366,9 +1366,9 @@ struct EncryptionInfoView: View {
                     encRow("hand.raised.fill", "Private by access control",
                            "Only the people in a conversation can read its messages.")
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Text("End-to-end encryption is on our roadmap. Until then, conversations are secured in transit and by strict access control.")
                     .font(.system(size: 12))
@@ -1419,17 +1419,17 @@ struct AdvancedPrivacyView: View {
                         Spacer()
                         Toggle("", isOn: $on).labelsHidden()
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
                 }
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Text("When on, others are blocked from exporting this chat, auto-saving its media, and using its messages for AI features. Best for sensitive conversations.")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Advanced privacy")
@@ -1481,7 +1481,7 @@ struct DisappearingMessagesView: View {
                 Text("New messages in this chat will disappear after the selected duration. This only affects messages from now on.")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                 VStack(spacing: 0) {
                     ForEach(Array(ChatDisappearStore.options.enumerated()), id: \.offset) { idx, opt in
@@ -1501,19 +1501,19 @@ struct DisappearingMessagesView: View {
                                         .foregroundStyle(Color.accentColor)
                                 }
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 14)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         if idx < ChatDisappearStore.options.count - 1 {
-                            Divider().padding(.leading, 16)
+                            Divider().padding(.leading, AppSpacing.lg)
                         }
                     }
                 }
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Disappearing messages")
@@ -1541,7 +1541,7 @@ struct ConversationNotificationsView: View {
                             .font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).frame(width: 26)
                         Toggle("Mute notifications", isOn: $muted).font(.system(size: 16))
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                     Divider().padding(.leading, 52)
                     tonePicker(icon: "bell.badge", label: "Alert tone",
                                options: ChatToneStore.alertTones, selection: $alertTone, isCall: false)
@@ -1552,7 +1552,7 @@ struct ConversationNotificationsView: View {
                                options: ChatToneStore.callTones, selection: $callTone, isCall: true)
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Notifications")
@@ -1573,10 +1573,10 @@ struct ConversationNotificationsView: View {
             Text(LocalizedStringKey(title))
                 .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
             VStack(spacing: 0) { content() }
                 .liquidGlass(cornerRadius: 16)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
         }
     }
 
@@ -1594,7 +1594,7 @@ struct ConversationNotificationsView: View {
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1653,7 +1653,7 @@ struct TonePickerView: View {
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -1661,7 +1661,7 @@ struct TonePickerView: View {
                 }
             }
             .liquidGlass(cornerRadius: 16)
-            .padding(16)
+            .padding(AppSpacing.lg)
 
             Text("Atinge un ton ca să-l asculți. Selecția se salvează automat.")
                 .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))

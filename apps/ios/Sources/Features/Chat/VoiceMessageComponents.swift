@@ -123,7 +123,7 @@ struct VoiceRecordButton: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, AppSpacing.md)
                 .transition(.opacity.combined(with: .scale))
             }
 
@@ -193,7 +193,7 @@ struct AudioBubble: View {
                 bottomRow
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 9)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
         .background(
             isOwn ? bubbleColor : Color.primary.opacity(0.08),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -239,7 +239,7 @@ struct AudioBubble: View {
             Image(systemName: "mic.fill")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(isOwn ? bubbleColor.opacity(1) : Color.accentColor)
-                .padding(4)
+                .padding(AppSpacing.xxs)
                 .background(Circle().fill(.white))
                 .offset(x: 3, y: 3)
         }

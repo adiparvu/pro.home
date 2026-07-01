@@ -54,8 +54,8 @@ struct AddTaskView: View {
                         saveButton
                         Spacer(minLength: 24)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(editing != nil ? String(localized: "Edit Task") : String(localized: "New Task"))
@@ -102,7 +102,7 @@ struct AddTaskView: View {
             TextField("What needs to be done?", text: $title)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -114,7 +114,7 @@ struct AddTaskView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -128,7 +128,7 @@ struct AddTaskView: View {
                         Text(LocalizedStringKey(p.capitalized))
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
                             .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 13).padding(.vertical, 8)
+                            .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
                             .background(priority == p ? priorityColor(p) : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -147,7 +147,7 @@ struct AddTaskView: View {
                             Text(LocalizedStringKey(cat.capitalized))
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
                                 .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
-                                .padding(.horizontal, 13).padding(.vertical, 8)
+                                .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
                                 .background(category == cat ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -177,7 +177,7 @@ struct AddTaskView: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(AppOpacity.secondaryText))
                             .labelStyle(.iconOnly)
-                            .padding(8)
+                            .padding(AppSpacing.sm)
                             .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Circle())
                     }
@@ -229,7 +229,7 @@ struct AddTaskView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
@@ -269,7 +269,7 @@ struct AddTaskView: View {
                     .labelsHidden()
                     .disabled(!hasDueDate)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
@@ -289,7 +289,7 @@ struct AddTaskView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(canSave ? Color.white : Color.primary.opacity(AppOpacity.disabled))
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

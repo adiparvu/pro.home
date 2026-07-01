@@ -59,7 +59,7 @@ struct AddFamilyMemberSheet: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
                 .scrollDismissesKeyboard(.immediately)
             }
@@ -94,7 +94,7 @@ struct AddFamilyMemberSheet: View {
                 .foregroundStyle(Color(hex: color) ?? .blue)
         }
         .frame(width: 80, height: 80)
-        .padding(.top, 8)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var colorRow: some View {
@@ -140,21 +140,21 @@ struct AddFamilyMemberSheet: View {
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
             if showBirthday {
                 DatePicker("", selection: $birthday, displayedComponents: .date)
                     .datePickerStyle(.wheel)
                     .labelsHidden()
-                    .padding(.horizontal, 8).padding(.bottom, 8)
+                    .padding(.horizontal, AppSpacing.sm).padding(.bottom, AppSpacing.sm)
             }
         }
     }
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -174,7 +174,7 @@ struct AddFamilyMemberSheet: View {
                 .pickerStyle(.menu)
                 .tint(.accentColor)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
@@ -182,7 +182,7 @@ struct AddFamilyMemberSheet: View {
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
@@ -200,7 +200,7 @@ struct AddFamilyMemberSheet: View {
                             Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     if idx < socialLinks.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                     }
@@ -214,7 +214,7 @@ struct AddFamilyMemberSheet: View {
                         Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                 }
                 .buttonStyle(.plain)
             }
@@ -225,7 +225,7 @@ struct AddFamilyMemberSheet: View {
 
     private var inviteSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INVITATION").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+            Text("INVITATION").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "envelope.badge.fill", color: .blue, size: 36)
@@ -236,7 +236,7 @@ struct AddFamilyMemberSheet: View {
                     Spacer()
                     Toggle("", isOn: $sendInvite).labelsHidden().tint(.accentColor)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
@@ -251,7 +251,7 @@ struct AddFamilyMemberSheet: View {
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View {
@@ -367,7 +367,7 @@ struct AddSocialLinkSheet: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
 
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
@@ -375,10 +375,10 @@ struct AddSocialLinkSheet: View {
                             .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                     Spacer()
                 }

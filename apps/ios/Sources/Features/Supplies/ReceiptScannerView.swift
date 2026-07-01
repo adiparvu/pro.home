@@ -161,9 +161,9 @@ struct ReceiptScannerView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
             }
 
             Spacer()
@@ -264,7 +264,7 @@ private struct ReceiptReviewView: View {
                     fieldLabel("STORE")
                     TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
                         .font(.system(size: 16))
-                        .padding(14)
+                        .padding(AppSpacing.base)
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -276,7 +276,7 @@ private struct ReceiptReviewView: View {
                     ), displayedComponents: .date)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppSpacing.xxs)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -290,7 +290,7 @@ private struct ReceiptReviewView: View {
                                         Text(cat.label).font(.system(size: 13))
                                     }
                                     .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                                     .background(parsed.category == cat.id
                                         ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(AppOpacity.subtleFill),
                                                 in: Capsule())
@@ -314,9 +314,9 @@ private struct ReceiptReviewView: View {
                                         Text(Receipt.format(item.totalPrice))
                                             .font(AppFont.captionEmphasis).foregroundStyle(.secondary).monospacedDigit()
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 9)
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                                     if idx < parsed.items.count - 1 {
-                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                                     }
                                 }
                             }
@@ -332,7 +332,7 @@ private struct ReceiptReviewView: View {
                             .font(AppFont.title2)
                             .keyboardType(.decimalPad)
                     }
-                    .padding(14)
+                    .padding(AppSpacing.base)
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -356,7 +356,7 @@ private struct ReceiptReviewView: View {
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 20).padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
         }
     }
 

@@ -138,7 +138,7 @@ struct PollBubble: View {
             .disabled(totalVoters == 0)
             .opacity(totalVoters == 0 ? 0.45 : 1)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: 260, alignment: .leading)
         .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -253,13 +253,13 @@ struct EventBubble: View {
                 Text("Add to Calendar")
                     .font(AppFont.captionEmphasis)
                     .foregroundStyle(isOwn ? .white : Color.accentColor)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                     .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: 260, alignment: .leading)
         .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))

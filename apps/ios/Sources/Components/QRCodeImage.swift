@@ -22,7 +22,7 @@ struct QRCodeImage: View {
             Image(uiImage: img)
                 .interpolation(.none).resizable().scaledToFit()
                 .frame(width: size, height: size)
-                .padding(14).background(.white, in: RoundedRectangle(cornerRadius: 14))
+                .padding(AppSpacing.base).background(.white, in: RoundedRectangle(cornerRadius: 14))
         } else {
             RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.08)).frame(width: size, height: size)
         }

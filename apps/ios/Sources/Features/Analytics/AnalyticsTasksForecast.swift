@@ -133,7 +133,7 @@ struct ForecastSection: View {
                         Label("AI", systemImage: "sparkles")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                             .background(Color.primary.opacity(0.08), in: Capsule())
                     }
 
@@ -201,7 +201,7 @@ struct ForecastSection: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                 }
             }
         }

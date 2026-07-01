@@ -38,8 +38,8 @@ struct TOTPEnrollView: View {
                             verifyButton
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
                     .padding(.bottom, 40)
                 }
             }
@@ -72,7 +72,7 @@ struct TOTPEnrollView: View {
                     .interpolation(.none)
                     .resizable()
                     .frame(width: 200, height: 200)
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                     .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
         }
@@ -97,7 +97,7 @@ struct TOTPEnrollView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Copy secret code")
             }
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -109,7 +109,7 @@ struct TOTPEnrollView: View {
                 .font(.system(size: 22, weight: .semibold, design: .monospaced))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .onChange(of: code) { _, v in
                     code = String(v.filter(\.isNumber).prefix(6))
@@ -125,7 +125,7 @@ struct TOTPEnrollView: View {
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(code.count == 6 ? Color.blue : Color.gray, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)

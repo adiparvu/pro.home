@@ -87,10 +87,10 @@ struct ObjectLocationPicker: View {
         }
             .font(AppFont.captionEmphasis)
             .foregroundStyle(.primary)
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
             .glassCapsule()
             .allowsHitTesting(false)
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
     }
 
@@ -108,7 +108,7 @@ struct ObjectLocationPicker: View {
         }
         .buttonStyle(.plain)
         .disabled(picked == nil)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
         .padding(.bottom, 28)
     }
 

@@ -27,8 +27,8 @@ struct TrustedContactView: View {
                 if hasContact { removeButton }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Trusted Contact")
@@ -87,8 +87,8 @@ struct TrustedContactView: View {
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 16)
+        .padding(.vertical, AppSpacing.xl)
+        .padding(.horizontal, AppSpacing.lg)
         .frame(maxWidth: .infinity)
         .liquidGlass(cornerRadius: 20)
     }
@@ -117,7 +117,7 @@ struct TrustedContactView: View {
                 .keyboardType(keyboard)
                 .autocorrectionDisabled(keyboard != .default)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 
@@ -140,7 +140,7 @@ struct TrustedContactView: View {
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.vertical, AppSpacing.base)
             .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.red.opacity(0.15), lineWidth: 0.5))
         }
@@ -156,9 +156,9 @@ struct TrustedContactView: View {
                 .font(.system(size: 13, weight: .medium))
         }
         .foregroundStyle(.primary)
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
         .background(Color(red: 0.12, green: 0.12, blue: 0.15).opacity(0.95), in: Capsule())
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Actions

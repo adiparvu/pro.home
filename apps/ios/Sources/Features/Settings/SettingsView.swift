@@ -39,8 +39,8 @@ struct SettingsView: View {
                 signOutButton
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
@@ -127,7 +127,7 @@ struct SettingsView: View {
                         Image(systemName: "arrow.2.squarepath")
                             .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -148,7 +148,7 @@ struct SettingsView: View {
                         Image(systemName: "arrow.left.arrow.right")
                             .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

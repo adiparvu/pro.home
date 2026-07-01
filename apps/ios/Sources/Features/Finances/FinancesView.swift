@@ -65,11 +65,11 @@ struct FinancesView: View {
                         heroSection
                         kpiStrip
                         quickActionsRow
-                            .padding(.top, 20)
-                            .padding(.horizontal, 20)
+                            .padding(.top, AppSpacing.xl)
+                            .padding(.horizontal, AppSpacing.xl)
                         transactionList
-                            .padding(.top, 16)
-                            .padding(.horizontal, 20)
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
                     .background(

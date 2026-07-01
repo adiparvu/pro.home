@@ -91,8 +91,8 @@ struct ZoneDetailView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle(zone.name)
@@ -208,11 +208,11 @@ struct ZoneDetailView: View {
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.vertical, AppSpacing.xs)
                 .background(Color.black.opacity(0.3), in: Capsule())
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.lg)
         }
         .frame(height: 220)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -251,7 +251,7 @@ struct ZoneDetailView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, AppSpacing.base)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -272,7 +272,7 @@ struct ZoneDetailView: View {
                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                 }
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             let metrics = metricsForZone
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -386,7 +386,7 @@ struct ZoneDetailView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -506,7 +506,7 @@ struct ZoneDetailView: View {
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(1.2)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             ForEach(elements) { element in
                 Button {

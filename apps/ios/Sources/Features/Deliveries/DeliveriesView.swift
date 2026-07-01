@@ -61,8 +61,8 @@ struct DeliveriesView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(
@@ -136,7 +136,7 @@ struct DeliveriesView: View {
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 10) {
                 ForEach(deliveryService.activeDeliveries) { delivery in
@@ -170,7 +170,7 @@ struct DeliveriesView: View {
                         Spacer()
                     }
                     .foregroundStyle(Color(red: 0.2, green: 0.80, blue: 0.4))
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
                 }
                 .buttonStyle(.plain)
 

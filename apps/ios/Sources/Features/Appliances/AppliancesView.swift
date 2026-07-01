@@ -82,8 +82,8 @@ struct AppliancesView: View {
                 appliances
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -102,7 +102,7 @@ struct AppliancesView: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
         .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
@@ -117,7 +117,7 @@ struct AppliancesView: View {
                 .foregroundStyle(.orange)
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
@@ -149,7 +149,7 @@ struct AppliancesView: View {
             Text(verbatim: label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 7)
                 .background(
                     isSelected ? Color.accentColor : Color.primary.opacity(0.08),
@@ -258,7 +258,7 @@ private struct ApplianceRow: View {
                         Text(appliance.warrantyStatus)
                             .font(AppFont.caption2)
                             .foregroundStyle(appliance.warrantyColor)
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, AppSpacing.sm)
                             .padding(.vertical, 3)
                             .background(appliance.warrantyColor.opacity(0.12), in: Capsule())
 
@@ -266,7 +266,7 @@ private struct ApplianceRow: View {
                             Text(location)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, AppSpacing.sm)
                                 .padding(.vertical, 3)
                                 .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                         }

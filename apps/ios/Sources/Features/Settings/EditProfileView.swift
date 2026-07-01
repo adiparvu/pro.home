@@ -45,8 +45,8 @@ struct EditProfileView: View {
 
                         saveButton
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                     .padding(.bottom, 40)
                 }
             }
@@ -64,7 +64,7 @@ struct EditProfileView: View {
             TextField(placeholder, text: text)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -99,7 +99,7 @@ struct EditProfileView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -111,7 +111,7 @@ struct EditProfileView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -143,7 +143,7 @@ struct EditProfileView: View {
                 Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppSpacing.xxs)
             } else {
                 ForEach($socialLinks) { $link in
                     HStack(spacing: 10) {
@@ -165,7 +165,7 @@ struct EditProfileView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
                     .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
@@ -182,7 +182,7 @@ struct EditProfileView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(.white)
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

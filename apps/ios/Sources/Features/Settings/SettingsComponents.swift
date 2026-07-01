@@ -12,7 +12,7 @@ struct SettingsGroup<Content: View>: View {
                 .textCase(.uppercase)
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) { content }
                 .liquidGlass(cornerRadius: 20)
@@ -43,8 +43,8 @@ struct NavSettingsRow<D: View>: View {
                         .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -76,8 +76,8 @@ struct TapSettingsRow: View {
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -105,8 +105,8 @@ struct ToggleSettingsRow: View {
                 .labelsHidden()
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
@@ -131,8 +131,8 @@ struct InfoSettingsRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.38))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -186,8 +186,8 @@ struct SettingsPlaceholder: View {
             Text("Coming soon")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
             Spacer()
         }

@@ -173,7 +173,7 @@ extension PropertyElementDetailView {
                 Button { showLocationPicker = true } label: {
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Place" : "Change"))
                         .font(.caption.weight(.semibold)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                         .background(Capsule().fill(Color.accentColor))
                 }
                 .buttonStyle(.plain)
@@ -221,8 +221,8 @@ extension PropertyElementDetailView {
                     Label("Add", systemImage: "plus")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
                         .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
                 }
             }
@@ -252,7 +252,7 @@ extension PropertyElementDetailView {
                     .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -272,7 +272,7 @@ extension PropertyElementDetailView {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
                 }
             }
@@ -286,7 +286,7 @@ extension PropertyElementDetailView {
                         Text("Link manuals, warranties or invoices to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.sm)
                 }
             } else {
                 ForEach(linked) { doc in
@@ -318,7 +318,7 @@ extension PropertyElementDetailView {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
                 }
             }
@@ -332,7 +332,7 @@ extension PropertyElementDetailView {
                         Text("Link maintenance tasks to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.sm)
                 }
             } else {
                 ForEach(linked) { task in

@@ -211,7 +211,7 @@ struct AddPropertyElementView: View {
                                             }
                                         }
                                         .pickerStyle(.menu)
-                                        .padding(6)
+                                        .padding(AppSpacing.xs)
                                         .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     .frame(width: 80)
@@ -243,7 +243,7 @@ struct AddPropertyElementView: View {
                                                     .font(.caption.weight(selectedLayer == layer ? .semibold : .regular))
                                                     .foregroundStyle(selectedLayer == layer ? Color.white : Color.secondary)
                                                     .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
+                                                    .padding(.vertical, AppSpacing.xs)
                                                     .background(
                                                         Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
                                                     )
@@ -263,15 +263,15 @@ struct AddPropertyElementView: View {
                                     .frame(minHeight: 72)
                                     .scrollContentBackground(.hidden)
                                     .font(.subheadline)
-                                    .padding(8)
+                                    .padding(AppSpacing.sm)
                                     .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("New element")
@@ -422,7 +422,7 @@ struct AddPropertyElementView: View {
                                     Text(brandName)
                                         .font(.caption.weight(.medium))
                                         .foregroundStyle(automationSystem == brandName ? Color.white : Color.secondary)
-                                        .padding(.horizontal, 12).padding(.vertical, 6)
+                                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                                         .background(
                                             Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
                                         )
@@ -549,7 +549,7 @@ private struct TypeChip: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 56)
             }
-            .padding(6)
+            .padding(AppSpacing.xs)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? type.accentColor.opacity(0.08) : Color.clear)

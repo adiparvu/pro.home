@@ -61,8 +61,8 @@ struct GuestModeView: View {
                     shareButtonCard
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md)
             }
         }
         .navigationTitle("Guest Mode")
@@ -202,7 +202,7 @@ struct GuestModeView: View {
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -221,7 +221,7 @@ struct GuestModeView: View {
                 .tracking(0.5)
                 .textCase(.uppercase)
         }
-        .padding(.leading, 6)
+        .padding(.leading, AppSpacing.xs)
     }
 
     private func editableRow(icon: String, placeholder: String, text: Binding<String>, isSecure: Bool = false) -> some View {
@@ -236,7 +236,7 @@ struct GuestModeView: View {
                 .tint(.accentColor)
                 .autocorrectionDisabled()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 

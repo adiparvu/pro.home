@@ -22,7 +22,7 @@ extension MortgageView {
                         .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, AppSpacing.md)
                         .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -266,8 +266,8 @@ struct MortgageSetupSheet: View {
 
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Mortgage Details")

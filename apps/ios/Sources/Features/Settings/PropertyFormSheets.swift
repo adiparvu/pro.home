@@ -74,7 +74,7 @@ func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<Stri
             .tint(.accentColor)
             .keyboardType(keyboard)
     }
-    .padding(.horizontal, 16).padding(.vertical, 13)
+    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
 }
 
 func formDivider() -> some View {
@@ -91,7 +91,7 @@ func formCoordField(_ label: String, text: Binding<String>, placeholder: String)
             .foregroundStyle(.primary)
             .tint(.accentColor)
             .keyboardType(.decimalPad)
-            .padding(.horizontal, 10).padding(.vertical, 8)
+            .padding(.horizontal, 10).padding(.vertical, AppSpacing.sm)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
     .frame(maxWidth: .infinity)
@@ -147,7 +147,7 @@ struct AddressAutocompleteField: View {
                         .accessibilityLabel("Clear address")
                     }
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                 formDivider()
                 formFieldRow("building.2.fill", "City", $city)
                 formDivider()
@@ -188,7 +188,7 @@ struct AddressAutocompleteField: View {
                         Spacer(minLength: 0)
                     }
                     .contentShape(Rectangle())
-                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 11)
                 }
                 .buttonStyle(.plain)
                 if idx < items.count - 1 { Divider().padding(.leading, 44) }
@@ -196,7 +196,7 @@ struct AddressAutocompleteField: View {
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-        .padding(.top, 6)
+        .padding(.top, AppSpacing.xs)
     }
 
     private func pick(_ s: MKLocalSearchCompletion) {
@@ -294,7 +294,7 @@ struct AddPropertySheet: View {
                                 }
                             }
                         )
-                        .padding(.top, 16)
+                        .padding(.top, AppSpacing.lg)
 
                         Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() } } label: {
                             HStack {
@@ -304,15 +304,15 @@ struct AddPropertySheet: View {
                                 Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-                        }.buttonStyle(.plain).padding(.top, 12)
+                        }.buttonStyle(.plain).padding(.top, AppSpacing.md)
 
-                        if showMap { mapPickerSection.padding(.top, 8) }
+                        if showMap { mapPickerSection.padding(.top, AppSpacing.sm) }
 
                         Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl).padding(.bottom, AppSpacing.sm)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(propertyTypes, id: \.self) { type in
@@ -320,7 +320,7 @@ struct AddPropertySheet: View {
                                         Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
                                             .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                                            .padding(.horizontal, 14).padding(.vertical, 8)
+                                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
                                 }
@@ -330,9 +330,9 @@ struct AddPropertySheet: View {
                             formFieldRow("ruler.fill", "Area (m²)", $sizeSqmText, keyboard: .decimalPad)
                             formDivider()
                             formFieldRow("door.left.hand.open", "Rooms", $numRoomsText, keyboard: .numberPad)
-                        }.padding(.top, 16)
+                        }.padding(.top, AppSpacing.lg)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 40)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, 40)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

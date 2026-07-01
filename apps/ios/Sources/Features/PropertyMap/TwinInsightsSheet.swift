@@ -39,7 +39,7 @@ struct TwinInsightsSheet: View {
                     if !critical.isEmpty { criticalCard }
                     aiCard
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("\(assistantName) Insights")
@@ -94,7 +94,7 @@ struct TwinInsightsSheet: View {
             Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(AppSpacing.base)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 

@@ -48,8 +48,8 @@ struct PRVIOTimelineView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.top, AppSpacing.xxs)
                     .padding(.bottom, 10)
 
                 if groupedEvents.isEmpty {
@@ -58,9 +58,9 @@ struct PRVIOTimelineView: View {
                 } else {
                     ForEach(groupedEvents, id: \.0) { group, events in
                         sectionHeader(LocalizedStringKey(group))
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.top, 18)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, AppSpacing.sm)
 
                         ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
                             HStack(alignment: .top, spacing: 0) {
@@ -78,12 +78,12 @@ struct PRVIOTimelineView: View {
                                     }
                                 }
                                 .frame(width: 30)
-                                .padding(.leading, 16)
+                                .padding(.leading, AppSpacing.lg)
 
                                 // Event card
                                 TimelineEventCard(event: event)
                                     .padding(.horizontal, 10)
-                                    .padding(.bottom, 8)
+                                    .padding(.bottom, AppSpacing.sm)
                             }
                         }
                     }
@@ -91,7 +91,7 @@ struct PRVIOTimelineView: View {
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -276,8 +276,8 @@ struct TimelineEventCard: View {
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.regularMaterial)

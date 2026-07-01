@@ -94,8 +94,8 @@ struct SupervisionView: View {
                     memberList
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -143,7 +143,7 @@ struct SupervisionView: View {
                         .foregroundStyle(.white.opacity(0.82))
                         .lineSpacing(3)
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
         }
     }
@@ -155,7 +155,7 @@ struct SupervisionView: View {
             Text("MEMBERS")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             if familyService.members.isEmpty {
                 GlassCard(padding: 24) {
@@ -206,7 +206,7 @@ struct SupervisionView: View {
                     Text(LocalizedStringKey(supervised ? "Active" : "Inactive"))
                         .font(AppFont.label)
                         .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
-                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
                         .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(AppOpacity.hairline),
                                     in: Capsule())
 
@@ -214,7 +214,7 @@ struct SupervisionView: View {
                         .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

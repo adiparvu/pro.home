@@ -32,7 +32,7 @@ struct AddSupplyListSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New List")
@@ -58,14 +58,14 @@ struct AddSupplyListSheet: View {
                     Image(systemName: selectedIcon)
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.92))
-                        .padding(14)
+                        .padding(AppSpacing.base)
                 }
                 Group {
                     if name.isEmpty { Text("List name") } else { Text(name) }
                 }
                 .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .primary)
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             }
         }
         .frame(width: 150)
@@ -78,7 +78,7 @@ struct AddSupplyListSheet: View {
                 .font(AppFont.label).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -89,7 +89,7 @@ struct AddSupplyListSheet: View {
                 .font(AppFont.label).foregroundStyle(.secondary)
             TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .lineLimit(2...4).padding(14)
+                .lineLimit(2...4).padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }

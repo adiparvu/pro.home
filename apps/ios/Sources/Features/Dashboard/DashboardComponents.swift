@@ -35,7 +35,7 @@ struct HomeWidget: View {
                         Text("\(min(badge, 99))")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                             .background(Color.red, in: Capsule())
                     }
                 }
@@ -54,7 +54,7 @@ struct HomeWidget: View {
                     .font(AppFont.caption)
                     .foregroundStyle(Color.primary.opacity(0.6))
             }
-            .padding(14)
+            .padding(AppSpacing.base)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
@@ -311,7 +311,7 @@ struct DashStatCard: View {
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xxs)
         }
     }
 }
@@ -343,11 +343,11 @@ struct DashTaskRow: View {
             Text(task.statusDisplay)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xxs)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
@@ -503,8 +503,8 @@ struct StatChip: View {
                         .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
         .liquidGlass(cornerRadius: 12)
@@ -524,8 +524,8 @@ struct CategoryFilterChip: View {
             Text(label)
                 .font(.system(size: 13, weight: isActive ? .semibold : .medium))
                 .foregroundStyle(isActive ? .primary : Color.primary.opacity(0.55))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
         .background {
@@ -592,7 +592,7 @@ struct PropertyHealthDashCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(16)
+        .padding(AppSpacing.lg)
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.regularMaterial)
@@ -661,7 +661,7 @@ struct DashStatsStrip: View {
                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, AppSpacing.base)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

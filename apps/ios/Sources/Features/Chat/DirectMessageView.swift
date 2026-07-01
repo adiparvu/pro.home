@@ -335,9 +335,9 @@ struct DirectMessageView: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 9)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
         .liquidGlass(cornerRadius: 18)
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
     }
 
     // MARK: - Message List
@@ -376,9 +376,9 @@ struct DirectMessageView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                 .liquidGlass(cornerRadius: 14)
-                .padding(.horizontal, 12).padding(.top, 8)
+                .padding(.horizontal, AppSpacing.md).padding(.top, AppSpacing.sm)
             }
             .buttonStyle(.plain)
         }
@@ -459,7 +459,7 @@ struct DirectMessageView: View {
                                         Text("Not delivered · tap to retry")
                                             .font(.system(size: 10))
                                             .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                            .padding(.trailing, 4)
+                                            .padding(.trailing, AppSpacing.xxs)
                                     }
                                 }
                             }
@@ -469,8 +469,8 @@ struct DirectMessageView: View {
                                                            value: g.frame(in: .named("DMOUTER")).maxY)
                                 })
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.bottom, AppSpacing.md)
                         .animation(.spring(response: 0.35, dampingFraction: 0.86), value: conversationMessages.count)
                     }
                     .scrollDismissesKeyboard(.immediately)
@@ -518,7 +518,7 @@ struct DirectMessageView: View {
                     .buttonStyle(.plain)
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                    .padding(.trailing, 16).padding(.bottom, 10)
+                    .padding(.trailing, AppSpacing.lg).padding(.bottom, 10)
                     .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -580,7 +580,7 @@ struct DirectMessageView: View {
         }
         .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, AppSpacing.base)
         .background(.regularMaterial)
     }
 
@@ -609,7 +609,7 @@ struct DirectMessageView: View {
                         .tint(.accentColor)
                         .lineLimit(1...6)
                         .focused($focused)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, AppSpacing.base)
                         .padding(.vertical, 9)
                         .liquidGlass(cornerRadius: 20)
                         .opacity(audioRecorder.isRecording ? 0 : 1)
@@ -656,7 +656,7 @@ struct DirectMessageView: View {
                 .animation(.spring(duration: 0.2), value: isTextEmpty)
                 .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 10)
             .background(.regularMaterial)
         }
@@ -689,7 +689,7 @@ struct DirectMessageView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
         .background(.regularMaterial)
     }
 
@@ -735,7 +735,7 @@ struct DirectMessageView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.4))
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 9)
         .liquidGlass(cornerRadius: 20)
     }
@@ -828,7 +828,7 @@ struct DirectMessageView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 28)
-        .padding(.vertical, 16)
+        .padding(.vertical, AppSpacing.lg)
         .background(.regularMaterial)
     }
 
@@ -1340,7 +1340,7 @@ private struct DMBubble: View {
                             Text("\(count)").font(AppFont.label).foregroundStyle(.primary)
                         }
                     }
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                     .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule())
                     .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
@@ -1401,7 +1401,7 @@ private struct DMBubble: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8).padding(.vertical, 5)
+        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 5)
         .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .frame(maxWidth: 240, alignment: .leading)
     }
@@ -1552,13 +1552,13 @@ private struct DMStarredView: View {
                                             .font(AppFont.captionStrong)
                                             .foregroundStyle(Color.primary.opacity(0.25))
                                     }
-                                    .padding(14)
+                                    .padding(AppSpacing.base)
                                     .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(16)
+                        .padding(AppSpacing.lg)
                     }
                 }
             }

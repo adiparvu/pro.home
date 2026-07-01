@@ -22,7 +22,7 @@ struct AssigneePickerSheet: View {
                                 Text("FAMILY MEMBERS")
                                     .font(AppFont.label)
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                    .padding(.leading, 4)
+                                    .padding(.leading, AppSpacing.xxs)
                                 MemberPickerView(selectedIds: $assigneeIds, selectedNames: $assigneeNames)
                             }
                         }
@@ -31,13 +31,13 @@ struct AssigneePickerSheet: View {
                             Text("SOMEONE ELSE")
                                 .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
 
                             if showCustom {
                                 HStack(spacing: 10) {
                                     TextField("Name", text: $customName)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                        .padding(.horizontal, 14).padding(.vertical, 11)
+                                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                                         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12))
                                     Button {
                                         let n = customName.trimmingCharacters(in: .whitespaces)
@@ -66,7 +66,7 @@ struct AssigneePickerSheet: View {
                                         Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 12)
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
                                 }
                                 .buttonStyle(.plain)
@@ -87,14 +87,14 @@ struct AssigneePickerSheet: View {
                                         }
                                         .accessibilityLabel("Remove \(name)")
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 10)
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Assign Task").navigationBarTitleDisplayMode(.inline)

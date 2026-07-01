@@ -47,8 +47,8 @@ struct ApplianceDetailSheet: View {
                         deleteButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(appliance.name)
@@ -89,7 +89,7 @@ struct ApplianceDetailSheet: View {
                         .font(AppFont.captionStrong)
                         .foregroundStyle(appliance.warrantyColor)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, AppSpacing.xxs)
                         .background(appliance.warrantyColor.opacity(0.13), in: Capsule())
                 }
                 Spacer()
@@ -165,7 +165,7 @@ struct ApplianceDetailSheet: View {
                 .font(AppFont.body)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
                 .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -175,7 +175,7 @@ struct ApplianceDetailSheet: View {
         Text(title)
             .font(AppFont.label)
             .foregroundStyle(.secondary)
-            .padding(.leading, 6)
+            .padding(.leading, AppSpacing.xs)
             .textCase(.uppercase)
     }
 
@@ -193,8 +193,8 @@ struct ApplianceDetailSheet: View {
                 .font(AppFont.footnote)
                 .foregroundStyle(valueColor)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private var rowDivider: some View {

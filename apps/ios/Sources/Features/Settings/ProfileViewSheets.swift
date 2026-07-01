@@ -25,10 +25,10 @@ struct ChangeEmailSheet: View {
 
                     Text("A verification link will be sent to your new address. Your email will only change after you confirm it.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
-                        .multilineTextAlignment(.center).padding(.horizontal, 8)
+                        .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                     Spacer()
                 }
-                .padding(.horizontal, 20).padding(.top, 20)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
             }
             .navigationTitle("Change Email").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,7 +52,7 @@ struct ChangeEmailSheet: View {
             TextField(ph, text: b)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).autocorrectionDisabled().textInputAutocapitalization(.never)
-        }.padding(.horizontal, 16).padding(.vertical, 14)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 }
 
@@ -90,7 +90,7 @@ struct ChangePasswordSheet: View {
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 20).padding(.top, 20)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
             }
             .navigationTitle("Change Password").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -113,6 +113,6 @@ struct ChangePasswordSheet: View {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             SecureField(ph, text: b)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-        }.padding(.horizontal, 16).padding(.vertical, 14)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 }

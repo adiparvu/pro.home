@@ -69,10 +69,10 @@ struct LoginView: View {
                             .font(.caption)
                             .foregroundStyle(.red.opacity(0.8))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, AppSpacing.xxs)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppSpacing.xxl)
 
                 // Sign in button
                 Button(action: signIn) {
@@ -92,8 +92,8 @@ struct LoginView: View {
                 }
                 .disabled(isLoading || email.isEmpty || password.isEmpty)
                 .opacity((email.isEmpty || password.isEmpty) ? 0.5 : 1)
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xxl)
+                .padding(.top, AppSpacing.lg)
 
                 Spacer()
                 Spacer()
@@ -144,7 +144,7 @@ private struct GlassTextField: View {
             }
             .font(.body)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .frame(height: 52)
         .glassRoundedRect(14)
     }

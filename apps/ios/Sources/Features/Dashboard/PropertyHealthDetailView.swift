@@ -30,8 +30,8 @@ struct PropertyHealthDetailView: View {
 
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Property Health")
@@ -84,11 +84,11 @@ struct PropertyHealthDetailView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(24)
+        .padding(AppSpacing.xxl)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -137,7 +137,7 @@ struct PropertyHealthDetailView: View {
                 color: Color(red: 0.20, green: 0.82, blue: 0.48)
             )
         }
-        .padding(20)
+        .padding(AppSpacing.xl)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -218,7 +218,7 @@ struct PropertyHealthDetailView: View {
                 }
             }
         }
-        .padding(20)
+        .padding(AppSpacing.xl)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -238,7 +238,7 @@ struct PropertyHealthDetailView: View {
                 .foregroundStyle(Color.primary.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
+        .padding(AppSpacing.lg)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 

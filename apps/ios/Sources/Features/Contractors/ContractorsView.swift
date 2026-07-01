@@ -139,9 +139,9 @@ struct ContractorsView: View {
                         Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(.horizontal, 20).padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.xl).padding(.bottom, AppSpacing.md)
                 }
 
                 if service.isLoading {
@@ -174,7 +174,7 @@ struct ContractorsView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20).padding(.bottom, 110)
+                        .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
                 }
             }
@@ -267,7 +267,7 @@ private struct AddContractorSheet: View {
                     }
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Contractor").navigationBarTitleDisplayMode(.inline)
@@ -286,7 +286,7 @@ private struct AddContractorSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 

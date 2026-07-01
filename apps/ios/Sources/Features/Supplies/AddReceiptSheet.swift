@@ -34,7 +34,7 @@ struct AddReceiptSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "add_receipt_title"))
@@ -53,7 +53,7 @@ struct AddReceiptSheet: View {
         formField("STORE") {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
                 .font(.system(size: 16))
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -63,7 +63,7 @@ struct AddReceiptSheet: View {
             DatePicker("", selection: $date, in: ...Date(), displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -78,7 +78,7 @@ struct AddReceiptSheet: View {
                                 Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
                             }
                             .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(category == cat.id
                                 ? ReceiptCategory.color(for: cat.id)
                                 : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
@@ -129,7 +129,7 @@ struct AddReceiptSheet: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, AppSpacing.xxs)
                         }
                     }
                 }
@@ -145,7 +145,7 @@ struct AddReceiptSheet: View {
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
                 }
             }
         }
@@ -156,7 +156,7 @@ struct AddReceiptSheet: View {
             TextField("0.00", text: $total)
                 .font(AppFont.title2)
                 .keyboardType(.decimalPad)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -166,7 +166,7 @@ struct AddReceiptSheet: View {
             TextField(String(localized: "add_receipt_notes_placeholder"), text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .lineLimit(2...4)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }

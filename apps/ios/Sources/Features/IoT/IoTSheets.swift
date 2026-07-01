@@ -420,9 +420,9 @@ struct SensorDetailSheet: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.leading, 8)
+                        .padding(.leading, AppSpacing.sm)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppSpacing.xxs)
                 }
 
                 Section("Info") {

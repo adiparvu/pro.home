@@ -23,7 +23,7 @@ struct AppIconPickerView: View {
                     noticeCard
                     Spacer(minLength: 110)
                 }
-                .padding(.top, 16)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -90,7 +90,7 @@ struct AppIconPickerView: View {
                     .labelsHidden()
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: - Grid
@@ -101,7 +101,7 @@ struct AppIconPickerView: View {
                 iconCell(group)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     private func iconCell(_ group: AppIconThemeGroup) -> some View {
@@ -137,7 +137,7 @@ struct AppIconPickerView: View {
                                 .font(.system(size: 10))
                         }
                         .foregroundStyle(Color.accentColor.opacity(0.8))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                         .background(Color.accentColor.opacity(0.1), in: Capsule())
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     }
@@ -188,7 +188,7 @@ struct AppIconPickerView: View {
                 }
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: - Apply

@@ -159,7 +159,7 @@ struct LiveActivitySettingsView: View {
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 4)
+                        .padding(.leading, AppSpacing.xxs)
 
                     settingsGroup {
                         ForEach(Array(LiveActivityKind.allCases.enumerated()), id: \.element.id) { idx, kind in
@@ -183,7 +183,7 @@ struct LiveActivitySettingsView: View {
                                     .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.primary.opacity(0.25))
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -194,12 +194,12 @@ struct LiveActivitySettingsView: View {
                     .font(.caption)
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
 
                 Spacer(minLength: 80)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -286,7 +286,7 @@ private struct LAToggleRow: View {
             Spacer()
             Toggle("", isOn: $isOn).labelsHidden()
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -337,7 +337,7 @@ struct LiveActivityPreview: View {
                         .tint(.orange)
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
             .liquidGlass(cornerRadius: 20, thick: true)
         }
     }
@@ -363,7 +363,7 @@ struct LiveActivityAppearanceView: View {
                 Text("SHOW IN")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
                 group {
                     LAToggleRow(icon: "lock.fill", color: .blue,
                                 title: "Lock Screen",
@@ -379,7 +379,7 @@ struct LiveActivityAppearanceView: View {
                 Text("DISPLAY OPTIONS")
                     .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
                 group {
                     LAToggleRow(icon: "chart.bar.fill", color: .green,
                                 title: "Progress Bar",
@@ -401,7 +401,7 @@ struct LiveActivityAppearanceView: View {
                     Text("DYNAMIC ISLAND")
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
                     VStack(spacing: 12) {
                         Picker("", selection: $islandStyle) {
                             ForEach(DynamicIslandStyle.allCases) { style in
@@ -413,14 +413,14 @@ struct LiveActivityAppearanceView: View {
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                     .liquidGlass(cornerRadius: 16)
                 }
 
                 Spacer(minLength: 80)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")

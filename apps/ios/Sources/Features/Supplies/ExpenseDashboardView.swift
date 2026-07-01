@@ -33,8 +33,8 @@ struct ExpenseDashboardView: View {
                 if !recurring.isEmpty { recurringSection(recurring) }
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -158,7 +158,7 @@ struct ExpenseDashboardView: View {
                             .foregroundStyle(delta <= 0
                                 ? Color(red: 0.2, green: 0.78, blue: 0.45)
                                 : Color.orange)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background((delta <= 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.orange).opacity(0.12),
                                         in: Capsule())
                         }
@@ -398,7 +398,7 @@ struct ExpenseDashboardView: View {
                     .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
 
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
@@ -457,7 +457,7 @@ struct ExpenseDashboardView: View {
                     .foregroundStyle(.primary)
                     .monospacedDigit()
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
             .contentShape(Rectangle())
 
             if !isLast {
@@ -474,7 +474,7 @@ struct ExpenseDashboardView: View {
                 .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .tracking(0.8)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -498,7 +498,7 @@ struct ExpenseDashboardView: View {
                                     .foregroundStyle(Color.accentColor)
                                     .monospacedDigit()
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                             if idx < items.count - 1 {
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                             }

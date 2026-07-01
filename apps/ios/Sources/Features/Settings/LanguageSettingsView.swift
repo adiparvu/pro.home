@@ -19,8 +19,8 @@ struct LanguageSettingsView: View {
                     restartNotice
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .id(refreshToken)
@@ -36,7 +36,7 @@ struct LanguageSettingsView: View {
             Text(String(localized: "lang_select_section"))
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -70,8 +70,8 @@ struct LanguageSettingsView: View {
                                         .foregroundStyle(.blue)
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.base)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -80,7 +80,7 @@ struct LanguageSettingsView: View {
                             Rectangle()
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(height: 0.5)
-                                .padding(.leading, 16)
+                                .padding(.leading, AppSpacing.lg)
                         }
                     }
                 }

@@ -30,7 +30,7 @@ struct ElementTagsSection: View {
                                         .accessibilityLabel("Remove tag \(tag)")
                                     }
                                     .foregroundStyle(Color.accentColor)
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .padding(.horizontal, 10).padding(.vertical, AppSpacing.xs)
                                     .background(Color.accentColor.opacity(0.12), in: Capsule())
                                 }
                             }

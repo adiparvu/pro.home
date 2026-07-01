@@ -21,7 +21,7 @@ struct EmergencyContactsView: View {
                 addButton
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20).padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -72,7 +72,7 @@ struct EmergencyContactsView: View {
     }
 
     private func sectionHeader(_ t: LocalizedStringKey) -> some View {
-        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -124,7 +124,7 @@ private struct EmergencyRow: View {
                     Text(contact.phone)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                 }
                 .glassCapsule()
             }
@@ -151,7 +151,7 @@ private struct AddEmergencySheet: View {
                 }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-                .padding(.horizontal, 20).padding(.top, 8)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 Spacer()
             }
             .navigationTitle("Add Contact").navigationBarTitleDisplayMode(.inline)
@@ -171,7 +171,7 @@ private struct AddEmergencySheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }

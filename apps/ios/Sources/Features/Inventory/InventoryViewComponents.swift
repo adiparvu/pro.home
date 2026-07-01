@@ -114,7 +114,7 @@ struct AddInventorySheet: View {
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
                                     DatePicker("", selection: $purchaseDate, in: ...Date(), displayedComponents: .date).tint(.accentColor)
-                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                                }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                             }
                             div
                             toggle("checkmark.shield.fill", "Has Warranty", $hasWarranty)
@@ -123,7 +123,7 @@ struct AddInventorySheet: View {
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
                                     DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(.system(size: 15)).foregroundStyle(.primary)
-                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                                }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                             }
                         }
                         card {
@@ -131,11 +131,11 @@ struct AddInventorySheet: View {
                                 Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 TextField("Note (opțional)", text: $notes, axis: .vertical)
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
-                            }.padding(.horizontal, 16).padding(.vertical, 13)
+                            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
@@ -265,7 +265,7 @@ struct AddInventorySheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
         HStack(spacing: 12) {
@@ -273,7 +273,7 @@ struct AddInventorySheet: View {
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
-        }.padding(.horizontal, 16).padding(.vertical, 10)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
@@ -281,7 +281,7 @@ struct AddInventorySheet: View {
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: b).tint(.accentColor).labelsHidden()
-        }.padding(.horizontal, 16).padding(.vertical, 12)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
@@ -311,12 +311,12 @@ struct QRScannerSheet: View {
                             .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
                     }
                     .accessibilityLabel("Close scanner")
-                    .padding(20)
+                    .padding(AppSpacing.xl)
                 }
                 Spacer()
                 Text("Point at an item's QR code")
                     .font(AppFont.body).foregroundStyle(.primary)
-                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
                     .background(Color.black.opacity(0.5), in: Capsule())
                     .padding(.bottom, 60)
             }

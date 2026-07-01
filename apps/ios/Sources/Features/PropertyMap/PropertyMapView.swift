@@ -46,7 +46,7 @@ struct PropertyMapView: View {
             )
 
             layerFilterBar
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
                 .padding(.vertical, 10)
 
             ScrollView(showsIndicators: false) {
@@ -71,28 +71,28 @@ struct PropertyMapView: View {
                                 Task { await elementService.updatePosition(elementId: element.id, x: newX, y: newY) }
                             }
                         )
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                     }
 
                     statsStrip
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                     if !elementService.criticalElements.isEmpty {
                         attentionSection
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     }
 
                     if elementService.elements.isEmpty {
                         emptyActionCard
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     } else {
                         elementListSection
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     }
 
                     Spacer(minLength: 110)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
                 .background(
                     GeometryReader { geo in
                         Color.clear.preference(key: ScrollOffsetKey.self,
@@ -114,7 +114,7 @@ struct PropertyMapView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             fabButton
-                .padding(.trailing, 24)
+                .padding(.trailing, AppSpacing.xxl)
                 .padding(.bottom, 100)
         }
         .sheet(item: $selectedElement) { element in

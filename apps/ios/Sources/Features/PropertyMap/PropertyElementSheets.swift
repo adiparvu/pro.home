@@ -51,7 +51,7 @@ struct EditPropertyElementView: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Edit")
@@ -135,7 +135,7 @@ struct AddElementRecordView: View {
                                         Text("Currency").font(.caption).foregroundStyle(.secondary)
                                         Picker("", selection: $currency) {
                                             ForEach(["EUR", "RON", "USD"], id: \.self) { Text($0).tag($0) }
-                                        }.pickerStyle(.menu).padding(6)
+                                        }.pickerStyle(.menu).padding(AppSpacing.xs)
                                             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }.frame(width: 90)
                                 }
@@ -149,7 +149,7 @@ struct AddElementRecordView: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("New record")

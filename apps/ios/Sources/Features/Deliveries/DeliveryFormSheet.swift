@@ -67,8 +67,8 @@ struct DeliveryFormSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(isEditing ? String(localized: "Edit delivery") : String(localized: "New delivery"))
@@ -90,7 +90,7 @@ struct DeliveryFormSheet: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -107,7 +107,7 @@ struct DeliveryFormSheet: View {
                 .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.characters)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -123,7 +123,7 @@ struct DeliveryFormSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(2...4)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
                     Color.primary.opacity(AppOpacity.subtleFill),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -146,8 +146,8 @@ struct DeliveryFormSheet: View {
                             Text(c)
                                 .font(.system(size: 13, weight: carrier == c ? .semibold : .regular))
                                 .foregroundStyle(carrier == c ? .white : Color.primary.opacity(0.65))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(
                                     carrier == c ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                     in: Capsule()
@@ -191,8 +191,8 @@ struct DeliveryFormSheet: View {
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

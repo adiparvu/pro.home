@@ -48,19 +48,19 @@ struct DashboardView: View {
             VStack(spacing: 0) {
                 // ── Header ──────────────────────────────────────────────
                 dashHeader
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 14)
 
                 // ── Aerial Hero Card ─────────────────────────────────────
                 aerialHero
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                 // ── Proactive Insights (fixed after hero) ────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
                     Spacer().frame(height: 14)
                     ProactiveInsightsStrip(engine: proactiveEngine)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                 }
 
                 // ── Reorderable sections ──────────────────────────────────
@@ -72,7 +72,7 @@ struct DashboardView: View {
             }
             .padding(.top, topSafeArea + 6)
             .trackTabScroll()
-            .padding(.bottom, 20)
+            .padding(.bottom, AppSpacing.xl)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(key: ScrollOffsetKey.self,
@@ -274,7 +274,7 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Expand Digital Twin")
-            .padding(12)
+            .padding(AppSpacing.md)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
             if let name = propertyService.primary?.name {
@@ -289,8 +289,8 @@ struct DashboardView: View {
                             .lineLimit(1)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
                 .padding(.bottom, 2)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -354,7 +354,7 @@ struct DashboardView: View {
                     Text("Done")
                         .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(Color.accentColor.opacity(0.1), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -408,24 +408,24 @@ struct DashboardView: View {
                     propertyHealthCard
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
             }
 
         case .statsStrip:
             Group {
                 Spacer().frame(height: 14)
                 dashStatsStrip
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
             }
 
         case .widgets:
             Group {
                 Spacer().frame(height: 22)
                 widgetSectionHeader
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 Spacer().frame(height: 10)
                 widgetGrid
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
             }
         }
     }

@@ -35,7 +35,7 @@ extension PlantDetailSheet {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
             }
         }
     }
@@ -122,8 +122,8 @@ extension PlantDetailSheet {
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private var rowDivider: some View {
@@ -202,7 +202,7 @@ extension PlantDetailSheet {
                     .font(.system(size: 16))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
-                    .padding(14)
+                    .padding(AppSpacing.base)
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
@@ -215,7 +215,7 @@ extension PlantDetailSheet {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
@@ -228,7 +228,7 @@ extension PlantDetailSheet {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
@@ -246,7 +246,7 @@ extension PlantDetailSheet {
                                     editedPlant.healthStatus == opt.id ? .white : Color.primary.opacity(0.65)
                                 )
                                 .padding(.horizontal, 11)
-                                .padding(.vertical, 8)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(
                                     editedPlant.healthStatus == opt.id
                                         ? plantHealthColor(opt.id)
@@ -270,7 +270,7 @@ extension PlantDetailSheet {
                     Stepper("", value: $editedPlant.wateringIntervalDays, in: 1...30)
                         .labelsHidden()
                 }
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
@@ -284,7 +284,7 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...6)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }

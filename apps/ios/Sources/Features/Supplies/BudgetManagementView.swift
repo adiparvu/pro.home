@@ -23,7 +23,7 @@ struct BudgetManagementView: View {
                         categoriesSection
                         Spacer(minLength: 80)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "budget_title"))
@@ -92,7 +92,7 @@ struct BudgetManagementView: View {
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "budget_categories_section"))
-                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -146,7 +146,7 @@ struct BudgetManagementView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
             .onTapGesture { editingCategoryItem = BudgetCategoryItem(value: category); HapticFeedback.selection() }
 
@@ -179,7 +179,7 @@ struct BudgetManagementView: View {
                         Text(LocalizedStringKey(label))
                             .font(.system(size: 20, weight: .bold))
                     }
-                    .padding(.top, 20)
+                    .padding(.top, AppSpacing.xl)
 
                     // Budget input
                     VStack(spacing: 8) {
@@ -197,7 +197,7 @@ struct BudgetManagementView: View {
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         let spent = receiptService.spent(for: category, in: currentMonth)
                         if spent > 0 {
@@ -205,7 +205,7 @@ struct BudgetManagementView: View {
                                 .font(.system(size: 13)).foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                     // Actions
                     VStack(spacing: 12) {
@@ -233,12 +233,12 @@ struct BudgetManagementView: View {
                                 Text(String(localized: "budget_remove"))
                                     .font(.system(size: 15))
                                     .foregroundStyle(.red)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                     Spacer()
                 }

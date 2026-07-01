@@ -38,7 +38,7 @@ struct SpendingReportView: View {
                         }
                         Spacer(minLength: 80)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "report_title"))
@@ -75,7 +75,7 @@ struct SpendingReportView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(4)
+            .padding(AppSpacing.xxs)
         }
     }
 
@@ -159,7 +159,7 @@ struct SpendingReportView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, AppSpacing.xxs)
 
             if !data.isEmpty {
                 reportChartCard(title: String(format: String(localized: "report_year_spending"), selectedYear), data: data, unit: .month)

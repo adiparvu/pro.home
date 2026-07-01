@@ -457,11 +457,11 @@ struct ChatView: View {
                             .accessibilityLabel("Clear search")
                         }
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, AppSpacing.base)
                     .padding(.vertical, 10)
                     .liquidGlass(cornerRadius: 16)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.top, AppSpacing.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -497,9 +497,9 @@ struct ChatView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("Unpin message")
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                         .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16).padding(.top, 8)
+                        .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
                     }
                     .buttonStyle(.plain)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -521,7 +521,7 @@ struct ChatView: View {
                         }
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppSpacing.sm)
                         .disabled(messageService.isLoadingOlder)
                     }
                     ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
@@ -585,7 +585,7 @@ struct ChatView: View {
                                         .font(.system(size: 10))
                                         .foregroundStyle(.white.opacity(0.75))
                                 }
-                                .padding(.horizontal, 14).padding(.vertical, 9)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                                 .background(chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
                                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 .opacity(0.85)
@@ -603,7 +603,7 @@ struct ChatView: View {
                                 Text("Not delivered · tap to retry")
                                     .font(.system(size: 10))
                                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                                    .padding(.trailing, 4)
+                                    .padding(.trailing, AppSpacing.xxs)
                             }
                         }
                     }
@@ -616,8 +616,8 @@ struct ChatView: View {
                                                    value: g.frame(in: .named("CHATOUTER")).maxY)
                         })
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
                 .animation(.spring(response: 0.35, dampingFraction: 0.86), value: filteredMessages.count)
             }
             .defaultScrollAnchor(.bottom)
@@ -702,7 +702,7 @@ struct ChatView: View {
                     }.buttonStyle(.plain)
                     .accessibilityLabel("Cancel edit")
                 }
-                .padding(.horizontal, 14).padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                 .background(Color.primary.opacity(0.05))
             }
             if let replyingTo {
@@ -720,7 +720,7 @@ struct ChatView: View {
                     }.buttonStyle(.plain)
                     .accessibilityLabel("Cancel reply")
                 }
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                 .background(Color.primary.opacity(0.05))
             }
             if !mentionedNames.isEmpty {
@@ -739,11 +739,11 @@ struct ChatView: View {
                                 }
                                 .accessibilityLabel("Remove mention of \(name)")
                             }
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                             .background(.blue.opacity(0.15), in: Capsule())
                         }
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                 }
             }
 
@@ -776,7 +776,7 @@ struct ChatView: View {
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                     .liquidGlass(cornerRadius: 22)
                     .gesture(
                         DragGesture(minimumDistance: 40)
@@ -802,9 +802,9 @@ struct ChatView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
@@ -908,13 +908,13 @@ struct ChatView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.top, AppSpacing.md)
                 .padding(.bottom, 10)
                 .liquidGlass(cornerRadius: 22)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
             }
         }
     }

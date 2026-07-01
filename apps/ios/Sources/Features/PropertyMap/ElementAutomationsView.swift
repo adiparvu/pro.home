@@ -87,7 +87,7 @@ struct ElementAutomationsSection: View {
                 Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 2)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppSpacing.xxs)
     }
 
     private func createTask(name: String, due: String) async {
@@ -139,7 +139,7 @@ struct AddElementAutomationSheet: View {
                                                 Label(t.displayName, systemImage: t.icon)
                                                     .font(.caption.weight(trigger == t ? .semibold : .regular))
                                                     .foregroundStyle(trigger == t ? .white : .secondary)
-                                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                                                     .background(Capsule().fill(trigger == t ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill)))
                                             }
                                             .buttonStyle(.plain)
@@ -186,7 +186,7 @@ struct AddElementAutomationSheet: View {
 
                         Spacer(minLength: 20)
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                 }
             }
             .navigationTitle("New automation")

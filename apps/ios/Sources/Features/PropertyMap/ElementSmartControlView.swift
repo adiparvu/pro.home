@@ -40,7 +40,7 @@ struct ElementSmartControlSection: View {
                             HapticFeedback.impact(.medium)
                         } label: {
                             Text("Toggle").font(AppFont.footnoteEmphasis)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(Color.accentColor.opacity(0.15), in: Capsule())
                         }
                         .buttonStyle(.plain)

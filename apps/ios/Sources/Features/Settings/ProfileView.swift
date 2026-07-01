@@ -30,8 +30,8 @@ struct ProfileView: View {
                 accountSection
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.xl)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
@@ -235,11 +235,11 @@ struct ProfileView: View {
             Spacer()
             Text(value).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View {
-        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 16)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, AppSpacing.lg)
     }
 
     // MARK: - Account actions
@@ -312,10 +312,10 @@ struct ProfileView: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(isError ? .red.opacity(0.85) : Color(red: 0.15, green: 0.15, blue: 0.18).opacity(0.95),
                         in: Capsule())
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Helpers

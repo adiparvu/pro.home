@@ -97,15 +97,15 @@ struct EditPropertySheet: View {
                                 }
                             }
                         )
-                        .padding(.top, 16)
+                        .padding(.top, AppSpacing.lg)
 
-                        mapToggleButton.padding(.top, 12)
-                        if showMap { mapPickerSection.padding(.top, 8) }
+                        mapToggleButton.padding(.top, AppSpacing.md)
+                        if showMap { mapPickerSection.padding(.top, AppSpacing.sm) }
 
                         Text("TYPE")
                             .font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
+                            .padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl).padding(.bottom, AppSpacing.sm)
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -114,7 +114,7 @@ struct EditPropertySheet: View {
                                         Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
                                             .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                                            .padding(.horizontal, 14).padding(.vertical, 8)
+                                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
                                 }
@@ -128,13 +128,13 @@ struct EditPropertySheet: View {
                             formDivider()
                             formFieldRow("calendar.badge.clock", "Year built", $yearBuiltText, keyboard: .numberPad)
                         }
-                        .padding(.top, 16)
+                        .padding(.top, AppSpacing.lg)
 
                         storySection
                         renovationsSection
                         ownersSection
                     }
-                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 40)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, 40)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

@@ -365,7 +365,7 @@ struct IntegrationGroup<Content: View>: View {
                 .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) { content }
                 .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
@@ -401,8 +401,8 @@ struct IntegrationRow: View {
 
                 statusBadge
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             Rectangle()
                 .fill(Color.primary.opacity(0.05))
@@ -439,14 +439,14 @@ struct IntegrationRow: View {
             Text("Soon")
                 .font(AppFont.caption2)
                 .foregroundStyle(Color.primary.opacity(0.3))
-                .padding(.horizontal, 8).padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                 .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
 
         case .active(let label):
             Text(label)
                 .font(AppFont.caption2)
                 .foregroundStyle(.green)
-                .padding(.horizontal, 8).padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                 .background(Color.green.opacity(0.12), in: Capsule())
 
         case .deepLink(let label):
@@ -492,8 +492,8 @@ struct IntegrationRowContent: View {
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             Rectangle()
                 .fill(Color.primary.opacity(0.05))

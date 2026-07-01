@@ -19,7 +19,7 @@ struct DetailTabBar: View {
                     }
                     .foregroundStyle(selected == tab ? Color.white : Color.secondary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(selected == tab ? Color.primary.opacity(0.12) : Color.clear)
@@ -28,7 +28,7 @@ struct DetailTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
+        .padding(AppSpacing.xxs)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -87,7 +87,7 @@ struct DocumentLinkPicker: View {
                             Text("All documents are already linked or no documents exist.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.top, 40).padding(.horizontal, 24)
+                                .padding(.top, 40).padding(.horizontal, AppSpacing.xxl)
                         } else {
                             ForEach(available) { doc in
                                 Button {
@@ -113,7 +113,7 @@ struct DocumentLinkPicker: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Link document")
@@ -183,7 +183,7 @@ struct TaskLinkPicker: View {
                             Text("No tasks available to link.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.top, 40).padding(.horizontal, 24)
+                                .padding(.top, 40).padding(.horizontal, AppSpacing.xxl)
                         } else {
                             ForEach(available) { task in
                                 Button {
@@ -208,7 +208,7 @@ struct TaskLinkPicker: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Link task")

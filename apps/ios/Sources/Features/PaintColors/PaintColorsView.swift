@@ -81,8 +81,8 @@ struct PaintColorsView: View {
                 roomsContent
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -117,7 +117,7 @@ struct PaintColorsView: View {
             Text(label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 7)
                 .background(
                     isSelected ? Color.accentColor : Color.primary.opacity(0.08),
@@ -160,7 +160,7 @@ struct PaintColorsView: View {
                     }
                 }
                 .padding(.horizontal, 2)
-                .padding(.bottom, 4)
+                .padding(.bottom, AppSpacing.xxs)
             }
         }
     }

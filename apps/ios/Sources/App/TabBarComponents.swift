@@ -121,9 +121,9 @@ struct AnimatedTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, AppSpacing.xs)
         .glassEffect(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
         .padding(.bottom, bottomPad + 4)
         .scaleEffect(1.0 - hideProgress * 0.08, anchor: .bottom)
         .opacity(max(0, 1.0 - hideProgress * 2.2))
@@ -148,7 +148,7 @@ struct AnimatedTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, AppSpacing.sm)
         .padding(.bottom, bottomPad)
         .background {
             Rectangle()
@@ -193,7 +193,7 @@ struct AnimatedTabBar: View {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)
                     .background(Color.red, in: Capsule())
                     .offset(x: 8, y: -1)
@@ -228,7 +228,7 @@ struct AnimatedTabBar: View {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)
                     .background(Color.red, in: Capsule())
                     .offset(x: 8, y: -1)

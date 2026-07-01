@@ -22,7 +22,7 @@ struct ReceiptDetailView: View {
                     deleteButton
                     Spacer(minLength: 40)
                 }
-                .padding(.horizontal, 20).padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
@@ -69,7 +69,7 @@ struct ReceiptDetailView: View {
                         Text(ReceiptCategory.label(for: receipt.category))
                             .font(AppFont.caption)
                             .foregroundStyle(receipt.categoryColor)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(receipt.categoryColor.opacity(0.12), in: Capsule())
                     }
                 }
@@ -94,7 +94,7 @@ struct ReceiptDetailView: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "receipt_items_section"))
-                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -118,9 +118,9 @@ struct ReceiptDetailView: View {
                                     .foregroundStyle(.primary)
                                     .monospacedDigit()
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                             if idx < items.count - 1 {
-                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                             }
                         }
                     }
@@ -134,7 +134,7 @@ struct ReceiptDetailView: View {
                         Text(receipt.formattedTotal)
                             .font(.system(size: 15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                 }
             }
         }
@@ -147,7 +147,7 @@ struct ReceiptDetailView: View {
         if let notes = receipt.notes, !notes.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("NOTES")
-                    .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 14) {
                     Text(notes)
                         .font(.system(size: 14))
@@ -167,9 +167,9 @@ struct ReceiptDetailView: View {
             Label(String(localized: "receipt_delete"), systemImage: "trash")
                 .font(AppFont.subheadline)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
                 .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .padding(.top, 4)
+        .padding(.top, AppSpacing.xxs)
     }
 }

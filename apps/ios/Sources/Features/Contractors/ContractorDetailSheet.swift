@@ -34,8 +34,8 @@ struct ContractorDetailSheet: View {
                         actionsSection
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("")
@@ -98,7 +98,7 @@ struct ContractorDetailSheet: View {
             ratingStars
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 8)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var ratingStars: some View {
@@ -169,7 +169,7 @@ struct ContractorDetailSheet: View {
                     .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
         }
         .buttonStyle(.plain)
     }
@@ -244,7 +244,7 @@ struct ContractorDetailSheet: View {
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -299,7 +299,7 @@ private struct EditContractorSheet: View {
                     }
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Edit Contractor").navigationBarTitleDisplayMode(.inline)
@@ -320,7 +320,7 @@ private struct EditContractorSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var divider: some View {

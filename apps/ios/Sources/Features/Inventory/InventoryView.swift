@@ -51,7 +51,7 @@ struct InventoryView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
+                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.vertical, 10)
                 }
                 if service.items.isEmpty {
                     emptyState
@@ -81,7 +81,7 @@ struct InventoryView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20).padding(.bottom, 110)
+                        .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
                 }
             }

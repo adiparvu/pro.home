@@ -16,8 +16,8 @@ struct AuditLogView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Jurnal activitate")
@@ -73,7 +73,7 @@ struct AuditLogView: View {
                 .textCase(.uppercase)
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
                 ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
@@ -119,8 +119,8 @@ struct AuditLogView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Empty state

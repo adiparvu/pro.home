@@ -29,10 +29,10 @@ struct SupplyListDetailView: View {
             PageHeader(title: list.name, subtitleKey: "SUPPLIES")
 
             searchBar
-                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, AppSpacing.xs)
 
             categoryChips
-                .padding(.bottom, 8)
+                .padding(.bottom, AppSpacing.sm)
 
             Divider().opacity(0.3)
 
@@ -91,7 +91,7 @@ struct SupplyListDetailView: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -130,7 +130,7 @@ struct SupplyListDetailView: View {
                 }
             }
             .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
-            .padding(.horizontal, 13).padding(.vertical, 6)
+            .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
             .background(isSelected ? list.swiftColor : Color.primary.opacity(0.08), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -157,7 +157,7 @@ struct SupplyListDetailView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                     } header: {
                         sectionHeader("TO BUY · \(pending.count)")
                     }
@@ -179,7 +179,7 @@ struct SupplyListDetailView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
                     } header: {
@@ -196,7 +196,7 @@ struct SupplyListDetailView: View {
                                 Spacer()
                             }
                             .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
-                            .padding(.horizontal, 28).padding(.vertical, 8)
+                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
                             .background(appBackground)
                         }
                         .buttonStyle(.plain)
@@ -205,7 +205,7 @@ struct SupplyListDetailView: View {
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
         }
     }
 
@@ -217,7 +217,7 @@ struct SupplyListDetailView: View {
                 .tracking(0.5)
             Spacer()
         }
-        .padding(.horizontal, 28).padding(.vertical, 6)
+        .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
         .background(appBackground)
     }
 

@@ -40,7 +40,7 @@ private struct DetailRow: View {
                 Text("—").foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 }
 
@@ -67,7 +67,7 @@ private struct DetailsCard<Header: View>: View {
                         ChatDateSeparator(dateStr: createdAt)
                         header()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 18)
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -79,7 +79,7 @@ private struct DetailsCard<Header: View>: View {
                 }
                 .background(Color(.secondarySystemGroupedBackground),
                             in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(16)
+                .padding(AppSpacing.lg)
 
                 Spacer()
             }
@@ -130,7 +130,7 @@ struct MessageDetailsView: View {
                     Text(summary)
                         .font(.system(size: 15))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(bubbleColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     HStack(spacing: 4) {
                         Text(message.timeDisplay)
@@ -179,7 +179,7 @@ struct DMMessageDetailsView: View {
                     Text(summary)
                         .font(.system(size: 15))
                         .foregroundStyle(isOwn ? .white : .primary)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(isOwn ? bubbleColor : Color.primary.opacity(0.12),
                                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     Text(message.timeDisplay)

@@ -58,14 +58,14 @@ struct AddPaintColorSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Paint Color")
@@ -106,7 +106,7 @@ struct AddPaintColorSheet: View {
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
@@ -127,7 +127,7 @@ struct AddPaintColorSheet: View {
                         if roomName.isEmpty { roomName = paintColorService.roomNames.first ?? "" }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, 10)
                 divider
                 Button {
@@ -140,7 +140,7 @@ struct AddPaintColorSheet: View {
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
@@ -162,7 +162,7 @@ struct AddPaintColorSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 
@@ -180,7 +180,7 @@ struct AddPaintColorSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 
@@ -200,7 +200,7 @@ struct AddPaintColorSheet: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.characters)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
@@ -224,7 +224,7 @@ struct AddPaintColorSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
@@ -233,7 +233,7 @@ struct AddPaintColorSheet: View {
             Text(title)
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()

@@ -48,8 +48,8 @@ struct ZonesListView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.base)
 
                 if filteredZones.isEmpty {
                     emptyState
@@ -75,12 +75,12 @@ struct ZonesListView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -189,14 +189,14 @@ struct ZoneListRow: View {
                 .font(AppFont.label)
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
                 .background(zone.healthColor.opacity(0.15), in: Capsule())
 
             Image(systemName: "chevron.right")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)

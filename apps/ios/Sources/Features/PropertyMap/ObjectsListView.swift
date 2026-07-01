@@ -62,8 +62,8 @@ struct ObjectsListView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.base)
 
                 if filteredElements.isEmpty {
                     emptyState
@@ -85,12 +85,12 @@ struct ObjectsListView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -129,7 +129,7 @@ struct ObjectsListView: View {
                         Text("Favorites").font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
                     .background(favoritesOnly ? Color.yellow : Color.primary.opacity(0.08), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -145,7 +145,7 @@ struct ObjectsListView: View {
                     Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 11).padding(.vertical, 8)
+                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.sm)
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -247,7 +247,7 @@ struct ObjectListRow: View {
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)

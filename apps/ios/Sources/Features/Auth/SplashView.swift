@@ -38,7 +38,7 @@ struct SplashView: View {
 
                 ProgressView()
                     .tint(.white.opacity(0.30))
-                    .padding(.top, 6)
+                    .padding(.top, AppSpacing.xs)
                     .opacity(opacity)
             }
         }

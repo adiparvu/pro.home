@@ -20,7 +20,7 @@ struct SiriShortcutsView: View {
                             .font(AppFont.footnote)
                             .foregroundStyle(.primary)
                     }
-                    .padding(14)
+                    .padding(AppSpacing.base)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(red: 0.15, green: 0.80, blue: 0.40).opacity(0.1),
                                 in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -32,8 +32,8 @@ struct SiriShortcutsView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -138,7 +138,7 @@ struct SiriShortcutsView: View {
             }
             .padding(.leading, 44)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
     }
 
     // MARK: Donate + Shortcuts app link
@@ -199,7 +199,7 @@ struct SiriShortcutsView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, AppSpacing.sm)
         }
     }
 
@@ -210,13 +210,13 @@ struct SiriShortcutsView: View {
             .font(AppFont.label)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, 8)
+            .padding(.bottom, AppSpacing.sm)
     }
 
     private var rowDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
     }
 }

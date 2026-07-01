@@ -73,7 +73,7 @@ struct StickerPicker: View {
             .accessibilityLabel("Close")
         }
         .padding(.horizontal, 18)
-        .padding(.bottom, 8)
+        .padding(.bottom, AppSpacing.sm)
     }
 
     private var categoryTabs: some View {
@@ -92,8 +92,8 @@ struct StickerPicker: View {
                     categoryButton(id: cat.id, icon: cat.icon, color: cat.color)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -140,8 +140,8 @@ struct StickerPicker: View {
                     }
                 }
             }
-            .padding(12)
-            .padding(.bottom, 24)
+            .padding(AppSpacing.md)
+            .padding(.bottom, AppSpacing.xxl)
         }
         .transition(.opacity)
         .animation(.easeInOut(duration: 0.18), value: selectedCategoryId)
@@ -198,7 +198,7 @@ struct StickerCell: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 8))
                             .foregroundStyle(.pink)
-                            .padding(4)
+                            .padding(AppSpacing.xxs)
                     }
                 }
 

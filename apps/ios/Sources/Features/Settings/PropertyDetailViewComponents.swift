@@ -35,8 +35,8 @@ extension PropertyDetailView {
 
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -79,21 +79,21 @@ extension PropertyDetailView {
                 if isUploadingPhoto {
                     ProgressView()
                         .tint(.white)
-                        .padding(12)
+                        .padding(AppSpacing.md)
                         .glassCircle()
                 } else {
                     Button { showPhotoMenu = true } label: {
                         Image(systemName: "camera.fill")
                             .font(AppFont.subheadline)
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(AppSpacing.md)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
                     .accessibilityLabel("Change photo")
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .frame(height: 280)
     }
@@ -166,8 +166,8 @@ extension PropertyDetailView {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private func rowDivider() -> some View {
@@ -211,7 +211,7 @@ extension PropertyDetailView {
                                 Circle()
                                     .fill(.blue)
                                     .frame(width: 10, height: 10)
-                                    .padding(.top, 4)
+                                    .padding(.top, AppSpacing.xxs)
                                 if idx < renovations.count - 1 {
                                     Rectangle()
                                         .fill(Color.accentColor.opacity(0.2))
@@ -268,7 +268,7 @@ extension PropertyDetailView {
                                 }
                                 Spacer()
                             }
-                            .padding(.vertical, 8)
+                            .padding(.vertical, AppSpacing.sm)
                             if idx < owners.count - 1 {
                                 Rectangle()
                                     .fill(Color.primary.opacity(0.05))
@@ -305,7 +305,7 @@ extension PropertyDetailView {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .buttonStyle(.plain)
         .liquidGlass(cornerRadius: 18)

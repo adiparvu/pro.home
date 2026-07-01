@@ -114,8 +114,8 @@ struct IoTHubView: View {
             Color.primary.opacity(0.04),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
-        .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.bottom, AppSpacing.sm)
     }
 
     private func addAction() {
@@ -143,8 +143,8 @@ struct IoTHubView: View {
                             deviceCard(device)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }
@@ -227,8 +227,8 @@ struct IoTHubView: View {
                                 .onTapGesture { selectedSensor = sensor }
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }
@@ -297,8 +297,8 @@ struct IoTHubView: View {
                             automationRow(auto)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }

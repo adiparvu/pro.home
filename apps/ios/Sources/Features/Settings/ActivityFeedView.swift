@@ -250,16 +250,16 @@ struct ActivityFeedView: View {
             PageHeader(titleKey: "Activity", subtitleKey: "PROPERTY")
 
             periodRow
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.sm)
 
             categoryRow
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
 
             memberRow
-                .padding(.top, 6)
+                .padding(.top, AppSpacing.xs)
 
-            Divider().opacity(0.3).padding(.top, 8)
+            Divider().opacity(0.3).padding(.top, AppSpacing.sm)
 
             if filteredEvents.isEmpty {
                 emptyState
@@ -283,7 +283,7 @@ struct ActivityFeedView: View {
                     Text(LocalizedStringKey(p.rawValue))
                         .font(.system(size: 12, weight: period == p ? .semibold : .regular))
                         .foregroundStyle(period == p ? .white : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 13).padding(.vertical, 6)
+                        .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
                         .background(period == p ? Color.accentColor : Color.primary.opacity(0.08),
                                     in: Capsule())
                 }
@@ -293,7 +293,7 @@ struct ActivityFeedView: View {
             Text("\(filteredEvents.count)")
                 .font(AppFont.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 10).padding(.vertical, 6)
+                .padding(.horizontal, 10).padding(.vertical, AppSpacing.xs)
                 .background(.regularMaterial, in: Capsule())
         }
     }
@@ -316,7 +316,7 @@ struct ActivityFeedView: View {
                                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                         }
                         .foregroundStyle(isSelected ? cat.color : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.xs)
                         .background(
                             isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(AppOpacity.subtleFill),
                             in: Capsule()
@@ -350,7 +350,7 @@ struct ActivityFeedView: View {
                                 .font(.system(size: 13, weight: selectedMember == name ? .semibold : .regular))
                                 .foregroundStyle(selectedMember == name ? .blue : .primary)
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(
                             selectedMember == name
                                 ? Color.accentColor.opacity(0.12)
@@ -368,7 +368,7 @@ struct ActivityFeedView: View {
                         Text("All")
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                             .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -393,14 +393,14 @@ struct ActivityFeedView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                     } header: {
                         dayHeader(LocalizedStringKey(group.label))
                     }
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
         }
     }
 
@@ -413,7 +413,7 @@ struct ActivityFeedView: View {
             Spacer()
         }
         .padding(.horizontal, 28)
-        .padding(.vertical, 6)
+        .padding(.vertical, AppSpacing.xs)
         .background(appBackground)
     }
 
@@ -446,7 +446,7 @@ struct ActivityFeedView: View {
                     memberAvatar(name: event.member, size: 18)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
 
             if !isLast {
                 Rectangle()

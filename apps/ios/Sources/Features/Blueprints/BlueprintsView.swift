@@ -31,8 +31,8 @@ struct BlueprintsView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
@@ -151,7 +151,7 @@ struct BlueprintsView: View {
             Text("SAVED PLANS & MODELS")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(service.scans) { scan in

@@ -101,7 +101,7 @@ struct PropertyMapCanvas: View {
                                     .multilineTextAlignment(.center)
                             }
                         }
-                        .padding(24)
+                        .padding(AppSpacing.xxl)
                     }
                 }
                 .frame(width: canvasW, height: canvasH)
@@ -168,7 +168,7 @@ private struct MapBackground: View {
                         ),
                         style: StrokeStyle(lineWidth: 1.5, dash: [8, 6])
                     )
-                    .padding(16)
+                    .padding(AppSpacing.lg)
             }
         }
     }
@@ -234,7 +234,7 @@ private struct ElementPin: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Color.primary.opacity(0.9))
                 .lineLimit(1)
-                .padding(.horizontal, 6)
+                .padding(.horizontal, AppSpacing.xs)
                 .padding(.vertical, 2)
                 .background(
                     Capsule().fill(Color.black.opacity(0.45))

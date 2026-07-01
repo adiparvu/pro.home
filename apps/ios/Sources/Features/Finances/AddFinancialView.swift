@@ -34,8 +34,8 @@ struct AddFinancialView: View {
                         notesField
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Record")
@@ -135,8 +135,8 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             divider
 
@@ -154,8 +154,8 @@ struct AddFinancialView: View {
                 }
                 .tint(Color.primary.opacity(AppOpacity.mediumText))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs)
 
             divider
 
@@ -167,8 +167,8 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
@@ -188,8 +188,8 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(

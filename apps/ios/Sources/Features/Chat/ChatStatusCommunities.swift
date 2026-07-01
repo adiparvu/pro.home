@@ -29,7 +29,7 @@ struct StatusView: View {
                     if !others.isEmpty {
                         Text("Recent updates")
                             .font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
 
                         VStack(spacing: 0) {
                             ForEach(others) { g in
@@ -39,20 +39,20 @@ struct StatusView: View {
                             }
                         }
                         .liquidGlass(cornerRadius: 16)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                     } else {
                         Text("No recent updates")
                             .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
-                            .padding(.horizontal, 20).padding(.top, 4)
+                            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xxs)
                     }
 
                     Text("Status updates disappear after 24 hours.")
                         .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                     Spacer(minLength: 20)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Status")
@@ -98,9 +98,9 @@ struct StatusView: View {
                     .accessibilityLabel("Add status")
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .liquidGlass(cornerRadius: 16)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
         }
         .buttonStyle(.plain)
     }
@@ -122,7 +122,7 @@ struct StatusView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
         .contentShape(Rectangle())
     }
 }
@@ -180,7 +180,7 @@ struct StoryViewer: View {
                             .frame(height: 3)
                     }
                 }
-                .padding(.horizontal, 10).padding(.top, 8)
+                .padding(.horizontal, 10).padding(.top, AppSpacing.sm)
 
                 HStack(spacing: 10) {
                     Text(group.authorName).font(AppFont.subheadline).foregroundStyle(.white)
@@ -190,14 +190,14 @@ struct StoryViewer: View {
                     }
                     .accessibilityLabel("Close")
                 }
-                .padding(.horizontal, 16).padding(.top, 8)
+                .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
 
                 Spacer()
 
                 if let cap = item?.caption, !cap.isEmpty {
                     Text(cap).font(.system(size: 16)).foregroundStyle(.white)
-                        .padding(12).background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal, 20)
+                        .padding(AppSpacing.md).background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, AppSpacing.xl)
                 }
 
                 if isMine {
@@ -268,12 +268,12 @@ struct CommunitiesView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                     }
 
                     Spacer(minLength: 20)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Communities")
@@ -303,9 +303,9 @@ struct CommunitiesView: View {
                 Spacer()
                 Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .liquidGlass(cornerRadius: 16)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
         }
         .buttonStyle(.plain)
     }
@@ -374,7 +374,7 @@ private struct GroupChatView: View {
                                                            value: g.frame(in: .named("GROUPCHATOUTER")).maxY)
                                 })
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, 10)
                     }
                     .onPreferenceChange(GroupChatBottomKey.self) { maxY in
@@ -401,7 +401,7 @@ private struct GroupChatView: View {
                             .buttonStyle(.plain)
                             .glassCircle()
                             .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, AppSpacing.sm)
                             .transition(.scale.combined(with: .opacity))
                             .accessibilityLabel("Jump to latest message")
                         }
@@ -437,7 +437,7 @@ private struct GroupChatView: View {
         HStack(spacing: 10) {
             TextField("Mesaj", text: $text, axis: .vertical)
                 .font(.system(size: 16))
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                 .liquidGlass(cornerRadius: 20)
             Button {
                 let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -453,7 +453,7 @@ private struct GroupChatView: View {
             .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
             .accessibilityLabel("Send")
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
     }
 }
 
@@ -476,7 +476,7 @@ private struct CommunityRow: View {
             Spacer()
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
         .liquidGlass(cornerRadius: 16)
     }
 }
@@ -518,7 +518,7 @@ private struct GroupSettingsSheet: View {
                     HStack(spacing: 10) {
                         TextField("Nume grup", text: $name)
                             .font(.system(size: 16))
-                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                             .liquidGlass(cornerRadius: 14)
                         Button("Salvează") {
                             Task { await service.rename(group, to: name) }
@@ -563,7 +563,7 @@ private struct GroupSettingsSheet: View {
                                     .accessibilityLabel("Remove \(m.memberName)")
                                 }
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
                             .liquidGlass(cornerRadius: 14)
                         }
                     }
@@ -572,14 +572,14 @@ private struct GroupSettingsSheet: View {
                         Label("Șterge grupul", systemImage: "trash")
                             .font(AppFont.subheadline)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AppSpacing.md)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.red)
                     .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .padding(.top, 10)
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
@@ -630,13 +630,13 @@ private struct AddGroupMembersSheet: View {
                                     .font(.system(size: 20))
                                     .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                             .liquidGlass(cornerRadius: 14)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Adaugă membri")
@@ -673,7 +673,7 @@ private struct CreateGroupSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
                     TextField("Nume grup", text: $name)
                         .font(.system(size: 16))
-                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .liquidGlass(cornerRadius: 14)
 
                     HStack(spacing: 10) {
@@ -683,7 +683,7 @@ private struct CreateGroupSheet: View {
                                     Image(systemName: k.2).font(.system(size: 20))
                                     Text(k.1).font(.system(size: 13, weight: .medium))
                                 }
-                                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                                 .background(kind == k.0 ? Color.accentColor.opacity(0.18) : Color.primary.opacity(0.04),
                                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 .foregroundStyle(kind == k.0 ? Color.accentColor : Color.primary.opacity(0.6))
@@ -706,14 +706,14 @@ private struct CreateGroupSheet: View {
                                         .font(.system(size: 20))
                                         .foregroundStyle(selectedIds.contains(m.id) ? Color.accentColor : Color.primary.opacity(0.25))
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 10)
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                                 .liquidGlass(cornerRadius: 14)
                             }
                             .buttonStyle(.plain)
                         }
                     }
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Grup nou")

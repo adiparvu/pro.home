@@ -113,9 +113,9 @@ struct ARIAView: View {
                                                        value: g.frame(in: .named("ariaScroll")).minY)
                             })
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .padding(.bottom, 20)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.xl)
                 }
             }
             .coordinateSpace(name: "ariaScroll")
@@ -167,8 +167,8 @@ struct ARIAView: View {
                     onConfirm: { confirmAction(action) },
                     onCancel: { proposedAction = nil }
                 )
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -193,7 +193,7 @@ struct ARIAView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -325,8 +325,8 @@ struct ARIAView: View {
                     .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isThinking)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.md)
             .padding(.bottom, 10)
             .background(.ultraThinMaterial)
             .overlay(alignment: .top) {
@@ -566,7 +566,7 @@ private struct ARIAMessageBubble: View {
             Text(LocalizedStringKey(message.content))
                 .font(.body)
                 .foregroundStyle(isUser ? .white : .primary)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(
                     isUser
@@ -608,7 +608,7 @@ private struct ThinkingBubble: View {
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .liquidGlass(cornerRadius: 18)
             Spacer(minLength: 48)
         }
@@ -654,7 +654,7 @@ private struct ARIAActionBanner: View {
                         .font(AppFont.captionEmphasis)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppSpacing.sm)
                         .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -664,14 +664,14 @@ private struct ARIAActionBanner: View {
                         .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppSpacing.sm)
                         .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

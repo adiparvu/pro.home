@@ -31,7 +31,7 @@ struct ItemDetailView: View {
                         if !live.notes.isEmpty { notesCard }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Item Detail").navigationBarTitleDisplayMode(.inline)
@@ -73,11 +73,11 @@ struct ItemDetailView: View {
                 conditionBadge
                 Text(LocalizedStringKey(live.location.capitalized))
                     .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
                     .background(Color.primary.opacity(0.08), in: Capsule())
             }
         }
-        .padding(.top, 4)
+        .padding(.top, AppSpacing.xxs)
     }
 
     private var conditionBadge: some View {
@@ -85,7 +85,7 @@ struct ItemDetailView: View {
         let color = map[live.condition] ?? .gray
         return Text(LocalizedStringKey(live.condition.capitalized))
             .font(AppFont.caption).foregroundStyle(color)
-            .padding(.horizontal, 10).padding(.vertical, 4)
+            .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
             .background(color.opacity(0.15), in: Capsule())
     }
 
@@ -116,7 +116,7 @@ struct ItemDetailView: View {
                                         .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                                 }
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                         }
                     }
                 }
@@ -132,7 +132,7 @@ struct ItemDetailView: View {
             Spacer()
             Text(value).font(.system(size: 13)).foregroundStyle(color)
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
 
     private var rowDiv: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
@@ -169,10 +169,10 @@ struct ItemDetailView: View {
                     Spacer()
                     if live.isLoaned {
                         Text("OUT").font(.system(size: 11, weight: .bold)).foregroundStyle(.orange)
-                            .padding(.horizontal, 8).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(.orange.opacity(0.15), in: Capsule())
                     } else {
                         Text("IN").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
-                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     }
                 }
                 if let loan = live.currentLoan {
@@ -184,20 +184,20 @@ struct ItemDetailView: View {
                             loanRow("Expected return", ret.formatted(date: .abbreviated, time: .omitted))
                         }
                     }
-                    .padding(12).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(AppSpacing.md).background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
 
                     Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
                         Label("Mark as Returned", systemImage: "checkmark.circle.fill")
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
                 } else {
                     Button { HapticFeedback.impact(.medium); showLoan = true } label: {
                         Label("Loan Out to Someone", systemImage: "arrow.uturn.right.circle.fill")
                             .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
-                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
                 }
@@ -255,7 +255,7 @@ struct ItemDetailView: View {
                     if !live.trackerType.isEmpty {
                         Text(LocalizedStringKey(live.trackerType == "airtag" ? "AirTag" : live.trackerType.capitalized))
                             .font(AppFont.label).foregroundStyle(.orange)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(.orange.opacity(0.15), in: Capsule())
                     }
                 }
@@ -312,11 +312,11 @@ struct ItemDetailView: View {
                     if live.publicProfile != nil {
                         Text("ON").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.15), in: Capsule())
                     } else {
                         Text("OFF").font(.system(size: 11, weight: .bold)).foregroundStyle(Color.primary.opacity(0.3))
-                            .padding(.horizontal, 8).padding(.vertical, 3).background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3).background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                 }
                 Text("Anyone who scans the QR code will see a web page with your contact details so they can return the item.")

@@ -39,7 +39,7 @@ struct LockScreenView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, AppSpacing.lg)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .buttonStyle(.plain)

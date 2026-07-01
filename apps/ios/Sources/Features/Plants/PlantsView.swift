@@ -84,8 +84,8 @@ struct PlantsView: View {
                 plantsGrid
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(
@@ -180,7 +180,7 @@ struct PlantsView: View {
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(
                 columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -312,7 +312,7 @@ struct PlantCard: View {
                                 .foregroundStyle(Color.primary.opacity(0.4))
                         }
                     }
-                    .padding(12)
+                    .padding(AppSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }

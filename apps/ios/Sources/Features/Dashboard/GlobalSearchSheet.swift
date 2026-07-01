@@ -117,9 +117,9 @@ struct GlobalSearchSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 searchBar
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.md)
                 Divider().opacity(0.3)
                 Group {
                     if !active {
@@ -191,7 +191,7 @@ struct GlobalSearchSheet: View {
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .background(Color.primary.opacity(AppOpacity.hairline),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -253,8 +253,8 @@ struct GlobalSearchSheet: View {
                 deliveriesSectionView
                 Spacer(minLength: 60)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
         }
     }
 
@@ -602,7 +602,7 @@ struct GlobalSearchSheet: View {
                 .font(AppFont.label)
                 .foregroundStyle(color)
                 .tracking(0.5)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
             GlassCard(padding: 0) {
                 VStack(spacing: 0) { body }
             }
@@ -640,7 +640,7 @@ struct GlobalSearchSheet: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.22))
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 11)
                 if !isLast {
                     Rectangle()

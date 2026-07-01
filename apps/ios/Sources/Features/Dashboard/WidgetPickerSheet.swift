@@ -229,7 +229,7 @@ struct WidgetPickerSheet: View {
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppSpacing.xxs)
         .contentShape(Rectangle())
     }
 }

@@ -34,7 +34,7 @@ struct MemberSupervisionDetailView: View {
                     if supervised { infoCard }
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20).padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 .animation(.spring(response: 0.4), value: supervised)
             }
         }
@@ -66,7 +66,7 @@ struct MemberSupervisionDetailView: View {
                         tick.toggle()
                     }
             }
-            .padding(.horizontal, 14).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.base)
         }
     }
 
@@ -77,7 +77,7 @@ struct MemberSupervisionDetailView: View {
             Text("WHAT THEY CAN SEE")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -107,7 +107,7 @@ struct MemberSupervisionDetailView: View {
                                 .labelsHidden()
                                 .tint(.accentColor)
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
 
                             if idx < SupervisionSettings.Section.allCases.count - 1 {
                                 Rectangle()
@@ -127,7 +127,7 @@ struct MemberSupervisionDetailView: View {
             Text("NOTIFICATIONS")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 HStack(spacing: 12) {
@@ -155,7 +155,7 @@ struct MemberSupervisionDetailView: View {
                             HapticFeedback.selection()
                         }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             }
         }
     }

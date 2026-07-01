@@ -62,7 +62,7 @@ struct AddUtilitySheet: View {
                                         .font(AppFont.headline).foregroundStyle(.primary)
                                         .tint(.accentColor).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
-                                }.padding(.vertical, 4)
+                                }.padding(.vertical, AppSpacing.xxs)
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
                                 HStack {
                                     Text("Consumption (\(units[type] ?? "units"))").font(.system(size: 15)).foregroundStyle(.primary)
@@ -71,7 +71,7 @@ struct AddUtilitySheet: View {
                                         .font(.system(size: 16)).foregroundStyle(.primary)
                                         .tint(.accentColor).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
-                                }.padding(.vertical, 4)
+                                }.padding(.vertical, AppSpacing.xxs)
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5)
                                 DatePicker("Month", selection: $month, displayedComponents: [.date])
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
@@ -79,7 +79,7 @@ struct AddUtilitySheet: View {
                         }
                         Spacer(minLength: 20)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Bill").navigationBarTitleDisplayMode(.inline)
@@ -151,7 +151,7 @@ struct AddUtilitySheet: View {
                     }
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, AppSpacing.base)
                     .background(
                         LinearGradient(
                             colors: [.blue.opacity(0.7), .purple.opacity(0.7)],

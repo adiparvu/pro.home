@@ -27,7 +27,7 @@ struct QuickActionButton: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 110)
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(
                 LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -125,7 +125,7 @@ struct AddPlanSheet: View {
                         kindPicker
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Plan").navigationBarTitleDisplayMode(.inline)
@@ -209,7 +209,7 @@ struct AddPlanSheet: View {
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
@@ -230,7 +230,7 @@ struct AddPlanSheet: View {
                     Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     Spacer()
                 }
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
             }
         }
@@ -242,14 +242,14 @@ struct AddPlanSheet: View {
             TextField("Name", text: $name)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var kindPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CATEGORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, 4)
+            Text("CATEGORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in
@@ -257,7 +257,7 @@ struct AddPlanSheet: View {
                             Text(LocalizedStringKey(kindLabel(k)))
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
                                 .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(kind == k ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }

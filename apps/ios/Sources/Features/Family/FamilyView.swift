@@ -36,7 +36,7 @@ struct FamilyView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         .padding(.bottom, 110)
                     }
                 }
@@ -214,7 +214,7 @@ struct MemberPickerView: View {
                                 .frame(width: 22, height: 22)
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)

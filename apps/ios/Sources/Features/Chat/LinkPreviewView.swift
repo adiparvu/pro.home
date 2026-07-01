@@ -73,7 +73,7 @@ struct LinkPreviewView: View {
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .lineLimit(1)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 8)
+                .padding(.horizontal, 10).padding(.vertical, AppSpacing.sm)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: 240, alignment: .leading)

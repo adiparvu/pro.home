@@ -40,7 +40,7 @@ struct ChatActionOverlay: View {
                 bubble
                 menu
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
             .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
             .scaleEffect(reduceMotion ? 1 : (appear ? 1 : 0.92))
             .opacity(appear ? 1 : 0)
@@ -60,7 +60,7 @@ struct ChatActionOverlay: View {
                     Text(e)
                         .font(.system(size: 28))
                         .scaleEffect(myReaction == e ? 1.2 : 1)
-                        .padding(4)
+                        .padding(AppSpacing.xxs)
                         .background(myReaction == e ? Color.accentColor.opacity(0.18) : Color.clear, in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -79,7 +79,7 @@ struct ChatActionOverlay: View {
             .buttonStyle(.plain)
             .accessibilityLabel("More reactions")
         }
-        .padding(.horizontal, 14).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
         .background(.regularMaterial, in: Capsule())
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
         .sheet(isPresented: $showEmojiPicker) {
@@ -95,7 +95,7 @@ struct ChatActionOverlay: View {
         Text(previewText)
             .font(.system(size: 15))
             .foregroundStyle(isOwn ? .white : .primary)
-            .padding(.horizontal, 14).padding(.vertical, 9)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
             .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .frame(maxWidth: 280, alignment: isOwn ? .trailing : .leading)
@@ -116,11 +116,11 @@ struct ChatActionOverlay: View {
                             .font(.system(size: 17))
                     }
                     .foregroundStyle(item.destructive ? Color.red : Color.primary)
-                    .padding(.horizontal, 16).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if idx < actions.count - 1 { Divider().padding(.leading, 16) }
+                if idx < actions.count - 1 { Divider().padding(.leading, AppSpacing.lg) }
             }
         }
         .frame(width: 240)
@@ -168,7 +168,7 @@ struct EmojiGridPicker: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Reactions")

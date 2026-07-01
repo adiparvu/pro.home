@@ -24,13 +24,13 @@ struct InterAppChatView: View {
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 14)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                     .liquidGlass(cornerRadius: 16)
 
                     Text("Permite să ți se trimită mesaje pe PRV HOUSE din aplicațiile terțe selectate.")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, AppSpacing.xs)
                 }
 
                 if enabled {
@@ -41,13 +41,13 @@ struct InterAppChatView: View {
                                 .font(.system(size: 16))
                                 .foregroundStyle(.primary)
                         }
-                        .padding(.horizontal, 16).padding(.vertical, 14)
+                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                         .liquidGlass(cornerRadius: 16)
 
                         Text("Primești notificare când cineva vrea să-ți trimită mesaj din altă aplicație.")
                             .font(.system(size: 13))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, AppSpacing.xs)
                     }
                 }
 
@@ -62,7 +62,7 @@ struct InterAppChatView: View {
                             .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.accentColor.opacity(0.5))
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 14)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
                     .liquidGlass(cornerRadius: 16)
                     .contentShape(Rectangle())
                 }
@@ -72,12 +72,12 @@ struct InterAppChatView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, AppSpacing.xs)
 
                 Spacer(minLength: 60)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -93,7 +93,7 @@ struct InterAppChatView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 12)
+                        .padding(.top, AppSpacing.md)
 
                     Text("Ce sunt conversațiile inter-aplicații")
                         .font(.system(size: 20, weight: .bold))
@@ -108,7 +108,7 @@ struct InterAppChatView: View {
 
                     Spacer(minLength: 40)
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Despre")

@@ -43,7 +43,7 @@ struct ChatAttachmentSheet: View {
                         option("Event", "calendar", .red) { pick(onEvent) }
                     }
                 }
-                .padding(24)
+                .padding(AppSpacing.xxl)
                 .frame(maxHeight: .infinity, alignment: .top)
             }
             .navigationTitle("Share")

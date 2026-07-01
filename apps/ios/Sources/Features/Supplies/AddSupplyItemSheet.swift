@@ -54,7 +54,7 @@ struct AddSupplyItemSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(editingItem == nil ? String(localized: "New Item") : String(localized: "Edit Item"))
@@ -79,7 +79,7 @@ struct AddSupplyItemSheet: View {
             fieldLabel("NAME")
             TextField("What needs to be bought?", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -89,7 +89,7 @@ struct AddSupplyItemSheet: View {
             fieldLabel("QUANTITY (OPTIONAL)")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -99,7 +99,7 @@ struct AddSupplyItemSheet: View {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -109,7 +109,7 @@ struct AddSupplyItemSheet: View {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .lineLimit(2...5).padding(14)
+                .lineLimit(2...5).padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -126,7 +126,7 @@ struct AddSupplyItemSheet: View {
                                 Text(l.name).font(.system(size: 13))
                             }
                             .foregroundStyle(selectedListId == l.id ? .white : .primary)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(selectedListId == l.id ? l.swiftColor : Color.primary.opacity(0.08),
                                         in: Capsule())
                         }
@@ -171,7 +171,7 @@ struct AddSupplyItemSheet: View {
                         Text(p.label)
                             .font(.system(size: 13, weight: priority == p.id ? .semibold : .regular))
                             .foregroundStyle(priority == p.id ? .white : Color.primary.opacity(0.65))
-                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(priority == p.id ? item.priorityColor : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Capsule())
                     }

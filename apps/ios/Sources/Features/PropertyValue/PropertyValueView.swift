@@ -76,8 +76,8 @@ struct PropertyValueView: View {
                 entriesList
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -207,7 +207,7 @@ struct PropertyValueView: View {
             Text("HISTORY")
                 .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 6)
+                .padding(.leading, AppSpacing.xs)
 
             LazyVStack(spacing: 10) {
                 ForEach(entries.reversed()) { entry in

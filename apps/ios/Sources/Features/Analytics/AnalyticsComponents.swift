@@ -116,7 +116,7 @@ struct FinancesSection: View {
             .disabled(isCurrentMonth)
             .accessibilityLabel("Next month")
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, AppSpacing.sm)
     }
 
     private var monthLabel: String {

@@ -56,7 +56,7 @@ struct ElementTypePickerSheet: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                 }
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search type")

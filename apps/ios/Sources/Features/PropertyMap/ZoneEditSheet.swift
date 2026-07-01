@@ -50,7 +50,7 @@ struct ZoneEditSheet: View {
                     field("NAME") {
                         TextField("Zone name", text: $name)
                             .font(.system(size: 16))
-                            .padding(14)
+                            .padding(AppSpacing.base)
                             .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     field("PHOTO") { photoPickerSection }
@@ -64,12 +64,12 @@ struct ZoneEditSheet: View {
                         Label("Delete zone", systemImage: "trash")
                             .font(AppFont.subheadline)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, AppSpacing.base)
                             .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .padding(.top, 4)
+                    .padding(.top, AppSpacing.xxs)
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Edit zone")
@@ -146,7 +146,7 @@ struct ZoneEditSheet: View {
                         .padding(7)
                         .background(.regularMaterial, in: Circle())
                 }
-                .padding(8)
+                .padding(AppSpacing.sm)
             }
         }
     }
@@ -176,7 +176,7 @@ struct ZoneEditSheet: View {
             }
             Spacer()
         }
-        .padding(16)
+        .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
@@ -228,7 +228,7 @@ struct ZoneEditSheet: View {
                 .clipShape(Circle())
                 .scaleEffect(Self.palette.contains(colorHex) ? 1.0 : 1.12)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -259,7 +259,7 @@ struct ZoneEditSheet: View {
                         Text(LocalizedStringKey(l.displayName)).font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(active ? .white : .primary)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
                     .background(active ? l.color : Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { layer = l }

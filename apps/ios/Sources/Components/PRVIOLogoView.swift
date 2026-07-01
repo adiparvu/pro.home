@@ -150,6 +150,6 @@ struct PRVIOLogoView: View {
         PRVIOLogoView(size: 96)
         PRVIOLogoView(size: 96).preferredColorScheme(.dark)
     }
-    .padding(24)
+    .padding(AppSpacing.xxl)
     .background(.gray.opacity(0.15))
 }

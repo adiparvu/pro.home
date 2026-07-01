@@ -23,7 +23,7 @@ struct AIInsightsView: View {
                 // Blue orb hero
                 orbHero
                     .padding(.top, 28)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, AppSpacing.xxl)
 
                 // Recommendations section
                 VStack(alignment: .leading, spacing: 8) {
@@ -40,7 +40,7 @@ struct AIInsightsView: View {
                                 .background(Color.accentColor, in: Capsule())
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     GlassCard(padding: 0) {
                         VStack(spacing: 0) {
@@ -50,7 +50,7 @@ struct AIInsightsView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer().frame(height: 28)
@@ -80,7 +80,7 @@ struct AIInsightsView: View {
                     .shadow(color: Color(red: 0.35, green: 0.30, blue: 0.90).opacity(0.45), radius: 14, y: 4)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 14)
 
@@ -102,7 +102,7 @@ struct AIInsightsView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 10)
 
@@ -121,7 +121,7 @@ struct AIInsightsView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer(minLength: 32)
             }
@@ -202,7 +202,7 @@ struct AIInsightsView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(Color(red: 0.20, green: 0.82, blue: 0.48).opacity(0.6))
-                .padding(.top, 20)
+                .padding(.top, AppSpacing.xl)
             Text(String(localized: "ai_insights_all_good"))
                 .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.55))
@@ -212,7 +212,7 @@ struct AIInsightsView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, AppSpacing.xxl)
     }
 
     // MARK: - Compute insights from live data
@@ -367,7 +367,7 @@ struct AIInsightRow: View {
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, 13)
 
             if !isLast {

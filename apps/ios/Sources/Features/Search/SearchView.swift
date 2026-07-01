@@ -51,9 +51,9 @@ struct SearchView: View {
 
                 VStack(spacing: 0) {
                     searchBar
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.sm)
+                        .padding(.bottom, AppSpacing.md)
 
                     if query.count < 2 {
                         recentHints
@@ -121,7 +121,7 @@ struct SearchView: View {
                 .accessibilityLabel("Voice search")
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .background(
             speech.isListening
@@ -254,8 +254,8 @@ struct SearchView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
             .padding(.bottom, 100)
         }
     }
@@ -299,7 +299,7 @@ private struct SearchSection<Content: View>: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(0.2))
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 6) { content }
         }
@@ -338,7 +338,7 @@ private struct SearchRow: View {
                     .background(badgeColor.opacity(0.12), in: Capsule())
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
