@@ -11,8 +11,8 @@ final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
     var isRecording = false
     var duration: TimeInterval = 0
 
-    private var recorder: AVAudioRecorder?
-    private var timer: Timer?
+    @ObservationIgnored private var recorder: AVAudioRecorder?
+    @ObservationIgnored private var timer: Timer?
     private(set) var recordingURL: URL?
 
     func start() {
@@ -410,9 +410,9 @@ final class AudioPlayer {
     var rate: Float = 1.0
     var totalDuration: TimeInterval = 0
 
-    private var player: AVPlayer?
-    private var timeObserverToken: Any?
-    private var endObserver: NSObjectProtocol?
+    @ObservationIgnored private var player: AVPlayer?
+    @ObservationIgnored private var timeObserverToken: Any?
+    @ObservationIgnored private var endObserver: NSObjectProtocol?
 
     func play(url: URL) {
         stop()
