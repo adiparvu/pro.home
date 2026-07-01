@@ -32329,6 +32329,870 @@
           }
         }
       }
+    },
+    "Mark a message to find it here later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark a message to find it here later."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează un mesaj ca să-l găsești aici mai târziu."
+          }
+        }
+      }
+    },
+    "No starred messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No starred messages"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niciun mesaj marcat"
+          }
+        }
+      }
+    },
+    "Slide to cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to cancel"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glisează pentru a anula"
+          }
+        }
+      }
+    },
+    "Starred messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starred messages"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaje marcate"
+          }
+        }
+      }
+    },
+    "You blocked this contact.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You blocked this contact."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai blocat acest contact."
+          }
+        }
+      }
+    },
+    "typingâ¦": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "typing…"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "scrie…"
+          }
+        }
+      }
+    },
+    "Ãncepe conversaÈia privatÄ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start the private conversation"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Începe conversația privată"
+          }
+        }
+      }
+    },
+    "AdaugÄ membri familiei pentru a Ã®ncepe.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add family members to get started."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă membri familiei pentru a începe."
+          }
+        }
+      }
+    },
+    "Archived": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arhivate"
+          }
+        }
+      }
+    },
+    "Asistent AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Assistant"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistent AI"
+          }
+        }
+      }
+    },
+    "Chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        }
+      }
+    },
+    "ConversaÈia va fi golitÄ Èi arhivatÄ pe acest dispozitiv.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The conversation will be cleared and archived on this device."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversația va fi golită și arhivată pe acest dispozitiv."
+          }
+        }
+      }
+    },
+    "ConversaÈie nouÄ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New conversation"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversație nouă"
+          }
+        }
+      }
+    },
+    "ConversaÈii arhivate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived conversations"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversații arhivate"
+          }
+        }
+      }
+    },
+    "Mark all as read": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark all as read"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează toate ca citite"
+          }
+        }
+      }
+    },
+    "New contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New contact"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact nou"
+          }
+        }
+      }
+    },
+    "Nicio conversaÈie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No conversations"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio conversație"
+          }
+        }
+      }
+    },
+    "Èterge conversaÈia": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete conversation"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge conversația"
+          }
+        }
+      }
+    },
+    "%@ is sharing live location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is sharing live location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ partajează locația în timp real"
+          }
+        }
+      }
+    },
+    "%d people are sharing live location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d people are sharing live location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d persoane partajează locația în timp real"
+          }
+        }
+      }
+    },
+    "Distribuie locaÈia Ã®n timp real": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share live location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distribuie locația în timp real"
+          }
+        }
+      }
+    },
+    "HÄrÈi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maps"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hărți"
+          }
+        }
+      }
+    },
+    "HÄrÈi Google": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Maps"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hărți Google"
+          }
+        }
+      }
+    },
+    "Locuri din apropiere": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nearby places"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locuri din apropiere"
+          }
+        }
+      }
+    },
+    "Shared location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locație partajată"
+          }
+        }
+      }
+    },
+    "Stop sharing live location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop sharing live location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oprește partajarea locației în timp real"
+          }
+        }
+      }
+    },
+    "Trimite locaÈia curentÄ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send current location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite locația curentă"
+          }
+        }
+      }
+    },
+    "Trimitere locaÈie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send location"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimitere locație"
+          }
+        }
+      }
+    },
+    "Add Controller": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Controller"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă controler"
+          }
+        }
+      }
+    },
+    "Add Sensor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Sensor"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă senzor"
+          }
+        }
+      }
+    },
+    "Alert above": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert above"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertă peste"
+          }
+        }
+      }
+    },
+    "Alert below": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alert below"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertă sub"
+          }
+        }
+      }
+    },
+    "Currently alerting": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently alerting"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertează acum"
+          }
+        }
+      }
+    },
+    "New Automation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Automation"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatizare nouă"
+          }
+        }
+      }
+    },
+    "No sensors yet â poll the device to auto-discover.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No sensors yet — poll the device to auto-discover."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Încă niciun senzor — interoghează dispozitivul pentru descoperire automată."
+          }
+        }
+      }
+    },
+    "Poll Now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poll Now"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interoghează acum"
+          }
+        }
+      }
+    },
+    "Port": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Port"
+          }
+        }
+      }
+    },
+    "Register Address": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Register Address"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresă registru"
+          }
+        }
+      }
+    },
+    "Remove Controller": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Controller"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină controlerul"
+          }
+        }
+      }
+    },
+    "Remove Sensor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Sensor"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimină senzorul"
+          }
+        }
+      }
+    },
+    "Scale Factor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scale Factor"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Factor de scalare"
+          }
+        }
+      }
+    },
+    "Select sensor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select sensor"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selectează senzorul"
+          }
+        }
+      }
+    },
+    "Test Connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Connection"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testează conexiunea"
+          }
+        }
+      }
+    },
+    "Unit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unit"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unitate"
+          }
+        }
+      }
+    },
+    "Unit ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unit ID"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID unitate"
+          }
+        }
+      }
+    },
+    "ActiveazÄ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează"
+          }
+        }
+      }
+    },
+    "Ce sunt conversaÈiile inter-aplicaÈii": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What are cross-app chats"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce sunt conversațiile inter-aplicații"
+          }
+        }
+      }
+    },
+    "ConversaÈiile inter-aplicaÈii Ã®Èi permit sÄ primeÈti Èi sÄ trimiÈi mesaje cÄtre persoane care folosesc alte aplicaÈii de mesagerie compatibile, fÄrÄ sÄ pÄrÄseÈti PRV HOUSE.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cross-app chats let you receive and send messages to people using other compatible messaging apps, without leaving PRV HOUSE."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversațiile inter-aplicații îți permit să primești și să trimiți mesaje către persoane care folosesc alte aplicații de mesagerie compatibile, fără să părăsești PRV HOUSE."
+          }
+        }
+      }
+    },
+    "Despre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despre"
+          }
+        }
+      }
+    },
+    "Despre conversaÈiile inter-aplicaÈii": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About cross-app chats"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despre conversațiile inter-aplicații"
+          }
+        }
+      }
+    },
+    "Mesageria Ã®ntre aplicaÈii este Ã®n pregÄtire â necesitÄ un serviciu de interoperabilitate. PreferinÈele tale sunt salvate de pe acum.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cross-app messaging is in the works — it requires an interoperability service. Your preferences are saved already."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesageria între aplicații este în pregătire — necesită un serviciu de interoperabilitate. Preferințele tale sunt salvate de pe acum."
+          }
+        }
+      }
+    },
+    "Permite sÄ Èi se trimitÄ mesaje pe PRV HOUSE din aplicaÈiile terÈe selectate.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow people to message you on PRV HOUSE from selected third-party apps."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite să ți se trimită mesaje pe PRV HOUSE din aplicațiile terțe selectate."
+          }
+        }
+      }
+    },
+    "PrimeÈti notificare cÃ¢nd cineva vrea sÄ-Èi trimitÄ mesaj din altÄ aplicaÈie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get notified when someone wants to message you from another app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primești notificare când cineva vrea să-ți trimită mesaj din altă aplicație."
+          }
+        }
+      }
+    },
+    "SolicitÄri din aplicaÈii terÈe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Third-party app requests"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicitări din aplicații terțe"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
