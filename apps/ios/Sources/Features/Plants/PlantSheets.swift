@@ -166,6 +166,7 @@ struct AddPlantSheet: View {
                                         .shadow(radius: 2)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Remove photo")
                                 .padding(10)
                             }
                             Spacer()

@@ -37,6 +37,7 @@ struct PlantsView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add plant")
             }
         }
         .sheet(isPresented: $showAddPlant) {
