@@ -58,6 +58,7 @@ struct ContractorDetailSheet: View {
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Menu")
                 }
             }
             .confirmationDialog("Delete \(contractor.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {

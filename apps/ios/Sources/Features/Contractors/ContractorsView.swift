@@ -202,6 +202,7 @@ struct ContractorsView: View {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add contractor")
             }
         }
     }
@@ -231,6 +232,7 @@ private struct ContractorRow: View {
                             .frame(width: 38, height: 38)
                     }
                     .glassCircle()
+                    .accessibilityLabel("Call contractor")
                 }
             }
         }
