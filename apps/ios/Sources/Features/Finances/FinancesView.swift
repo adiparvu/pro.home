@@ -110,6 +110,7 @@ struct FinancesView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .semibold))
                 }
+                .accessibilityLabel("Add transaction")
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -142,5 +143,6 @@ struct FinancesView: View {
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.primary)
         }
+        .accessibilityLabel("Filter transactions")
     }
 }

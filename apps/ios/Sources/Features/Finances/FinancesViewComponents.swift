@@ -43,6 +43,7 @@ extension FinancesView {
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Previous month")
 
                 Text(monthLabel)
                     .font(.system(size: 14, weight: .semibold))
@@ -63,6 +64,7 @@ extension FinancesView {
                 }
                 .buttonStyle(.plain)
                 .disabled(isCurrentMonth)
+                .accessibilityLabel("Next month")
             }
             .padding(.top, 8)
 
