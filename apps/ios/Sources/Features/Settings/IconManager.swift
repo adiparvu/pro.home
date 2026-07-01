@@ -129,8 +129,8 @@ struct IconColorSchemeWatcher: View {
 final class IconManager {
     var selectedGroup: AppIconThemeGroup
 
-    @AppStorage("prvio.selectedIconGroup") private var savedGroupId: String = "clasic"
-    @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true
+    @ObservationIgnored @AppStorage("prvio.selectedIconGroup") private var savedGroupId: String = "clasic"
+    @ObservationIgnored @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true
 
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
 
