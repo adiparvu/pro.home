@@ -96,7 +96,7 @@ struct AddPropertyValueSheet: View {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .disabled((Double(valueText) ?? 0) <= 0 || isSaving)
                     }
@@ -149,7 +149,7 @@ struct AddPropertyValueSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
                 .textCase(.uppercase)

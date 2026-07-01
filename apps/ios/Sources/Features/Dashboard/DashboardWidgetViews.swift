@@ -38,7 +38,7 @@ struct WeatherWidget: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cityName.isEmpty ? "Proprietatea mea" : cityName)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
                                 if let w = weatherService.currentWeather {
@@ -74,7 +74,7 @@ struct WeatherWidget: View {
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(dateString(ctx.date))
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(AppFont.caption)
                                     .foregroundStyle(.white.opacity(0.80))
                             }
                         }
@@ -163,7 +163,7 @@ struct CalendarLargeWidget: View {
                     // Day name + mini week strip
                     VStack(alignment: .leading, spacing: 8) {
                         Text(dayName(ctx.date))
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppFont.title3)
                             .foregroundStyle(.primary)
 
                         HStack(spacing: 6) {

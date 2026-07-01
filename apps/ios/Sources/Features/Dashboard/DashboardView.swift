@@ -158,7 +158,7 @@ struct DashboardView: View {
 
             Button { HapticFeedback.impact(.light); showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
             }
@@ -267,7 +267,7 @@ struct DashboardView: View {
                 router.selectedTab = .digitalTwin
             } label: {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 34, height: 34)
                     .glassCircle()
@@ -280,7 +280,7 @@ struct DashboardView: View {
             if let name = propertyService.primary?.name {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(name)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white.opacity(0.9))
                     if let addr = propertyService.primary?.addressLine1 {
                         Text(addr)
@@ -339,7 +339,7 @@ struct DashboardView: View {
     private var widgetSectionHeader: some View {
         HStack {
             Text("OVERVIEW")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
             Spacer()
             if isEditingWidgets {
@@ -352,7 +352,7 @@ struct DashboardView: View {
                     }
                 } label: {
                     Text("Done")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .background(Color.accentColor.opacity(0.1), in: Capsule())
@@ -368,7 +368,7 @@ struct DashboardView: View {
                         }
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(Color.primary.opacity(0.7))
                             .frame(width: 32, height: 32)
                     }
@@ -381,7 +381,7 @@ struct DashboardView: View {
                         showWidgetPicker = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.7))
                             .frame(width: 32, height: 32)
                     }

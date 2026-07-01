@@ -140,12 +140,12 @@ struct SpendingReportView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
+                        .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
                         .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Text("\(selectedYear)").font(.system(size: 15, weight: .semibold))
+                Text("\(selectedYear)").font(AppFont.subheadline)
                 Spacer()
                 Button {
                     if selectedYear < Calendar.current.component(.year, from: Date()) {
@@ -153,7 +153,7 @@ struct SpendingReportView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(selectedYear < Calendar.current.component(.year, from: Date()) ? .secondary : Color.primary.opacity(0.2))
                         .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
                 }
@@ -177,20 +177,20 @@ struct SpendingReportView: View {
                 HapticFeedback.selection()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
+                    .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
                     .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Previous month")
             Spacer()
-            Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(.system(size: 15, weight: .semibold))
+            Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(AppFont.subheadline)
             Spacer()
             Button {
                 let next = receiptService.nextMonthKey(from: selectedMonth)
                 if next != selectedMonth { selectedMonth = next; HapticFeedback.selection() }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(selectedMonth == receiptService.currentMonthKey ? Color.primary.opacity(0.2) : .secondary)
                     .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
             }
@@ -203,7 +203,7 @@ struct SpendingReportView: View {
     private func reportChartCard(title: String, data: [DailySpend], unit: Calendar.Component) -> some View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).tracking(0.8)
+                Text(title).font(AppFont.captionStrong).foregroundStyle(.secondary).tracking(0.8)
 
                 let calUnit: Calendar.Component = unit
                 Chart(data) { day in
@@ -256,7 +256,7 @@ struct SpendingReportView: View {
     private func statBadge(icon: String, value: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 11)).foregroundStyle(color)
-            Text(value).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+            Text(value).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
         }
     }
 
@@ -284,7 +284,7 @@ struct SpendingReportView: View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(String(localized: "expense_section_categories"))
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).tracking(0.8)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary).tracking(0.8)
 
                 let total = cats.reduce(0) { $0 + $1.total }
                 ForEach(cats.prefix(8)) { cat in
@@ -293,7 +293,7 @@ struct SpendingReportView: View {
                             Image(systemName: cat.icon).font(.system(size: 11)).foregroundStyle(cat.color)
                             Text(cat.label).font(.system(size: 13, weight: .medium))
                             Spacer()
-                            Text(Receipt.format(cat.total)).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+                            Text(Receipt.format(cat.total)).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
                             let pct = total > 0 ? cat.total / total * 100 : 0
                             Text(String(format: "%.0f%%", pct))
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))

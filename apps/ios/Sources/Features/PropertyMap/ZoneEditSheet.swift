@@ -62,7 +62,7 @@ struct ZoneEditSheet: View {
                         showDeleteConfirm = true
                     } label: {
                         Label("Delete zone", systemImage: "trash")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -125,7 +125,7 @@ struct ZoneEditSheet: View {
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 26, weight: .light))
                             Text("Add cover photo")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(AppFont.caption)
                         }
                         .foregroundStyle(Color.primary.opacity(0.35))
                         .frame(maxWidth: .infinity)
@@ -141,7 +141,7 @@ struct ZoneEditSheet: View {
             if pendingPhotoData != nil || photoUrl != nil {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                     Image(systemName: "camera.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white)
                         .padding(7)
                         .background(.regularMaterial, in: Circle())
@@ -183,7 +183,7 @@ struct ZoneEditSheet: View {
 
     private func field<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+            Text(title).font(AppFont.captionStrong).foregroundStyle(.secondary)
             content()
         }
     }
@@ -236,7 +236,7 @@ struct ZoneEditSheet: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 6), spacing: 10) {
             ForEach(Self.icons, id: \.self) { sym in
                 Image(systemName: sym)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(icon == sym ? .white : .primary)
                     .frame(width: 44, height: 44)
                     .background(icon == sym ? tint : Color.primary.opacity(0.06),
@@ -255,8 +255,8 @@ struct ZoneEditSheet: View {
                 ForEach(PropertyLayer.allCases, id: \.self) { l in
                     let active = layer == l
                     HStack(spacing: 5) {
-                        Image(systemName: l.icon).font(.system(size: 11, weight: .semibold))
-                        Text(LocalizedStringKey(l.displayName)).font(.system(size: 13, weight: .semibold))
+                        Image(systemName: l.icon).font(AppFont.label)
+                        Text(LocalizedStringKey(l.displayName)).font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(active ? .white : .primary)
                     .padding(.horizontal, 12).padding(.vertical, 8)

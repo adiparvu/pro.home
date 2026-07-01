@@ -155,7 +155,7 @@ struct NFCWalletView: View {
                     rescanTag(tag)
                 } label: {
                     Image(systemName: "wave.3.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.blue)
                         .frame(width: 44, height: 44)
                         .background(Color.blue.opacity(0.1),
@@ -172,7 +172,7 @@ struct NFCWalletView: View {
                     }
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                         .background(Color.red.opacity(0.1),
@@ -233,7 +233,7 @@ struct NFCWalletView: View {
                             .foregroundStyle(.white.opacity(0.55))
                             .tracking(1.5)
                         Text(tag.linkedName.isEmpty ? "Standalone" : tag.linkedName)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.white.opacity(0.88))
                             .lineLimit(1)
                     }
@@ -306,7 +306,7 @@ struct NFCWalletView: View {
                     .foregroundStyle(Color.blue.opacity(0.45))
             }
             Text("No NFC tags yet")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("Scan an NFC tag to link it to a room,\nappliance, or element in your property.")
                 .font(.system(size: 13))
@@ -315,7 +315,7 @@ struct NFCWalletView: View {
                 .padding(.horizontal, 40)
             Button { scanForNewTag() } label: {
                 Label("Scan First Tag", systemImage: "wave.3.right.circle.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -384,7 +384,7 @@ struct NFCTagNameSheet: View {
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Name")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Front Door, Garage, Boiler Room", text: $name)
@@ -399,7 +399,7 @@ struct NFCTagNameSheet: View {
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Links to")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 Picker("", selection: $linkedType) {
@@ -425,7 +425,7 @@ struct NFCTagNameSheet: View {
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Icon")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
@@ -477,7 +477,7 @@ struct NFCTagNameSheet: View {
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }

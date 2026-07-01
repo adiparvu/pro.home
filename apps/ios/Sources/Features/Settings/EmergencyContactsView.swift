@@ -61,7 +61,7 @@ struct EmergencyContactsView: View {
     private var addButton: some View {
         Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
             Label("Add Contact", systemImage: "plus")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -72,7 +72,7 @@ struct EmergencyContactsView: View {
     }
 
     private func sectionHeader(_ t: LocalizedStringKey) -> some View {
-        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -111,7 +111,7 @@ private struct EmergencyRow: View {
                     Image(systemName: isSystem ? "phone.fill" : "person.fill").font(.system(size: 18)).foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contact.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                    Text(contact.name).font(AppFont.subheadline).foregroundStyle(.primary)
                     Text(contact.role).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
@@ -161,7 +161,7 @@ private struct AddEmergencySheet: View {
                     Button("Save") {
                         onSave(EmergencyContact(name: name, role: role, phone: phone))
                         dismiss()
-                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue).disabled(name.isEmpty || phone.isEmpty)
+                    }.font(AppFont.subheadline).foregroundStyle(.blue).disabled(name.isEmpty || phone.isEmpty)
                 }
             }
         }

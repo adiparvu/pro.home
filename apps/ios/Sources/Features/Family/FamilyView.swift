@@ -77,7 +77,7 @@ struct FamilyView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
-            Text("No members").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No members").font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.5))
             Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
@@ -97,7 +97,7 @@ struct FamilyMemberRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(member.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     HStack(spacing: 6) {
                         Text(LocalizedStringKey(member.roleLabel))

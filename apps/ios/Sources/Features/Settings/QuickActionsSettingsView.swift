@@ -43,7 +43,7 @@ struct QuickActionsSettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Customize buttons")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Choose which actions appear on each page — or hide the button entirely.")
                         .font(.system(size: 12))
@@ -59,7 +59,7 @@ struct QuickActionsSettingsView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(host.title)
                 .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
 
@@ -110,7 +110,7 @@ private struct FabVisibilityRow: View {
                         .fill(Color.primary.opacity(0.08))
                         .frame(width: 32, height: 32)
                     Image(systemName: isOn ? "eye.fill" : "eye.slash.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                 }
                 Text("Show button")
@@ -147,7 +147,7 @@ private struct QuickActionToggleRow: View {
                         .fill(action.color.opacity(0.18))
                         .frame(width: 32, height: 32)
                     Image(systemName: action.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(action.color)
                 }
                 VStack(alignment: .leading, spacing: 1) {

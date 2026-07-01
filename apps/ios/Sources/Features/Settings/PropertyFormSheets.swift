@@ -180,7 +180,7 @@ struct AddressAutocompleteField: View {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 16)).foregroundStyle(Color.accentColor)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(s.title).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                            Text(s.title).font(AppFont.footnote).foregroundStyle(.primary)
                             if !s.subtitle.isEmpty {
                                 Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                             }
@@ -299,7 +299,7 @@ struct AddPropertySheet: View {
                         Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() } } label: {
                             HStack {
                                 Image(systemName: "map.fill").foregroundStyle(Color.accentColor)
-                                Text("Location on map").font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                Text("Location on map").font(AppFont.footnote).foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
@@ -311,7 +311,7 @@ struct AddPropertySheet: View {
 
                         if showMap { mapPickerSection.padding(.top, 8) }
 
-                        Text("TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+                        Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
@@ -342,7 +342,7 @@ struct AddPropertySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
+                        else { Text("Add").font(AppFont.subheadline).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
                     }.disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
                 }
             }
@@ -366,7 +366,7 @@ struct AddPropertySheet: View {
                 VStack { Spacer(); HStack {
                     Button { Task { await reverseGeocode() } } label: {
                         Label("Apply address", systemImage: "arrow.up.left.square.fill")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                            .font(AppFont.captionStrong).foregroundStyle(.white)
                             .padding(.horizontal, 10).padding(.vertical, 7).background(.blue, in: Capsule())
                     }.buttonStyle(.plain).padding(.leading, 10).padding(.bottom, 10)
                     Spacer()

@@ -55,7 +55,7 @@ struct ARIAView: View {
                     onDismiss?()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Close")
@@ -73,7 +73,7 @@ struct ARIAView: View {
                     withAnimation { messages = ARIAMessage.welcome }
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Reset messages")
@@ -81,7 +81,7 @@ struct ARIAView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { ARIASettingsView() } label: {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Settings")
@@ -140,7 +140,7 @@ struct ARIAView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                             .frame(width: 40, height: 40)
                     }
@@ -218,7 +218,7 @@ struct ARIAView: View {
                                         : Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "mic.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(speech.isListening
                                         ? .red
                                         : Color(red: 0.55, green: 0.70, blue: 1.0))
@@ -237,7 +237,7 @@ struct ARIAView: View {
                                     .fill(Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "waveform")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
                             }
                         }
@@ -253,7 +253,7 @@ struct ARIAView: View {
                                     .fill(Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "icloud")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
                             }
                         }
@@ -558,7 +558,7 @@ private struct ARIAMessageBubble: View {
                 ZStack {
                     Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(0.7))
                 }
             }
@@ -596,7 +596,7 @@ private struct ThinkingBubble: View {
             ZStack {
                 Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.7))
             }
             HStack(spacing: 4) {
@@ -643,7 +643,7 @@ private struct ARIAActionBanner: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.yellow)
                 Text(action.displayText)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
             }
@@ -651,7 +651,7 @@ private struct ARIAActionBanner: View {
             HStack(spacing: 8) {
                 Button(action: onConfirm) {
                     Text("Confirm")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -661,7 +661,7 @@ private struct ARIAActionBanner: View {
 
                 Button(action: onCancel) {
                     Text("Cancel")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.primary.opacity(0.7))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)

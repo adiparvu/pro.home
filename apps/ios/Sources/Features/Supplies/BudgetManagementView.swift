@@ -47,14 +47,14 @@ struct BudgetManagementView: View {
                 HStack {
                     Image(systemName: "target").font(.system(size: 18)).foregroundStyle(Color.accentColor)
                     Text(LocalizedStringKey(receiptService.monthDisplayName(currentMonth)))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     Spacer()
                     let totalBudget = receiptService.budgets.filter { $0.month == currentMonth }.reduce(0) { $0 + $1.monthlyLimit }
                     let totalSpent = receiptService.totalSpent(in: currentMonth)
                     if totalBudget > 0 {
                         VStack(alignment: .trailing, spacing: 1) {
                             Text("\(Receipt.format(totalSpent)) / \(Receipt.format(totalBudget))")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(totalSpent > totalBudget ? .red : .primary)
                             Text(String(localized: "budget_total_label"))
                                 .font(.system(size: 10)).foregroundStyle(.secondary)
@@ -92,7 +92,7 @@ struct BudgetManagementView: View {
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "budget_categories_section"))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -116,12 +116,12 @@ struct BudgetManagementView: View {
                         .fill(ReceiptCategory.color(for: category).opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: ReceiptCategory.icon(for: category))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(ReceiptCategory.color(for: category))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(LocalizedStringKey(label)).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                    Text(LocalizedStringKey(label)).font(AppFont.footnote).foregroundStyle(.primary)
                     if let budget, budget.monthlyLimit > 0 {
                         let pct = min(spent / budget.monthlyLimit * 100, 100)
                         Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit)) · \(Int(pct))%")
@@ -184,7 +184,7 @@ struct BudgetManagementView: View {
                     // Budget input
                     VStack(spacing: 8) {
                         Text(String(localized: "budget_monthly_limit"))
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                            .font(AppFont.captionStrong).foregroundStyle(.secondary)
                         TextField("0.00", text: Binding(
                             get: {
                                 if budgetInput.isEmpty, let b = existing {
@@ -214,7 +214,7 @@ struct BudgetManagementView: View {
                         } label: {
                             Group {
                                 if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                                else { Text(String(localized: "budget_save")).font(.system(size: 16, weight: .semibold)) }
+                                else { Text(String(localized: "budget_save")).font(AppFont.headline) }
                             }
                             .foregroundStyle(Color(UIColor.systemBackground))
                             .frame(maxWidth: .infinity).frame(height: 52)

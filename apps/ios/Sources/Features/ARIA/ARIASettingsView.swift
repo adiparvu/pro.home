@@ -101,7 +101,7 @@ struct ARIASettingsView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14)
@@ -220,9 +220,9 @@ struct ARIASettingsView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                 Text(label)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
             }
             .foregroundStyle(isActive ? .white : .primary)
             .frame(maxWidth: .infinity)
@@ -243,7 +243,7 @@ struct ARIASettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("WHAT \(assistantName) CAN SEE")
                 .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
 
@@ -307,7 +307,7 @@ struct ARIASettingsView: View {
                     Spacer()
                     if !useCustomModel {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.accentColor)
                     }
                 }
@@ -340,7 +340,7 @@ struct ARIASettingsView: View {
                             ? Color.primary.opacity(0.35)
                             : Color(red: 0.3, green: 0.85, blue: 0.5))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14)
@@ -383,7 +383,7 @@ struct ARIASettingsView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14)
@@ -422,7 +422,7 @@ struct ARIASettingsView: View {
     private func settingsGroup<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
             VStack(spacing: 0) { content() }
@@ -521,7 +521,7 @@ private struct ApiKeyEditorSheet: View {
                     // Input
                     VStack(alignment: .leading, spacing: 8) {
                         Text("API KEY")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(.secondary)
                             .padding(.leading, 4)
 
@@ -556,7 +556,7 @@ private struct ApiKeyEditorSheet: View {
                             dismiss()
                         } label: {
                             Text("Save Key")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -577,7 +577,7 @@ private struct ApiKeyEditorSheet: View {
                                 dismiss()
                             } label: {
                                 Text("Clear Key")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)

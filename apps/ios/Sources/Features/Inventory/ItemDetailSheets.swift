@@ -73,7 +73,7 @@ struct PublicContactSheet: View {
                         }
                         onSave(updated); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -140,7 +140,7 @@ struct LoanItemSheet: View {
                         onSave(borrower.trimmingCharacters(in: .whitespaces), hasReturnDate ? returnDate : nil)
                         HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                     .disabled(borrower.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -189,7 +189,7 @@ struct ItemLocationSheet: View {
                         }
                         Button { locMgr.requestLocation() } label: {
                             Label("Use Current Location", systemImage: "location.fill")
-                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
+                                .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
                                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                                 .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                         }.buttonStyle(.plain)
@@ -201,7 +201,7 @@ struct ItemLocationSheet: View {
                         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("TRACKER TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+                            Text("TRACKER TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
                                     ForEach(trackerTypes, id: \.self) { t in
@@ -254,7 +254,7 @@ struct ItemLocationSheet: View {
                         onSave(updated)
                         HapticFeedback.success()
                         dismiss()
-                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
             .onChange(of: locMgr.location) { _, loc in

@@ -74,7 +74,7 @@ struct AddPhotoJournalSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(Color.accentColor)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || selectedImageData == nil || isUploading)
                 }
@@ -187,7 +187,7 @@ struct AddPhotoJournalSheet: View {
                     .scaleEffect(1.4)
                     .tint(.white)
                 Text("Uploading photo…")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.white)
             }
             .padding(32)
@@ -200,7 +200,7 @@ struct AddPhotoJournalSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
                 .textCase(.uppercase)

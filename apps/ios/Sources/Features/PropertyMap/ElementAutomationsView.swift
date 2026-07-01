@@ -63,11 +63,11 @@ struct ElementAutomationsSection: View {
     private func row(_ a: ElementAutomation) -> some View {
         HStack(spacing: 10) {
             Image(systemName: a.trigger.icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(a.isActive ? Color.accentColor : .secondary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 1) {
-                Text(a.name).font(.system(size: 14, weight: .medium))
+                Text(a.name).font(AppFont.footnote)
                     .foregroundStyle(a.isActive ? .primary : .secondary)
                 Text(a.summary + (a.createsTask ? " · " + String(localized: "creates task") : ""))
                     .font(.system(size: 11)).foregroundStyle(.secondary)

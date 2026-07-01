@@ -59,7 +59,7 @@ struct TrustedPersonsView: View {
     private var personsList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("PERSOANE DE ÎNCREDERE")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -103,7 +103,7 @@ struct TrustedPersonsView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(person.name)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(person.email)
                     .font(.system(size: 12))
@@ -155,7 +155,7 @@ struct TrustedPersonsView: View {
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             Text("Nicio persoană de încredere")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
             Text("Adaugă persoane care te pot ajuta cu recuperarea contului")
                 .font(.system(size: 13))
@@ -174,7 +174,7 @@ struct TrustedPersonsView: View {
             HapticFeedback.impact(.medium)
         } label: {
             Label("Adaugă persoană", systemImage: "plus")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -233,7 +233,7 @@ private struct AddTrustedPersonSheet: View {
                         // Info fields
                         VStack(alignment: .leading, spacing: 8) {
                             Text("DETALII")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(0.35))
                                 .padding(.leading, 4)
 
@@ -248,7 +248,7 @@ private struct AddTrustedPersonSheet: View {
                         // Permissions
                         VStack(alignment: .leading, spacing: 8) {
                             Text("PERMISIUNI")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(0.35))
                                 .padding(.leading, 4)
 
@@ -296,7 +296,7 @@ private struct AddTrustedPersonSheet: View {
                         onSave(person)
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(isValid ? .blue : Color.primary.opacity(0.3))
                     .disabled(!isValid)
                 }

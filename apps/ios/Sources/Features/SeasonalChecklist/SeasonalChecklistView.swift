@@ -122,7 +122,7 @@ struct SeasonalChecklistView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("\(completedCount) of \(totalCount) done")
-                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.headline).foregroundStyle(.primary)
                     Text("\(selectedSeason.displayName) maintenance checklist")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                 }
@@ -163,7 +163,7 @@ struct SeasonalChecklistView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey(category))
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 6)
 
@@ -198,7 +198,7 @@ struct SeasonalChecklistView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(done ? Color.primary.opacity(0.35) : .primary)
                             .strikethrough(done, color: Color.primary.opacity(0.35))
                             .animation(.easeInOut(duration: 0.2), value: done)
@@ -268,7 +268,7 @@ struct AddCustomSeasonalItemSheet: View {
                         // Title
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Title")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 4)
@@ -282,7 +282,7 @@ struct AddCustomSeasonalItemSheet: View {
                         // Description
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Description (optional)")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 4)
@@ -297,7 +297,7 @@ struct AddCustomSeasonalItemSheet: View {
                         // Category
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Category")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 4)
@@ -352,7 +352,7 @@ struct AddCustomSeasonalItemSheet: View {
                             dismiss()
                         } label: {
                             Text(isEditing ? "Save Changes" : "Add Item")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
                                 .background(canSave ? season.color : Color.primary.opacity(0.3),

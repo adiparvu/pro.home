@@ -55,7 +55,7 @@ struct NotificationsSettingsView: View {
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text(statusTitle)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
                             .font(.system(size: 12))
@@ -69,7 +69,7 @@ struct NotificationsSettingsView: View {
                         Task { await requestPermission() }
                     } label: {
                         Text("Enable Notifications")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -79,7 +79,7 @@ struct NotificationsSettingsView: View {
                 } else if authStatus == .denied {
                     Button { showOpenSettings = true } label: {
                         Text("Open iOS Settings")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -160,7 +160,7 @@ struct NotificationsSettingsView: View {
     private func group<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
             VStack(spacing: 0) { content() }

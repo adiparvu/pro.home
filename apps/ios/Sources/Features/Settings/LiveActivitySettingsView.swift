@@ -156,7 +156,7 @@ struct LiveActivitySettingsView: View {
 
                     // Per-activity auto-start
                     Text("AUTOMATICALLY START")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(0.35))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 4)
@@ -180,7 +180,7 @@ struct LiveActivitySettingsView: View {
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.primary.opacity(0.25))
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
@@ -221,7 +221,7 @@ struct LiveActivitySettingsView: View {
                 ColoredIconBadge(icon: "exclamationmark.triangle.fill", color: .orange)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Live Activities are off in iOS")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                     Text("Enable them in Settings › Face ID & Passcode and per-app to see them here.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.5))
@@ -314,7 +314,7 @@ struct LiveActivityPreview: View {
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Garden bench")
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                            .font(AppFont.subheadline).foregroundStyle(.primary)
                         if showProperty {
                             Text("Lakeside House · DHL")
                                 .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
@@ -361,7 +361,7 @@ struct LiveActivityAppearanceView: View {
                 LiveActivityPreview()
 
                 Text("SHOW IN")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.35))
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                 group {
@@ -377,7 +377,7 @@ struct LiveActivityAppearanceView: View {
                 }
 
                 Text("DISPLAY OPTIONS")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.35))
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                 group {
@@ -399,7 +399,7 @@ struct LiveActivityAppearanceView: View {
 
                 if dynamicIsland {
                     Text("DYNAMIC ISLAND")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(0.35))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
                     VStack(spacing: 12) {

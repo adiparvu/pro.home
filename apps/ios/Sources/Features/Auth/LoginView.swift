@@ -35,7 +35,7 @@ struct LoginView: View {
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                         Text("Property management")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.white.opacity(0.45))
                             .tracking(0.4)
                     }

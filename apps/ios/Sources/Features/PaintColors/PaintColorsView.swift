@@ -141,7 +141,7 @@ struct PaintColorsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(room)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(.primary)
                 Spacer()
                 Text(colors.count == 1 ? "\(colors.count) color" : "\(colors.count) colors")
@@ -174,7 +174,7 @@ struct PaintColorsView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("No colors saved yet")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Save paint colors for each room so you can easily reorder or touch up later.")
                 .font(.system(size: 14))
@@ -185,7 +185,7 @@ struct PaintColorsView: View {
                 showAdd = true
             } label: {
                 Label("Add first color", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -216,7 +216,7 @@ private struct PaintSwatch: View {
                 .shadow(color: paintColor.swatchColor.opacity(0.4), radius: 8, y: 3)
 
             Text(paintColor.colorName)
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .frame(width: 70)

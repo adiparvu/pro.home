@@ -42,7 +42,7 @@ struct BudgetView: View {
             VStack(spacing: 14) {
                 HStack {
                     Text("Total Budget")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("This month")
@@ -81,7 +81,7 @@ struct BudgetView: View {
                           ? String(format: String(localized: "%@%lld remaining"), financialService.currencySymbol, Int(abs(remaining)))
                           : String(format: String(localized: "%@%lld over budget"), financialService.currencySymbol, Int(abs(remaining))),
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(remaining >= 0 ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
                     Spacer()
                     Text(String(format: String(localized: "%.0f%% used"), progress * 100))
@@ -97,7 +97,7 @@ struct BudgetView: View {
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("PER CATEGORY")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -114,13 +114,13 @@ struct BudgetView: View {
                                 HStack {
                                     ColoredIconBadge(icon: categoryIcon(cat), color: categoryColor(cat), size: 32)
                                     Text(LocalizedStringKey(cat.capitalized))
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(AppFont.footnote)
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     VStack(alignment: .trailing, spacing: 1) {
                                         if budget > 0 {
                                             Text("\(sym)\(Int(spent)) / \(sym)\(Int(budget))")
-                                                .font(.system(size: 13, weight: .semibold))
+                                                .font(AppFont.captionEmphasis)
                                                 .foregroundStyle(progress > 0.9 ? .red : .white)
                                         } else {
                                             Text("Set budget")
@@ -208,7 +208,7 @@ private struct EditBudgetSheet: View {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("MONTHLY BUDGET")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(0.35))
                             HStack(spacing: 8) {
                                 Text("€")
@@ -240,7 +240,7 @@ private struct EditBudgetSheet: View {
                         onSave(val)
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }

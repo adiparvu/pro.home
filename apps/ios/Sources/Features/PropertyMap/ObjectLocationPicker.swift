@@ -85,7 +85,7 @@ struct ObjectLocationPicker: View {
                 Text("Outside all zones")
             }
         }
-            .font(.system(size: 13, weight: .semibold))
+            .font(AppFont.captionEmphasis)
             .foregroundStyle(.primary)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .glassCapsule()
@@ -99,7 +99,7 @@ struct ObjectLocationPicker: View {
             Task { await save() }
         } label: {
             Text("Save location")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 15)

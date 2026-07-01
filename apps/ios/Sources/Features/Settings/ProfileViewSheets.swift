@@ -39,7 +39,7 @@ struct ChangeEmailSheet: View {
                     Button("Send") {
                         onSave(email); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                     .disabled(!isValid)
                 }
             }
@@ -101,7 +101,7 @@ struct ChangePasswordSheet: View {
                     Button("Update") {
                         onSave(password); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                     .disabled(!isValid)
                 }
             }

@@ -37,7 +37,7 @@ struct ZoneBottomSheet: View {
 
                 if !objects.isEmpty {
                     Text("OBJECTS IN ZONE")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)
                     VStack(spacing: 8) {
@@ -77,7 +77,7 @@ struct ZoneBottomSheet: View {
                     .foregroundStyle(.primary)
                 HStack(spacing: 6) {
                     Image(systemName: zone.layer.icon).font(.system(size: 11))
-                    Text(zone.layer.displayName).font(.system(size: 12, weight: .medium))
+                    Text(zone.layer.displayName).font(AppFont.caption)
                 }
                 .foregroundStyle(.secondary)
             }
@@ -125,7 +125,7 @@ struct ZoneBottomSheet: View {
 
     private func statTile(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {
         VStack(spacing: 5) {
-            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(color)
+            Image(systemName: icon).font(AppFont.footnoteEmphasis).foregroundStyle(color)
             Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(.primary)
             Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
         }
@@ -151,8 +151,8 @@ struct ZoneBottomSheet: View {
             action()
         } label: {
             VStack(spacing: 5) {
-                Image(systemName: icon).font(.system(size: 15, weight: .semibold))
-                Text(title).font(.system(size: 11, weight: .semibold))
+                Image(systemName: icon).font(AppFont.subheadline)
+                Text(title).font(AppFont.label)
             }
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
@@ -192,7 +192,7 @@ private struct ObjectRow: View {
                     .background(element.elementType.accentColor.opacity(0.15),
                                 in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(element.name).font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                    Text(element.name).font(AppFont.body).foregroundStyle(.primary)
                     Text(element.elementType.displayName).font(.system(size: 12)).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -200,7 +200,7 @@ private struct ObjectRow: View {
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(element.healthColor)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             .padding(.horizontal, 12).padding(.vertical, 10)

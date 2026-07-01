@@ -84,7 +84,7 @@ struct ItemDetailView: View {
         let map: [String: Color] = ["excellent": Color(red: 0.2, green: 0.8, blue: 0.3), "good": Color.accentColor, "fair": .orange, "poor": Color.red]
         let color = map[live.condition] ?? .gray
         return Text(LocalizedStringKey(live.condition.capitalized))
-            .font(.system(size: 12, weight: .medium)).foregroundStyle(color)
+            .font(AppFont.caption).foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(color.opacity(0.15), in: Capsule())
     }
@@ -165,7 +165,7 @@ struct ItemDetailView: View {
             VStack(spacing: 12) {
                 HStack {
                     Label("Loan Status", systemImage: "arrow.uturn.right.circle.fill")
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.isLoaned {
                         Text("OUT").font(.system(size: 11, weight: .bold)).foregroundStyle(.orange)
@@ -188,7 +188,7 @@ struct ItemDetailView: View {
 
                     Button { HapticFeedback.impact(.medium); showReturnConfirm = true } label: {
                         Label("Mark as Returned", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.3))
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(Color(red: 0.2, green: 0.8, blue: 0.3).opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
@@ -196,7 +196,7 @@ struct ItemDetailView: View {
                 } else {
                     Button { HapticFeedback.impact(.medium); showLoan = true } label: {
                         Label("Loan Out to Someone", systemImage: "arrow.uturn.right.circle.fill")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     }.buttonStyle(.plain)
@@ -218,7 +218,7 @@ struct ItemDetailView: View {
         GlassCard {
             VStack(spacing: 14) {
                 HStack {
-                    Label("QR Code", systemImage: "qrcode").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                    Label("QR Code", systemImage: "qrcode").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     Text("Scan to identify").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
                 }
@@ -249,12 +249,12 @@ struct ItemDetailView: View {
             VStack(spacing: 12) {
                 HStack {
                     Label("Location & Tracker", systemImage: "location.fill")
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.hasLocation { Text("📍").font(.system(size: 14)) }
                     if !live.trackerType.isEmpty {
                         Text(LocalizedStringKey(live.trackerType == "airtag" ? "AirTag" : live.trackerType.capitalized))
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(.orange)
+                            .font(AppFont.label).foregroundStyle(.orange)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(.orange.opacity(0.15), in: Capsule())
                     }
@@ -307,7 +307,7 @@ struct ItemDetailView: View {
             VStack(spacing: 12) {
                 HStack {
                     Label("Lost & Found Card", systemImage: "mappin.and.ellipse")
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Spacer()
                     if live.publicProfile != nil {
                         Text("ON").font(.system(size: 11, weight: .bold))
@@ -351,7 +351,7 @@ struct ItemDetailView: View {
     private var notesCard: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Notes", systemImage: "note.text").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                Label("Notes", systemImage: "note.text").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.5))
                 Text(live.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
             }
         }

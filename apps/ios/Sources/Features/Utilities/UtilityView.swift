@@ -235,7 +235,7 @@ struct UtilityView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Last \(data.count) months")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
                 Chart(data, id: \.id) { e in
                     BarMark(
@@ -321,10 +321,10 @@ private struct UtilitySummaryCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: type.icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(isSelected ? .black : type.color)
                 Text(type.label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(isSelected ? .black : .white)
             }
             if let entry = currentEntry {
@@ -367,7 +367,7 @@ private struct UtilityEntryRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(displayMonth)
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     if entry.consumption > 0 {
                         Text("\(String(format: "%.0f", entry.consumption)) \(entry.unit)")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))

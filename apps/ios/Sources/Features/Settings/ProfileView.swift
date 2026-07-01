@@ -112,7 +112,7 @@ struct ProfileView: View {
                             ProgressView().tint(.white).scaleEffect(0.7)
                         } else {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(.white)
                         }
                     }
@@ -233,7 +233,7 @@ struct ProfileView: View {
         HStack {
             Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
-            Text(value).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
+            Text(value).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
     }

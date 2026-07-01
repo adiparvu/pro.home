@@ -67,7 +67,7 @@ struct ReceiptDetailView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                         Text(ReceiptCategory.label(for: receipt.category))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.caption)
                             .foregroundStyle(receipt.categoryColor)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(receipt.categoryColor.opacity(0.12), in: Capsule())
@@ -78,7 +78,7 @@ struct ReceiptDetailView: View {
 
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(receipt.formattedTotal)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(AppFont.title2)
                         .foregroundStyle(.primary)
                         .monospacedDigit()
                     Text(String(localized: "receipt_total_label"))
@@ -94,7 +94,7 @@ struct ReceiptDetailView: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "receipt_items_section"))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -103,7 +103,7 @@ struct ReceiptDetailView: View {
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.name)
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(AppFont.footnote)
                                         .foregroundStyle(.primary)
                                         .lineLimit(2)
                                     if item.quantity != 1 {
@@ -114,7 +114,7 @@ struct ReceiptDetailView: View {
                                 }
                                 Spacer()
                                 Text(Receipt.format(item.totalPrice))
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                     .foregroundStyle(.primary)
                                     .monospacedDigit()
                             }
@@ -129,7 +129,7 @@ struct ReceiptDetailView: View {
                     Rectangle().fill(Color.primary.opacity(0.08)).frame(height: 1)
                     HStack {
                         Text(String(localized: "receipt_total_label"))
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Spacer()
                         Text(receipt.formattedTotal)
                             .font(.system(size: 15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
@@ -147,7 +147,7 @@ struct ReceiptDetailView: View {
         if let notes = receipt.notes, !notes.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("NOTES")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, 4)
                 GlassCard(padding: 14) {
                     Text(notes)
                         .font(.system(size: 14))
@@ -165,7 +165,7 @@ struct ReceiptDetailView: View {
             showDeleteConfirm = true
         } label: {
             Label(String(localized: "receipt_delete"), systemImage: "trash")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

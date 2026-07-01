@@ -76,11 +76,11 @@ extension DashboardView {
                                 .fill(sec.color.opacity(0.15))
                                 .frame(width: 36, height: 36)
                             Image(systemName: sec.icon)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(sec.color)
                         }
                         Text(sec.title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
@@ -89,7 +89,7 @@ extension DashboardView {
                 .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
             } header: {
                 Text("Sections")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
             }
@@ -102,11 +102,11 @@ extension DashboardView {
                                 .fill(type.color.opacity(0.15))
                                 .frame(width: 36, height: 36)
                             Image(systemName: type.icon)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(type.color)
                         }
                         Text(type.title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
@@ -115,7 +115,7 @@ extension DashboardView {
                 .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
             } header: {
                 Text("Overview Widgets")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
             }

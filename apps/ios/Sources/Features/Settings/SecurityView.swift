@@ -94,13 +94,13 @@ struct SecurityView: View {
                     }
                     Spacer()
                     if totpFactorId != nil {
-                        Text("Enabled").font(.system(size: 13, weight: .semibold))
+                        Text("Enabled").font(AppFont.captionEmphasis)
                             .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
                     } else {
                         Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
                 .contentShape(Rectangle())
@@ -120,7 +120,7 @@ struct SecurityView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
                 .contentShape(Rectangle())
@@ -144,7 +144,7 @@ struct SecurityView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
             }
@@ -159,7 +159,7 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
             }
@@ -174,7 +174,7 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
             }
@@ -202,7 +202,7 @@ struct SecurityView: View {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                     } else {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
@@ -268,7 +268,7 @@ struct SecurityView: View {
                     Text(autoLockLabel)
                         .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
                 .contentShape(Rectangle())
@@ -291,7 +291,7 @@ struct SecurityView: View {
                         ProgressView().scaleEffect(0.8)
                     } else {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
@@ -307,7 +307,7 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.red)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 13)
             }
@@ -320,7 +320,7 @@ struct SecurityView: View {
     private func secGroup<Content: View>(title: LocalizedStringKey, footer: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
                 .textCase(.uppercase)

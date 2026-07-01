@@ -48,7 +48,7 @@ struct AppIconPickerView: View {
                 }
             }
             Text(LocalizedStringKey(group.displayName))
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
             if group.hasPair {
                 HStack(spacing: 4) {
                     Image(systemName: "sun.min").font(.system(size: 10))
@@ -74,12 +74,12 @@ struct AppIconPickerView: View {
                 ZStack {
                     Circle().fill(Color.purple.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: "wand.and.stars")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.purple)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Auto Dark/Light Switch")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                     Text("Icon changes automatically with system theme")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -181,7 +181,7 @@ struct AppIconPickerView: View {
                     .foregroundStyle(.purple)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Icons in progress")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                     Text("Final icon designs are being finalized. Changes activate once the app assets are published.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)

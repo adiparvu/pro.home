@@ -81,7 +81,7 @@ private struct AccountRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if let name = account.displayName, !name.isEmpty {
                         Text(name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                     }
                     Text(account.email)

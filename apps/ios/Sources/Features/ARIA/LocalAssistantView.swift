@@ -126,7 +126,7 @@ struct LocalAssistantView: View {
                     Text("Assistant")
                         .font(.title2.weight(.bold))
                     Image(systemName: "cpu.fill")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.9))
                 }
                 if #available(iOS 26.0, *) {
@@ -145,7 +145,7 @@ struct LocalAssistantView: View {
                 HapticFeedback.impact(.light)
             } label: {
                 Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }

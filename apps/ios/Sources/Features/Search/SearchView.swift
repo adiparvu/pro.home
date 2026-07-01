@@ -85,7 +85,7 @@ struct SearchView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
             TextField("Tasks, plants, documents…", text: $query)
@@ -289,11 +289,11 @@ private struct SearchSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.35))
                 Text(title)
                     .textCase(.uppercase)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.35))
                 Text("(\(count))")
                     .font(.system(size: 11))
@@ -319,7 +319,7 @@ private struct SearchRow: View {
             ColoredIconBadge(icon: icon, color: color, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 if !subtitle.isEmpty {

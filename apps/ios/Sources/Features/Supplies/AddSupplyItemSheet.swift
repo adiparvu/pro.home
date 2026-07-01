@@ -71,7 +71,7 @@ struct AddSupplyItemSheet: View {
     }
 
     private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        Text(text).font(AppFont.label).foregroundStyle(.secondary)
     }
 
     private var nameField: some View {
@@ -187,7 +187,7 @@ struct AddSupplyItemSheet: View {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
                     Text(LocalizedStringKey(editingItem == nil ? "Add item" : "Save changes"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 52)

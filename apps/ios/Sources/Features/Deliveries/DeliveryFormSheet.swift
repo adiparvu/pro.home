@@ -178,7 +178,7 @@ struct DeliveryFormSheet: View {
                                     .fill(statusColor(for: opt.id).opacity(0.15))
                                     .frame(width: 32, height: 32)
                                 Image(systemName: statusIcon(for: opt.id))
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                     .foregroundStyle(statusColor(for: opt.id))
                             }
                             Text(LocalizedStringKey(opt.label))
@@ -187,7 +187,7 @@ struct DeliveryFormSheet: View {
                             Spacer()
                             if status == opt.id {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
@@ -278,7 +278,7 @@ struct DeliveryFormSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text(LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -299,7 +299,7 @@ struct DeliveryFormSheet: View {
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

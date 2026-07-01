@@ -10,7 +10,7 @@ extension EditPropertySheet {
         Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() } } label: {
             HStack {
                 Image(systemName: "map.fill").foregroundStyle(Color.accentColor)
-                Text("Location on map").font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                Text("Location on map").font(AppFont.footnote).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
@@ -40,7 +40,7 @@ extension EditPropertySheet {
             VStack { Spacer(); HStack {
                 Button { Task { await reverseGeocode() } } label: {
                     Label("Apply address", systemImage: "arrow.up.left.square.fill")
-                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                        .font(AppFont.captionStrong).foregroundStyle(.white)
                         .padding(.horizontal, 10).padding(.vertical, 7).background(.blue, in: Capsule())
                 }.buttonStyle(.plain).padding(.leading, 10).padding(.bottom, 10)
                 Spacer()
@@ -69,7 +69,7 @@ extension EditPropertySheet {
 
     var storySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("STORY").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+            Text("STORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 0)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.primary.opacity(0.04))
@@ -90,7 +90,7 @@ extension EditPropertySheet {
     var renovationsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("RENOVATIONS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+                Text("RENOVATIONS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                 Spacer()
                 Button { withAnimation { showRenovationForm.toggle() } } label: {
                     Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
@@ -104,7 +104,7 @@ extension EditPropertySheet {
                         HStack(spacing: 10) {
                             Circle().fill(.blue).frame(width: 8, height: 8)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(r.title).font(.system(size: 14, weight: .medium))
+                                Text(r.title).font(AppFont.footnote)
                                 Text(r.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
                             }
                             Spacer()
@@ -136,7 +136,7 @@ extension EditPropertySheet {
                         renovations.append(Renovation(yearFrom: from, yearTo: Int(newRenTo), title: newRenTitle))
                         newRenTitle = ""; newRenFrom = ""; newRenTo = ""; showRenovationForm = false
                     } label: {
-                        Text("Add renovation").font(.system(size: 15, weight: .semibold))
+                        Text("Add renovation").font(AppFont.subheadline)
                             .foregroundStyle(newRenTitle.isEmpty || newRenFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -151,7 +151,7 @@ extension EditPropertySheet {
     var ownersSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("OWNERS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+                Text("OWNERS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                 Spacer()
                 Button { withAnimation { showOwnerForm.toggle() } } label: {
                     Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
@@ -165,7 +165,7 @@ extension EditPropertySheet {
                         HStack(spacing: 10) {
                             Image(systemName: "person.fill").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4)).frame(width: 20)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(o.name).font(.system(size: 14, weight: .medium))
+                                Text(o.name).font(AppFont.footnote)
                                 Text(o.yearRange).font(.system(size: 12)).foregroundStyle(.secondary)
                             }
                             Spacer()
@@ -197,7 +197,7 @@ extension EditPropertySheet {
                         owners.append(OwnerRecord(name: newOwnerName, yearFrom: from, yearTo: Int(newOwnerTo)))
                         newOwnerName = ""; newOwnerFrom = ""; newOwnerTo = ""; showOwnerForm = false
                     } label: {
-                        Text("Add owner").font(.system(size: 15, weight: .semibold))
+                        Text("Add owner").font(AppFont.subheadline)
                             .foregroundStyle(newOwnerName.isEmpty || newOwnerFrom.isEmpty ? Color.primary.opacity(0.3) : .blue)
                             .frame(maxWidth: .infinity).padding(.vertical, 12)
                             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

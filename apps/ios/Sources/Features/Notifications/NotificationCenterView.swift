@@ -123,7 +123,7 @@ struct NotificationCenterView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.18))
             Text("No notifications")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("You're all caught up!")
                 .font(.system(size: 14))
@@ -192,7 +192,7 @@ private struct NotificationRow: View {
                     .fill(notification.priorityColor.opacity(0.12))
                     .frame(width: 40, height: 40)
                 Image(systemName: notification.moduleIcon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(notification.priorityColor)
             }
 

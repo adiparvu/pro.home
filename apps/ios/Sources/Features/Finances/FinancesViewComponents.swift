@@ -38,7 +38,7 @@ extension FinancesView {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color.primary.opacity(0.45))
                         .frame(width: 32, height: 32)
                 }
@@ -46,7 +46,7 @@ extension FinancesView {
                 .accessibilityLabel("Previous month")
 
                 Text(monthLabel)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
                     .contentTransition(.identity)
                     .id(displayedMonth)
@@ -58,7 +58,7 @@ extension FinancesView {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.15) : Color.primary.opacity(0.45))
                         .frame(width: 32, height: 32)
                 }
@@ -149,11 +149,11 @@ extension FinancesView {
                     .fill(color.opacity(0.18))
                     .frame(width: 36, height: 36)
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(color)
             }
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
@@ -176,7 +176,7 @@ extension FinancesView {
                     VStack(spacing: 0) {
                         HStack {
                             Text(groupDateLabel(group.date))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(Color.primary.opacity(0.4))
                                 .textCase(.uppercase)
                                 .kerning(0.5)
@@ -186,7 +186,7 @@ extension FinancesView {
                                 return sum + (r.isIncome ? v : -v)
                             }
                             Text(fmtSigned(dayTotal))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(dayTotal >= 0 ? Color(red: 0.25, green: 0.82, blue: 0.5) : .red)
                         }
                         .padding(.bottom, 8)
@@ -284,7 +284,7 @@ struct FinancialRecordRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(record.category.capitalized))
                     .font(.system(size: 12))
@@ -295,7 +295,7 @@ struct FinancialRecordRow: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(record.isIncome ? "+" : "-")\(displayAmount)")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(record.isIncome ? Color(red: 0.25, green: 0.82, blue: 0.5) : .primary)
                 Text(record.dateFormatted)
                     .font(.system(size: 11))

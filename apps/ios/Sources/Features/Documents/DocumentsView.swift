@@ -91,7 +91,7 @@ struct DocumentsView: View {
                         }
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
@@ -224,7 +224,7 @@ struct DocumentsView: View {
             Image(systemName: selectedCategory == nil
                   ? "line.3.horizontal.decrease"
                   : selectedCategory.map { categoryIcon(for: $0) } ?? "line.3.horizontal.decrease")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
         .accessibilityLabel("Filter documents")
@@ -269,7 +269,7 @@ struct DocumentsView: View {
                     .foregroundStyle(.orange).font(.system(size: 18))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Text("Review and renew before they expire")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
                 }
@@ -288,7 +288,7 @@ struct DocumentsView: View {
                 .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
             VStack(spacing: 8) {
                 Text(LocalizedStringKey(search.isEmpty ? "No documents yet" : "No results found"))
-                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
+                    .font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
                 if search.isEmpty {
                     Text("Tap + to add your first document")
                         .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35))
@@ -323,7 +323,7 @@ struct DocumentRow: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(doc.name)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(.primary).lineLimit(1)
                             if doc.isCritical {
                                 Image(systemName: "exclamationmark.circle.fill")
@@ -332,7 +332,7 @@ struct DocumentRow: View {
                         }
                         HStack(spacing: 8) {
                             Text(LocalizedStringKey(doc.category.capitalized))
-                                .font(.system(size: 11, weight: .medium))
+                                .font(AppFont.caption2)
                                 .foregroundStyle(categoryColor.opacity(0.8))
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(categoryColor.opacity(0.12), in: Capsule())

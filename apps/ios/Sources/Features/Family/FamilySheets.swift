@@ -71,7 +71,7 @@ struct AddFamilyMemberSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
+                        else { Text("Add").font(AppFont.subheadline).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
                     }
                     .disabled(!canSave)
                 }
@@ -154,12 +154,12 @@ struct AddFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
@@ -182,13 +182,13 @@ struct AddFamilyMemberSheet: View {
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                             TextField("@\(link.handle)", text: Binding(
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
@@ -225,12 +225,12 @@ struct AddFamilyMemberSheet: View {
 
     private var inviteSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INVITATION").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("INVITATION").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "envelope.badge.fill", color: .blue, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Send invitation").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        Text("Send invitation").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                     }
                     Spacer()
@@ -395,7 +395,7 @@ struct AddSocialLinkSheet: View {
                         onAdd(SocialLink(platform: platform, handle: h))
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(handle.isEmpty ? Color.primary.opacity(0.3) : .blue)
                     .disabled(handle.trimmingCharacters(in: .whitespaces).isEmpty)
                 }

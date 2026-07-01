@@ -61,7 +61,7 @@ struct PlantDetailSheet: View {
                                 ProgressView().tint(.accentColor)
                             } else {
                                 Text("Save")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(Color.accentColor)
                             }
                         }

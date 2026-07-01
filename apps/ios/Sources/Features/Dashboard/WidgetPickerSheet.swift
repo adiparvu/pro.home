@@ -148,7 +148,7 @@ struct WidgetPickerSheet: View {
                         }
                     } header: {
                         Text("Active — trage pentru reordonare")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -169,7 +169,7 @@ struct WidgetPickerSheet: View {
                         }
                     } header: {
                         Text("Disponibile")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -188,7 +188,7 @@ struct WidgetPickerSheet: View {
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }
@@ -202,13 +202,13 @@ struct WidgetPickerSheet: View {
                     .fill(type.color.opacity(0.18))
                     .frame(width: 40, height: 40)
                 Image(systemName: type.icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(type.color)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(type.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 if type.isFullWidth {
                     Text("Lățime completă")

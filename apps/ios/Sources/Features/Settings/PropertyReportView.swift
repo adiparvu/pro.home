@@ -108,7 +108,7 @@ struct PropertyReportView: View {
     private func statCell(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(color)
             Text(value)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
@@ -125,7 +125,7 @@ struct PropertyReportView: View {
     private var sectionToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("INCLUDE IN REPORT")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -178,7 +178,7 @@ struct PropertyReportView: View {
                     ProgressView().tint(.white)
                 } else {
                     Label("Generate PDF", systemImage: "arrow.down.doc.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.white)
                 }
             }

@@ -20,7 +20,7 @@ struct InventoryRow: View {
                     ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                    Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
                             Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
@@ -36,7 +36,7 @@ struct InventoryRow: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(0.5))
                     }
                     switch item.warrantyStatus {
                     case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
@@ -143,7 +143,7 @@ struct AddInventorySheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
             }
@@ -315,7 +315,7 @@ struct QRScannerSheet: View {
                 }
                 Spacer()
                 Text("Point at an item's QR code")
-                    .font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
+                    .font(AppFont.body).foregroundStyle(.primary)
                     .padding(.horizontal, 20).padding(.vertical, 12)
                     .background(Color.black.opacity(0.5), in: Capsule())
                     .padding(.bottom, 60)

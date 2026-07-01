@@ -7,7 +7,7 @@ extension PropertyMapView {
     var healthScoreBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "heart.fill")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
             Text("\(elementService.overallHealthScore)")
                 .font(.system(size: 13, weight: .bold))
         }
@@ -87,10 +87,10 @@ extension PropertyMapView {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: icon)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(color)
                     Text(label)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(AppFont.caption2)
                         .foregroundStyle(.secondary)
                 }
                 Text(value)
@@ -142,14 +142,14 @@ extension PropertyMapView {
                         .fill(element.elementType.accentColor.opacity(0.18))
                         .frame(width: 36, height: 36)
                     Image(systemName: element.elementType.icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(element.elementType.accentColor)
                         .symbolRenderingMode(.hierarchical)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(element.name)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text(element.layer.displayName)
                         .font(.system(size: 11))
@@ -161,7 +161,7 @@ extension PropertyMapView {
                 healthPill(element.healthScore)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
             .padding(.horizontal, 14)
@@ -212,7 +212,7 @@ extension PropertyMapView {
                     showAddElement = true
                 } label: {
                     Text("Add first element")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 11)
@@ -299,7 +299,7 @@ struct LayerChip: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                 Text(label)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                 if count > 0 {

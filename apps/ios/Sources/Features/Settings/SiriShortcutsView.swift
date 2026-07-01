@@ -17,7 +17,7 @@ struct SiriShortcutsView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
                         Text("All \(PRVIOShortcutsProvider.appShortcuts.count) shortcuts activated for Siri!")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.primary)
                     }
                     .padding(14)
@@ -59,7 +59,7 @@ struct SiriShortcutsView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Siri Commands")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Control PRVIO with your voice")
                         .font(.system(size: 12))
@@ -111,11 +111,11 @@ struct SiriShortcutsView: View {
                         .fill(color.opacity(0.14))
                         .frame(width: 32, height: 32)
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(color)
                 }
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "mic.fill")
@@ -160,9 +160,9 @@ struct SiriShortcutsView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                     Text(LocalizedStringKey(donated ? "Commands Activated!" : "Activate Siri Commands"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -182,9 +182,9 @@ struct SiriShortcutsView: View {
             ShortcutsLink {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.up.right.square")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     Text("View in Shortcuts App")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                 }
                 .foregroundStyle(Color(red: 0.55, green: 0.35, blue: 0.95))
                 .frame(maxWidth: .infinity)
@@ -207,7 +207,7 @@ struct SiriShortcutsView: View {
 
     private func sectionHeader(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, 8)

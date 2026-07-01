@@ -285,7 +285,7 @@ struct AddTaskView: View {
                     ProgressView().tint(.black)
                 } else {
                     Text(LocalizedStringKey(editing != nil ? "Save Changes" : "Add Task"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)

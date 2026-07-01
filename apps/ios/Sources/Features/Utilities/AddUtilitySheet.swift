@@ -59,7 +59,7 @@ struct AddUtilitySheet: View {
                                     Text("Amount (€)").font(.system(size: 15)).foregroundStyle(.primary)
                                     Spacer()
                                     TextField("0.00", text: $amount)
-                                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                                        .font(AppFont.headline).foregroundStyle(.primary)
                                         .tint(.accentColor).keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing).frame(width: 100)
                                 }.padding(.vertical, 4)
@@ -104,7 +104,7 @@ struct AddUtilitySheet: View {
                         )
                         onSave(entry); HapticFeedback.success(); dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(amount.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                     .disabled(amount.isEmpty)
                 }
@@ -144,9 +144,9 @@ struct AddUtilitySheet: View {
                             Text("Scanning…")
                         } else {
                             Image(systemName: "doc.text.viewfinder")
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(AppFont.title3)
                             Text("Scan Invoice")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                         }
                     }
                     .foregroundStyle(.primary)

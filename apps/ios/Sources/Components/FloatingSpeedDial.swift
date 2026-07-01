@@ -76,7 +76,7 @@ struct FloatingSpeedDial: View {
         } label: {
             HStack(spacing: 10) {
                 Text(action.title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
@@ -89,7 +89,7 @@ struct FloatingSpeedDial: View {
                         .fill(action.color.opacity(0.18))
                         .frame(width: 44, height: 44)
                     Image(systemName: action.icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(action.color)
                 }
                 .shadow(color: action.color.opacity(0.25), radius: 8, y: 3)

@@ -105,7 +105,7 @@ struct AppearanceView: View {
                                     .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
                                     .frame(width: 40, height: 40)
                                 Text(cur.symbol)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
                             }
 
@@ -163,9 +163,9 @@ struct AppearanceView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                     Text("Refresh rates now")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                 }
                 .foregroundStyle(.tint)
                 .padding(.leading, 4)
@@ -284,7 +284,7 @@ struct AppearanceView: View {
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(0.35))
             .padding(.leading, 4)
             .textCase(.uppercase)

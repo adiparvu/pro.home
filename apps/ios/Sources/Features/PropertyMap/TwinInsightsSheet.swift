@@ -89,7 +89,7 @@ struct TwinInsightsSheet: View {
 
     private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundStyle(color)
+            Image(systemName: icon).font(AppFont.headline).foregroundStyle(color)
             Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
             Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
         }
@@ -102,7 +102,7 @@ struct TwinInsightsSheet: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Needs attention", systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.orange)
                 ForEach(critical.prefix(5)) { obj in
                     HStack(spacing: 10) {
@@ -123,7 +123,7 @@ struct TwinInsightsSheet: View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Label("\(assistantName) Analysis", systemImage: "sparkles")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
 
                 if let aiReply {
@@ -149,7 +149,7 @@ struct TwinInsightsSheet: View {
                         Image(systemName: "sparkles")
                         Text(aiReply == nil ? String(localized: "Ask") + " \(assistantName)" : String(localized: "Re-analyze"))
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)

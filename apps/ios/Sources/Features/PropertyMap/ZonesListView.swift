@@ -90,7 +90,7 @@ struct ZonesListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {
                     Text("\(filteredZones.count)")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(.regularMaterial, in: Capsule())
@@ -100,7 +100,7 @@ struct ZonesListView: View {
                         router.selectedTab = .digitalTwin
                     } label: {
                         Image(systemName: "map.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.primary.opacity(0.7))
                             .frame(width: 34, height: 34)
                     }
@@ -135,7 +135,7 @@ struct ZonesListView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No zones")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.45))
             Text("Open the Digital Twin to draw your first zone")
                 .font(.system(size: 13))
@@ -175,7 +175,7 @@ struct ZoneListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(zone.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
                     .font(.system(size: 12))
@@ -186,14 +186,14 @@ struct ZoneListRow: View {
 
             // Health badge
             Text(LocalizedStringKey(healthLabel))
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(zone.healthColor.opacity(0.15), in: Capsule())
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 14)

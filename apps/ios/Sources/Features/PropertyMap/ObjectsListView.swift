@@ -100,7 +100,7 @@ struct ObjectsListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredElements.count)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
@@ -125,8 +125,8 @@ struct ObjectsListView: View {
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: favoritesOnly ? "star.fill" : "star")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("Favorites").font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.label)
+                        Text("Favorites").font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
                     .padding(.horizontal, 12).padding(.vertical, 8)
@@ -143,7 +143,7 @@ struct ObjectsListView: View {
                     HapticFeedback.selection()
                 } label: {
                     Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 11).padding(.vertical, 8)
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
@@ -177,7 +177,7 @@ struct ObjectsListView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No objects")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.45))
             Text("Add objects to your property zones from the Digital Twin")
                 .font(.system(size: 13))
@@ -213,7 +213,7 @@ struct ObjectListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(element.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 if let zone = zoneName {
                     Text(zone)
@@ -230,7 +230,7 @@ struct ObjectListRow: View {
 
             Button { onToggleFavorite() } label: {
                 Image(systemName: element.isFavorite ? "star.fill" : "star")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(element.isFavorite ? .yellow : Color.primary.opacity(0.3))
                     .frame(width: 30, height: 30)
             }
@@ -244,7 +244,7 @@ struct ObjectListRow: View {
                 .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
         .padding(.horizontal, 14)

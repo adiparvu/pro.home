@@ -137,7 +137,7 @@ struct GlobalSearchSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Close") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                 }
             }
         }
@@ -173,7 +173,7 @@ struct GlobalSearchSheet: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.secondary)
             TextField("People, tasks, documents, appliances…", text: $query)
                 .font(.system(size: 16))
@@ -206,7 +206,7 @@ struct GlobalSearchSheet: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("Search the entire app")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("Tasks · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
                 .font(.system(size: 12))
@@ -228,7 +228,7 @@ struct GlobalSearchSheet: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Color.primary.opacity(0.45))
             Text("\"\(query)\"")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Spacer()
         }
@@ -599,7 +599,7 @@ struct GlobalSearchSheet: View {
         let body = content()
         return VStack(alignment: .leading, spacing: 8) {
             Label(LocalizedStringKey(title), systemImage: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(color)
                 .tracking(0.5)
                 .padding(.leading, 4)
@@ -620,12 +620,12 @@ struct GlobalSearchSheet: View {
                             .fill(color.opacity(0.14))
                             .frame(width: 30, height: 30)
                         Image(systemName: icon)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(color)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         if !subtitle.isEmpty {

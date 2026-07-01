@@ -349,7 +349,7 @@ struct AerialCanvasView: View {
             }
             VStack {
                 Text("Tap to add corners (\(draftZonePoints.count))")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    .font(AppFont.captionEmphasis).foregroundStyle(.white)
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(.black.opacity(0.65), in: Capsule())
                     .padding(.top, 14)
@@ -366,7 +366,7 @@ struct AerialCanvasView: View {
             HStack(spacing: 6) {
                 Image(systemName: "hand.tap.fill")
                 Text("Tap the photo to place an element")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 14).padding(.vertical, 9)

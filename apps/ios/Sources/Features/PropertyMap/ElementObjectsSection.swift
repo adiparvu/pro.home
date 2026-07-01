@@ -32,7 +32,7 @@ struct ElementObjectsSection: View {
                             Image(systemName: item.categoryIcon)
                                 .font(.system(size: 14)).foregroundStyle(item.categoryColor).frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(item.name).font(.system(size: 14, weight: .medium))
+                                Text(item.name).font(AppFont.footnote)
                                 if !item.brand.isEmpty {
                                     Text(item.brand).font(.system(size: 11)).foregroundStyle(.secondary)
                                 }

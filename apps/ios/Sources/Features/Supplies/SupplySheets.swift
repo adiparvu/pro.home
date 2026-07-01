@@ -63,7 +63,7 @@ struct AddSupplyListSheet: View {
                 Group {
                     if name.isEmpty { Text("List name") } else { Text(name) }
                 }
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .primary)
                 .padding(.horizontal, 12).padding(.vertical, 10)
             }
@@ -75,7 +75,7 @@ struct AddSupplyListSheet: View {
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NAME")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
                 .padding(14)
@@ -86,7 +86,7 @@ struct AddSupplyListSheet: View {
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NOTE (OPTIONAL)")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .lineLimit(2...4).padding(14)
@@ -97,7 +97,7 @@ struct AddSupplyListSheet: View {
     private var iconPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ICON")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             let color = Color(hex: selectedColor) ?? .blue
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
                 ForEach(iconOptions, id: \.self) { icon in
@@ -124,7 +124,7 @@ struct AddSupplyListSheet: View {
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("COLOR")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(SupplyList.colorOptions, id: \.hex) { opt in
                     let c = Color(hex: opt.hex) ?? .blue
@@ -181,7 +181,7 @@ struct AddSupplyListSheet: View {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
                     Text("Create list")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 52)

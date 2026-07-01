@@ -34,7 +34,7 @@ struct PropertyMapView: View {
                             withAnimation(.spring(response: 0.3)) { isEditMode.toggle() }
                         } label: {
                             Image(systemName: isEditMode ? "checkmark" : "pencil")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(isEditMode ? Color.green : .primary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 7)

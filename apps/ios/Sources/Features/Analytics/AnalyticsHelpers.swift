@@ -56,7 +56,7 @@ struct TrendKPICard: View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
                     .symbolRenderingMode(.hierarchical)
 

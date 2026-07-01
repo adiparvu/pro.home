@@ -34,7 +34,7 @@ struct LanguageSettingsView: View {
     private var languageListCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "lang_select_section"))
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -55,7 +55,7 @@ struct LanguageSettingsView: View {
                                     .font(.system(size: 22))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(lang.nativeName)
-                                        .font(.system(size: 15, weight: .medium))
+                                        .font(AppFont.body)
                                         .foregroundStyle(.primary)
                                     Text(lang.localizedName)
                                         .font(.system(size: 12))

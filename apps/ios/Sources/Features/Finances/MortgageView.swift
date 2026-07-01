@@ -70,7 +70,7 @@ struct MortgageView: View {
                     isEditing = true
                     HapticFeedback.impact(.light)
                 }
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(Color.accentColor)
             }
         }

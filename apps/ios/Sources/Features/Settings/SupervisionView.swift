@@ -153,7 +153,7 @@ struct SupervisionView: View {
     private var memberList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("MEMBERS")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
 
@@ -164,7 +164,7 @@ struct SupervisionView: View {
                             .font(.system(size: 32))
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("No members added")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(Color.primary.opacity(0.45))
                         Text("Add members in the Family Members section to configure supervision.")
                             .font(.system(size: 12))
@@ -193,7 +193,7 @@ struct SupervisionView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.role.capitalized))
                             .font(.system(size: 12))
@@ -204,14 +204,14 @@ struct SupervisionView: View {
 
                     let supervised = SupervisionSettings.isSupervised(member.id)
                     Text(LocalizedStringKey(supervised ? "Active" : "Inactive"))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
                         .padding(.horizontal, 10).padding(.vertical, 4)
                         .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(0.06),
                                     in: Capsule())
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
                 .padding(.horizontal, 14).padding(.vertical, 12)

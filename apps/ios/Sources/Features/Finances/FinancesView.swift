@@ -108,7 +108,7 @@ struct FinancesView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .accessibilityLabel("Add transaction")
             }
@@ -140,7 +140,7 @@ struct FinancesView: View {
             Image(systemName: selectedType == nil
                   ? "line.3.horizontal.decrease"
                   : (selectedType == "income" ? "arrow.down.left" : "arrow.up.right"))
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
         .accessibilityLabel("Filter transactions")

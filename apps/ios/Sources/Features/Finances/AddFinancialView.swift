@@ -53,7 +53,7 @@ struct AddFinancialView: View {
                             ProgressView().tint(.white)
                         } else {
                             Text("Save")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
@@ -81,7 +81,7 @@ struct AddFinancialView: View {
                             Image(systemName: t == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                                 .font(.system(size: 14))
                             Text(LocalizedStringKey(t.capitalized))
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                         }
                         .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.5))
                         .frame(maxWidth: .infinity)
@@ -105,7 +105,7 @@ struct AddFinancialView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AMOUNT")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.primary.opacity(0.35))
 
                 HStack(alignment: .center, spacing: 8) {

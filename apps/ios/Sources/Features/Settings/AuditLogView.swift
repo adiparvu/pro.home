@@ -71,7 +71,7 @@ struct AuditLogView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(day)
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 8)
 
@@ -97,12 +97,12 @@ struct AuditLogView: View {
                     .fill(iconColor(for: event.type).opacity(0.15))
                     .frame(width: 36, height: 36)
                 Image(systemName: iconName(for: event.type))
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(iconColor(for: event.type))
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.description)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                 HStack(spacing: 4) {
                     Text(timeString(from: event.timestamp))
@@ -136,7 +136,7 @@ struct AuditLogView: View {
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             Text("Nicio activitate înregistrată")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
             Text("Activitățile de securitate vor apărea aici")
                 .font(.system(size: 13))

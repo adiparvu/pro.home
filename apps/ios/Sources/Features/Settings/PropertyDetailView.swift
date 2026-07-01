@@ -30,7 +30,7 @@ struct PropertyDetailView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showEdit = true } label: {
                     Image(systemName: "pencil")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                 }
                 .accessibilityLabel("Edit property")
             }

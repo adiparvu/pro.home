@@ -151,7 +151,7 @@ struct AddDocumentSheet: View {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                             .disabled(!canSave)
                     }
                 }

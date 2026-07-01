@@ -40,7 +40,7 @@ struct TrustedContactView: View {
                         ProgressView().scaleEffect(0.8)
                     } else {
                         Button("Save") { save() }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(isValid ? .blue : Color.primary.opacity(0.3))
                             .disabled(!isValid)
                     }
@@ -78,7 +78,7 @@ struct TrustedContactView: View {
             }
 
             Text("Your emergency contact person")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
@@ -136,7 +136,7 @@ struct TrustedContactView: View {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 13))
                 Text("Remove trusted contact")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)

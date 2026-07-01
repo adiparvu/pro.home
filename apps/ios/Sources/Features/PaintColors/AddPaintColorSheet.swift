@@ -80,7 +80,7 @@ struct AddPaintColorSheet: View {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .disabled(colorName.trimmingCharacters(in: .whitespaces).isEmpty || roomName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
@@ -191,7 +191,7 @@ struct AddPaintColorSheet: View {
                 .foregroundStyle(hexPreviewColor)
                 .frame(width: 28)
             Text("#")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Hex Color (e.g. F5E6D0)", text: $hexColor)
                 .font(.system(size: 15))
@@ -231,7 +231,7 @@ struct AddPaintColorSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 8)
                 .textCase(.uppercase)

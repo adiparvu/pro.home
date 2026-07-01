@@ -166,7 +166,7 @@ struct ContractorDetailSheet: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
@@ -184,7 +184,7 @@ struct ContractorDetailSheet: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Notes", systemImage: "note.text")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                 Text(currentContractor.notes ?? "")
                     .font(.system(size: 14))
@@ -240,7 +240,7 @@ struct ContractorDetailSheet: View {
                     Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
                 }
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -309,7 +309,7 @@ private struct EditContractorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.isEmpty || category.isEmpty || isSaving)
                 }
             }

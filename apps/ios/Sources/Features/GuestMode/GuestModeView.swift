@@ -196,9 +196,9 @@ struct GuestModeView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                 Text("Share Guest Info")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -213,10 +213,10 @@ struct GuestModeView: View {
     private func sectionHeader(icon: String, title: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
                 .textCase(.uppercase)

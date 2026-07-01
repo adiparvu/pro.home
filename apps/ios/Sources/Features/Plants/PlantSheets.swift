@@ -321,7 +321,7 @@ struct AddPlantSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text("Add plant")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -342,7 +342,7 @@ struct AddPlantSheet: View {
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

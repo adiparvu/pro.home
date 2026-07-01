@@ -178,7 +178,7 @@ struct EditProfileView: View {
                 if profileService.isSaving {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Save Changes").font(.system(size: 16, weight: .semibold))
+                    Text("Save Changes").font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)

@@ -84,7 +84,7 @@ extension PropertyDetailView {
                 } else {
                     Button { showPhotoMenu = true } label: {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.white)
                             .padding(12)
                     }
@@ -154,7 +154,7 @@ extension PropertyDetailView {
                     .fill(color.opacity(0.14))
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(color)
             }
             Text(label)
@@ -162,7 +162,7 @@ extension PropertyDetailView {
                 .foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
         }
@@ -183,7 +183,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Story", systemImage: "text.quote")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
                 Text(story)
@@ -200,7 +200,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Renovations", systemImage: "wrench.and.screwdriver.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
 
@@ -222,7 +222,7 @@ extension PropertyDetailView {
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(r.title)
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                 Text(r.yearRange)
                                     .font(.system(size: 12))
                                     .foregroundStyle(.secondary)
@@ -243,7 +243,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Owners", systemImage: "person.2.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
 
@@ -261,7 +261,7 @@ extension PropertyDetailView {
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(owner.name)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.footnoteEmphasis)
                                     Text(owner.yearRange)
                                         .font(.system(size: 12))
                                         .foregroundStyle(.secondary)
@@ -294,11 +294,11 @@ extension PropertyDetailView {
                         .fill(Color.orange.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: "doc.richtext.fill")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.orange)
                 }
                 Text("Property plans")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")

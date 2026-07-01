@@ -30,7 +30,7 @@ struct HelpFAQView: View {
 
                 VStack(spacing: 12) {
                     Text("Still need help?")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Button {
                         if let url = URL(string: "mailto:support@prvio.app") {
@@ -38,7 +38,7 @@ struct HelpFAQView: View {
                         }
                     } label: {
                         Label("Email Support", systemImage: "envelope.fill")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -71,12 +71,12 @@ private struct FAQRow: View {
             } label: {
                 HStack(spacing: 12) {
                     Text(LocalizedStringKey(item.question))
-                        .font(.system(size: 15, weight: .medium))
+                        .font(AppFont.body)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
                     Spacer()
                     Image(systemName: item.isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
                 .padding(.horizontal, 16)

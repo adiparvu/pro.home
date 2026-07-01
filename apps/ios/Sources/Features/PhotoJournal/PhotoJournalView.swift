@@ -85,7 +85,7 @@ struct PhotoJournalView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Start your renovation diary")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Capture before and after photos, track progress, and document every improvement to your home.")
                 .font(.system(size: 14))
@@ -96,7 +96,7 @@ struct PhotoJournalView: View {
                 showAdd = true
             } label: {
                 Label("Add first photo", systemImage: "camera.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -165,7 +165,7 @@ private struct PhotoGridCell: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white)
                         .lineLimit(1)
                     if let date = entry.takenDate {
@@ -246,7 +246,7 @@ private struct PhotoEntryDetailSheet: View {
                                     HStack(spacing: 8) {
                                         ForEach(entryTags, id: \.self) { tag in
                                             Text("#\(tag)")
-                                                .font(.system(size: 12, weight: .medium))
+                                                .font(AppFont.caption)
                                                 .foregroundStyle(.white.opacity(0.7))
                                                 .padding(.horizontal, 10)
                                                 .padding(.vertical, 5)
@@ -261,7 +261,7 @@ private struct PhotoEntryDetailSheet: View {
                                 HapticFeedback.warning()
                             } label: {
                                 Label("Delete Photo", systemImage: "trash")
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(AppFont.body)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)

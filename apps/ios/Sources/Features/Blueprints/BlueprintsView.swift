@@ -118,12 +118,12 @@ struct BlueprintsView: View {
                             .fill(LinearGradient(colors: [.orange, .brown], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 44, height: 44)
                         Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppFont.title3)
                             .foregroundStyle(.primary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Underground Map")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
                             .font(.system(size: 12))
@@ -149,7 +149,7 @@ struct BlueprintsView: View {
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SAVED PLANS & MODELS")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -179,7 +179,7 @@ struct BlueprintsView: View {
                 .font(.system(size: 46))
                 .foregroundStyle(Color.primary.opacity(0.16))
             Text("No plans yet")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
                 .font(.system(size: 13))

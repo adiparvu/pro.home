@@ -34,7 +34,7 @@ struct PlantsView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add plant")
@@ -173,10 +173,10 @@ struct PlantsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(iconColor)
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
             }
@@ -204,7 +204,7 @@ struct PlantsView: View {
             Text("🪴")
                 .font(.system(size: 60))
             Text("No plants added")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add plants to track\nwatering and their health status.")
                 .font(.system(size: 14))
@@ -212,7 +212,7 @@ struct PlantsView: View {
                 .multilineTextAlignment(.center)
             Button { showAddPlant = true } label: {
                 Label("Add first plant", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -244,7 +244,7 @@ struct PlantsView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No property added")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
         }
@@ -283,7 +283,7 @@ struct PlantCard: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(plant.name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -295,7 +295,7 @@ struct PlantCard: View {
                         }
 
                         Text(LocalizedStringKey(plant.wateringLabel))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.caption)
                             .foregroundStyle(
                                 plant.needsWatering
                                     ? Color(red: 1.0, green: 0.62, blue: 0.1)

@@ -47,13 +47,13 @@ struct PageHeader: View {
             VStack(alignment: .leading, spacing: 3) {
                 if let subtitleKey = _subtitleKey {
                     Text(subtitleKey)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(.secondary)
                         .tracking(1.4)
                         .textCase(.uppercase)
                 } else if let subtitle {
                     Text(LocalizedStringKey(subtitle))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(.secondary)
                         .tracking(1.4)
                         .textCase(.uppercase)

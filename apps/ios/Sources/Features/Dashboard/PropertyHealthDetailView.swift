@@ -39,7 +39,7 @@ struct PropertyHealthDetailView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
             }
         }
     }
@@ -148,7 +148,7 @@ struct PropertyHealthDetailView: View {
     private func categoryRow(icon: String, label: String, detail: String, pct: Int, color: Color) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(color)
                 .frame(width: 32, height: 32)
                 .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -156,7 +156,7 @@ struct PropertyHealthDetailView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(label)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("\(pct)%")
@@ -185,7 +185,7 @@ struct PropertyHealthDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
                 Text("How to Improve")
                     .font(.system(size: 17, weight: .bold))
@@ -195,14 +195,14 @@ struct PropertyHealthDetailView: View {
             ForEach(suggestions, id: \.title) { tip in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: tip.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(tip.color)
                         .frame(width: 30, height: 30)
                         .background(tip.color.opacity(0.13), in: Circle())
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(tip.title)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                         Text(tip.body)
                             .font(.system(size: 12))
@@ -231,7 +231,7 @@ struct PropertyHealthDetailView: View {
     private var howItWorksCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("How the Score Works")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("The property health score is calculated from four categories: Maintenance (30%), Utilities (25%), Security (25%), and Tasks completion (20%). Completing tasks, keeping documents current, and resolving alerts all raise your score.")
                 .font(.system(size: 12))

@@ -77,7 +77,7 @@ struct SettingsView: View {
                     profileAvatar
                     VStack(alignment: .leading, spacing: 3) {
                         Text(displayName)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
                             .font(.system(size: 12))
@@ -115,11 +115,11 @@ struct SettingsView: View {
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                             if let name = propertyService.primary?.name {
                                 Text(name)
-                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .font(AppFont.footnote).foregroundStyle(.primary)
                                     .lineLimit(1)
                             } else {
                                 Text("No property")
-                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .font(AppFont.footnote).foregroundStyle(.primary)
                                     .lineLimit(1)
                             }
                         }
@@ -141,7 +141,7 @@ struct SettingsView: View {
                             Text("Account")
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
                             Text(auth.session?.user.email ?? "—")
-                                .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                .font(AppFont.footnote).foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         Spacer()
@@ -403,7 +403,7 @@ struct SettingsView: View {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                 Text("Sign Out")
             }
-            .font(.system(size: 15, weight: .medium))
+            .font(AppFont.body)
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)

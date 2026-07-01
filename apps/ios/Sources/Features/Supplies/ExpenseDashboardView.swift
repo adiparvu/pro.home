@@ -96,7 +96,7 @@ struct ExpenseDashboardView: View {
                         HapticFeedback.selection()
                     } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.secondary)
                             .frame(width: 32, height: 32)
                             .background(Color.primary.opacity(0.07), in: Circle())
@@ -106,7 +106,7 @@ struct ExpenseDashboardView: View {
                     Spacer()
 
                     Text(receiptService.monthDisplayName(selectedMonth))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                         .contentTransition(.numericText())
 
@@ -120,7 +120,7 @@ struct ExpenseDashboardView: View {
                         }
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(selectedMonth == receiptService.currentMonthKey
                                 ? Color.primary.opacity(0.2) : .secondary)
                             .frame(width: 32, height: 32)
@@ -153,7 +153,7 @@ struct ExpenseDashboardView: View {
                                 Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
                                     .font(.system(size: 10, weight: .bold))
                                 Text(String(format: "%.0f%%", pct))
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                             }
                             .foregroundStyle(delta <= 0
                                 ? Color(red: 0.2, green: 0.78, blue: 0.45)
@@ -185,7 +185,7 @@ struct ExpenseDashboardView: View {
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(String(localized: "expense_section_daily"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
 
@@ -281,7 +281,7 @@ struct ExpenseDashboardView: View {
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(String(localized: "expense_section_categories"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
 
@@ -310,7 +310,7 @@ struct ExpenseDashboardView: View {
                                     Spacer()
                                     let pct = total > 0 ? cat.total / total * 100 : 0
                                     Text(String(format: "%.0f%%", pct))
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(AppFont.label)
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -338,7 +338,7 @@ struct ExpenseDashboardView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text(String(localized: "expense_section_budgets"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
                     Spacer()
@@ -358,14 +358,14 @@ struct ExpenseDashboardView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             Image(systemName: ReceiptCategory.icon(for: budget.category))
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(ReceiptCategory.color(for: budget.category))
                             Text(ReceiptCategory.label(for: budget.category))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit))")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(isOver ? .red : .secondary)
                         }
 
@@ -395,7 +395,7 @@ struct ExpenseDashboardView: View {
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "expense_section_recent"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
                     .padding(.leading, 4)
@@ -436,13 +436,13 @@ struct ExpenseDashboardView: View {
                         .fill(receipt.categoryColor.opacity(0.15))
                         .frame(width: 40, height: 40)
                     Image(systemName: receipt.categoryIcon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(receipt.categoryColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(receipt.formattedDate)
@@ -453,7 +453,7 @@ struct ExpenseDashboardView: View {
                 Spacer()
 
                 Text(receipt.formattedTotal)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .monospacedDigit()
             }
@@ -471,7 +471,7 @@ struct ExpenseDashboardView: View {
     private func recurringSection(_ items: [RecurringItem]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "expense_section_recurring"))
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .tracking(0.8)
                 .padding(.leading, 4)
@@ -485,16 +485,16 @@ struct ExpenseDashboardView: View {
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                                         .fill(Color.accentColor.opacity(0.12)).frame(width: 36, height: 36)
                                     Image(systemName: "arrow.triangle.2.circlepath")
-                                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.accentColor)
+                                        .font(AppFont.captionEmphasis).foregroundStyle(Color.accentColor)
                                 }
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
+                                    Text(item.name).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
                                     Text(String(format: String(localized: "expense_recurring_times"), item.count))
                                         .font(.system(size: 11)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text("~\(Receipt.format(item.avgPrice))")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.accentColor)
                                     .monospacedDigit()
                             }

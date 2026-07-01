@@ -91,7 +91,7 @@ extension PlantDetailSheet {
                 GlassCard(padding: 16) {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Notes", systemImage: "note.text")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(.secondary)
                         Text(notes)
                             .font(.system(size: 15))
@@ -143,9 +143,9 @@ extension PlantDetailSheet {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                 Text("Mark as watered")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -292,7 +292,7 @@ extension PlantDetailSheet {
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

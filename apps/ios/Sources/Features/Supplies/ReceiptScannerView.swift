@@ -125,7 +125,7 @@ struct ReceiptScannerView: View {
                         showCamera = true
                     } label: {
                         Label(String(localized: "Fotografiază bon"), systemImage: "camera.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
@@ -136,7 +136,7 @@ struct ReceiptScannerView: View {
                     HStack(spacing: 12) {
                         PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                             Label(String(localized: "scanner_choose_photo"), systemImage: "photo.on.rectangle")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(Color.accentColor)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
@@ -148,7 +148,7 @@ struct ReceiptScannerView: View {
                             showFileImporter = true
                         } label: {
                             Label(String(localized: "Din fișiere"), systemImage: "doc.fill")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(Color.primary.opacity(0.7))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
@@ -312,7 +312,7 @@ private struct ReceiptReviewView: View {
                                         Text(item.name).font(.system(size: 13)).foregroundStyle(.primary).lineLimit(1)
                                         Spacer()
                                         Text(Receipt.format(item.totalPrice))
-                                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+                                            .font(AppFont.captionEmphasis).foregroundStyle(.secondary).monospacedDigit()
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 9)
                                     if idx < parsed.items.count - 1 {
@@ -329,7 +329,7 @@ private struct ReceiptReviewView: View {
                     fieldLabel("TOTAL")
                     HStack {
                         TextField("0.00", value: $parsed.total, format: .number.precision(.fractionLength(2)))
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .font(AppFont.title2)
                             .keyboardType(.decimalPad)
                     }
                     .padding(14)
@@ -344,7 +344,7 @@ private struct ReceiptReviewView: View {
                         if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
                         else {
                             Label(String(localized: "scanner_save"), systemImage: "checkmark")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                         }
                     }
                     .foregroundStyle(Color(UIColor.systemBackground))
@@ -361,7 +361,7 @@ private struct ReceiptReviewView: View {
     }
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        Text(text).font(AppFont.label).foregroundStyle(.secondary)
     }
 }
 

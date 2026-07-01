@@ -230,7 +230,7 @@ struct PropertyHealthDashboardView: View {
     private func aiTip(icon: String, title: LocalizedStringKey, desc: LocalizedStringKey, color: Color) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(color)
                 .frame(width: 28, height: 28)
                 .background(color.opacity(0.12), in: Circle())
@@ -275,7 +275,7 @@ private struct HealthElementRow: View {
                         .fill(element.elementType.accentColor.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: element.elementType.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(element.elementType.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 3) {

@@ -94,7 +94,7 @@ struct AddReceiptSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("ITEMS")
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                    .font(AppFont.label).foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     items.append(EditableReceiptItem())
@@ -116,7 +116,7 @@ struct AddReceiptSheet: View {
                                     .font(.system(size: 13))
                                     .frame(maxWidth: .infinity)
                                 TextField("0.00", text: $item.priceText)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 70)
@@ -154,7 +154,7 @@ struct AddReceiptSheet: View {
     private var totalField: some View {
         formField("TOTAL") {
             TextField("0.00", text: $total)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(AppFont.title2)
                 .keyboardType(.decimalPad)
                 .padding(14)
                 .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -177,7 +177,7 @@ struct AddReceiptSheet: View {
                 if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
                 else {
                     Text(String(localized: "add_receipt_save"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .foregroundStyle(Color(UIColor.systemBackground))
@@ -196,7 +196,7 @@ struct AddReceiptSheet: View {
 
     private func formField<C: View>(_ label: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(LocalizedStringKey(label)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(label)).font(AppFont.label).foregroundStyle(.secondary)
             content()
         }
     }

@@ -12,7 +12,7 @@ struct ElementRecordRow: View {
                 ZStack {
                     Circle().fill(record.recordType.color.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: record.recordType.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(record.recordType.color)
                 }
                 VStack(alignment: .leading, spacing: 3) {

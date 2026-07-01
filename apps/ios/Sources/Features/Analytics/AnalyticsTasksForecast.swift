@@ -40,7 +40,7 @@ struct TasksSection: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Completion rate")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
                             .font(.system(size: 18, weight: .bold))
@@ -66,7 +66,7 @@ struct TasksSection: View {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("By priority")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
 
                         Chart(tasksByPriority, id: \.priority) { item in
                             BarMark(
@@ -124,7 +124,7 @@ struct ForecastSection: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("12-month projection")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                             Text("Based on the last \(financialService.monthlyData.count) months")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
@@ -157,7 +157,7 @@ struct ForecastSection: View {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Expense trend")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
 
                         Chart {
                             ForEach(financialService.monthlyData, id: \.month) { item in

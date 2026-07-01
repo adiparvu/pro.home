@@ -279,7 +279,7 @@ struct DigitalTwinView: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: "line.3.horizontal.decrease.circle\(categoryFilter == nil ? "" : ".fill")")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
                 Text(categoryFilter?.displayName ?? "Filter")
                     .font(.system(size: 9, weight: .bold))
@@ -297,7 +297,7 @@ struct DigitalTwinView: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(tint)
                 if let label {
                     Text(LocalizedStringKey(label))
@@ -341,7 +341,7 @@ struct DigitalTwinView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon).font(.system(size: 13, weight: .bold))
-                Text(LocalizedStringKey(title)).font(.system(size: 14, weight: .semibold))
+                Text(LocalizedStringKey(title)).font(AppFont.footnoteEmphasis)
             }
             .foregroundStyle(tint)
             .padding(.horizontal, 12).padding(.vertical, 8)
@@ -430,9 +430,9 @@ struct DigitalTwinView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: zoneView == .hidden ? "square.on.square.dashed" : "square.on.square")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                 Text(zoneViewLabel)
-                    .font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    .font(AppFont.captionEmphasis).lineLimit(1)
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
             }
             .foregroundStyle(.white)

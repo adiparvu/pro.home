@@ -103,7 +103,7 @@ struct EditPropertySheet: View {
                         if showMap { mapPickerSection.padding(.top, 8) }
 
                         Text("TYPE")
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+                            .font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
 
@@ -144,7 +144,7 @@ struct EditPropertySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
+                        else { Text("Save").font(AppFont.subheadline).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
                     }
                     .disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
                 }

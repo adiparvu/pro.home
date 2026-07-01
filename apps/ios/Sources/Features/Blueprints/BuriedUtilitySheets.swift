@@ -16,18 +16,18 @@ struct BuriedUtilityRow: View {
                     Circle().fill(utility.swiftColor.opacity(0.2))
                         .overlay(Circle().strokeBorder(utility.swiftColor.opacity(0.5), lineWidth: 1.5))
                     Image(systemName: utility.icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(utility.swiftColor)
                 }
                 .frame(width: 42, height: 42)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(utility.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     HStack(spacing: 8) {
                         Text(LocalizedStringKey(utility.typeLabel))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(utility.swiftColor)
                         Text("·").foregroundStyle(Color.primary.opacity(0.3))
                         Text(LocalizedStringKey(utility.depthDisplay))
@@ -100,7 +100,7 @@ struct BuriedUtilityDetailSheet: View {
                         if !utility.notes.isEmpty {
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("NOTES").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
+                                    Text("NOTES").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35))
                                     Text(utility.notes).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.8))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,7 +114,7 @@ struct BuriedUtilityDetailSheet: View {
                                 }
                             } label: {
                                 Label("Open in Maps", systemImage: "map.fill")
-                                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                                    .font(AppFont.subheadline).foregroundStyle(.primary)
                                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                                     .background(.blue, in: RoundedRectangle(cornerRadius: 14))
                             }
@@ -128,7 +128,7 @@ struct BuriedUtilityDetailSheet: View {
             .navigationTitle(utility.name).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }
@@ -138,7 +138,7 @@ struct BuriedUtilityDetailSheet: View {
         HStack {
             Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
-            Text(LocalizedStringKey(value)).font(.system(size: 14, weight: .semibold)).foregroundStyle(color)
+            Text(LocalizedStringKey(value)).font(AppFont.footnoteEmphasis).foregroundStyle(color)
         }
         .padding(.vertical, 10)
     }
@@ -193,7 +193,7 @@ struct AddBuriedUtilitySheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor)
                         .disabled(name.isEmpty)
                 }
@@ -212,7 +212,7 @@ struct AddBuriedUtilitySheet: View {
 
     private var typePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(BuriedUtilityKind.all, id: \.self) { t in
@@ -240,7 +240,7 @@ struct AddBuriedUtilitySheet: View {
                 Text("Depth (cm)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("60", text: $depth)
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
             }.padding(.horizontal, 16).padding(.vertical, 13)
             div
@@ -249,7 +249,7 @@ struct AddBuriedUtilitySheet: View {
                 Text("Length (m)").font(.system(size: 15)).foregroundStyle(.primary)
                 Spacer()
                 TextField("0", text: $length)
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary).tint(.accentColor)
+                    .font(AppFont.subheadline).foregroundStyle(.primary).tint(.accentColor)
                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
             }.padding(.horizontal, 16).padding(.vertical, 13)
             div
@@ -313,7 +313,7 @@ struct AddBuriedUtilitySheet: View {
                 }
                 Button { showPhotoPicker = true } label: {
                     Label(LocalizedStringKey(photoImage == nil ? "Add reference photo" : "Change photo"), systemImage: "photo.badge.plus")
-                        .font(.system(size: 14, weight: .medium)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.footnote).foregroundStyle(Color.accentColor)
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 }.buttonStyle(.plain)

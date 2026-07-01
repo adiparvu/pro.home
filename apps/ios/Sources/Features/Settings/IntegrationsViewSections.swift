@@ -363,7 +363,7 @@ struct IntegrationGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -389,7 +389,7 @@ struct IntegrationRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
@@ -437,14 +437,14 @@ struct IntegrationRow: View {
 
         case .comingSoon:
             Text("Soon")
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Color.primary.opacity(0.06), in: Capsule())
 
         case .active(let label):
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(.green)
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Color.green.opacity(0.12), in: Capsule())
@@ -454,7 +454,7 @@ struct IntegrationRow: View {
                 action?()
             } label: {
                 Text(label)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Color.accentColor.opacity(0.12), in: Capsule())
@@ -478,7 +478,7 @@ struct IntegrationRowContent: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
@@ -489,7 +489,7 @@ struct IntegrationRowContent: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
             .padding(.horizontal, 14)

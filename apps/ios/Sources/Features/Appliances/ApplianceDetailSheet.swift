@@ -86,7 +86,7 @@ struct ApplianceDetailSheet: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.45))
                     Text(appliance.warrantyStatus)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(appliance.warrantyColor)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -162,7 +162,7 @@ struct ApplianceDetailSheet: View {
             HapticFeedback.warning()
         } label: {
             Label("Delete Appliance", systemImage: "trash")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
@@ -173,7 +173,7 @@ struct ApplianceDetailSheet: View {
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
             .padding(.leading, 6)
             .textCase(.uppercase)
@@ -190,7 +190,7 @@ struct ApplianceDetailSheet: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(valueColor)
         }
         .padding(.horizontal, 16)

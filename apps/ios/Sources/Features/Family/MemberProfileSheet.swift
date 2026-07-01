@@ -40,7 +40,7 @@ struct MemberProfileSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Edit") { showEdit = true }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
             .sheet(isPresented: $showEdit, onDismiss: {
@@ -64,7 +64,7 @@ struct MemberProfileSheet: View {
                 .foregroundStyle(.primary)
             Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(resolvedMember.swiftColor)
                 .padding(.horizontal, 12).padding(.vertical, 4)
                 .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
@@ -108,14 +108,14 @@ struct MemberProfileSheet: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(color)
                     .frame(width: 52, height: 52)
                     .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(color.opacity(0.2), lineWidth: 0.5))
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))
             }
         }
@@ -185,7 +185,7 @@ struct MemberProfileSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(0.35))
             .padding(.leading, 4)
     }

@@ -101,7 +101,7 @@ extension FinancesSection {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Monthly evolution")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
 
                 rangeChips
 
@@ -201,7 +201,7 @@ extension FinancesSection {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = .custom }
                             showCustomSheet = false
                         }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     }
                 }
             }

@@ -51,7 +51,7 @@ struct BackupCodesView: View {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Păstrează-le în siguranță")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                 Text("Stochează aceste coduri undeva sigur. Fiecare cod poate fi folosit o singură dată.")
                     .font(.system(size: 12))
@@ -72,7 +72,7 @@ struct BackupCodesView: View {
     private var codesGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("CODURI DE REZERVĂ")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.35))
                 .padding(.leading, 4)
 
@@ -117,7 +117,7 @@ struct BackupCodesView: View {
         HStack(spacing: 12) {
             Button { copyAll() } label: {
                 Label("Copiază tot", systemImage: showCopyConfirm ? "checkmark" : "doc.on.doc.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(showCopyConfirm ? Color(red: 0.3, green: 0.82, blue: 0.45) : .primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
@@ -128,7 +128,7 @@ struct BackupCodesView: View {
 
             Button { shareAll() } label: {
                 Label("Descarcă", systemImage: "square.and.arrow.up.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
@@ -147,7 +147,7 @@ struct BackupCodesView: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 13))
                 Text("Generează coduri noi")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)

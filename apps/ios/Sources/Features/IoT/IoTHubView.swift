@@ -52,7 +52,7 @@ struct IoTHubView: View {
                     } else {
                         Button { Task { await service.pollAllDevices() } } label: {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 15, weight: .medium))
+                                .font(AppFont.body)
                                 .foregroundStyle(.primary)
                         }
                         .accessibilityLabel("Refresh devices")
@@ -166,7 +166,7 @@ struct IoTHubView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(device.name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Circle()
                             .fill(device.isConnected ? Color.green : Color.red)
@@ -244,7 +244,7 @@ struct IoTHubView: View {
                             .fill(sensor.type.color.opacity(0.15))
                             .frame(width: 36, height: 36)
                         Image(systemName: sensor.type.icon)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(sensor.type.color)
                     }
                     Spacer()
@@ -256,14 +256,14 @@ struct IoTHubView: View {
                 }
 
                 Text(sensor.displayValue)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(AppFont.title2)
                     .foregroundStyle(sensor.isAlerting ? .orange : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(sensor.name)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if !sensor.linkedZoneName.isEmpty {
@@ -319,7 +319,7 @@ struct IoTHubView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(auto.name)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text("IF \(auto.conditionDescription)")
                         .font(.system(size: 11))
@@ -368,7 +368,7 @@ struct IoTHubView: View {
                 .padding(.horizontal, 40)
             Button { addAction() } label: {
                 Label("Add", systemImage: "plus")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 11)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

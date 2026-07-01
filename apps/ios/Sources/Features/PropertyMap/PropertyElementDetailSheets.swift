@@ -46,7 +46,7 @@ struct LinkedDocumentRow: View {
                 ZStack {
                     Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: doc.categoryIcon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {

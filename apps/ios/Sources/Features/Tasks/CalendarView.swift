@@ -33,7 +33,7 @@ struct CalendarView: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(0.07), in: Circle())
@@ -50,7 +50,7 @@ struct CalendarView: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(0.07), in: Circle())
@@ -67,7 +67,7 @@ struct CalendarView: View {
         HStack(spacing: 0) {
             ForEach(["Mo","Tu","We","Th","Fr","Sa","Su"], id: \.self) { d in
                 Text(d)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .frame(maxWidth: .infinity)
             }
@@ -255,7 +255,7 @@ private struct CalendarEventRow: View {
             ColoredIconBadge(icon: icon, color: color, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(subtitle))

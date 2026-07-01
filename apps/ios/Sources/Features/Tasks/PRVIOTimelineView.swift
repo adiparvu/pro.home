@@ -100,7 +100,7 @@ struct PRVIOTimelineView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredEvents.count)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
@@ -127,7 +127,7 @@ struct PRVIOTimelineView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No events")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.45))
             Text("No activity in this time range")
                 .font(.system(size: 13))
@@ -139,7 +139,7 @@ struct PRVIOTimelineView: View {
     private func sectionHeader(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .textCase(.uppercase)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(Color.primary.opacity(0.35))
             .kerning(0.8)
     }
@@ -254,13 +254,13 @@ struct TimelineEventCard: View {
                     .fill(event.color.opacity(0.15))
                     .frame(width: 40, height: 40)
                 Image(systemName: event.icon)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(event.color)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(event.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                 Text(LocalizedStringKey(event.subtitle))
@@ -272,7 +272,7 @@ struct TimelineEventCard: View {
 
             if !event.timeLabel.isEmpty {
                 Text(event.timeLabel)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
         }

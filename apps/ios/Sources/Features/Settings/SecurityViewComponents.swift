@@ -33,7 +33,7 @@ struct ActiveSessionsSheet: View {
                         Task { try? await supabase.auth.signOut(scope: .others) }
                     } label: {
                         Text("Sign out all other sessions")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.red)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.red)
                             .frame(maxWidth: .infinity).padding(.vertical, 14)
                             .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                     }

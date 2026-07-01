@@ -81,7 +81,7 @@ struct TOTPEnrollView: View {
 
     private var secretCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("MANUAL KEY").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("MANUAL KEY").font(AppFont.label).foregroundStyle(.secondary)
             HStack {
                 Text(secret)
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
@@ -104,7 +104,7 @@ struct TOTPEnrollView: View {
 
     private var codeEntry: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("6-DIGIT CODE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("6-DIGIT CODE").font(AppFont.label).foregroundStyle(.secondary)
             TextField("000000", text: $code)
                 .font(.system(size: 22, weight: .semibold, design: .monospaced))
                 .keyboardType(.numberPad)
@@ -121,7 +121,7 @@ struct TOTPEnrollView: View {
         Button { Task { await verify() } } label: {
             Group {
                 if isVerifying { ProgressView().tint(.white) }
-                else { Text("Activate").font(.system(size: 16, weight: .semibold)) }
+                else { Text("Activate").font(AppFont.headline) }
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -136,7 +136,7 @@ struct TOTPEnrollView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.shield.fill").font(.system(size: 40)).foregroundStyle(.orange)
             Text("Could not start enrollment")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
             Text(LocalizedStringKey(message))
                 .font(.system(size: 13)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

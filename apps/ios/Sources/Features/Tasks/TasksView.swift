@@ -118,7 +118,7 @@ struct TasksView: View {
                         }
                     } label: {
                         Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
                     .accessibilityLabel("Filter tasks")
@@ -130,7 +130,7 @@ struct TasksView: View {
                         HapticFeedback.impact(.medium)
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
@@ -256,7 +256,7 @@ struct TasksView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.18))
             Text(emptyTitle)
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.55))
             if filter == .all {
                 Button("Add your first task") { showAdd = true }
@@ -284,7 +284,7 @@ struct FilterChip: View {
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(isSelected ? .black.opacity(0.6) : Color.primary.opacity(0.4))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
@@ -329,7 +329,7 @@ struct TaskRowView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.primary)
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(0.3))
                     .lineLimit(1)

@@ -51,7 +51,7 @@ struct SupplyListDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(.primary)
                 }
                 .accessibilityLabel("Add item")
@@ -75,7 +75,7 @@ struct SupplyListDetailView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.secondary)
             TextField("Search items…", text: $searchText)
                 .font(.system(size: 15))
@@ -191,7 +191,7 @@ struct SupplyListDetailView: View {
                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
                                     .font(.system(size: 10, weight: .semibold))
                                 Text("COMPLETED · \(completed.count)")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .tracking(0.5)
                                 Spacer()
                             }
@@ -212,7 +212,7 @@ struct SupplyListDetailView: View {
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
@@ -229,7 +229,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "cart")
                 .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No items in this list")
-                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
             Text("Tap + to add the first item.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
@@ -244,7 +244,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 36)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No results")
-                .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.4))
+                .font(AppFont.subheadline).foregroundStyle(Color.primary.opacity(0.4))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -19,7 +19,7 @@ struct MapStylePickerSheet: View {
                 .padding(.bottom, 16)
 
             Text("Map Style")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.primary)
                 .padding(.bottom, 16)
 
@@ -77,7 +77,7 @@ private struct StyleCard: View {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(.white)
                                     .background(Color.accentColor, in: Circle())
                                     .padding(6)
@@ -89,7 +89,7 @@ private struct StyleCard: View {
 
                 VStack(spacing: 2) {
                     Text(title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     Text(subtitle)
                         .font(.system(size: 10))

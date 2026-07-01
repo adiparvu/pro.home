@@ -110,10 +110,10 @@ struct AppliancesView: View {
     private var warrantyBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.orange)
             Text("\(applianceService.appliancesExpiringWarranty.count) warranty expiring soon")
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(.orange)
             Spacer()
         }
@@ -188,7 +188,7 @@ struct AppliancesView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("No appliances yet")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Track warranties, model numbers, and maintenance for all your home appliances.")
                 .font(.system(size: 14))
@@ -199,7 +199,7 @@ struct AppliancesView: View {
                 showAdd = true
             } label: {
                 Label("Add your first appliance", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -234,7 +234,7 @@ private struct ApplianceRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(appliance.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -256,7 +256,7 @@ private struct ApplianceRow: View {
 
                     HStack(spacing: 6) {
                         Text(appliance.warrantyStatus)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(appliance.warrantyColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
@@ -276,7 +276,7 @@ private struct ApplianceRow: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
         }

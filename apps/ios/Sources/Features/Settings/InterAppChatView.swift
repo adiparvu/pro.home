@@ -59,7 +59,7 @@ struct InterAppChatView: View {
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.accentColor.opacity(0.5))
                     }
                     .padding(.horizontal, 16).padding(.vertical, 14)
@@ -124,7 +124,7 @@ struct InterAppChatView: View {
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 15, weight: .semibold))
+                Text(title).font(AppFont.subheadline)
                 Text(body).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.6))
             }
         }

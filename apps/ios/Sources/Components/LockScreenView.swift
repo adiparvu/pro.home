@@ -36,7 +36,7 @@ struct LockScreenView: View {
                         Image(systemName: "faceid")
                         Text("Unlock")
                     }
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -63,7 +63,7 @@ struct PrivacyCoverView: View {
             VStack(spacing: 14) {
                 PRVIOLogoView(size: 72)
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(Color.primary.opacity(0.5))
             }
         }

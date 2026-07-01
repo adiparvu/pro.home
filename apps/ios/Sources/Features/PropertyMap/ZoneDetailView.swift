@@ -261,7 +261,7 @@ struct ZoneDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Text("METRICS")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
                 if zoneType != .generic {
@@ -491,7 +491,7 @@ struct ZoneDetailView: View {
                         .foregroundStyle(color)
                 }
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(.secondary)
             }
         }
@@ -503,7 +503,7 @@ struct ZoneDetailView: View {
     private var elementsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("OBJECTS IN ZONE")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(1.2)
                 .padding(.leading, 4)

@@ -140,7 +140,7 @@ private struct AutomationPickerRow: View {
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.accentColor)
                 }
             }
@@ -201,7 +201,7 @@ private struct AddAutomationSheet: View {
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Rule Name")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Warranty Alert", text: $name)
@@ -216,7 +216,7 @@ private struct AddAutomationSheet: View {
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("When (Trigger)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
@@ -243,7 +243,7 @@ private struct AddAutomationSheet: View {
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("If (Condition)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
@@ -270,7 +270,7 @@ private struct AddAutomationSheet: View {
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Then (Action)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                     .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
@@ -325,7 +325,7 @@ private struct AddAutomationSheet: View {
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }
@@ -410,8 +410,8 @@ struct AutomationBuilderView: View {
 
     private func statPill(icon: String, label: String, color: Color) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 11, weight: .semibold)).foregroundStyle(color)
-            Text(label).font(.system(size: 12, weight: .medium)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.label).foregroundStyle(color)
+            Text(label).font(AppFont.caption).foregroundStyle(.primary)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .frame(maxWidth: .infinity)
@@ -436,7 +436,7 @@ struct AutomationBuilderView: View {
                                     .fill(a.isActive ? a.color : Color.primary.opacity(0.25))
                                     .frame(width: 6, height: 6)
                                 Text(a.name)
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(activeFlowIndex == i ? .white : .secondary)
                             }
                             .padding(.horizontal, 12).padding(.vertical, 6)
@@ -535,7 +535,7 @@ struct AutomationBuilderView: View {
             .background(color)
 
             Text(LocalizedStringKey(bodyText))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                .font(AppFont.captionStrong).foregroundStyle(.white)
                 .padding(.horizontal, 8).padding(.vertical, 7)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -583,9 +583,9 @@ struct AutomationBuilderView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: isDeployed ? "checkmark.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                     Text(isDeployed ? "Deployed ✓" : "Deploy")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                 }
                 .foregroundStyle(isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95))
                 .frame(maxWidth: .infinity).frame(height: 44)
@@ -606,8 +606,8 @@ struct AutomationBuilderView: View {
             HapticFeedback.impact(.light)
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
-                Text(LocalizedStringKey(label)).font(.system(size: 13, weight: .semibold))
+                Image(systemName: icon).font(AppFont.captionStrong)
+                Text(LocalizedStringKey(label)).font(AppFont.captionEmphasis)
             }
             .foregroundStyle(color)
             .frame(maxWidth: .infinity).frame(height: 44)
@@ -626,7 +626,7 @@ struct AutomationBuilderView: View {
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(.primary)
                 Spacer()
                 Text("\(automations.count)")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(.regularMaterial, in: Capsule())
             }
@@ -655,12 +655,12 @@ struct AutomationBuilderView: View {
             ZStack {
                 Circle().fill(rule.color.opacity(0.15)).frame(width: 40, height: 40)
                 Image(systemName: rule.triggerIcon)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(rule.color)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(rule.name)
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                 Text("\(rule.triggerLabel.replacingOccurrences(of: "\n", with: " ")) → \(rule.actionLabel.replacingOccurrences(of: "\n", with: " "))")
                     .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
             }

@@ -83,7 +83,7 @@ struct SuppliesView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if activeTab == .lists {
                     Button { showAddList = true; HapticFeedback.impact(.light) } label: {
-                        Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary)
+                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                     }
                     .accessibilityLabel("Add list")
                 } else {
@@ -102,7 +102,7 @@ struct SuppliesView: View {
                             Label(String(localized: "expense_reports"), systemImage: "chart.bar.doc.horizontal")
                         }
                     } label: {
-                        Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary)
+                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                     }
                 }
             }
@@ -209,7 +209,7 @@ struct SuppliesView: View {
     private var listsGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "supply_section_lists"))
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, 4)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                 ForEach(supplyService.lists) { list in
@@ -234,7 +234,7 @@ struct SuppliesView: View {
     private var urgentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("URGENT")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, 4)
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     let urgent = supplyService.items
@@ -255,10 +255,10 @@ struct SuppliesView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(item.categoryColor.opacity(0.14)).frame(width: 30, height: 30)
-                    Image(systemName: item.categoryIcon).font(.system(size: 13, weight: .semibold)).foregroundStyle(item.categoryColor)
+                    Image(systemName: item.categoryIcon).font(AppFont.captionEmphasis).foregroundStyle(item.categoryColor)
                 }
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                    Text(item.name).font(AppFont.footnote).foregroundStyle(.primary)
                     Text(listName).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -353,11 +353,11 @@ struct SuppliesView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "cart.badge.plus").font(.system(size: 56)).foregroundStyle(Color.primary.opacity(0.12))
-            Text(String(localized: "supply_empty_title")).font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
+            Text(String(localized: "supply_empty_title")).font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
             Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center)
             Button { showAddList = true } label: {
                 Label(String(localized: "supply_add_first"), systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                    .font(AppFont.subheadline).foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -375,7 +375,7 @@ struct SuppliesView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "house.slash").font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("No property added").font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No property added").font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -400,7 +400,7 @@ struct SupplyListCard: View {
                         .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(14)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(list.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                    Text(list.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                     let pending = supplyService.pendingCount(for: list.id)
                     Text(pending == 0 ? String(localized: "supply_all_done") : "\(pending) \(String(localized: "supply_to_buy_short"))")
                         .font(.system(size: 11))
@@ -440,7 +440,7 @@ struct SupplyItemRow: View {
                             .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(0.35) : .primary)
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
-                            Text(qty).font(.system(size: 11, weight: .semibold)).foregroundStyle(item.categoryColor)
+                            Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
                                 .padding(.horizontal, 6).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
                         }
                     }

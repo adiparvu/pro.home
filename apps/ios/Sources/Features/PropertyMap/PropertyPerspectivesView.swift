@@ -117,9 +117,9 @@ struct PropertyPerspectivesView: View {
                             } label: {
                                 HStack(spacing: 7) {
                                     Image(systemName: p.icon)
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(AppFont.captionStrong)
                                     Text(p.title)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(AppFont.captionEmphasis)
                                 }
                                 .foregroundStyle(selectedRole == p.role ? .white : p.color)
                                 .padding(.horizontal, 14).padding(.vertical, 8)
@@ -184,7 +184,7 @@ struct PropertyPerspectivesView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(spacing: 8) {
                                     Image(systemName: h.icon)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.footnoteEmphasis)
                                         .foregroundStyle(h.color)
                                     Text(h.label)
                                         .font(.system(size: 12))
@@ -251,7 +251,7 @@ struct PropertyPerspectivesView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(.yellow)
                     Text("Tips for this view")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                 }
                 ForEach(tips, id: \.self) { tip in
                     HStack(alignment: .top, spacing: 8) {

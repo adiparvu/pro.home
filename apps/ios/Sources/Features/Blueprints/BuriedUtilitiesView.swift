@@ -133,7 +133,7 @@ struct BuriedUtilitiesView: View {
             Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.16))
             Text("No buried lines mapped")
-                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(0.5))
             Text("Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35))
                 .multilineTextAlignment(.center).padding(.horizontal, 28)

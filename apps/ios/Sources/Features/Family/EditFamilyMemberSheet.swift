@@ -67,7 +67,7 @@ struct EditFamilyMemberSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor) }
+                        else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
                     }
                     .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
@@ -147,12 +147,12 @@ struct EditFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
@@ -174,13 +174,13 @@ struct EditFamilyMemberSheet: View {
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                             TextField("@username", text: Binding(
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
@@ -219,7 +219,7 @@ struct EditFamilyMemberSheet: View {
     private var deleteButton: some View {
         Button { showDeleteConfirm = true } label: {
             Label("Remove member", systemImage: "trash")
-                .font(.system(size: 14, weight: .medium)).foregroundStyle(.red)
+                .font(AppFont.footnote).foregroundStyle(.red)
                 .frame(maxWidth: .infinity).padding(.vertical, 14)
                 .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
         }

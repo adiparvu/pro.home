@@ -66,7 +66,7 @@ struct ScanCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(scan.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(scan.kindLabel))
@@ -139,7 +139,7 @@ struct AddPlanSheet: View {
                         onSave(name, kind, data, pickedExt, pickedFormat)
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(canSave ? Color.accentColor : Color.primary.opacity(0.3))
                     .disabled(!canSave)
                 }
@@ -205,7 +205,7 @@ struct AddPlanSheet: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
@@ -249,7 +249,7 @@ struct AddPlanSheet: View {
 
     private var kindPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CATEGORY").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("CATEGORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in

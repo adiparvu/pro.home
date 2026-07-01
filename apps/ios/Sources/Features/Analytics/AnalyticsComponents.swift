@@ -79,7 +79,7 @@ struct FinancesSection: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
@@ -90,7 +90,7 @@ struct FinancesSection: View {
 
             VStack(spacing: 1) {
                 Text(LocalizedStringKey(monthLabel))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                 if isCurrentMonth {
@@ -108,7 +108,7 @@ struct FinancesSection: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.2) : .secondary)
                     .frame(width: 36, height: 36)
             }
@@ -162,7 +162,7 @@ struct FinancesSection: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("Savings rate", systemImage: "leaf.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.0f%%", max(0, savingsRate)))
@@ -204,7 +204,7 @@ struct FinancesSection: View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Expenses by category")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
 
                 HStack(alignment: .top, spacing: 16) {
                     Chart(categoryData.prefix(6)) { cat in
@@ -228,7 +228,7 @@ struct FinancesSection: View {
                                     .lineLimit(1)
                                 Spacer()
                                 Text("\(sym)\(Int(cat.amount))")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.primary)
                             }
                         }

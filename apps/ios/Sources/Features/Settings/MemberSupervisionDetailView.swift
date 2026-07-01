@@ -51,7 +51,7 @@ struct MemberSupervisionDetailView: View {
                 MemberAvatar(member: member, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Enable supervision")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(AppFont.body)
                     Text(LocalizedStringKey(supervised ? "Restrictions are active" : "Member has full access"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -75,7 +75,7 @@ struct MemberSupervisionDetailView: View {
     private var sectionsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("WHAT THEY CAN SEE")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
 
@@ -89,7 +89,7 @@ struct MemberSupervisionDetailView: View {
                                         .fill(section.color.opacity(0.14))
                                         .frame(width: 32, height: 32)
                                     Image(systemName: section.icon)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.footnoteEmphasis)
                                         .foregroundStyle(section.color)
                                 }
                                 Text(LocalizedStringKey(section.label))
@@ -125,7 +125,7 @@ struct MemberSupervisionDetailView: View {
     private var notificationsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NOTIFICATIONS")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 4)
 
@@ -136,7 +136,7 @@ struct MemberSupervisionDetailView: View {
                             .fill(Color.blue.opacity(0.14))
                             .frame(width: 32, height: 32)
                         Image(systemName: "bell.badge.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.blue)
                     }
                     VStack(alignment: .leading, spacing: 1) {
@@ -170,7 +170,7 @@ struct MemberSupervisionDetailView: View {
                     .foregroundStyle(.blue)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("How it works")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                     Text("Restrictions apply at the device level. \(member.name) will only see the enabled sections. Assigned tasks will automatically send them a notification.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)

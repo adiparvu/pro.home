@@ -94,7 +94,7 @@ struct PropertyValueView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Current Value")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.caption)
                             .foregroundStyle(Color.primary.opacity(0.5))
                             .tracking(0.3)
 
@@ -117,10 +117,10 @@ struct PropertyValueView: View {
                     Divider().opacity(0.3)
                     HStack(spacing: 6) {
                         Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4) : .red)
                         Text("\(change >= 0 ? "+" : "")\(formatValue(change, currency: propertyValueService.latestValue?.currency ?? "EUR"))")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4) : .red)
                         Text("(\(change >= 0 ? "+" : "")\(String(format: "%.1f", pct))%)")
                             .font(.system(size: 13))
@@ -141,7 +141,7 @@ struct PropertyValueView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Value Over Time")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
 
                 Chart {
@@ -205,7 +205,7 @@ struct PropertyValueView: View {
     private var entriesList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("HISTORY")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 6)
 
@@ -276,7 +276,7 @@ struct PropertyValueView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Track your property value")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Log manual estimates and bank appraisals to see how your property value changes over time.")
                 .font(.system(size: 14))
@@ -287,7 +287,7 @@ struct PropertyValueView: View {
                 showAdd = true
             } label: {
                 Label("Add First Entry", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)

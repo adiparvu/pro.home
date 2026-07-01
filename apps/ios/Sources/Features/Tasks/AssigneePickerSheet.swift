@@ -20,7 +20,7 @@ struct AssigneePickerSheet: View {
                         if !familyService.members.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("FAMILY MEMBERS")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(Color.primary.opacity(0.35))
                                     .padding(.leading, 4)
                                 MemberPickerView(selectedIds: $assigneeIds, selectedNames: $assigneeNames)
@@ -29,7 +29,7 @@ struct AssigneePickerSheet: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("SOMEONE ELSE")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(Color.primary.opacity(0.35))
                                 .padding(.leading, 4)
 
@@ -100,7 +100,7 @@ struct AssigneePickerSheet: View {
             .navigationTitle("Assign Task").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }

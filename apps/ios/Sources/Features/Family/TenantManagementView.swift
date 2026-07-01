@@ -96,7 +96,7 @@ struct TenantManagementView: View {
         GlassCard(padding: 12) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(color)
                 Text(value)
                     .font(.system(size: 20, weight: .bold))
@@ -120,7 +120,7 @@ struct TenantManagementView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(tenant.name)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
 
                         HStack(spacing: 6) {
@@ -128,7 +128,7 @@ struct TenantManagementView: View {
                                 .font(.system(size: 10))
                                 .foregroundStyle(tenant.swiftColor)
                             Text("Tenant")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(AppFont.caption)
                                 .foregroundStyle(tenant.swiftColor)
                         }
                         .padding(.horizontal, 8).padding(.vertical, 3)
@@ -183,9 +183,9 @@ struct TenantManagementView: View {
                                 } label: {
                                     HStack(spacing: 5) {
                                         Image(systemName: link.platformIcon)
-                                            .font(.system(size: 11, weight: .semibold))
+                                            .font(AppFont.label)
                                         Text(link.platformLabel)
-                                            .font(.system(size: 12, weight: .medium))
+                                            .font(AppFont.caption)
                                     }
                                     .foregroundStyle(link.platformColor)
                                     .padding(.horizontal, 10).padding(.vertical, 5)
@@ -238,7 +238,7 @@ struct TenantManagementView: View {
                     .foregroundStyle(Color.purple.opacity(0.45))
             }
             Text("No tenants yet")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("Add tenants to manage their contact info\nand lease details in one place.")
                 .font(.system(size: 13))
@@ -250,7 +250,7 @@ struct TenantManagementView: View {
                 HapticFeedback.impact(.medium)
             } label: {
                 Label("Add Tenant", systemImage: "person.badge.plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -62,9 +62,9 @@ struct AIInsightsView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                         Text(String(localized: "ai_insights_ask_aria"))
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -92,7 +92,7 @@ struct AIInsightsView: View {
                         .environmentObject(tabBarVis)
                 } label: {
                     Text(String(localized: "ai_insights_timeline"))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
@@ -111,7 +111,7 @@ struct AIInsightsView: View {
                     AutomationBuilderView()
                 } label: {
                     Text(String(localized: "ai_insights_automation"))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
@@ -204,7 +204,7 @@ struct AIInsightsView: View {
                 .foregroundStyle(Color(red: 0.20, green: 0.82, blue: 0.48).opacity(0.6))
                 .padding(.top, 20)
             Text(String(localized: "ai_insights_all_good"))
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text(String(localized: "ai_insights_healthy"))
                 .font(.system(size: 13))
@@ -326,12 +326,12 @@ struct AIInsightRow: View {
                         .fill(insight.iconColor.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: insight.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(insight.iconColor)
                 }
 
                 Text(LocalizedStringKey(insight.title))
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -352,7 +352,7 @@ struct AIInsightRow: View {
                                 .frame(width: 52, height: 24)
                         } else {
                             Text(actionLabel)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 5)
@@ -363,7 +363,7 @@ struct AIInsightRow: View {
                     .disabled(isActing)
                 } else {
                     Text(LocalizedStringKey(insight.elapsed))
-                        .font(.system(size: 11, weight: .medium))
+                        .font(AppFont.caption2)
                         .foregroundStyle(Color.primary.opacity(0.35))
                 }
             }

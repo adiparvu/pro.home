@@ -291,7 +291,7 @@ struct ActivityFeedView: View {
             }
             Spacer()
             Text("\(filteredEvents.count)")
-                .font(.system(size: 12, weight: .medium))
+                .font(AppFont.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(.regularMaterial, in: Capsule())
@@ -311,7 +311,7 @@ struct ActivityFeedView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: cat.icon)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                             Text(LocalizedStringKey(cat.rawValue))
                                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                         }
@@ -407,7 +407,7 @@ struct ActivityFeedView: View {
     private func dayHeader(_ label: LocalizedStringKey) -> some View {
         HStack {
             Text(label).textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
@@ -425,13 +425,13 @@ struct ActivityFeedView: View {
                         .fill(event.color.opacity(0.14))
                         .frame(width: 36, height: 36)
                     Image(systemName: event.icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(event.color)
                         .symbolRenderingMode(.hierarchical)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(event.title))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(.primary)
                     Text(event.subtitle)
                         .font(.system(size: 12))
@@ -466,7 +466,7 @@ struct ActivityFeedView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No activity in this period")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.5))
             Text("Activities appear automatically as you\nadd tasks, documents, and transactions.")
                 .font(.system(size: 13))

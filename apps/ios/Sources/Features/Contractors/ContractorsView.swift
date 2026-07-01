@@ -215,7 +215,7 @@ private struct ContractorRow: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contractor.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                    Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary)
                     Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
                 }
                 Spacer()
@@ -275,7 +275,7 @@ private struct AddContractorSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.isEmpty || category.isEmpty || isSaving)
                 }
             }
