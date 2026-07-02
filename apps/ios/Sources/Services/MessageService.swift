@@ -20,6 +20,12 @@ final class MessageService {
     private var readsChannel: RealtimeChannelV2?
     private var deliveriesChannel: RealtimeChannelV2?
     private var reactionsChannel: RealtimeChannelV2?
+    /// Retained postgres-change subscription handles. `onPostgresChange`
+    /// (which replaced the removed async-stream `postgresChange`) returns a
+    /// handle whose deinit removes the callback, so it must be held for the
+    /// callback to keep firing. Cleared in `unsubscribeAll`; per-channel
+    /// removeChannel also tears the callbacks down.
+    private var postgresSubs: [RealtimeSubscription] = []
 
     // MARK: - Typing indicator
     var typingNames: Set<String> = []
@@ -139,12 +145,23 @@ final class MessageService {
 
     func subscribeRealtime(propertyId: UUID) async {
         let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString)")
-        let changes = channel.postgresChange(
+        // Callbacks must be registered before subscribing.
+        postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                let added = await self.loadNewer(propertyId: propertyId)
+                guard added > 0 else { return }
+                // Count only messages from others as unread — not my own echoes, and
+                // not a forced +1 when loadNewer found nothing new (the old drift bug).
+                let myId = supabase.auth.currentSession?.user.id
+                self.unreadCount += self.messages.suffix(added).filter { $0.senderId != myId }.count
+            }
+        })
         typingSub = channel.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
                 Task { @MainActor in self?.handleTyping(name) }
@@ -152,15 +169,6 @@ final class MessageService {
         }
         try? await channel.subscribeWithError()
         realtimeChannel = channel
-
-        for await _ in changes {
-            let added = await loadNewer(propertyId: propertyId)
-            guard added > 0 else { continue }
-            // Count only messages from others as unread — not my own echoes, and
-            // not a forced +1 when loadNewer found nothing new (the old drift bug).
-            let myId = supabase.auth.currentSession?.user.id
-            unreadCount += messages.suffix(added).filter { $0.senderId != myId }.count
-        }
     }
 
     func unsubscribe() async {
@@ -347,23 +355,24 @@ final class MessageService {
     /// Subscribes to read receipt changes so the sender sees "seen" updates live.
     func subscribeReads(propertyId: UUID) async {
         let channel = supabase.realtimeV2.channel("message_reads:\(propertyId.uuidString)")
-        let changes = channel.postgresChange(
+        postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reads",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.reloadTasks["reads"]?.cancel()
+                self.reloadTasks["reads"] = Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    guard !Task.isCancelled else { return }
+                    await self?.loadReads(propertyId: propertyId)
+                }
+            }
+        })
         try? await channel.subscribeWithError()
         readsChannel = channel
-
-        for await _ in changes {
-            reloadTasks["reads"]?.cancel()
-            reloadTasks["reads"] = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                guard !Task.isCancelled else { return }
-                await self?.loadReads(propertyId: propertyId)
-            }
-        }
     }
 
     func unsubscribeReads() async {
@@ -419,23 +428,24 @@ final class MessageService {
     /// Subscribes to delivery changes so the sender's ticks advance live.
     func subscribeDeliveries(propertyId: UUID) async {
         let channel = supabase.realtimeV2.channel("message_deliveries:\(propertyId.uuidString)")
-        let changes = channel.postgresChange(
+        postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_deliveries",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.reloadTasks["deliveries"]?.cancel()
+                self.reloadTasks["deliveries"] = Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    guard !Task.isCancelled else { return }
+                    await self?.loadDeliveries(propertyId: propertyId)
+                }
+            }
+        })
         try? await channel.subscribeWithError()
         deliveriesChannel = channel
-
-        for await _ in changes {
-            reloadTasks["deliveries"]?.cancel()
-            reloadTasks["deliveries"] = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                guard !Task.isCancelled else { return }
-                await self?.loadDeliveries(propertyId: propertyId)
-            }
-        }
     }
 
     func unsubscribeDeliveries() async {
@@ -521,23 +531,24 @@ final class MessageService {
 
     func subscribeReactions(propertyId: UUID) async {
         let channel = supabase.realtimeV2.channel("message_reactions:\(propertyId.uuidString)")
-        let changes = channel.postgresChange(
+        postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_reactions",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.reloadTasks["reactions"]?.cancel()
+                self.reloadTasks["reactions"] = Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    guard !Task.isCancelled else { return }
+                    await self?.loadReactions(propertyId: propertyId)
+                }
+            }
+        })
         try? await channel.subscribeWithError()
         reactionsChannel = channel
-
-        for await _ in changes {
-            reloadTasks["reactions"]?.cancel()
-            reloadTasks["reactions"] = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                guard !Task.isCancelled else { return }
-                await self?.loadReactions(propertyId: propertyId)
-            }
-        }
     }
 
     func unsubscribeReactions() async {
@@ -595,23 +606,24 @@ final class MessageService {
 
     func subscribePollVotes(propertyId: UUID) async {
         let channel = supabase.realtimeV2.channel("message_poll_votes:\(propertyId.uuidString)")
-        let changes = channel.postgresChange(
+        postgresSubs.append(channel.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "message_poll_votes",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.reloadTasks["pollVotes"]?.cancel()
+                self.reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    guard !Task.isCancelled else { return }
+                    await self?.loadPollVotes(propertyId: propertyId)
+                }
+            }
+        })
         try? await channel.subscribeWithError()
         pollVotesChannel = channel
-
-        for await _ in changes {
-            reloadTasks["pollVotes"]?.cancel()
-            reloadTasks["pollVotes"] = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 250_000_000)
-                guard !Task.isCancelled else { return }
-                await self?.loadPollVotes(propertyId: propertyId)
-            }
-        }
     }
 
     func unsubscribePollVotes() async {
@@ -624,6 +636,7 @@ final class MessageService {
     func unsubscribeAll() async {
         reloadTasks.values.forEach { $0.cancel() }
         reloadTasks.removeAll()
+        postgresSubs.removeAll()
         await unsubscribe()
         await unsubscribeReads()
         await unsubscribeReactions()

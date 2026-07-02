@@ -65,6 +65,10 @@ final class DirectMessageService {
     private var localRevision = 0
 
     @ObservationIgnored private var channel: RealtimeChannelV2?
+    /// Retained postgres-change subscription handles (see MessageService).
+    /// onPostgresChange's handle removes its callback on deinit, so it must be
+    /// held for the callback to keep firing; cleared on unsubscribe.
+    @ObservationIgnored private var postgresSubs: [RealtimeSubscription] = []
 
     // MARK: - Typing indicator
     var typingNames: Set<String> = []
@@ -167,18 +171,25 @@ final class DirectMessageService {
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
         let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
-        let inserts = ch.postgresChange(
+        // Inserts and updates (reactions, read receipts, pin/mark, edit,
+        // delete-for-all) both just reload the conversation. Callbacks must be
+        // registered before subscribing.
+        postgresSubs.append(ch.onPostgresChange(
             InsertAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
-        let updates = ch.postgresChange(
+        ) { [weak self] _ in
+            Task { @MainActor in await self?.load(propertyId: propertyId, myName: myName) }
+        })
+        postgresSubs.append(ch.onPostgresChange(
             UpdateAction.self,
             schema: "public",
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
-        )
+        ) { [weak self] _ in
+            Task { @MainActor in await self?.load(propertyId: propertyId, myName: myName) }
+        })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
                 Task { @MainActor in self?.handleTyping(name) }
@@ -186,20 +197,10 @@ final class DirectMessageService {
         }
         try? await ch.subscribeWithError()
         channel = ch
-
-        // Updates (reactions, read receipts, pin/mark, edit, delete-for-all) on a side task.
-        Task { [weak self] in
-            for await _ in updates {
-                await self?.load(propertyId: propertyId, myName: myName)
-            }
-        }
-
-        for await _ in inserts {
-            await load(propertyId: propertyId, myName: myName)
-        }
     }
 
     func unsubscribe() async {
+        postgresSubs.removeAll()
         if let ch = channel {
             await supabase.realtimeV2.removeChannel(ch)
             channel = nil
