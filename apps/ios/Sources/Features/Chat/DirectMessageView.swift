@@ -34,6 +34,12 @@ struct DirectMessageView: View {
     @State private var menuMessage: DirectMessage? = nil
     @State private var deleteCandidate: DirectMessage? = nil
     @State private var showJumpToLatest = false
+    /// How many of the most-recent messages to render. The service holds the
+    /// full conversation in memory; the list only builds this trailing window
+    /// so opening a long chat stays cheap, growing a page at a time as the user
+    /// scrolls back. Searching bypasses the window (it scans everything).
+    @State private var visibleCount = DirectMessageView.pageSize
+    private static let pageSize = 50
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -266,8 +272,16 @@ struct DirectMessageView: View {
     private var displayedMessages: [DirectMessage] {
         let all = conversationMessages
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else { return all }
+        // Searching scans the whole conversation; browsing renders only the
+        // most-recent window so a long history doesn't build thousands of rows.
+        guard !q.isEmpty else { return Array(all.suffix(visibleCount)) }
         return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
+    }
+
+    /// True when older messages exist beyond the current render window.
+    private var hasMoreOlder: Bool {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && conversationMessages.count > visibleCount
     }
 
     private var pinnedMessages: [DirectMessage] {
@@ -391,6 +405,26 @@ struct DirectMessageView: View {
                     let shown = displayedMessages
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 2) {
+                            if hasMoreOlder {
+                                Button {
+                                    // Anchor the current top message so inserting
+                                    // an older page above it doesn't jump the view.
+                                    let anchor = shown.first?.id
+                                    visibleCount += Self.pageSize
+                                    if let anchor {
+                                        DispatchQueue.main.async {
+                                            proxy.scrollTo(anchor, anchor: .top)
+                                        }
+                                    }
+                                } label: {
+                                    Text("Load older messages")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                                .buttonStyle(.plain)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.sm)
+                            }
                             ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
                                 let isOwn = msg.senderName == myName
                                 // While searching, `shown` is a sparse subset, so adjacency-based
