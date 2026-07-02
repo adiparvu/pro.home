@@ -191,6 +191,7 @@ struct MainTabView: View {
         .environment(propertyValueService)
         .environment(contractorService)
         .environment(directMessageService)
+        .environment(presenceService)
         .environment(proactiveEngine)
         .task {
             await currencyService.refresh()
