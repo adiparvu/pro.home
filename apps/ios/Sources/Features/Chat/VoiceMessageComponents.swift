@@ -323,19 +323,10 @@ struct AudioBubble: View {
 
     @ViewBuilder private var tickView: some View {
         switch tick {
-        case .none:
-            EmptyView()
-        case .sent:
-            Image(systemName: "checkmark")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(subFg)
-        case .delivered, .read:
-            ZStack(alignment: .leading) {
-                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
-                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).offset(x: 3.5)
-            }
-            .frame(width: 14, alignment: .leading)
-            .foregroundStyle(tick == .read ? .white : subFg)
+        case .none:    EmptyView()
+        case .sent:      MessageTick(status: .sent, color: subFg, readColor: .white, size: 10)
+        case .delivered: MessageTick(status: .delivered, color: subFg, readColor: .white, size: 10)
+        case .read:      MessageTick(status: .read, color: subFg, readColor: .white, size: 10)
         }
     }
 

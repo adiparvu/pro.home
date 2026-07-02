@@ -1371,7 +1371,7 @@ private struct DMBubble: View {
                     .foregroundStyle(.orange.opacity(0.7))
             }
             if isOwn, messageType != .deleted {
-                DMReadCheck(status: message.readAt != nil ? .read
+                MessageTick(status: message.readAt != nil ? .read
                                     : (message.deliveredAt != nil ? .delivered : .sent))
             }
         }
@@ -1470,24 +1470,7 @@ private struct DMImageBubble: View {
     }
 }
 
-// MARK: - DM Read Receipt Check
-
-private struct DMReadCheck: View {
-    enum Status { case sent, delivered, read }
-    let status: Status
-
-    var body: some View {
-        ZStack(alignment: .leading) {
-            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
-            // Single tick = sent; second tick appears once delivered/read.
-            if status != .sent {
-                Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).offset(x: 3.5)
-            }
-        }
-        .frame(width: 14, alignment: .leading)
-        .foregroundStyle(status == .read ? Color.blue : Color.primary.opacity(0.4))
-    }
-}
+// (DM read-receipt tick now uses the shared MessageTick from ChatComponents.)
 
 // MARK: - DM Starred (marked) messages
 

@@ -277,7 +277,7 @@ struct MessageBubble: View {
     }
     private var seen: Bool { !readers.isEmpty }
     /// 3-state tick: read (someone read) > delivered (someone received) > sent.
-    private var tickStatus: ReadCheck.Status {
+    private var tickStatus: MessageTick.Status {
         if !readers.isEmpty { return .read }
         if !deliverers.isEmpty { return .delivered }
         return .sent
@@ -524,7 +524,7 @@ struct MessageBubble: View {
                             .font(.system(size: 10))
                             .foregroundStyle(Color.primary.opacity(0.3))
                     }
-                    if !isDeleted { ReadCheck(status: tickStatus) }
+                    if !isDeleted { MessageTick(status: tickStatus) }
                 }
                 .padding(.horizontal, AppSpacing.xxs)
             }
@@ -624,25 +624,37 @@ struct MessageBubble: View {
     }
 }
 
-// MARK: - Read Receipt Check
+// MARK: - Message status tick (shared)
 
-private struct ReadCheck: View {
+/// WhatsApp-style delivery tick: single check = sent, double check =
+/// delivered, blue double check = read. The second check grows in and the
+/// colour morphs as the status advances, so a message reads sent → delivered
+/// → read with a smooth transition rather than a hard swap.
+struct MessageTick: View {
     enum Status { case sent, delivered, read }
     let status: Status
+    /// Colour for the sent/delivered states.
+    var color: Color = Color.primary.opacity(0.45)
+    /// Colour for the read state — blue on a neutral status row, or white
+    /// when the tick sits inside a coloured (own) bubble.
+    var readColor: Color = .blue
+    var size: CGFloat = 11
 
     var body: some View {
         ZStack(alignment: .leading) {
             Image(systemName: "checkmark")
-                .font(.system(size: 8, weight: .bold))
-            // Single tick = sent; second tick appears once delivered/read.
             if status != .sent {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 8, weight: .bold))
-                    .offset(x: 3.5)
+                    .offset(x: size * 0.42)
+                    .transition(.scale(scale: 0.4, anchor: .leading).combined(with: .opacity))
             }
         }
-        .frame(width: 14, alignment: .leading)
-        .foregroundStyle(status == .read ? Color.blue : Color.primary.opacity(0.4))
+        .font(.system(size: size, weight: .semibold))
+        .frame(width: status == .sent ? size : size * 1.42, alignment: .leading)
+        .foregroundStyle(status == .read ? readColor : color)
+        .animation(.snappy(duration: 0.22), value: status)
+        .accessibilityLabel(status == .read ? Text("Read")
+                             : status == .delivered ? Text("Delivered") : Text("Sent"))
     }
 }
 
