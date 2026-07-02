@@ -360,6 +360,10 @@ struct DirectMessageView: View {
     @ViewBuilder
     private func dmActionOverlay(_ m: DirectMessage) -> some View {
         let own = m.senderName == myName
+        let lower = m.body.lowercased()
+        let isImage = m.deletedForAll != true &&
+            (lower.contains("/dm-images/") || lower.hasSuffix(".jpg") ||
+             lower.hasSuffix(".jpeg") || lower.hasSuffix(".png") || lower.hasSuffix(".webp"))
         ChatActionOverlay(
             previewText: m.deletedForAll == true ? "This message was deleted" : dmSnippet(m),
             isOwn: own,
@@ -367,7 +371,8 @@ struct DirectMessageView: View {
             myReaction: m.reactions?[myName],
             onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
             actions: dmMessageActions(m, own: own),
-            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } }
+            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
+            imageStored: isImage ? m.body : nil
         )
         .transition(.opacity)
     }

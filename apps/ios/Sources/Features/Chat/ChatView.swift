@@ -156,7 +156,8 @@ struct ChatView: View {
                 }
             },
             actions: messageActions(m),
-            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } }
+            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
+            imageStored: m.isImageMessage ? m.attachmentUrl : nil
         )
         .transition(.opacity)
     }

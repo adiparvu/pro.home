@@ -22,10 +22,14 @@ struct ChatActionOverlay: View {
     let onReact: (String) -> Void
     let actions: [ChatActionItem]
     let onDismiss: () -> Void
+    /// When the pressed message is a photo, its stored attachment value so the
+    /// overlay elevates the real image instead of a "📷 Photo" text preview.
+    var imageStored: String? = nil
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
     @State private var showEmojiPicker = false
+    @State private var imageURL: URL?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -91,15 +95,33 @@ struct ChatActionOverlay: View {
         }
     }
 
+    @ViewBuilder
     private var bubble: some View {
-        Text(previewText)
-            .font(.system(size: 15))
-            .foregroundStyle(isOwn ? .white : .primary)
-            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .frame(maxWidth: 280, alignment: isOwn ? .trailing : .leading)
-            .lineLimit(6)
+        if imageStored != nil {
+            AsyncImage(url: imageURL) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
+                        .overlay(ProgressView())
+                }
+            }
+            .frame(maxWidth: 240, maxHeight: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+            .task(id: imageStored) {
+                if let s = imageStored { imageURL = await ChatMedia.resolve(s) }
+            }
+        } else {
+            Text(previewText)
+                .font(.system(size: 15))
+                .foregroundStyle(isOwn ? .white : .primary)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+                .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
+                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .frame(maxWidth: 280, alignment: isOwn ? .trailing : .leading)
+                .lineLimit(6)
+        }
     }
 
     private var menu: some View {
