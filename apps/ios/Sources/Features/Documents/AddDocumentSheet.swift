@@ -9,6 +9,7 @@ struct AddDocumentSheet: View {
     let onSaved: () async -> Void
 
     @Environment(DocumentService.self) private var documentService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -22,6 +23,8 @@ struct AddDocumentSheet: View {
     @State private var pickedMimeType = "application/octet-stream"
     @State private var error: String?
     @State private var isSaving = false
+    @State private var sharedMemberIds: [String] = []
+    @State private var sharedMemberNames: [String] = []
     @State private var showScanCamera = false
     @State private var isScanning = false
     @State private var scanPickerItem: PhotosPickerItem? = nil
@@ -130,6 +133,8 @@ struct AddDocumentSheet: View {
                             .buttonStyle(.plain)
                         }
 
+                        shareSection
+
                         if let err = error {
                             Text(err).font(.system(size: 13)).foregroundStyle(.red)
                                 .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
@@ -140,6 +145,7 @@ struct AddDocumentSheet: View {
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
                 }
             }
+            .task { if familyService.members.isEmpty { await familyService.load() } }
             .navigationTitle("Add Document")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -173,6 +179,41 @@ struct AddDocumentSheet: View {
                 }
                 .ignoresSafeArea()
             }
+        }
+    }
+
+    // MARK: - Share with
+
+    // Documents are visible to the whole family by default. Sharing a specific
+    // document surfaces it to a scoped member (e.g. a tenant's lease, a worker's
+    // plan) without exposing the rest. Writes family_members.id strings into
+    // shared_member_ids (RLS: is_shared_with_me, migration 094).
+    @ViewBuilder
+    private var shareSection: some View {
+        if !familyService.members.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("Share with")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if !sharedMemberIds.isEmpty {
+                        Text("\(sharedMemberIds.count)")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .padding(.horizontal, 8).padding(.vertical, 2)
+                            .background(Color.primary.opacity(0.08), in: Capsule())
+                    }
+                }
+                Text("The whole family sees documents. Anyone you add here can also see this one.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                MemberPickerView(selectedIds: $sharedMemberIds, selectedNames: $sharedMemberNames)
+            }
+            .padding(AppSpacing.lg)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -218,7 +259,8 @@ struct AddDocumentSheet: View {
                 fileName: pickedFileName,
                 mimeType: pickedMimeType,
                 expiresAt: expiryStr,
-                isCritical: isCritical
+                isCritical: isCritical,
+                sharedMemberIds: sharedMemberIds
             )
             HapticFeedback.success()
             dismiss()

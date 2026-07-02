@@ -15,6 +15,7 @@ struct DocumentModel: Identifiable, Codable {
     var tags: [String]
     var elementId: UUID?
     let createdAt: String
+    var sharedMemberIds: [String] = []   // family_members.id shared this doc with (see migration 094)
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, category, tags
@@ -27,6 +28,7 @@ struct DocumentModel: Identifiable, Codable {
         case isCritical  = "is_critical"
         case elementId   = "element_id"
         case createdAt   = "created_at"
+        case sharedMemberIds = "shared_member_ids"
     }
 
     var categoryIcon: String {

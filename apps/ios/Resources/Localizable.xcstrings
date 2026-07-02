@@ -16845,6 +16845,22 @@
         }
       }
     },
+    "Only household adults see finances. Anyone you add here can see this one record.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only household adults see finances. Anyone you add here can see this one record."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doar adulții casei văd finanțele. Oricine adaugi aici poate vedea această înregistrare."
+          }
+        }
+      }
+    },
     "Open": {
       "localizations": {
         "en": {
@@ -21985,6 +22001,22 @@
         }
       }
     },
+    "Share with": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share with"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partajează cu"
+          }
+        }
+      }
+    },
     "Shed": {
       "localizations": {
         "en": {
@@ -23919,6 +23951,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sarcina de finalizat"
+          }
+        }
+      }
+    },
+    "The whole family sees documents. Anyone you add here can also see this one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The whole family sees documents. Anyone you add here can also see this one."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toată familia vede documentele. Oricine adaugi aici poate vedea și acest document."
           }
         }
       }

@@ -11,11 +11,13 @@ struct FinancialRecord: Identifiable, Codable {
     var date: String        // "YYYY-MM-DD"
     var description: String?
     let createdAt: String
+    var sharedMemberIds: [String] = []   // family_members.id shared this row with (see migration 094)
 
     enum CodingKeys: String, CodingKey {
         case id, title, amount, currency, type, category, date, description
         case propertyId = "property_id"
         case createdAt = "created_at"
+        case sharedMemberIds = "shared_member_ids"
     }
 
     var dateFormatted: String {

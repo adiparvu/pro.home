@@ -37,7 +37,8 @@ final class DocumentService {
         fileName: String,
         mimeType: String,
         expiresAt: String?,
-        isCritical: Bool
+        isCritical: Bool,
+        sharedMemberIds: [String] = []
     ) async throws {
         guard let userId = supabase.auth.currentSession?.user.id else {
             throw DocumentError.notAuthenticated
@@ -64,6 +65,7 @@ final class DocumentService {
             let expires_at: String?
             let is_critical: Bool
             let tags: [String]
+            let shared_member_ids: [String]
         }
 
         let payload = DocInsert(
@@ -76,7 +78,8 @@ final class DocumentService {
             mime_type: mimeType,
             expires_at: expiresAt,
             is_critical: isCritical,
-            tags: []
+            tags: [],
+            shared_member_ids: sharedMemberIds
         )
 
         let newDoc: DocumentModel = try await supabase
