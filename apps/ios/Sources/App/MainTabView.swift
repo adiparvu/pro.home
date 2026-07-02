@@ -243,8 +243,9 @@ struct MainTabView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             // Beat immediately on foreground so we don't read as offline after a
-            // background gap, and refresh who's online right now.
+            // background gap; drop the live channel while backgrounded.
             if phase == .active { Task { await pulsePresence() } }
+            else if phase == .background { Task { await presenceService.unsubscribe() } }
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
@@ -322,6 +323,9 @@ struct MainTabView: View {
         let name = profileService.profile?.preferredName
             ?? profileService.profile?.fullName ?? ""
         guard !name.isEmpty else { return }
+        // subscribe() is idempotent per property, so this both establishes the
+        // live channel once and self-heals if the primary property changed.
+        await presenceService.subscribe(propertyId: pid)
         await presenceService.heartbeat(propertyId: pid, userId: uid, userName: name)
         await presenceService.load(propertyId: pid)
     }

@@ -22,6 +22,12 @@ final class PresenceService {
     @ObservationIgnored
     @AppStorage("presence.shareStatus") private var shareStatus = true
 
+    @ObservationIgnored private var channel: RealtimeChannelV2?
+    /// onPostgresChange handles remove their callback on deinit, so they must be
+    /// retained for the callbacks to keep firing; cleared on unsubscribe.
+    @ObservationIgnored private var postgresSubs: [RealtimeSubscription] = []
+    @ObservationIgnored private var subscribedPropertyId: UUID?
+
     /// A member counts as "online" if seen within this window.
     static let onlineWindow: TimeInterval = 90
 
@@ -54,6 +60,41 @@ final class PresenceService {
             // presence table may not exist yet (migration 086 not applied) —
             // degrade silently to "no presence data".
         }
+    }
+
+    /// Live presence: reload the property's statuses whenever any member's row
+    /// changes (a heartbeat upsert), so "online" flips within seconds instead of
+    /// on the next poll. Idempotent — re-subscribing to the same property is a
+    /// no-op; switching properties tears down the old channel first.
+    func subscribe(propertyId: UUID) async {
+        guard subscribedPropertyId != propertyId else { return }
+        await unsubscribe()
+        let ch = supabase.realtimeV2.channel("presence:\(propertyId.uuidString)")
+        // Callbacks must be registered before subscribing.
+        postgresSubs.append(ch.onPostgresChange(
+            InsertAction.self, schema: "public", table: "presence",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        ) { [weak self] _ in
+            Task { @MainActor in await self?.load(propertyId: propertyId) }
+        })
+        postgresSubs.append(ch.onPostgresChange(
+            UpdateAction.self, schema: "public", table: "presence",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        ) { [weak self] _ in
+            Task { @MainActor in await self?.load(propertyId: propertyId) }
+        })
+        try? await ch.subscribeWithError()
+        channel = ch
+        subscribedPropertyId = propertyId
+    }
+
+    func unsubscribe() async {
+        if let ch = channel {
+            await supabase.realtimeV2.removeChannel(ch)
+            channel = nil
+        }
+        postgresSubs.removeAll()
+        subscribedPropertyId = nil
     }
 
     func heartbeat(propertyId: UUID, userId: UUID, userName: String) async {
