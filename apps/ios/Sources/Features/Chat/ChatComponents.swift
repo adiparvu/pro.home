@@ -235,6 +235,11 @@ struct MessageBubble: View {
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
+    /// Speech-bubble background; the tail is drawn only on the last bubble of a
+    /// same-sender group so a run reads as one block ending in a single tail.
+    private var bubbleShape: ChatBubbleShape {
+        ChatBubbleShape(isOwn: isOwn, hasTail: isGroupEnd)
+    }
 
     private var showsQuickForward: Bool {
         // Forwarding is available only from the long-press menu — no inline arrow.
@@ -591,7 +596,7 @@ struct MessageBubble: View {
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: bubbleShape)
         } else if message.isPollMessage, let poll = ChatPoll.decode(message.body) {
             PollBubble(poll: poll, votes: pollVotes, myUserId: myUserId, isOwn: isOwn,
                        bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
@@ -629,7 +634,7 @@ struct MessageBubble: View {
                 .foregroundStyle(.primary)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                 .background(isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            in: bubbleShape)
         }
     }
 }
@@ -665,6 +670,30 @@ struct MessageTick: View {
         .animation(.snappy(duration: 0.22), value: status)
         .accessibilityLabel(status == .read ? Text("Read")
                              : status == .delivered ? Text("Delivered") : Text("Sent"))
+    }
+}
+
+// MARK: - Bubble shape (shared)
+
+/// A speech-bubble background whose bottom corner nearest the sender tightens
+/// into a "tail" on the last bubble of a same-sender run — the iMessage /
+/// WhatsApp read for "this is where the group ends, and who it's from". Middle
+/// bubbles of a run stay fully rounded so the column reads as one block.
+struct ChatBubbleShape: Shape {
+    let isOwn: Bool
+    /// Draw the tail — true only on the last bubble of a same-sender group.
+    var hasTail: Bool = true
+    var radius: CGFloat = 18
+    var tailRadius: CGFloat = 5
+
+    func path(in rect: CGRect) -> Path {
+        UnevenRoundedRectangle(
+            topLeadingRadius: radius,
+            bottomLeadingRadius: hasTail && !isOwn ? tailRadius : radius,
+            bottomTrailingRadius: hasTail && isOwn ? tailRadius : radius,
+            topTrailingRadius: radius,
+            style: .continuous
+        ).path(in: rect)
     }
 }
 
