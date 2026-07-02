@@ -36009,6 +36009,22 @@
           }
         }
       }
+    },
+    "Reaction %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reaction %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reacție %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

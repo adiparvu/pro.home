@@ -1451,6 +1451,9 @@ private struct DMBubble: View {
                                 in: Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(format: String(localized: "Reaction %@"), emoji)))
+                .accessibilityValue(count > 1 ? Text("\(count)") : Text(""))
+                .accessibilityAddTraits(myReaction == emoji ? [.isButton, .isSelected] : .isButton)
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 3)

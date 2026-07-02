@@ -258,6 +258,11 @@ struct ChatRecordingIndicator: View {
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 9)
         .liquidGlass(cornerRadius: AppRadius.xl)
+        // One VoiceOver stop instead of "8 · lessthan · Slide to cancel".
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Recording voice message"))
+        .accessibilityValue(Text(durationText))
+        .accessibilityHint("Slide left to cancel")
     }
 }
 
@@ -608,6 +613,9 @@ struct MessageBubble: View {
                                 in: Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(format: String(localized: "Reaction %@"), emoji)))
+                .accessibilityValue(count > 1 ? Text("\(count)") : Text(""))
+                .accessibilityAddTraits(displayMyReaction == emoji ? [.isButton, .isSelected] : .isButton)
             }
         }
         .padding(.horizontal, 6).padding(.vertical, 3)
@@ -764,6 +772,7 @@ struct MessageTick: View {
     /// when the tick sits inside a coloured (own) bubble.
     var readColor: Color = .blue
     var size: CGFloat = 11
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -771,13 +780,15 @@ struct MessageTick: View {
             if status != .sent {
                 Image(systemName: "checkmark")
                     .offset(x: size * 0.42)
-                    .transition(.scale(scale: 0.4, anchor: .leading).combined(with: .opacity))
+                    // Reduce Motion: fade the second check in without the scale morph.
+                    .transition(reduceMotion ? .opacity
+                                : .scale(scale: 0.4, anchor: .leading).combined(with: .opacity))
             }
         }
         .font(.system(size: size, weight: .semibold))
         .frame(width: status == .sent ? size : size * 1.42, alignment: .leading)
         .foregroundStyle(status == .read ? readColor : color)
-        .animation(.snappy(duration: 0.22), value: status)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: status)
         .accessibilityLabel(status == .read ? Text("Read")
                              : status == .delivered ? Text("Delivered") : Text("Sent"))
     }
