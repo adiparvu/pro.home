@@ -314,6 +314,10 @@ struct MessageBubble: View {
     var isGroupStart: Bool = true
     /// Last message of a same-sender run — anchors the avatar to this bubble.
     var isGroupEnd: Bool = true
+    /// Tapping the quoted reply snippet jumps to the original message.
+    var onQuotedTap: (() -> Void)? = nil
+    /// Briefly tinted when the reader jumped here from a reply/pin.
+    var isHighlighted: Bool = false
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
@@ -398,8 +402,21 @@ struct MessageBubble: View {
                 }
                 if let replied = repliedMessage, !isDeleted {
                     quotedReply(replied)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onQuotedTap?() }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Jump to the replied message")
                 }
                 bubbleContent
+                    // Brief accent wash when the reader jumped here from a reply.
+                    .overlay {
+                        if isHighlighted {
+                            bubbleShape.fill(Color.accentColor.opacity(0.28))
+                                .allowsHitTesting(false)
+                                .transition(.opacity)
+                        }
+                    }
+                    .animation(.easeInOut(duration: 0.3), value: isHighlighted)
                     // Reactions float over the bubble's bottom-sender corner; the
                     // bottom padding reserves the overhang so they don't collide
                     // with the timestamp row below.

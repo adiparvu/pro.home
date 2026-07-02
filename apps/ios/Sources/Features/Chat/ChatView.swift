@@ -34,6 +34,7 @@ struct ChatView: View {
     @State private var showGroupInfo = false
     @State private var showAddMember = false
     @State private var scrollTarget: UUID? = nil
+    @State private var highlightedMessageId: UUID? = nil
     @State private var menuMessage: Message?
     @State private var deleteCandidate: Message?
     @State private var editingMessage: Message? = nil
@@ -80,6 +81,20 @@ struct ChatView: View {
         let dA = a.date ?? Date()
         let dB = b.date ?? Date()
         return Calendar.current.isDate(dA, inSameDayAs: dB)
+    }
+
+    /// Scroll to a message (e.g. from tapping a reply's quote) and flash it. No-op
+    /// if it isn't in the loaded window — older pages aren't force-loaded here.
+    private func jumpToMessage(_ id: UUID) {
+        guard filteredMessages.contains(where: { $0.id == id }) else { return }
+        scrollTarget = id
+        HapticFeedback.impact(.light)
+        withAnimation(.easeInOut(duration: 0.25)) { highlightedMessageId = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(.easeInOut(duration: 0.4)) {
+                if highlightedMessageId == id { highlightedMessageId = nil }
+            }
+        }
     }
 
     /// Messages after the "clear conversation" cutoff and disappearing-message
@@ -612,7 +627,9 @@ struct ChatView: View {
                             },
                             onLongPress: { menuMessage = msg },
                             isGroupStart: !prevSameSender,
-                            isGroupEnd: !nextSameSender
+                            isGroupEnd: !nextSameSender,
+                            onQuotedTap: { if let rid = msg.replyTo { jumpToMessage(rid) } },
+                            isHighlighted: highlightedMessageId == msg.id
                         )
                         .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
                         .id(msg.id)

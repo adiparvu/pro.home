@@ -46,6 +46,7 @@ struct DirectMessageView: View {
     @State private var unreadSince: Date? = nil
     @State private var unreadDividerId: UUID? = nil
     @State private var unreadResolved = false
+    @State private var highlightedId: UUID? = nil
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -316,6 +317,17 @@ struct DirectMessageView: View {
         return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
     }
 
+    /// Flash a message briefly after jumping to it from a reply.
+    private func flashHighlight(_ id: UUID) {
+        HapticFeedback.impact(.light)
+        withAnimation(.easeInOut(duration: 0.25)) { highlightedId = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(.easeInOut(duration: 0.4)) {
+                if highlightedId == id { highlightedId = nil }
+            }
+        }
+    }
+
     /// Resolve the unread-divider anchor exactly once, from the frozen
     /// last-seen date, as soon as the conversation has loaded.
     private func resolveUnreadDivider() {
@@ -513,7 +525,14 @@ struct DirectMessageView: View {
                                     onMark: { Task { await directMessageService.toggleMark(msg) } },
                                     onDeleteForEveryone: { Task { await directMessageService.deleteForEveryone(id: msg.id) } },
                                     onDeleteForMe: { directMessageService.deleteForMe(id: msg.id) },
-                                    onLongPress: { menuMessage = msg }
+                                    onLongPress: { menuMessage = msg },
+                                    onQuotedTap: {
+                                        guard let rid = msg.replyTo,
+                                              displayedMessages.contains(where: { $0.id == rid }) else { return }
+                                        withAnimation { proxy.scrollTo(rid, anchor: .center) }
+                                        flashHighlight(rid)
+                                    },
+                                    isHighlighted: highlightedId == msg.id
                                 )
                                 .id(msg.id)
                             }
@@ -1200,6 +1219,10 @@ private struct DMBubble: View {
     var onDeleteForEveryone: (() -> Void)? = nil
     var onDeleteForMe: (() -> Void)? = nil
     var onLongPress: (() -> Void)? = nil
+    /// Tapping the quoted reply jumps to the original message.
+    var onQuotedTap: (() -> Void)? = nil
+    /// Briefly tinted when the reader jumped here from a reply.
+    var isHighlighted: Bool = false
 
     @State private var swipeOffset: CGFloat = 0
     @State private var showDetails = false
@@ -1258,6 +1281,10 @@ private struct DMBubble: View {
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                 if let replied = repliedMessage, messageType != .deleted {
                     quotedReply(replied)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onQuotedTap?() }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Jump to the replied message")
                 }
 
                 Group {
@@ -1281,6 +1308,15 @@ private struct DMBubble: View {
                     case .text:  textBubble
                     }
                 }
+                // Brief accent wash when the reader jumped here from a reply.
+                .overlay {
+                    if isHighlighted {
+                        bubbleShape.fill(Color.accentColor.opacity(0.28))
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.3), value: isHighlighted)
                 // Reactions float over the bubble's bottom-sender corner; bottom
                 // padding reserves the overhang so the timestamp row clears it.
                 .overlay(alignment: isOwn ? .bottomTrailing : .bottomLeading) {
