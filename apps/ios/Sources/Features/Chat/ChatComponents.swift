@@ -337,6 +337,15 @@ struct MessageBubble: View {
                     quotedReply(replied)
                 }
                 bubbleContent
+                    // Reactions float over the bubble's bottom-sender corner; the
+                    // bottom padding reserves the overhang so they don't collide
+                    // with the timestamp row below.
+                    .overlay(alignment: isOwn ? .bottomTrailing : .bottomLeading) {
+                        if !displayReactions.isEmpty, !isDeleted {
+                            reactionPills.offset(x: isOwn ? -6 : 6, y: 12)
+                        }
+                    }
+                    .padding(.bottom, (!displayReactions.isEmpty && !isDeleted) ? 14 : 0)
                     .offset(x: swipeOffset)
                     .overlay(alignment: isOwn ? .trailing : .leading) {
                         if abs(swipeOffset) > 12 {
@@ -352,9 +361,6 @@ struct MessageBubble: View {
                     }
                 if let link = linkURL {
                     LinkPreviewView(url: link)
-                }
-                if !displayReactions.isEmpty, !isDeleted {
-                    reactionPills
                 }
                 // Audio bubbles render their own time + ticks inside.
                 if !message.isAudioMessage { statusRow }
@@ -500,30 +506,34 @@ struct MessageBubble: View {
         return "Attachment"
     }
 
+    /// A single floating capsule of reactions that straddles the bubble's
+    /// bottom edge (see the overlay in `body`), rather than a separate row
+    /// underneath — the WhatsApp/iMessage placement. The reader's own reaction
+    /// gets a subtle accent chip inside the cluster.
     private var reactionPills: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             ForEach(Array(displayReactions.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
                 Button {
-                    if let onReact {
-                        onReact(emoji)
-                    } else {
-                        toggleLocalReaction(emoji)
-                    }
+                    if let onReact { onReact(emoji) } else { toggleLocalReaction(emoji) }
                 } label: {
-                    HStack(spacing: 3) {
-                        Text(emoji).font(.system(size: 14))
+                    HStack(spacing: 2) {
+                        Text(emoji).font(.system(size: 13))
                         if count > 1 {
-                            Text("\(count)").font(AppFont.label).foregroundStyle(.primary)
+                            Text("\(count)").font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
-                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
-                    .background(displayMyReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(AppOpacity.subtleFill),
+                    .padding(.horizontal, 3).padding(.vertical, 1)
+                    .background(displayMyReaction == emoji ? Color.accentColor.opacity(0.18) : Color.clear,
                                 in: Capsule())
-                    .overlay(Capsule().strokeBorder(displayMyReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.1), radius: 1.5, y: 0.5)
     }
 
     private func toggleLocalReaction(_ emoji: String) {

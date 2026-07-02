@@ -1295,6 +1295,14 @@ private struct DMBubble: View {
                     case .text:  textBubble
                     }
                 }
+                // Reactions float over the bubble's bottom-sender corner; bottom
+                // padding reserves the overhang so the timestamp row clears it.
+                .overlay(alignment: isOwn ? .bottomTrailing : .bottomLeading) {
+                    if !reactionCounts.isEmpty, messageType != .deleted {
+                        reactionPills.offset(x: isOwn ? -6 : 6, y: 12)
+                    }
+                }
+                .padding(.bottom, (!reactionCounts.isEmpty && messageType != .deleted) ? 14 : 0)
                 .offset(x: swipeOffset)
                 .overlay(alignment: isOwn ? .trailing : .leading) {
                     if abs(swipeOffset) > 12 {
@@ -1312,8 +1320,6 @@ private struct DMBubble: View {
                 if messageType == .text, let link = firstDetectedURL(in: message.body) {
                     LinkPreviewView(url: link)
                 }
-
-                if !reactionCounts.isEmpty { reactionPills }
 
                 // Audio bubbles render their own time + ticks inside.
                 if messageType != .audio { statusRow }
@@ -1398,26 +1404,32 @@ private struct DMBubble: View {
         }
     }
 
+    /// Floating reaction cluster that straddles the bubble's bottom edge (see
+    /// the overlay in `body`) — matches the group chat's placement.
     private var reactionPills: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             ForEach(Array(reactionCounts.sorted(by: { $0.key < $1.key })), id: \.key) { emoji, count in
                 Button {
                     onReact?(emoji)
                 } label: {
-                    HStack(spacing: 3) {
-                        Text(emoji).font(.system(size: 14))
+                    HStack(spacing: 2) {
+                        Text(emoji).font(.system(size: 13))
                         if count > 1 {
-                            Text("\(count)").font(AppFont.label).foregroundStyle(.primary)
+                            Text("\(count)").font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
-                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
-                    .background(myReaction == emoji ? Color.blue.opacity(0.15) : Color.primary.opacity(AppOpacity.subtleFill),
+                    .padding(.horizontal, 3).padding(.vertical, 1)
+                    .background(myReaction == emoji ? Color.accentColor.opacity(0.18) : Color.clear,
                                 in: Capsule())
-                    .overlay(Capsule().strokeBorder(myReaction == emoji ? Color.blue.opacity(0.4) : Color.clear, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.1), radius: 1.5, y: 0.5)
     }
 
     private var statusRow: some View {
