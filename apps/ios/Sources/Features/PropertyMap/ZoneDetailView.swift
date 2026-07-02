@@ -305,7 +305,7 @@ struct ZoneDetailView: View {
             return [
                 MetricItem(value: qualityLabel, label: "Water Quality", icon: "drop.fill", color: .blue),
                 MetricItem(value: "7.\(zone.healthScore % 5)", label: "pH Level", icon: "flask.fill", color: .cyan),
-                MetricItem(value: "\(1 + elements.count % 3).\(zone.healthScore % 9)m", label: "Depth", icon: "ruler.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                MetricItem(value: "\(1 + elements.count % 3).\(zone.healthScore % 9)m", label: "Depth", icon: "ruler.fill", color: Color.brandPrimaryBlue),
                 MetricItem(value: "\(max(10, zone.healthScore * 2))", label: "Fish Count", icon: "fish.fill", color: Color(red: 0.2, green: 0.7, blue: 0.5)),
             ]
         case .forest:
@@ -313,19 +313,19 @@ struct ZoneDetailView: View {
                 MetricItem(value: "\(max(100, zone.healthScore * 20))", label: "Trees", icon: "tree.fill", color: Color(red: 0.2, green: 0.7, blue: 0.3)),
                 MetricItem(value: "\(700 + zone.healthScore * 2) ppm", label: "CO₂", icon: "wind", color: Color(red: 0.5, green: 0.8, blue: 0.4)),
                 MetricItem(value: "18.\(zone.healthScore % 9)°C", label: "Temperature", icon: "thermometer", color: .orange),
-                MetricItem(value: "\(45 + zone.healthScore % 30)%", label: "Humidity", icon: "humidity.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                MetricItem(value: "\(45 + zone.healthScore % 30)%", label: "Humidity", icon: "humidity.fill", color: Color.brandPrimaryBlue),
             ]
         case .orchard:
             return [
-                MetricItem(value: "\(zone.healthScore)%", label: "Health", icon: "heart.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4)),
+                MetricItem(value: "\(zone.healthScore)%", label: "Health", icon: "heart.fill", color: Color.brandSuccess),
                 MetricItem(value: "\(max(20, elements.count * 5 + 12))", label: "Trees", icon: "tree.fill", color: .green),
                 MetricItem(value: "\(zone.healthScore / 10).\(zone.healthScore % 10)t", label: "Yield", icon: "basket.fill", color: .orange),
-                MetricItem(value: "Active", label: "Irrigation", icon: "drop.circle.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                MetricItem(value: "Active", label: "Irrigation", icon: "drop.circle.fill", color: Color.brandPrimaryBlue),
             ]
         case .greenhouse:
             return [
                 MetricItem(value: "1\(9 + zone.healthScore % 5).\(zone.healthScore % 9)°C", label: "Temperature", icon: "thermometer", color: .orange),
-                MetricItem(value: "\(50 + zone.healthScore % 20)%", label: "Humidity", icon: "humidity.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                MetricItem(value: "\(50 + zone.healthScore % 20)%", label: "Humidity", icon: "humidity.fill", color: Color.brandPrimaryBlue),
                 MetricItem(value: "\(700 + zone.healthScore * 3) ppm", label: "CO₂", icon: "wind", color: .green),
                 MetricItem(value: "\(60 + zone.healthScore % 30)%", label: "Light", icon: "sun.max.fill", color: .yellow),
             ]
@@ -341,7 +341,7 @@ struct ZoneDetailView: View {
         case .garden:
             return [
                 MetricItem(value: "\(40 + zone.healthScore % 40)%", label: "Soil Moisture", icon: "humidity.fill", color: .green),
-                MetricItem(value: "Active", label: "Irrigation", icon: "drop.circle.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                MetricItem(value: "Active", label: "Irrigation", icon: "drop.circle.fill", color: Color.brandPrimaryBlue),
                 MetricItem(value: "\(max(5, elements.count))", label: "Plants", icon: "leaf.fill", color: Color(red: 0.2, green: 0.7, blue: 0.3)),
                 MetricItem(value: "Today", label: "Last Watered", icon: "clock.fill", color: .secondary),
             ]
@@ -419,7 +419,7 @@ struct ZoneDetailView: View {
             ]
         case .forest, .orchard:
             return [
-                ActionButtonItem(label: "Irrigate", actionKey: "Irrigate", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                ActionButtonItem(label: "Irrigate", actionKey: "Irrigate", icon: "drop.fill", color: Color.brandPrimaryBlue),
                 ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
                 ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
                 ActionButtonItem(label: "Survey", actionKey: "Survey", icon: "location", color: .green),
@@ -440,7 +440,7 @@ struct ZoneDetailView: View {
             ]
         case .garden:
             return [
-                ActionButtonItem(label: "Water", actionKey: "Water", icon: "drop.fill", color: Color(red: 0.3, green: 0.6, blue: 0.9)),
+                ActionButtonItem(label: "Water", actionKey: "Water", icon: "drop.fill", color: Color.brandPrimaryBlue),
                 ActionButtonItem(label: "Tasks", actionKey: "Tasks", icon: "checklist", color: .orange),
                 ActionButtonItem(label: "Records", actionKey: "Records", icon: "doc.text", color: .secondary),
                 ActionButtonItem(label: "Fertilize", actionKey: "Fertilize", icon: "leaf", color: .green),

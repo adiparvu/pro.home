@@ -102,7 +102,7 @@ struct ZoneBottomSheet: View {
 
     private var healthColor: Color {
         switch zoneHealth {
-        case 80...:   return Color(red: 0.2, green: 0.8, blue: 0.45)
+        case 80...:   return Color.brandSuccess
         case 50..<80: return .orange
         default:      return .red
         }

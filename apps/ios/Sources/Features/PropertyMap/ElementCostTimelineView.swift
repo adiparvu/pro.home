@@ -34,7 +34,7 @@ struct ElementCostTimeline: View {
                         Spacer()
                         Text(String(format: "%.0f %@", points.last?.cumulative ?? 0, currency))
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
+                            .foregroundStyle(Color.brandSuccess)
                     }
                     Chart(points) { p in
                         AreaMark(x: .value("Date", p.date), y: .value("Cost", p.cumulative))

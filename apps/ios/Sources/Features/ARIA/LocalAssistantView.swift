@@ -127,7 +127,7 @@ struct LocalAssistantView: View {
                         .font(.title2.weight(.bold))
                     Image(systemName: "cpu.fill")
                         .font(AppFont.captionEmphasis)
-                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.9))
+                        .foregroundStyle(Color.brandSuccess.opacity(0.9))
                 }
                 if #available(iOS 26.0, *) {
                     Text("Apple Intelligence · On-device")

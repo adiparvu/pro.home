@@ -44,14 +44,14 @@ struct TasksSection: View {
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(completionRate >= 70 ? Color(red: 0.2, green: 0.8, blue: 0.4) : .orange)
+                            .foregroundStyle(completionRate >= 70 ? Color.brandSuccess : .orange)
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.primary.opacity(0.08)).frame(height: 10)
                             Capsule()
                                 .fill(LinearGradient(
-                                    colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
+                                    colors: [.blue, Color.brandSuccess],
                                     startPoint: .leading, endPoint: .trailing
                                 ))
                                 .frame(width: geo.size.width * (completionRate / 100), height: 10)
@@ -223,7 +223,7 @@ struct ForecastRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(value)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(positive ? Color(red: 0.2, green: 0.8, blue: 0.4) : .primary)
+                    .foregroundStyle(positive ? Color.brandSuccess : .primary)
                 Text(sub).font(.caption2).foregroundStyle(.secondary)
             }
         }

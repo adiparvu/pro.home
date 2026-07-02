@@ -54,7 +54,7 @@ struct PropertyPerspectivesView: View {
                     .init(icon: "banknote.fill",         label: "Net Balance",   value: "\(financialService.currencySymbol)\(Int(income - expenses))", color: income >= expenses ? .green : .red, tab: .settings),
                     .init(icon: "checkmark.circle.fill", label: "Open Tasks",    value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange, tab: .tasks),
                     .init(icon: "doc.text.fill",         label: "Documents",     value: "\(documentService.documents.count)", color: .purple,  tab: .settings),
-                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color.brandPrimaryBlue, tab: .settings),
                     .init(icon: "person.2.fill",         label: "Family",        value: "\(familyService.members.count)", color: .teal, tab: .settings),
                 ]
             ),
@@ -92,7 +92,7 @@ struct PropertyPerspectivesView: View {
                 description: "Service access — maintenance tasks, systems, and appliances.",
                 highlights: [
                     .init(icon: "checkmark.circle.fill", label: "Maintenance Tasks", value: "\(tasks.filter { $0.category == "maintenance" && !$0.isCompleted }.count)", color: .orange, tab: .tasks),
-                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color.brandPrimaryBlue, tab: .settings),
                     .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)", color: overdue.isEmpty ? .green : .red, tab: .tasks),
                     .init(icon: "shield.lefthalf.filled", label: "Under Warranty", value: "\(applianceService.appliances.filter { $0.warrantyUntil != nil }.count)", color: .teal, tab: .settings),
                 ]

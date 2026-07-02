@@ -252,7 +252,7 @@ struct DigitalTwinView: View {
                     showHealth = true
                     HapticFeedback.impact(.light)
                 }
-                controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
+                controlButton(icon: "sparkles", tint: Color.brandPurple) {
                     showInsights = true
                     HapticFeedback.impact(.light)
                 }

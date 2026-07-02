@@ -167,7 +167,7 @@ struct AuditLogView: View {
 
     private func iconColor(for type: String) -> Color {
         switch type {
-        case "login":                    return Color(red: 0.3, green: 0.82, blue: 0.45)
+        case "login":                    return Color.brandSuccess
         case "logout":                   return .orange
         case "export":                   return .cyan
         case "biometric_enabled":        return .blue

@@ -97,7 +97,7 @@ struct DeliveriesView: View {
                 .frame(width: 1, height: 14)
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(red: 0.2, green: 0.80, blue: 0.4))
+                    .fill(Color.brandSuccess)
                     .frame(width: 8, height: 8)
                 Text("\(delivered) delivered")
                     .font(.system(size: 13, weight: .medium))
@@ -168,7 +168,7 @@ struct DeliveriesView: View {
                             .tracking(0.5)
                         Spacer()
                     }
-                    .foregroundStyle(Color(red: 0.2, green: 0.80, blue: 0.4))
+                    .foregroundStyle(Color.brandSuccess)
                     .padding(.leading, AppSpacing.xxs)
                 }
                 .buttonStyle(.plain)

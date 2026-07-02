@@ -118,7 +118,7 @@ struct NotificationsSettingsView: View {
                                subtitle: "Reminder to return borrowed items",
                                value: bind(\.inventoryLoans))
                 divider
-                NotifToggleRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
+                NotifToggleRow(icon: "banknote.fill", color: Color.brandSuccess,
                                title: "Financial alerts",
                                subtitle: "Upcoming rents & large transactions",
                                value: bind(\.financialAlerts))
@@ -192,7 +192,7 @@ struct NotificationsSettingsView: View {
 
     private var statusColor: Color {
         switch authStatus {
-        case .authorized, .provisional: return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case .authorized, .provisional: return Color.brandSuccess
         case .denied: return .orange
         default: return .blue
         }

@@ -100,7 +100,7 @@ struct TrustedContactView: View {
             VStack(spacing: 0) {
                 fieldRow(icon: "person.fill", color: .blue, placeholder: "Full name", text: $name, keyboard: .default)
                 rowDivider
-                fieldRow(icon: "phone.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), placeholder: "Phone number", text: $phone, keyboard: .phonePad)
+                fieldRow(icon: "phone.fill", color: Color.brandSuccess, placeholder: "Phone number", text: $phone, keyboard: .phonePad)
                 rowDivider
                 fieldRow(icon: "heart.fill", color: .pink, placeholder: "Relationship (e.g. spouse, mother, friend)", text: $relationship, keyboard: .default)
             }

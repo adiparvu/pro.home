@@ -40,11 +40,11 @@ private enum ActivityCategory: String, CaseIterable {
     var color: Color {
         switch self {
         case .all:        return .blue
-        case .tasks:      return Color(red: 0.2, green: 0.78, blue: 0.45)
+        case .tasks:      return Color.brandSuccess
         case .finances:   return Color(red: 0.3, green: 0.6, blue: 1.0)
         case .documents:  return .orange
         case .elements:   return .purple
-        case .appliances: return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .appliances: return Color.brandPrimaryBlue
         case .plants:     return Color(red: 0.15, green: 0.75, blue: 0.40)
         }
     }
@@ -92,7 +92,7 @@ struct ActivityFeedView: View {
             let isIncome = r.type == "income"
             events.append(ActivityEvent(
                 icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                color:    isIncome ? Color(red: 0.2, green: 0.78, blue: 0.45) : .red,
+                color:    isIncome ? Color.brandSuccess : .red,
                 title:    isIncome ? "Income added" : "Expense recorded",
                 subtitle: "\(r.title) · \(financialService.currencySymbol)\(Int(r.amount))",
                 date:     date,
@@ -123,7 +123,7 @@ struct ActivityFeedView: View {
             if task.isCompleted {
                 events.append(ActivityEvent(
                     icon:     "checkmark.circle.fill",
-                    color:    Color(red: 0.2, green: 0.78, blue: 0.45),
+                    color:    Color.brandSuccess,
                     title:    "Task completed",
                     subtitle: task.title,
                     date:     date,
@@ -199,7 +199,7 @@ struct ActivityFeedView: View {
             let date = isoTask(ap.createdAt) ?? Date()
             events.append(ActivityEvent(
                 icon:     ap.categoryIcon,
-                color:    Color(red: 0.2, green: 0.55, blue: 0.95),
+                color:    Color.brandPrimaryBlue,
                 title:    "Appliance added",
                 subtitle: [ap.brand, ap.name].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " "),
                 date:     date,

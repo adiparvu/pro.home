@@ -73,7 +73,7 @@ struct InventoryView: View {
                                     .swipeActions(edge: .leading) {
                                         if item.isLoaned {
                                             Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: { Label("Returned", systemImage: "checkmark.circle") }
-                                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                                                .tint(Color.brandSuccess)
                                         } else {
                                             Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
                                                 .tint(.accentColor)

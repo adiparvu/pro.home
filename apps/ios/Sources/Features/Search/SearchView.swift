@@ -244,7 +244,7 @@ struct SearchView: View {
                         ForEach(results.finances) { record in
                             SearchRow(
                                 icon: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                                color: record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red,
+                                color: record.isIncome ? Color.brandSuccess : Color.red,
                                 title: record.title,
                                 subtitle: "\(record.category.capitalized) · \(record.dateFormatted)",
                                 badge: record.amountDisplay,

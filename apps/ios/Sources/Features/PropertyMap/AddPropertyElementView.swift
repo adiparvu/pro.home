@@ -245,7 +245,7 @@ struct AddPropertyElementView: View {
                                                     .padding(.horizontal, 10)
                                                     .padding(.vertical, AppSpacing.xs)
                                                     .background(
-                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
+                                                        Capsule().fill(selectedLayer == layer ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
                                                     )
                                             }
                                             .buttonStyle(.plain)
@@ -283,7 +283,7 @@ struct AddPropertyElementView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add") { save() }
                         .fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
+                        .foregroundStyle(canSave ? Color.brandPrimaryBlue : Color.secondary)
                         .disabled(!canSave)
                 }
             }
@@ -412,7 +412,7 @@ struct AddPropertyElementView: View {
                 Toggle(isOn: $isElectric) {
                     Text("Electric / automated").font(.subheadline)
                 }
-                .tint(Color(red: 0.29, green: 0.56, blue: 0.89))
+                .tint(Color.brandPrimaryBlue)
                 if isElectric {
                     fieldRow(label: "Automation system", placeholder: "e.g. Nice sliding motor, remote + app", text: $automationSystem)
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -424,7 +424,7 @@ struct AddPropertyElementView: View {
                                         .foregroundStyle(automationSystem == brandName ? Color.white : Color.secondary)
                                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                                         .background(
-                                            Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
+                                            Capsule().fill(automationSystem == brandName ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
                                         )
                                 }
                                 .buttonStyle(.plain)
@@ -505,10 +505,10 @@ struct AddPropertyElementView: View {
 
     private var scoreColor: Color {
         switch healthScore {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return .orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return .red
         }
     }

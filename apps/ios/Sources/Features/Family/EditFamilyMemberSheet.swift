@@ -114,7 +114,7 @@ struct EditFamilyMemberSheet: View {
             div
             fieldRow(icon: "envelope.fill", color: .orange, placeholder: "E-mail", text: $email, keyboard: .emailAddress, autocap: .never)
             div
-            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Phone", text: $phone, keyboard: .phonePad)
+            fieldRow(icon: "phone.fill", color: Color.brandSuccess, placeholder: "Phone", text: $phone, keyboard: .phonePad)
             div
             birthdayRow
         }

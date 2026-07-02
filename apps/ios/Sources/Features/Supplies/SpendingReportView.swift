@@ -246,7 +246,7 @@ struct SpendingReportView: View {
                     HStack {
                         statBadge(icon: "arrow.up.circle.fill", value: Receipt.format(maxDay.total), color: .orange)
                         Spacer()
-                        statBadge(icon: "arrow.down.circle.fill", value: Receipt.format(minDay.total), color: Color(red: 0.2, green: 0.78, blue: 0.45))
+                        statBadge(icon: "arrow.down.circle.fill", value: Receipt.format(minDay.total), color: Color.brandSuccess)
                     }
                 }
             }

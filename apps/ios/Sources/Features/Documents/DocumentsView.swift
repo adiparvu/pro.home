@@ -384,7 +384,7 @@ struct DocumentRow: View {
         switch doc.category {
         case "warranty":    return .yellow
         case "contract":    return .blue
-        case "insurance":   return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "insurance":   return Color.brandSuccess
         case "certificate": return .purple
         case "manual":      return .cyan
         case "invoice":     return .orange

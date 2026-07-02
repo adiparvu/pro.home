@@ -62,7 +62,7 @@ struct EditPropertyElementView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") { onSave(); dismiss() }.fontWeight(.semibold)
-                        .foregroundStyle(Color(red: 0.29, green: 0.56, blue: 0.89))
+                        .foregroundStyle(Color.brandPrimaryBlue)
                 }
             }
         }
@@ -160,7 +160,7 @@ struct AddElementRecordView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add") { save() }.fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
+                        .foregroundStyle(canSave ? Color.brandPrimaryBlue : Color.secondary)
                         .disabled(!canSave)
                 }
             }

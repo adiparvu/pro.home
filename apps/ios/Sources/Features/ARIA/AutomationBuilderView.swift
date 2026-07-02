@@ -42,7 +42,7 @@ struct AutomationRule: Identifiable, Codable {
             actionIcon: "bell.badge.fill",
             actionLabel: "Notify &\nCreate Task",
             isActive: true,
-            color: Color(red: 0.95, green: 0.45, blue: 0.15)
+            color: Color.brandWarning
         ),
         .init(
             name: "Plant Watering",
@@ -161,7 +161,7 @@ private struct AddAutomationSheet: View {
     @State private var actionType     = 0
 
     private let triggerOptions: [TriggerOption] = [
-        TriggerOption(label: "Warranty expires",       icon: "shield.lefthalf.filled",       color: Color(red: 0.95, green: 0.45, blue: 0.15)),
+        TriggerOption(label: "Warranty expires",       icon: "shield.lefthalf.filled",       color: Color.brandWarning),
         TriggerOption(label: "Task overdue",            icon: "exclamationmark.circle.fill",   color: .red),
         TriggerOption(label: "Plant needs water",       icon: "drop.fill",                    color: Color(red: 0.15, green: 0.72, blue: 0.37)),
         TriggerOption(label: "Document expires",        icon: "doc.badge.clock.fill",          color: .purple),
@@ -251,7 +251,7 @@ private struct AddAutomationSheet: View {
                                     AutomationPickerRow(
                                         icon: conditionOptions[i].icon,
                                         label: conditionOptions[i].label,
-                                        accentColor: Color(red: 0.2, green: 0.55, blue: 0.95),
+                                        accentColor: Color.brandPrimaryBlue,
                                         isSelected: conditionType == i
                                     ) {
                                         conditionType = i
@@ -403,7 +403,7 @@ struct AutomationBuilderView: View {
         let active = automations.filter(\.isActive).count
         return HStack(spacing: 12) {
             statPill(icon: "bolt.fill", label: "\(automations.count) Rules", color: Color(red: 0.45, green: 0.60, blue: 1.0))
-            statPill(icon: "checkmark.circle.fill", label: "\(active) Active", color: Color(red: 0.2, green: 0.78, blue: 0.45))
+            statPill(icon: "checkmark.circle.fill", label: "\(active) Active", color: Color.brandSuccess)
             statPill(icon: "bell.badge.fill", label: "\(automations.count - active) Paused", color: .orange)
         }
     }
@@ -587,13 +587,13 @@ struct AutomationBuilderView: View {
                     Text(isDeployed ? "Deployed ✓" : "Deploy")
                         .font(AppFont.captionEmphasis)
                 }
-                .foregroundStyle(isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95))
+                .foregroundStyle(isDeployed ? Color.brandSuccess : Color.brandPurple)
                 .frame(maxWidth: .infinity).frame(height: 44)
                 .background(
-                    (isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.12),
+                    (isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.12),
                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder((isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.30), lineWidth: 1))
+                    .strokeBorder((isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.30), lineWidth: 1))
                 .animation(.spring(response: 0.35), value: isDeployed)
             }
             .buttonStyle(.plain)

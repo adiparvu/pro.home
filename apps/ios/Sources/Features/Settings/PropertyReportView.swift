@@ -88,7 +88,7 @@ struct PropertyReportView: View {
                 statCell(icon: "banknote",
                          value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
                          label: String(localized: "this month"),
-                         color: Color(red: 0.25, green: 0.82, blue: 0.5))
+                         color: Color.brandSuccess)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "doc.fill",
                          value: "\(documentService.documents.count)",
@@ -132,7 +132,7 @@ struct PropertyReportView: View {
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
-                toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Financial summary", $includesFinances)
+                toggleRow("banknote.fill", Color.brandSuccess, "Financial summary", $includesFinances)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
                 Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))

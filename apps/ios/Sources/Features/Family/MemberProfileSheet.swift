@@ -74,7 +74,7 @@ struct MemberProfileSheet: View {
     private var quickActions: some View {
         HStack(spacing: 12) {
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Call", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
                 profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
@@ -134,7 +134,7 @@ struct MemberProfileSheet: View {
                     }
                 }
                 if let phone = resolvedMember.phone, !phone.isEmpty {
-                    contactRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), value: phone)
+                    contactRow(icon: "phone.fill", color: Color.brandSuccess, value: phone)
                     if resolvedMember.birthday != nil { divider }
                 }
                 if let bd = resolvedMember.birthdayDate {

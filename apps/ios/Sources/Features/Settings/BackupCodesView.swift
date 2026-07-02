@@ -118,7 +118,7 @@ struct BackupCodesView: View {
             Button { copyAll() } label: {
                 Label("Copiază tot", systemImage: showCopyConfirm ? "checkmark" : "doc.on.doc.fill")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(showCopyConfirm ? Color(red: 0.3, green: 0.82, blue: 0.45) : .primary)
+                    .foregroundStyle(showCopyConfirm ? Color.brandSuccess : .primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))

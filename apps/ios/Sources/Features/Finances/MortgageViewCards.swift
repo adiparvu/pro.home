@@ -73,7 +73,7 @@ extension MortgageView {
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
-                            .fill(LinearGradient(colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
+                            .fill(LinearGradient(colors: [.blue, Color.brandSuccess],
                                                  startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * paidProgress, height: 10)
                             .animation(.spring(response: 0.6), value: paidProgress)
@@ -121,7 +121,7 @@ extension MortgageView {
                             let f: DateFormatter = { let d = DateFormatter(); d.dateFormat = "MMM yyyy"; return d }()
                             Text(f.string(from: endDate))
                                 .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                                .foregroundStyle(Color.brandSuccess)
                         }
                     }
                 }
@@ -139,14 +139,14 @@ extension MortgageView {
                     Spacer()
                     Text(String(format: "%.1f%%", equityPercent * 100))
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                        .foregroundStyle(Color.brandSuccess)
                 }
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
-                            .fill(Color(red: 0.3, green: 0.85, blue: 0.5))
+                            .fill(Color.brandSuccess)
                             .frame(width: geo.size.width * equityPercent, height: 10)
                             .animation(.spring(response: 0.6), value: equityPercent)
                     }

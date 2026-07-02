@@ -123,7 +123,7 @@ struct AddDocumentSheet: View {
                                     Spacer()
                                     Image(systemName: pickedFileData != nil ? "checkmark.circle.fill" : "chevron.right")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(pickedFileData != nil ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.primary.opacity(0.3))
+                                        .foregroundStyle(pickedFileData != nil ? Color.brandSuccess : Color.primary.opacity(0.3))
                                 }
                                 .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }

@@ -286,7 +286,7 @@ private struct PropertyStep: View {
 private struct FeaturesStep: View {
     let features: [(icon: String, color: Color, title: String, desc: String)] = [
         ("checklist",          .blue,                           "Task Manager",   "Track maintenance and repairs"),
-        ("chart.bar.xaxis",    Color(red: 0.3, green: 0.85, blue: 0.5), "Analytics", "Monitor finances & performance"),
+        ("chart.bar.xaxis",    Color.brandSuccess, "Analytics", "Monitor finances & performance"),
         ("doc.text.fill",      .orange,                         "Documents",      "Store warranties & certificates"),
         ("sparkles",           .purple,                         "ARIA Assistant", "AI powered property advisor"),
     ]
@@ -333,7 +333,7 @@ private struct ReadyStep: View {
             Spacer()
             ZStack {
                 Circle()
-                    .fill(LinearGradient(colors: [Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.3), .blue.opacity(0.3)],
+                    .fill(LinearGradient(colors: [Color.brandSuccess.opacity(0.3), .blue.opacity(0.3)],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 120, height: 120)
                 Image(systemName: "checkmark.circle.fill")

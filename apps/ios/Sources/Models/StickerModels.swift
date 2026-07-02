@@ -74,7 +74,7 @@ enum StickerCatalog {
             Sticker(id: "recharge",  emoji: "🔌", label: "Recharge",   categoryId: "mood"),
         ]),
         StickerCategory(id: "extras", name: "Extras",
-                        icon: "sparkles", color: Color(red: 0.6, green: 0.35, blue: 0.95), stickers: [
+                        icon: "sparkles", color: Color.brandPurple, stickers: [
             Sticker(id: "new_stuff",   emoji: "🎁", label: "New stuff!",   categoryId: "extras"),
             Sticker(id: "memories",    emoji: "📷", label: "Memories",    categoryId: "extras"),
             Sticker(id: "important",   emoji: "📌", label: "Important!",   categoryId: "extras"),

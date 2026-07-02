@@ -149,7 +149,7 @@ struct UtilityView: View {
         ("electricity", "bolt.fill",      .yellow,                                  String(localized: "Electricity"), "kWh"),
         ("water",       "drop.fill",      .blue,                                    String(localized: "Water"),       "m³"),
         ("gas",         "flame.fill",     .orange,                                  String(localized: "Gas"),         "m³"),
-        ("internet",    "wifi",           Color(red: 0.3, green: 0.85, blue: 0.5), String(localized: "Internet"),    "Mbps"),
+        ("internet",    "wifi",           Color.brandSuccess, String(localized: "Internet"),    "Mbps"),
     ]
 
     var body: some View {

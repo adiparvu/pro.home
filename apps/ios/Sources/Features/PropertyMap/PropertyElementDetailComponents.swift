@@ -44,7 +44,7 @@ struct ElementRecordRow: View {
                     if let cost = record.cost {
                         Text("−\(formatCost(cost)) \(record.currency)")
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
+                            .foregroundStyle(Color.brandSuccess)
                     }
                 }
             }

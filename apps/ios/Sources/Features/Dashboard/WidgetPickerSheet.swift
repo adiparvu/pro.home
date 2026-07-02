@@ -92,13 +92,13 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .tasks:       return .blue
-        case .finances:    return Color(red: 0.3, green: 0.85, blue: 0.45)
+        case .finances:    return Color.brandSuccess
         case .documents:   return Color(red: 0.55, green: 0.55, blue: 0.95)
         case .family:      return Color(red: 0.7, green: 0.45, blue: 0.95)
         case .healthScore: return .red
         case .inventory:   return .orange
         case .contractors: return Color(red: 0.9, green: 0.65, blue: 0.2)
-        case .weather:     return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .weather:     return Color.brandPrimaryBlue
         case .plants:      return Color(red: 0.25, green: 0.78, blue: 0.45)
         case .calendar:    return .teal
         }

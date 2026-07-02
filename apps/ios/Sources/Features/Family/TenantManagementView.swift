@@ -87,7 +87,7 @@ struct TenantManagementView: View {
                 statCell(value: "\(waCount)", label: "WhatsApp", icon: "message.fill", color: Color(red: 0.16, green: 0.72, blue: 0.37))
             }
             if phoneCount > 0 {
-                statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4))
+                statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color.brandSuccess)
             }
         }
     }
@@ -151,7 +151,7 @@ struct TenantManagementView: View {
                     // Quick action buttons (vertical stack)
                     VStack(spacing: 6) {
                         if let phone = tenant.phone, !phone.isEmpty {
-                            quickActionButton(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                            quickActionButton(icon: "phone.fill", color: Color.brandSuccess) {
                                 if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
                                     UIApplication.shared.open(url)
                                 }

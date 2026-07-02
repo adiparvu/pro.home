@@ -99,7 +99,7 @@ private struct EmergencyRow: View {
         switch contact.color {
         case "blue": return .blue
         case "orange": return .orange
-        case "green": return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "green": return Color.brandSuccess
         default: return .red
         }
     }

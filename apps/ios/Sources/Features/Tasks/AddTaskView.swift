@@ -251,7 +251,7 @@ struct AddTaskView: View {
             HStack(spacing: 12) {
                 Image(systemName: calendarAdded ? "calendar.badge.checkmark" : "calendar.badge.plus")
                     .font(.system(size: 14))
-                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.accentColor)
+                    .foregroundStyle(calendarAdded ? Color.brandSuccess : Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar"))

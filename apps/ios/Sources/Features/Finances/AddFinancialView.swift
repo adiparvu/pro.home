@@ -88,7 +88,7 @@ struct AddFinancialView: View {
                         .padding(.vertical, 10)
                         .background(
                             type == t
-                                ? (t == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
+                                ? (t == "income" ? Color.brandSuccess : Color.red)
                                 : Color.clear,
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                         )

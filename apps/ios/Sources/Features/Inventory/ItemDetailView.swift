@@ -153,7 +153,7 @@ struct ItemDetailView: View {
     }
     private var warrantyColor: Color {
         switch live.warrantyStatus {
-        case .valid:        return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case .valid:        return Color.brandSuccess
         case .expiringSoon: return .orange
         case .expired:      return .red
         case .none:         return Color.primary.opacity(AppOpacity.disabled)

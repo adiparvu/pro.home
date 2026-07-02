@@ -252,7 +252,7 @@ struct ProfileView: View {
             TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change email") {
                 showChangeEmail = true
             }
-            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Change password") {
+            TapSettingsRow(icon: "key.fill", color: Color.brandSuccess, label: "Change password") {
                 showChangePassword = true
             }
             NavSettingsRow(icon: "shield.fill", color: .purple, label: "Safety and security") {

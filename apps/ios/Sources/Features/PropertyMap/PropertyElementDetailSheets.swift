@@ -140,7 +140,7 @@ struct LinkedTaskRow: View {
                 Button(action: onToggle) {
                     Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
-                        .foregroundStyle(task.isCompleted ? Color(red: 0.2, green: 0.8, blue: 0.45) : Color.secondary)
+                        .foregroundStyle(task.isCompleted ? Color.brandSuccess : Color.secondary)
                 }
                 .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 2) {

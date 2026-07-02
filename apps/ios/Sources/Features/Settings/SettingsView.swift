@@ -210,7 +210,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
                 BlueprintsView()
             }
-            NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
+            NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
                 FinancesView()
                     .environment(financialService)
                     .environment(propertyService)
@@ -255,7 +255,7 @@ struct SettingsView: View {
                     .environment(familyService)
                     .environment(propertyService)
             }
-            NavSettingsRow(icon: "washer.fill", color: Color(red: 0.2, green: 0.55, blue: 0.95), label: "Appliances") {
+            NavSettingsRow(icon: "washer.fill", color: Color.brandPrimaryBlue, label: "Appliances") {
                 AppliancesView()
                     .environment(applianceService)
                     .environment(propertyService)
@@ -268,7 +268,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
                 SeasonalChecklistView()
             }
-            NavSettingsRow(icon: "paintpalette.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15), label: "Paint Colors") {
+            NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
                 PaintColorsView()
                     .environment(paintColorService)
                     .environment(propertyService)
@@ -360,7 +360,7 @@ struct SettingsView: View {
                 QuickActionsSettingsView()
                     .environment(appSettings)
             }
-            NavSettingsRow(icon: "mic.fill", color: Color(red: 0.55, green: 0.35, blue: 0.95), label: "Siri & Shortcuts") {
+            NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
                 SiriShortcutsView()
             }
             NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {

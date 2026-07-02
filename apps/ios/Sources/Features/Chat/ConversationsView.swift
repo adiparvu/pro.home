@@ -589,7 +589,7 @@ struct ConversationsView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle().fill(LinearGradient(
-                    colors: [Color(red: 0.6, green: 0.35, blue: 0.95), Color(red: 0.29, green: 0.56, blue: 0.89)],
+                    colors: [Color.brandPurple, Color.brandPrimaryBlue],
                     startPoint: .topLeading, endPoint: .bottomTrailing))
                 Image(systemName: "sparkles")
                     .font(.system(size: 22, weight: .semibold))

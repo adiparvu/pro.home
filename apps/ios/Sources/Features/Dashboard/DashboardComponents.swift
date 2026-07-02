@@ -220,7 +220,7 @@ struct PropertySection: Identifiable {
 
     static let all: [PropertySection] = [
         PropertySection(name: "House",      icon: "house.fill",       color: Color(red: 0.35, green: 0.65, blue: 1.0),  latOffset:  1.2, lonOffset:  0.0),
-        PropertySection(name: "Yard",      icon: "leaf.fill",        color: Color(red: 0.3,  green: 0.85, blue: 0.45), latOffset: -0.8, lonOffset:  0.9),
+        PropertySection(name: "Yard",      icon: "leaf.fill",        color: Color.brandSuccess, latOffset: -0.8, lonOffset:  0.9),
         PropertySection(name: "Garage",    icon: "car.fill",         color: Color(red: 0.9,  green: 0.65, blue: 0.2),  latOffset: -1.2, lonOffset: -0.5),
         PropertySection(name: "Garden",    icon: "tree.fill",        color: Color(red: 0.25, green: 0.75, blue: 0.35), latOffset:  0.5, lonOffset:  1.3),
         PropertySection(name: "Solar",     icon: "sun.max.fill",     color: Color(red: 1.0,  green: 0.85, blue: 0.2),  latOffset:  1.0, lonOffset: -1.2),
@@ -420,7 +420,7 @@ struct PropertyHealthGauge: View {
 
     private var scoreColor: Color {
         switch score {
-        case 80...: return Color(red: 0.20, green: 0.87, blue: 0.48)
+        case 80...: return Color.brandSuccess
         case 55..<80: return .orange
         default: return .red
         }
@@ -550,7 +550,7 @@ struct PropertyHealthDashCard: View {
     var tasksPct: Int      = 6
 
     private var scoreColor: Color {
-        score >= 80 ? Color(red: 0.20, green: 0.82, blue: 0.48) :
+        score >= 80 ? Color.brandSuccess :
         score >= 55 ? .orange : .red
     }
 
@@ -587,8 +587,8 @@ struct PropertyHealthDashCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 metricRow("wrench.and.screwdriver", label: "Maintenance", pct: maintenancePct, color: .orange)
                 metricRow("bolt.fill", label: "Utilities", pct: utilitiesPct, color: Color(red: 0.35, green: 0.65, blue: 1.0))
-                metricRow("lock.shield.fill", label: "Security", pct: securityPct, color: Color(red: 0.48, green: 0.41, blue: 0.93))
-                metricRow("checklist", label: "Tasks", pct: tasksPct, color: Color(red: 0.20, green: 0.82, blue: 0.48))
+                metricRow("lock.shield.fill", label: "Security", pct: securityPct, color: Color.brandPurple)
+                metricRow("checklist", label: "Tasks", pct: tasksPct, color: Color.brandSuccess)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -691,7 +691,7 @@ struct ProactiveInsightsStrip: View {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                        .foregroundStyle(Color.brandPurple)
                     Text("Property Insights")
                         .font(AppFont.captionStrong)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
@@ -700,7 +700,7 @@ struct ProactiveInsightsStrip: View {
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 7).padding(.vertical, 2)
-                        .background(Color(red: 0.6, green: 0.35, blue: 0.95), in: Capsule())
+                        .background(Color.brandPurple, in: Capsule())
                 }
                 ForEach(engine.activeInsights.prefix(3)) { insight in
                     InsightRow(insight: insight) {

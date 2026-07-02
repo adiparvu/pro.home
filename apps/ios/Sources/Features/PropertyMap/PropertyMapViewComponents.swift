@@ -70,7 +70,7 @@ extension PropertyMapView {
                 label: "Value",
                 value: formattedTotal,
                 sub: "estimated",
-                color: Color(red: 0.3, green: 0.82, blue: 0.45)
+                color: Color.brandSuccess
             )
             statTile(
                 icon: "exclamationmark.triangle.fill",
@@ -267,10 +267,10 @@ extension PropertyMapView {
 
     private func healthColor(_ score: Int) -> Color {
         switch score {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return .orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return .red
         }
     }
@@ -315,7 +315,7 @@ struct LayerChip: View {
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, 7)
             .background(
-                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(AppOpacity.subtleFill))
+                Capsule().fill(isSelected ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
             )
             .overlay(
                 Capsule().strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.1), lineWidth: 0.5)

@@ -89,7 +89,7 @@ struct InventoryItem: Identifiable, Codable {
         case "furniture":   return Color(red: 0.7, green: 0.5, blue: 0.3)
         case "vehicles":    return .red
         case "sports":      return .cyan
-        case "security":    return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "security":    return Color.brandSuccess
         default:            return .gray
         }
     }

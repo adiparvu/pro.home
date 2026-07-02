@@ -48,7 +48,7 @@ struct SiriShortcutsView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         .fill(LinearGradient(
-                            colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
+                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
@@ -75,7 +75,7 @@ struct SiriShortcutsView: View {
     private let shortcuts: [(icon: String, color: Color, title: String, phrases: [String])] = [
         ("house.fill",    .blue,
          "Open PRVIO",    ["\"Open PRVIO\"", "\"Show PRVIO dashboard\""]),
-        ("checklist",     Color(red: 0.3, green: 0.85, blue: 0.45),
+        ("checklist",     Color.brandSuccess,
          "New Task",      ["\"Add task in PRVIO\"", "\"New task in PRVIO\""]),
         ("drop.fill",     Color(red: 0.15, green: 0.65, blue: 1.0),
          "Water Plant",   ["\"Water plant in PRVIO\"", "\"Mark plant watered in PRVIO\""]),
@@ -83,9 +83,9 @@ struct SiriShortcutsView: View {
          "Open Plants",   ["\"Open plants in PRVIO\"", "\"Show plants in PRVIO\""]),
         ("cart.fill",     Color(red: 0.35, green: 0.65, blue: 1.0),
          "Shopping List", ["\"Open shopping in PRVIO\"", "\"Shopping list PRVIO\""]),
-        ("message.fill",  Color(red: 0.2, green: 0.55, blue: 0.95),
+        ("message.fill",  Color.brandPrimaryBlue,
          "Chat",          ["\"Open chat in PRVIO\"", "\"Chat PRVIO\""]),
-        ("sparkles",      Color(red: 0.55, green: 0.35, blue: 0.95),
+        ("sparkles",      Color.brandPurple,
          "Ask ARIA",      ["\"Ask ARIA in PRVIO\"", "\"Talk to PRVIO\""]),
     ]
 
@@ -171,7 +171,7 @@ struct SiriShortcutsView: View {
                     donated
                         ? AnyShapeStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
                         : AnyShapeStyle(LinearGradient(
-                            colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
+                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .leading, endPoint: .trailing)),
                     in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 )
@@ -186,13 +186,13 @@ struct SiriShortcutsView: View {
                     Text("View in Shortcuts App")
                         .font(AppFont.subheadline)
                 }
-                .foregroundStyle(Color(red: 0.55, green: 0.35, blue: 0.95))
+                .foregroundStyle(Color.brandPurple)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .background(Color(red: 0.55, green: 0.35, blue: 0.95).opacity(0.1),
+                .background(Color.brandPurple.opacity(0.1),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color(red: 0.55, green: 0.35, blue: 0.95).opacity(0.25), lineWidth: 1))
+                    .strokeBorder(Color.brandPurple.opacity(0.25), lineWidth: 1))
             }
 
             Text("Activate once — Siri learns all \(shortcuts.count) commands. To remove, go to iPhone Settings › Siri.")

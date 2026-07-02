@@ -95,7 +95,7 @@ struct SecurityView: View {
                     Spacer()
                     if totpFactorId != nil {
                         Text("Enabled").font(AppFont.captionEmphasis)
-                            .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
+                            .foregroundStyle(Color.brandSuccess)
                     } else {
                         Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
@@ -107,7 +107,7 @@ struct SecurityView: View {
             }
             .buttonStyle(.plain)
             divider
-            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Text messages", status: "Coming soon")
+            statusRow(icon: "message.fill", color: Color.brandSuccess, title: "Text messages", status: "Coming soon")
             divider
             Button { showBackupCodes = true } label: {
                 HStack(spacing: 12) {
@@ -235,7 +235,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(
                         icon: biometricType == .faceID ? "faceid" : "touchid",
-                        color: Color(red: 0.3, green: 0.82, blue: 0.45)
+                        color: Color.brandSuccess
                     )
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LocalizedStringKey(biometricType == .faceID ? "Require Face ID" : "Require Touch ID"))

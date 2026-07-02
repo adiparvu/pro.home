@@ -167,7 +167,7 @@ struct FinancesSection: View {
                     Spacer()
                     Text(String(format: "%.0f%%", max(0, savingsRate)))
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(savingsRate >= 20 ? Color(red: 0.2, green: 0.8, blue: 0.4) : savingsRate >= 0 ? .orange : .red)
+                        .foregroundStyle(savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 0 ? .orange : .red)
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -175,7 +175,7 @@ struct FinancesSection: View {
                         Capsule()
                             .fill(LinearGradient(
                                 colors: savingsRate > 0
-                                    ? [Color(red: 0.3, green: 0.85, blue: 0.5), .blue]
+                                    ? [Color.brandSuccess, .blue]
                                     : [.red.opacity(0.8), .orange],
                                 startPoint: .leading, endPoint: .trailing
                             ))

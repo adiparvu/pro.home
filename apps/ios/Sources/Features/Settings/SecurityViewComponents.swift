@@ -17,7 +17,7 @@ struct ActiveSessionsSheet: View {
                             icon: "iphone",
                             title: "This device",
                             subtitle: "Current session · active now",
-                            color: Color(red: 0.3, green: 0.82, blue: 0.45),
+                            color: Color.brandSuccess,
                             isCurrent: true
                         )
                     }

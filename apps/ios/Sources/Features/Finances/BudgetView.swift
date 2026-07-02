@@ -82,7 +82,7 @@ struct BudgetView: View {
                           : String(format: String(localized: "%@%lld over budget"), financialService.currencySymbol, Int(abs(remaining))),
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
                         .font(AppFont.caption)
-                        .foregroundStyle(remaining >= 0 ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
+                        .foregroundStyle(remaining >= 0 ? Color.brandSuccess : Color.red)
                     Spacer()
                     Text(String(format: String(localized: "%.0f%% used"), progress * 100))
                         .font(.system(size: 12))
@@ -180,7 +180,7 @@ struct BudgetView: View {
         case "rent":        return .blue
         case "utilities":   return .yellow
         case "maintenance": return .orange
-        case "insurance":   return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "insurance":   return Color.brandSuccess
         case "taxes":       return .purple
         case "mortgage":    return .cyan
         case "supplies":    return .pink

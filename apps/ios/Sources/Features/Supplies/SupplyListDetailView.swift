@@ -195,7 +195,7 @@ struct SupplyListDetailView: View {
                                     .tracking(0.5)
                                 Spacer()
                             }
-                            .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
+                            .foregroundStyle(Color.brandSuccess)
                             .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
                             .background(appBackground)
                         }

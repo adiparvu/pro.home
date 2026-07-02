@@ -37,7 +37,7 @@ extension IntegrationsView {
                 })
 
             IntegrationRow(
-                icon: "person.2.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15),
+                icon: "person.2.fill", color: Color.brandWarning,
                 title: "Apple Contacts",
                 description: "Sync family members to your iPhone Contacts.",
                 status: vm.contactsStatus,
@@ -329,7 +329,7 @@ extension IntegrationsView {
 
     var energySection: some View {
         IntegrationGroup(title: "Energy & Environment") {
-            IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
+            IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color.brandSuccess,
                 title: "Energy Provider",
                 description: "Import utility bills automatically from your energy supplier.",
                 status: .deepLink("Set Up"),

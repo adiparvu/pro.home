@@ -156,10 +156,10 @@ struct ExpenseDashboardView: View {
                                     .font(AppFont.captionStrong)
                             }
                             .foregroundStyle(delta <= 0
-                                ? Color(red: 0.2, green: 0.78, blue: 0.45)
+                                ? Color.brandSuccess
                                 : Color.orange)
                             .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
-                            .background((delta <= 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.orange).opacity(0.12),
+                            .background((delta <= 0 ? Color.brandSuccess : Color.orange).opacity(0.12),
                                         in: Capsule())
                         }
                     }

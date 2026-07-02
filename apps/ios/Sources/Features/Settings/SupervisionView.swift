@@ -36,7 +36,7 @@ struct SupervisionSettings {
         var color: Color {
             switch self {
             case .tasks:       return .blue
-            case .finances:    return Color(red: 0.2, green: 0.78, blue: 0.45)
+            case .finances:    return Color.brandSuccess
             case .documents:   return .orange
             case .inventory:   return .indigo
             case .contractors: return .teal
@@ -205,9 +205,9 @@ struct SupervisionView: View {
                     let supervised = SupervisionSettings.isSupervised(member.id)
                     Text(LocalizedStringKey(supervised ? "Active" : "Inactive"))
                         .font(AppFont.label)
-                        .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
+                        .foregroundStyle(supervised ? Color.brandSuccess : Color.primary.opacity(0.3))
                         .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
-                        .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(AppOpacity.hairline),
+                        .background(supervised ? Color.brandSuccess.opacity(0.12) : Color.primary.opacity(AppOpacity.hairline),
                                     in: Capsule())
 
                     Image(systemName: "chevron.right")

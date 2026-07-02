@@ -201,7 +201,7 @@ struct AIInsightsView: View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 36, weight: .light))
-                .foregroundStyle(Color(red: 0.20, green: 0.82, blue: 0.48).opacity(0.6))
+                .foregroundStyle(Color.brandSuccess.opacity(0.6))
                 .padding(.top, AppSpacing.xl)
             Text(String(localized: "ai_insights_all_good"))
                 .font(AppFont.headline)
@@ -289,7 +289,7 @@ struct AIInsightsView: View {
             let score = propertyService.primary?.healthScore ?? 100
             result.append(.init(
                 icon: "checkmark.seal.fill",
-                iconColor: Color(red: 0.20, green: 0.82, blue: 0.48),
+                iconColor: Color.brandSuccess,
                 title: "Property health is excellent (\(score)%)",
                 elapsed: "Now"
             ))

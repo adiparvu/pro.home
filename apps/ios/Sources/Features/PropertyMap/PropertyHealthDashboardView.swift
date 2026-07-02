@@ -169,12 +169,12 @@ struct PropertyHealthDashboardView: View {
                         .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     Text(currencyService.formatted(elementService.totalEstimatedValue(), from: "EUR", preferred: appSettings.preferredCurrency))
                         .font(.title3.weight(.bold))
-                        .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
+                        .foregroundStyle(Color.brandSuccess)
                 }
                 Spacer()
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4).opacity(0.5))
+                    .foregroundStyle(Color.brandSuccess.opacity(0.5))
             }
         }
     }
@@ -186,7 +186,7 @@ struct PropertyHealthDashboardView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("AI Recommendations", systemImage: "sparkles")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.48, green: 0.41, blue: 0.93))
+                    .foregroundStyle(Color.brandPurple)
 
                 VStack(spacing: 8) {
                     if let worst = elementService.elements.min(by: { $0.healthScore < $1.healthScore }) {
@@ -207,7 +207,7 @@ struct PropertyHealthDashboardView: View {
                         icon: "chart.line.uptrend.xyaxis",
                         title: "Cost analysis",
                         desc: "Add maintenance costs for an accurate expense prediction.",
-                        color: Color(red: 0.29, green: 0.56, blue: 0.89)
+                        color: Color.brandPrimaryBlue
                     )
                 }
 
@@ -243,10 +243,10 @@ struct PropertyHealthDashboardView: View {
 
     private func scoreColor(_ score: Int) -> Color {
         switch score {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return .orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return .red
         }
     }

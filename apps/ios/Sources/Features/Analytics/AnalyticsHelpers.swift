@@ -29,9 +29,9 @@ struct CategoryStat: Identifiable {
 
     var color: Color {
         let palette: [Color] = [
-            Color(red: 0.29, green: 0.56, blue: 0.89),
-            Color(red: 1.0, green: 0.45, blue: 0.1),
-            Color(red: 0.3, green: 0.82, blue: 0.45),
+            Color.brandPrimaryBlue,
+            Color.brandWarning,
+            Color.brandSuccess,
             Color(red: 0.7, green: 0.3, blue: 0.9),
             Color(red: 1.0, green: 0.75, blue: 0.1),
             Color(red: 0.9, green: 0.3, blue: 0.35)
@@ -63,7 +63,7 @@ struct TrendKPICard: View {
                 Text(value)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(highlightValue
-                        ? (positiveValue ? Color(red: 0.2, green: 0.8, blue: 0.4) : .red)
+                        ? (positiveValue ? Color.brandSuccess : .red)
                         : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
@@ -77,7 +77,7 @@ struct TrendKPICard: View {
                             .font(.system(size: 10, weight: .semibold))
                     }
                     .foregroundStyle(trendPositive
-                        ? Color(red: 0.2, green: 0.8, blue: 0.4)
+                        ? Color.brandSuccess
                         : .red)
                 } else {
                     Text(label)

@@ -35,7 +35,7 @@ struct Delivery: Identifiable, Codable, Hashable {
         switch status {
         case "expected":         return .blue
         case "out_for_delivery": return .orange
-        case "delivered":        return Color(red: 0.2, green: 0.80, blue: 0.4)
+        case "delivered":        return Color.brandSuccess
         case "missed":           return .red
         case "returned":         return .gray
         default:                 return .gray

@@ -126,7 +126,7 @@ struct PropertyHealthDetailView: View {
                 label: "Security",
                 detail: securityDetail,
                 pct: securityPct,
-                color: Color(red: 0.48, green: 0.41, blue: 0.93)
+                color: Color.brandPurple
             )
             Divider().opacity(0.3)
             categoryRow(
@@ -134,7 +134,7 @@ struct PropertyHealthDetailView: View {
                 label: "Tasks",
                 detail: tasksDetail,
                 pct: tasksPct,
-                color: Color(red: 0.20, green: 0.82, blue: 0.48)
+                color: Color.brandSuccess
             )
         }
         .padding(AppSpacing.xl)
@@ -186,7 +186,7 @@ struct PropertyHealthDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                    .foregroundStyle(Color.brandPurple)
                 Text("How to Improve")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.primary)
@@ -245,7 +245,7 @@ struct PropertyHealthDetailView: View {
     // MARK: - Computed helpers
 
     private var scoreColor: Color {
-        score >= 80 ? Color(red: 0.20, green: 0.82, blue: 0.48) :
+        score >= 80 ? Color.brandSuccess :
         score >= 55 ? .orange : .red
     }
 
@@ -309,13 +309,13 @@ struct PropertyHealthDetailView: View {
                 points: 5))
         }
         if securityPct < 85 {
-            tips.append(.init(icon: "lock.shield.fill", color: Color(red: 0.48, green: 0.41, blue: 0.93),
+            tips.append(.init(icon: "lock.shield.fill", color: Color.brandPurple,
                 title: "Îmbunătățește securitatea",
                 body: "Adaugă camere sau senzori în zonele neacoperite ale proprietății.",
                 points: 7))
         }
         if tasksPct < 80 {
-            tips.append(.init(icon: "checklist", color: Color(red: 0.20, green: 0.82, blue: 0.48),
+            tips.append(.init(icon: "checklist", color: Color.brandSuccess,
                 title: "Rezolvă sarcinile restante",
                 body: "Completează sarcinile scadente — fiecare task finalizat ridică scorul.",
                 points: 3))

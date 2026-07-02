@@ -252,7 +252,7 @@ struct ARIASettingsView: View {
                                  label: "Tasks", value: $canSeeTasks)
                 rowDivider
                 contextToggleRow(icon: "banknote.fill",
-                                 color: Color(red: 0.3, green: 0.85, blue: 0.5),
+                                 color: Color.brandSuccess,
                                  label: "Finances", value: $canSeeFinances)
                 rowDivider
                 contextToggleRow(icon: "house.fill", color: .blue,
@@ -338,7 +338,7 @@ struct ARIASettingsView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(customApiKey.isEmpty
                             ? Color.primary.opacity(AppOpacity.disabled)
-                            : Color(red: 0.3, green: 0.85, blue: 0.5))
+                            : Color.brandSuccess)
                     Image(systemName: "chevron.right")
                         .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))

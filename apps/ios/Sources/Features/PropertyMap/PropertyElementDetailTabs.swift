@@ -42,7 +42,7 @@ extension PropertyElementDetailView {
                     }
                     if let value = localElement.estimatedValue {
                         let formatted = currencyService.formatted(value, from: localElement.valueCurrency, preferred: appSettings.preferredCurrency)
-                        StatRow(label: "Estimated value", value: formatted, valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
+                        StatRow(label: "Estimated value", value: formatted, valueColor: Color.brandSuccess)
                     }
                 }
             }
@@ -53,7 +53,7 @@ extension PropertyElementDetailView {
                         SectionHeader("Automation")
                         StatRow(label: "Electric",
                                 value: localElement.isElectric ? String(localized: "Yes") : String(localized: "No"),
-                                valueColor: localElement.isElectric ? Color(red: 0.2, green: 0.8, blue: 0.4) : .secondary)
+                                valueColor: localElement.isElectric ? Color.brandSuccess : .secondary)
                         if let sys = localElement.automationSystem, !sys.isEmpty {
                             StatRow(label: "System", value: sys)
                         }
@@ -96,7 +96,7 @@ extension PropertyElementDetailView {
                         StatRow(label: "Total records", value: "\(recs.count)")
                         if totalCost > 0 {
                             StatRow(label: "Total costs", value: currencyService.formatted(totalCost, from: "EUR", preferred: appSettings.preferredCurrency),
-                                    valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
+                                    valueColor: Color.brandSuccess)
                         }
                         if let last = lastDate {
                             StatRow(label: "Last record", value: formatted(date: last))
@@ -223,7 +223,7 @@ extension PropertyElementDetailView {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
 
@@ -273,7 +273,7 @@ extension PropertyElementDetailView {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
             if linked.isEmpty {
@@ -319,7 +319,7 @@ extension PropertyElementDetailView {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
             if linked.isEmpty {

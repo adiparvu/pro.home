@@ -24,7 +24,7 @@ struct TwinInsightsSheet: View {
 
     private var healthColor: Color {
         switch avgHealth {
-        case 80...:   return Color(red: 0.2, green: 0.8, blue: 0.45)
+        case 80...:   return Color.brandSuccess
         case 50..<80: return .orange
         default:      return .red
         }
@@ -59,7 +59,7 @@ struct TwinInsightsSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(
-                    LinearGradient(colors: [Color(red: 0.6, green: 0.35, blue: 0.95),
+                    LinearGradient(colors: [Color.brandPurple,
                                             Color(red: 0.35, green: 0.4, blue: 0.95)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -124,7 +124,7 @@ struct TwinInsightsSheet: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("\(assistantName) Analysis", systemImage: "sparkles")
                     .font(AppFont.captionEmphasis)
-                    .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                    .foregroundStyle(Color.brandPurple)
 
                 if let aiReply {
                     Text(LocalizedStringKey(aiReply))
@@ -154,7 +154,7 @@ struct TwinInsightsSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(
-                        LinearGradient(colors: [Color(red: 0.6, green: 0.35, blue: 0.95),
+                        LinearGradient(colors: [Color.brandPurple,
                                                 Color(red: 0.35, green: 0.4, blue: 0.95)],
                                        startPoint: .leading, endPoint: .trailing),
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))

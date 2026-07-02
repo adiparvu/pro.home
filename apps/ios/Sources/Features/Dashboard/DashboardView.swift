@@ -173,7 +173,7 @@ struct DashboardView: View {
                     .overlay(alignment: .topTrailing) {
                         if hasNotifications {
                             Circle()
-                                .fill(Color(red: 0.20, green: 0.87, blue: 0.48))
+                                .fill(Color.brandSuccess)
                                 .frame(width: 10, height: 10)
                                 .overlay(Circle().strokeBorder(.black.opacity(0.55), lineWidth: 1.5))
                                 .offset(x: -8, y: 8)
@@ -229,7 +229,7 @@ struct DashboardView: View {
             }
         }
         .frame(width: 42, height: 42)
-        .overlay(Circle().strokeBorder(Color(red: 0.20, green: 0.87, blue: 0.48).opacity(0.55), lineWidth: 1.5))
+        .overlay(Circle().strokeBorder(Color.brandSuccess.opacity(0.55), lineWidth: 1.5))
     }
 
     // MARK: - Aerial background (drone photo or canvas illustration)

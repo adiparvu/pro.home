@@ -89,13 +89,13 @@ extension FinancesView {
 
     var kpiStrip: some View {
         HStack(spacing: 0) {
-            kpiCell(label: "Income", value: fmt(income), color: Color(red: 0.25, green: 0.82, blue: 0.5), icon: "arrow.down.left")
+            kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess, icon: "arrow.down.left")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
             kpiCell(label: "Expenses", value: fmt(expenses), color: .red, icon: "arrow.up.right")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
             let savingsRate = income > 0 ? max(0, (income - expenses) / income * 100) : 0
             kpiCell(label: "Savings", value: String(format: "%.0f%%", savingsRate),
-                    color: savingsRate >= 20 ? Color(red: 0.25, green: 0.82, blue: 0.5) : savingsRate >= 10 ? .orange : .red,
+                    color: savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 10 ? .orange : .red,
                     icon: "percent")
         }
         .padding(.vertical, AppSpacing.lg)
@@ -187,7 +187,7 @@ extension FinancesView {
                             }
                             Text(fmtSigned(dayTotal))
                                 .font(AppFont.captionStrong)
-                                .foregroundStyle(dayTotal >= 0 ? Color(red: 0.25, green: 0.82, blue: 0.5) : .red)
+                                .foregroundStyle(dayTotal >= 0 ? Color.brandSuccess : .red)
                         }
                         .padding(.bottom, AppSpacing.sm)
 
@@ -296,7 +296,7 @@ struct FinancialRecordRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(record.isIncome ? "+" : "-")\(displayAmount)")
                     .font(AppFont.subheadline)
-                    .foregroundStyle(record.isIncome ? Color(red: 0.25, green: 0.82, blue: 0.5) : .primary)
+                    .foregroundStyle(record.isIncome ? Color.brandSuccess : .primary)
                 Text(record.dateFormatted)
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))

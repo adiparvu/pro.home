@@ -404,7 +404,7 @@ struct SupplyListCard: View {
                     let pending = supplyService.pendingCount(for: list.id)
                     Text(pending == 0 ? String(localized: "supply_all_done") : "\(pending) \(String(localized: "supply_to_buy_short"))")
                         .font(.system(size: 11))
-                        .foregroundStyle(pending == 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(AppOpacity.secondaryText))
+                        .foregroundStyle(pending == 0 ? Color.brandSuccess : Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             }
@@ -428,7 +428,7 @@ struct SupplyItemRow: View {
                     Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
                         .foregroundStyle(item.isCompleted
-                            ? Color(red: 0.2, green: 0.78, blue: 0.45)
+                            ? Color.brandSuccess
                             : Color.primary.opacity(0.28))
                         .symbolEffect(.bounce, value: item.isCompleted)
                 }
@@ -470,7 +470,7 @@ struct SupplyItemRow: View {
                 Label(LocalizedStringKey(item.isCompleted ? "Undo" : "Complete"),
                       systemImage: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
             }
-            .tint(item.isCompleted ? .orange : Color(red: 0.2, green: 0.78, blue: 0.45))
+            .tint(item.isCompleted ? .orange : Color.brandSuccess)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }

@@ -148,7 +148,7 @@ extension DashboardView {
             HomeWidget(
                 icon: "creditcard.fill",
                 iconColor: financialService.currentMonthNet >= 0
-                    ? Color(red: 0.3, green: 0.85, blue: 0.45) : .orange,
+                    ? Color.brandSuccess : .orange,
                 title: "Finances",
                 value: netFormatted,
                 subtitle: String(localized: "this month")

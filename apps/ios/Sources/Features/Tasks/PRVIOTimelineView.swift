@@ -154,7 +154,7 @@ struct PRVIOTimelineView: View {
             events.append(.init(
                 id: task.id,
                 icon: "checkmark.circle.fill",
-                color: Color(red: 0.20, green: 0.82, blue: 0.48),
+                color: Color.brandSuccess,
                 title: task.title,
                 subtitle: task.category.capitalized,
                 date: date

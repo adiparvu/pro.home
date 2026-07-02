@@ -216,8 +216,8 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .aria:       return Color(red: 0.6,  green: 0.35, blue: 0.95)
-        case .newTask:    return Color(red: 0.3,  green: 0.85, blue: 0.45)
+        case .aria:       return Color.brandPurple
+        case .newTask:    return Color.brandSuccess
         case .chat:       return Color(red: 0.35, green: 0.65, blue: 1.0)
         case .scan:       return Color(red: 1.0,  green: 0.65, blue: 0.15)
         case .addItem:    return Color(red: 0.0,  green: 0.6,  blue: 0.85)

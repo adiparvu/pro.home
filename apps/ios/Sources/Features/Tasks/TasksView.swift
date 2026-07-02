@@ -197,7 +197,7 @@ struct TasksView: View {
                                     Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Done"),
                                           systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
                                 }
-                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                                .tint(Color.brandSuccess)
                             }
                     }
                 }
