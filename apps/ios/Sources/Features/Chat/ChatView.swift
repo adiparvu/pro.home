@@ -757,22 +757,9 @@ struct ChatView: View {
                 .background(Color.primary.opacity(0.05))
             }
             if let replyingTo {
-                HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 40)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
-                            .font(AppFont.footnoteEmphasis).foregroundStyle(Color.accentColor)
-                        Text(pinnedSnippet(replyingTo))
-                            .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.65)).lineLimit(1)
-                    }
-                    Spacer()
-                    Button { withAnimation { self.replyingTo = nil } } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundStyle(Color.primary.opacity(0.4))
-                    }.buttonStyle(.plain)
-                    .accessibilityLabel("Cancel reply")
+                ChatReplyBanner(sender: replyingTo.senderName, snippet: pinnedSnippet(replyingTo)) {
+                    withAnimation { self.replyingTo = nil }
                 }
-                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                .background(Color.primary.opacity(0.05))
             }
             if !mentionedNames.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -814,30 +801,16 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Cancel recording")
 
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 8, height: 8)
-                            .symbolEffect(.pulse)
-                        Text(audioRecorder.durationText)
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text("← Slide to cancel")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                    }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                    .liquidGlass(cornerRadius: 22)
-                    .gesture(
-                        DragGesture(minimumDistance: 40)
-                            .onEnded { val in
-                                if val.translation.width < -40 {
-                                    _ = audioRecorder.stop()
-                                    HapticFeedback.warning()
+                    ChatRecordingIndicator(durationText: audioRecorder.durationText)
+                        .gesture(
+                            DragGesture(minimumDistance: 40)
+                                .onEnded { val in
+                                    if val.translation.width < -40 {
+                                        _ = audioRecorder.stop()
+                                        HapticFeedback.warning()
+                                    }
                                 }
-                            }
-                    )
+                        )
 
                     Button {
                         if let url = audioRecorder.stop() {

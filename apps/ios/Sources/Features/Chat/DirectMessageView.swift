@@ -758,27 +758,9 @@ struct DirectMessageView: View {
 
     @ViewBuilder
     private func replyPreviewBar(_ msg: DirectMessage) -> some View {
-        HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Replying to \(msg.senderName)")
-                    .font(AppFont.captionStrong)
-                    .foregroundStyle(Color.accentColor)
-                Text(replyPreviewText(msg))
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.55))
-                    .lineLimit(1)
-            }
-            Spacer()
-            Button { withAnimation { replyingTo = nil } } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(Color.primary.opacity(0.3))
-            }
-            .buttonStyle(.plain)
+        ChatReplyBanner(sender: msg.senderName, snippet: replyPreviewText(msg)) {
+            withAnimation { replyingTo = nil }
         }
-        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.sm)
-        .background(.regularMaterial)
     }
 
     private func replyPreviewText(_ msg: DirectMessage) -> String {
@@ -806,26 +788,7 @@ struct DirectMessageView: View {
     }
 
     private var recordingIndicator: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.red)
-                .frame(width: 8, height: 8)
-                .symbolEffect(.pulse)
-            Text(audioRecorder.durationText)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-            Spacer()
-            Image(systemName: "lessthan")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.3))
-            Text("Slide to cancel")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.4))
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 9)
-        .liquidGlass(cornerRadius: AppRadius.xl)
+        ChatRecordingIndicator(durationText: audioRecorder.durationText)
     }
 
     private var cameraButton: some View {

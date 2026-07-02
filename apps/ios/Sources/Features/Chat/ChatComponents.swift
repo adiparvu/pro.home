@@ -198,6 +198,69 @@ struct ChatDateSeparator: View {
     }
 }
 
+/// The reply-preview banner shown above the composer while replying. Shared by
+/// the group and DM input bars — both pass a plain sender + snippet so it works
+/// across the two message types.
+struct ChatReplyBanner: View {
+    let sender: String
+    let snippet: String
+    var onCancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor).frame(width: 4, height: 38)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(format: String(localized: "Reply to %@"), sender))
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(Color.accentColor)
+                Text(snippet)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.primary.opacity(0.6))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            Button(action: onCancel) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Cancel reply")
+        }
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
+        .background(.regularMaterial)
+    }
+}
+
+/// The recording status pill (pulsing dot · elapsed time · "slide to cancel")
+/// shared by both input bars while a voice message is being recorded.
+struct ChatRecordingIndicator: View {
+    let durationText: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 8, height: 8)
+                .symbolEffect(.pulse)
+            Text(durationText)
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+            Spacer(minLength: 0)
+            Image(systemName: "lessthan")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(0.3))
+            Text("Slide to cancel")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.primary.opacity(0.4))
+        }
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, 9)
+        .liquidGlass(cornerRadius: AppRadius.xl)
+    }
+}
+
 /// The "unread messages" marker shown at the point the reader left off, tinted
 /// with the accent colour to stand apart from the neutral date separators.
 struct UnreadDivider: View {
