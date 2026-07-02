@@ -2,14 +2,15 @@ import SwiftUI
 
 // MARK: - Constants
 
-let kRoles = ["owner", "partner", "child", "member", "tenant", "guest"]
+let kRoles = ["owner", "partner", "child", "member", "tenant", "worker", "guest"]
 let kRoleLabels: [String: String] = [
     "owner": "Owner", "partner": "Partner", "child": "Child",
-    "member": "Member", "tenant": "Tenant", "guest": "Guest"
+    "member": "Member", "tenant": "Tenant", "worker": "Worker", "guest": "Guest"
 ]
 let kRoleIcons: [String: String] = [
     "owner": "house.fill", "partner": "heart.fill", "child": "figure.child",
-    "member": "person.fill", "tenant": "key.fill", "guest": "person.badge.clock"
+    "member": "person.fill", "tenant": "key.fill", "worker": "hammer.fill",
+    "guest": "person.badge.clock"
 ]
 let kColors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter"]

@@ -1328,9 +1328,11 @@ struct AddContactView: View {
         do {
             let trimmedName = name.trimmingCharacters(in: .whitespaces)
             let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+            // Contacts added from chat default to chat-only (guest). Elevate to a
+            // fuller role from Family settings if they should see more of the home.
             try await familyService.add(
                 name: trimmedName,
-                role: "member",
+                role: "guest",
                 email: trimmedEmail.isEmpty ? nil : trimmedEmail,
                 phone: phone.isEmpty ? nil : phone,
                 color: colorHex,
@@ -1341,7 +1343,7 @@ struct AddContactView: View {
             // WhatsApp-style: adding a contact with an email invites them.
             if !trimmedEmail.isEmpty {
                 await familyService.sendInvite(
-                    to: trimmedEmail, name: trimmedName, role: "member",
+                    to: trimmedEmail, name: trimmedName, role: "guest",
                     propertyId: propertyService.primary?.id,
                     propertyName: propertyService.primary?.name)
             }

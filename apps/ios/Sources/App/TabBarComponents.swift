@@ -55,6 +55,23 @@ enum AppTab: String, CaseIterable {
         case .settings:    return String(localized: "You")
         }
     }
+
+    /// Tabs a property role may see. Fail-open: nil / owner / partner / adult /
+    /// elderly see everything; only explicitly-scoped roles are trimmed. This is
+    /// navigation convenience — real per-module data security is server-side RLS
+    /// (Phase 3). Chat + settings (your own profile) stay available to everyone.
+    static func visible(for role: String?) -> Set<AppTab> {
+        switch role {
+        case "guest":
+            return [.chat, .settings]
+        case "service_provider":
+            return [.tasks, .chat, .settings]
+        case "tenant", "family_child", "family_teen":
+            return [.home, .tasks, .chat, .settings]
+        default:
+            return Set(AppTab.allCases)
+        }
+    }
 }
 
 // MARK: - Scroll-direction tracker (Instagram-style tab hide)

@@ -36025,6 +36025,22 @@
           }
         }
       }
+    },
+    "Worker": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worker"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muncitor"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

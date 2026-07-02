@@ -38,19 +38,26 @@ struct MainTabView: View {
 
     var body: some View {
         @Bindable var router = router
+        let visibleTabs = AppTab.visible(for: propertyService.myRole)
         return TabView(selection: $router.selectedTab) {
-            NavigationStack { DashboardView() }
-                .tabItem { Image(systemName: "house.fill") }
-                .tag(AppTab.home)
+            if visibleTabs.contains(.home) {
+                NavigationStack { DashboardView() }
+                    .tabItem { Image(systemName: "house.fill") }
+                    .tag(AppTab.home)
+            }
 
-            NavigationStack { PropertyTabView() }
-                .tabItem { Image(systemName: "square.stack.3d.up.fill") }
-                .tag(AppTab.digitalTwin)
+            if visibleTabs.contains(.digitalTwin) {
+                NavigationStack { PropertyTabView() }
+                    .tabItem { Image(systemName: "square.stack.3d.up.fill") }
+                    .tag(AppTab.digitalTwin)
+            }
 
-            NavigationStack { TasksView() }
-                .tabItem { Image(systemName: "checklist") }
-                .tag(AppTab.tasks)
-                .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
+            if visibleTabs.contains(.tasks) {
+                NavigationStack { TasksView() }
+                    .tabItem { Image(systemName: "checklist") }
+                    .tag(AppTab.tasks)
+                    .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
+            }
 
             NavigationStack {
                 ConversationsView()
@@ -196,6 +203,8 @@ struct MainTabView: View {
         .task {
             await currencyService.refresh()
             await propertyService.load()
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
             await taskService.load()
             await financialService.load()
             await documentService.load()
@@ -251,6 +260,8 @@ struct MainTabView: View {
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
             Task {
+                await propertyService.loadMyRole()
+                redirectIfTabHidden()
                 await deliveryService.load(propertyId: newPropId)
                 await supplyService.load(propertyId: newPropId)
                 await receiptService.load(propertyId: newPropId)
@@ -315,6 +326,14 @@ struct MainTabView: View {
     }
 
     // MARK: Widget + Dynamic Shortcuts
+
+    /// If the selected tab isn't available to the current role (e.g. a guest on
+    /// the Home tab), fall back to Chat, which every role can see.
+    private func redirectIfTabHidden() {
+        if !AppTab.visible(for: propertyService.myRole).contains(router.selectedTab) {
+            router.selectedTab = .chat
+        }
+    }
 
     /// One presence beat: stamp our own heartbeat, then refresh the property's
     /// statuses. No-op until we have a property, a session, and a display name.

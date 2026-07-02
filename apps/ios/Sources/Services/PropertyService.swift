@@ -10,6 +10,12 @@ final class PropertyService {
     var isLoading = false
     var error: String?
 
+    /// The current user's role on the primary property (from property_members),
+    /// e.g. owner / partner / tenant / service_provider / guest. Drives role-based
+    /// UI gating. nil = unknown → treat as full access (fail-open; real security
+    /// is server-side RLS).
+    var myRole: String?
+
     /// Bumped when the UserDefaults-backed selection changes. Since
     /// `selectedPropertyId` isn't an observable stored property, its getter
     /// touches this so consumers (and `primary`) refresh when it changes.
@@ -32,6 +38,29 @@ final class PropertyService {
     }
 
     func select(_ property: PropertyModel) { selectedPropertyId = property.id }
+
+    /// Load the current user's role on the primary property. Silent on error →
+    /// leaves myRole nil (fail-open).
+    func loadMyRole() async {
+        guard let pid = primary?.id, let uid = supabase.auth.currentSession?.user.id else {
+            myRole = nil; return
+        }
+        struct Row: Decodable { let role: String }
+        do {
+            let rows: [Row] = try await supabase
+                .from("property_members")
+                .select("role")
+                .eq("property_id", value: pid.uuidString)
+                .eq("user_id", value: uid.uuidString)
+                .eq("status", value: "active")
+                .limit(1)
+                .execute()
+                .value
+            myRole = rows.first?.role
+        } catch {
+            myRole = nil
+        }
+    }
 
     func load() async {
         isLoading = true
