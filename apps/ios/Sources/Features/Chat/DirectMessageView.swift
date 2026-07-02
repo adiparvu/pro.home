@@ -454,7 +454,11 @@ struct DirectMessageView: View {
                                 // While searching, `shown` is a sparse subset, so adjacency-based
                                 // grouping is meaningless — show each result as a standalone bubble.
                                 let isSearching = !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                let prevSameSender = !isSearching && idx > 0 && shown[idx - 1].senderName == msg.senderName
+                                // Tail on the last bubble of a same-sender run (or when the
+                                // next message starts a new day) — matches the group chat.
+                                let nextSameSender = !isSearching && idx < shown.count - 1
+                                    && shown[idx + 1].senderName == msg.senderName
+                                    && sameDay(msg, shown[idx + 1])
                                 let showDate = idx == 0 || !sameDay(shown[idx - 1], msg)
 
                                 if showDate {
@@ -468,7 +472,7 @@ struct DirectMessageView: View {
                                 DMBubble(
                                     message: msg,
                                     isOwn: isOwn,
-                                    showSenderBubbleTail: !prevSameSender || showDate,
+                                    hasTail: !nextSameSender,
                                     myName: myName,
                                     partner: member,
                                     myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
@@ -1194,7 +1198,8 @@ private struct DMAttachmentOption: View {
 private struct DMBubble: View {
     let message: DirectMessage
     let isOwn: Bool
-    let showSenderBubbleTail: Bool
+    /// Draw the iMessage-style tail — true on the last bubble of a same-sender run.
+    let hasTail: Bool
     var myName: String = ""
     var partner: FamilyMember? = nil
     var myAvatarURL: URL? = nil
@@ -1221,6 +1226,9 @@ private struct DMBubble: View {
         for (_, emoji) in message.reactions ?? [:] { out[emoji, default: 0] += 1 }
         return out
     }
+
+    /// Speech-bubble background; tail only on the last bubble of a run.
+    private var bubbleShape: ChatBubbleShape { ChatBubbleShape(isOwn: isOwn, hasTail: hasTail) }
     private var myReaction: String? { message.reactions?[myName] }
 
     private var showsQuickForward: Bool {
@@ -1280,7 +1288,8 @@ private struct DMBubble: View {
                             timeText: message.timeDisplay,
                             tick: isOwn ? (message.readAt != nil ? .read
                                            : (message.deliveredAt != nil ? .delivered : .sent)) : .none,
-                            bubbleColor: outgoingColor ?? Color.accentColor
+                            bubbleColor: outgoingColor ?? Color.accentColor,
+                            hasTail: hasTail
                         )
                     case .image: imageBubble
                     case .text:  textBubble
@@ -1478,7 +1487,7 @@ private struct DMBubble: View {
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
         }
         .padding(.horizontal, 13).padding(.vertical, 9)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: bubbleShape)
     }
 
     private var textBubble: some View {
@@ -1489,13 +1498,13 @@ private struct DMBubble: View {
             .padding(.vertical, 9)
             .background(
                 isOwn ? (outgoingColor ?? Color.accentColor) : Color.primary.opacity(0.09),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                in: bubbleShape
             )
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(bubbleShape)
     }
 
     private var imageBubble: some View {
-        DMImageBubble(stored: message.body) { u in viewerItem = ImageViewerItem(url: u) }
+        DMImageBubble(stored: message.body, isOwn: isOwn, hasTail: hasTail) { u in viewerItem = ImageViewerItem(url: u) }
     }
 }
 
@@ -1503,8 +1512,12 @@ private struct DMBubble: View {
 
 private struct DMImageBubble: View {
     let stored: String
+    var isOwn: Bool = false
+    var hasTail: Bool = true
     let onTap: (URL) -> Void
     @State private var url: URL?
+
+    private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: isOwn, hasTail: hasTail) }
 
     var body: some View {
         AsyncImage(url: url) { phase in
@@ -1513,15 +1526,15 @@ private struct DMImageBubble: View {
                 img.resizable()
                     .scaledToFill()
                     .frame(maxWidth: 220, maxHeight: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .clipShape(shape)
                     .onTapGesture { if let url { onTap(url) } }
             case .failure:
-                RoundedRectangle(cornerRadius: AppRadius.lg)
+                shape
                     .fill(Color.primary.opacity(0.08))
                     .frame(width: 220, height: 140)
                     .overlay(Image(systemName: "photo").foregroundStyle(Color.primary.opacity(0.3)))
             default:
-                RoundedRectangle(cornerRadius: AppRadius.lg)
+                shape
                     .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 220, height: 140)
                     .overlay(ProgressView())
