@@ -440,7 +440,7 @@ struct MessageBubble: View {
                                 .offset(x: swipeOffset > 0 ? -28 : 28)
                         }
                     }
-                    .onLongPressGesture(minimumDuration: 0.15) {
+                    .onLongPressGesture(minimumDuration: 0.3) {
                         HapticFeedback.impact(.medium)
                         onLongPress?()
                     }
@@ -458,18 +458,22 @@ struct MessageBubble: View {
         }
         .contentShape(Rectangle())
         .simultaneousGesture(
-            DragGesture(minimumDistance: 14)
+            // Only a decisively horizontal drag engages the reply/details swipe;
+            // anything with real vertical travel is left to the scroll view, so
+            // scrolling with a finger on a bubble never nudges it or fires a reply.
+            DragGesture(minimumDistance: 24)
                 .onChanged { v in
                     guard !isDeleted else { return }
-                    // Engage across the full row width, only on a clearly horizontal
-                    // drag so vertical scrolling still works. Right = reply, left = details.
-                    guard abs(v.translation.width) > abs(v.translation.height) else { return }
-                    swipeOffset = max(-70, min(70, v.translation.width))
+                    guard abs(v.translation.width) > abs(v.translation.height) * 2 else { return }
+                    // Track past the activation distance so the bubble doesn't jump.
+                    let w = v.translation.width
+                    swipeOffset = max(-90, min(90, w > 0 ? w - 24 : w + 24))
                 }
                 .onEnded { v in
                     guard !isDeleted else { return }
-                    if v.translation.width > 44 { onReply?(); HapticFeedback.impact(.light) }
-                    else if v.translation.width < -60 { showDetails = true; HapticFeedback.impact(.light) }
+                    let horizontal = abs(v.translation.width) > abs(v.translation.height) * 2
+                    if horizontal, v.translation.width > 72 { onReply?(); HapticFeedback.impact(.light) }
+                    else if horizontal, v.translation.width < -90 { showDetails = true; HapticFeedback.impact(.light) }
                     withAnimation(.spring(response: 0.3)) { swipeOffset = 0 }
                 }
         )
