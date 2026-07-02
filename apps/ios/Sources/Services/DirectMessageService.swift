@@ -350,4 +350,17 @@ final class DirectMessageService {
     private func lastSeenDate(for partner: String) -> Date {
         UserDefaults.standard.object(forKey: "dm.lastseen.\(partner)") as? Date ?? .distantPast
     }
+
+    /// This device's last-open time for a conversation — captured before
+    /// `markRead` so the view can place the "unread messages" divider.
+    func lastSeen(for partner: String) -> Date { lastSeenDate(for: partner) }
+
+    /// The earliest message from `partner` newer than `since` — where the
+    /// unread divider goes. `dms` is oldest→newest, so `.first` is the earliest.
+    func firstUnreadId(from partner: String, myName: String, since: Date) -> UUID? {
+        dms.first {
+            $0.senderName == partner && $0.recipientName == myName &&
+            ($0.date ?? .distantPast) > since
+        }?.id
+    }
 }

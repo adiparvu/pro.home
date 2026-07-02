@@ -26,6 +26,9 @@ struct ChatView: View {
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showJumpToLatest = false
+    /// First unread message on open — anchors the "unread messages" divider.
+    /// Frozen for the lifetime of this view so it doesn't chase read receipts.
+    @State private var unreadDividerId: UUID? = nil
     @State private var showStarred = false
     @State private var showGroupInfo = false
     @State private var showAddMember = false
@@ -238,7 +241,12 @@ struct ChatView: View {
         }
         .task {
             guard let pid = propertyId else { return }
+            // Freeze where the reader left off BEFORE marking anything read, so
+            // the "unread messages" divider lands at the first new message.
+            let seen = messageService.lastSeen(propertyId: pid)
             await messageService.load(propertyId: pid)
+            unreadDividerId = messageService.firstUnreadId(
+                since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
             await messageService.loadReads(propertyId: pid)
             await messageService.loadDeliveries(propertyId: pid)
@@ -278,6 +286,9 @@ struct ChatView: View {
         }
         .onDisappear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
+            // Remember we've now seen everything, so the next open computes the
+            // unread divider from this point forward.
+            if let pid = propertyId { messageService.markSeen(propertyId: pid) }
             Task {
                 await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
@@ -539,6 +550,9 @@ struct ChatView: View {
                         if showDate {
                             ChatDateSeparator(dateStr: msg.createdAt)
                         }
+                        if grouping, msg.id == unreadDividerId {
+                            UnreadDivider().id("UNREAD_DIVIDER")
+                        }
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
@@ -657,7 +671,13 @@ struct ChatView: View {
             }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                    // Land on the unread divider when there's a backlog, otherwise
+                    // rest at the newest message like usual.
+                    if unreadDividerId != nil {
+                        proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
+                    } else {
+                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                    }
                 }
             }
             .onChange(of: scrollTarget) { _, target in

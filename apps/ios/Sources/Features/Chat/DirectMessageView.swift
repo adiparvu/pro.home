@@ -40,6 +40,11 @@ struct DirectMessageView: View {
     /// scrolls back. Searching bypasses the window (it scans everything).
     @State private var visibleCount = DirectMessageView.pageSize
     private static let pageSize = 50
+    /// Where the reader left off, frozen on open before markRead runs, and the
+    /// resulting first-unread message id that anchors the "unread" divider.
+    @State private var unreadSince: Date? = nil
+    @State private var unreadDividerId: UUID? = nil
+    @State private var unreadResolved = false
     @State private var input = ""
     @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
@@ -210,10 +215,20 @@ struct DirectMessageView: View {
             .background(Color.black.ignoresSafeArea())
         }
         .onAppear {
+            // Freeze the prior last-seen BEFORE markRead overwrites it, so the
+            // divider marks where this session started — not messages that
+            // arrive while we're reading.
+            unreadSince = directMessageService.lastSeen(for: member.name)
+            resolveUnreadDivider()
             directMessageService.markRead(partner: member.name)
             Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
             Task { await flushOutbox() }
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
+        }
+        .onChange(of: conversationMessages.count) { _, _ in
+            // The parent loads messages asynchronously, so they may arrive after
+            // onAppear; resolve the divider on the first non-empty state, once.
+            resolveUnreadDivider()
         }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
@@ -276,6 +291,15 @@ struct DirectMessageView: View {
         // most-recent window so a long history doesn't build thousands of rows.
         guard !q.isEmpty else { return Array(all.suffix(visibleCount)) }
         return all.filter { $0.body.localizedCaseInsensitiveContains(q) }
+    }
+
+    /// Resolve the unread-divider anchor exactly once, from the frozen
+    /// last-seen date, as soon as the conversation has loaded.
+    private func resolveUnreadDivider() {
+        guard !unreadResolved, let since = unreadSince, !conversationMessages.isEmpty else { return }
+        unreadDividerId = directMessageService.firstUnreadId(
+            from: member.name, myName: myName, since: since)
+        unreadResolved = true
     }
 
     /// True when older messages exist beyond the current render window.
@@ -436,6 +460,9 @@ struct DirectMessageView: View {
                                 if showDate {
                                     ChatDateSeparator(dateStr: msg.createdAt)
                                         .padding(.top, idx == 0 ? 8 : 16)
+                                }
+                                if !isSearching, msg.id == unreadDividerId {
+                                    UnreadDivider().id("UNREAD_DIVIDER")
                                 }
 
                                 DMBubble(

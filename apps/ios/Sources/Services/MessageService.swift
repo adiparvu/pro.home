@@ -279,6 +279,28 @@ final class MessageService {
 
     func resetUnread() { unreadCount = 0 }
 
+    // MARK: - Local "last seen" marker (drives the unread-messages divider)
+
+    private func lastSeenKey(_ propertyId: UUID) -> String { "chat.lastseen.\(propertyId.uuidString)" }
+
+    /// The moment this device last had the conversation open. Device-local (not
+    /// synced) — its only job is to place the "unread messages" divider.
+    func lastSeen(propertyId: UUID) -> Date {
+        (UserDefaults.standard.object(forKey: lastSeenKey(propertyId)) as? Date) ?? .distantPast
+    }
+
+    /// The id of the first message the viewer hasn't seen yet — the earliest
+    /// message from someone else newer than `since`. nil when all is caught up.
+    /// Computed from the frozen `since` captured on open, so the divider stays
+    /// put while reading instead of chasing `markRead`.
+    func firstUnreadId(since: Date, myId: UUID?) -> UUID? {
+        messages.first { $0.senderId != myId && ($0.date ?? .distantPast) > since }?.id
+    }
+
+    func markSeen(propertyId: UUID) {
+        UserDefaults.standard.set(Date(), forKey: lastSeenKey(propertyId))
+    }
+
     func togglePin(_ message: Message) async {
         let newValue = !(message.pinned ?? false)
         if let idx = messages.firstIndex(where: { $0.id == message.id }) { messages[idx].pinned = newValue }

@@ -198,6 +198,25 @@ struct ChatDateSeparator: View {
     }
 }
 
+/// The "unread messages" marker shown at the point the reader left off, tinted
+/// with the accent colour to stand apart from the neutral date separators.
+struct UnreadDivider: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Rectangle().fill(Color.accentColor.opacity(0.3)).frame(height: 0.5)
+            Text("Unread messages")
+                .font(AppFont.caption2)
+                .foregroundStyle(Color.accentColor)
+                .fixedSize()
+            Rectangle().fill(Color.accentColor.opacity(0.3)).frame(height: 0.5)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Unread messages"))
+    }
+}
+
 // MARK: - Message Bubble
 
 struct MessageBubble: View {
