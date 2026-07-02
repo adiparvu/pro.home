@@ -283,6 +283,7 @@ struct ChatView: View {
                 await messageService.unsubscribeReads()
                 await messageService.unsubscribeDeliveries()
                 await messageService.unsubscribeReactions()
+                await messageService.unsubscribePollVotes()
             }
         }
         .onChange(of: text) { _, newValue in

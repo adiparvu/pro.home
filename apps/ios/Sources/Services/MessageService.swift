@@ -639,6 +639,7 @@ final class MessageService {
         postgresSubs.removeAll()
         await unsubscribe()
         await unsubscribeReads()
+        await unsubscribeDeliveries()
         await unsubscribeReactions()
         await unsubscribePollVotes()
     }
