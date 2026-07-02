@@ -94,7 +94,12 @@ struct PRVIOApp: App {
             .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
             .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
             .onOpenURL { url in
-                router.handle(deepLink: url)
+                // Magic-link / invite callbacks establish a session; anything
+                // else is an ordinary deep link handled by the router.
+                Task {
+                    if await auth.handleOpenURL(url) { return }
+                    router.handle(deepLink: url)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .prvioQuickAction)) { notif in
                 if let type = notif.object as? String {

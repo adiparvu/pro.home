@@ -36,6 +36,51 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    // ── Authorize the inviter ───────────────────────────────────────────────
+    // Only an active owner/partner of the property may invite people into it.
+    // Without this check any authenticated user could grant themselves access
+    // to an arbitrary property by calling this function with its id.
+    const jwt = req.headers.get('Authorization')?.replace('Bearer ', '')
+    const { data: callerData } = jwt ? await admin.auth.getUser(jwt) : { data: { user: null } }
+    const caller = callerData?.user ?? null
+
+    if (propertyId) {
+      if (!caller) {
+        return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+          status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
+        })
+      }
+      const { data: membership } = await admin
+        .from('property_members')
+        .select('role')
+        .eq('property_id', propertyId)
+        .eq('user_id', caller.id)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (!membership || !['owner', 'partner'].includes(membership.role)) {
+        return new Response(JSON.stringify({ error: 'Not authorized to invite for this property' }), {
+          status: 403, headers: { ...CORS, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
+    // Map the app's role strings onto the DB user_role enum (tolerant: unknown
+    // roles fall back to the least-privileged 'guest').
+    const dbRole = mapRole(role)
+
+    // Grant membership for the invitee (new OR existing user). Uses the
+    // service role so it bypasses RLS; runs after the auth user is resolved.
+    async function grantMembership(userId?: string): Promise<void> {
+      if (!propertyId || !userId || !caller) return
+      await admin.from('property_members').upsert({
+        property_id: propertyId,
+        user_id: userId,
+        role: dbRole,
+        status: 'active',
+        invited_by: caller.id,
+      }, { onConflict: 'property_id,user_id' })
+    }
+
     const displayProperty = propertyName ?? 'your property'
     const displayInviter = inviterEmail ?? 'A PRVIO user'
     const roleLabel = (role ?? 'member').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
@@ -64,6 +109,8 @@ serve(async (req) => {
           headers: { ...CORS, 'Content-Type': 'application/json' },
         })
       }
+      // Existing user — add them to the property now.
+      await grantMembership(mlData.user?.id)
       // For existing users, send custom email if Resend is configured
       if (resendKey) {
         const inviteUrl = mlData.properties.action_link
@@ -73,6 +120,9 @@ serve(async (req) => {
         headers: { ...CORS, 'Content-Type': 'application/json' },
       })
     }
+
+    // New user just created — add them to the property.
+    await grantMembership(inviteData.user?.id)
 
     // For new users, Supabase already sent the invite email via inviteUserByEmail.
     // If Resend is configured, also send our custom branded email.
@@ -97,6 +147,24 @@ serve(async (req) => {
     })
   }
 })
+
+// Map the app's role labels onto the DB user_role enum. Tolerant by design:
+// the app currently sends values like "member"/"child" that aren't enum
+// members, so anything unrecognised falls back to the least-privileged guest.
+function mapRole(r?: string): string {
+  switch ((r ?? '').toLowerCase()) {
+    case 'owner': return 'owner'
+    case 'partner': return 'partner'
+    case 'child': case 'family_child': return 'family_child'
+    case 'teen': case 'family_teen': return 'family_teen'
+    case 'adult': case 'member': case 'family_adult': return 'family_adult'
+    case 'elderly': case 'family_elderly': return 'family_elderly'
+    case 'tenant': return 'tenant'
+    case 'worker': case 'contractor': case 'service_provider': return 'service_provider'
+    case 'guest': case 'friend': return 'guest'
+    default: return 'guest'
+  }
+}
 
 async function sendResendEmail(
   resendKey: string,
@@ -128,21 +196,7 @@ async function sendResendEmail(
       <a href="${inviteUrl}" style="display: block; text-align: center; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; text-decoration: none; font-size: 15px; font-weight: 600; padding: 16px 24px; border-radius: 14px; margin-bottom: 20px; letter-spacing: 0.01em;">
         Accept Invitation →
       </a>
-      <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px; margin-top: 8px;">
-        <p style="font-size: 12px; color: #64748b; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">What you'll get access to</p>
-        <p style="font-size: 13px; color: #94a3b8; margin: 0; line-height: 1.6;">
-          🏡 Property dashboard &amp; analytics<br>
-          ✅ Tasks &amp; maintenance tracking<br>
-          💰 Shared finances &amp; expenses<br>
-          📦 Inventory &amp; documents<br>
-          🌿 Plants &amp; home monitoring
-        </p>
-      </div>
     </div>
-    <p style="font-size: 12px; color: #334155; text-align: center; margin: 0 0 8px;">
-      Or paste this link in your browser:<br>
-      <a href="${inviteUrl}" style="color: #60a5fa; word-break: break-all;">${inviteUrl}</a>
-    </p>
     <p style="font-size: 11px; color: #1e293b; text-align: center; margin: 0;">This invitation expires in 7 days.</p>
   </div>
 </body>

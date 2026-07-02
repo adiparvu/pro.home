@@ -56,6 +56,28 @@ final class AuthService {
         AuditLogService.AuditEvent.record("login", String(localized: "Signed in with email"))
     }
 
+    /// Complete sign-in from a magic-link / invite deep link (`prvio://…`).
+    /// Supabase auth callbacks carry tokens in the URL fragment (implicit flow)
+    /// or a `?code=` (PKCE); everything else is an ordinary deep link and is
+    /// left for the router. Returns true when the URL was an auth callback we
+    /// consumed.
+    func handleOpenURL(_ url: URL) async -> Bool {
+        let s = url.absoluteString
+        let looksLikeAuth = s.contains("access_token")
+            || s.contains("refresh_token")
+            || s.contains("code=")
+            || s.contains("error_description")
+            || (url.fragment?.contains("access_token") ?? false)
+        guard looksLikeAuth else { return false }
+        do {
+            self.session = try await supabase.auth.session(from: url)
+            AuditLogService.AuditEvent.record("login", String(localized: "Signed in via link"))
+            return true
+        } catch {
+            return false
+        }
+    }
+
     func signOut() async throws {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
         try await supabase.auth.signOut()
