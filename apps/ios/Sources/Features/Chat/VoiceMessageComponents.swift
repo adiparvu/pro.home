@@ -178,6 +178,8 @@ struct AudioBubble: View {
     var tick: AudioTick = .none
     /// Outgoing-bubble fill — driven by the selected chat theme.
     var bubbleColor: Color = Color.blue.opacity(0.75)
+    /// Draw the group tail — true only on the last bubble of a same-sender run.
+    var hasTail: Bool = true
 
     enum AudioTick { case none, sent, delivered, read }
 
@@ -200,7 +202,7 @@ struct AudioBubble: View {
         .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
         .background(
             isOwn ? bubbleColor : Color.primary.opacity(0.08),
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
         )
         .frame(minWidth: 230, maxWidth: 290)
         .task(id: audioValue ?? "") {

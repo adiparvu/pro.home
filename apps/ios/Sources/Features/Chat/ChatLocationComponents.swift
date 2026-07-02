@@ -51,6 +51,7 @@ struct LocationBubble: View {
     let lon: Double
     let isOwn: Bool
     var label: String = ""
+    var hasTail: Bool = true
 
     @State private var showAppChooser = false
 
@@ -63,7 +64,7 @@ struct LocationBubble: View {
                 .tint(.blue)
         }
         .frame(width: 220, height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .clipShape(ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
         .overlay(alignment: .bottomLeading) {
             // Car/ETA-style badge — tapping it (or the map) offers a choice of
             // navigation app, then hands off with turn-by-turn directions.

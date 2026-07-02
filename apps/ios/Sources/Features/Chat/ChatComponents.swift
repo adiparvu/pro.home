@@ -605,7 +605,7 @@ struct MessageBubble: View {
         } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
-            LocationBubble(lat: lat, lon: lon, isOwn: isOwn, label: message.senderName)
+            LocationBubble(lat: lat, lon: lon, isOwn: isOwn, label: message.senderName, hasTail: isGroupEnd)
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl {
             AudioBubble(
                 audioValue: urlStr, isOwn: isOwn,
@@ -614,20 +614,21 @@ struct MessageBubble: View {
                 avatarColor: sender?.swiftColor ?? Color.gray,
                 timeText: message.timeDisplay,
                 tick: isOwn ? (tickStatus == .read ? .read : (tickStatus == .delivered ? .delivered : .sent)) : .none,
-                bubbleColor: ownBubbleColor
+                bubbleColor: ownBubbleColor,
+                hasTail: isGroupEnd
             )
         } else if message.isFileMessage {
             ChatFileBubble(stored: message.attachmentUrl, name: message.body,
-                           isOwn: isOwn, ownBubbleColor: ownBubbleColor) { u, n in
+                           isOwn: isOwn, ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd) { u, n in
                 filePreview = FilePreviewItem(url: u, name: n)
             }
         } else if message.isImageMessage, let urlStr = message.attachmentUrl {
             ChatImageBubble(stored: urlStr, caption: message.body, isOwn: isOwn,
-                            ownBubbleColor: ownBubbleColor) { resolved in
+                            ownBubbleColor: ownBubbleColor, hasTail: isGroupEnd) { resolved in
                 viewerItem = ImageViewerItem(url: resolved)
             }
         } else if message.isVideoMessage, let urlStr = message.attachmentUrl {
-            ChatVideoBubble(stored: urlStr) { resolved in videoItem = ImageViewerItem(url: resolved) }
+            ChatVideoBubble(stored: urlStr, isOwn: isOwn, hasTail: isGroupEnd) { resolved in videoItem = ImageViewerItem(url: resolved) }
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))
@@ -832,6 +833,7 @@ struct ChatFileBubble: View {
     let name: String?
     let isOwn: Bool
     let ownBubbleColor: Color
+    var hasTail: Bool = true
     let onPreview: (URL, String) -> Void
     @State private var url: URL?
 
@@ -857,7 +859,7 @@ struct ChatFileBubble: View {
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(
             isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
         )
         .frame(maxWidth: 240)
         .task(id: stored ?? "") { if let stored { url = await ChatMedia.resolve(stored) } }
@@ -866,19 +868,23 @@ struct ChatFileBubble: View {
 
 struct ChatVideoBubble: View {
     let stored: String
+    var isOwn: Bool = false
+    var hasTail: Bool = true
     let onTap: (URL) -> Void
     @State private var url: URL?
 
+    private var shape: ChatBubbleShape { ChatBubbleShape(isOwn: isOwn, hasTail: hasTail) }
+
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .fill(Color.black.opacity(0.85))
+            Color.black.opacity(0.85)
                 .frame(width: 200, height: 140)
             Image(systemName: "play.circle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.white.opacity(0.9))
         }
-        .contentShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .clipShape(shape)
+        .contentShape(shape)
         .onTapGesture { if let url { onTap(url) } }
         .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
@@ -891,6 +897,7 @@ struct ChatImageBubble: View {
     let caption: String?
     let isOwn: Bool
     let ownBubbleColor: Color
+    var hasTail: Bool = true
     let onTap: (URL) -> Void
     @State private var url: URL?
 
@@ -902,9 +909,8 @@ struct ChatImageBubble: View {
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
                         .frame(maxWidth: 220, maxHeight: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                 } else {
-                    RoundedRectangle(cornerRadius: AppRadius.lg).fill(Color.primary.opacity(AppOpacity.subtleFill))
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
                         .frame(width: 160, height: 120)
                         .overlay(ProgressView().tint(.white))
                 }
@@ -919,10 +925,10 @@ struct ChatImageBubble: View {
             }
         }
         .padding(hasCaption ? 4 : 0)
-        .background(
-            hasCaption ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear,
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-        )
+        .background(hasCaption ? (isOwn ? ownBubbleColor : Color.primary.opacity(0.08)) : Color.clear)
+        // Clip the whole card (image + caption) to the bubble so a group ending
+        // on a photo carries the same tail as a text bubble.
+        .clipShape(ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
         .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
