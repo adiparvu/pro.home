@@ -138,7 +138,7 @@ enum ReceiptCategory {
         case "diy":         return Color(red: 0.90, green: 0.45, blue: 0.18)
         case "electronics": return Color(red: 1.00, green: 0.85, blue: 0.10)
         case "clothing":    return Color(red: 0.75, green: 0.35, blue: 0.90)
-        case "health":      return Color(red: 0.95, green: 0.30, blue: 0.30)
+        case "health":      return Color.brandDanger
         case "dining":      return Color(red: 0.97, green: 0.45, blue: 0.55)
         case "transport":   return Color(red: 0.30, green: 0.60, blue: 0.95)
         default:            return Color.secondary

@@ -356,14 +356,14 @@ enum PropertyElementType: String, Codable, CaseIterable {
             return Color(red: 0.95, green: 0.77, blue: 0.06)
         // Heat — red/orange
         case .boiler, .heatPump, .waterHeater, .bbq:
-            return Color(red: 0.91, green: 0.3, blue: 0.24)
+            return Color.brandDanger
         // Climate / appliances — teal/purple
         case .airConditioner, .ventilation, .thermostat, .router,
              .fridge, .washingMachine, .dryer, .dishwasher, .oven, .stove, .microwave, .tv:
             return Color(red: 0.0, green: 0.6, blue: 0.7)
         // Security — red
         case .camera, .alarm, .smartLock, .intercom, .doorbell, .sensor:
-            return Color(red: 0.91, green: 0.3, blue: 0.24)
+            return Color.brandDanger
         case .pet:
             return Color(red: 0.91, green: 0.12, blue: 0.39)
         case .lawnMower:
@@ -459,7 +459,7 @@ enum ElementCategory: String, CaseIterable, Identifiable {
         case .outdoor:    return Color(red: 0.18, green: 0.8, blue: 0.44)
         case .water:      return Color(red: 0.0, green: 0.71, blue: 0.85)
         case .energy:     return Color(red: 0.95, green: 0.77, blue: 0.06)
-        case .security:   return Color(red: 0.91, green: 0.3, blue: 0.24)
+        case .security:   return Color.brandDanger
         case .appliances: return Color(red: 0.0, green: 0.6, blue: 0.7)
         case .equipment:  return Color(red: 0.55, green: 0.45, blue: 0.33)
         case .other:      return Color(red: 0.61, green: 0.35, blue: 0.71)

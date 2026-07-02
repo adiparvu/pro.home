@@ -34,7 +34,7 @@ struct CategoryStat: Identifiable {
             Color.brandSuccess,
             Color(red: 0.7, green: 0.3, blue: 0.9),
             Color(red: 1.0, green: 0.75, blue: 0.1),
-            Color(red: 0.9, green: 0.3, blue: 0.35)
+            Color.brandDanger
         ]
         let idx = abs(name.hashValue) % palette.count
         return palette[idx]

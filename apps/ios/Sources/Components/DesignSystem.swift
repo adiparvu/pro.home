@@ -82,6 +82,9 @@ extension Color {
     static let brandPrimaryBlue = Color(red: 0.25, green: 0.60, blue: 0.90)
     static let brandPurple = Color(red: 0.55, green: 0.45, blue: 0.95)
     static let brandWarning = Color(red: 1.0, green: 0.45, blue: 0.1)
+    /// Error / destructive-emphasis red. Use for error states and danger
+    /// accents; `.red` remains fine for system destructive roles/buttons.
+    static let brandDanger = Color(red: 0.91, green: 0.3, blue: 0.24)
 }
 
 // MARK: - Spacing

@@ -102,7 +102,7 @@ struct ChatTheme: Identifiable {
         Color(red: 0.85, green: 0.72, blue: 0.20), Color(red: 0.96, green: 0.95, blue: 0.70),
         Color(red: 0.45, green: 0.66, blue: 0.30), Color(red: 0.88, green: 0.96, blue: 0.78),
         Color(red: 0.83, green: 0.30, blue: 0.50), Color(red: 0.97, green: 0.85, blue: 0.90),
-        Color(red: 0.85, green: 0.20, blue: 0.20), Color(red: 0.97, green: 0.84, blue: 0.84),
+        Color.brandDanger, Color(red: 0.97, green: 0.84, blue: 0.84),
         Color(red: 0.84, green: 0.30, blue: 0.20), Color(red: 0.95, green: 0.85, blue: 0.80),
         Color(red: 0.82, green: 0.66, blue: 0.18), Color(red: 0.97, green: 0.93, blue: 0.78),
     ]

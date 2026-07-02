@@ -424,7 +424,7 @@ struct AddTaskView: View {
 
     private func priorityColor(_ p: String) -> Color {
         switch p {
-        case "critical": return Color(red: 1, green: 0.25, blue: 0.25)
+        case "critical": return Color.brandDanger
         case "high":     return .orange
         case "medium":   return Color(red: 1, green: 0.85, blue: 0.25)
         default:         return Color(red: 0.3, green: 0.9, blue: 0.5)

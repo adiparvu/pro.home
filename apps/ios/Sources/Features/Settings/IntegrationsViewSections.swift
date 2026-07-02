@@ -268,7 +268,7 @@ extension IntegrationsView {
                 description: "Manage short-term rental bookings and guest access.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://www.booking.com") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "airplane.circle.fill", color: Color(red: 1.0, green: 0.3, blue: 0.3),
+            IntegrationRow(icon: "airplane.circle.fill", color: Color.brandDanger,
                 title: "Airbnb",
                 description: "Sync Airbnb calendar and automate guest check-ins.",
                 status: .deepLink("Open"),
