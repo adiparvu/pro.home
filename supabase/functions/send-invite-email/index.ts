@@ -79,6 +79,13 @@ serve(async (req) => {
         status: 'active',
         invited_by: caller.id,
       }, { onConflict: 'property_id,user_id' })
+      // Reconcile: point the owner's contact row at the real user so chat and
+      // presence (which match by name) resolve to one identity.
+      await admin.from('family_members')
+        .update({ user_id: userId })
+        .eq('property_id', propertyId)
+        .ilike('email', to)
+        .is('user_id', null)
     }
 
     const displayProperty = propertyName ?? 'your property'
@@ -93,6 +100,9 @@ serve(async (req) => {
         property_id: propertyId,
         invited_role: role ?? 'member',
         invited_name: name,
+        // Seeds the new user's profile name (handle_new_user reads full_name),
+        // so the contact name the owner gave becomes their chat identity.
+        full_name: name ?? '',
       },
     })
 

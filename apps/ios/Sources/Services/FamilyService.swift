@@ -54,6 +54,29 @@ final class FamilyService {
         members.sort { $0.name < $1.name }
     }
 
+    /// WhatsApp-style invite: a contact with an email is sent an invitation that
+    /// (server-side) creates their account, grants property membership, and
+    /// links this contact row to their real user. Silent no-op without an email.
+    func sendInvite(to email: String, name: String, role: String,
+                    propertyId: UUID?, propertyName: String?) async {
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        struct InvitePayload: Encodable {
+            let to: String
+            let name: String
+            let propertyId: String?
+            let propertyName: String?
+            let role: String
+            let inviterEmail: String?
+        }
+        let inviterEmail = try? await supabase.auth.session.user.email
+        let payload = InvitePayload(
+            to: email, name: name,
+            propertyId: propertyId?.uuidString, propertyName: propertyName,
+            role: role, inviterEmail: inviterEmail
+        )
+        _ = try? await supabase.functions.invoke("send-invite-email", options: .init(body: payload))
+    }
+
     func update(_ member: FamilyMember) async {
         struct Payload: Encodable {
             let name: String

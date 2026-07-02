@@ -310,25 +310,8 @@ struct AddFamilyMemberSheet: View {
 
     private func sendInviteEmail(to email: String, name: String) {
         Task {
-            struct InvitePayload: Encodable {
-                let to: String
-                let name: String
-                let propertyId: String?
-                let propertyName: String?
-                let role: String
-                let inviterEmail: String?
-            }
-            let inviterEmail = try? await supabase.auth.session.user.email
-            let payload = InvitePayload(
-                to: email,
-                name: name,
-                propertyId: propertyId?.uuidString,
-                propertyName: propertyName,
-                role: role,
-                inviterEmail: inviterEmail
-            )
-            _ = try? await supabase.functions
-                .invoke("send-invite-email", options: .init(body: payload))
+            await familyService.sendInvite(to: email, name: name, role: role,
+                                           propertyId: propertyId, propertyName: propertyName)
         }
     }
 }

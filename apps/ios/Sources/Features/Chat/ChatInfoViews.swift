@@ -1326,16 +1326,25 @@ struct AddContactView: View {
         saving = true
         defer { saving = false }
         do {
+            let trimmedName = name.trimmingCharacters(in: .whitespaces)
+            let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
             try await familyService.add(
-                name: name.trimmingCharacters(in: .whitespaces),
+                name: trimmedName,
                 role: "member",
-                email: email.isEmpty ? nil : email,
+                email: trimmedEmail.isEmpty ? nil : trimmedEmail,
                 phone: phone.isEmpty ? nil : phone,
                 color: colorHex,
                 propertyId: propertyService.primary?.id,
                 birthday: nil,
                 socialLinks: []
             )
+            // WhatsApp-style: adding a contact with an email invites them.
+            if !trimmedEmail.isEmpty {
+                await familyService.sendInvite(
+                    to: trimmedEmail, name: trimmedName, role: "member",
+                    propertyId: propertyService.primary?.id,
+                    propertyName: propertyService.primary?.name)
+            }
             dismiss()
         } catch {
             self.error = error.localizedDescription
