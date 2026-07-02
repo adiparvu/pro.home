@@ -92,7 +92,7 @@ struct TrustedPersonsView: View {
             ZStack {
                 Circle()
                     .fill(LinearGradient(
-                        colors: [Color(red: 0.35, green: 0.5, blue: 1.0), Color(red: 0.55, green: 0.3, blue: 1.0)],
+                        colors: [Color.brandSkyBlue, Color(red: 0.55, green: 0.3, blue: 1.0)],
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ))
                     .frame(width: 40, height: 40)

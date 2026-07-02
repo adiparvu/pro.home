@@ -32,7 +32,7 @@ struct PRVIOLogoView: View {
                         Path(CGRect(origin: .zero, size: canvas)),
                         with: .linearGradient(
                             Gradient(stops: [
-                                .init(color: Color(red: 0.376, green: 0.682, blue: 1.00),  location: 0.00),
+                                .init(color: Color.brandSkyBlue,  location: 0.00),
                                 .init(color: Color(red: 0.235, green: 0.494, blue: 1.00),  location: 0.35),
                                 .init(color: Color(red: 0.118, green: 0.306, blue: 0.847), location: 0.70),
                                 .init(color: Color(red: 0.063, green: 0.188, blue: 0.722), location: 1.00),
@@ -72,7 +72,7 @@ struct PRVIOLogoView: View {
 
             let roofColor: GraphicsContext.Shading = isDark
                 ? .linearGradient(
-                    Gradient(colors: [Color(red: 0.333, green: 0.565, blue: 1.00),
+                    Gradient(colors: [Color.brandSkyBlue,
                                       Color(red: 0.176, green: 0.376, blue: 0.941)]),
                     startPoint: CGPoint(x: cx, y: roofPeakY),
                     endPoint:   CGPoint(x: cx, y: eaveY))

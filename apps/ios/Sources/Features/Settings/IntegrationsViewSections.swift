@@ -15,7 +15,7 @@ extension IntegrationsView {
             }
             .buttonStyle(.plain)
 
-            IntegrationRow(icon: "magnifyingglass", color: Color(red: 0.2, green: 0.6, blue: 0.95),
+            IntegrationRow(icon: "magnifyingglass", color: Color.brandSkyBlue,
                 title: "Spotlight Search",
                 description: "Tasks, plants, and documents appear in iOS Spotlight search results.",
                 status: .active("Active"), action: nil)
@@ -55,7 +55,7 @@ extension IntegrationsView {
                     }
                 })
 
-            IntegrationRow(icon: "icloud.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95),
+            IntegrationRow(icon: "icloud.fill", color: Color.brandSkyBlue,
                 title: "iCloud Backup",
                 description: "App data is included in your iPhone iCloud backup automatically.",
                 status: .active("Automatic"), action: nil)
@@ -118,12 +118,12 @@ extension IntegrationsView {
                 description: "Sync tasks and maintenance reminders to your calendar.",
                 status: vm.calendarStatus,
                 action: { Task { await vm.toggleCalendar() } })
-            IntegrationRow(icon: "checklist", color: Color(red: 0.25, green: 0.5, blue: 0.95),
+            IntegrationRow(icon: "checklist", color: Color.brandSkyBlue,
                 title: "Apple Reminders",
                 description: "Add overdue tasks to Reminders for quick action.",
                 status: vm.remindersStatus,
                 action: { Task { await vm.toggleReminders() } })
-            IntegrationRow(icon: "calendar.badge.clock", color: Color(red: 0.25, green: 0.7, blue: 1.0),
+            IntegrationRow(icon: "calendar.badge.clock", color: Color.brandSkyBlue,
                 title: "Google Calendar",
                 description: "Sync household schedules with Google Calendar.",
                 status: .deepLink("Open"),
@@ -166,7 +166,7 @@ extension IntegrationsView {
             .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
-                    icon: "network", color: Color(red: 0.35, green: 0.55, blue: 0.95),
+                    icon: "network", color: Color.brandSkyBlue,
                     title: "RS485 Modbus",
                     description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
                     status: .deepLink("Manage"))
@@ -202,7 +202,7 @@ extension IntegrationsView {
                 description: "Manage whole-home audio from your property dashboard.",
                 status: .comingSoon,
                 action: { if let url = URL(string: "sonos://") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "lock.shield.fill", color: Color(red: 0.3, green: 0.65, blue: 0.95),
+            IntegrationRow(icon: "lock.shield.fill", color: Color.brandSkyBlue,
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
                 status: .comingSoon,
@@ -212,7 +212,7 @@ extension IntegrationsView {
                 description: "Control IKEA smart lighting and blinds.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://www.ikea.com/us/en/customer-service/smart-home/") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "atom", color: Color(red: 0.4, green: 0.7, blue: 0.95),
+            IntegrationRow(icon: "atom", color: Color.brandSkyBlue,
                 title: "Matter & Thread",
                 description: "Compatible Matter devices work automatically via Apple Home.",
                 status: .active("Via HomeKit"), action: nil)
@@ -246,7 +246,7 @@ extension IntegrationsView {
                 description: "Auto-import home expenses from your bank transactions.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://app.revolut.com") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.25, green: 0.5, blue: 0.95),
+            IntegrationRow(icon: "creditcard.fill", color: Color.brandSkyBlue,
                 title: "Open Banking",
                 description: "Connect your bank for automatic expense categorization.",
                 status: .deepLink("Learn More"),

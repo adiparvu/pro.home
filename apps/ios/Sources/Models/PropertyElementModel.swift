@@ -538,7 +538,7 @@ enum PropertyLayer: String, Codable, CaseIterable {
 
     var color: Color {
         switch self {
-        case .property:    return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .property:    return Color.brandSkyBlue
         case .maintenance: return .orange
         case .utility:     return Color(red: 0.95, green: 0.77, blue: 0.06)
         case .financial:   return Color.brandSuccess

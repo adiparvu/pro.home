@@ -30,7 +30,7 @@ enum Season: String, CaseIterable, Codable {
         case .spring: return Color(red: 0.30, green: 0.80, blue: 0.45)
         case .summer: return Color(red: 1.00, green: 0.75, blue: 0.10)
         case .fall:   return Color(red: 0.90, green: 0.45, blue: 0.15)
-        case .winter: return Color(red: 0.40, green: 0.70, blue: 0.95)
+        case .winter: return Color.brandSkyBlue
         }
     }
 

@@ -38,7 +38,7 @@ struct IoTDevice: Identifiable, Codable {
             switch self {
             case .esp32:        return Color(red: 0.05, green: 0.75, blue: 0.45)
             case .raspberryPi:  return Color(red: 0.85, green: 0.15, blue: 0.35)
-            case .rs485Modbus:  return Color(red: 0.35, green: 0.55, blue: 0.95)
+            case .rs485Modbus:  return Color.brandSkyBlue
             }
         }
         var defaultPort: Int {

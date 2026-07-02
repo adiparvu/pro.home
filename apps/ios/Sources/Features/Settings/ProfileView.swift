@@ -258,7 +258,7 @@ struct ProfileView: View {
             NavSettingsRow(icon: "shield.fill", color: .purple, label: "Safety and security") {
                 SecurityView().environment(auth)
             }
-            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Trusted contact") {
+            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color.brandSkyBlue, label: "Trusted contact") {
                 TrustedContactView().environment(auth)
             }
             NavSettingsRow(icon: "bell.fill", color: .red, label: "Notifications") {

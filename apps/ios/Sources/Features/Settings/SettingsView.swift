@@ -219,7 +219,7 @@ struct SettingsView: View {
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
                 InventoryView()
             }
-            NavSettingsRow(icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), label: "Supplies") {
+            NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
                 SuppliesView()
                     .environment(supplyService)
                     .environment(propertyService)
@@ -285,7 +285,7 @@ struct SettingsView: View {
                     .environment(propertyService)
                     .environment(familyService)
             }
-            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color(red: 0.35, green: 0.55, blue: 1.0), label: "Perspectives") {
+            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color.brandSkyBlue, label: "Perspectives") {
                 PropertyPerspectivesView()
                     .environment(propertyService)
                     .environment(taskService)

@@ -81,7 +81,7 @@ struct SiriShortcutsView: View {
          "Water Plant",   ["\"Water plant in PRVIO\"", "\"Mark plant watered in PRVIO\""]),
         ("leaf.fill",     Color(red: 0.15, green: 0.72, blue: 0.37),
          "Open Plants",   ["\"Open plants in PRVIO\"", "\"Show plants in PRVIO\""]),
-        ("cart.fill",     Color(red: 0.35, green: 0.65, blue: 1.0),
+        ("cart.fill",     Color.brandSkyBlue,
          "Shopping List", ["\"Open shopping in PRVIO\"", "\"Shopping list PRVIO\""]),
         ("message.fill",  Color.brandPrimaryBlue,
          "Chat",          ["\"Open chat in PRVIO\"", "\"Chat PRVIO\""]),

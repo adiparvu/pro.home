@@ -69,7 +69,7 @@ struct TrustedContactView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.55, blue: 1.0), Color(red: 0.55, green: 0.25, blue: 1.0)],
+                    .fill(LinearGradient(colors: [Color.brandSkyBlue, Color(red: 0.55, green: 0.25, blue: 1.0)],
                                         startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.badge.shield.checkmark.fill")

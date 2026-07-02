@@ -85,6 +85,9 @@ extension Color {
     /// Error / destructive-emphasis red. Use for error states and danger
     /// accents; `.red` remains fine for system destructive roles/buttons.
     static let brandDanger = Color(red: 0.91, green: 0.3, blue: 0.24)
+    /// Bright accent blue — the lighter, more saturated companion to
+    /// `brandPrimaryBlue`, used for highlights and secondary accents.
+    static let brandSkyBlue = Color(red: 0.35, green: 0.65, blue: 1.0)
 }
 
 // MARK: - Spacing

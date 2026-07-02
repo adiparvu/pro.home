@@ -137,7 +137,7 @@ extension DashboardView {
         case .tasks:
             HomeWidget(
                 icon: "checklist",
-                iconColor: taskService.overdueCount > 0 ? .red : Color(red: 0.35, green: 0.65, blue: 1.0),
+                iconColor: taskService.overdueCount > 0 ? .red : Color.brandSkyBlue,
                 title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? String(localized: "urgent") : String(localized: "active"),

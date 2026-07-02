@@ -402,7 +402,7 @@ struct AutomationBuilderView: View {
     private var statsRow: some View {
         let active = automations.filter(\.isActive).count
         return HStack(spacing: 12) {
-            statPill(icon: "bolt.fill", label: "\(automations.count) Rules", color: Color(red: 0.45, green: 0.60, blue: 1.0))
+            statPill(icon: "bolt.fill", label: "\(automations.count) Rules", color: Color.brandSkyBlue)
             statPill(icon: "checkmark.circle.fill", label: "\(active) Active", color: Color.brandSuccess)
             statPill(icon: "bell.badge.fill", label: "\(automations.count - active) Paused", color: .orange)
         }
@@ -567,7 +567,7 @@ struct AutomationBuilderView: View {
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0)) {
+            actionButton(icon: "plus", label: "+ Node", color: Color.brandSkyBlue) {
                 showAdd = true
             }
             actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45)) {

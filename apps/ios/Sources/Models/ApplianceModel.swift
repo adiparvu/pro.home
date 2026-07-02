@@ -123,7 +123,7 @@ struct Appliance: Identifiable, Codable, Equatable {
         switch category {
         case .hvac:          return Color(red: 0.20, green: 0.60, blue: 0.90)
         case .kitchen:       return Color(red: 0.95, green: 0.45, blue: 0.20)
-        case .laundry:       return Color(red: 0.40, green: 0.65, blue: 0.95)
+        case .laundry:       return Color.brandSkyBlue
         case .bathroom:      return Color(red: 0.30, green: 0.75, blue: 0.80)
         case .security:      return Color(red: 0.55, green: 0.35, blue: 0.90)
         case .entertainment: return Color(red: 0.85, green: 0.30, blue: 0.55)

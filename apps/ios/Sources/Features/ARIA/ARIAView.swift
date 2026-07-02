@@ -280,7 +280,7 @@ struct ARIAView: View {
                                 .fill(
                                     RadialGradient(
                                         colors: [
-                                            Color(red: 0.40, green: 0.60, blue: 1.0).opacity(0.5),
+                                            Color.brandSkyBlue.opacity(0.5),
                                             Color.clear
                                         ],
                                         center: .center, startRadius: 0, endRadius: 32
@@ -293,7 +293,7 @@ struct ARIAView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color(red: 0.40, green: 0.62, blue: 1.0),
+                                            Color.brandSkyBlue,
                                             Color(red: 0.30, green: 0.38, blue: 0.98)
                                         ],
                                         startPoint: .topLeading,
@@ -301,7 +301,7 @@ struct ARIAView: View {
                                     )
                                 )
                                 .frame(width: 52, height: 52)
-                                .shadow(color: Color(red: 0.35, green: 0.50, blue: 1.0).opacity(0.8), radius: 14, y: 3)
+                                .shadow(color: Color.brandSkyBlue.opacity(0.8), radius: 14, y: 3)
 
                             // Inner highlight
                             Circle()

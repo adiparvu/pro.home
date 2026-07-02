@@ -84,8 +84,8 @@ supported devices, low memory/CPU/GPU usage, and minimal battery consumption.
 `Components/DesignSystem.swift` defines the app's typography (`AppFont`),
 color-opacity tiers (`AppOpacity`, plus `Color.hairline`/`.subtleFill`/
 `.secondaryTextColor`), brand accent colors (`Color.brandSuccess`,
-`.brandPrimaryBlue`, `.brandPurple`, `.brandWarning`, `.brandDanger`),
-spacing (`AppSpacing`),
+`.brandPrimaryBlue`, `.brandPurple`, `.brandWarning`, `.brandDanger`,
+`.brandSkyBlue`), spacing (`AppSpacing`),
 and corner radius (`AppRadius`) scales. These codify the de facto values
 already used hundreds of times across the app into one source of truth.
 

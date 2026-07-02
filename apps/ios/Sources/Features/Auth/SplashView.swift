@@ -20,7 +20,7 @@ struct SplashView: View {
 
             VStack(spacing: 20) {
                 PRVIOLogoView(size: 100)
-                    .shadow(color: Color(red: 0.24, green: 0.50, blue: 1.00).opacity(0.60), radius: 28, y: 10)
+                    .shadow(color: Color.brandSkyBlue.opacity(0.60), radius: 28, y: 10)
                     .scaleEffect(scale)
                     .offset(y: logoY)
                     .opacity(opacity)

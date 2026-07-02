@@ -49,7 +49,7 @@ enum StickerCatalog {
             Sticker(id: "goal_hit",     emoji: "🎯", label: "Goal hit!",      categoryId: "tasks"),
         ]),
         StickerCategory(id: "supplies", name: "Supplies",
-                        icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), stickers: [
+                        icon: "cart.fill", color: Color.brandSkyBlue, stickers: [
             Sticker(id: "shopping_time",   emoji: "🛒", label: "Shopping time",   categoryId: "supplies"),
             Sticker(id: "dont_run_out",    emoji: "🧻", label: "Don't run out!",   categoryId: "supplies"),
             Sticker(id: "need_more_juice", emoji: "🔋", label: "Need more juice",  categoryId: "supplies"),

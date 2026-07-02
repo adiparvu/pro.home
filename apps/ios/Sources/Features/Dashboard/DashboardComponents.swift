@@ -219,7 +219,7 @@ struct PropertySection: Identifiable {
     }
 
     static let all: [PropertySection] = [
-        PropertySection(name: "House",      icon: "house.fill",       color: Color(red: 0.35, green: 0.65, blue: 1.0),  latOffset:  1.2, lonOffset:  0.0),
+        PropertySection(name: "House",      icon: "house.fill",       color: Color.brandSkyBlue,  latOffset:  1.2, lonOffset:  0.0),
         PropertySection(name: "Yard",      icon: "leaf.fill",        color: Color.brandSuccess, latOffset: -0.8, lonOffset:  0.9),
         PropertySection(name: "Garage",    icon: "car.fill",         color: Color(red: 0.9,  green: 0.65, blue: 0.2),  latOffset: -1.2, lonOffset: -0.5),
         PropertySection(name: "Garden",    icon: "tree.fill",        color: Color(red: 0.25, green: 0.75, blue: 0.35), latOffset:  0.5, lonOffset:  1.3),
@@ -586,7 +586,7 @@ struct PropertyHealthDashCard: View {
             // Sub-metrics
             VStack(alignment: .leading, spacing: 8) {
                 metricRow("wrench.and.screwdriver", label: "Maintenance", pct: maintenancePct, color: .orange)
-                metricRow("bolt.fill", label: "Utilities", pct: utilitiesPct, color: Color(red: 0.35, green: 0.65, blue: 1.0))
+                metricRow("bolt.fill", label: "Utilities", pct: utilitiesPct, color: Color.brandSkyBlue)
                 metricRow("lock.shield.fill", label: "Security", pct: securityPct, color: Color.brandPurple)
                 metricRow("checklist", label: "Tasks", pct: tasksPct, color: Color.brandSuccess)
             }

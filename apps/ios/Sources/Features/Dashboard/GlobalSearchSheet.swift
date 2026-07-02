@@ -276,7 +276,7 @@ struct GlobalSearchSheet: View {
         let green  = Color(red: 0.20, green: 0.78, blue: 0.35)
         let pGreen = Color(red: 0.15, green: 0.80, blue: 0.40)
         let purple = Color(red: 0.45, green: 0.30, blue: 0.95)
-        let chart  = Color(red: 0.40, green: 0.60, blue: 1.0)
+        let chart  = Color.brandSkyBlue
         let gray   = Color(.systemGray)
         return [
             // ── Main tabs ──────────────────────────────────────────────────────

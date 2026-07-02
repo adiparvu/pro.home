@@ -41,7 +41,7 @@ private enum ActivityCategory: String, CaseIterable {
         switch self {
         case .all:        return .blue
         case .tasks:      return Color.brandSuccess
-        case .finances:   return Color(red: 0.3, green: 0.6, blue: 1.0)
+        case .finances:   return Color.brandSkyBlue
         case .documents:  return .orange
         case .elements:   return .purple
         case .appliances: return Color.brandPrimaryBlue

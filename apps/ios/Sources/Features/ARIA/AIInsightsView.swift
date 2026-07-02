@@ -93,12 +93,12 @@ struct AIInsightsView: View {
                 } label: {
                     Text(String(localized: "ai_insights_timeline"))
                         .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
+                        .foregroundStyle(Color.brandSkyBlue)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
                         .background {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
+                                .strokeBorder(Color.brandSkyBlue.opacity(0.4), lineWidth: 1.5)
                         }
                 }
                 .buttonStyle(.plain)
@@ -112,12 +112,12 @@ struct AIInsightsView: View {
                 } label: {
                     Text(String(localized: "ai_insights_automation"))
                         .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
+                        .foregroundStyle(Color.brandSkyBlue)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
                         .background {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
+                                .strokeBorder(Color.brandSkyBlue.opacity(0.4), lineWidth: 1.5)
                         }
                 }
                 .buttonStyle(.plain)
@@ -142,7 +142,7 @@ struct AIInsightsView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(red: 0.30, green: 0.55, blue: 1.0).opacity(orbPulse ? 0.35 : 0.20),
+                            colors: [Color.brandSkyBlue.opacity(orbPulse ? 0.35 : 0.20),
                                      Color.clear],
                             center: .center, startRadius: 0, endRadius: 70
                         )
@@ -164,7 +164,7 @@ struct AIInsightsView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color(red: 0.35, green: 0.55, blue: 1.0),
+                            colors: [Color.brandSkyBlue,
                                      Color(red: 0.55, green: 0.30, blue: 0.95)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
@@ -246,7 +246,7 @@ struct AIInsightsView: View {
             let plantsToWater = needsWater
             result.append(.init(
                 icon: "drop.fill",
-                iconColor: Color(red: 0.25, green: 0.65, blue: 1.0),
+                iconColor: Color.brandSkyBlue,
                 title: needsWater.count == 1
                     ? "\(firstPlant.name) needs watering"
                     : "\(needsWater.count) plants need watering",

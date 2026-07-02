@@ -78,7 +78,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
     }
     var color: Color {
         switch self {
-        case .shopping:    return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .shopping:    return Color.brandSkyBlue
         case .delivery:    return .orange
         case .maintenance: return .teal
         case .plantCare:   return Color(red: 0.15, green: 0.80, blue: 0.40)

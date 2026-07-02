@@ -156,7 +156,7 @@ struct TenantManagementView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }
-                            quickActionButton(icon: "message.fill", color: Color(red: 0.2, green: 0.65, blue: 1.0)) {
+                            quickActionButton(icon: "message.fill", color: Color.brandSkyBlue) {
                                 if let url = URL(string: "sms:\(phone.filter { $0.isNumber })") {
                                     UIApplication.shared.open(url)
                                 }

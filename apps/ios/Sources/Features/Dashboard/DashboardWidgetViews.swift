@@ -105,7 +105,7 @@ struct WeatherWidget: View {
         let h = Calendar.current.component(.hour, from: date)
         switch h {
         case 5..<8:  return [Color(red: 0.90, green: 0.58, blue: 0.28), Color(red: 0.68, green: 0.38, blue: 0.76)]
-        case 8..<18: return [Color(red: 0.18, green: 0.48, blue: 0.92), Color(red: 0.30, green: 0.72, blue: 0.95)]
+        case 8..<18: return [Color(red: 0.18, green: 0.48, blue: 0.92), Color.brandSkyBlue]
         case 18..<21: return [Color(red: 0.78, green: 0.35, blue: 0.18), Color(red: 0.48, green: 0.22, blue: 0.62)]
         default:     return [Color(red: 0.04, green: 0.08, blue: 0.22), Color(red: 0.14, green: 0.18, blue: 0.42)]
         }

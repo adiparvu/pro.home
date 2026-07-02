@@ -118,7 +118,7 @@ struct PropertyHealthDetailView: View {
                 label: "Utilities",
                 detail: utilitiesDetail,
                 pct: utilitiesPct,
-                color: Color(red: 0.35, green: 0.65, blue: 1.0)
+                color: Color.brandSkyBlue
             )
             Divider().opacity(0.3)
             categoryRow(
@@ -303,7 +303,7 @@ struct PropertyHealthDetailView: View {
                 points: 8))
         }
         if utilitiesPct < 90 {
-            tips.append(.init(icon: "bolt.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0),
+            tips.append(.init(icon: "bolt.fill", color: Color.brandSkyBlue,
                 title: "Actualizează facturile",
                 body: "Introduc chitanțele de utilități pentru a menține istoricul complet.",
                 points: 5))
