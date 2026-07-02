@@ -30,9 +30,11 @@ struct MainTabView: View {
     @State private var propertyValueService = PropertyValueService()
     @State private var contractorService = ContractorService()
     @State private var directMessageService = DirectMessageService()
+    @State private var presenceService = PresenceService()
     @State private var proactiveEngine = ProactiveEngine()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var router = router
@@ -54,6 +56,7 @@ struct MainTabView: View {
                 ConversationsView()
                     .environment(messageService)
                     .environment(directMessageService)
+                    .environment(presenceService)
                     .environment(familyService)
                     .environment(propertyService)
                     .environment(profileService)
@@ -100,6 +103,7 @@ struct MainTabView: View {
                 ConversationsView()
                     .environment(messageService)
                     .environment(directMessageService)
+                    .environment(presenceService)
                     .environment(familyService)
                     .environment(propertyService)
                     .environment(profileService)
@@ -229,6 +233,19 @@ struct MainTabView: View {
             proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
             ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
         }
+        .task {
+            // Presence heartbeat: advertise ourselves and refresh members' status
+            // on a slow cadence while the app is foregrounded.
+            while !Task.isCancelled {
+                await pulsePresence()
+                try? await Task.sleep(nanoseconds: 45_000_000_000)
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Beat immediately on foreground so we don't read as offline after a
+            // background gap, and refresh who's online right now.
+            if phase == .active { Task { await pulsePresence() } }
+        }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
             Task {
@@ -296,6 +313,18 @@ struct MainTabView: View {
     }
 
     // MARK: Widget + Dynamic Shortcuts
+
+    /// One presence beat: stamp our own heartbeat, then refresh the property's
+    /// statuses. No-op until we have a property, a session, and a display name.
+    private func pulsePresence() async {
+        guard let pid = propertyService.primary?.id,
+              let uid = auth.session?.user.id else { return }
+        let name = profileService.profile?.preferredName
+            ?? profileService.profile?.fullName ?? ""
+        guard !name.isEmpty else { return }
+        await presenceService.heartbeat(propertyId: pid, userId: uid, userName: name)
+        await presenceService.load(propertyId: pid)
+    }
 
     private func writeWidgetSnapshot() {
         var snapshot = PRVIOWidgetSnapshot()

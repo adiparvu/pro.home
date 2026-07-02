@@ -12,6 +12,7 @@ struct ChatSettingsView: View {
     @Environment(ProfileService.self) private var profileService
     @Environment(MessageService.self) private var messageService
 
+    @AppStorage("presence.shareStatus") private var shareStatus = true
     @State private var showTheme = false
     @State private var showStarred = false
     @State private var showStatus = false
@@ -40,6 +41,8 @@ struct ChatSettingsView: View {
                 }
 
                 SettingsGroup(title: "Confidențialitate") {
+                    ToggleSettingsRow(icon: "eye.fill", color: .blue,
+                                      label: "Arată online și văzut ultima dată", value: $shareStatus)
                     NavSettingsRow(icon: "shield.lefthalf.filled", color: .indigo, label: "Confidențialitate avansată") {
                         AdvancedPrivacyView(convId: "group")
                     }

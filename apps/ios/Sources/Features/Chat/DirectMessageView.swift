@@ -18,6 +18,7 @@ struct DirectMessageView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(FamilyService.self) private var familyService
     @Environment(MessageService.self) private var messageService
+    @Environment(PresenceService.self) private var presenceService
 
     @State private var replyingTo: DirectMessage? = nil
     @State private var forwarding: DirectMessage? = nil
@@ -93,6 +94,23 @@ struct DirectMessageView: View {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
+    /// "online" / "last seen {relative}" under the partner's name, shown only
+    /// when they're sharing presence.
+    @ViewBuilder private var presenceSubtitle: some View {
+        switch presenceService.status(for: member.name) {
+        case .online:
+            Text("online")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.brandSuccess)
+        case .lastSeen(let date):
+            Text("last seen \(date, format: .relative(presentation: .named))")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+        case .hidden:
+            EmptyView()
+        }
+    }
+
     var body: some View {
         ZStack {
             chatTheme.background
@@ -132,12 +150,14 @@ struct DirectMessageView: View {
                             Text(member.name)
                                 .font(AppFont.headline)
                                 .foregroundStyle(.primary)
-                            // Header is avatar + name only; the role-label subtitle is
-                            // gone. Typing status still surfaces here since it's transient.
+                            // Transient typing status wins; otherwise show presence
+                            // (online / last seen) when the partner shares it.
                             if directMessageService.typingNames.contains(member.name) {
                                 Text("typing…")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.accentColor)
+                            } else {
+                                presenceSubtitle
                             }
                         }
                     }
@@ -223,6 +243,9 @@ struct DirectMessageView: View {
             directMessageService.markRead(partner: member.name)
             Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
             Task { await flushOutbox() }
+            if let pid = propertyService.primary?.id {
+                Task { await presenceService.load(propertyId: pid) }
+            }
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
         }
         .onChange(of: conversationMessages.count) { _, _ in
