@@ -228,6 +228,10 @@ struct MessageBubble: View {
     var myAvatarURL: URL? = nil
     var onPollVote: ((Int) -> Void)? = nil
     var onLongPress: (() -> Void)? = nil
+    /// First message of a same-sender run — shows the sender's name label.
+    var isGroupStart: Bool = true
+    /// Last message of a same-sender run — anchors the avatar to this bubble.
+    var isGroupEnd: Bool = true
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
@@ -289,11 +293,17 @@ struct MessageBubble: View {
                 Spacer(minLength: 60)
                 if showsQuickForward { forwardButton }
             } else {
-                chatAvatar
+                // Avatar anchors to the last bubble of a same-sender run; earlier
+                // bubbles reserve its width so they stay left-aligned with it.
+                if isGroupEnd {
+                    chatAvatar
+                } else {
+                    Color.clear.frame(width: 32, height: 32)
+                }
             }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
-                if !isOwn {
+                if !isOwn, isGroupStart {
                     Text(message.senderName)
                         .font(AppFont.label)
                         .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(AppOpacity.secondaryText))

@@ -507,7 +507,7 @@ struct ChatView: View {
                 }
 
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 6) {
+                LazyVStack(spacing: 2) {
                     if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
                         Button {
                             if let pid = propertyId { Task { await messageService.loadOlder(propertyId: pid) } }
@@ -526,7 +526,17 @@ struct ChatView: View {
                         .disabled(messageService.isLoadingOlder)
                     }
                     ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
-                        if idx == 0 || !sameDay(filteredMessages[idx - 1], msg) {
+                        let showDate = idx == 0 || !sameDay(filteredMessages[idx - 1], msg)
+                        // Consecutive messages from the same sender on the same day form a
+                        // visual group: only the first shows the name, only the last the
+                        // avatar. Searching yields a sparse subset, so grouping is disabled.
+                        let grouping = !(showSearch && !searchText.isEmpty)
+                        let prevSameSender = grouping && !showDate && idx > 0
+                            && filteredMessages[idx - 1].senderName == msg.senderName
+                        let nextSameSender = grouping && idx < filteredMessages.count - 1
+                            && sameDay(msg, filteredMessages[idx + 1])
+                            && filteredMessages[idx + 1].senderName == msg.senderName
+                        if showDate {
                             ChatDateSeparator(dateStr: msg.createdAt)
                         }
                         MessageBubble(
@@ -569,8 +579,11 @@ struct ChatView: View {
                                     messageId: msg.id, propertyId: pid,
                                     optionIndex: idx, voterName: senderName, multi: poll.multi) }
                             },
-                            onLongPress: { menuMessage = msg }
+                            onLongPress: { menuMessage = msg },
+                            isGroupStart: !prevSameSender,
+                            isGroupEnd: !nextSameSender
                         )
+                        .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
                         .id(msg.id)
                     }
                     // Pending (offline) messages — shown optimistically with a clock.
