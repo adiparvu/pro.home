@@ -20,6 +20,7 @@ struct ChatView: View {
     @Environment(ProfileService.self) private var profileService
     @Environment(TabBarVisibility.self) private var tabBarVis
     @Environment(StickerService.self) private var stickerService
+    @Environment(PresenceService.self) private var presenceService
     @Environment(AppRouter.self) private var router
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
@@ -99,6 +100,18 @@ struct ChatView: View {
         guard let first = names.first else { return nil }
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
+    }
+    /// Family members (other than me) currently online, for the header subtitle.
+    private var onlineText: String? {
+        let me = senderName
+        let online = familyService.members
+            .map(\.name)
+            .filter { $0 != me && presenceService.status(for: $0) == .online }
+            .sorted()
+        guard let first = online.first else { return nil }
+        if online.count == 1 { return String(format: String(localized: "%@ is online"), first) }
+        if online.count == 2 { return String(format: String(localized: "%@ and %@ online"), first, online[1]) }
+        return String(format: String(localized: "%d online"), online.count)
     }
     private var sharedMediaURLs: [URL] {
         messageService.messages.compactMap { m in
@@ -210,12 +223,15 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(String(localized: "Chat Grup"))
                             .font(AppFont.headline)
-                        // Header is avatar + name only; the member-count subtitle is
-                        // gone. Typing status still surfaces here since it's transient.
+                        // Transient typing status wins; otherwise show who's online.
                         if let t = typingText {
                             Text(t)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.accentColor)
+                        } else if let o = onlineText {
+                            Text(o)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.brandSuccess)
                         }
                     }
                     .contentShape(Rectangle())
@@ -248,6 +264,7 @@ struct ChatView: View {
             unreadDividerId = messageService.firstUnreadId(
                 since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
+            await presenceService.load(propertyId: pid)
             await messageService.loadReads(propertyId: pid)
             await messageService.loadDeliveries(propertyId: pid)
             await messageService.loadReactions(propertyId: pid)
