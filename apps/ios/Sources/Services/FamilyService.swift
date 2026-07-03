@@ -73,12 +73,16 @@ final class FamilyService {
             let propertyName: String?
             let role: String
             let inviterEmail: String?
+            let locale: String
         }
         let inviterEmail = try? await supabase.auth.session.user.email
+        // App language so the invite email is localized (server also falls back
+        // to the inviter's profile locale, then Romanian).
+        let locale = Locale.current.language.languageCode?.identifier ?? "ro"
         let payload = InvitePayload(
             to: email, name: name,
             propertyId: propertyId?.uuidString, propertyName: propertyName,
-            role: role, inviterEmail: inviterEmail
+            role: role, inviterEmail: inviterEmail, locale: locale
         )
         do {
             _ = try await supabase.functions.invoke("send-invite-email", options: .init(body: payload))
