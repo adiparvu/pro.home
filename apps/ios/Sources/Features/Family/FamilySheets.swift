@@ -36,6 +36,9 @@ struct AddFamilyMemberSheet: View {
     @State private var sendInvite = true
     @State private var isSaving = false
     @State private var showAddSocial = false
+    @State private var inviteError: String?
+    // Member is added before the invite; guard against re-adding on retry.
+    @State private var memberAdded = false
 
     private var fullName: String {
         [firstName.trimmingCharacters(in: .whitespaces),
@@ -79,6 +82,13 @@ struct AddFamilyMemberSheet: View {
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
+            }
+            .alert("Invite not sent", isPresented: Binding(
+                get: { inviteError != nil }, set: { if !$0 { inviteError = nil } })
+            ) {
+                Button("OK", role: .cancel) { dismiss() }
+            } message: {
+                Text(inviteError ?? "")
             }
         }
         .onAppear {
@@ -287,33 +297,37 @@ struct AddFamilyMemberSheet: View {
         let name = fullName
         let bdString = birthdayString()
         do {
-            try await familyService.add(
-                name: name, role: role,
-                email: email.isEmpty ? nil : email,
-                phone: phone.isEmpty ? nil : phone,
-                color: color, propertyId: propertyId,
-                birthday: bdString, socialLinks: socialLinks
-            )
-            if let bdStr = bdString, let bdDate = parseBirthday(bdStr) {
-                await familyService.addBirthdayToCalendar(name: name, birthday: bdDate)
-            }
-            if sendInvite, !email.isEmpty {
-                sendInviteEmail(to: email, name: name)
+            if !memberAdded {
+                try await familyService.add(
+                    name: name, role: role,
+                    email: email.isEmpty ? nil : email,
+                    phone: phone.isEmpty ? nil : phone,
+                    color: color, propertyId: propertyId,
+                    birthday: bdString, socialLinks: socialLinks
+                )
+                memberAdded = true
+                if let bdStr = bdString, let bdDate = parseBirthday(bdStr) {
+                    await familyService.addBirthdayToCalendar(name: name, birthday: bdDate)
+                }
             }
         } catch {
             #if DEBUG
             print("[FamilySheets] save error: \(error)")
             #endif
         }
+        // Await the invite so a delivery failure is surfaced (member is already
+        // added; the alert's OK dismisses). Previously fired-and-forgotten, which
+        // hid every failure and made invitations silently vanish.
+        if sendInvite, !email.isEmpty {
+            if let err = await familyService.sendInvite(
+                to: email, name: name, role: role,
+                propertyId: propertyId, propertyName: propertyName) {
+                inviteError = err
+                return
+            }
+        }
         HapticFeedback.success()
         dismiss()
-    }
-
-    private func sendInviteEmail(to email: String, name: String) {
-        Task {
-            await familyService.sendInvite(to: email, name: name, role: role,
-                                           propertyId: propertyId, propertyName: propertyName)
-        }
     }
 }
 

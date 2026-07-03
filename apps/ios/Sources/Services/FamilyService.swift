@@ -56,10 +56,16 @@ final class FamilyService {
 
     /// WhatsApp-style invite: a contact with an email is sent an invitation that
     /// (server-side) creates their account, grants property membership, and
-    /// links this contact row to their real user. Silent no-op without an email.
+    /// links this contact row to their real user.
+    ///
+    /// Returns `nil` on success (or when there's no email — nothing to send), or
+    /// a human-readable message when the invite failed. We deliberately do NOT
+    /// swallow the error: a silently-failing invite is exactly the bug that made
+    /// invitations "disappear", so callers surface this to the inviter.
+    @discardableResult
     func sendInvite(to email: String, name: String, role: String,
-                    propertyId: UUID?, propertyName: String?) async {
-        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                    propertyId: UUID?, propertyName: String?) async -> String? {
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
         struct InvitePayload: Encodable {
             let to: String
             let name: String
@@ -74,7 +80,17 @@ final class FamilyService {
             propertyId: propertyId?.uuidString, propertyName: propertyName,
             role: role, inviterEmail: inviterEmail
         )
-        _ = try? await supabase.functions.invoke("send-invite-email", options: .init(body: payload))
+        do {
+            _ = try await supabase.functions.invoke("send-invite-email", options: .init(body: payload))
+            return nil
+        } catch {
+            let message = error.localizedDescription
+            self.error = message
+            #if DEBUG
+            print("[FamilyService] sendInvite failed: \(error)")
+            #endif
+            return message
+        }
     }
 
     func update(_ member: FamilyMember) async {

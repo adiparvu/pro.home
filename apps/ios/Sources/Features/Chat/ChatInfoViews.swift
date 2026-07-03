@@ -1251,6 +1251,9 @@ struct AddContactView: View {
     @State private var colorHex = "#3B82F6"
     @State private var saving = false
     @State private var error: String?
+    // The contact is added before the invite is sent. If the invite fails we keep
+    // the sheet open to show why — this guards against re-adding on a retry.
+    @State private var contactAdded = false
 
     private let swatches = ["#3B82F6", "#22C55E", "#A855F7", "#EF4444",
                             "#F59E0B", "#14B8A6", "#EC4899", "#6366F1"]
@@ -1325,32 +1328,42 @@ struct AddContactView: View {
     private func save() async {
         saving = true
         defer { saving = false }
+        error = nil
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
         do {
-            let trimmedName = name.trimmingCharacters(in: .whitespaces)
-            let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
             // Contacts added from chat default to chat-only (guest). Elevate to a
             // fuller role from Family settings if they should see more of the home.
-            try await familyService.add(
-                name: trimmedName,
-                role: "guest",
-                email: trimmedEmail.isEmpty ? nil : trimmedEmail,
-                phone: phone.isEmpty ? nil : phone,
-                color: colorHex,
-                propertyId: propertyService.primary?.id,
-                birthday: nil,
-                socialLinks: []
-            )
-            // WhatsApp-style: adding a contact with an email invites them.
-            if !trimmedEmail.isEmpty {
-                await familyService.sendInvite(
-                    to: trimmedEmail, name: trimmedName, role: "guest",
+            // Guard so a retry (after an invite failure) doesn't add them twice.
+            if !contactAdded {
+                try await familyService.add(
+                    name: trimmedName,
+                    role: "guest",
+                    email: trimmedEmail.isEmpty ? nil : trimmedEmail,
+                    phone: phone.isEmpty ? nil : phone,
+                    color: colorHex,
                     propertyId: propertyService.primary?.id,
-                    propertyName: propertyService.primary?.name)
+                    birthday: nil,
+                    socialLinks: []
+                )
+                contactAdded = true
             }
-            dismiss()
         } catch {
             self.error = error.localizedDescription
+            return
         }
+        // WhatsApp-style: adding a contact with an email invites them. Surface a
+        // delivery failure instead of dismissing as if it worked.
+        if !trimmedEmail.isEmpty {
+            if let inviteError = await familyService.sendInvite(
+                to: trimmedEmail, name: trimmedName, role: "guest",
+                propertyId: propertyService.primary?.id,
+                propertyName: propertyService.primary?.name) {
+                self.error = String(localized: "Contact added, but the invite email couldn't be sent: \(inviteError)")
+                return
+            }
+        }
+        dismiss()
     }
 }
 

@@ -92,22 +92,39 @@ serve(async (req) => {
     const displayInviter = inviterEmail ?? 'A PRVIO user'
     const roleLabel = (role ?? 'member').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
 
-    // inviteUserByEmail sends a Supabase invitation email automatically
-    // (uses Supabase's built-in email provider — no Resend required)
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(to, {
-      redirectTo: 'prvio://',
-      data: {
-        property_id: propertyId,
-        invited_role: role ?? 'member',
-        invited_name: name,
-        // Seeds the new user's profile name (handle_new_user reads full_name),
-        // so the contact name the owner gave becomes their chat identity.
-        full_name: name ?? '',
+    // Email delivery goes exclusively through Resend. Supabase's built-in mailer
+    // is rate-limited and unreliable, and inviteUserByEmail *fails the whole call*
+    // (no user created) when that mailer errors. So we decouple the two concerns:
+    //   1. generateLink creates the auth user and returns the action link WITHOUT
+    //      sending anything (mailer-independent — can't be blocked by SMTP).
+    //   2. we send the branded email ourselves via Resend.
+    if (!resendKey) {
+      return new Response(JSON.stringify({
+        error: 'Email sending is not configured (missing RESEND_API_KEY secret).',
+      }), { status: 503, headers: { ...CORS, 'Content-Type': 'application/json' } })
+    }
+
+    // Try to create the invitee (new user). `data` seeds user_metadata so
+    // handle_new_user picks up full_name for their chat identity.
+    let actionLink: string | undefined
+    let invitedUserId: string | undefined
+    const { data: inviteLink, error: inviteErr } = await admin.auth.admin.generateLink({
+      type: 'invite',
+      email: to,
+      options: {
+        redirectTo: 'prvio://',
+        data: {
+          property_id: propertyId,
+          invited_role: role ?? 'member',
+          invited_name: name,
+          full_name: name ?? '',
+        },
       },
     })
 
-    if (inviteError) {
-      // User already exists — generate a magic link instead so they can access
+    if (inviteErr) {
+      // Most likely the user already exists — fall back to a magic link so an
+      // existing account can still open the property they were added to.
       const { data: mlData, error: mlError } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: to,
@@ -115,39 +132,38 @@ serve(async (req) => {
       })
       if (mlError) {
         return new Response(JSON.stringify({ error: mlError.message }), {
-          status: 500,
-          headers: { ...CORS, 'Content-Type': 'application/json' },
+          status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
         })
       }
-      // Existing user — add them to the property now.
-      await grantMembership(mlData.user?.id)
-      // For existing users, send custom email if Resend is configured
-      if (resendKey) {
-        const inviteUrl = mlData.properties.action_link
-        await sendResendEmail(resendKey, to, displayProperty, displayInviter, roleLabel, inviteUrl)
-      }
-      return new Response(JSON.stringify({ sent: true, note: 'existing_user_magic_link' }), {
-        headers: { ...CORS, 'Content-Type': 'application/json' },
+      actionLink = mlData.properties?.action_link
+      invitedUserId = mlData.user?.id
+    } else {
+      actionLink = inviteLink.properties?.action_link
+      invitedUserId = inviteLink.user?.id
+    }
+
+    // Add them to the property (works for both new and existing users).
+    await grantMembership(invitedUserId)
+
+    if (!actionLink) {
+      return new Response(JSON.stringify({ error: 'Could not generate an invite link.' }), {
+        status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
       })
     }
 
-    // New user just created — add them to the property.
-    await grantMembership(inviteData.user?.id)
-
-    // For new users, Supabase already sent the invite email via inviteUserByEmail.
-    // If Resend is configured, also send our custom branded email.
-    if (resendKey) {
-      const { data: linkData } = await admin.auth.admin.generateLink({
-        type: 'invite',
-        email: to,
-        options: { redirectTo: 'prvio://' },
+    const emailError = await sendResendEmail(
+      resendKey, to, displayProperty, displayInviter, roleLabel, actionLink,
+    )
+    if (emailError) {
+      // The user + membership were created, but the email genuinely failed to
+      // send. Surface it so the client can tell the inviter instead of silently
+      // pretending success.
+      return new Response(JSON.stringify({ error: `Email delivery failed: ${emailError}` }), {
+        status: 502, headers: { ...CORS, 'Content-Type': 'application/json' },
       })
-      if (linkData?.properties?.action_link) {
-        await sendResendEmail(resendKey, to, displayProperty, displayInviter, roleLabel, linkData.properties.action_link)
-      }
     }
 
-    return new Response(JSON.stringify({ sent: true, userId: inviteData.user?.id }), {
+    return new Response(JSON.stringify({ sent: true, userId: invitedUserId }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     })
   } catch (err) {
@@ -176,6 +192,9 @@ function mapRole(r?: string): string {
   }
 }
 
+// Sends the branded invite via Resend. Returns null on success, or an error
+// string the caller can surface. The sender is env-driven (INVITE_FROM) so the
+// verified domain can change without a code deploy; defaults to the current one.
 async function sendResendEmail(
   resendKey: string,
   to: string,
@@ -183,7 +202,8 @@ async function sendResendEmail(
   displayInviter: string,
   roleLabel: string,
   inviteUrl: string,
-): Promise<void> {
+): Promise<string | null> {
+  const from = Deno.env.get('INVITE_FROM') ?? 'PRVIO <invites@xparvu.com>'
   const html = `
 <!DOCTYPE html>
 <html>
@@ -212,14 +232,23 @@ async function sendResendEmail(
 </body>
 </html>`
 
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: 'PRVIO <invites@prvio.app>',
-      to: [to],
-      subject: `You've been invited to ${displayProperty} on PRVIO`,
-      html,
-    }),
-  })
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: `You've been invited to ${displayProperty} on PRVIO`,
+        html,
+      }),
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      return `Resend ${res.status}: ${body}`
+    }
+    return null
+  } catch (err) {
+    return String(err)
+  }
 }
