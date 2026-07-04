@@ -21,6 +21,7 @@ final class AppRouter {
     var showFamily = false
     var showContractors = false
     var showFinances = false
+    var showDeliveries = false
 
     // Deep link destinations
     var deepLinkTaskId: UUID?
@@ -63,6 +64,8 @@ final class AppRouter {
         case "shopping", "supplies":
             selectedTab = .settings
             showSuppliesView = true
+        case "deliveries", "packages":
+            showDeliveries = true
         case "chat":
             selectedTab = .chat
         case "scan":

@@ -144,6 +144,13 @@ struct MainTabView: View {
             }
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $router.showDeliveries) {
+            NavigationStack {
+                DeliveriesView()
+                    .environment(deliveryService)
+            }
+            .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $router.showFinances) {
             NavigationStack {
                 FinancesView()
@@ -363,6 +370,16 @@ struct MainTabView: View {
         snapshot.plantNames = Array(plantService.plantsNeedingWater.prefix(3).map(\.name))
         snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
         snapshot.propertyName = propertyService.primary?.name
+        snapshot.pendingSupplyCount = supplyService.totalPending
+        snapshot.unreadMessages = messageService.unreadCount
+        snapshot.propertyHealthScore = propertyService.primary?.healthScore
+        snapshot.criticalTaskTitle = taskService.tasks.first { $0.isOverdue && !$0.isCompleted }?.title
+        let upcoming = taskService.tasks
+            .filter { !$0.isCompleted && !$0.isOverdue && $0.dueDate != nil }
+            .sorted { ($0.dueDate ?? "") < ($1.dueDate ?? "") }
+            .first
+        snapshot.nextMaintenanceTitle = upcoming?.title
+        snapshot.nextMaintenanceDue = upcoming?.dueDateDisplay
         SharedDataStore.write(snapshot)
 
         SharedDataStore.writeTaskCatalog(

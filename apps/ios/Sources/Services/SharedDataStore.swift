@@ -13,6 +13,8 @@ struct PRVIOWidgetSnapshot: Codable {
     var propertyHealthScore: Int? = nil
     var criticalTaskTitle: String? = nil
     var nextMaintenanceTitle: String? = nil
+    // Optional so snapshots written before this field existed still decode.
+    var nextMaintenanceDue: String? = nil
     var activeDeliveryCount: Int = 0
     var updatedAt: Date = Date()
 }
