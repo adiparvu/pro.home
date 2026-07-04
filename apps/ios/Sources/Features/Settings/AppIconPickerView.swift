@@ -239,6 +239,9 @@ private struct IconArtwork: View {
                 RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
                     .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
             )
-            .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
+            // A soft, tight contact shadow — not a wide grey halo. The earlier
+            // radius:18 spread bled a grey cloud well past the icon edges, which
+            // read as an unwanted "background" around every preview.
+            .shadow(color: .black.opacity(0.16), radius: 7, y: 4)
     }
 }

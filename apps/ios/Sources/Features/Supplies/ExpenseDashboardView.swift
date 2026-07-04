@@ -154,18 +154,23 @@ struct ExpenseDashboardView: View {
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 22)
         .frame(maxWidth: .infinity)
+        // A ZStack isn't a ShapeStyle, so the `.background(_:in:)` form can't take
+        // it — build the rounded card as a filled shape and clip the sheen to it.
         .background(
-            ZStack {
-                LinearGradient(
-                    colors: [Color(red: 0.15, green: 0.34, blue: 0.76),
-                             Color(red: 0.40, green: 0.22, blue: 0.70)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.15, green: 0.34, blue: 0.76),
+                                 Color(red: 0.40, green: 0.22, blue: 0.70)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
                 )
                 // Soft highlight sheen in the top-right for depth.
-                RadialGradient(colors: [.white.opacity(0.18), .clear],
-                               center: .topTrailing, startRadius: 8, endRadius: 220)
-            },
-            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .overlay(
+                    RadialGradient(colors: [.white.opacity(0.18), .clear],
+                                   center: .topTrailing, startRadius: 8, endRadius: 220)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         )
         .shadow(color: Color(red: 0.25, green: 0.2, blue: 0.6).opacity(0.28), radius: 18, y: 10)
     }
