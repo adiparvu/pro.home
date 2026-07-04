@@ -169,6 +169,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
     case finances
     case addSupply
     case waterPlant
+    case documents
+    case deliveries
+    case digitalTwin
 
     var id: String { rawValue }
 
@@ -183,6 +186,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return String(localized: "Finances")
         case .addSupply:  return String(localized: "New Item")
         case .waterPlant: return String(localized: "Water Plants")
+        case .documents:  return String(localized: "Documents")
+        case .deliveries: return String(localized: "Deliveries")
+        case .digitalTwin: return String(localized: "Digital Twin")
         }
     }
 
@@ -197,6 +203,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return String(localized: "Open finances")
         case .addSupply:  return String(localized: "Add to supplies")
         case .waterPlant: return String(localized: "Mark as watered")
+        case .documents:  return String(localized: "Open documents")
+        case .deliveries: return String(localized: "Track packages")
+        case .digitalTwin: return String(localized: "Property map")
         }
     }
 
@@ -211,6 +220,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return "chart.pie.fill"
         case .addSupply:  return "cart.badge.plus"
         case .waterPlant: return "drop.fill"
+        case .documents:  return "doc.fill"
+        case .deliveries: return "shippingbox.fill"
+        case .digitalTwin: return "map.fill"
         }
     }
 
@@ -225,6 +237,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return Color(red: 0.55, green: 0.55, blue: 0.95)
         case .addSupply:  return Color.brandSkyBlue
         case .waterPlant: return Color(red: 0.15, green: 0.80, blue: 0.40)
+        case .documents:  return Color(red: 1.0,  green: 0.6,  blue: 0.0)
+        case .deliveries: return Color(red: 0.95, green: 0.55, blue: 0.1)
+        case .digitalTwin: return Color(red: 0.2,  green: 0.72, blue: 0.6)
         }
     }
 }

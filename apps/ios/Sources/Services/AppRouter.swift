@@ -38,6 +38,9 @@ final class AppRouter {
         case .addItem:    showInventoryAdd = true
         case .addSupply:  showAddSupply = true
         case .waterPlant: showWaterPlant = true
+        case .documents:  showDocuments = true
+        case .deliveries: showDeliveries = true
+        case .digitalTwin: selectedTab = .digitalTwin
         }
     }
 
