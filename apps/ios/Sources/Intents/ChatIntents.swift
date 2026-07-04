@@ -2,7 +2,7 @@ import AppIntents
 import Foundation
 
 struct OpenChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "Family chat"
+    static var title: LocalizedStringResource = "Chat"
     static var description = IntentDescription("Open the chat in PRVIO")
     static var openAppWhenRun: Bool = true
 
