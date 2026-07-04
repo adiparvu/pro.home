@@ -69,8 +69,19 @@ struct AppIconTheme: Identifiable, Equatable {
 
 extension Locale {
     /// True when the app is running in Romanian.
+    ///
+    /// Reads the app's own saved choice (`prvio.locale` / `prvio.followSystemLang`)
+    /// rather than `Locale.preferredLanguages`, which stays cached at its launch
+    /// value until the process restarts — so this flips the instant the user picks
+    /// a language, keeping RO/EN copy in sync with the rest of the UI without a
+    /// relaunch.
     static var appIsRomanian: Bool {
-        (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("ro")
+        let followSystem = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? false
+        if followSystem {
+            return (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("ro")
+        }
+        let saved = UserDefaults.standard.string(forKey: "prvio.locale") ?? "ro"
+        return saved.lowercased().hasPrefix("ro")
     }
 }
 

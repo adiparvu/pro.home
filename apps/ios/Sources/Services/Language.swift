@@ -3,11 +3,12 @@ import SwiftUI
 
 // MARK: - Language enum — single source of truth for supported locales
 
+// PRVIO ships in Romanian (its native/development language) and English only.
+// The list is deliberately short so the picker stays a two-item choice; adding a
+// language later means adding a case here plus its .lproj strings — nothing else.
 enum Language: String, CaseIterable, Identifiable, Codable {
     case english  = "en"
     case romanian = "ro"
-    case french   = "fr"
-    case dutch    = "nl"
 
     var id: String { rawValue }
 
@@ -16,8 +17,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .english:  return "English"
         case .romanian: return "Română"
-        case .french:   return "Français"
-        case .dutch:    return "Nederlands"
         }
     }
 
@@ -28,8 +27,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .english:  return String(localized: "lang_english")
         case .romanian: return String(localized: "lang_romanian")
-        case .french:   return String(localized: "lang_french")
-        case .dutch:    return String(localized: "lang_dutch")
         }
     }
 
@@ -39,8 +36,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .english:  return "lang_english"
         case .romanian: return "lang_romanian"
-        case .french:   return "lang_french"
-        case .dutch:    return "lang_dutch"
         }
     }
 
@@ -48,8 +43,6 @@ enum Language: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .english:  return "🇬🇧"
         case .romanian: return "🇷🇴"
-        case .french:   return "🇫🇷"
-        case .dutch:    return "🇳🇱"
         }
     }
 
@@ -65,7 +58,7 @@ enum Language: String, CaseIterable, Identifiable, Codable {
 
     // MARK: Matching helpers
 
-    /// Best-match a language from any BCP 47 code string (e.g. "fr-CA" → .french)
+    /// Best-match a language from any BCP 47 code string (e.g. "ro-RO" → .romanian)
     static func from(_ code: String?) -> Language? {
         guard let code else { return nil }
         let lower = code.lowercased()

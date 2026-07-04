@@ -62,6 +62,30 @@ final class AppSettings {
         return Language(rawValue: locale) ?? Language.devicePreferred
     }
 
+    /// Switches the app language immediately, with no relaunch.
+    ///
+    /// Persisting `locale` (an observation-tracked property) recomputes `appLocale`,
+    /// which the app root feeds into `.environment(\.locale, …)`; that environment
+    /// change invalidates the whole view tree, so every `String(localized:)` — which
+    /// resolves through `LanguageManager`'s freshly-rebuilt string table — re-reads
+    /// in the new language on the next frame.
+    func setLanguage(_ language: Language) {
+        LanguageManager.apply(language.rawValue)
+        followSystemLanguage = false
+        locale = language.rawValue
+        UserDefaults.standard.set([language.rawValue], forKey: "AppleLanguages")
+    }
+
+    /// Follows the device language (best match among the supported languages).
+    func useSystemLanguage() {
+        LanguageManager.applySystemLanguage()
+        followSystemLanguage = true
+        UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        // Keep `locale` pointed at the resolved match so `currentLanguage` and the
+        // checkmark in the picker reflect what's actually showing.
+        locale = Language.devicePreferred.rawValue
+    }
+
     // Customizable floating (speed-dial) buttons — per page.
     // Stored in UserDefaults, keyed by host, so this scales to any number of pages.
     // (Home keeps its legacy key for backward compatibility.)

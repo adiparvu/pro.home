@@ -50,7 +50,7 @@ enum LanguageManager {
 
     /// Apply the best matching supported language from the device's preferred language list.
     static func applySystemLanguage() {
-        let supported = ["en", "ro", "fr", "nl"]
+        let supported = ["en", "ro"]
         let code = Locale.preferredLanguages
             .compactMap { tag -> String? in
                 let c = String(tag.prefix(2))
