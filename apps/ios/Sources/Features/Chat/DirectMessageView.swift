@@ -918,6 +918,7 @@ struct DirectMessageView: View {
         defer { isSending = false }
 
         struct Payload: Encodable {
+            let id: String
             let sender_name: String
             let recipient_name: String
             let body: String
@@ -928,11 +929,28 @@ struct DirectMessageView: View {
             let expires_at: String?
         }
 
-        let replyId = replyingTo?.id.uuidString
+        let replyUUID = replyingTo?.id
+        let replyId = replyUUID?.uuidString
+        // Optimistic append: the bubble shows the instant you hit send; the
+        // client-generated id lets the server row replace it cleanly on ack
+        // (the realtime reload dedups on the same id).
+        let clientId = UUID()
+        let optimistic = DirectMessage(
+            id: clientId, senderName: myName, recipientName: member.name,
+            body: text, createdAt: ISO8601DateFormatter().string(from: Date()),
+            replyTo: replyUUID,
+            senderId: supabase.auth.currentSession?.user.id,
+            recipientMemberId: member.id,
+            expiresAt: dmExpiresAt
+        )
+        directMessageService.dms.append(optimistic)
+        withAnimation { replyingTo = nil }
+        HapticFeedback.impact(.light)
         do {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
-                .insert(Payload(sender_name: myName, recipient_name: member.name,
+                .insert(Payload(id: clientId.uuidString,
+                                sender_name: myName, recipient_name: member.name,
                                 body: text, property_id: propertyService.primary?.id.uuidString,
                                 reply_to: replyId,
                                 sender_id: supabase.auth.currentSession?.user.id.uuidString,
@@ -942,18 +960,20 @@ struct DirectMessageView: View {
                 .single()
                 .execute()
                 .value
-            directMessageService.dms.append(sent)
-            withAnimation { replyingTo = nil }
-            HapticFeedback.impact(.light)
+            if let i = directMessageService.dms.firstIndex(where: { $0.id == sent.id }) {
+                directMessageService.dms[i] = sent
+            } else {
+                directMessageService.dms.append(sent)
+            }
         } catch {
+            directMessageService.dms.removeAll { $0.id == clientId }
             // Offline / send failed → queue it; sends automatically when back online.
             if let pid = propertyService.primary?.id {
                 outbox.enqueue(PendingMessage(
                     propertyId: pid, senderName: myName, recipientName: member.name,
-                    body: text, replyTo: replyingTo?.id
+                    body: text, replyTo: replyUUID
                 ))
             }
-            withAnimation { replyingTo = nil }
             HapticFeedback.warning()
         }
     }

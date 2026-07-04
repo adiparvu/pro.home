@@ -76,8 +76,15 @@ final class DirectMessageService {
     @ObservationIgnored private var typingSub: RealtimeSubscription?
     @ObservationIgnored private var typingTasks: [String: Task<Void, Never>] = [:]
 
+    @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
+
     func sendTyping() {
         guard let ch = channel, !myName.isEmpty else { return }
+        // Called on every keystroke — throttle to one broadcast per 2.5s
+        // (receivers keep the indicator alive 4s per event, so it stays smooth).
+        let now = Date()
+        guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
+        lastTypingSentAt = now
         Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
     }
 

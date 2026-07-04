@@ -550,6 +550,14 @@ struct ChatView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
+            // Capture the list ONCE per render. `filteredMessages` is a computed
+            // property that re-runs two filter passes on every access; the rows
+            // below read neighbours (idx±1), which made scrolling O(n²). The
+            // reply lookup gets the same treatment (dictionary instead of a
+            // linear scan per bubble).
+            let msgs = filteredMessages
+            let messagesById = Dictionary(messageService.messages.map { ($0.id, $0) },
+                                          uniquingKeysWith: { a, _ in a })
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 2) {
                     if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
@@ -569,17 +577,17 @@ struct ChatView: View {
                         .padding(.vertical, AppSpacing.sm)
                         .disabled(messageService.isLoadingOlder)
                     }
-                    ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
-                        let showDate = idx == 0 || !sameDay(filteredMessages[idx - 1], msg)
+                    ForEach(Array(msgs.enumerated()), id: \.element.id) { idx, msg in
+                        let showDate = idx == 0 || !sameDay(msgs[idx - 1], msg)
                         // Consecutive messages from the same sender on the same day form a
                         // visual group: only the first shows the name, only the last the
                         // avatar. Searching yields a sparse subset, so grouping is disabled.
                         let grouping = !(showSearch && !searchText.isEmpty)
                         let prevSameSender = grouping && !showDate && idx > 0
-                            && filteredMessages[idx - 1].senderName == msg.senderName
-                        let nextSameSender = grouping && idx < filteredMessages.count - 1
-                            && sameDay(msg, filteredMessages[idx + 1])
-                            && filteredMessages[idx + 1].senderName == msg.senderName
+                            && msgs[idx - 1].senderName == msg.senderName
+                        let nextSameSender = grouping && idx < msgs.count - 1
+                            && sameDay(msg, msgs[idx + 1])
+                            && msgs[idx + 1].senderName == msg.senderName
                         if showDate {
                             ChatDateSeparator(dateStr: msg.createdAt)
                         }
@@ -605,7 +613,7 @@ struct ChatView: View {
                                     messageId: msg.id, propertyId: pid,
                                     emoji: emoji, reactorName: senderName) }
                             },
-                            repliedMessage: msg.replyTo.flatMap { rid in messageService.messages.first { $0.id == rid } },
+                            repliedMessage: msg.replyTo.flatMap { messagesById[$0] },
                             onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
                             onPin: { Task { await messageService.togglePin(msg) } },
                             onMark: { Task { await messageService.toggleMark(msg) } },
@@ -681,7 +689,7 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
-                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: filteredMessages.count)
+                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
             .onPreferenceChange(ChatBottomKey.self) { maxY in

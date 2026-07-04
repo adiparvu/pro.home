@@ -58,6 +58,9 @@ struct Message: Identifiable, Codable {
 }
 
 struct NewMessage: Encodable {
+    // Client-generated so the row can be shown optimistically before the
+    // server acknowledges it (realtime echoes dedup on this id).
+    var id: UUID? = nil
     let property_id: UUID?
     let sender_id: UUID
     let sender_name: String

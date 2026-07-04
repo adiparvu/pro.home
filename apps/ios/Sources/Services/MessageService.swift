@@ -37,8 +37,15 @@ final class MessageService {
     /// reload code runs — just debounced — so the displayed data stays correct.
     private var reloadTasks: [String: Task<Void, Never>] = [:]
 
+    @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
+
     func sendTyping() {
         guard let ch = realtimeChannel, !myName.isEmpty else { return }
+        // Called on every keystroke — throttle to one broadcast per 2.5s
+        // (receivers keep the indicator alive 4s per event, so it stays smooth).
+        let now = Date()
+        guard now.timeIntervalSince(lastTypingSentAt) > 2.5 else { return }
+        lastTypingSentAt = now
         Task { await ch.broadcast(event: "typing", message: ["name": .string(myName)]) }
     }
 
@@ -253,6 +260,7 @@ final class MessageService {
             : nil
 
         let payload = NewMessage(
+            id: UUID(),
             property_id: propertyId,
             sender_id: senderId,
             sender_name: senderName,
@@ -267,14 +275,47 @@ final class MessageService {
             expires_at: expiresAt
         )
 
-        let sent: Message = try await supabase
-            .from("messages")
-            .insert(payload)
-            .select()
-            .single()
-            .execute()
-            .value
-        messages.append(sent)
+        // Optimistic append: the bubble appears the moment you hit send instead
+        // of after the network round-trip. The id is client-generated, so the
+        // realtime echo and loadNewer dedup against it; on ack we swap in the
+        // server row (authoritative timestamp), on failure we roll back and
+        // rethrow so the caller's error path (outbox) takes over.
+        let optimistic = Message(
+            id: payload.id!,
+            propertyId: propertyId,
+            senderId: senderId,
+            senderName: senderName,
+            body: body,
+            attachmentUrl: attachmentUrl,
+            attachmentType: attachmentType,
+            latitude: latitude,
+            longitude: longitude,
+            mentionedIds: mentionedIds,
+            replyTo: replyTo,
+            pinned: nil, isMarked: nil, editedAt: nil, deletedForAll: nil,
+            groupId: currentGroupId,
+            expiresAt: expiresAt,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        )
+        messages.append(optimistic)
+
+        do {
+            let sent: Message = try await supabase
+                .from("messages")
+                .insert(payload)
+                .select()
+                .single()
+                .execute()
+                .value
+            if let idx = messages.firstIndex(where: { $0.id == sent.id }) {
+                messages[idx] = sent
+            } else {
+                messages.append(sent)
+            }
+        } catch {
+            messages.removeAll { $0.id == optimistic.id }
+            throw error
+        }
     }
 
     func resetUnread() { unreadCount = 0 }
