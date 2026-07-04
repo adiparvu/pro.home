@@ -162,8 +162,13 @@ struct InventoryView: View {
     private func infoTile(_ value: String, _ label: LocalizedStringKey, highlight: Bool = false) -> some View {
         GlassCard(padding: 10) {
             VStack(spacing: 3) {
-                Text(value).font(.system(size: 14, weight: .bold)).foregroundStyle(highlight ? .orange : .white).lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(.system(size: 9)).foregroundStyle(Color.primary.opacity(0.4))
+                // Was `.white`, which is invisible on the light-mode card. Use
+                // `.primary` so it's readable in both light and dark.
+                Text(value).font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(highlight ? .orange : .primary)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }.frame(maxWidth: .infinity)
         }
     }
