@@ -196,146 +196,129 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
-    // Role-gated property section. Owners/partners (and the fail-open default)
-    // see everything; residents and service providers see only what they use;
-    // guests see no property management at all (just chat + their own profile).
-    @ViewBuilder private var propertySectionGated: some View {
+    // MARK: - Role-based property matrix
+    //
+    // Single source of truth for which property tools each role sees. Owners,
+    // partners (and the fail-open default) get everything; a family adult gets
+    // everything except landlord-only tools; residents and service providers get
+    // a curated subset; guests get nothing. Feature order = display order.
+    private enum PropertyFeature: CaseIterable {
+        case myProperty, documents, plans, finances, inventory, supplies, plants,
+             deliveries, utilities, contractors, analytics, report, tenants,
+             appliances, photoJournal, seasonal, paint, propertyValue, guestMode, perspectives
+    }
+
+    private func allowed(_ f: PropertyFeature) -> Bool {
         switch propertyService.myRole {
         case "guest":
-            EmptyView()
-        case "tenant", "family_child", "family_teen":
-            SettingsGroup(title: "Property") {
-                NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
-                    DocumentsView().environment(documentService).environment(propertyService)
-                }
-                NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
-                    SuppliesView().environment(supplyService).environment(propertyService)
-                }
-                NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
-                    PlantsView().environment(plantService).environment(propertyService)
-                }
-                NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
-                    DeliveriesView().environment(deliveryService)
-                }
-                NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
-                    PaintColorsView().environment(paintColorService).environment(propertyService)
-                }
-            }
+            return false
+        case "tenant":
+            return [.documents, .supplies, .plants, .deliveries, .utilities,
+                    .contractors, .appliances, .photoJournal, .seasonal, .paint].contains(f)
+        case "family_child", "family_teen":
+            return [.supplies, .plants, .deliveries, .photoJournal, .seasonal].contains(f)
         case "service_provider":
-            SettingsGroup(title: "Property") {
-                NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
-                    DocumentsView().environment(documentService).environment(propertyService)
-                }
-                NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
-                    ContractorsView().environment(auth)
-                }
-                NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
-                    DeliveriesView().environment(deliveryService)
-                }
-            }
+            return [.documents, .contractors, .deliveries, .appliances,
+                    .seasonal, .photoJournal].contains(f)
+        case "adult":
+            // Family adult: everything except the landlord-only tools.
+            return f != .tenants && f != .guestMode && f != .propertyValue
         default:
-            propertySection
+            return true   // owner, partner, nil (fail-open)
         }
     }
 
-    private var propertySection: some View {
-        SettingsGroup(title: "Property") {
+    private var visibleFeatures: [PropertyFeature] { PropertyFeature.allCases.filter(allowed) }
+
+    @ViewBuilder private var propertySectionGated: some View {
+        if !visibleFeatures.isEmpty {
+            SettingsGroup(title: "Property") {
+                ForEach(visibleFeatures, id: \.self) { propertyRow($0) }
+            }
+        }
+    }
+
+    @ViewBuilder private func propertyRow(_ f: PropertyFeature) -> some View {
+        switch f {
+        case .myProperty:
             NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
-                PropertySettingsView()
-                    .environment(propertyService)
+                PropertySettingsView().environment(propertyService)
             }
+        case .documents:
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
-                DocumentsView()
-                    .environment(documentService)
-                    .environment(propertyService)
+                DocumentsView().environment(documentService).environment(propertyService)
             }
+        case .plans:
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
                 BlueprintsView()
             }
+        case .finances:
             NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
-                FinancesView()
-                    .environment(financialService)
-                    .environment(propertyService)
-                    .environment(budgetService)
+                FinancesView().environment(financialService).environment(propertyService).environment(budgetService)
             }
+        case .inventory:
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
                 InventoryView()
             }
+        case .supplies:
             NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
-                SuppliesView()
-                    .environment(supplyService)
-                    .environment(propertyService)
+                SuppliesView().environment(supplyService).environment(propertyService)
             }
+        case .plants:
             NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
-                PlantsView()
-                    .environment(plantService)
-                    .environment(propertyService)
+                PlantsView().environment(plantService).environment(propertyService)
             }
+        case .deliveries:
             NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
-                DeliveriesView()
-                    .environment(deliveryService)
+                DeliveriesView().environment(deliveryService)
             }
+        case .utilities:
             NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
                 UtilityView()
             }
+        case .contractors:
             NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
-                ContractorsView()
-                    .environment(auth)
+                ContractorsView().environment(auth)
             }
+        case .analytics:
             NavSettingsRow(icon: "chart.bar.xaxis", color: .purple, label: "Analytics") {
                 AnalyticsView()
             }
+        case .report:
             NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
-                PropertyReportView()
-                    .environment(taskService)
-                    .environment(financialService)
-                    .environment(documentService)
-                    .environment(propertyService)
+                PropertyReportView().environment(taskService).environment(financialService).environment(documentService).environment(propertyService)
             }
+        case .tenants:
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
-                TenantManagementView()
-                    .environment(familyService)
-                    .environment(propertyService)
+                TenantManagementView().environment(familyService).environment(propertyService)
             }
+        case .appliances:
             NavSettingsRow(icon: "washer.fill", color: Color.brandPrimaryBlue, label: "Appliances") {
-                AppliancesView()
-                    .environment(applianceService)
-                    .environment(propertyService)
+                AppliancesView().environment(applianceService).environment(propertyService)
             }
+        case .photoJournal:
             NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
-                PhotoJournalView()
-                    .environment(photoJournalService)
-                    .environment(propertyService)
+                PhotoJournalView().environment(photoJournalService).environment(propertyService)
             }
+        case .seasonal:
             NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
                 SeasonalChecklistView()
             }
+        case .paint:
             NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
-                PaintColorsView()
-                    .environment(paintColorService)
-                    .environment(propertyService)
+                PaintColorsView().environment(paintColorService).environment(propertyService)
             }
+        case .propertyValue:
             NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
-                PropertyValueView()
-                    .environment(propertyValueService)
-                    .environment(propertyService)
-                    .environment(currencyService)
-                    .environment(appSettings)
+                PropertyValueView().environment(propertyValueService).environment(propertyService).environment(currencyService).environment(appSettings)
             }
+        case .guestMode:
             NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
-                GuestModeView()
-                    .environment(propertyService)
-                    .environment(familyService)
+                GuestModeView().environment(propertyService).environment(familyService)
             }
+        case .perspectives:
             NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color.brandSkyBlue, label: "Perspectives") {
-                PropertyPerspectivesView()
-                    .environment(propertyService)
-                    .environment(taskService)
-                    .environment(documentService)
-                    .environment(financialService)
-                    .environment(familyService)
-                    .environment(applianceService)
-                    .environment(router)
+                PropertyPerspectivesView().environment(propertyService).environment(taskService).environment(documentService).environment(financialService).environment(familyService).environment(applianceService).environment(router)
             }
         }
     }
