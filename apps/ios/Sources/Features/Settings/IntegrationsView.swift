@@ -9,6 +9,7 @@ struct IntegrationsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                customIntegrationsSection
                 appleEcosystemSection
                 productivitySection
                 localControllersSection

@@ -37705,6 +37705,278 @@
           }
         }
       }
+    },
+    "Connect anything": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect anything"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectează orice"
+          }
+        }
+      }
+    },
+    "Create your own integrations — each service gets its own secret key and posts straight into your chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create your own integrations — each service gets its own secret key and posts straight into your chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creează-ți propriile integrări — fiecare serviciu primește cheia lui secretă și trimite mesaje direct în chat."
+          }
+        }
+      }
+    },
+    "Custom integrations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom integrations"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integrări personalizate"
+          }
+        }
+      }
+    },
+    "Every service you connect gets its own name and secret key. Anything that can send a web request — automations, servers, sensors, bots — posts straight into your house chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every service you connect gets its own name and secret key. Anything that can send a web request — automations, servers, sensors, bots — posts straight into your house chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiecare serviciu conectat primește propriul nume și propria cheie secretă. Orice poate trimite o cerere web — automatizări, servere, senzori, boți — ajunge direct în chatul casei."
+          }
+        }
+      }
+    },
+    "No integrations yet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No integrations yet"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicio integrare încă"
+          }
+        }
+      }
+    },
+    "Each integration gets its own key that you can pause, rotate or revoke at any time.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each integration gets its own key that you can pause, rotate or revoke at any time."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiecare integrare are cheia ei, pe care o poți opri, regenera sau revoca oricând."
+          }
+        }
+      }
+    },
+    "Add integration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add integration"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă integrare"
+          }
+        }
+      }
+    },
+    "Last used %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last used %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folosită ultima dată %@"
+          }
+        }
+      }
+    },
+    "Never used yet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never used yet"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nefolosită încă"
+          }
+        }
+      }
+    },
+    "Integration name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integration name"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numele integrării"
+          }
+        }
+      }
+    },
+    "e.g. Home Assistant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Home Assistant"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ex. Home Assistant"
+          }
+        }
+      }
+    },
+    "After you create it, open the integration to copy its secret key into the external service.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After you create it, open the integration to copy its secret key into the external service."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "După ce o creezi, deschide integrarea și copiază cheia secretă în serviciul extern."
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creează"
+          }
+        }
+      }
+    },
+    "Delete integration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete integration"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge integrarea"
+          }
+        }
+      }
+    },
+    "This immediately cuts off the service using this key.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This immediately cuts off the service using this key."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serviciul care folosește această cheie este deconectat imediat."
+          }
+        }
+      }
+    },
+    "Integration test — everything works! 🎉": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Integration test — everything works! 🎉"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test integrare — totul funcționează! 🎉"
+          }
+        }
+      }
+    },
+    "Give every service its own name and secret key — pause or revoke each one separately.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give every service its own name and secret key — pause or revoke each one separately."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dă fiecărui serviciu propriul nume și propria cheie secretă — oprești sau revoci fiecare separat."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

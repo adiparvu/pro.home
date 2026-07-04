@@ -4,6 +4,43 @@ import SwiftUI
 
 extension IntegrationsView {
 
+    var customIntegrationsSection: some View {
+        NavigationLink {
+            CustomIntegrationsView()
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Connect anything")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                    Text("Create your own integrations — each service gets its own secret key and posts straight into your chat.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(AppSpacing.base)
+            .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+        .buttonStyle(.plain)
+    }
+
     var appleEcosystemSection: some View {
         IntegrationGroup(title: "iOS & Apple Ecosystem") {
             Button { vm.activeSheet = .siriShortcuts } label: {

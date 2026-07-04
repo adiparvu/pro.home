@@ -257,6 +257,31 @@ struct InterAppChatView: View {
                             .padding(.horizontal, AppSpacing.xs)
                     }
 
+                    // Named integrations — one key per service
+                    NavigationLink {
+                        CustomIntegrationsView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ColoredIconBadge(icon: "sparkles", color: Color.brandPurple, size: 36)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Custom integrations")
+                                    .font(AppFont.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text("Give every service its own name and secret key — pause or revoke each one separately.")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                    .lineLimit(2)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(AppFont.captionStrong)
+                                .foregroundStyle(Color.primary.opacity(0.25))
+                        }
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
+                    }
+                    .buttonStyle(.plain)
+
                     // How-to
                     VStack(alignment: .leading, spacing: 10) {
                         Text("IDEAS")
