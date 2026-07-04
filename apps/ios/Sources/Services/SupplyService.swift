@@ -118,6 +118,13 @@ final class SupplyService {
         updated.isCompleted.toggle()
         updated.updatedAt = ISO8601DateFormatter().string(from: Date())
         await updateItem(updated)
+        // Keep the shopping Live Activity in sync with this list's progress.
+        let listId = item.listId
+        let listName = lists.first { $0.id == listId }?.name ?? String(localized: "Shopping list")
+        LiveActivityService.shared.syncShopping(
+            listName: listName,
+            bought: completedCount(for: listId),
+            total: items(for: listId).count)
     }
 
     func deleteItem(_ item: SupplyItem) async {

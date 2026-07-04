@@ -240,6 +240,11 @@ struct MainTabView: View {
             updateDynamicShortcuts()
             await indexSpotlight()
             await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+            // Live Activities: property context + the "Start When App Opens" /
+            // "Start on a Schedule" preferences, now that data is loaded.
+            LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
+            LiveActivityService.shared.evaluateAutoStart(
+                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
             proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
             ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
         }

@@ -92,6 +92,10 @@ final class TaskService {
                 tasks[idx].status = newStatus
                 tasks[idx].updatedAt = update.updatedAt
             }
+            // Completing a tracked task finishes its Live Activity.
+            if newStatus == "completed" {
+                LiveActivityService.shared.completeMaintenance(taskTitle: task.title)
+            }
         } catch {
             self.error = error.localizedDescription
         }

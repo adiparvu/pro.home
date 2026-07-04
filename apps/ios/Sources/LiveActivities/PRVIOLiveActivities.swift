@@ -1,6 +1,63 @@
 import ActivityKit
 import Foundation
 
+// MARK: - Live Activity preferences (shared app ↔ widget extension)
+//
+// This file is compiled into BOTH the app and the widgets target, so it is the
+// single source of truth for Live Activity preferences. Values live in the app
+// group suite — the widget extension renders the activity, so prefs written to
+// UserDefaults.standard would be invisible to it (the old bug: the settings
+// screen only ever restyled its own mock preview).
+
+enum LiveActivityPrefs {
+    static let suiteName = "group.com.prvio.app"
+
+    static let enabledKey       = "prvio.la.enabled"
+    static let startOnOpenKey   = "prvio.la.startOnOpen"
+    static let scheduleKey      = "prvio.la.schedule"
+    static let lockScreenKey    = "prvio.la.lockScreen"
+    static let dynamicIslandKey = "prvio.la.dynamicIsland"
+    static let showProgressKey  = "prvio.la.showProgress"
+    static let showETAKey       = "prvio.la.showETA"
+    static let showPropertyKey  = "prvio.la.showProperty"
+    static let islandStyleKey   = "prvio.la.islandStyle"
+    static let autoShoppingKey  = "prvio.la.auto.shopping"
+    static let autoDeliveryKey  = "prvio.la.auto.delivery"
+    static let autoMaintKey     = "prvio.la.auto.maintenance"
+    static let autoPlantKey     = "prvio.la.auto.plant"
+
+    static var store: UserDefaults {
+        UserDefaults(suiteName: suiteName) ?? .standard
+    }
+
+    static func bool(_ key: String, default def: Bool) -> Bool {
+        // Fall back to .standard so preferences set before the app-group
+        // migration keep their value.
+        if let v = store.object(forKey: key) as? Bool { return v }
+        return UserDefaults.standard.object(forKey: key) as? Bool ?? def
+    }
+
+    static var isEnabled:        Bool { bool(enabledKey,       default: true) }
+    static var startOnOpen:      Bool { bool(startOnOpenKey,   default: false) }
+    static var startOnSchedule:  Bool { bool(scheduleKey,      default: false) }
+    static var showOnLockScreen: Bool { bool(lockScreenKey,    default: true) }
+    static var showDynamicIsland: Bool { bool(dynamicIslandKey, default: true) }
+    static var showProgress:     Bool { bool(showProgressKey,  default: true) }
+    static var showETA:          Bool { bool(showETAKey,       default: true) }
+    static var showProperty:     Bool { bool(showPropertyKey,  default: true) }
+
+    static var islandStyle: DynamicIslandStyle {
+        DynamicIslandStyle(rawValue: store.string(forKey: islandStyleKey)
+                           ?? UserDefaults.standard.string(forKey: islandStyleKey)
+                           ?? "") ?? .detailed
+    }
+}
+
+enum DynamicIslandStyle: String, CaseIterable, Identifiable {
+    case detailed, compact, minimal
+    var id: String { rawValue }
+}
+
 // MARK: - Shopping Live Activity
 
 struct ShoppingActivityAttributes: ActivityAttributes {
@@ -23,6 +80,7 @@ struct MaintenanceActivityAttributes: ActivityAttributes {
     }
     let taskTitle: String
     let category: String
+    var propertyName: String?
 }
 
 // MARK: - Delivery Live Activity
@@ -36,6 +94,8 @@ struct DeliveryActivityAttributes: ActivityAttributes {
     let trackingNumber: String
     let carrier: String
     let description: String
+    // Optional so old payloads (started before this field existed) still decode.
+    var propertyName: String?
 }
 
 // MARK: - Plant Care Live Activity

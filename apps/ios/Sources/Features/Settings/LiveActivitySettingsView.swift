@@ -1,39 +1,13 @@
 import SwiftUI
 import ActivityKit
 
-// MARK: - Live Activity preferences (shared keys)
+// MARK: - Live Activity preferences
 //
-// The settings screen writes these via @AppStorage; LiveActivityService reads
-// them through the static accessors below so the two stay in sync.
+// Keys and accessors live in PRVIOLiveActivities.swift (compiled into both the
+// app and the widgets target) so the extension that actually renders the
+// activity reads the same app-group values this screen writes.
 
-enum LiveActivityPrefs {
-    static let enabledKey       = "prvio.la.enabled"
-    static let startOnOpenKey   = "prvio.la.startOnOpen"
-    static let scheduleKey      = "prvio.la.schedule"
-    static let lockScreenKey    = "prvio.la.lockScreen"
-    static let dynamicIslandKey = "prvio.la.dynamicIsland"
-    static let showProgressKey  = "prvio.la.showProgress"
-    static let showETAKey       = "prvio.la.showETA"
-    static let showPropertyKey  = "prvio.la.showProperty"
-    static let islandStyleKey   = "prvio.la.islandStyle"
-    static let autoShoppingKey  = "prvio.la.auto.shopping"
-    static let autoDeliveryKey  = "prvio.la.auto.delivery"
-    static let autoMaintKey     = "prvio.la.auto.maintenance"
-    static let autoPlantKey     = "prvio.la.auto.plant"
-
-    private static func bool(_ key: String, default def: Bool) -> Bool {
-        UserDefaults.standard.object(forKey: key) as? Bool ?? def
-    }
-
-    static var isEnabled:       Bool { bool(enabledKey,       default: true) }
-    static var startOnOpen:     Bool { bool(startOnOpenKey,   default: false) }
-    static var startOnSchedule: Bool { bool(scheduleKey,      default: false) }
-    static var showOnLockScreen:Bool { bool(lockScreenKey,    default: true) }
-    static var showDynamicIsland:Bool { bool(dynamicIslandKey, default: true) }
-    static var showProgress:    Bool { bool(showProgressKey,  default: true) }
-    static var showETA:         Bool { bool(showETAKey,       default: true) }
-    static var showProperty:    Bool { bool(showPropertyKey,  default: true) }
-
+extension LiveActivityPrefs {
     static func autoStart(for kind: LiveActivityKind) -> Bool {
         switch kind {
         case .shopping:    return bool(autoShoppingKey, default: true)
@@ -41,10 +15,6 @@ enum LiveActivityPrefs {
         case .maintenance: return bool(autoMaintKey,    default: false)
         case .plantCare:   return bool(autoPlantKey,    default: false)
         }
-    }
-
-    static var islandStyle: DynamicIslandStyle {
-        DynamicIslandStyle(rawValue: UserDefaults.standard.string(forKey: islandStyleKey) ?? "") ?? .detailed
     }
 }
 
@@ -100,9 +70,7 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
     }
 }
 
-enum DynamicIslandStyle: String, CaseIterable, Identifiable {
-    case detailed, compact, minimal
-    var id: String { rawValue }
+extension DynamicIslandStyle {
     var label: LocalizedStringKey {
         switch self {
         case .detailed: return "Detailed"
@@ -115,9 +83,9 @@ enum DynamicIslandStyle: String, CaseIterable, Identifiable {
 // MARK: - Live Activities settings screen
 
 struct LiveActivitySettingsView: View {
-    @AppStorage(LiveActivityPrefs.enabledKey)     private var enabled       = true
-    @AppStorage(LiveActivityPrefs.startOnOpenKey) private var startOnOpen   = false
-    @AppStorage(LiveActivityPrefs.scheduleKey)    private var startSchedule = false
+    @AppStorage(LiveActivityPrefs.enabledKey, store: LiveActivityPrefs.store)     private var enabled       = true
+    @AppStorage(LiveActivityPrefs.startOnOpenKey, store: LiveActivityPrefs.store) private var startOnOpen   = false
+    @AppStorage(LiveActivityPrefs.scheduleKey, store: LiveActivityPrefs.store)    private var startSchedule = false
 
     @State private var systemEnabled = true
 
@@ -258,11 +226,11 @@ private struct AutoStartRow: View {
                         get: { on },
                         set: { newVal in
                             on = newVal
-                            UserDefaults.standard.set(newVal, forKey: kind.storageKey)
+                            LiveActivityPrefs.store.set(newVal, forKey: kind.storageKey)
                             HapticFeedback.selection()
                         }))
         .onAppear {
-            on = UserDefaults.standard.object(forKey: kind.storageKey) as? Bool ?? kind.defaultAuto
+            on = LiveActivityPrefs.bool(kind.storageKey, default: kind.defaultAuto)
         }
     }
 }
@@ -293,9 +261,9 @@ private struct LAToggleRow: View {
 // MARK: - Live Activity preview (mock Lock-Screen card)
 
 struct LiveActivityPreview: View {
-    @AppStorage(LiveActivityPrefs.showProgressKey) private var showProgress = true
-    @AppStorage(LiveActivityPrefs.showETAKey)      private var showETA      = true
-    @AppStorage(LiveActivityPrefs.showPropertyKey) private var showProperty = true
+    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store) private var showProgress = true
+    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)      private var showETA      = true
+    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store) private var showProperty = true
 
     var body: some View {
         VStack(spacing: 8) {
@@ -346,12 +314,12 @@ struct LiveActivityPreview: View {
 // MARK: - Customize Appearance sub-screen
 
 struct LiveActivityAppearanceView: View {
-    @AppStorage(LiveActivityPrefs.lockScreenKey)    private var lockScreen    = true
-    @AppStorage(LiveActivityPrefs.dynamicIslandKey) private var dynamicIsland = true
-    @AppStorage(LiveActivityPrefs.showProgressKey)  private var showProgress  = true
-    @AppStorage(LiveActivityPrefs.showETAKey)       private var showETA       = true
-    @AppStorage(LiveActivityPrefs.showPropertyKey)  private var showProperty  = true
-    @AppStorage(LiveActivityPrefs.islandStyleKey)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
+    @AppStorage(LiveActivityPrefs.lockScreenKey, store: LiveActivityPrefs.store)    private var lockScreen    = true
+    @AppStorage(LiveActivityPrefs.dynamicIslandKey, store: LiveActivityPrefs.store) private var dynamicIsland = true
+    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store)  private var showProgress  = true
+    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)       private var showETA       = true
+    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store)  private var showProperty  = true
+    @AppStorage(LiveActivityPrefs.islandStyleKey, store: LiveActivityPrefs.store)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -367,12 +335,12 @@ struct LiveActivityAppearanceView: View {
                 group {
                     LAToggleRow(icon: "lock.fill", color: .blue,
                                 title: "Lock Screen",
-                                subtitle: "Show the activity banner on the Lock Screen",
+                                subtitle: "Show full details on the Lock Screen — off keeps a minimal banner",
                                 isOn: $lockScreen)
                     divider
                     LAToggleRow(icon: "capsule.fill", color: .purple,
                                 title: "Dynamic Island",
-                                subtitle: "Show live status around the camera",
+                                subtitle: "Show live details around the camera — off keeps just the icon",
                                 isOn: $dynamicIsland)
                 }
 

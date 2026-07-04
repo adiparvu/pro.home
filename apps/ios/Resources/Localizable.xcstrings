@@ -36089,6 +36089,118 @@
           }
         }
       }
+    },
+    "In progress": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "În lucru"
+          }
+        }
+      }
+    },
+    "Done!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gata!"
+          }
+        }
+      }
+    },
+    "Scheduled for today": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled for today"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programat pentru azi"
+          }
+        }
+      }
+    },
+    "Courier": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Courier"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curier"
+          }
+        }
+      }
+    },
+    "Shopping list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping list"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listă de cumpărături"
+          }
+        }
+      }
+    },
+    "Show full details on the Lock Screen — off keeps a minimal banner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show full details on the Lock Screen — off keeps a minimal banner"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afișează detalii complete pe ecranul blocat — dezactivat păstrează un banner minimal"
+          }
+        }
+      }
+    },
+    "Show live details around the camera — off keeps just the icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show live details around the camera — off keeps just the icon"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afișează detalii live în jurul camerei — dezactivat păstrează doar iconița"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
