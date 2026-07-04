@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - App Icon Picker (scenic carousel)
 //
-// A full-bleed, slide-per-icon gallery: each theme gets its own stage with a
-// blurred backdrop drawn from its own artwork, a live light/dark preview, and a
-// short story. Applying an icon is one tap with haptic confirmation.
+// One slide per theme: artwork, name, apply. No info paragraphs — the compact
+// progress capsule replaces the old dot-per-theme pager, whose 36 dots forced
+// the whole layout wider than the screen (the "button off-screen" bug).
 
 struct AppIconPickerView: View {
     @Environment(IconManager.self) private var iconManager
@@ -49,10 +49,10 @@ struct AppIconPickerView: View {
             Image(current.lightPreview)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 520, height: 520)
+                .frame(width: 480, height: 480)
                 .blur(radius: 90)
-                .opacity(0.55)
-                .offset(y: -120)
+                .opacity(0.5)
+                .offset(y: -110)
                 .id(current.id)
                 .transition(.opacity)
             Rectangle().fill(.ultraThinMaterial)
@@ -92,22 +92,30 @@ struct AppIconPickerView: View {
         .animation(.smooth, value: index)
     }
 
-    // MARK: Pager dots
+    // MARK: Pager — fixed-width progress capsule (never wider than the screen)
 
     private var pager: some View {
-        HStack(spacing: 6) {
-            ForEach(themes.indices, id: \.self) { i in
-                Capsule()
-                    .fill(i == index ? Color.accentColor : Color.primary.opacity(0.18))
-                    .frame(width: i == index ? 18 : 6, height: 6)
-            }
+        let trackWidth: CGFloat = 132
+        let thumbWidth: CGFloat = 14
+        let progress = themes.count > 1 ? CGFloat(index) / CGFloat(themes.count - 1) : 0
+        return HStack(spacing: 10) {
+            Capsule()
+                .fill(Color.primary.opacity(0.12))
+                .frame(width: trackWidth, height: 4)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(width: thumbWidth, height: 4)
+                        .offset(x: (trackWidth - thumbWidth) * progress)
+                }
+            Text("\(index + 1)/\(themes.count)")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
+        .frame(height: 16)
         .animation(.snappy, value: index)
         .padding(.vertical, AppSpacing.sm)
-        // Keep the row compact even with many themes.
-        .frame(maxWidth: .infinity)
-        .fixedSize(horizontal: false, vertical: true)
-        .opacity(themes.count <= 40 ? 1 : 0.9)
     }
 
     // MARK: Apply bar
@@ -150,14 +158,8 @@ struct AppIconPickerView: View {
         return HStack(spacing: 10) {
             Image(systemName: "circle.lefthalf.filled")
                 .foregroundStyle(Color.brandPurple)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(ro ? "Schimbare automată zi/noapte" : "Auto day/night switch")
-                    .font(AppFont.footnoteEmphasis)
-                Text(ro ? "Perechile light/dark urmează sistemul"
-                        : "Light/dark pairs follow the system")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
+            Text(ro ? "Schimbare automată zi/noapte" : "Auto day/night switch")
+                .font(AppFont.footnoteEmphasis)
             Spacer()
             Toggle("", isOn: $iconManager.autoSwitch).labelsHidden().tint(Color.brandPurple)
         }
@@ -172,7 +174,6 @@ struct AppIconPickerView: View {
 private struct IconSlide: View {
     let theme: AppIconTheme
     let isCurrent: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     private var ro: Bool { Locale.appIsRomanian }
 
@@ -182,45 +183,21 @@ private struct IconSlide: View {
 
             // Artwork — pair shows light + dark, single shows one.
             HStack(spacing: 18) {
-                IconArtwork(name: theme.lightPreview, size: theme.hasPair ? 116 : 168)
+                IconArtwork(name: theme.lightPreview, size: theme.hasPair ? 118 : 172)
                     .overlay(alignment: .bottom) { if theme.hasPair { modeTag("sun.max.fill", ro ? "Zi" : "Day") } }
                 if let dark = theme.darkPreview {
-                    IconArtwork(name: dark, size: 116)
+                    IconArtwork(name: dark, size: 118)
                         .overlay(alignment: .bottom) { modeTag("moon.stars.fill", ro ? "Noapte" : "Night") }
                 }
             }
             .scaleEffect(isCurrent ? 1 : 0.9)
             .animation(.smooth, value: isCurrent)
 
-            VStack(spacing: 8) {
-                Text(theme.name)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-
-                if theme.hasPair {
-                    Label(ro ? "Se schimbă automat cu tema sistemului"
-                             : "Switches automatically with the system",
-                          systemImage: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Color.accentColor.opacity(0.12), in: Capsule())
-                } else if theme.isDefault {
-                    Label(ro ? "Iconița implicită" : "Default icon", systemImage: "checkmark.seal.fill")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(.ultraThinMaterial, in: Capsule())
-                }
-
-                Text(theme.story)
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-                    .padding(.horizontal, AppSpacing.sm)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(theme.name)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Spacer(minLength: 0)
         }
