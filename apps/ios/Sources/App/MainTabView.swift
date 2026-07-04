@@ -208,41 +208,51 @@ struct MainTabView: View {
         .environment(presenceService)
         .environment(proactiveEngine)
         .task {
-            await currencyService.refresh()
+            // Property + role must resolve first — the tab layout and every
+            // property-scoped load depend on them. Currency + profile are
+            // independent, so they run concurrently with that.
+            async let currency: Void = currencyService.refresh()
+            async let profile: Void = loadProfileAndSettings()
             await propertyService.load()
             await propertyService.loadMyRole()
             redirectIfTabHidden()
-            await taskService.load()
-            await financialService.load()
-            await documentService.load()
-            await familyService.load()
-            if let uid = auth.session?.user.id {
-                await profileService.load(userId: uid)
-                if let profile = profileService.profile {
-                    appSettings.loadFromProfile(profile)
-                }
+            _ = await (currency, profile)
+
+            // Everything below is independent network I/O. Fanning it out with
+            // async let overlaps the round-trips instead of paying their sum,
+            // which is the single biggest win for cold-start latency.
+            let propId = propertyService.primary?.id
+            async let tasksLoad: Void = taskService.load()
+            async let financialLoad: Void = financialService.load()
+            async let documentsLoad: Void = documentService.load()
+            async let familyLoad: Void = familyService.load()
+            async let contractorLoad: Void = contractorService.load()
+            await tasksLoad; await financialLoad; await documentsLoad
+            await familyLoad; await contractorLoad
+
+            if let propId {
+                async let messagesLoad: Void = messageService.load(propertyId: propId)
+                async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
+                async let suppliesLoad: Void = supplyService.load(propertyId: propId)
+                async let receiptsLoad: Void = receiptService.load(propertyId: propId)
+                async let plantsLoad: Void = plantService.load(propertyId: propId)
+                async let appliancesLoad: Void = applianceService.load(propertyId: propId)
+                async let journalLoad: Void = photoJournalService.load(propertyId: propId)
+                async let paintLoad: Void = paintColorService.load(propertyId: propId)
+                async let valueLoad: Void = propertyValueService.load(propertyId: propId)
+                async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
+                async let budgetLoad: Void = budgetService.load(propertyId: propId)
+                await messagesLoad; await deliveriesLoad; await suppliesLoad
+                await receiptsLoad; await plantsLoad; await appliancesLoad
+                await journalLoad; await paintLoad; await valueLoad
+                await inventoryLoad; await budgetLoad
             }
+
             notificationScheduler.registerCategories()
             await notificationScheduler.reschedule(
                 tasks: taskService.tasks,
                 documents: documentService.documents
             )
-            if let propId = propertyService.primary?.id {
-                await messageService.load(propertyId: propId)
-            }
-            await contractorService.load()
-            if let propId = propertyService.primary?.id {
-                await deliveryService.load(propertyId: propId)
-                await supplyService.load(propertyId: propId)
-                await receiptService.load(propertyId: propId)
-                await plantService.load(propertyId: propId)
-                await applianceService.load(propertyId: propId)
-                await photoJournalService.load(propertyId: propId)
-                await paintColorService.load(propertyId: propId)
-                await propertyValueService.load(propertyId: propId)
-                await inventoryService.load(propertyId: propId)
-                await budgetService.load(propertyId: propId)
-            }
             writeWidgetSnapshot()
             updateDynamicShortcuts()
             await indexSpotlight()
@@ -360,6 +370,14 @@ struct MainTabView: View {
         await presenceService.subscribe(propertyId: pid)
         await presenceService.heartbeat(propertyId: pid, userId: uid, userName: name)
         await presenceService.load(propertyId: pid)
+    }
+
+    private func loadProfileAndSettings() async {
+        guard let uid = auth.session?.user.id else { return }
+        await profileService.load(userId: uid)
+        if let profile = profileService.profile {
+            appSettings.loadFromProfile(profile)
+        }
     }
 
     private func writeWidgetSnapshot() {

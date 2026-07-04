@@ -45,10 +45,13 @@ final class ContractorService {
         isLoading = true
         defer { isLoading = false }
         do {
+            // RLS already scopes this to the caller's household; the cap just
+            // prevents an unbounded select as the table grows over the years.
             contractors = try await supabase
                 .from("contractors")
                 .select()
                 .order("name")
+                .limit(500)
                 .execute()
                 .value
         } catch {

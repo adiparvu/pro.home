@@ -81,6 +81,19 @@ final class DirectMessageService {
     @ObservationIgnored private var typingTasks: [String: Task<Void, Never>] = [:]
 
     @ObservationIgnored private var lastTypingSentAt: Date = .distantPast
+    /// Coalesces bursts of realtime events (a lively thread, a flurry of read
+    /// receipts) into a single reload per quiet window, instead of refetching
+    /// the whole conversation once per event.
+    @ObservationIgnored private var reloadTask: Task<Void, Never>?
+
+    private func scheduleReload(propertyId: UUID, myName: String) {
+        reloadTask?.cancel()
+        reloadTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            await self?.load(propertyId: propertyId, myName: myName)
+        }
+    }
 
     func sendTyping() {
         guard let ch = channel, !myName.isEmpty else { return }
@@ -170,19 +183,20 @@ final class DirectMessageService {
         }
         guard !undelivered.isEmpty else { return }
         let nowISO = ISO8601DateFormatter().string(from: Date())
-        for m in undelivered {
-            do {
-                try await supabase
-                    .from("direct_messages")
-                    .update(["delivered_at": nowISO])
-                    .eq("id", value: m.id.uuidString)
-                    .execute()
-                // Only reflect the receipt locally once it actually persisted —
-                // otherwise the sender's ticks never advance while we falsely
-                // believe we sent the receipt. A failed row simply retries.
+        let ids = undelivered.map { $0.id.uuidString }
+        do {
+            // One batched UPDATE instead of one write per message (the old N+1,
+            // which also fired N realtime updates and made every other client
+            // reload N times). Reflect locally only after it persists.
+            try await supabase
+                .from("direct_messages")
+                .update(["delivered_at": nowISO])
+                .in("id", values: ids)
+                .execute()
+            for m in undelivered {
                 if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].deliveredAt = nowISO }
-            } catch { continue }
-        }
+            }
+        } catch { return }
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
@@ -200,7 +214,7 @@ final class DirectMessageService {
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in await self?.load(propertyId: propertyId, myName: myName) }
+            Task { @MainActor in self?.scheduleReload(propertyId: propertyId, myName: myName) }
         })
         postgresSubs.append(ch.onPostgresChange(
             UpdateAction.self,
@@ -208,7 +222,7 @@ final class DirectMessageService {
             table: "direct_messages",
             filter: "property_id=eq.\(propertyId.uuidString)"
         ) { [weak self] _ in
-            Task { @MainActor in await self?.load(propertyId: propertyId, myName: myName) }
+            Task { @MainActor in self?.scheduleReload(propertyId: propertyId, myName: myName) }
         })
         typingSub = ch.onBroadcast(event: "typing") { [weak self] json in
             if case let .string(name)? = json["name"] {
@@ -226,6 +240,8 @@ final class DirectMessageService {
         typingTasks.values.forEach { $0.cancel() }
         typingTasks.removeAll()
         typingNames.removeAll()
+        reloadTask?.cancel()
+        reloadTask = nil
         subscribedPropertyId = nil
         if let ch = channel {
             await supabase.realtimeV2.removeChannel(ch)
@@ -347,24 +363,30 @@ final class DirectMessageService {
         }
         guard !unread.isEmpty else { return }
         let nowISO = ISO8601DateFormatter().string(from: Date())
-        for m in unread {
-            // Read implies delivered — backfill delivered_at if it was never set
-            // so the ticks/details never show "read" without a "delivered".
-            var payload = ["read_at": nowISO]
-            if m.deliveredAt == nil { payload["delivered_at"] = nowISO }
-            do {
-                try await supabase
-                    .from("direct_messages")
-                    .update(payload)
-                    .eq("id", value: m.id.uuidString)
-                    .execute()
-                // Reflect locally only after the write lands (see markDelivered).
+        // Read implies delivered, so rows with no delivered_at get both stamped.
+        // Batch by which columns they need — at most two UPDATEs total instead
+        // of one per message.
+        let needBoth = unread.filter { $0.deliveredAt == nil }.map { $0.id.uuidString }
+        let readOnly = unread.filter { $0.deliveredAt != nil }.map { $0.id.uuidString }
+        do {
+            if !needBoth.isEmpty {
+                try await supabase.from("direct_messages")
+                    .update(["read_at": nowISO, "delivered_at": nowISO])
+                    .in("id", values: needBoth).execute()
+            }
+            if !readOnly.isEmpty {
+                try await supabase.from("direct_messages")
+                    .update(["read_at": nowISO])
+                    .in("id", values: readOnly).execute()
+            }
+            // Reflect locally only after the writes land (see markDelivered).
+            for m in unread {
                 if let i = dms.firstIndex(where: { $0.id == m.id }) {
                     dms[i].readAt = nowISO
                     if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
                 }
-            } catch { continue }
-        }
+            }
+        } catch { return }
     }
 
     // MARK: - Private helpers

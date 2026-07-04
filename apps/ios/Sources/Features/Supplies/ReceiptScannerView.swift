@@ -186,24 +186,25 @@ struct ReceiptScannerView: View {
     }
 
     private func performOCR(on image: UIImage) async -> ParsedReceipt {
-        await withCheckedContinuation { continuation in
-            guard let cgImage = image.cgImage else {
-                continuation.resume(returning: ParsedReceipt())
-                return
-            }
+        guard let cgImage = image.cgImage else { return ParsedReceipt() }
+        // Vision's `.accurate` recognition is CPU-heavy (often 1s+). Running the
+        // handler on a detached task keeps it off the main actor so the
+        // "processing" animation and scrolling stay smooth.
+        return await Task.detached(priority: .userInitiated) {
+            await withCheckedContinuation { continuation in
+                let request = VNRecognizeTextRequest { req, _ in
+                    let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
+                    let lines = observations.compactMap { $0.topCandidates(1).first?.string }
+                    continuation.resume(returning: ReceiptParser.parse(lines: lines))
+                }
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = true
 
-            let request = VNRecognizeTextRequest { req, _ in
-                let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
-                let lines = observations.compactMap { $0.topCandidates(1).first?.string }
-                let result = ReceiptParser.parse(lines: lines)
-                continuation.resume(returning: result)
+                let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+                do { try handler.perform([request]) }
+                catch { continuation.resume(returning: ParsedReceipt()) }
             }
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            try? handler.perform([request])
-        }
+        }.value
     }
 
     // MARK: - Save
