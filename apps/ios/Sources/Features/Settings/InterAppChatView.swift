@@ -257,44 +257,9 @@ struct InterAppChatView: View {
                             .padding(.horizontal, AppSpacing.xs)
                     }
 
-                    // Named integrations — one key per service
-                    NavigationLink {
-                        CustomIntegrationsView()
-                    } label: {
-                        HStack(spacing: 12) {
-                            ColoredIconBadge(icon: "sparkles", color: Color.brandPurple, size: 36)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Custom integrations")
-                                    .font(AppFont.subheadline)
-                                    .foregroundStyle(.primary)
-                                Text("Give every service its own name and secret key — pause or revoke each one separately.")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                                    .lineLimit(2)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(AppFont.captionStrong)
-                                .foregroundStyle(Color.primary.opacity(0.25))
-                        }
-                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                        .liquidGlass(cornerRadius: AppRadius.lg)
-                    }
-                    .buttonStyle(.plain)
-
-                    // How-to
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("IDEAS")
-                            .font(AppFont.label)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                            .padding(.leading, AppSpacing.xxs)
-                        howTo("bolt.fill", .yellow, "Shortcuts automations",
-                              "\"When I leave work → send 'Plec spre casă' to the chat\" — use Get Contents of URL with the format above.")
-                        howTo("app.connected.to.app.below.fill", .purple, "Zapier / IFTTT",
-                              "Connect Gmail, Telegram bots, smart-home alarms — anything with a webhook action.")
-                        howTo("server.rack", .teal, "Home server / IoT",
-                              "Scripts, Home Assistant or a Raspberry Pi can post sensor alerts straight into the chat.")
-                    }
+                    // Named integrations and the Shortcuts/Zapier/IoT recipes
+                    // live on the Integrations page — this screen stays focused
+                    // on the shared inbound channel itself.
                 }
 
                 if let err = service.error {
@@ -338,19 +303,6 @@ struct InterAppChatView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .liquidGlass(cornerRadius: AppRadius.lg)
-    }
-
-    private func howTo(_ icon: String, _ tint: Color, _ title: LocalizedStringKey, _ text: LocalizedStringKey) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            ColoredIconBadge(icon: icon, color: tint, size: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
-                Text(text).font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            }
-        }
-        .padding(AppSpacing.base)
         .liquidGlass(cornerRadius: AppRadius.lg)
     }
 }
