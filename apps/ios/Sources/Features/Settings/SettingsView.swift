@@ -33,7 +33,7 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 profileCard
                 switchCard
-                propertySection
+                propertySectionGated
                 familySection
                 appSection
                 supportSection
@@ -196,6 +196,48 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
+    // Role-gated property section. Owners/partners (and the fail-open default)
+    // see everything; residents and service providers see only what they use;
+    // guests see no property management at all (just chat + their own profile).
+    @ViewBuilder private var propertySectionGated: some View {
+        switch propertyService.myRole {
+        case "guest":
+            EmptyView()
+        case "tenant", "family_child", "family_teen":
+            SettingsGroup(title: "Property") {
+                NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
+                    DocumentsView().environment(documentService).environment(propertyService)
+                }
+                NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
+                    SuppliesView().environment(supplyService).environment(propertyService)
+                }
+                NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
+                    PlantsView().environment(plantService).environment(propertyService)
+                }
+                NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
+                    DeliveriesView().environment(deliveryService)
+                }
+                NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
+                    PaintColorsView().environment(paintColorService).environment(propertyService)
+                }
+            }
+        case "service_provider":
+            SettingsGroup(title: "Property") {
+                NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
+                    DocumentsView().environment(documentService).environment(propertyService)
+                }
+                NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
+                    ContractorsView().environment(auth)
+                }
+                NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
+                    DeliveriesView().environment(deliveryService)
+                }
+            }
+        default:
+            propertySection
+        }
+    }
+
     private var propertySection: some View {
         SettingsGroup(title: "Property") {
             NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
@@ -298,12 +340,22 @@ struct SettingsView: View {
         }
     }
 
+    // Only owners/partners (or the fail-open default) manage the household roster.
+    private var canManageMembers: Bool {
+        switch propertyService.myRole {
+        case nil, "owner", "partner", "adult": return true
+        default: return false
+        }
+    }
+
     private var familySection: some View {
         SettingsGroup(title: "Family & Chat") {
-            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
-                MembersHubView()
-                    .environment(familyService)
-                    .environment(propertyService)
+            if canManageMembers {
+                NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
+                    MembersHubView()
+                        .environment(familyService)
+                        .environment(propertyService)
+                }
             }
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
                 Group {
