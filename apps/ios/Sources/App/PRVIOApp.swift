@@ -61,29 +61,26 @@ struct PRVIOApp: App {
                         UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
                         router.handle(quickActionType: quickAction)
                     }
-                    // Process App Intent-triggered actions
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openNewTask") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openNewTask")
+                    // Process App Intent-triggered actions. Flags live in the
+                    // app-group suite so intents running in the widget-extension
+                    // process reach us too (consumeIntentFlag also drains the
+                    // legacy .standard location).
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openNewTask") {
                         router.showAddTask = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openARIA") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openARIA")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openARIA") {
                         router.showARIA = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openDashboard") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openDashboard")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openDashboard") {
                         router.selectedTab = .home
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showPlants") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showPlants")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showPlants") {
                         router.showWaterPlant = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showChat") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showChat") {
                         router.showFamilyChat = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showShopping") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showShopping")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showShopping") {
                         router.showAddSupply = true
                     }
                 case .inactive, .background: lock.willResignActive()

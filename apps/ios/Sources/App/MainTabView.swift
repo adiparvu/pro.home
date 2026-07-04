@@ -383,10 +383,14 @@ struct MainTabView: View {
         SharedDataStore.write(snapshot)
 
         SharedDataStore.writeTaskCatalog(
-            taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority, isCompleted: $0.isCompleted) }
+            taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority,
+                                                     isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) }
         )
         SharedDataStore.writePlantCatalog(
             plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
+        )
+        SharedDataStore.writeSupplyCatalog(
+            supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }
         )
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -414,7 +418,13 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
-        if !waterIds.isEmpty || !completeIds.isEmpty {
+        let supplyIds = SharedDataStore.popPendingSupplyChecks()
+        for id in supplyIds {
+            if let item = supplyService.items.first(where: { $0.id == id }), !item.isCompleted {
+                Task { await supplyService.toggleComplete(item) }
+            }
+        }
+        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty {
             writeWidgetSnapshot()
         }
     }

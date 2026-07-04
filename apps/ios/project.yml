@@ -70,7 +70,7 @@ targets:
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "624"
+        CURRENT_PROJECT_VERSION: "625"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         GENERATE_INFOPLIST_FILE: NO
@@ -111,6 +111,7 @@ targets:
       - path: Sources/Intents/PRVIOEntities.swift
       - path: Sources/Intents/TaskIntents.swift
       - path: Sources/Intents/PlantIntents.swift
+      - path: Sources/Intents/SupplyIntents.swift
       - path: Sources/LiveActivities/PRVIOLiveActivities.swift
     resources:
       - path: Resources/Localizable.xcstrings
@@ -134,7 +135,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "624"
+        CURRENT_PROJECT_VERSION: "625"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:

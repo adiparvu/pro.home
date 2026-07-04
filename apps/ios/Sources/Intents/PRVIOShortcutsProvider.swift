@@ -91,7 +91,7 @@ struct OpenDashboardIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.openDashboard")
+        SharedDataStore.setIntentFlag("prvio.intent.openDashboard")
         return .result()
     }
 }
@@ -104,7 +104,7 @@ struct AskARIAIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.openARIA")
+        SharedDataStore.setIntentFlag("prvio.intent.openARIA")
         return .result()
     }
 }

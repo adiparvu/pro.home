@@ -7,7 +7,7 @@ struct OpenChatIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.showChat")
+        SharedDataStore.setIntentFlag("prvio.intent.showChat")
         return .result()
     }
 }

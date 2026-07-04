@@ -26,6 +26,8 @@ struct TaskCatalogEntry: Codable {
     var title: String
     var priority: String
     var isCompleted: Bool
+    // Optional so catalogs written before this field existed still decode.
+    var isOverdue: Bool? = nil
 }
 
 struct PlantCatalogEntry: Codable {
@@ -33,6 +35,12 @@ struct PlantCatalogEntry: Codable {
     var name: String
     var emoji: String
     var needsWatering: Bool
+}
+
+struct SupplyCatalogEntry: Codable {
+    var id: UUID
+    var name: String
+    var isCompleted: Bool
 }
 
 // MARK: - Store
@@ -43,8 +51,10 @@ enum SharedDataStore {
     private static let snapshotKey         = "prvio.widget.snapshot"
     private static let taskCatalogKey      = "prvio.catalog.tasks"
     private static let plantCatalogKey     = "prvio.catalog.plants"
+    private static let supplyCatalogKey    = "prvio.catalog.supplies"
     private static let pendingWateringsKey = "prvio.pending.waterings"
     private static let pendingCompletionsKey = "prvio.pending.completions"
+    private static let pendingSupplyChecksKey = "prvio.pending.supplyChecks"
 
     // MARK: Widget snapshot
 
@@ -103,6 +113,102 @@ enum SharedDataStore {
         let ids = ((ud.array(forKey: pendingWateringsKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
         ud.removeObject(forKey: pendingWateringsKey)
         return ids
+    }
+
+    // MARK: Supply catalog
+
+    static func writeSupplyCatalog(_ items: [SupplyCatalogEntry]) {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = try? JSONEncoder().encode(items) else { return }
+        ud.set(data, forKey: supplyCatalogKey)
+    }
+
+    static func readSupplyCatalog() -> [SupplyCatalogEntry] {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let data = ud.data(forKey: supplyCatalogKey) else { return [] }
+        return (try? JSONDecoder().decode([SupplyCatalogEntry].self, from: data)) ?? []
+    }
+
+    static func appendPendingSupplyCheck(_ itemId: UUID) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        var pending = (ud.array(forKey: pendingSupplyChecksKey) as? [String]) ?? []
+        let str = itemId.uuidString
+        if !pending.contains(str) { pending.append(str) }
+        ud.set(pending, forKey: pendingSupplyChecksKey)
+    }
+
+    static func popPendingSupplyChecks() -> [UUID] {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return [] }
+        let ids = ((ud.array(forKey: pendingSupplyChecksKey) as? [String]) ?? []).compactMap { UUID(uuidString: $0) }
+        ud.removeObject(forKey: pendingSupplyChecksKey)
+        return ids
+    }
+
+    // MARK: Intent flags (widget/Shortcuts process → app process)
+    //
+    // Written from whichever process runs the App Intent. The app-group suite is
+    // the only store both processes can see — flags written to .standard from
+    // the widget extension were invisible to the app (the old bug: "New Task"
+    // opened the app but never the form).
+
+    static func setIntentFlag(_ key: String) {
+        UserDefaults(suiteName: suiteName)?.set(true, forKey: key)
+    }
+
+    static func consumeIntentFlag(_ key: String) -> Bool {
+        var flagged = false
+        if let ud = UserDefaults(suiteName: suiteName), ud.bool(forKey: key) {
+            ud.removeObject(forKey: key); flagged = true
+        }
+        // Legacy location (intent ran in the app process before this migration).
+        if UserDefaults.standard.bool(forKey: key) {
+            UserDefaults.standard.removeObject(forKey: key); flagged = true
+        }
+        return flagged
+    }
+
+    // MARK: Instant widget feedback (applied by App Intents in the extension)
+    //
+    // Pending actions are only reconciled with Supabase when the app next
+    // foregrounds — without these local mutations a widget button tap would
+    // visibly do nothing.
+
+    static func applyLocalTaskCompletion(_ id: UUID) {
+        var catalog = readTaskCatalog()
+        guard let idx = catalog.firstIndex(where: { $0.id == id }) else { return }
+        catalog[idx].isCompleted = true
+        catalog[idx].isOverdue = false
+        writeTaskCatalog(catalog)
+        if var snap = read() {
+            snap.openTaskCount = catalog.filter { !$0.isCompleted }.count
+            snap.overdueTaskCount = catalog.filter { !$0.isCompleted && ($0.isOverdue ?? false) }.count
+            if snap.criticalTaskTitle == catalog[idx].title { snap.criticalTaskTitle = nil }
+            write(snap)
+        }
+    }
+
+    static func applyLocalWatering(_ id: UUID) {
+        var catalog = readPlantCatalog()
+        guard let idx = catalog.firstIndex(where: { $0.id == id }) else { return }
+        catalog[idx].needsWatering = false
+        writePlantCatalog(catalog)
+        if var snap = read() {
+            let needing = catalog.filter { $0.needsWatering }
+            snap.plantsNeedingWater = needing.count
+            snap.plantNames = Array(needing.prefix(3).map(\.name))
+            write(snap)
+        }
+    }
+
+    static func applyLocalSupplyCheck(_ id: UUID) {
+        var catalog = readSupplyCatalog()
+        guard let idx = catalog.firstIndex(where: { $0.id == id }) else { return }
+        catalog[idx].isCompleted = true
+        writeSupplyCatalog(catalog)
+        if var snap = read() {
+            snap.pendingSupplyCount = catalog.filter { !$0.isCompleted }.count
+            write(snap)
+        }
     }
 
     static func appendPendingCompletion(_ taskId: UUID) {

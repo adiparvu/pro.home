@@ -36441,6 +36441,102 @@
           }
         }
       }
+    },
+    "Shows your shopping list.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows your shopping list."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Îți arată lista de cumpărături."
+          }
+        }
+      }
+    },
+    "Check off item": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check off item"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bifează articolul"
+          }
+        }
+      }
+    },
+    "Mark a shopping item as bought": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark a shopping item as bought"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marchează un articol ca luat"
+          }
+        }
+      }
+    },
+    "Shopping item": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping item"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Articol de cumpărături"
+          }
+        }
+      }
+    },
+    "The item to check off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The item to check off"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Articolul de bifat"
+          }
+        }
+      }
+    },
+    "\"%@\" checked off.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\" checked off."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” a fost bifat."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

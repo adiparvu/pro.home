@@ -10,7 +10,7 @@ struct CreateTaskIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.openNewTask")
+        SharedDataStore.setIntentFlag("prvio.intent.openNewTask")
         return .result()
     }
 }
@@ -27,6 +27,9 @@ struct CompleteTaskIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingCompletion(task.id)
+        // Update the shared catalog/snapshot NOW so the widget reflects the tap
+        // immediately; Supabase reconciles when the app next foregrounds.
+        SharedDataStore.applyLocalTaskCompletion(task.id)
         WidgetCenter.shared.reloadAllTimelines()
         return .result(dialog: "Task \"\(task.title)\" has been completed.")
     }

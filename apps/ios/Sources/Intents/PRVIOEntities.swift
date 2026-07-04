@@ -32,6 +32,35 @@ struct TaskEntityQuery: EntityQuery {
     }
 }
 
+// MARK: - Supply Item Entity
+
+struct SupplyItemEntity: AppEntity {
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Shopping item"
+    static var defaultQuery = SupplyItemEntityQuery()
+
+    var id: UUID
+    var name: String
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(name)")
+    }
+}
+
+struct SupplyItemEntityQuery: EntityQuery {
+    func entities(for identifiers: [UUID]) async throws -> [SupplyItemEntity] {
+        SharedDataStore.readSupplyCatalog()
+            .filter { identifiers.contains($0.id) }
+            .map { SupplyItemEntity(id: $0.id, name: $0.name) }
+    }
+
+    func suggestedEntities() async throws -> [SupplyItemEntity] {
+        SharedDataStore.readSupplyCatalog()
+            .filter { !$0.isCompleted }
+            .prefix(8)
+            .map { SupplyItemEntity(id: $0.id, name: $0.name) }
+    }
+}
+
 // MARK: - Plant Entity
 
 struct PlantEntity: AppEntity {
