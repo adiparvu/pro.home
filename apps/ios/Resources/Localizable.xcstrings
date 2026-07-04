@@ -4291,6 +4291,86 @@
         }
       }
     },
+    "Enter passcode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter passcode"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introdu codul"
+          }
+        }
+      }
+    },
+    "Locked sections": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked sections"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secțiuni blocate"
+          }
+        }
+      }
+    },
+    "Require Face ID, Touch ID, or your passcode before these sections open. They re-lock every time you leave the app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Require Face ID, Touch ID, or your passcode before these sections open. They re-lock every time you leave the app."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicită Face ID, Touch ID sau codul înainte ca aceste secțiuni să se deschidă. Se blochează din nou de fiecare dată când părăsești aplicația."
+          }
+        }
+      }
+    },
+    "This section is locked. Authenticate to continue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This section is locked. Authenticate to continue."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Această secțiune este blocată. Autentifică-te pentru a continua."
+          }
+        }
+      }
+    },
+    "Unlock to view this section": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock to view this section"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deblochează pentru a vedea această secțiune"
+          }
+        }
+      }
+    },
     "Authenticator": {
       "localizations": {
         "en": {

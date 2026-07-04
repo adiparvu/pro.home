@@ -23,6 +23,7 @@ struct SecurityView: View {
     @State private var showBackupCodes = false
     @State private var showAuditLog = false
     @State private var showTrustedPersons = false
+    @State private var sectionLock = SectionLockManager.shared
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -32,6 +33,7 @@ struct SecurityView: View {
                 sessionsSection
                 advancedSection
                 biometricSection
+                sectionLocksSection
                 dataSection
                 Spacer(minLength: 100)
             }
@@ -274,6 +276,33 @@ struct SecurityView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Locked sections
+
+    private var sectionLocksSection: some View {
+        secGroup(
+            title: "Locked sections",
+            footer: "Require Face ID, Touch ID, or your passcode before these sections open. They re-lock every time you leave the app."
+        ) {
+            let sections = SectionLockManager.Section.allCases
+            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: section.icon, color: section.color)
+                    Text(section.titleKey)
+                        .font(.system(size: 15)).foregroundStyle(.primary)
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { sectionLock.isProtected(section) },
+                        set: { sectionLock.setProtected(section, $0) }
+                    ))
+                    .labelsHidden().tint(.accentColor)
+                }
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
+
+                if index < sections.count - 1 { divider }
+            }
         }
     }
 

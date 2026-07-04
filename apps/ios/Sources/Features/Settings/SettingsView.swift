@@ -247,18 +247,22 @@ struct SettingsView: View {
         case .documents:
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
                 DocumentsView().environment(documentService).environment(propertyService)
+                    .sectionLock(.documents)
             }
         case .plans:
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
                 BlueprintsView()
+                    .sectionLock(.plans)
             }
         case .finances:
             NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
                 FinancesView().environment(financialService).environment(propertyService).environment(budgetService)
+                    .sectionLock(.finances)
             }
         case .inventory:
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
                 InventoryView()
+                    .sectionLock(.inventory)
             }
         case .supplies:
             NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
