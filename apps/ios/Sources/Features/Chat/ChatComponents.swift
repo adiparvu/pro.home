@@ -373,7 +373,14 @@ struct MessageBubble: View {
     private static let reactionEmojis = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
     private var sender: FamilyMember? {
-        members.first { $0.name == message.senderName }
+        // Messages carry the sender's display name, not a family-member id, so we
+        // match by name. Compare case- and whitespace-insensitively so a member's
+        // photo still resolves despite minor formatting differences.
+        let target = message.senderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return members.first {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(target) == .orderedSame
+        }
     }
     private var seen: Bool { !readers.isEmpty }
     /// 3-state tick: read (someone read) > delivered (someone received) > sent.
@@ -440,7 +447,7 @@ struct MessageBubble: View {
                 if !isOwn, isGroupStart {
                     Text(message.senderName)
                         .font(AppFont.label)
-                        .foregroundStyle(sender?.swiftColor ?? Color.primary.opacity(AppOpacity.secondaryText))
+                        .foregroundStyle(sender?.swiftColor ?? Self.color(for: message.senderName))
                         .padding(.leading, AppSpacing.xxs)
                 }
                 if let replied = repliedMessage, !isDeleted {
@@ -714,25 +721,55 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var chatAvatar: some View {
-        if let member = sender {
-            ZStack {
-                Circle()
-                    .fill(member.swiftColor.opacity(0.18))
-                Text(member.initials)
+        // Resolve the best available identity for this sender. A matching family
+        // member gives us their photo + brand color; otherwise we fall back to
+        // initials on a deterministic color derived from the name — never a
+        // blank circle, and never dropping the photo when we do have one.
+        let color = sender?.swiftColor ?? Self.color(for: message.senderName)
+        let initials = sender?.initials ?? Self.initials(from: message.senderName)
+        let avatarURL = sender?.avatarUrl.flatMap { URL(string: $0) }
+
+        ZStack {
+            Circle().fill(color.opacity(0.18))
+            if let avatarURL {
+                AsyncImage(url: avatarURL) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        Text(initials)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(color)
+                    }
+                }
+            } else {
+                Text(initials)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(member.swiftColor)
+                    .foregroundStyle(color)
             }
-            .frame(width: 32, height: 32)
-            .overlay(
-                Circle()
-                    .strokeBorder(member.swiftColor, lineWidth: 2)
-            )
-        } else {
-            Circle()
-                .fill(Color.primary.opacity(0.08))
-                .frame(width: 32, height: 32)
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 1.5))
         }
+        .frame(width: 32, height: 32)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(color, lineWidth: 2))
+    }
+
+    /// Initials for an arbitrary sender name (used when the sender isn't a
+    /// resolvable family member — e.g. cross-app / external messages).
+    static func initials(from name: String) -> String {
+        let parts = name.split(separator: " ")
+        if parts.count >= 2 {
+            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
+        }
+        return String(name.prefix(2)).uppercased()
+    }
+
+    /// Deterministic, pleasant avatar tint from a name so unknown senders get a
+    /// stable, distinguishable color instead of a gray blank.
+    static func color(for name: String) -> Color {
+        let palette: [Color] = [.blue, .purple, .pink, .orange, .teal,
+                                 .green, .indigo, .red, .cyan, .mint]
+        var hash = 5381
+        for byte in name.utf8 { hash = ((hash << 5) &+ hash) &+ Int(byte) }
+        return palette[abs(hash) % palette.count]
     }
 
     @ViewBuilder
