@@ -85,6 +85,44 @@ final class AppRouter {
         }
     }
 
+    /// Routes a tapped in-app notification to the thing it's about.
+    /// Prefers the typed module + resource id; falls back to parsing the
+    /// action_url path the DB triggers write ("/maintenance/<id>", …).
+    func handle(notificationModule module: String?, actionUrl: String?, resourceId: UUID?) {
+        let id = resourceId ?? Self.firstUUID(in: actionUrl ?? "")
+        switch module ?? "" {
+        case "chat":
+            selectedTab = .chat
+        case "maintenance":
+            selectedTab = .tasks
+            deepLinkTaskId = id
+        case "garden":
+            selectedTab = .home
+            showWaterPlant = true
+            deepLinkPlantId = id
+        case "documents", "document":
+            showDocuments = true
+        case "inventory":
+            showInventoryView = true
+        case "finance":
+            showFinances = true
+        case "delivery", "deliveries":
+            showDeliveries = true
+        case "family":
+            showFamily = true
+        case "aria":
+            showARIA = true
+        case "security":
+            selectedTab = .settings
+        default:
+            selectedTab = .home
+        }
+    }
+
+    private static func firstUUID(in path: String) -> UUID? {
+        path.split(separator: "/").lazy.compactMap { UUID(uuidString: String($0)) }.first
+    }
+
     func handle(quickActionType type: String) {
         // "opentask" carries the task id in the type string ("…opentask:<uuid>")
         // because userInfo doesn't survive the cold-launch UserDefaults hand-off.

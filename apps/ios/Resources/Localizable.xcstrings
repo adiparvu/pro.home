@@ -37977,6 +37977,166 @@
           }
         }
       }
+    },
+    "House chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "House chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chatul casei"
+          }
+        }
+      }
+    },
+    "Family, invitations & supervision": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Family, invitations & supervision"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familie, invitații și supraveghere"
+          }
+        }
+      }
+    },
+    "Connect anything with its own key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect anything with its own key"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectează orice, cu cheie proprie"
+          }
+        }
+      }
+    },
+    "Messages from other apps into chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages from other apps into chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaje din alte aplicații în chat"
+          }
+        }
+      }
+    },
+    "Choose your app icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your app icon"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alege iconița aplicației"
+          }
+        }
+      }
+    },
+    "Lock Screen & Dynamic Island": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Screen & Dynamic Island"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ecran blocat și Dynamic Island"
+          }
+        }
+      }
+    },
+    "Home & Lock Screen widgets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home & Lock Screen widgets"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widgeturi pe ecranul principal și blocat"
+          }
+        }
+      }
+    },
+    "Clear all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Șterge tot"
+          }
+        }
+      }
+    },
+    "Unread": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necitite"
+          }
+        }
+      }
+    },
+    "Tasks · Chat · Settings · %@ · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries · Contractors · Zones · Paint · Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasks · Chat · Settings · %@ · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries · Contractors · Zones · Paint · Photos"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sarcini · Chat · Setări · %@ · Hartă · Plante · Documente · Finanțe · Electrocasnice · Inventar · Provizii · Persoane · Colete · Meșteri · Zone · Vopsele · Poze"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

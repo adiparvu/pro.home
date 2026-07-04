@@ -33,6 +33,7 @@ struct DashboardView: View {
     @State private var selectedSection: PropertySection? = nil
     @State var pulsing = false
     @State private var showNotifications = false
+    @State private var notificationService = NotificationService()
     @State private var showEditProfile = false
     @State private var showSearch = false
     @State private var showWidgetPicker = false
@@ -96,10 +97,16 @@ struct DashboardView: View {
                 await zoneService.load(propertyId: pid)
             }
         }
+        .task(id: auth.session?.user.id) {
+            guard let uid = auth.session?.user.id else { return }
+            await notificationService.load(userId: uid)
+            await notificationService.subscribeRealtime(userId: uid)
+        }
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
-                NotificationCenterView()
+                NotificationCenterView(service: notificationService)
                     .environment(auth)
+                    .environment(router)
             }
             .presentationDragIndicator(.visible)
         }
@@ -171,7 +178,15 @@ struct DashboardView: View {
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
                     .overlay(alignment: .topTrailing) {
-                        if hasNotifications {
+                        if notificationService.unreadCount > 0 {
+                            Text("\(min(notificationService.unreadCount, 99))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4.5).padding(.vertical, 1.5)
+                                .background(Color.red, in: Capsule())
+                                .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
+                                .offset(x: -2, y: 4)
+                        } else if hasNotifications {
                             Circle()
                                 .fill(Color.brandSuccess)
                                 .frame(width: 10, height: 10)
@@ -182,7 +197,8 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .glassCircle()
-            .accessibilityLabel(hasNotifications ? "Notifications, new" : "Notifications")
+            .accessibilityLabel(notificationService.unreadCount > 0 || hasNotifications
+                                ? "Notifications, new" : "Notifications")
 
             Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
                 avatarCircle
