@@ -56,10 +56,17 @@ struct PRVIOApp: App {
                 case .active:
                     lock.didBecomeActive()
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
-                    // Process quick action from cold launch (stored by AppDelegate before SwiftUI was ready)
+                    // Process quick action from cold launch (stored by AppDelegate before SwiftUI was ready).
+                    // Defer so MainTabView has mounted — an immediate tab/sheet change on
+                    // cold launch is overridden by the initial mount (same reason the
+                    // Finances quick action delays its tab switch), so the shortcut
+                    // appeared to "do nothing".
                     if let quickAction = UserDefaults.standard.string(forKey: "prvio.pendingQuickAction") {
                         UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
-                        router.handle(quickActionType: quickAction)
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(500))
+                            router.handle(quickActionType: quickAction)
+                        }
                     }
                     // Process App Intent-triggered actions. Flags live in the
                     // app-group suite so intents running in the widget-extension

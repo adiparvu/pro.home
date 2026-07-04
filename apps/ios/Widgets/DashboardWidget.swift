@@ -20,9 +20,22 @@ struct DashboardWidget: Widget {
 
 private struct AerialBackground: View {
     var body: some View {
-        Image("aerial_property")
-            .resizable()
-            .scaledToFill()
+        ZStack {
+            // Premium branded gradient base — always renders, so the widget looks
+            // intentional even if the aerial image can't load in the extension.
+            LinearGradient(
+                colors: [Color(red: 0.16, green: 0.20, blue: 0.52),
+                         Color(red: 0.28, green: 0.22, blue: 0.60),
+                         Color(red: 0.36, green: 0.20, blue: 0.68)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            RadialGradient(colors: [.white.opacity(0.14), .clear],
+                           center: .topTrailing, startRadius: 8, endRadius: 320)
+            // The property photo on top when available.
+            Image("aerial_property")
+                .resizable()
+                .scaledToFill()
+        }
     }
 }
 
