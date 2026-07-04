@@ -35,10 +35,14 @@ struct DocumentModel: Identifiable, Codable {
         switch category {
         case "warranty":    return "checkmark.seal.fill"
         case "contract":    return "doc.text.fill"
+        case "legal":       return "building.columns.fill"
         case "insurance":   return "shield.fill"
         case "certificate": return "rosette"
         case "manual":      return "book.fill"
         case "invoice":     return "receipt.fill"
+        case "permit":      return "checkmark.shield.fill"
+        case "tax":         return "percent"
+        case "utility":     return "bolt.fill"
         case "photo":       return "photo.fill"
         default:            return "doc.fill"
         }

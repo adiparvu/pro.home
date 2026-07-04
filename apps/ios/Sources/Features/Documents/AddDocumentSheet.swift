@@ -29,8 +29,8 @@ struct AddDocumentSheet: View {
     @State private var isScanning = false
     @State private var scanPickerItem: PhotosPickerItem? = nil
 
-    private let categories = ["contract", "warranty", "insurance", "certificate",
-                               "manual", "invoice", "photo", "other"]
+    private let categories = ["contract", "legal", "warranty", "insurance", "certificate",
+                               "manual", "invoice", "permit", "tax", "utility", "photo", "other"]
 
     var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && pickedFileData != nil }
 
