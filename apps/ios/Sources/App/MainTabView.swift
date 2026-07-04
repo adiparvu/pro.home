@@ -392,6 +392,9 @@ struct MainTabView: View {
         SharedDataStore.writeSupplyCatalog(
             supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }
         )
+        // Context for in-app intents (Shortcuts "send message to chat").
+        SharedDataStore.setContext(propertyId: propertyService.primary?.id,
+                                   myName: profileService.profile?.preferredName)
         WidgetCenter.shared.reloadAllTimelines()
     }
 

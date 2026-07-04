@@ -37225,6 +37225,486 @@
           }
         }
       }
+    },
+    "Cross-app messaging": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cross-app messaging"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversații inter-aplicații"
+          }
+        }
+      }
+    },
+    "Enable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activează"
+          }
+        }
+      }
+    },
+    "Lets other apps and services send messages into your house chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets other apps and services send messages into your house chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite altor aplicații și servicii să trimită mesaje în chatul casei."
+          }
+        }
+      }
+    },
+    "CONNECTION": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONNECTION"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CONEXIUNE"
+          }
+        }
+      }
+    },
+    "Endpoint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpoint"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpoint"
+          }
+        }
+      }
+    },
+    "Secret token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secret token"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token secret"
+          }
+        }
+      }
+    },
+    "Rotate token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate token"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenerează tokenul"
+          }
+        }
+      }
+    },
+    "Any app that can send a POST request can deliver messages: Shortcuts automations, Zapier, IFTTT, a home server. Rotating the token instantly disconnects everything using the old one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any app that can send a POST request can deliver messages: Shortcuts automations, Zapier, IFTTT, a home server. Rotating the token instantly disconnects everything using the old one."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orice aplicație care poate trimite un POST poate livra mesaje: automatizări Shortcuts, Zapier, IFTTT, un server de acasă. Regenerarea tokenului deconectează instant tot ce folosea tokenul vechi."
+          }
+        }
+      }
+    },
+    "MESSAGE FORMAT": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MESSAGE FORMAT"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FORMATUL MESAJULUI"
+          }
+        }
+      }
+    },
+    "Copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiat"
+          }
+        }
+      }
+    },
+    "Send test message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send test message"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite mesaj de test"
+          }
+        }
+      }
+    },
+    "Sent — check the chat!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent — check the chat!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimis — verifică chatul!"
+          }
+        }
+      }
+    },
+    "Notify on external messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notify on external messages"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notificare la mesaje externe"
+          }
+        }
+      }
+    },
+    "External messages appear in chat marked with ⥂ and the sender's app name.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External messages appear in chat marked with ⥂ and the sender's app name."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesajele externe apar în chat marcate cu ⥂ și numele aplicației expeditoare."
+          }
+        }
+      }
+    },
+    "IDEAS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IDEAS"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IDEI"
+          }
+        }
+      }
+    },
+    "Shortcuts automations": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcuts automations"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatizări Shortcuts"
+          }
+        }
+      }
+    },
+    "\"When I leave work → send 'Plec spre casă' to the chat\" — use Get Contents of URL with the format above.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"When I leave work → send 'Plec spre casă' to the chat\" — use Get Contents of URL with the format above."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Când plec de la birou → trimite «Plec spre casă» în chat” — folosește Get Contents of URL cu formatul de mai sus."
+          }
+        }
+      }
+    },
+    "Zapier / IFTTT": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapier / IFTTT"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapier / IFTTT"
+          }
+        }
+      }
+    },
+    "Connect Gmail, Telegram bots, smart-home alarms — anything with a webhook action.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Gmail, Telegram bots, smart-home alarms — anything with a webhook action."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectează Gmail, boți de Telegram, alarme smart-home — orice are o acțiune de webhook."
+          }
+        }
+      }
+    },
+    "Home server / IoT": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home server / IoT"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server de acasă / IoT"
+          }
+        }
+      }
+    },
+    "Scripts, Home Assistant or a Raspberry Pi can post sensor alerts straight into the chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scripts, Home Assistant or a Raspberry Pi can post sensor alerts straight into the chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scripturi, Home Assistant sau un Raspberry Pi pot posta alerte de la senzori direct în chat."
+          }
+        }
+      }
+    },
+    "Test PRVIO": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test PRVIO"
+          }
+        }
+      }
+    },
+    "Cross-app messaging works! 🎉": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cross-app messaging works! 🎉"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesageria inter-aplicații funcționează! 🎉"
+          }
+        }
+      }
+    },
+    "Send message to chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send message to chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite mesaj în chat"
+          }
+        }
+      }
+    },
+    "Sends a message into the PRVIO house chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends a message into the PRVIO house chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimite un mesaj în chatul casei PRVIO"
+          }
+        }
+      }
+    },
+    "Nothing to send.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to send."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimic de trimis."
+          }
+        }
+      }
+    },
+    "Open PRVIO once to finish setup, then try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open PRVIO once to finish setup, then try again."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide PRVIO o dată pentru configurare, apoi încearcă din nou."
+          }
+        }
+      }
+    },
+    "Sent to the house chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to the house chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trimis în chatul casei."
+          }
+        }
+      }
+    },
+    "Me": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eu"
+          }
+        }
+      }
+    },
+    "The text to send": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The text to send"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Textul de trimis"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

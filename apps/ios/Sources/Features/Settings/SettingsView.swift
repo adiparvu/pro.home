@@ -320,6 +320,7 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "arrow.left.arrow.right.circle.fill", color: .green, label: "Cross-app messaging") {
                 InterAppChatView()
+                    .environment(propertyService)
             }
         }
     }

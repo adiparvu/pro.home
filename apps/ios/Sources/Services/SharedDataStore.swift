@@ -144,6 +144,27 @@ enum SharedDataStore {
         return ids
     }
 
+    // MARK: App context for in-app intents (primary property + display name)
+
+    private static let contextPropertyIdKey = "prvio.context.propertyId"
+    private static let contextMyNameKey     = "prvio.context.myName"
+
+    static func setContext(propertyId: UUID?, myName: String?) {
+        guard let ud = UserDefaults(suiteName: suiteName) else { return }
+        ud.set(propertyId?.uuidString, forKey: contextPropertyIdKey)
+        ud.set(myName, forKey: contextMyNameKey)
+    }
+
+    static func contextPropertyId() -> UUID? {
+        guard let ud = UserDefaults(suiteName: suiteName),
+              let s = ud.string(forKey: contextPropertyIdKey) else { return nil }
+        return UUID(uuidString: s)
+    }
+
+    static func contextMyName() -> String? {
+        UserDefaults(suiteName: suiteName)?.string(forKey: contextMyNameKey)
+    }
+
     // MARK: Intent flags (widget/Shortcuts process → app process)
     //
     // Written from whichever process runs the App Intent. The app-group suite is
