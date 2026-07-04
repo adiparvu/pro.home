@@ -24,11 +24,11 @@ struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://chat")!)) {
-                Label("Family Chat", systemImage: "message.fill")
+                Label("Chat", systemImage: "message.fill")
             }
         }
-        .displayName("Family Chat")
-        .description("Open the family chat in PRVIO.")
+        .displayName("Chat")
+        .description("Open the chat in PRVIO.")
     }
 }
 

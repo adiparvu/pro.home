@@ -201,8 +201,8 @@ struct LockScreenMessagesWidget: Widget {
         StaticConfiguration(kind: kind, provider: PRVIOTimelineProvider()) { entry in
             LockScreenMessagesView(entry: entry)
         }
-        .configurationDisplayName("Family Chat (Lock Screen)")
-        .description("Unread messages in the family chat.")
+        .configurationDisplayName("Chat (Lock Screen)")
+        .description("Unread messages in chat.")
         .supportedFamilies([.accessoryCircular])
     }
 }

@@ -498,10 +498,10 @@ struct MainTabView: View {
             ))
         }
 
-        // 4. Family Chat
+        // 4. Chat
         items.append(UIApplicationShortcutItem(
             type: "com.prvio.action.chat",
-            localizedTitle: String(localized: "Family Chat"),
+            localizedTitle: String(localized: "Chat"),
             localizedSubtitle: nil,
             icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill")
         ))

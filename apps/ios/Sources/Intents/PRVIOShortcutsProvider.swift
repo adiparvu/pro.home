@@ -54,10 +54,10 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: OpenChatIntent(),
             phrases: [
-                "Open family chat in \(.applicationName)",
-                "Family chat in \(.applicationName)"
+                "Open chat in \(.applicationName)",
+                "Chat in \(.applicationName)"
             ],
-            shortTitle: "Family chat",
+            shortTitle: "Chat",
             systemImageName: "message.fill"
         )
         AppShortcut(

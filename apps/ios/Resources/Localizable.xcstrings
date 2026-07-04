@@ -36569,6 +36569,86 @@
           }
         }
       }
+    },
+    "Chat (Lock Screen)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat (Lock Screen)"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat (ecran blocat)"
+          }
+        }
+      }
+    },
+    "Unread messages in chat.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread messages in chat."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaje necitite în chat."
+          }
+        }
+      }
+    },
+    "Open the chat in PRVIO.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the chat in PRVIO."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide chatul în PRVIO."
+          }
+        }
+      }
+    },
+    "Open the chat in PRVIO": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the chat in PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide chatul în PRVIO"
+          }
+        }
+      }
+    },
+    "New messages in chat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New messages in chat"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaje noi în chat"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

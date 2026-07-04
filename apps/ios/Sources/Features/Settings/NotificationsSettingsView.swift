@@ -127,7 +127,7 @@ struct NotificationsSettingsView: View {
             group("COMMUNICATION") {
                 NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
                                title: "Family chat",
-                               subtitle: "New messages in the family chat",
+                               subtitle: "New messages in chat",
                                value: bind(\.chatMessages))
                 divider
                 NotifToggleRow(icon: "at", color: .purple,
