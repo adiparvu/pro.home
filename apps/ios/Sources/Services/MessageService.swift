@@ -17,6 +17,10 @@ final class MessageService {
     var reactions: [UUID: [MessageReaction]] = [:]
 
     private var realtimeChannel: RealtimeChannelV2?
+    /// Property the main messages channel is bound to. Makes subscribeRealtime
+    /// idempotent so the chat tab and the open thread can both ask for it
+    /// without stacking channels or tearing a live one down.
+    private var subscribedPropertyId: UUID?
     private var readsChannel: RealtimeChannelV2?
     private var deliveriesChannel: RealtimeChannelV2?
     private var reactionsChannel: RealtimeChannelV2?
@@ -151,6 +155,10 @@ final class MessageService {
     }
 
     func subscribeRealtime(propertyId: UUID) async {
+        // Idempotent: keep a single live channel for the chat session so opening
+        // a thread never tears down the tab-level subscription (and vice-versa).
+        if realtimeChannel != nil, subscribedPropertyId == propertyId { return }
+        if realtimeChannel != nil { await unsubscribe() }
         let channel = supabase.realtimeV2.channel("messages:\(propertyId.uuidString)")
         // Callbacks must be registered before subscribing.
         postgresSubs.append(channel.onPostgresChange(
@@ -176,13 +184,24 @@ final class MessageService {
         }
         try? await channel.subscribeWithError()
         realtimeChannel = channel
+        subscribedPropertyId = propertyId
     }
 
     func unsubscribe() async {
+        subscribedPropertyId = nil
         if let ch = realtimeChannel {
             await supabase.realtimeV2.removeChannel(ch)
             realtimeChannel = nil
         }
+    }
+
+    /// Unread group messages from others since this device last had the chat
+    /// open — derived from the persisted last-seen marker so it stays correct
+    /// no matter which screen is showing (unlike the incremental `unreadCount`,
+    /// which only ticked while ChatView itself was on-screen and reset there).
+    func groupUnread(propertyId: UUID, myId: UUID?) -> Int {
+        let seen = lastSeen(propertyId: propertyId)
+        return messages.filter { $0.senderId != myId && ($0.date ?? .distantPast) > seen }.count
     }
 
     func deleteMessage(id: UUID) async {

@@ -5,9 +5,13 @@ struct TasksView: View {
     @Environment(PropertyService.self) private var propertyService
     @Environment(DocumentService.self) private var documentService
     @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
+    @Environment(FamilyService.self) private var familyService
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
+    /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
+    @State private var deepLinkedTask: MaintenanceTask?
 
     enum TaskFilter: String, CaseIterable {
         case all = "All"
@@ -143,6 +147,17 @@ struct TasksView: View {
                 .environment(taskService)
                 .environment(propertyService)
         }
+        // Deep link: open the specific task the notification / Spotlight / URL
+        // pointed at. Resolve on both the id arriving and the task list loading,
+        // so it works whether the tab was already open or cold-launched.
+        .sheet(item: $deepLinkedTask) { task in
+            AddTaskView(editing: task)
+                .environment(taskService)
+                .environment(propertyService)
+                .environment(familyService)
+        }
+        .onChange(of: router.deepLinkTaskId) { resolveTaskDeepLink() }
+        .task(id: taskService.tasks.count) { resolveTaskDeepLink() }
         .alert("Error", isPresented: Binding(
             get: { taskService.error != nil },
             set: { if !$0 { taskService.error = nil } }
@@ -158,6 +173,13 @@ struct TasksView: View {
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
         }
+    }
+
+    private func resolveTaskDeepLink() {
+        guard let id = router.deepLinkTaskId,
+              let task = taskService.tasks.first(where: { $0.id == id }) else { return }
+        deepLinkedTask = task
+        router.deepLinkTaskId = nil
     }
 
     private func countFor(_ f: TaskFilter) -> Int {

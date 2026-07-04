@@ -235,6 +235,14 @@ struct DirectMessageView: View {
             .ignoresSafeArea()
             .background(Color.black.ignoresSafeArea())
         }
+        // Ensure the DM realtime channel is live while the thread is open — the
+        // conversation list's teardown must never leave an open thread silent.
+        // subscribeRealtime is idempotent, so this is a no-op when already live.
+        .task {
+            guard let pid = propertyService.primary?.id else { return }
+            directMessageService.myName = myName
+            await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+        }
         .onAppear {
             // Freeze the prior last-seen BEFORE markRead overwrites it, so the
             // divider marks where this session started — not messages that

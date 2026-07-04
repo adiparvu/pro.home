@@ -322,8 +322,10 @@ struct ChatView: View {
             // Remember we've now seen everything, so the next open computes the
             // unread divider from this point forward.
             if let pid = propertyId { messageService.markSeen(propertyId: pid) }
+            // The main messages channel is owned by the chat tab (ConversationsView)
+            // so the conversation list keeps its preview + unread badge live; only
+            // the per-message receipt channels are thread-scoped, so tear those down.
             Task {
-                await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
                 await messageService.unsubscribeDeliveries()
                 await messageService.unsubscribeReactions()

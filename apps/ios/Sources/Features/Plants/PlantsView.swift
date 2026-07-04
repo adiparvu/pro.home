@@ -6,6 +6,7 @@ struct PlantsView: View {
     @Environment(PlantService.self) private var plantService
     @Environment(PropertyService.self) private var propertyService
     @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
@@ -62,6 +63,10 @@ struct PlantsView: View {
                 await plantService.load(propertyId: id)
             }
         }
+        // Deep link: a garden notification / Spotlight / prvio://plants/<id> opens
+        // this sheet and asks for a specific plant — resolve once loaded.
+        .onChange(of: router.deepLinkPlantId) { resolvePlantDeepLink() }
+        .task(id: plantService.plants.count) { resolvePlantDeepLink() }
         .refreshable {
             if let id = propertyService.primary?.id {
                 await plantService.load(propertyId: id)
@@ -73,6 +78,13 @@ struct PlantsView: View {
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
         }
+    }
+
+    private func resolvePlantDeepLink() {
+        guard let id = router.deepLinkPlantId,
+              let plant = plantService.plants.first(where: { $0.id == id }) else { return }
+        selectedPlant = plant
+        router.deepLinkPlantId = nil
     }
 
     // MARK: - Main content

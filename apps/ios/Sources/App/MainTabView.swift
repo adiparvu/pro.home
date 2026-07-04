@@ -371,7 +371,9 @@ struct MainTabView: View {
         snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
         snapshot.propertyName = propertyService.primary?.name
         snapshot.pendingSupplyCount = supplyService.totalPending
-        snapshot.unreadMessages = messageService.unreadCount
+        snapshot.unreadMessages = propertyService.primary.map {
+            messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
+        } ?? 0
         snapshot.propertyHealthScore = propertyService.primary?.healthScore
         snapshot.criticalTaskTitle = taskService.tasks.first { $0.isOverdue && !$0.isCompleted }?.title
         let upcoming = taskService.tasks

@@ -218,6 +218,15 @@ struct ConversationsView: View {
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
             await syncRemotePrefs()
         }
+        .task {
+            // Keep the group conversation preview + unread badge live from the
+            // list itself, so they're correct even when the group thread was
+            // never opened this session (idempotent subscribe).
+            guard let pid = propertyService.primary?.id else { return }
+            messageService.myName = myName
+            await messageService.load(propertyId: pid)
+            await messageService.subscribeRealtime(propertyId: pid)
+        }
         .onAppear { loadFlags() }
         .navigationDestination(item: $navTarget) { id in
             if id == "group" {
@@ -226,9 +235,11 @@ struct ConversationsView: View {
                 DirectMessageView(member: member)
             }
         }
-        .onDisappear {
-            Task { await directMessageService.unsubscribe() }
-        }
+        // NB: no unsubscribe here. Pushing a DM thread fires this view's
+        // onDisappear, and tearing the channel down there left the open thread
+        // silent until you popped back. The channel is property-scoped and
+        // lightweight, so it stays live for the chat session (re-subscribing is
+        // idempotent); it's cleaned up when the service is torn down.
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
                                  propertyName: propertyService.primary?.name)
@@ -668,7 +679,9 @@ struct ConversationsView: View {
             name: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? "Chat Grup",
             preview: groupPreview,
             date: lastGroupMsg.flatMap { parseISODate($0.createdAt) },
-            unread: messageService.unreadCount,
+            unread: propertyService.primary.map {
+                messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
+            } ?? 0,
             isGroup: true,
             member: nil
         ))

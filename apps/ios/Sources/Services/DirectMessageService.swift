@@ -65,6 +65,10 @@ final class DirectMessageService {
     private var localRevision = 0
 
     @ObservationIgnored private var channel: RealtimeChannelV2?
+    /// Property the live channel is currently bound to, so repeated
+    /// subscribe calls (re-entering the chat tab, opening a thread) are no-ops
+    /// instead of stacking duplicate channels or tearing down a live one.
+    @ObservationIgnored private var subscribedPropertyId: UUID?
     /// Retained postgres-change subscription handles (see MessageService).
     /// onPostgresChange's handle removes its callback on deinit, so it must be
     /// held for the callback to keep firing; cleared on unsubscribe.
@@ -177,6 +181,10 @@ final class DirectMessageService {
     }
 
     func subscribeRealtime(propertyId: UUID, myName: String) async {
+        // Idempotent: already live for this property → keep it (don't let a
+        // navigation push/pop tear down the channel while a thread is open).
+        if channel != nil, subscribedPropertyId == propertyId { return }
+        if channel != nil { await unsubscribe() }
         let ch = supabase.realtimeV2.channel("direct_messages:\(propertyId.uuidString)")
         // Inserts and updates (reactions, read receipts, pin/mark, edit,
         // delete-for-all) both just reload the conversation. Callbacks must be
@@ -204,10 +212,16 @@ final class DirectMessageService {
         }
         try? await ch.subscribeWithError()
         channel = ch
+        subscribedPropertyId = propertyId
     }
 
     func unsubscribe() async {
         postgresSubs.removeAll()
+        typingSub = nil
+        typingTasks.values.forEach { $0.cancel() }
+        typingTasks.removeAll()
+        typingNames.removeAll()
+        subscribedPropertyId = nil
         if let ch = channel {
             await supabase.realtimeV2.removeChannel(ch)
             channel = nil
