@@ -119,17 +119,42 @@ struct NewContractor: Encodable {
     }
 }
 
+// Per-device contractor favorites (like starred documents).
+enum ContractorFavoritesStore {
+    private static let key = "prvio.contractor.favorites"
+    static func ids() -> Set<String> { Set(UserDefaults.standard.stringArray(forKey: key) ?? []) }
+    static func isFavorite(_ id: UUID) -> Bool { ids().contains(id.uuidString) }
+    @discardableResult
+    static func toggle(_ id: UUID) -> Bool {
+        var s = ids()
+        let now: Bool
+        if s.contains(id.uuidString) { s.remove(id.uuidString); now = false }
+        else { s.insert(id.uuidString); now = true }
+        UserDefaults.standard.set(Array(s), forKey: key)
+        return now
+    }
+}
+
 struct ContractorsView: View {
     @Environment(ContractorService.self) private var service
     @Environment(AuthService.self) private var auth
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedContractor: ContractorModel? = nil
+    @State private var editContractor: ContractorModel? = nil
     @State private var search = ""
+    @State private var favoritesOnly = false
+    @State private var favRefresh = 0
 
     var filtered: [ContractorModel] {
-        guard !search.isEmpty else { return service.contractors }
-        return service.contractors.filter {
+        _ = favRefresh
+        var list = service.contractors
+        if favoritesOnly {
+            let favs = ContractorFavoritesStore.ids()
+            list = list.filter { favs.contains($0.id.uuidString) }
+        }
+        guard !search.isEmpty else { return list }
+        return list.filter {
             $0.name.localizedCaseInsensitiveContains(search) ||
             $0.specialty.localizedCaseInsensitiveContains(search)
         }
@@ -165,17 +190,43 @@ struct ContractorsView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 10) {
                             ForEach(filtered) { c in
-                                ContractorRow(contractor: c)
+                                ContractorRow(contractor: c,
+                                              isFavorite: ContractorFavoritesStore.isFavorite(c.id))
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         HapticFeedback.selection()
                                         selectedContractor = c
+                                    }
+                                    .contextMenu {
+                                        if let phone = c.phone, !phone.isEmpty {
+                                            Button { call(phone) } label: { Label("Call", systemImage: "phone.fill") }
+                                        }
+                                        Button { editContractor = c } label: { Label("Edit", systemImage: "pencil") }
+                                        Button {
+                                            HapticFeedback.selection()
+                                            ContractorFavoritesStore.toggle(c.id); favRefresh += 1
+                                        } label: {
+                                            Label(ContractorFavoritesStore.isFavorite(c.id) ? "Remove from favorites" : "Add to favorites",
+                                                  systemImage: ContractorFavoritesStore.isFavorite(c.id) ? "star.slash" : "star")
+                                        }
+                                        Divider()
+                                        Button(role: .destructive) {
+                                            HapticFeedback.warning(); Task { await service.delete(c) }
+                                        } label: { Label("Delete", systemImage: "trash") }
                                     }
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             HapticFeedback.warning()
                                             Task { await service.delete(c) }
                                         } label: { Label("Delete", systemImage: "trash") }
+                                    }
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            HapticFeedback.selection()
+                                            ContractorFavoritesStore.toggle(c.id); favRefresh += 1
+                                        } label: {
+                                            Label("Favorite", systemImage: "star")
+                                        }.tint(.yellow)
                                     }
                             }
                         }
@@ -191,6 +242,9 @@ struct ContractorsView: View {
         .sheet(item: $selectedContractor) { c in
             ContractorDetailSheet(contractor: c, service: service)
         }
+        .sheet(item: $editContractor) { c in
+            EditContractorSheet(contractor: c, service: service)
+        }
         .alert("Error", isPresented: Binding(
             get: { service.error != nil },
             set: { if !$0 { service.error = nil } }
@@ -204,23 +258,49 @@ struct ContractorsView: View {
         .floatingSpeedDial(.contractors)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                    Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
+                HStack(spacing: 2) {
+                    Button {
+                        withAnimation(.snappy) { favoritesOnly.toggle() }
+                        HapticFeedback.selection()
+                    } label: {
+                        Image(systemName: favoritesOnly ? "star.fill" : "star")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(favoritesOnly ? .yellow : .primary)
+                            .frame(width: 34, height: 32)
+                    }
+                    .accessibilityLabel(favoritesOnly ? "Show all contractors" : "Show favorites")
+                    Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
+                        Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
+                            .frame(width: 34, height: 32)
+                    }
+                    .accessibilityLabel("Add contractor")
                 }
-                .accessibilityLabel("Add contractor")
             }
+        }
+    }
+
+    private func call(_ phone: String) {
+        HapticFeedback.impact(.light)
+        if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
+            UIApplication.shared.open(url)
         }
     }
 }
 
 private struct ContractorRow: View {
     let contractor: ContractorModel
+    var isFavorite: Bool = false
     var body: some View {
         GlassCard {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary)
+                    HStack(spacing: 6) {
+                        Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary)
+                        if isFavorite {
+                            Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(.yellow)
+                        }
+                    }
                     Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()

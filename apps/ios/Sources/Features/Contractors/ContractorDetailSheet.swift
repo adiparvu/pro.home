@@ -257,7 +257,7 @@ struct ContractorDetailSheet: View {
 
 // MARK: - Edit Contractor Sheet
 
-private struct EditContractorSheet: View {
+struct EditContractorSheet: View {
     let contractor: ContractorModel
     var service: ContractorService
     @Environment(\.dismiss) private var dismiss
