@@ -129,23 +129,27 @@ struct AppIconPickerView: View {
                 HapticFeedback.success()
                 iconManager.select(current, isDark: colorScheme == .dark)
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: isApplied ? "checkmark.circle.fill" : "square.and.arrow.down.on.square")
+                HStack(spacing: 7) {
+                    Image(systemName: isApplied ? "checkmark.circle.fill" : "square.and.arrow.down")
+                        .font(.system(size: 14, weight: .semibold))
                     Text(isApplied ? (ro ? "Aplicată" : "Applied")
-                                   : (ro ? "Aplică această iconiță" : "Apply this icon"))
+                                   : (ro ? "Aplică iconița" : "Apply icon"))
                         .font(AppFont.subheadline)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 15)
+                // A compact centered pill, not a full-width bar.
+                .padding(.horizontal, 26)
+                .padding(.vertical, 12)
                 .foregroundStyle(isApplied ? Color.primary : .white)
                 .background(
                     isApplied ? AnyShapeStyle(.ultraThinMaterial)
                               : AnyShapeStyle(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
                                                              startPoint: .leading, endPoint: .trailing)),
-                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    in: Capsule()
                 )
+                .shadow(color: isApplied ? .clear : Color.accentColor.opacity(0.3), radius: 12, y: 5)
             }
             .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
             .disabled(isApplied)
             .animation(.snappy, value: isApplied)
         }
@@ -181,37 +185,41 @@ private struct IconSlide: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer(minLength: 0)
 
-            // Artwork — pair shows light + dark, single shows one.
+            // Artwork — a paired theme shows its light + dark faces side by side
+            // (no per-icon labels; the auto-switch toggle below explains it),
+            // a single theme shows one large icon.
             HStack(spacing: 18) {
-                IconArtwork(name: theme.lightPreview, size: theme.hasPair ? 118 : 172)
-                    .overlay(alignment: .bottom) { if theme.hasPair { modeTag("sun.max.fill", ro ? "Zi" : "Day") } }
+                IconArtwork(name: theme.lightPreview, size: theme.hasPair ? 122 : 176)
                 if let dark = theme.darkPreview {
-                    IconArtwork(name: dark, size: 118)
-                        .overlay(alignment: .bottom) { modeTag("moon.stars.fill", ro ? "Noapte" : "Night") }
+                    IconArtwork(name: dark, size: 122)
                 }
             }
             .scaleEffect(isCurrent ? 1 : 0.9)
             .animation(.smooth, value: isCurrent)
 
-            Text(theme.name)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            VStack(spacing: 6) {
+                Text(theme.name)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                // Fills the space under the name and tells the user what the pair
+                // means without cluttering the icons with badges.
+                if theme.hasPair {
+                    Label(ro ? "Se adaptează la tema telefonului" : "Adapts to your theme",
+                          systemImage: "circle.lefthalf.filled")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(theme.category.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             Spacer(minLength: 0)
         }
-    }
-
-    private func modeTag(_ icon: String, _ text: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 8))
-            Text(text).font(.system(size: 9, weight: .semibold))
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 7).padding(.vertical, 3)
-        .background(.black.opacity(0.35), in: Capsule())
-        .offset(y: 10)
     }
 }
 

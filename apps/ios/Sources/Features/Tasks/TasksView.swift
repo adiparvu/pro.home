@@ -393,6 +393,13 @@ struct TaskRowView: View {
                     lineWidth: 0.5
                 )
         )
+        // Tapping the row (anywhere but the checkbox) opens the task's details.
+        // The checkbox Button consumes its own taps, so completion still works.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            HapticFeedback.impact(.light)
+            showEdit = true
+        }
         .contextMenu {
             Button {
                 HapticFeedback.impact(.light)
