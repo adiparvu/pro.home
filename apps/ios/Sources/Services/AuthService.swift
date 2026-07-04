@@ -78,6 +78,30 @@ final class AuthService {
         }
     }
 
+    /// Invited accounts are created with `needs_password: true` in their user
+    /// metadata (send-invite-email). Until they set one, the app forces the
+    /// strong-password screen — an invite link alone must not become a
+    /// passwordless account someone else could reuse later.
+    var needsPasswordSetup: Bool {
+        guard let meta = session?.user.userMetadata else { return false }
+        if case .bool(true) = meta["needs_password"] { return true }
+        return false
+    }
+
+    func completePasswordSetup(password: String) async throws {
+        let user = try await supabase.auth.update(user: UserAttributes(
+            password: password,
+            data: ["needs_password": .bool(false)]
+        ))
+        // authStateChanges emits .userUpdated too; set directly so the cover
+        // dismisses without waiting on the stream.
+        if var s = session {
+            s.user = user
+            session = s
+        }
+        AuditLogService.AuditEvent.record("security", String(localized: "Password set for invited account"))
+    }
+
     func signOut() async throws {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
         try await supabase.auth.signOut()

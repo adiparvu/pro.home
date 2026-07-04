@@ -115,6 +115,22 @@ serve(async (req) => {
       }), { status: 503, headers: { ...CORS, 'Content-Type': 'application/json' } })
     }
 
+    // Audit trail for the Members hub: replace any previous invitation for this
+    // email so created_at/expires_at reflect the LATEST send.
+    if (propertyId && caller) {
+      await admin.from('member_invitations')
+        .delete()
+        .eq('property_id', propertyId)
+        .ilike('email', to)
+      await admin.from('member_invitations').insert({
+        property_id: propertyId,
+        email: to,
+        name: name ?? null,
+        role: role ?? 'guest',
+        invited_by: caller.id,
+      })
+    }
+
     let actionLink: string | undefined
     let invitedUserId: string | undefined
     const { data: inviteLink, error: inviteErr } = await admin.auth.admin.generateLink({
@@ -127,6 +143,8 @@ serve(async (req) => {
           invited_role: role ?? 'member',
           invited_name: name,
           full_name: name ?? '',
+          // Forces the strong-password setup screen on first sign-in.
+          needs_password: true,
         },
       },
     })

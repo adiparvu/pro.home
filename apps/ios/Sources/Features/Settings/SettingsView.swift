@@ -300,14 +300,10 @@ struct SettingsView: View {
 
     private var familySection: some View {
         SettingsGroup(title: "Family & Chat") {
-            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Family Members") {
-                FamilyView()
+            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
+                MembersHubView()
                     .environment(familyService)
                     .environment(propertyService)
-            }
-            NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supervision") {
-                SupervisionView()
-                    .environment(familyService)
             }
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
                 Group {

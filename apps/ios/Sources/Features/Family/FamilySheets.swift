@@ -12,6 +12,15 @@ let kRoleIcons: [String: String] = [
     "member": "person.fill", "tenant": "key.fill", "worker": "hammer.fill",
     "guest": "person.badge.clock"
 ]
+let kRoleDescriptions: [String: String] = [
+    "owner":   "Full access to everything",
+    "partner": "Full access, same as the owner",
+    "member":  "Family adult — home, tasks, finances",
+    "child":   "Limited access, with supervision",
+    "tenant":  "Sees own tasks and shared bills",
+    "worker":  "Sees only assigned tasks and chat",
+    "guest":   "Chat only — nothing from the home",
+]
 let kColors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter"]
 
@@ -171,8 +180,8 @@ struct AddFamilyMemberSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
                         .font(AppFont.subheadline).foregroundStyle(.primary)
-                    if role == "tenant" {
-                        Text("Limited access — tasks and chat")
+                    if let desc = kRoleDescriptions[role] {
+                        Text(LocalizedStringKey(desc))
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
@@ -246,12 +255,31 @@ struct AddFamilyMemberSheet: View {
                     }
                     Spacer()
                     Toggle("", isOn: $sendInvite).labelsHidden().tint(.accentColor)
+                        .disabled(!isEmailValid)
                 }
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             }
             .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+
+            if !isEmailValid {
+                Label("Enter a valid email to send the invitation", systemImage: "exclamationmark.circle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .padding(.leading, AppSpacing.xxs)
+            } else if sendInvite {
+                Label("The invitation is valid for 7 days; you can track and resend it from Members → Invitations.", systemImage: "clock")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .padding(.leading, AppSpacing.xxs)
+            }
         }
+    }
+
+    private var isEmailValid: Bool {
+        let e = email.trimmingCharacters(in: .whitespaces)
+        guard e.contains("@"), e.contains("."), e.count >= 6 else { return false }
+        return !e.hasPrefix("@") && !e.hasSuffix(".")
     }
 
     private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>,
@@ -318,7 +346,7 @@ struct AddFamilyMemberSheet: View {
         // Await the invite so a delivery failure is surfaced (member is already
         // added; the alert's OK dismisses). Previously fired-and-forgotten, which
         // hid every failure and made invitations silently vanish.
-        if sendInvite, !email.isEmpty {
+        if sendInvite, isEmailValid {
             if let err = await familyService.sendInvite(
                 to: email, name: name, role: role,
                 propertyId: propertyId, propertyName: propertyName) {

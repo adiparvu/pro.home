@@ -103,6 +103,15 @@ struct PRVIOApp: App {
                     router.handle(quickActionType: type)
                 }
             }
+            // Invited accounts must set a strong password on first sign-in.
+            .fullScreenCover(isPresented: Binding(
+                get: { auth.needsPasswordSetup },
+                set: { _ in }
+            )) {
+                ForcePasswordView()
+                    .environment(auth)
+                    .interactiveDismissDisabled()
+            }
             .onContinueUserActivity("com.prvio.task")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.plants")   { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.chat")     { router.handle(userActivity: $0) }
