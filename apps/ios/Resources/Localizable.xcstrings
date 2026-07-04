@@ -36537,6 +36537,38 @@
           }
         }
       }
+    },
+    "%d in transit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d in transit"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d în tranzit"
+          }
+        }
+      }
+    },
+    "Shopping List": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shopping List"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listă de cumpărături"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

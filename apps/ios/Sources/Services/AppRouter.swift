@@ -86,12 +86,25 @@ final class AppRouter {
     }
 
     func handle(quickActionType type: String) {
+        // "opentask" carries the task id in the type string ("…opentask:<uuid>")
+        // because userInfo doesn't survive the cold-launch UserDefaults hand-off.
+        if type.hasPrefix("com.prvio.action.opentask") {
+            selectedTab = .tasks
+            if let idStr = type.split(separator: ":").last, let id = UUID(uuidString: String(idStr)) {
+                deepLinkTaskId = id
+            }
+            return
+        }
         switch type {
-        case "com.prvio.action.addtask":  showAddTask = true
-        case "com.prvio.action.plants":   showWaterPlant = true
-        case "com.prvio.action.shopping": showAddSupply = true
-        case "com.prvio.action.chat":     selectedTab = .chat
-        case "com.prvio.action.scan":     showInventoryScan = true
+        case "com.prvio.action.addtask":    showAddTask = true
+        case "com.prvio.action.plants":     showWaterPlant = true
+        case "com.prvio.action.shopping":
+            // The list, not the add-item form — the shortcut says "Shopping List".
+            selectedTab = .settings
+            showSuppliesView = true
+        case "com.prvio.action.deliveries": showDeliveries = true
+        case "com.prvio.action.chat":       selectedTab = .chat
+        case "com.prvio.action.scan":       showInventoryScan = true
         default: break
         }
     }

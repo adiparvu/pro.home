@@ -434,25 +434,27 @@ struct MainTabView: View {
         // We set all 4 dynamically so content is always data-driven and contextual.
         var items: [UIApplicationShortcutItem] = []
 
-        // 1. Urgent/overdue task — highest priority signal
+        // 1. Urgent/overdue task — highest priority signal. Showing a task's
+        // title must open THAT task, so its id rides along in the type string
+        // (userInfo doesn't survive our cold-launch UserDefaults hand-off).
         if let task = taskService.tasks.first(where: { $0.isOverdue }) {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.addtask",
+                type: "com.prvio.action.opentask:\(task.id.uuidString)",
                 localizedTitle: task.title,
-                localizedSubtitle: "Overdue task",
+                localizedSubtitle: String(localized: "Overdue task"),
                 icon: UIApplicationShortcutIcon(systemImageName: "exclamationmark.circle.fill")
             ))
         } else if let task = taskService.tasks.first(where: { !$0.isCompleted }) {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.addtask",
+                type: "com.prvio.action.opentask:\(task.id.uuidString)",
                 localizedTitle: task.title,
-                localizedSubtitle: "Next task",
+                localizedSubtitle: String(localized: "Next task"),
                 icon: UIApplicationShortcutIcon(systemImageName: "checklist")
             ))
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.addtask",
-                localizedTitle: "New Task",
+                localizedTitle: String(localized: "New Task"),
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "plus.circle.fill")
             ))
@@ -461,8 +463,8 @@ struct MainTabView: View {
         // 2. Plant needing water — contextual
         if let plant = plantService.plantsNeedingWater.first {
             let subtitle = plantService.plantsNeedingWater.count > 1
-                ? "\(plantService.plantsNeedingWater.count) need water"
-                : "Needs water"
+                ? String(format: String(localized: "%d need water"), plantService.plantsNeedingWater.count)
+                : String(localized: "Needs water")
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.plants",
                 localizedTitle: plant.name,
@@ -472,24 +474,25 @@ struct MainTabView: View {
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.plants",
-                localizedTitle: "My Plants",
-                localizedSubtitle: plantService.plants.isEmpty ? nil : "All watered",
+                localizedTitle: String(localized: "My Plants"),
+                localizedSubtitle: plantService.plants.isEmpty ? nil : String(localized: "All watered"),
                 icon: UIApplicationShortcutIcon(systemImageName: "leaf.fill")
             ))
         }
 
-        // 3. Active delivery or shopping list
+        // 3. Active delivery or shopping list — each opens its OWN screen
+        // (the deliveries variant previously landed on the shopping form).
         if deliveryService.activeDeliveries.count > 0 {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.shopping",
-                localizedTitle: "Active Deliveries",
-                localizedSubtitle: "\(deliveryService.activeDeliveries.count) in transit",
+                type: "com.prvio.action.deliveries",
+                localizedTitle: String(localized: "Active Deliveries"),
+                localizedSubtitle: String(format: String(localized: "%d in transit"), deliveryService.activeDeliveries.count),
                 icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill")
             ))
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.shopping",
-                localizedTitle: "Shopping List",
+                localizedTitle: String(localized: "Shopping List"),
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "cart.fill")
             ))
@@ -498,7 +501,7 @@ struct MainTabView: View {
         // 4. Family Chat
         items.append(UIApplicationShortcutItem(
             type: "com.prvio.action.chat",
-            localizedTitle: "Family Chat",
+            localizedTitle: String(localized: "Family Chat"),
             localizedSubtitle: nil,
             icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill")
         ))
