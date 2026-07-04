@@ -69,10 +69,15 @@ extension ChatView {
             struct DMForward: Encodable {
                 let sender_name: String; let recipient_name: String
                 let body: String; let property_id: String?
+                // Required by direct_messages RLS: sender_id must equal the
+                // caller and recipient_member_id lets the recipient read it.
+                let sender_id: String?; let recipient_member_id: String
             }
             _ = try? await supabase.from("direct_messages").insert(
                 DMForward(sender_name: senderName, recipient_name: m.name,
-                          body: message.body ?? "📎", property_id: pid.uuidString)
+                          body: message.body ?? "📎", property_id: pid.uuidString,
+                          sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                          recipient_member_id: m.id.uuidString)
             ).execute()
         }
         HapticFeedback.success()

@@ -37,19 +37,45 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Authorize the inviter: only an active owner/partner of the property may
-    // invite people into it. Without this any authenticated user could grant
-    // themselves access to an arbitrary property by calling this with its id.
+    // Authorize the inviter BEFORE doing anything else. Inviting is always
+    // property-scoped: a valid caller who is an active owner/partner of a
+    // specific property. Enforcing this unconditionally (not only when a
+    // propertyId happens to be present) is what stops an attacker from
+    // omitting propertyId to reach generateLink/Resend and mint accounts or
+    // send branded phishing under our verified domain.
     const jwt = req.headers.get('Authorization')?.replace('Bearer ', '')
     const { data: callerData } = jwt ? await admin.auth.getUser(jwt) : { data: { user: null } }
     const caller = callerData?.user ?? null
+
+    if (!caller) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+        status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
+      })
+    }
+    if (!propertyId) {
+      return new Response(JSON.stringify({ error: 'Missing required field: propertyId' }), {
+        status: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
+      })
+    }
+    const { data: membership } = await admin
+      .from('property_members')
+      .select('role')
+      .eq('property_id', propertyId)
+      .eq('user_id', caller.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    if (!membership || !['owner', 'partner'].includes(membership.role)) {
+      return new Response(JSON.stringify({ error: 'Not authorized to invite for this property' }), {
+        status: 403, headers: { ...CORS, 'Content-Type': 'application/json' },
+      })
+    }
 
     // Resolve the inviter's display name from their profile so the email reads
     // "Adi invited you..." instead of exposing their raw email. Also grab their
     // locale as a language fallback when the client doesn't send one.
     let profileName: string | undefined
     let profileLocale: string | undefined
-    if (caller) {
+    {
       const { data: prof } = await admin
         .from('profiles')
         .select('display_name, full_name, first_name, last_name, locale')
@@ -59,26 +85,6 @@ serve(async (req) => {
         profileLocale = prof.locale ?? undefined
         const composed = [prof.first_name, prof.last_name].filter(Boolean).join(' ').trim()
         profileName = (prof.display_name?.trim() || prof.full_name?.trim() || composed) || undefined
-      }
-    }
-
-    if (propertyId) {
-      if (!caller) {
-        return new Response(JSON.stringify({ error: 'Not authenticated' }), {
-          status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
-        })
-      }
-      const { data: membership } = await admin
-        .from('property_members')
-        .select('role')
-        .eq('property_id', propertyId)
-        .eq('user_id', caller.id)
-        .eq('status', 'active')
-        .maybeSingle()
-      if (!membership || !['owner', 'partner'].includes(membership.role)) {
-        return new Response(JSON.stringify({ error: 'Not authorized to invite for this property' }), {
-          status: 403, headers: { ...CORS, 'Content-Type': 'application/json' },
-        })
       }
     }
 

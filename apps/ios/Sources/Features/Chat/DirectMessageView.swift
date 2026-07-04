@@ -971,6 +971,7 @@ struct DirectMessageView: View {
             if let pid = propertyService.primary?.id {
                 outbox.enqueue(PendingMessage(
                     propertyId: pid, senderName: myName, recipientName: member.name,
+                    recipientMemberId: member.id,
                     body: text, replyTo: replyUUID
                 ))
             }
@@ -985,7 +986,7 @@ struct DirectMessageView: View {
             struct P: Encodable {
                 let sender_name, recipient_name, body, property_id: String
                 let reply_to: String?
-                let sender_id, expires_at: String?
+                let sender_id, recipient_member_id, expires_at: String?
             }
             let obTtl = ChatDisappearStore.ttl(recipient)
             let obExpires = obTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(obTtl)) : nil
@@ -996,6 +997,7 @@ struct DirectMessageView: View {
                               body: pm.body ?? "", property_id: pid.uuidString,
                               reply_to: pm.replyTo?.uuidString,
                               sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                              recipient_member_id: pm.recipientMemberId?.uuidString,
                               expires_at: obExpires))
                     .select().single().execute().value
                 directMessageService.dms.append(sent)
