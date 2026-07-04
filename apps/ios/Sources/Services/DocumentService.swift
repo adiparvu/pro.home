@@ -116,6 +116,32 @@ final class DocumentService {
         }
     }
 
+    /// Update a document's editable metadata (name, category, critical flag,
+    /// expiry, description). The file itself is not touched.
+    func update(_ doc: DocumentModel) async {
+        struct Upd: Encodable {
+            let name: String
+            let category: String
+            let is_critical: Bool
+            let expires_at: String?
+            let description: String?
+        }
+        do {
+            try await supabase
+                .from("documents")
+                .update(Upd(name: doc.name, category: doc.category,
+                            is_critical: doc.isCritical, expires_at: doc.expiresAt,
+                            description: doc.description))
+                .eq("id", value: doc.id.uuidString)
+                .execute()
+            if let idx = documents.firstIndex(where: { $0.id == doc.id }) {
+                documents[idx] = doc
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     func delete(_ doc: DocumentModel) async {
         do {
             // Remove from storage

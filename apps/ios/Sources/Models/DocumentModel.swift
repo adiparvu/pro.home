@@ -1,6 +1,6 @@
 import Foundation
 
-struct DocumentModel: Identifiable, Codable {
+struct DocumentModel: Identifiable, Codable, Hashable {
     let id: UUID
     let propertyId: UUID
     var name: String

@@ -14,13 +14,22 @@ struct DocumentsView: View {
     @State private var errorToast: String?
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
+    @State private var selectedDoc: DocumentModel?
+    @State private var editDoc: DocumentModel?
+    // Bumped when a favorite toggles so the (UserDefaults-backed) filter/badges refresh.
+    @State private var favRefresh = 0
 
-    private let categories = ["All", "warranty", "contract", "insurance",
-                               "certificate", "manual", "invoice", "photo", "other"]
+    private let categories = ["All", "Favorite", "warranty", "contract", "legal", "insurance",
+                               "certificate", "manual", "invoice", "permit", "tax", "utility",
+                               "photo", "other"]
 
     var filteredDocuments: [DocumentModel] {
+        _ = favRefresh
         var docs = documentService.documents
-        if let cat = selectedCategory, cat != "All" {
+        if selectedCategory == "Favorite" {
+            let favs = DocumentFavoritesStore.ids()
+            docs = docs.filter { favs.contains($0.id.uuidString) }
+        } else if let cat = selectedCategory, cat != "All" {
             docs = docs.filter { $0.category == cat }
         }
         if !search.isEmpty {
@@ -54,14 +63,20 @@ struct DocumentsView: View {
                                 expiringBanner
                             }
                             ForEach(filteredDocuments) { doc in
-                                DocumentRow(doc: doc) {
-                                    openDocument(doc)
-                                } onShare: {
-                                    shareDocument(doc)
-                                } onDelete: {
-                                    docToDelete = doc
-                                    showDeleteConfirm = true
-                                }
+                                DocumentRow(
+                                    doc: doc,
+                                    isFavorite: DocumentFavoritesStore.isFavorite(doc.id),
+                                    onOpen: { selectedDoc = doc },
+                                    onPreview: { openDocument(doc) },
+                                    onShare: { shareDocument(doc) },
+                                    onDelete: { docToDelete = doc; showDeleteConfirm = true },
+                                    onFavorite: {
+                                        HapticFeedback.selection()
+                                        DocumentFavoritesStore.toggle(doc.id)
+                                        favRefresh += 1
+                                    },
+                                    onEdit: { editDoc = doc }
+                                )
                                 .padding(.horizontal, AppSpacing.xl)
                             }
                         }
@@ -105,6 +120,12 @@ struct DocumentsView: View {
                 AddDocumentSheet(propertyId: propertyId) { await documentService.load() }
                     .environment(documentService)
             }
+        }
+        .navigationDestination(item: $selectedDoc) { doc in
+            DocumentDetailView(doc: doc).environment(documentService)
+        }
+        .sheet(item: $editDoc) { doc in
+            EditDocumentSheet(doc: doc) { updated in Task { await documentService.update(updated) } }
         }
         .confirmationDialog("Delete \"\(docToDelete?.name ?? String(localized: "document"))\"?",
                             isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -232,31 +253,47 @@ struct DocumentsView: View {
 
     private func categoryIcon(for cat: String) -> String {
         switch cat {
+        case "Favorite":    return "star.fill"
         case "warranty":    return "checkmark.seal.fill"
         case "contract":    return "doc.text.fill"
+        case "legal":       return "building.columns.fill"
         case "insurance":   return "shield.fill"
         case "certificate": return "star.seal.fill"
         case "manual":      return "book.fill"
         case "invoice":     return "banknote.fill"
+        case "permit":      return "checkmark.shield.fill"
+        case "tax":         return "percent"
+        case "utility":     return "bolt.fill"
         case "photo":       return "photo.fill"
         default:            return "folder.fill"
         }
     }
 
     private func countFor(_ cat: String) -> Int {
-        documentService.documents.filter { $0.category == cat }.count
+        if cat == "Favorite" {
+            _ = favRefresh
+            let favs = DocumentFavoritesStore.ids()
+            return documentService.documents.filter { favs.contains($0.id.uuidString) }.count
+        }
+        return documentService.documents.filter { $0.category == cat }.count
     }
 
     private func docCategoryName(_ cat: String) -> String {
+        let ro = Locale.appIsRomanian
         switch cat {
-        case "warranty":    return "Garanție"
-        case "contract":    return "Contract"
-        case "insurance":   return "Asigurare"
-        case "certificate": return "Certificat"
-        case "manual":      return "Manual"
-        case "invoice":     return "Factură"
-        case "photo":       return "Fotografie"
-        default:            return "Altele"
+        case "Favorite":    return ro ? "Favorite" : "Favorites"
+        case "warranty":    return ro ? "Garanție" : "Warranty"
+        case "contract":    return ro ? "Contract" : "Contract"
+        case "legal":       return ro ? "Juridic" : "Legal"
+        case "insurance":   return ro ? "Asigurare" : "Insurance"
+        case "certificate": return ro ? "Certificat" : "Certificate"
+        case "manual":      return ro ? "Manual" : "Manual"
+        case "invoice":     return ro ? "Factură" : "Invoice"
+        case "permit":      return ro ? "Autorizație" : "Permit"
+        case "tax":         return ro ? "Taxe" : "Tax"
+        case "utility":     return ro ? "Utilități" : "Utility"
+        case "photo":       return ro ? "Fotografie" : "Photo"
+        default:            return ro ? "Altele" : "Other"
         }
     }
 
@@ -304,9 +341,13 @@ struct DocumentsView: View {
 
 struct DocumentRow: View {
     let doc: DocumentModel
+    var isFavorite: Bool = false
     let onOpen: () -> Void
+    let onPreview: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
+    var onFavorite: () -> Void = {}
+    var onEdit: () -> Void = {}
 
     var body: some View {
         Button(action: onOpen) {
@@ -325,6 +366,10 @@ struct DocumentRow: View {
                             Text(doc.name)
                                 .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(.primary).lineLimit(1)
+                            if isFavorite {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 11)).foregroundStyle(.yellow)
+                            }
                             if doc.isCritical {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .font(.system(size: 12)).foregroundStyle(.red)
@@ -359,13 +404,19 @@ struct DocumentRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button { onShare() } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
+            Button { onPreview() } label: { Label("Open file", systemImage: "eye") }
+            Button { onShare() } label: { Label("Share", systemImage: "square.and.arrow.up") }
+            Button { onFavorite() } label: {
+                Label(isFavorite ? "Remove from favorites" : "Add to favorites",
+                      systemImage: isFavorite ? "star.slash" : "star")
             }
+            Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
             Divider()
             Button(role: .destructive) { onDelete() } label: {
                 Label("Delete", systemImage: "trash")
             }
+        } preview: {
+            DocumentRowPreview(doc: doc)
         }
         .swipeActions(edge: .leading) {
             Button { onShare() } label: {
