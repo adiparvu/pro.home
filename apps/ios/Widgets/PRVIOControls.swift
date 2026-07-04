@@ -53,7 +53,9 @@ struct ShoppingControl: ControlWidget {
 struct ScanControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://scan")!)) {
+            // prvio://receipts opens the expense/receipt capture flow —
+            // prvio://scan would open the inventory object scanner instead.
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://receipts")!)) {
                 Label("Scan Receipt", systemImage: "barcode.viewfinder")
             }
         }
