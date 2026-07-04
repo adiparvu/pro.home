@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import PhotosUI
 
 // MARK: - Conversations list (WhatsApp-style main chat screen)
 
@@ -19,8 +20,15 @@ struct ConversationsView: View {
     @State private var showContactsPicker = false
     @State private var showStatus = false
     @State private var showCommunities = false
-    @State private var showStoryCamera = false
+    // One presentation slot for the status composer covers (camera + text) —
+    // two separate `.fullScreenCover(isPresented:)` on one view conflict.
+    @State private var statusComposer: StatusComposerKind?
+    @State private var showStatusOptions = false
+    @State private var showStoryLibrary = false
+    @State private var storyPickerItem: PhotosPickerItem?
     @State private var storyError: String?
+
+    private enum StatusComposerKind: Int, Identifiable { case camera, text; var id: Int { rawValue } }
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
@@ -281,7 +289,29 @@ struct ConversationsView: View {
             StatusView(propertyId: propertyService.primary?.id,
                        myName: myName,
                        members: familyService.members,
-                       onAddStatus: { showStatus = false; showStoryCamera = true })
+                       // Dismiss the sheet first, then present the composer — presenting
+                       // a cover while the sheet is still dismissing swallows it.
+                       onAddStatus: {
+                           showStatus = false
+                           DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showStatusOptions = true }
+                       })
+        }
+        .confirmationDialog("Add to status", isPresented: $showStatusOptions, titleVisibility: .visible) {
+            Button("Camera") { statusComposer = .camera }
+            Button("Photo Library") { showStoryLibrary = true }
+            Button("Write text") { statusComposer = .text }
+            Button("Cancel", role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showStoryLibrary, selection: $storyPickerItem, matching: .images)
+        .onChange(of: storyPickerItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data) {
+                    await sendStory(img)
+                }
+                storyPickerItem = nil
+            }
         }
         .sheet(isPresented: $showCommunities) {
             CommunitiesView(propertyId: propertyService.primary?.id,
@@ -298,10 +328,15 @@ struct ConversationsView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showContactsPicker = true }
             }
         }
-        .fullScreenCover(isPresented: $showStoryCamera) {
-            CameraPickerView { img in Task { await sendStory(img) } }
-                .ignoresSafeArea()
-                .background(Color.black.ignoresSafeArea())
+        .fullScreenCover(item: $statusComposer) { kind in
+            switch kind {
+            case .camera:
+                CameraPickerView { img in Task { await sendStory(img) } }
+                    .ignoresSafeArea()
+                    .background(Color.black.ignoresSafeArea())
+            case .text:
+                TextStatusComposer { image in Task { await sendStory(image) } }
+            }
         }
         .modifier(ConversationDestructiveDialogs(
             clearCandidate: $clearCandidate,
@@ -338,7 +373,7 @@ struct ConversationsView: View {
                 }
                 .accessibilityLabel("More options")
                 Spacer()
-                Button { showStoryCamera = true } label: {
+                Button { statusComposer = .camera } label: {
                     Image(systemName: "camera.fill")
                         .font(AppFont.headline)
                         .foregroundStyle(Color.primary.opacity(0.75))

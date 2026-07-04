@@ -127,6 +127,100 @@ struct StatusView: View {
     }
 }
 
+// MARK: - Text status composer (WhatsApp-style: text on a gradient)
+
+struct TextStatusComposer: View {
+    let onPost: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @State private var bgIndex = 0
+    @FocusState private var focused: Bool
+
+    private let gradients: [[Color]] = [
+        [Color(red: 0.16, green: 0.20, blue: 0.52), Color(red: 0.36, green: 0.20, blue: 0.68)],
+        [Color(red: 0.90, green: 0.42, blue: 0.28), Color(red: 0.98, green: 0.70, blue: 0.52)],
+        [Color(red: 0.00, green: 0.48, blue: 0.66), Color(red: 0.60, green: 0.79, blue: 0.88)],
+        [Color(red: 0.13, green: 0.69, blue: 0.30), Color(red: 0.30, green: 0.85, blue: 0.45)],
+        [Color(red: 0.82, green: 0.35, blue: 0.55), Color(red: 0.96, green: 0.66, blue: 0.72)],
+        [Color(white: 0.05), Color(white: 0.18)],
+    ]
+
+    // The 9:16 card that gets rendered to the posted image.
+    private var renderCard: some View {
+        ZStack {
+            LinearGradient(colors: gradients[bgIndex], startPoint: .topLeading, endPoint: .bottomTrailing)
+            Text(text.isEmpty ? " " : text)
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .padding(36)
+        }
+        .frame(width: 360, height: 640)
+    }
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: gradients[bgIndex], startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+            VStack {
+                HStack {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark").font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white).frame(width: 40, height: 40)
+                            .background(.white.opacity(0.15), in: Circle())
+                    }
+                    Spacer()
+                    Button { withAnimation(.snappy) { bgIndex = (bgIndex + 1) % gradients.count } } label: {
+                        Image(systemName: "paintpalette.fill").font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white).frame(width: 40, height: 40)
+                            .background(.white.opacity(0.15), in: Circle())
+                    }
+                    .accessibilityLabel("Change background")
+                }
+                Spacer()
+                TextField("", text: $text, axis: .vertical)
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .tint(.white)
+                    .multilineTextAlignment(.center)
+                    .focused($focused)
+                    .overlay(alignment: .center) {
+                        if text.isEmpty {
+                            Text("Type a status")
+                                .font(.system(size: 30, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.5))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                Spacer()
+                Button { post() } label: {
+                    HStack(spacing: 8) {
+                        Text("Share").font(AppFont.headline)
+                        Image(systemName: "paperplane.fill").font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(Color(red: 0.16, green: 0.20, blue: 0.52))
+                    .padding(.horizontal, 24).padding(.vertical, 14)
+                    .background(.white, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .opacity(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
+                .padding(.bottom, 20)
+            }
+            .padding(AppSpacing.lg)
+        }
+        .onAppear { focused = true }
+    }
+
+    @MainActor private func post() {
+        let renderer = ImageRenderer(content: renderCard)
+        renderer.scale = 3
+        if let img = renderer.uiImage { onPost(img) }
+        dismiss()
+    }
+}
+
 // MARK: - Full-screen story viewer
 
 struct StoryViewer: View {
