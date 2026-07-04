@@ -384,26 +384,24 @@ struct MessageBubble: View {
     }
 
     // Swipe affordance, pinned to a screen edge (WhatsApp-style) rather than to
-    // the bubble: swipe-right-to-reply shows the reply glyph on the message's own
-    // side (right edge for your messages, left for incoming); swipe-left-for-
-    // details shows the info glyph on the opposite edge. The glyph scales and
-    // fades in with the swipe so the gesture feels physical.
+    // the bubble: swipe-right-to-reply always shows the reply glyph on the LEFT
+    // edge of the screen (as in WhatsApp, for both your own and incoming
+    // messages); swipe-left-for-details shows the info glyph on the RIGHT edge.
+    // The glyph scales and fades in with the swipe so the gesture feels physical.
     @ViewBuilder private var swipeIndicator: some View {
         if swipeOffset > 12 {
             let progress = min(1, (swipeOffset - 12) / 60)
             HStack(spacing: 0) {
-                if isOwn { Spacer(minLength: 0) }
                 swipeGlyph("arrowshape.turn.up.left.fill", progress: progress)
-                if !isOwn { Spacer(minLength: 0) }
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, AppSpacing.lg)
             .allowsHitTesting(false)
         } else if swipeOffset < -12 {
             let progress = min(1, (-swipeOffset - 12) / 60)
             HStack(spacing: 0) {
-                if !isOwn { Spacer(minLength: 0) }
+                Spacer(minLength: 0)
                 swipeGlyph("info.circle.fill", progress: progress)
-                if isOwn { Spacer(minLength: 0) }
             }
             .padding(.horizontal, AppSpacing.lg)
             .allowsHitTesting(false)
