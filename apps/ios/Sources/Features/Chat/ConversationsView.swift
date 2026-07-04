@@ -229,6 +229,7 @@ struct ConversationsView: View {
             // never opened this session (idempotent subscribe).
             guard let pid = propertyService.primary?.id else { return }
             messageService.myName = myName
+            await propertyService.loadGroupChatName()
             await messageService.load(propertyId: pid)
             await messageService.subscribeRealtime(propertyId: pid)
         }
@@ -289,7 +290,7 @@ struct ConversationsView: View {
         }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
-                                 groupName: propertyService.primary?.name) { id in
+                                 groupName: propertyService.groupChatDisplayName) { id in
                 showNewConversation = false
                 navTarget = id
             } onAddMember: {
@@ -702,7 +703,7 @@ struct ConversationsView: View {
 
         items.append(ConversationEntry(
             id: "group",
-            name: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? "Chat Grup",
+            name: propertyService.groupChatDisplayName,
             preview: groupPreview,
             date: lastGroupMsg.flatMap { parseISODate($0.createdAt) },
             unread: propertyService.primary.map {

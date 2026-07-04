@@ -237,11 +237,9 @@ struct ChatView: View {
                         showGroupInfo = true
                     }
                     VStack(alignment: .leading, spacing: 1) {
-                        // The group name is stored as the property name (renaming
-                        // the group from group details updates it) — reflect it
-                        // here instead of a hardcoded label.
-                        Text((propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 }
-                             ?? String(localized: "Chat Grup"))
+                        // The group chat has its own name (chat_group_settings),
+                        // independent of the property name.
+                        Text(propertyService.groupChatDisplayName)
                             .font(AppFont.headline)
                         // Transient typing status wins; otherwise show who's online.
                         if let t = typingText {
@@ -280,6 +278,7 @@ struct ChatView: View {
             // Freeze where the reader left off BEFORE marking anything read, so
             // the "unread messages" divider lands at the first new message.
             let seen = messageService.lastSeen(propertyId: pid)
+            await propertyService.loadGroupChatName()
             await messageService.load(propertyId: pid)
             unreadDividerId = messageService.firstUnreadId(
                 since: seen, myId: supabase.auth.currentSession?.user.id)
@@ -385,7 +384,7 @@ struct ChatView: View {
         }
         .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
-                groupName: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup"),
+                groupName: propertyService.groupChatDisplayName,
                 members: familyService.members,
                 photoUrl: propertyService.primary?.photoUrl,
                 onAudio: { showCallSheet = true },

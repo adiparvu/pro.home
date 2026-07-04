@@ -1067,9 +1067,10 @@ struct EditGroupDetailsSheet: View {
     private func save() async {
         saving = true
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if var p = propertyService.primary, !trimmed.isEmpty, trimmed != p.name {
-            p.name = trimmed
-            await propertyService.update(p)
+        // Rename the group chat only — never the property. The name lives in
+        // chat_group_settings via PropertyService.groupChatName.
+        if !trimmed.isEmpty, trimmed != propertyService.groupChatDisplayName {
+            await propertyService.updateGroupChatName(trimmed)
         }
         if let img = pickedImage, let pid = propertyId {
             await propertyService.uploadPhoto(propertyId: pid, image: img)
