@@ -1,6 +1,30 @@
 import SwiftUI
+import UIKit
+import PhotosUI
 
 // MARK: - Chat theme (conversation background + bubble color)
+
+// MARK: - Custom chat wallpaper storage
+//
+// A user-uploaded chat background. Only the file name is persisted (not the
+// absolute path, which can change between app launches); the full URL is
+// reconstructed under the app's Documents directory on read.
+enum ChatBackgroundStore {
+    private static var dir: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    static func url(for fileName: String) -> URL? {
+        fileName.isEmpty ? nil : dir.appendingPathComponent(fileName)
+    }
+    /// Persist an image for the given scope and return the stored file name.
+    static func save(_ image: UIImage, scope: String?) -> String? {
+        let safe = (scope ?? "global").replacingOccurrences(of: "/", with: "_")
+        let name = "chatbg-\(safe).jpg"
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+        do { try data.write(to: dir.appendingPathComponent(name)); return name }
+        catch { return nil }
+    }
+}
 
 struct ChatTheme: Identifiable {
     let id: String
@@ -8,6 +32,7 @@ struct ChatTheme: Identifiable {
     let outgoingBubble: Color
     let backgroundColors: [Color]?   // nil = app default background
     let isDark: Bool
+    var backgroundImage: String? = nil   // custom wallpaper file name (wins over colors)
 
     static let all: [ChatTheme] = [
         ChatTheme(id: "appDefault", name: "Default",
@@ -61,22 +86,31 @@ struct ChatTheme: Identifiable {
 
     /// Resolves the effective theme from the saved theme id plus optional
     /// per-user customizations (custom bubble colour, custom background).
-    static func resolved(themeID: String, bubbleHex: String, bgID: String) -> ChatTheme {
+    static func resolved(themeID: String, bubbleHex: String, bgID: String, bgImage: String = "") -> ChatTheme {
         let base = theme(for: themeID)
         let bubble: Color = (!bubbleHex.isEmpty ? Color(hex: bubbleHex) : nil) ?? base.outgoingBubble
         let bgTheme = bgID.isEmpty ? base : theme(for: bgID)
-        let isPlainDefault = themeID == "appDefault" && bubbleHex.isEmpty && bgID.isEmpty
+        let isPlainDefault = themeID == "appDefault" && bubbleHex.isEmpty && bgID.isEmpty && bgImage.isEmpty
         return ChatTheme(
             id: isPlainDefault ? "appDefault" : "custom",
             name: base.name,
             outgoingBubble: bubble,
             backgroundColors: bgTheme.backgroundColors,
-            isDark: bgTheme.isDark
+            isDark: bgTheme.isDark,
+            backgroundImage: bgImage.isEmpty ? nil : bgImage
         )
     }
 
     @ViewBuilder var background: some View {
-        if let cols = backgroundColors {
+        if let name = backgroundImage,
+           let url = ChatBackgroundStore.url(for: name),
+           let img = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .overlay(Color.black.opacity(0.05).ignoresSafeArea())
+        } else if let cols = backgroundColors {
             LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         } else {
             appBackground.ignoresSafeArea()
@@ -323,26 +357,63 @@ struct BubbleColorPicker: View {
 // MARK: - Background (wallpaper) picker
 
 struct BackgroundPicker: View {
+    private let scope: String?
     @AppStorage private var bgID: String
+    @AppStorage private var bgImage: String   // custom wallpaper file name ("" = none)
+    @State private var photoItem: PhotosPickerItem?
     @Environment(\.dismiss) private var dismiss
 
     init(scope: String? = nil) {
+        self.scope = scope
         let suffix = scope.map { ".\($0)" } ?? ""
-        let g = scope == nil ? "" : (UserDefaults.standard.string(forKey: "prvio.chatBgID") ?? "")
-        _bgID = AppStorage(wrappedValue: g, "prvio.chatBgID\(suffix)")
+        let d = UserDefaults.standard
+        let gBg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgID") ?? "")
+        let gImg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgImage") ?? "")
+        _bgID = AppStorage(wrappedValue: gBg, "prvio.chatBgID\(suffix)")
+        _bgImage = AppStorage(wrappedValue: gImg, "prvio.chatBgImage\(suffix)")
     }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
+    private var usingCustom: Bool { !bgImage.isEmpty }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(ChatTheme.all) { theme in
+                // Upload your own photo
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    tile(selected: false) {
+                        VStack(spacing: 6) {
+                            Image(systemName: "photo.badge.plus").font(.system(size: 24, weight: .semibold))
+                            Text("Upload").font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.accentColor.opacity(0.1))
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // The custom wallpaper (if one is set), selectable + removable.
+                if usingCustom, let url = ChatBackgroundStore.url(for: bgImage),
+                   let img = UIImage(contentsOfFile: url.path) {
                     Button {
-                        bgID = theme.id
+                        HapticFeedback.impact(.light)  // already selected — tap re-affirms
+                    } label: {
+                        tile(selected: true) {
+                            Image(uiImage: img).resizable().scaledToFill()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Preset gradients
+                ForEach(ChatTheme.all) { theme in
+                    let isSel = !usingCustom && bgID == theme.id
+                    Button {
+                        bgID = theme.id; bgImage = ""   // preset clears the custom image
                         HapticFeedback.impact(.light)
                     } label: {
-                        ZStack {
+                        tile(selected: isSel) {
                             Group {
                                 if let cols = theme.backgroundColors {
                                     LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
@@ -350,29 +421,56 @@ struct BackgroundPicker: View {
                                     appBackground
                                 }
                             }
-                            if bgID == theme.id {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(.white, Color.accentColor)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                                    .padding(AppSpacing.xs)
-                            }
                         }
-                        .aspectRatio(0.62, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(bgID == theme.id ? Color.accentColor : Color.primary.opacity(0.12),
-                                              lineWidth: bgID == theme.id ? 2.5 : 1)
-                        )
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(AppSpacing.lg)
+
+            if usingCustom {
+                Button(role: .destructive) {
+                    bgImage = ""; HapticFeedback.impact(.light)
+                } label: {
+                    Label("Remove custom photo", systemImage: "trash")
+                        .font(AppFont.subheadline)
+                }
+                .padding(.bottom, AppSpacing.lg)
+            }
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Background")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data),
+                   let name = ChatBackgroundStore.save(img, scope: scope) {
+                    await MainActor.run { bgImage = name; bgID = ""; HapticFeedback.success() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tile<Content: View>(selected: Bool, @ViewBuilder content: () -> Content) -> some View {
+        ZStack {
+            content()
+            if selected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white, Color.accentColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(AppSpacing.xs)
+            }
+        }
+        .aspectRatio(0.62, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.12),
+                              lineWidth: selected ? 2.5 : 1)
+        )
     }
 }

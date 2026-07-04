@@ -97,7 +97,8 @@ struct DirectMessageView: View {
         let t = d.string(forKey: "prvio.chatTheme.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatThemeID
         let b = d.string(forKey: "prvio.chatBubbleHex.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBubbleHex
         let g = d.string(forKey: "prvio.chatBgID.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBgID
-        return .resolved(themeID: t, bubbleHex: b, bgID: g)
+        let i = d.string(forKey: "prvio.chatBgImage.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? (d.string(forKey: "prvio.chatBgImage") ?? "")
+        return .resolved(themeID: t, bubbleHex: b, bgID: g, bgImage: i)
     }
     private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
     private var pendingOutbox: [PendingMessage] {
