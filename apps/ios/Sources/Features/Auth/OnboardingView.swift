@@ -3,9 +3,9 @@ import Supabase
 
 struct OnboardingView: View {
     @AppStorage("prvio.onboarding.done") private var onboardingDone = false
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var auth: AuthService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(AuthService.self) private var auth
 
     @State private var step = 0
     @State private var propertyName = ""
@@ -22,7 +22,7 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 progressBar
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                     .padding(.horizontal, 32)
 
                 TabView(selection: $step) {
@@ -74,11 +74,11 @@ struct OnboardingView: View {
                     withAnimation { step -= 1 }
                 } label: {
                     Text("Back")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .font(AppFont.body)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -97,7 +97,7 @@ struct OnboardingView: View {
                         .background(.blue, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 } else {
                     Text(LocalizedStringKey(step == 3 ? "Get Started" : (step == 1 && propertyName.isEmpty ? "Skip" : "Continue")))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
@@ -207,7 +207,7 @@ private struct WelcomeStep: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
             }
             Spacer()
             Spacer()
@@ -231,7 +231,7 @@ private struct PropertyStep: View {
                     .foregroundStyle(.primary)
                 Text("Tell us a bit about your property.")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
 
             VStack(spacing: 0) {
@@ -239,8 +239,8 @@ private struct PropertyStep: View {
                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
                 fieldRow(icon: "mappin.circle.fill", placeholder: "Address (optional)", text: $address)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -252,8 +252,8 @@ private struct PropertyStep: View {
                             Text(LocalizedStringKey(t.capitalized))
                                 .font(.system(size: 13, weight: type == t ? .semibold : .regular))
                                 .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.6))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.lg)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(type == t ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -278,15 +278,15 @@ private struct PropertyStep: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.base)
     }
 }
 
 private struct FeaturesStep: View {
     let features: [(icon: String, color: Color, title: String, desc: String)] = [
         ("checklist",          .blue,                           "Task Manager",   "Track maintenance and repairs"),
-        ("chart.bar.xaxis",    Color(red: 0.3, green: 0.85, blue: 0.5), "Analytics", "Monitor finances & performance"),
+        ("chart.bar.xaxis",    Color.brandSuccess, "Analytics", "Monitor finances & performance"),
         ("doc.text.fill",      .orange,                         "Documents",      "Store warranties & certificates"),
         ("sparkles",           .purple,                         "ARIA Assistant", "AI powered property advisor"),
     ]
@@ -300,7 +300,7 @@ private struct FeaturesStep: View {
                     .foregroundStyle(.primary)
                 Text("Packed with smart features to manage your property effortlessly.")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
             }
 
@@ -309,15 +309,15 @@ private struct FeaturesStep: View {
                     HStack(spacing: 14) {
                         ColoredIconBadge(icon: f.icon, color: f.color, size: 44)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(LocalizedStringKey(f.title)).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                            Text(LocalizedStringKey(f.title)).font(AppFont.subheadline).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(f.desc)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.md)
                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
                 }
             }
             Spacer()
@@ -333,7 +333,7 @@ private struct ReadyStep: View {
             Spacer()
             ZStack {
                 Circle()
-                    .fill(LinearGradient(colors: [Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.3), .blue.opacity(0.3)],
+                    .fill(LinearGradient(colors: [Color.brandSuccess.opacity(0.3), .blue.opacity(0.3)],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 120, height: 120)
                 Image(systemName: "checkmark.circle.fill")
@@ -348,7 +348,7 @@ private struct ReadyStep: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
             }
             Spacer()
             Spacer()

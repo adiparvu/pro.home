@@ -16,8 +16,8 @@ struct AuditLogView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Jurnal activitate")
@@ -71,22 +71,22 @@ struct AuditLogView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(day)
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 8)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
                 ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
                         Rectangle()
-                            .fill(Color.primary.opacity(0.06))
+                            .fill(Color.primary.opacity(AppOpacity.hairline))
                             .frame(height: 0.4)
                             .padding(.leading, 52)
                     }
                     eventRow(event)
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 
@@ -97,12 +97,12 @@ struct AuditLogView: View {
                     .fill(iconColor(for: event.type).opacity(0.15))
                     .frame(width: 36, height: 36)
                 Image(systemName: iconName(for: event.type))
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(iconColor(for: event.type))
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.description)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                 HStack(spacing: 4) {
                     Text(timeString(from: event.timestamp))
@@ -119,8 +119,8 @@ struct AuditLogView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Empty state
@@ -129,14 +129,14 @@ struct AuditLogView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 64, height: 64)
                 Image(systemName: "clock.badge.checkmark")
                     .font(.system(size: 28))
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             Text("Nicio activitate înregistrată")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
             Text("Activitățile de securitate vor apărea aici")
                 .font(.system(size: 13))
@@ -167,11 +167,11 @@ struct AuditLogView: View {
 
     private func iconColor(for type: String) -> Color {
         switch type {
-        case "login":                    return Color(red: 0.3, green: 0.82, blue: 0.45)
+        case "login":                    return Color.brandSuccess
         case "logout":                   return .orange
         case "export":                   return .cyan
         case "biometric_enabled":        return .blue
-        case "biometric_disabled":       return Color.primary.opacity(0.5)
+        case "biometric_disabled":       return Color.primary.opacity(AppOpacity.mediumText)
         case "totp_enabled":             return .indigo
         case "totp_disabled":            return .gray
         case "password_reset_requested": return .orange

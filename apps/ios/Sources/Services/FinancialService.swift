@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class FinancialService: ObservableObject {
-    @Published var records: [FinancialRecord] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class FinancialService {
+    var records: [FinancialRecord] = []
+    var isLoading = false
+    var error: String?
 
     // MARK: - Computed stats
 

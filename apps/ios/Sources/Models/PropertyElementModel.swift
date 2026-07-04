@@ -108,10 +108,10 @@ struct PropertyElement: Identifiable, Codable, Equatable {
 
     var healthColor: Color {
         switch healthScore {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return Color.orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return Color.red
         }
     }
@@ -133,7 +133,7 @@ enum WarrantyStatus {
     var color: Color {
         switch self {
         case .none:         return .secondary
-        case .valid:        return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case .valid:        return Color.brandSuccess
         case .expiringSoon: return .orange
         case .expired:      return .red
         }
@@ -336,13 +336,13 @@ enum PropertyElementType: String, Codable, CaseIterable {
         // Structures — slate blue
         case .house, .garage, .gazebo, .shed, .barn, .carport, .terrace, .balcony,
              .basement, .attic, .roof, .chimney, .staircase, .playground:
-            return Color(red: 0.29, green: 0.56, blue: 0.89)
+            return Color.brandPrimaryBlue
         // Access — gray
         case .fence, .gate, .driveway, .parking:
             return Color(red: 0.58, green: 0.65, blue: 0.65)
         // Rooms — indigo
         case .kitchen, .bathroom, .bedroom, .livingRoom, .office, .laundry:
-            return Color(red: 0.48, green: 0.41, blue: 0.93)
+            return Color.brandPurple
         // Green
         case .yard, .lawn, .garden, .vegetableGarden, .greenhouse:
             return Color(red: 0.18, green: 0.8, blue: 0.44)
@@ -356,14 +356,14 @@ enum PropertyElementType: String, Codable, CaseIterable {
             return Color(red: 0.95, green: 0.77, blue: 0.06)
         // Heat — red/orange
         case .boiler, .heatPump, .waterHeater, .bbq:
-            return Color(red: 0.91, green: 0.3, blue: 0.24)
+            return Color.brandDanger
         // Climate / appliances — teal/purple
         case .airConditioner, .ventilation, .thermostat, .router,
              .fridge, .washingMachine, .dryer, .dishwasher, .oven, .stove, .microwave, .tv:
             return Color(red: 0.0, green: 0.6, blue: 0.7)
         // Security — red
         case .camera, .alarm, .smartLock, .intercom, .doorbell, .sensor:
-            return Color(red: 0.91, green: 0.3, blue: 0.24)
+            return Color.brandDanger
         case .pet:
             return Color(red: 0.91, green: 0.12, blue: 0.39)
         case .lawnMower:
@@ -454,12 +454,12 @@ enum ElementCategory: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .structures: return Color(red: 0.29, green: 0.56, blue: 0.89)
-        case .rooms:      return Color(red: 0.48, green: 0.41, blue: 0.93)
+        case .structures: return Color.brandPrimaryBlue
+        case .rooms:      return Color.brandPurple
         case .outdoor:    return Color(red: 0.18, green: 0.8, blue: 0.44)
         case .water:      return Color(red: 0.0, green: 0.71, blue: 0.85)
         case .energy:     return Color(red: 0.95, green: 0.77, blue: 0.06)
-        case .security:   return Color(red: 0.91, green: 0.3, blue: 0.24)
+        case .security:   return Color.brandDanger
         case .appliances: return Color(red: 0.0, green: 0.6, blue: 0.7)
         case .equipment:  return Color(red: 0.55, green: 0.45, blue: 0.33)
         case .other:      return Color(red: 0.61, green: 0.35, blue: 0.71)
@@ -488,10 +488,10 @@ enum TechnicalCondition: String, Codable, CaseIterable {
 
     var color: Color {
         switch self {
-        case .excellent: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case .excellent: return Color.brandSuccess
         case .good:      return Color(red: 0.4, green: 0.75, blue: 0.3)
         case .fair:      return Color.orange
-        case .poor:      return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case .poor:      return Color.brandWarning
         case .critical:  return Color.red
         }
     }
@@ -538,11 +538,11 @@ enum PropertyLayer: String, Codable, CaseIterable {
 
     var color: Color {
         switch self {
-        case .property:    return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .property:    return Color.brandSkyBlue
         case .maintenance: return .orange
         case .utility:     return Color(red: 0.95, green: 0.77, blue: 0.06)
-        case .financial:   return Color(red: 0.2, green: 0.8, blue: 0.45)
-        case .smartHome:   return Color(red: 0.48, green: 0.41, blue: 0.93)
+        case .financial:   return Color.brandSuccess
+        case .smartHome:   return Color.brandPurple
         }
     }
 }
@@ -604,10 +604,10 @@ enum ElementRecordType: String, Codable, CaseIterable {
 
     var color: Color {
         switch self {
-        case .note:        return Color(red: 0.29, green: 0.56, blue: 0.89)
+        case .note:        return Color.brandPrimaryBlue
         case .maintenance: return Color.orange
-        case .cost:        return Color(red: 0.2, green: 0.8, blue: 0.4)
-        case .inspection:  return Color(red: 0.48, green: 0.41, blue: 0.93)
+        case .cost:        return Color.brandSuccess
+        case .inspection:  return Color.brandPurple
         case .reminder:    return Color(red: 0.95, green: 0.77, blue: 0.06)
         }
     }

@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Budget Management View
 
 struct BudgetManagementView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingCategoryItem: BudgetCategoryItem? = nil
@@ -23,7 +23,7 @@ struct BudgetManagementView: View {
                         categoriesSection
                         Spacer(minLength: 80)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "budget_title"))
@@ -47,14 +47,14 @@ struct BudgetManagementView: View {
                 HStack {
                     Image(systemName: "target").font(.system(size: 18)).foregroundStyle(Color.accentColor)
                     Text(LocalizedStringKey(receiptService.monthDisplayName(currentMonth)))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     Spacer()
                     let totalBudget = receiptService.budgets.filter { $0.month == currentMonth }.reduce(0) { $0 + $1.monthlyLimit }
                     let totalSpent = receiptService.totalSpent(in: currentMonth)
                     if totalBudget > 0 {
                         VStack(alignment: .trailing, spacing: 1) {
                             Text("\(Receipt.format(totalSpent)) / \(Receipt.format(totalBudget))")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(totalSpent > totalBudget ? .red : .primary)
                             Text(String(localized: "budget_total_label"))
                                 .font(.system(size: 10)).foregroundStyle(.secondary)
@@ -80,7 +80,7 @@ struct BudgetManagementView: View {
 
                 Text(String(localized: "budget_description"))
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -92,7 +92,7 @@ struct BudgetManagementView: View {
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "budget_categories_section"))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -116,12 +116,12 @@ struct BudgetManagementView: View {
                         .fill(ReceiptCategory.color(for: category).opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: ReceiptCategory.icon(for: category))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(ReceiptCategory.color(for: category))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(LocalizedStringKey(label)).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                    Text(LocalizedStringKey(label)).font(AppFont.footnote).foregroundStyle(.primary)
                     if let budget, budget.monthlyLimit > 0 {
                         let pct = min(spent / budget.monthlyLimit * 100, 100)
                         Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit)) · \(Int(pct))%")
@@ -146,7 +146,7 @@ struct BudgetManagementView: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
             .onTapGesture { editingCategoryItem = BudgetCategoryItem(value: category); HapticFeedback.selection() }
 
@@ -169,7 +169,7 @@ struct BudgetManagementView: View {
                     // Icon + label
                     VStack(spacing: 12) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                                 .fill(ReceiptCategory.color(for: category).opacity(0.15))
                                 .frame(width: 72, height: 72)
                             Image(systemName: ReceiptCategory.icon(for: category))
@@ -179,12 +179,12 @@ struct BudgetManagementView: View {
                         Text(LocalizedStringKey(label))
                             .font(.system(size: 20, weight: .bold))
                     }
-                    .padding(.top, 20)
+                    .padding(.top, AppSpacing.xl)
 
                     // Budget input
                     VStack(spacing: 8) {
                         Text(String(localized: "budget_monthly_limit"))
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                            .font(AppFont.captionStrong).foregroundStyle(.secondary)
                         TextField("0.00", text: Binding(
                             get: {
                                 if budgetInput.isEmpty, let b = existing {
@@ -197,7 +197,7 @@ struct BudgetManagementView: View {
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         let spent = receiptService.spent(for: category, in: currentMonth)
                         if spent > 0 {
@@ -205,7 +205,7 @@ struct BudgetManagementView: View {
                                 .font(.system(size: 13)).foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                     // Actions
                     VStack(spacing: 12) {
@@ -214,11 +214,11 @@ struct BudgetManagementView: View {
                         } label: {
                             Group {
                                 if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                                else { Text(String(localized: "budget_save")).font(.system(size: 16, weight: .semibold)) }
+                                else { Text(String(localized: "budget_save")).font(AppFont.headline) }
                             }
                             .foregroundStyle(Color(UIColor.systemBackground))
                             .frame(maxWidth: .infinity).frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                         }
                         .buttonStyle(.plain)
                         .disabled(isSaving)
@@ -233,12 +233,12 @@ struct BudgetManagementView: View {
                                 Text(String(localized: "budget_remove"))
                                     .font(.system(size: 15))
                                     .foregroundStyle(.red)
-                                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
 
                     Spacer()
                 }

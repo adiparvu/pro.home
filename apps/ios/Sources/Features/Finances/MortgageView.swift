@@ -58,8 +58,8 @@ struct MortgageView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Mortgage")
@@ -70,7 +70,7 @@ struct MortgageView: View {
                     isEditing = true
                     HapticFeedback.impact(.light)
                 }
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(Color.accentColor)
             }
         }

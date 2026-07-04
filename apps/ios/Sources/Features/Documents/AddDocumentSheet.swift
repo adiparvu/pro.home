@@ -8,7 +8,8 @@ struct AddDocumentSheet: View {
     let propertyId: UUID
     let onSaved: () async -> Void
 
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -22,6 +23,8 @@ struct AddDocumentSheet: View {
     @State private var pickedMimeType = "application/octet-stream"
     @State private var error: String?
     @State private var isSaving = false
+    @State private var sharedMemberIds: [String] = []
+    @State private var sharedMemberNames: [String] = []
     @State private var showScanCamera = false
     @State private var isScanning = false
     @State private var scanPickerItem: PhotosPickerItem? = nil
@@ -71,7 +74,7 @@ struct AddDocumentSheet: View {
                                         await runOCR(on: uiImage)
                                     }
                                 }
-                                .padding(.trailing, 16)
+                                .padding(.trailing, AppSpacing.lg)
                             }
                         }
 
@@ -84,9 +87,9 @@ struct AddDocumentSheet: View {
                                         Text(LocalizedStringKey(c.capitalized)).tag(c)
                                     }
                                 }
-                                .tint(Color.primary.opacity(0.7))
+                                .tint(Color.primary.opacity(AppOpacity.emphasis))
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
                         fieldGroup {
@@ -96,13 +99,13 @@ struct AddDocumentSheet: View {
                                     Spacer()
                                     Toggle("", isOn: $hasExpiry).labelsHidden().tint(.accentColor)
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 13)
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
 
                                 if hasExpiry {
                                     div
                                     DatePicker("", selection: $expiryDate, in: Date()..., displayedComponents: .date)
                                         .datePickerStyle(.compact)
-                                        .padding(.horizontal, 16).padding(.vertical, 10)
+                                        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
                                 }
                             }
                         }
@@ -113,7 +116,7 @@ struct AddDocumentSheet: View {
                                 Spacer()
                                 Toggle("", isOn: $isCritical).labelsHidden().tint(.red)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
                         fieldGroup {
@@ -123,35 +126,38 @@ struct AddDocumentSheet: View {
                                     Spacer()
                                     Image(systemName: pickedFileData != nil ? "checkmark.circle.fill" : "chevron.right")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(pickedFileData != nil ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.primary.opacity(0.3))
+                                        .foregroundStyle(pickedFileData != nil ? Color.brandSuccess : Color.primary.opacity(0.3))
                                 }
-                                .padding(.horizontal, 16).padding(.vertical, 13)
+                                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                             }
                             .buttonStyle(.plain)
                         }
 
+                        shareSection
+
                         if let err = error {
                             Text(err).font(.system(size: 13)).foregroundStyle(.red)
-                                .multilineTextAlignment(.center).padding(.horizontal, 8)
+                                .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 20)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
                 }
             }
+            .task { if familyService.members.isEmpty { await familyService.load() } }
             .navigationTitle("Add Document")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                            .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                             .disabled(!canSave)
                     }
                 }
@@ -173,6 +179,41 @@ struct AddDocumentSheet: View {
                 }
                 .ignoresSafeArea()
             }
+        }
+    }
+
+    // MARK: - Share with
+
+    // Documents are visible to the whole family by default. Sharing a specific
+    // document surfaces it to a scoped member (e.g. a tenant's lease, a worker's
+    // plan) without exposing the rest. Writes family_members.id strings into
+    // shared_member_ids (RLS: is_shared_with_me, migration 094).
+    @ViewBuilder
+    private var shareSection: some View {
+        if !familyService.members.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("Share with")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if !sharedMemberIds.isEmpty {
+                        Text("\(sharedMemberIds.count)")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .padding(.horizontal, 8).padding(.vertical, 2)
+                            .background(Color.primary.opacity(0.08), in: Capsule())
+                    }
+                }
+                Text("The whole family sees documents. Anyone you add here can also see this one.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                MemberPickerView(selectedIds: $sharedMemberIds, selectedNames: $sharedMemberNames)
+            }
+            .padding(AppSpacing.lg)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -218,7 +259,8 @@ struct AddDocumentSheet: View {
                 fileName: pickedFileName,
                 mimeType: pickedMimeType,
                 expiresAt: expiryStr,
-                isCritical: isCritical
+                isCritical: isCritical,
+                sharedMemberIds: sharedMemberIds
             )
             HapticFeedback.success()
             dismiss()
@@ -231,9 +273,9 @@ struct AddDocumentSheet: View {
 
     private func fieldGroup<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private func rowField<Content: View>(_ icon: String, _ placeholder: String, @ViewBuilder content: () -> Content) -> some View {
@@ -241,7 +283,7 @@ struct AddDocumentSheet: View {
             iconLabel(icon, color: .blue)
             content()
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 
     private func iconLabel(_ icon: String, color: Color, text: LocalizedStringKey? = nil) -> some View {
@@ -254,7 +296,7 @@ struct AddDocumentSheet: View {
     }
 
     private var div: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, 52)
     }
 }
 

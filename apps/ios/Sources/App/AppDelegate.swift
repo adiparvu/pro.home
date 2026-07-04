@@ -10,7 +10,32 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         ProactiveEngine.registerBackgroundTask()
         ProactiveEngine.scheduleBackgroundRefresh()
+        // Ask APNs for a token if the user already granted notifications.
+        PushTokenService.registerIfAuthorized()
+        // AsyncImage (chat photos, avatars, stickers) loads through
+        // URLCache.shared; the system default is small enough that scrolling a
+        // media-heavy chat re-fetches images. Give it room: 48 MB RAM / 256 MB disk.
+        URLCache.shared = URLCache(memoryCapacity: 48 * 1024 * 1024,
+                                   diskCapacity: 256 * 1024 * 1024)
         return true
+    }
+
+    // MARK: - Remote notifications (APNs)
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Task { await PushTokenService.handle(deviceToken: deviceToken) }
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+#if DEBUG
+        print("[Push] APNs registration failed: \(error)")
+#endif
     }
 
     func application(

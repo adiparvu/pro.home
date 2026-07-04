@@ -5,23 +5,23 @@ import CoreLocation
 // MARK: - Dashboard — matches dark mockup exactly
 
 struct DashboardView: View {
-    @EnvironmentObject var auth: AuthService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var financialService: FinancialService
-    @EnvironmentObject var profileService: ProfileService
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var familyService: FamilyService
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject var inventoryService: InventoryService
-    @EnvironmentObject var contractorService: ContractorService
-    @EnvironmentObject var proactiveEngine: ProactiveEngine
+    @Environment(AuthService.self) var auth
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(FinancialService.self) var financialService
+    @Environment(ProfileService.self) var profileService
+    @Environment(DocumentService.self) var documentService
+    @Environment(FamilyService.self) var familyService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(AppRouter.self) var router
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PlantService.self) var plantService
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(InventoryService.self) var inventoryService
+    @Environment(ContractorService.self) var contractorService
+    @Environment(ProactiveEngine.self) var proactiveEngine
 
     @State var mapPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -33,6 +33,7 @@ struct DashboardView: View {
     @State private var selectedSection: PropertySection? = nil
     @State var pulsing = false
     @State private var showNotifications = false
+    @State private var notificationService = NotificationService()
     @State private var showEditProfile = false
     @State private var showSearch = false
     @State private var showWidgetPicker = false
@@ -48,19 +49,19 @@ struct DashboardView: View {
             VStack(spacing: 0) {
                 // ── Header ──────────────────────────────────────────────
                 dashHeader
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 14)
 
                 // ── Aerial Hero Card ─────────────────────────────────────
                 aerialHero
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                 // ── Proactive Insights (fixed after hero) ────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
                     Spacer().frame(height: 14)
                     ProactiveInsightsStrip(engine: proactiveEngine)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                 }
 
                 // ── Reorderable sections ──────────────────────────────────
@@ -72,7 +73,7 @@ struct DashboardView: View {
             }
             .padding(.top, topSafeArea + 6)
             .trackTabScroll()
-            .padding(.bottom, 20)
+            .padding(.bottom, AppSpacing.xl)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(key: ScrollOffsetKey.self,
@@ -96,33 +97,38 @@ struct DashboardView: View {
                 await zoneService.load(propertyId: pid)
             }
         }
+        .task(id: auth.session?.user.id) {
+            guard let uid = auth.session?.user.id else { return }
+            await notificationService.load(userId: uid)
+            await notificationService.subscribeRealtime(userId: uid)
+        }
         .sheet(isPresented: $showNotifications) {
             NavigationStack {
-                NotificationCenterView()
-                    .environmentObject(auth)
+                NotificationCenterView(service: notificationService)
+                    .environment(auth)
+                    .environment(router)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showEditProfile) {
             NavigationStack {
                 EditProfileView()
-                    .environmentObject(profileService)
+                    .environment(profileService)
             }
         }
         .sheet(isPresented: $showSearch) {
             GlobalSearchSheet()
-                .environmentObject(taskService)
-                .environmentObject(documentService)
-                .environmentObject(plantService)
-                .environmentObject(deliveryService)
-                .environmentObject(familyService)
-                .environmentObject(financialService)
-                .environmentObject(elementService)
-                .environmentObject(router)
+                .environment(taskService)
+                .environment(documentService)
+                .environment(plantService)
+                .environment(deliveryService)
+                .environment(familyService)
+                .environment(financialService)
+                .environment(elementService)
+                .environment(router)
         }
         .sheet(isPresented: $showWidgetPicker) {
             WidgetPickerSheet()
-                .environmentObject(appSettings)
         }
         .sheet(isPresented: $showHealthDetail) {
             let score = propertyService.primary?.healthScore ?? 87
@@ -146,7 +152,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(dateString)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 Text(displayName.isEmpty ? greetingText : "\(greetingText), \(displayName)")
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(.primary)
@@ -158,12 +164,13 @@ struct DashboardView: View {
 
             Button { HapticFeedback.impact(.light); showSearch = true } label: {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
             }
             .buttonStyle(.plain)
             .glassCircle()
+            .accessibilityLabel("Search")
 
             Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
                 Image(systemName: "bell.fill")
@@ -171,9 +178,17 @@ struct DashboardView: View {
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
                     .overlay(alignment: .topTrailing) {
-                        if hasNotifications {
+                        if notificationService.unreadCount > 0 {
+                            Text("\(min(notificationService.unreadCount, 99))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4.5).padding(.vertical, 1.5)
+                                .background(Color.red, in: Capsule())
+                                .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
+                                .offset(x: -2, y: 4)
+                        } else if hasNotifications {
                             Circle()
-                                .fill(Color(red: 0.20, green: 0.87, blue: 0.48))
+                                .fill(Color.brandSuccess)
                                 .frame(width: 10, height: 10)
                                 .overlay(Circle().strokeBorder(.black.opacity(0.55), lineWidth: 1.5))
                                 .offset(x: -8, y: 8)
@@ -182,6 +197,8 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
             .glassCircle()
+            .accessibilityLabel(notificationService.unreadCount > 0 || hasNotifications
+                                ? "Notifications, new" : "Notifications")
 
             Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
                 avatarCircle
@@ -228,7 +245,7 @@ struct DashboardView: View {
             }
         }
         .frame(width: 42, height: 42)
-        .overlay(Circle().strokeBorder(Color(red: 0.20, green: 0.87, blue: 0.48).opacity(0.55), lineWidth: 1.5))
+        .overlay(Circle().strokeBorder(Color.brandSuccess.opacity(0.55), lineWidth: 1.5))
     }
 
     // MARK: - Aerial background (drone photo or canvas illustration)
@@ -265,19 +282,20 @@ struct DashboardView: View {
                 router.selectedTab = .digitalTwin
             } label: {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 34, height: 34)
                     .glassCircle()
             }
             .buttonStyle(.plain)
-            .padding(12)
+            .accessibilityLabel("Expand Digital Twin")
+            .padding(AppSpacing.md)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
             if let name = propertyService.primary?.name {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(name)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white.opacity(0.9))
                     if let addr = propertyService.primary?.addressLine1 {
                         Text(addr)
@@ -286,15 +304,15 @@ struct DashboardView: View {
                             .lineLimit(1)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
                 .padding(.bottom, 2)
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
@@ -304,7 +322,6 @@ struct DashboardView: View {
 
     private var propertyHealthCard: some View {
         let score = propertyService.primary?.healthScore ?? 87
-        let overdueTasks = taskService.overdueCount
         let tasksPct = taskService.tasks.isEmpty ? 0 :
             Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
         return PropertyHealthDashCard(
@@ -336,8 +353,8 @@ struct DashboardView: View {
     private var widgetSectionHeader: some View {
         HStack {
             Text("OVERVIEW")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Spacer()
             if isEditingWidgets {
                 Button {
@@ -349,9 +366,9 @@ struct DashboardView: View {
                     }
                 } label: {
                     Text("Done")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(Color.accentColor.opacity(0.1), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -365,24 +382,26 @@ struct DashboardView: View {
                         }
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Reorder widgets")
 
                     Button {
                         HapticFeedback.impact(.light)
                         showWidgetPicker = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .font(AppFont.captionEmphasis)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Add widget")
                 }
             }
         }
@@ -403,24 +422,24 @@ struct DashboardView: View {
                     propertyHealthCard
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
             }
 
         case .statsStrip:
             Group {
                 Spacer().frame(height: 14)
                 dashStatsStrip
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
             }
 
         case .widgets:
             Group {
                 Spacer().frame(height: 22)
                 widgetSectionHeader
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 Spacer().frame(height: 10)
                 widgetGrid
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
             }
         }
     }

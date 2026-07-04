@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @State private var email = ""
     @State private var password = ""
     @State private var isLoading = false
@@ -15,7 +15,7 @@ struct LoginView: View {
             // Background
             Color.black.ignoresSafeArea()
             RadialGradient(
-                colors: [Color.primary.opacity(0.06), .clear],
+                colors: [Color.primary.opacity(AppOpacity.hairline), .clear],
                 center: .top,
                 startRadius: 0,
                 endRadius: 400
@@ -28,14 +28,14 @@ struct LoginView: View {
                 // Logo
                 VStack(spacing: 14) {
                     PRVIOLogoView(size: 84)
-                        .shadow(color: Color(red: 0.24, green: 0.50, blue: 1.00).opacity(0.50), radius: 22, y: 8)
+                        .shadow(color: Color.brandSkyBlue.opacity(0.50), radius: 22, y: 8)
 
                     VStack(spacing: 4) {
                         Text("PRVIO")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                         Text("Property management")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.white.opacity(0.45))
                             .tracking(0.4)
                     }
@@ -69,10 +69,10 @@ struct LoginView: View {
                             .font(.caption)
                             .foregroundStyle(.red.opacity(0.8))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, AppSpacing.xxs)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppSpacing.xxl)
 
                 // Sign in button
                 Button(action: signIn) {
@@ -92,8 +92,8 @@ struct LoginView: View {
                 }
                 .disabled(isLoading || email.isEmpty || password.isEmpty)
                 .opacity((email.isEmpty || password.isEmpty) ? 0.5 : 1)
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xxl)
+                .padding(.top, AppSpacing.lg)
 
                 Spacer()
                 Spacer()
@@ -144,7 +144,7 @@ private struct GlassTextField: View {
             }
             .font(.body)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .frame(height: 52)
         .glassRoundedRect(14)
     }

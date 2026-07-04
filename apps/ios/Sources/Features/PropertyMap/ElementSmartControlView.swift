@@ -7,7 +7,7 @@ import HomeKit
 struct ElementSmartControlSection: View {
     let elementId: UUID
 
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyElementService.self) private var elementService
     @ObservedObject private var homeKit = HomeKitService.shared
     @State private var showPicker = false
 
@@ -30,7 +30,7 @@ struct ElementSmartControlSection: View {
                             .font(.system(size: 26))
                             .foregroundStyle(homeKit.isOn(acc) ? Color.green : .secondary)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(acc.name).font(.system(size: 15, weight: .semibold))
+                            Text(acc.name).font(AppFont.subheadline)
                             Text(homeKit.isOn(acc) ? String(localized: "On") : String(localized: "Off"))
                                 .font(.system(size: 12)).foregroundStyle(.secondary)
                         }
@@ -39,8 +39,8 @@ struct ElementSmartControlSection: View {
                             Task { try? await homeKit.toggle(acc) }
                             HapticFeedback.impact(.medium)
                         } label: {
-                            Text("Toggle").font(.system(size: 14, weight: .semibold))
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                            Text("Toggle").font(AppFont.footnoteEmphasis)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(Color.accentColor.opacity(0.15), in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -62,7 +62,7 @@ struct ElementSmartControlSection: View {
                         showPicker = true
                     } label: {
                         Label("Link HomeKit accessory", systemImage: "homekit")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)

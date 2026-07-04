@@ -18,4 +18,13 @@ extension Color {
         ui.getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
     }
+
+    /// True for light colours (so overlaid text/checkmarks can switch to dark).
+    var isLight: Bool {
+        let ui = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        ui.getRed(&r, green: &g, blue: &b, alpha: &a)
+        // Perceived luminance (Rec. 601).
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 0.6
+    }
 }

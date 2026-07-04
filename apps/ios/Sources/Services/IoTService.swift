@@ -1,15 +1,17 @@
 import Foundation
+import Observation
 import Network
 import UserNotifications
 
 @MainActor
-final class IoTService: ObservableObject {
+@Observable
+final class IoTService {
     static let shared = IoTService()
 
-    @Published var devices: [IoTDevice] = []
-    @Published var sensors: [IoTSensor] = []
-    @Published var automations: [IoTAutomation] = []
-    @Published var isPolling = false
+    var devices: [IoTDevice] = []
+    var sensors: [IoTSensor] = []
+    var automations: [IoTAutomation] = []
+    var isPolling = false
 
     private let devicesKey     = "prvio.iot.devices"
     private let sensorsKey     = "prvio.iot.sensors"

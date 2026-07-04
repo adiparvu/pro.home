@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EditProfileView: View {
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(ProfileService.self) private var profileService
     @Environment(\.dismiss) private var dismiss
 
     @State private var displayName = ""
@@ -45,8 +45,8 @@ struct EditProfileView: View {
 
                         saveButton
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                     .padding(.bottom, 40)
                 }
             }
@@ -64,15 +64,15 @@ struct EditProfileView: View {
             TextField(placeholder, text: text)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
     private func fieldLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(Color.primary.opacity(0.5))
+            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -92,15 +92,15 @@ struct EditProfileView: View {
                     Button { withAnimation { hasBirthDate = true } } label: {
                         HStack {
                             Image(systemName: "calendar").foregroundStyle(.tint)
-                            Text("Add date of birth").foregroundStyle(Color.primary.opacity(0.5))
+                            Text("Add date of birth").foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             Spacer()
                         }
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(14)
-            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(AppSpacing.base)
+            .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -111,8 +111,8 @@ struct EditProfileView: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .lineLimit(3...8)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -142,8 +142,8 @@ struct EditProfileView: View {
             if socialLinks.isEmpty {
                 Text("Add accounts with \"+\" (Instagram, WhatsApp, etc.)")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.35))
-                    .padding(.vertical, 4)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                    .padding(.vertical, AppSpacing.xxs)
             } else {
                 ForEach($socialLinks) { $link in
                     HStack(spacing: 10) {
@@ -151,7 +151,7 @@ struct EditProfileView: View {
                             .font(.system(size: 14))
                             .foregroundStyle(link.platformColor)
                             .frame(width: 26, height: 26)
-                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .background(link.platformColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                         TextField(link.platformLabel, text: $link.handle)
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
@@ -165,8 +165,8 @@ struct EditProfileView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 10)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
+                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
             }
         }
@@ -178,11 +178,11 @@ struct EditProfileView: View {
                 if profileService.isSaving {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Save Changes").font(.system(size: 16, weight: .semibold))
+                    Text("Save Changes").font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(.white)
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

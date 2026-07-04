@@ -1,56 +1,84 @@
 import ActivityKit
 import Foundation
 
+// Drives real Live Activities from the app's flows: shopping check-offs,
+// deliveries, maintenance tasks and plant-watering sessions call the sync
+// methods below, and this service starts / updates / ends the system activity
+// accordingly — always gated by the user's Live Activity preferences.
 @MainActor
 final class LiveActivityService: ObservableObject {
     static let shared = LiveActivityService()
     private init() {}
+
+    /// Set by the root view once the primary property is known, so activities
+    /// can show the property name (the "Property Name" appearance option).
+    var propertyName: String = ""
 
     // Active activity tokens
     private var shoppingActivity: Activity<ShoppingActivityAttributes>?
     private var maintenanceActivity: Activity<MaintenanceActivityAttributes>?
     private var deliveryActivities: [UUID: Activity<DeliveryActivityAttributes>] = [:]
     private var plantCareActivity: Activity<PlantCareActivityAttributes>?
+    private var plantSessionTotal = 0
 
-    // MARK: - Shopping
+    private var systemEnabled: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
 
-    func startShoppingActivity(listName: String, totalItems: Int, propertyName: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
-        let state = ShoppingActivityAttributes.ContentState(itemsBought: 0, totalItems: totalItems, listName: listName)
-        shoppingActivity = try? Activity.request(
-            attributes: attrs,
-            content: .init(state: state, staleDate: nil),
-            pushType: nil
-        )
+    private func allowed(_ kind: LiveActivityKind) -> Bool {
+        LiveActivityPrefs.isEnabled && LiveActivityPrefs.autoStart(for: kind) && systemEnabled
     }
 
-    func updateShopping(bought: Int, total: Int, listName: String) {
-        guard let activity = shoppingActivity else { return }
-        let state = ShoppingActivityAttributes.ContentState(itemsBought: bought, totalItems: total, listName: listName)
-        Task { await activity.update(.init(state: state, staleDate: nil)) }
-    }
+    // MARK: - Shopping (driven by SupplyService.toggleComplete)
 
-    func endShoppingActivity(bought: Int, total: Int, listName: String) {
-        guard let activity = shoppingActivity else { return }
-        let state = ShoppingActivityAttributes.ContentState(itemsBought: bought, totalItems: total, listName: listName)
-        Task {
-            await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(5)))
+    /// Starts on the first checked item, updates while shopping, ends when done.
+    func syncShopping(listName: String, bought: Int, total: Int) {
+        guard total > 0 else { return }
+
+        // Adopt an activity that survived an app relaunch.
+        if shoppingActivity == nil {
+            shoppingActivity = Activity<ShoppingActivityAttributes>.activities.first
         }
-        shoppingActivity = nil
+
+        let state = ShoppingActivityAttributes.ContentState(itemsBought: bought, totalItems: total, listName: listName)
+
+        if let activity = shoppingActivity {
+            if bought >= total {
+                Task { await activity.end(.init(state: state, staleDate: nil),
+                                          dismissalPolicy: .after(Date().addingTimeInterval(5))) }
+                shoppingActivity = nil
+            } else if activity.attributes.listName != listName {
+                // Switched lists — restart for the new one.
+                Task { await activity.end(nil, dismissalPolicy: .immediate) }
+                shoppingActivity = nil
+                startShopping(listName: listName, state: state)
+            } else {
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+            }
+        } else if bought > 0, bought < total {
+            startShopping(listName: listName, state: state)
+        }
     }
 
-    // MARK: - Maintenance
+    private func startShopping(listName: String, state: ShoppingActivityAttributes.ContentState) {
+        guard allowed(.shopping) else { return }
+        let attrs = ShoppingActivityAttributes(propertyName: propertyName, listName: listName)
+        shoppingActivity = try? Activity.request(
+            attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+    }
 
-    func startMaintenanceActivity(taskTitle: String, category: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let attrs = MaintenanceActivityAttributes(taskTitle: taskTitle, category: category)
-        let state = MaintenanceActivityAttributes.ContentState(progress: 0, stepDescription: "Început", isComplete: false)
+    // MARK: - Maintenance (driven by TaskService)
+
+    func startMaintenance(taskTitle: String, category: String, step: String? = nil) {
+        guard allowed(.maintenance) else { return }
+        if maintenanceActivity == nil {
+            maintenanceActivity = Activity<MaintenanceActivityAttributes>.activities.first
+        }
+        guard maintenanceActivity == nil else { return }
+        let attrs = MaintenanceActivityAttributes(taskTitle: taskTitle, category: category,
+                                                  propertyName: propertyName)
+        let state = MaintenanceActivityAttributes.ContentState(
+            progress: 0, stepDescription: step ?? String(localized: "In progress"), isComplete: false)
         maintenanceActivity = try? Activity.request(
-            attributes: attrs,
-            content: .init(state: state, staleDate: nil),
-            pushType: nil
-        )
+            attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
     }
 
     func updateMaintenance(progress: Double, step: String) {
@@ -59,67 +87,113 @@ final class LiveActivityService: ObservableObject {
         Task { await activity.update(.init(state: state, staleDate: nil)) }
     }
 
-    func completeMaintenanceActivity() {
-        guard let activity = maintenanceActivity else { return }
-        let state = MaintenanceActivityAttributes.ContentState(progress: 1.0, stepDescription: "Finalizat!", isComplete: true)
-        Task {
-            await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(4)))
+    /// Ends the activity if the completed task is the one being tracked.
+    func completeMaintenance(taskTitle: String) {
+        if maintenanceActivity == nil {
+            maintenanceActivity = Activity<MaintenanceActivityAttributes>.activities.first
         }
+        guard let activity = maintenanceActivity, activity.attributes.taskTitle == taskTitle else { return }
+        let state = MaintenanceActivityAttributes.ContentState(
+            progress: 1.0, stepDescription: String(localized: "Done!"), isComplete: true)
+        Task { await activity.end(.init(state: state, staleDate: nil),
+                                  dismissalPolicy: .after(Date().addingTimeInterval(4))) }
         maintenanceActivity = nil
     }
 
-    // MARK: - Delivery
+    // MARK: - Delivery (driven by DeliveryService add/update)
 
-    func startDeliveryActivity(deliveryId: UUID, trackingNumber: String, carrier: String, description: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        guard deliveryActivities[deliveryId] == nil else { return }
-        let attrs = DeliveryActivityAttributes(trackingNumber: trackingNumber, carrier: carrier, description: description)
-        let state = DeliveryActivityAttributes.ContentState(status: "in_transit", statusLabel: String(localized: "In transit"), eta: nil)
-        deliveryActivities[deliveryId] = try? Activity.request(
-            attributes: attrs,
-            content: .init(state: state, staleDate: nil),
-            pushType: nil
-        )
-    }
-
-    func updateDelivery(deliveryId: UUID, status: String, statusLabel: String, eta: String? = nil) {
-        guard let activity = deliveryActivities[deliveryId] else { return }
-        let state = DeliveryActivityAttributes.ContentState(status: status, statusLabel: statusLabel, eta: eta)
-        Task { await activity.update(.init(state: state, staleDate: nil)) }
-    }
-
-    func endDeliveryActivity(deliveryId: UUID) {
-        guard let activity = deliveryActivities[deliveryId] else { return }
-        let state = DeliveryActivityAttributes.ContentState(status: "delivered", statusLabel: String(localized: "Delivered"), eta: nil)
-        Task {
-            await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(6)))
-        }
-        deliveryActivities.removeValue(forKey: deliveryId)
-    }
-
-    // MARK: - Plant Care
-
-    func startPlantCareActivity(totalCount: Int, propertyName: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled, totalCount > 0 else { return }
-        let attrs = PlantCareActivityAttributes(propertyName: propertyName)
-        let state = PlantCareActivityAttributes.ContentState(wateredCount: 0, totalCount: totalCount, lastWateredName: nil)
-        plantCareActivity = try? Activity.request(
-            attributes: attrs,
-            content: .init(state: state, staleDate: nil),
-            pushType: nil
-        )
-    }
-
-    func updatePlantCare(watered: Int, total: Int, lastWateredName: String?) {
-        guard let activity = plantCareActivity else { return }
-        let state = PlantCareActivityAttributes.ContentState(wateredCount: watered, totalCount: total, lastWateredName: lastWateredName)
-        Task { await activity.update(.init(state: state, staleDate: nil)) }
-        if watered >= total {
-            Task {
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(4)))
+    /// Reflects a delivery's current state: starts when active, updates status,
+    /// ends when delivered / returned / missed.
+    func syncDelivery(_ delivery: Delivery) {
+        // Adopt activities that survived an app relaunch (matched by tracking id).
+        if deliveryActivities[delivery.id] == nil {
+            deliveryActivities[delivery.id] = Activity<DeliveryActivityAttributes>.activities.first {
+                $0.attributes.trackingNumber == (delivery.trackingNumber ?? "")
+                    && $0.attributes.description == delivery.description
             }
+        }
+
+        let state = DeliveryActivityAttributes.ContentState(
+            status: delivery.status, statusLabel: delivery.statusLabel,
+            eta: delivery.expectedDisplay)
+
+        if let activity = deliveryActivities[delivery.id] {
+            if delivery.isActive {
+                Task { await activity.update(.init(state: state, staleDate: nil)) }
+            } else {
+                Task { await activity.end(.init(state: state, staleDate: nil),
+                                          dismissalPolicy: .after(Date().addingTimeInterval(6))) }
+                deliveryActivities.removeValue(forKey: delivery.id)
+            }
+        } else if delivery.isActive, allowed(.delivery) {
+            let attrs = DeliveryActivityAttributes(
+                trackingNumber: delivery.trackingNumber ?? "",
+                carrier: delivery.carrier ?? String(localized: "Courier"),
+                description: delivery.description,
+                propertyName: propertyName)
+            deliveryActivities[delivery.id] = try? Activity.request(
+                attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+        }
+    }
+
+    func endDelivery(id: UUID) {
+        guard let activity = deliveryActivities[id] else { return }
+        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        deliveryActivities.removeValue(forKey: id)
+    }
+
+    // MARK: - Plant care (driven by PlantService.markWatered)
+
+    /// One watering session: starts on the first watered plant, tracks progress
+    /// against how many needed water when the session began, ends at zero left.
+    func plantWatered(name: String, remainingAfter: Int) {
+        if plantCareActivity == nil, remainingAfter >= 0, allowed(.plantCare) {
+            plantSessionTotal = remainingAfter + 1
+            let attrs = PlantCareActivityAttributes(propertyName: propertyName)
+            let state = PlantCareActivityAttributes.ContentState(
+                wateredCount: 1, totalCount: plantSessionTotal, lastWateredName: name)
+            if plantSessionTotal > 1 {
+                plantCareActivity = try? Activity.request(
+                    attributes: attrs, content: .init(state: state, staleDate: nil), pushType: nil)
+            }
+            return
+        }
+        guard let activity = plantCareActivity else { return }
+        let watered = max(0, plantSessionTotal - remainingAfter)
+        let state = PlantCareActivityAttributes.ContentState(
+            wateredCount: watered, totalCount: plantSessionTotal, lastWateredName: name)
+        if remainingAfter <= 0 {
+            Task { await activity.end(.init(state: state, staleDate: nil),
+                                      dismissalPolicy: .after(Date().addingTimeInterval(4))) }
             plantCareActivity = nil
+            plantSessionTotal = 0
+        } else {
+            Task { await activity.update(.init(state: state, staleDate: nil)) }
+        }
+    }
+
+    // MARK: - Auto-start (Start When App Opens / Start on a Schedule)
+
+    /// Called when the app becomes active with fresh data. Honors the
+    /// "Start When App Opens" and "Start on a Schedule" preferences.
+    func evaluateAutoStart(deliveries: [Delivery], tasks: [MaintenanceTask]) {
+        guard LiveActivityPrefs.isEnabled, systemEnabled else { return }
+
+        // Resume in-progress deliveries.
+        if LiveActivityPrefs.startOnOpen {
+            for delivery in deliveries where delivery.isActive {
+                syncDelivery(delivery)
+            }
+        }
+
+        // Start activities for tasks scheduled today.
+        if LiveActivityPrefs.startOnSchedule {
+            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
+            let today = fmt.string(from: Date())
+            if let due = tasks.first(where: { !$0.isCompleted && ($0.dueDate?.hasPrefix(today) ?? false) }) {
+                startMaintenance(taskTitle: due.title, category: due.category,
+                                 step: String(localized: "Scheduled for today"))
+            }
         }
     }
 }

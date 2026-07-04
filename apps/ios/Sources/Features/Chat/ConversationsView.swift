@@ -4,27 +4,38 @@ import Supabase
 // MARK: - Conversations list (WhatsApp-style main chat screen)
 
 struct ConversationsView: View {
-    @EnvironmentObject private var messageService: MessageService
-    @EnvironmentObject private var directMessageService: DirectMessageService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var stickerService: StickerService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var router: AppRouter
+    @Environment(MessageService.self) private var messageService
+    @Environment(DirectMessageService.self) private var directMessageService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(StickerService.self) private var stickerService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddMember = false
     @State private var showNewConversation = false
+    @State private var showAddContact = false
+    @State private var showContactsPicker = false
+    @State private var showStatus = false
+    @State private var showCommunities = false
     @State private var showStoryCamera = false
+    @State private var storyError: String?
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
     @State private var pinnedIds: Set<String> = []
     @State private var mutedIds: Set<String> = []
     @State private var manualUnreadIds: Set<String> = []
+    @State private var lockedIds: Set<String> = []
+    @State private var clearCandidate: ConversationEntry?
+    @State private var deleteCandidate: ConversationEntry?
     @State private var showArchived = false
+    @State private var lockedRevealed = false
     @State private var searchText = ""
     @State private var navTarget: String? = nil
+
+    private var hasLockedChats: Bool { nonArchived.contains { ChatLockStore.isLocked($0.id) } }
 
     enum ConvFilter: CaseIterable {
         case all, unread, favorites, groups, family
@@ -50,6 +61,8 @@ struct ConversationsView: View {
 
     private var visibleConversations: [ConversationEntry] {
         let filtered = nonArchived.filter { e in
+            // Secured conversations stay hidden until unlocked with Face ID.
+            if ChatLockStore.isLocked(e.id) && !lockedRevealed { return false }
             switch filter {
             case .all:       return true
             case .unread:    return isUnread(e)
@@ -58,18 +71,39 @@ struct ConversationsView: View {
             case .family:    return !e.isGroup
             }
         }
-        // pinned conversations float to the top
+        // pinned conversations float to the top, otherwise keep newest-first order
         return filtered.sorted { a, b in
             let pa = pinnedIds.contains(a.id), pb = pinnedIds.contains(b.id)
             if pa != pb { return pa }
-            return false
+            switch (a.date, b.date) {
+            case (.some(let da), .some(let db)): return da > db
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return false
+            }
         }
     }
 
     private var searchedConversations: [ConversationEntry] {
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return visibleConversations }
-        return nonArchived.filter { $0.name.localizedCaseInsensitiveContains(q) }
+        // Global search: match the conversation name, its last-message preview,
+        // or the body of any loaded message in that conversation.
+        return nonArchived.filter { entry in
+            // Don't surface secured chats in search until unlocked.
+            if ChatLockStore.isLocked(entry.id) && !lockedRevealed { return false }
+            if entry.name.localizedCaseInsensitiveContains(q) { return true }
+            if entry.preview.localizedCaseInsensitiveContains(q) { return true }
+            if entry.isGroup {
+                return messageService.messages.contains {
+                    ($0.body ?? "").localizedCaseInsensitiveContains(q)
+                }
+            } else if let member = entry.member {
+                return directMessageService.messages(with: member.name, myName: myName)
+                    .contains { $0.body.localizedCaseInsensitiveContains(q) }
+            }
+            return false
+        }
     }
 
     private func loadFlags() {
@@ -78,16 +112,76 @@ struct ConversationsView: View {
         pinnedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.pinned") ?? [])
         mutedIds = Set(UserDefaults.standard.stringArray(forKey: "chat.muted") ?? [])
         manualUnreadIds = Set(UserDefaults.standard.stringArray(forKey: "chat.manualUnread") ?? [])
+        lockedIds = ChatLockStore.locked()
+    }
+
+    /// Reconciles pin/mute/archive + block with Supabase so they sync across
+    /// devices. Supabase is the source of truth; if it has no rows yet (first run
+    /// for this user) the existing local prefs are migrated up instead of wiped.
+    private func syncRemotePrefs() async {
+        let pid = propertyService.primary?.id
+        let prefs = await ChatPrefsSync.load()
+        if prefs.isEmpty {
+            let ids = pinnedIds.union(mutedIds).union(archivedIds)
+            for id in ids {
+                await ChatPrefsSync.upsert(convId: id,
+                                           pinned: pinnedIds.contains(id),
+                                           muted: mutedIds.contains(id),
+                                           archived: archivedIds.contains(id),
+                                           propertyId: pid)
+            }
+        } else {
+            pinnedIds   = Set(prefs.filter { $0.pinned }.map { $0.convId })
+            mutedIds    = Set(prefs.filter { $0.muted }.map { $0.convId })
+            archivedIds = Set(prefs.filter { $0.archived }.map { $0.convId })
+            UserDefaults.standard.set(Array(pinnedIds),   forKey: "chat.pinned")
+            UserDefaults.standard.set(Array(mutedIds),    forKey: "chat.muted")
+            UserDefaults.standard.set(Array(archivedIds), forKey: "chat.archived")
+        }
+        // Bring the "clear conversation" cutoff across from other devices.
+        for r in prefs { ConversationClearStore.applyRemote(r.convId, iso: r.clearedAt) }
+
+        // Reflect server-side blocks locally (chat_blocks is keyed by name).
+        let blockedNames = await ChatBlockSync.load()
+        for m in familyService.members {
+            ChatBlockStore.setBlocked(m.id.uuidString, blockedNames.contains(m.name))
+        }
+    }
+    private func toggleLocked(_ id: String) {
+        let newVal = !lockedIds.contains(id)
+        ChatLockStore.setLocked(id, newVal)
+        if newVal { lockedIds.insert(id) } else { lockedIds.remove(id) }
+        HapticFeedback.selection()
+    }
+    private func toggleBlock(_ member: FamilyMember) {
+        let id = member.id.uuidString
+        let willBlock = !ChatBlockStore.isBlocked(id)
+        ChatBlockStore.setBlocked(id, willBlock)
+        // Enforce server-side: chat_blocks is keyed by the blocked person's display
+        // name (so the dm_insert policy can reject them by sender_name).
+        let pid = propertyService.primary?.id
+        Task {
+            if willBlock { await ChatBlockSync.block(name: member.name, myName: myName, propertyId: pid) }
+            else { await ChatBlockSync.unblock(name: member.name) }
+        }
+        HapticFeedback.warning()
     }
     private func toggle(_ id: String, in set: inout Set<String>, key: String) {
         if set.contains(id) { set.remove(id) } else { set.insert(id) }
         UserDefaults.standard.set(Array(set), forKey: key)
     }
-    private func toggleArchived(_ id: String) { toggle(id, in: &archivedIds, key: "chat.archived") }
+    private func toggleArchived(_ id: String) { toggle(id, in: &archivedIds, key: "chat.archived"); syncPrefs(id) }
     private func toggleFavorite(_ id: String) { toggle(id, in: &favoriteIds, key: "chat.favorites") }
-    private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned") }
-    private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted") }
+    private func togglePinned(_ id: String)   { toggle(id, in: &pinnedIds, key: "chat.pinned"); syncPrefs(id) }
+    private func toggleMuted(_ id: String)    { toggle(id, in: &mutedIds, key: "chat.muted"); syncPrefs(id) }
     private func toggleUnread(_ id: String)   { toggle(id, in: &manualUnreadIds, key: "chat.manualUnread") }
+
+    /// Pushes the current pin/mute/archive state of one conversation to Supabase.
+    private func syncPrefs(_ id: String) {
+        let pid = propertyService.primary?.id
+        let pinned = pinnedIds.contains(id), muted = mutedIds.contains(id), archived = archivedIds.contains(id)
+        Task { await ChatPrefsSync.upsert(convId: id, pinned: pinned, muted: muted, archived: archived, propertyId: pid) }
+    }
 
     private func markAllRead() {
         manualUnreadIds.removeAll()
@@ -102,17 +196,11 @@ struct ConversationsView: View {
 
     @MainActor
     private func sendStory(_ image: UIImage) async {
-        guard let pid = propertyService.primary?.id,
-              let data = image.jpegData(compressionQuality: 0.85) else { return }
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(UUID().uuidString).jpg"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
-        try? await messageService.send(
-            propertyId: pid, senderName: myName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image"
-        )
-        HapticFeedback.success()
+        guard let pid = propertyService.primary?.id else { return }
+        if let err = await StatusService.shared.post(propertyId: pid, authorName: myName, image: image, caption: nil) {
+            storyError = err
+            HapticFeedback.warning()
+        }
     }
 
     var body: some View {
@@ -133,6 +221,16 @@ struct ConversationsView: View {
             directMessageService.myName = myName
             await directMessageService.load(propertyId: pid, myName: myName)
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
+            await syncRemotePrefs()
+        }
+        .task {
+            // Keep the group conversation preview + unread badge live from the
+            // list itself, so they're correct even when the group thread was
+            // never opened this session (idempotent subscribe).
+            guard let pid = propertyService.primary?.id else { return }
+            messageService.myName = myName
+            await messageService.load(propertyId: pid)
+            await messageService.subscribeRealtime(propertyId: pid)
         }
         .onAppear { loadFlags() }
         .navigationDestination(item: $navTarget) { id in
@@ -142,13 +240,52 @@ struct ConversationsView: View {
                 DirectMessageView(member: member)
             }
         }
-        .onDisappear {
-            Task { await directMessageService.unsubscribe() }
+        // NB: no unsubscribe here. Pushing a DM thread fires this view's
+        // onDisappear, and tearing the channel down there left the open thread
+        // silent until you popped back. The channel is property-scoped and
+        // lightweight, so it stays live for the chat session (re-subscribing is
+        // idempotent); it's cleaned up when the service is torn down.
+        .alert("Story not posted", isPresented: Binding(
+            get: { storyError != nil }, set: { if !$0 { storyError = nil } }
+        )) {
+            Button("OK", role: .cancel) { storyError = nil }
+        } message: {
+            Text(storyError ?? "")
         }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
                                  propertyName: propertyService.primary?.name)
-                .environmentObject(familyService)
+                .environment(familyService)
+        }
+        .sheet(isPresented: $showContactsPicker) {
+            ContactsInviteView(
+                onOpenMember: { member in
+                    showContactsPicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { navTarget = member.id.uuidString }
+                },
+                onManualEntry: {
+                    showContactsPicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddContact = true }
+                }
+            )
+            .environment(familyService)
+            .environment(propertyService)
+        }
+        .sheet(isPresented: $showAddContact) {
+            AddContactView()
+                .environment(familyService)
+                .environment(propertyService)
+        }
+        .sheet(isPresented: $showStatus) {
+            StatusView(propertyId: propertyService.primary?.id,
+                       myName: myName,
+                       members: familyService.members,
+                       onAddStatus: { showStatus = false; showStoryCamera = true })
+        }
+        .sheet(isPresented: $showCommunities) {
+            CommunitiesView(propertyId: propertyService.primary?.id,
+                            members: familyService.members,
+                            myName: myName)
         }
         .sheet(isPresented: $showNewConversation) {
             NewConversationSheet(members: familyService.members,
@@ -157,12 +294,25 @@ struct ConversationsView: View {
                 navTarget = id
             } onAddMember: {
                 showNewConversation = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddMember = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showContactsPicker = true }
             }
         }
         .fullScreenCover(isPresented: $showStoryCamera) {
             CameraPickerView { img in Task { await sendStory(img) } }
+                .ignoresSafeArea()
+                .background(Color.black.ignoresSafeArea())
         }
+        .modifier(ConversationDestructiveDialogs(
+            clearCandidate: $clearCandidate,
+            deleteCandidate: $deleteCandidate,
+            onClear: { e in
+                ConversationClearStore.clear(e.id); markConversationRead(e); HapticFeedback.success()
+            },
+            onDelete: { e in
+                ConversationClearStore.clear(e.id)
+                if !archivedIds.contains(e.id) { toggleArchived(e.id) }
+                markConversationRead(e); HapticFeedback.success()
+            }))
     }
 
     // MARK: - Custom header (independent round buttons + title + search)
@@ -171,13 +321,16 @@ struct ConversationsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
                 Menu {
+                    Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
+                    Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
+                    Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
                         Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.primary.opacity(0.75))
                         .frame(width: 40, height: 40)
                         .glassCircle()
@@ -186,7 +339,7 @@ struct ConversationsView: View {
                 Spacer()
                 Button { showStoryCamera = true } label: {
                     Image(systemName: "camera.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(Color.primary.opacity(0.75))
                         .frame(width: 40, height: 40)
                         .glassCircle()
@@ -210,8 +363,8 @@ struct ConversationsView: View {
 
             searchField
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.top, AppSpacing.xs)
     }
 
     // MARK: - Conversation list
@@ -231,7 +384,38 @@ struct ConversationsView: View {
                         Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    }
+
+                    if hasLockedChats && !showArchived && searchText.isEmpty {
+                        Button {
+                            if lockedRevealed {
+                                withAnimation { lockedRevealed = false }
+                            } else {
+                                Task {
+                                    if await BiometricAuth.authenticate(reason: "Unlock secured chats") {
+                                        withAnimation { lockedRevealed = true }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: lockedRevealed ? "lock.open.fill" : "lock.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Color.primary.opacity(0.6))
+                                    .frame(width: 40)
+                                Text(lockedRevealed ? "Locked chats (visible)" : "Locked chats")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(AppFont.captionEmphasis)
+                                    .foregroundStyle(Color.primary.opacity(0.25))
+                            }
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+                        }
+                        .buttonStyle(.plain)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
                     }
 
                     ForEach(entries) { entry in
@@ -251,21 +435,7 @@ struct ConversationsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .contextMenu {
-                                Button { toggleFavorite(entry.id) } label: {
-                                    Label(favoriteIds.contains(entry.id) ? "Unfavorite" : "Favorite",
-                                          systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
-                                }
-                                Button { togglePinned(entry.id) } label: {
-                                    Label(pinnedIds.contains(entry.id) ? "Unpin" : "Pin", systemImage: "pin")
-                                }
-                                Button { toggleMuted(entry.id) } label: {
-                                    Label(mutedIds.contains(entry.id) ? "Unmute" : "Mute", systemImage: "bell.slash")
-                                }
-                                Button { toggleArchived(entry.id) } label: {
-                                    Label(archivedIds.contains(entry.id) ? "Unarchive" : "Archive", systemImage: "archivebox")
-                                }
-                            }
+                            .contextMenu { conversationMenu(entry) }
                         }
                     }
 
@@ -273,13 +443,63 @@ struct ConversationsView: View {
                         Button { withAnimation { showArchived = true } } label: { archivedRow }
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
-                                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xxl)
+        }
+    }
+
+    @ViewBuilder
+    private func conversationMenu(_ entry: ConversationEntry) -> some View {
+        let unread = isUnread(entry)
+        Button {
+            if unread { markConversationRead(entry) } else { markConversationUnread(entry) }
+        } label: {
+            Label(unread ? "Marchează citit" : "Marchează necitit",
+                  systemImage: unread ? "checkmark.message" : "message.badge")
+        }
+        Button { togglePinned(entry.id) } label: {
+            Label(pinnedIds.contains(entry.id) ? "Detașează" : "Fixează", systemImage: "pin")
+        }
+        Button { toggleMuted(entry.id) } label: {
+            Label(mutedIds.contains(entry.id) ? "Pornește sunetul" : "Oprește sunetul",
+                  systemImage: mutedIds.contains(entry.id) ? "bell" : "bell.slash")
+        }
+        Button { toggleLocked(entry.id) } label: {
+            Label(lockedIds.contains(entry.id) ? "Anulează secretizarea" : "Secretizează conversația",
+                  systemImage: lockedIds.contains(entry.id) ? "lock.open" : "lock")
+        }
+        Button { toggleFavorite(entry.id) } label: {
+            Label(favoriteIds.contains(entry.id) ? "Scoate din listă" : "Adaugă în listă",
+                  systemImage: favoriteIds.contains(entry.id) ? "star.slash" : "star")
+        }
+        Button { toggleArchived(entry.id) } label: {
+            Label(archivedIds.contains(entry.id) ? "Dezarhivează" : "Arhivează", systemImage: "archivebox")
+        }
+        Divider()
+        conversationDestructiveItems(entry)
+    }
+
+    @ViewBuilder
+    private func conversationDestructiveItems(_ entry: ConversationEntry) -> some View {
+        if !entry.isGroup, let m = entry.member {
+            let blocked = ChatBlockStore.isBlocked(m.id.uuidString)
+            Button(role: .destructive) { toggleBlock(m) } label: {
+                Label(blocked ? "Deblochează pe \(m.name)" : "Blochează pe \(m.name)",
+                      systemImage: blocked ? "hand.raised.slash" : "hand.raised")
+            }
+        }
+        Button(role: .destructive) { clearCandidate = entry } label: {
+            Label("Golește conversația", systemImage: "xmark.circle")
+        }
+        if !entry.isGroup {
+            Button(role: .destructive) { deleteCandidate = entry } label: {
+                Label("Șterge conversația", systemImage: "trash")
+            }
         }
     }
 
@@ -339,10 +559,11 @@ struct ConversationsView: View {
                         .foregroundStyle(Color.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.06), in: Capsule())
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
+        .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
     }
 
     private var filterChips: some View {
@@ -351,16 +572,16 @@ struct ConversationsView: View {
                 ForEach(ConvFilter.allCases, id: \.self) { f in
                     Button { filter = f } label: {
                         Text(f.label)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(filter == f ? Color.accentColor : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06),
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
+                            .background(filter == f ? Color.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
         }
     }
 
@@ -368,14 +589,14 @@ struct ConversationsView: View {
         HStack(spacing: 10) {
             Button { withAnimation { showArchived = false } } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(Color.accentColor)
             }
             Text("Conversații arhivate")
                 .font(.system(size: 17, weight: .bold))
             Spacer()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
     }
 
     private var archivedRow: some View {
@@ -384,20 +605,20 @@ struct ConversationsView: View {
                 Circle().fill(Color.primary.opacity(0.08))
                 Image(systemName: "archivebox.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
             .frame(width: 52, height: 52)
             Text("Conversații arhivate")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
             Spacer()
             Text("\(archivedList.count)")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
         .contentShape(Rectangle())
     }
 
@@ -405,7 +626,7 @@ struct ConversationsView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle().fill(LinearGradient(
-                    colors: [Color(red: 0.6, green: 0.35, blue: 0.95), Color(red: 0.29, green: 0.56, blue: 0.89)],
+                    colors: [Color.brandPurple, Color.brandPrimaryBlue],
                     startPoint: .topLeading, endPoint: .bottomTrailing))
                 Image(systemName: "sparkles")
                     .font(.system(size: 22, weight: .semibold))
@@ -413,13 +634,13 @@ struct ConversationsView: View {
             }
             .frame(width: 52, height: 52)
             VStack(alignment: .leading, spacing: 3) {
-                Text("ARIA").font(.system(size: 16, weight: .semibold))
+                Text("ARIA").font(AppFont.headline)
                 Text("Asistent AI").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.25))
+            Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
         .contentShape(Rectangle())
     }
 
@@ -443,7 +664,7 @@ struct ConversationsView: View {
                     .foregroundStyle(Color.accentColor)
             }
             Text("Nicio conversație")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
             Text("Adaugă membri familiei pentru a începe.")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))
@@ -468,6 +689,7 @@ struct ConversationsView: View {
             if let body = m.body, !body.isEmpty { return prefix + body }
             switch m.attachmentType {
             case "image":    return prefix + "📷 Imagine"
+            case "video":    return prefix + "🎥 Videoclip"
             case "audio":    return prefix + "🎤 Mesaj vocal"
             case "location": return prefix + "📍 Locație"
             case "file":     return prefix + "📎 Fișier"
@@ -483,7 +705,9 @@ struct ConversationsView: View {
             name: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? "Chat Grup",
             preview: groupPreview,
             date: lastGroupMsg.flatMap { parseISODate($0.createdAt) },
-            unread: messageService.unreadCount,
+            unread: propertyService.primary.map {
+                messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
+            } ?? 0,
             isGroup: true,
             member: nil
         ))
@@ -513,15 +737,48 @@ struct ConversationsView: View {
             case (.some(let da), .some(let db)): return da > db
             case (.some, .none): return true
             case (.none, .some): return false
-            case (.none, .none): return a.isGroup
+            case (.none, .none): return a.isGroup && !b.isGroup
             }
         }
     }
 
-    private func parseISODate(_ s: String) -> Date? {
-        let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        return f1.date(from: s) ?? f2.date(from: s)
+    private func parseISODate(_ s: String) -> Date? { ISODate.date(from: s) }
+}
+
+// MARK: - Destructive conversation dialogs (kept off the main body chain)
+
+private struct ConversationDestructiveDialogs: ViewModifier {
+    @Binding var clearCandidate: ConversationEntry?
+    @Binding var deleteCandidate: ConversationEntry?
+    let onClear: (ConversationEntry) -> Void
+    let onDelete: (ConversationEntry) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog("Golești conversația?",
+                                isPresented: Binding(get: { clearCandidate != nil },
+                                                     set: { if !$0 { clearCandidate = nil } }),
+                                titleVisibility: .visible) {
+                Button("Golește", role: .destructive) {
+                    if let e = clearCandidate { onClear(e) }
+                    clearCandidate = nil
+                }
+                Button("Anulează", role: .cancel) { clearCandidate = nil }
+            } message: {
+                Text("Mesajele vor fi ascunse de pe acest dispozitiv.")
+            }
+            .confirmationDialog("Ștergi conversația?",
+                                isPresented: Binding(get: { deleteCandidate != nil },
+                                                     set: { if !$0 { deleteCandidate = nil } }),
+                                titleVisibility: .visible) {
+                Button("Șterge", role: .destructive) {
+                    if let e = deleteCandidate { onDelete(e) }
+                    deleteCandidate = nil
+                }
+                Button("Anulează", role: .cancel) { deleteCandidate = nil }
+            } message: {
+                Text("Conversația va fi golită și arhivată pe acest dispozitiv.")
+            }
     }
 }
 
@@ -581,17 +838,17 @@ private struct ConversationRowView: View {
                     if muted {
                         Image(systemName: "bell.slash.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Spacer()
                     if pinned {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                     Text(entry.formattedTime)
                         .font(.system(size: 12))
-                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(0.35))
+                        .foregroundStyle(isUnread ? Color.accentColor : Color.primary.opacity(AppOpacity.disabled))
                 }
                 HStack {
                     Text(entry.preview)
@@ -603,9 +860,9 @@ private struct ConversationRowView: View {
                         Text("\(entry.unread)")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
+                            .padding(.horizontal, AppSpacing.xs)
                             .padding(.vertical, 2)
-                            .background(muted ? Color.primary.opacity(0.35) : Color.accentColor, in: Capsule())
+                            .background(muted ? Color.primary.opacity(AppOpacity.disabled) : Color.accentColor, in: Capsule())
                             .fixedSize()
                     } else if forceUnread {
                         Circle()
@@ -615,7 +872,7 @@ private struct ConversationRowView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .contentShape(Rectangle())
     }

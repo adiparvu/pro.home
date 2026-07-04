@@ -1,11 +1,13 @@
 import Foundation
 import SwiftUI
 import UserNotifications
+import Observation
 
 @MainActor
-final class AutomationService: ObservableObject {
-    @Published var byElement: [UUID: [ElementAutomation]] = [:]
-    @Published var error: String?
+@Observable
+final class AutomationService {
+    var byElement: [UUID: [ElementAutomation]] = [:]
+    var error: String?
 
     private let df: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f

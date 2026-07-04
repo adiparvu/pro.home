@@ -16,12 +16,12 @@ struct ARIAProposedAction {
 struct ARIAView: View {
     var onDismiss: (() -> Void)? = nil
 
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PlantService.self) private var plantService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(ProfileService.self) private var profileService
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
@@ -34,7 +34,7 @@ struct ARIAView: View {
     @AppStorage("prvio.voiceInput")        private var voiceInputEnabled: Bool = true
     @AppStorage("prvio.locale")            private var currentLocale: String = "en"
     @AppStorage("prvio.followSystemLang")  private var followSystemLanguage: Bool = true
-    @StateObject private var speech = SpeechRecognizer()
+    @State private var speech = SpeechRecognizer()
     @State private var showJumpToLatest = false
 
     var body: some View {
@@ -55,9 +55,10 @@ struct ARIAView: View {
                     onDismiss?()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Close")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 MemberAvatarStack(
@@ -72,16 +73,18 @@ struct ARIAView: View {
                     withAnimation { messages = ARIAMessage.welcome }
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Reset messages")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { ARIASettingsView() } label: {
                     Image(systemName: "gearshape")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Settings")
             }
         }
         .task { await loadHistory() }
@@ -110,9 +113,9 @@ struct ARIAView: View {
                                                        value: g.frame(in: .named("ariaScroll")).minY)
                             })
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .padding(.bottom, 20)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.xl)
                 }
             }
             .coordinateSpace(name: "ariaScroll")
@@ -137,11 +140,12 @@ struct ARIAView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                             .frame(width: 40, height: 40)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Jump to latest")
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.bottom, 10)
@@ -163,8 +167,8 @@ struct ARIAView: View {
                     onConfirm: { confirmAction(action) },
                     onCancel: { proposedAction = nil }
                 )
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -184,12 +188,12 @@ struct ARIAView: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 16))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -214,7 +218,7 @@ struct ARIAView: View {
                                         : Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "mic.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(speech.isListening
                                         ? .red
                                         : Color(red: 0.55, green: 0.70, blue: 1.0))
@@ -222,6 +226,7 @@ struct ARIAView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(speech.isListening ? "Stop voice input" : "Voice input")
 
                         // Waveform / equalizer button
                         Button {
@@ -232,11 +237,12 @@ struct ARIAView: View {
                                     .fill(Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "waveform")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Audio mode")
 
                         // Cloud / AI mode button
                         Button {
@@ -247,11 +253,12 @@ struct ARIAView: View {
                                     .fill(Color.primary.opacity(0.1))
                                     .frame(width: 44, height: 44)
                                 Image(systemName: "icloud")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(Color(red: 0.55, green: 0.70, blue: 1.0))
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Cloud mode")
                     }
 
                     Spacer()
@@ -273,7 +280,7 @@ struct ARIAView: View {
                                 .fill(
                                     RadialGradient(
                                         colors: [
-                                            Color(red: 0.40, green: 0.60, blue: 1.0).opacity(0.5),
+                                            Color.brandSkyBlue.opacity(0.5),
                                             Color.clear
                                         ],
                                         center: .center, startRadius: 0, endRadius: 32
@@ -286,7 +293,7 @@ struct ARIAView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color(red: 0.40, green: 0.62, blue: 1.0),
+                                            Color.brandSkyBlue,
                                             Color(red: 0.30, green: 0.38, blue: 0.98)
                                         ],
                                         startPoint: .topLeading,
@@ -294,7 +301,7 @@ struct ARIAView: View {
                                     )
                                 )
                                 .frame(width: 52, height: 52)
-                                .shadow(color: Color(red: 0.35, green: 0.50, blue: 1.0).opacity(0.8), radius: 14, y: 3)
+                                .shadow(color: Color.brandSkyBlue.opacity(0.8), radius: 14, y: 3)
 
                             // Inner highlight
                             Circle()
@@ -318,8 +325,8 @@ struct ARIAView: View {
                     .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isThinking)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.md)
             .padding(.bottom, 10)
             .background(.ultraThinMaterial)
             .overlay(alignment: .top) {
@@ -551,15 +558,15 @@ private struct ARIAMessageBubble: View {
                 ZStack {
                     Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                     Image(systemName: "sparkles")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .font(AppFont.captionStrong)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
             }
 
             Text(LocalizedStringKey(message.content))
                 .font(.body)
                 .foregroundStyle(isUser ? .white : .primary)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(
                     isUser
@@ -589,19 +596,19 @@ private struct ThinkingBubble: View {
             ZStack {
                 Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
                 Image(systemName: "sparkles")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
-                        .fill(Color.primary.opacity(0.5))
+                        .fill(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(width: 6, height: 6)
                         .scaleEffect(phase == i ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
             .liquidGlass(cornerRadius: 18)
             Spacer(minLength: 48)
         }
@@ -636,7 +643,7 @@ private struct ARIAActionBanner: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.yellow)
                 Text(action.displayText)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
             }
@@ -644,30 +651,30 @@ private struct ARIAActionBanner: View {
             HStack(spacing: 8) {
                 Button(action: onConfirm) {
                     Text("Confirm")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppSpacing.sm)
                         .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
                 Button(action: onCancel) {
                     Text("Cancel")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppSpacing.sm)
                         .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(Color.yellow.opacity(0.3), lineWidth: 1)
         )
     }

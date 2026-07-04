@@ -5,8 +5,8 @@ import Supabase
 // MARK: - PhotoJournalView
 
 struct PhotoJournalView: View {
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PhotoJournalService.self) private var photoJournalService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd = false
     @State private var selectedEntry: PhotoJournalEntry? = nil
@@ -36,16 +36,17 @@ struct PhotoJournalView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add photo")
             }
         }
         .sheet(isPresented: $showAdd) {
             AddPhotoJournalSheet()
-                .environmentObject(photoJournalService)
-                .environmentObject(propertyService)
+                .environment(photoJournalService)
+                .environment(propertyService)
         }
         .sheet(item: $selectedEntry) { entry in
             PhotoEntryDetailSheet(entry: entry)
-                .environmentObject(photoJournalService)
+                .environment(photoJournalService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -84,18 +85,18 @@ struct PhotoJournalView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Start your renovation diary")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Capture before and after photos, track progress, and document every improvement to your home.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
                 showAdd = true
             } label: {
                 Label("Add first photo", systemImage: "camera.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -164,7 +165,7 @@ private struct PhotoGridCell: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white)
                         .lineLimit(1)
                     if let date = entry.takenDate {
@@ -174,8 +175,8 @@ private struct PhotoGridCell: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.sm)
             }
         }
         .aspectRatio(1, contentMode: .fit)
@@ -186,7 +187,7 @@ private struct PhotoGridCell: View {
 
 private struct PhotoEntryDetailSheet: View {
     let entry: PhotoJournalEntry
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
+    @Environment(PhotoJournalService.self) private var photoJournalService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirm = false
@@ -245,7 +246,7 @@ private struct PhotoEntryDetailSheet: View {
                                     HStack(spacing: 8) {
                                         ForEach(entryTags, id: \.self) { tag in
                                             Text("#\(tag)")
-                                                .font(.system(size: 12, weight: .medium))
+                                                .font(AppFont.caption)
                                                 .foregroundStyle(.white.opacity(0.7))
                                                 .padding(.horizontal, 10)
                                                 .padding(.vertical, 5)
@@ -260,16 +261,16 @@ private struct PhotoEntryDetailSheet: View {
                                 HapticFeedback.warning()
                             } label: {
                                 Label("Delete Photo", systemImage: "trash")
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(AppFont.body)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
+                                    .padding(.vertical, AppSpacing.base)
                                     .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
-                            .padding(.top, 8)
+                            .padding(.top, AppSpacing.sm)
                         }
-                        .padding(20)
+                        .padding(AppSpacing.xl)
 
                         Spacer(minLength: 40)
                     }

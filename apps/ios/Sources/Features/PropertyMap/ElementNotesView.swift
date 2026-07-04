@@ -9,8 +9,8 @@ import Supabase
 struct ElementNotesSection: View {
     let element: PropertyElement
 
-    @StateObject private var noteService = ElementNoteService()
-    @ObservedObject private var lock = NoteLockManager.shared
+    @State private var noteService = ElementNoteService()
+    private let lock = NoteLockManager.shared
 
     @State private var editorNote: ElementNote?      // existing note being edited
     @State private var showNewEditor = false
@@ -32,6 +32,7 @@ struct ElementNotesSection: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add note")
                 }
 
                 if notes.isEmpty {
@@ -49,11 +50,11 @@ struct ElementNotesSection: View {
         .task { await noteService.load(elementId: element.id) }
         .sheet(isPresented: $showNewEditor) {
             ElementNoteEditorSheet(element: element, existing: nil)
-                .environmentObject(noteService)
+                .environment(noteService)
         }
         .sheet(item: $editorNote) { note in
             ElementNoteEditorSheet(element: element, existing: note)
-                .environmentObject(noteService)
+                .environment(noteService)
         }
         .sheet(isPresented: $showPINSheet) {
             NotePINSheet(mode: pinPurpose == .setup ? .setup : .enter) {
@@ -74,7 +75,7 @@ struct ElementNotesSection: View {
                     Image(systemName: lock.biometryAvailable ? "faceid" : "key.fill")
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
             }
             .buttonStyle(.plain)
         } else {
@@ -92,7 +93,7 @@ struct ElementNotesSection: View {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 4)
+                        Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                     }
                 }
 
@@ -124,7 +125,7 @@ struct ElementNotesSection: View {
                             ForEach(note.photos, id: \.self) { u in
                                 AsyncImage(url: URL(string: u)) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 64, height: 64)
                                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -133,7 +134,7 @@ struct ElementNotesSection: View {
                     }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -153,8 +154,8 @@ struct ElementNoteEditorSheet: View {
     let element: PropertyElement
     let existing: ElementNote?
 
-    @EnvironmentObject private var noteService: ElementNoteService
-    @ObservedObject private var lock = NoteLockManager.shared
+    @Environment(ElementNoteService.self) private var noteService
+    private let lock = NoteLockManager.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var body_ = ""
@@ -200,7 +201,7 @@ struct ElementNoteEditorSheet: View {
                         }
                         Spacer(minLength: 20)
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                 }
             }
             .navigationTitle(existing == nil ? "New note" : "Edit note")
@@ -283,7 +284,7 @@ struct ElementNoteEditorSheet: View {
                             ForEach(photoURLs, id: \.self) { u in
                                 AsyncImage(url: URL(string: u)) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 70, height: 70)
                                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -340,7 +341,7 @@ struct NotePINSheet: View {
     let mode: Mode
     let onDone: () -> Void
 
-    @ObservedObject private var lock = NoteLockManager.shared
+    private let lock = NoteLockManager.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var pin = ""
@@ -374,7 +375,7 @@ struct NotePINSheet: View {
                         .disabled(pin.count < 4)
                     Spacer()
                 }
-                .padding(24)
+                .padding(AppSpacing.xxl)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }

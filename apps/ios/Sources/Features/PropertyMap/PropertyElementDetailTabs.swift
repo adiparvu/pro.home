@@ -42,7 +42,7 @@ extension PropertyElementDetailView {
                     }
                     if let value = localElement.estimatedValue {
                         let formatted = currencyService.formatted(value, from: localElement.valueCurrency, preferred: appSettings.preferredCurrency)
-                        StatRow(label: "Estimated value", value: formatted, valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
+                        StatRow(label: "Estimated value", value: formatted, valueColor: Color.brandSuccess)
                     }
                 }
             }
@@ -53,7 +53,7 @@ extension PropertyElementDetailView {
                         SectionHeader("Automation")
                         StatRow(label: "Electric",
                                 value: localElement.isElectric ? String(localized: "Yes") : String(localized: "No"),
-                                valueColor: localElement.isElectric ? Color(red: 0.2, green: 0.8, blue: 0.4) : .secondary)
+                                valueColor: localElement.isElectric ? Color.brandSuccess : .secondary)
                         if let sys = localElement.automationSystem, !sys.isEmpty {
                             StatRow(label: "System", value: sys)
                         }
@@ -96,7 +96,7 @@ extension PropertyElementDetailView {
                         StatRow(label: "Total records", value: "\(recs.count)")
                         if totalCost > 0 {
                             StatRow(label: "Total costs", value: currencyService.formatted(totalCost, from: "EUR", preferred: appSettings.preferredCurrency),
-                                    valueColor: Color(red: 0.2, green: 0.8, blue: 0.4))
+                                    valueColor: Color.brandSuccess)
                         }
                         if let last = lastDate {
                             StatRow(label: "Last record", value: formatted(date: last))
@@ -135,12 +135,12 @@ extension PropertyElementDetailView {
                                         if case .success(let img) = phase {
                                             img.resizable().scaledToFill()
                                         } else {
-                                            Rectangle().fill(Color.primary.opacity(0.06))
+                                            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline))
                                                 .overlay(ProgressView().scaleEffect(0.6))
                                         }
                                     }
                                     .frame(width: 96, height: 96)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                                     .contextMenu {
                                         Button(role: .destructive) {
                                             Task { await deletePhoto(urlStr) }
@@ -173,7 +173,7 @@ extension PropertyElementDetailView {
                 Button { showLocationPicker = true } label: {
                     Text(LocalizedStringKey(localElement.coordinate == nil ? "Place" : "Change"))
                         .font(.caption.weight(.semibold)).foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                         .background(Capsule().fill(Color.accentColor))
                 }
                 .buttonStyle(.plain)
@@ -190,7 +190,7 @@ extension PropertyElementDetailView {
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
             let path = "\(uid)/elements/\(localElement.id.uuidString)/\(UUID().uuidString).jpg"
-            try? await supabase.storage.from("documents")
+            _ = try? await supabase.storage.from("documents")
                 .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
             if let url = try? supabase.storage.from("documents").getPublicURL(path: path) {
                 urls.append(url.absoluteString)
@@ -221,9 +221,9 @@ extension PropertyElementDetailView {
                     Label("Add", systemImage: "plus")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
 
@@ -252,7 +252,7 @@ extension PropertyElementDetailView {
                     .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -272,8 +272,8 @@ extension PropertyElementDetailView {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
             if linked.isEmpty {
@@ -286,7 +286,7 @@ extension PropertyElementDetailView {
                         Text("Link manuals, warranties or invoices to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.sm)
                 }
             } else {
                 ForEach(linked) { doc in
@@ -318,8 +318,8 @@ extension PropertyElementDetailView {
                     Label("Link", systemImage: "link")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Capsule().fill(Color(red: 0.29, green: 0.56, blue: 0.89)))
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
+                        .background(Capsule().fill(Color.brandPrimaryBlue))
                 }
             }
             if linked.isEmpty {
@@ -332,7 +332,7 @@ extension PropertyElementDetailView {
                         Text("Link maintenance tasks to this item")
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.sm)
                 }
             } else {
                 ForEach(linked) { task in

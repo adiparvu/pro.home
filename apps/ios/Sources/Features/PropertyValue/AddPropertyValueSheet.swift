@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct AddPropertyValueSheet: View {
-    @EnvironmentObject private var propertyValueService: PropertyValueService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var currencyService: CurrencyService
+    @Environment(PropertyValueService.self) private var propertyValueService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(CurrencyService.self) private var currencyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var valueText = ""
@@ -42,8 +42,8 @@ struct AddPropertyValueSheet: View {
                                 .tint(.accentColor)
                                 .pickerStyle(.menu)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.base)
                         }
 
                         formSection("Details") {
@@ -57,8 +57,8 @@ struct AddPropertyValueSheet: View {
                             .tint(.accentColor)
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
                         }
 
                         formSection("Notes") {
@@ -74,14 +74,14 @@ struct AddPropertyValueSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Value Entry")
@@ -89,14 +89,14 @@ struct AddPropertyValueSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .disabled((Double(valueText) ?? 0) <= 0 || isSaving)
                     }
@@ -117,7 +117,7 @@ struct AddPropertyValueSheet: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, 13)
 
             if source.isEmpty {
@@ -131,16 +131,16 @@ struct AddPropertyValueSheet: View {
                             } label: {
                                 Text(LocalizedStringKey(s))
                                     .font(.system(size: 12))
-                                    .foregroundStyle(Color.primary.opacity(0.7))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                     .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color.primary.opacity(0.07), in: Capsule())
+                                    .padding(.vertical, AppSpacing.xs)
+                                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.sm)
                 }
             }
         }
@@ -149,15 +149,15 @@ struct AddPropertyValueSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

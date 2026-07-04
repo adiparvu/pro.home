@@ -3,15 +3,15 @@ import SwiftUI
 // MARK: - Zones List — matches dark mockup (filter chips + zone rows)
 
 struct ZonesListView: View {
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(AppRouter.self) var router
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ZoneFilter = .all
 
@@ -48,8 +48,8 @@ struct ZonesListView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.base)
 
                 if filteredZones.isEmpty {
                     emptyState
@@ -59,13 +59,13 @@ struct ZonesListView: View {
                         ForEach(filteredZones) { zone in
                             NavigationLink {
                                 ZoneDetailView(zone: zone)
-                                    .environmentObject(elementService)
-                                    .environmentObject(taskService)
-                                    .environmentObject(currencyService)
-                                    .environmentObject(appSettings)
-                                    .environmentObject(documentService)
-                                    .environmentObject(router)
-                                    .environmentObject(zoneService)
+                                    .environment(elementService)
+                                    .environment(taskService)
+                                    .environment(currencyService)
+                                    .environment(appSettings)
+                                    .environment(documentService)
+                                    .environment(router)
+                                    .environment(zoneService)
                             } label: {
                                 ZoneListRow(
                                     zone: zone,
@@ -75,12 +75,12 @@ struct ZonesListView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -90,7 +90,7 @@ struct ZonesListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 10) {
                     Text("\(filteredZones.count)")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(.regularMaterial, in: Capsule())
@@ -100,12 +100,13 @@ struct ZonesListView: View {
                         router.selectedTab = .digitalTwin
                     } label: {
                         Image(systemName: "map.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .frame(width: 34, height: 34)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Open Digital Twin")
                 }
             }
         }
@@ -134,8 +135,8 @@ struct ZonesListView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No zones")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Open the Digital Twin to draw your first zone")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -174,28 +175,28 @@ struct ZoneListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(zone.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 Text(elementCount == 1 ? "1 item" : "\(elementCount) items")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 
             Spacer()
 
             // Health badge
             Text(LocalizedStringKey(healthLabel))
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(zone.healthColor)
                 .padding(.horizontal, 9)
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
                 .background(zone.healthColor.opacity(0.15), in: Capsule())
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)

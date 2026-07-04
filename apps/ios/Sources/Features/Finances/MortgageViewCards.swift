@@ -15,15 +15,15 @@ extension MortgageView {
                     .foregroundStyle(.primary)
                 Text("Enter your mortgage details to track payments, remaining balance, and equity buildup.")
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
                 Button { isEditing = true } label: {
                     Text("Set Up Mortgage")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(.blue, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.vertical, AppSpacing.md)
+                        .background(.blue, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -35,7 +35,7 @@ extension MortgageView {
             VStack(spacing: 14) {
                 HStack {
                     Text("Monthly Payment")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("\(Int(interestRate * 10) / 10)% · \(Int(termYears))yr")
@@ -48,9 +48,9 @@ extension MortgageView {
 
                 HStack(spacing: 0) {
                     MortgageStat(label: "Principal", value: "€\(Int(loanAmount))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Interest", value: "€\(Int(totalInterest))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Total Cost", value: "€\(Int(loanAmount + totalInterest))")
                 }
             }
@@ -62,7 +62,7 @@ extension MortgageView {
             VStack(spacing: 14) {
                 HStack {
                     Text("Repayment Progress")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.1f%%", paidProgress * 100))
@@ -71,9 +71,9 @@ extension MortgageView {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
-                            .fill(LinearGradient(colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
+                            .fill(LinearGradient(colors: [.blue, Color.brandSuccess],
                                                  startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * paidProgress, height: 10)
                             .animation(.spring(response: 0.6), value: paidProgress)
@@ -87,7 +87,7 @@ extension MortgageView {
                             .font(.system(size: 11))
                             .foregroundStyle(Color.primary.opacity(0.4))
                         Text("\(paidMonths) months")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                     }
                     Spacer()
@@ -96,7 +96,7 @@ extension MortgageView {
                             .font(.system(size: 11))
                             .foregroundStyle(Color.primary.opacity(0.4))
                         Text("\(remainingMonths) months")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                     }
                 }
@@ -121,7 +121,7 @@ extension MortgageView {
                             let f: DateFormatter = { let d = DateFormatter(); d.dateFormat = "MMM yyyy"; return d }()
                             Text(f.string(from: endDate))
                                 .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                                .foregroundStyle(Color.brandSuccess)
                         }
                     }
                 }
@@ -134,19 +134,19 @@ extension MortgageView {
             VStack(spacing: 14) {
                 HStack {
                     Text("Equity")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.1f%%", equityPercent * 100))
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                        .foregroundStyle(Color.brandSuccess)
                 }
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.07)).frame(height: 10)
+                        Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 10)
                         Capsule()
-                            .fill(Color(red: 0.3, green: 0.85, blue: 0.5))
+                            .fill(Color.brandSuccess)
                             .frame(width: geo.size.width * equityPercent, height: 10)
                             .animation(.spring(response: 0.6), value: equityPercent)
                     }
@@ -155,9 +155,9 @@ extension MortgageView {
 
                 HStack {
                     MortgageStat(label: "Property Value", value: "€\(Int(propertyValue))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Your Equity", value: "€\(Int(max(0, propertyValue - remainingLoanBalance)))")
-                    Rectangle().fill(Color.primary.opacity(0.07)).frame(width: 0.5, height: 34)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
                     MortgageStat(label: "Owed", value: "€\(Int(remainingLoanBalance))")
                 }
             }
@@ -168,7 +168,7 @@ extension MortgageView {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Payment Breakdown")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
 
                 let principalShare = loanAmount / (loanAmount + totalInterest)
@@ -191,7 +191,7 @@ struct MortgageStat: View {
     var body: some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(AppFont.captionEmphasis)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -214,16 +214,16 @@ struct BreakdownRow: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle().fill(color).frame(width: 7, height: 7)
-                    Text(label).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.7))
+                    Text(label).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 Spacer()
                 Text(String(format: "%.1f%%", percent * 100))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.primary.opacity(0.07)).frame(height: 6)
+                    Capsule().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 6)
                     Capsule().fill(color.opacity(0.7)).frame(width: geo.size.width * percent, height: 6)
                 }
             }.frame(height: 6)
@@ -266,19 +266,19 @@ struct MortgageSetupSheet: View {
 
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Mortgage Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(Color.accentColor)
                 }
             }
@@ -301,7 +301,7 @@ struct MortgageSetupSheet: View {
                 Spacer()
                 HStack(spacing: 4) {
                     TextField("0", text: text)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
                         .keyboardType(keyboard)

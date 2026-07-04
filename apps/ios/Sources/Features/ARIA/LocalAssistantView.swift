@@ -80,10 +80,10 @@ struct PropertyBotEngine {
 }
 
 struct LocalAssistantView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var messages: [ChatMessage] = []
     @State private var input = ""
@@ -126,8 +126,8 @@ struct LocalAssistantView: View {
                     Text("Assistant")
                         .font(.title2.weight(.bold))
                     Image(systemName: "cpu.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.9))
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.brandSuccess.opacity(0.9))
                 }
                 if #available(iOS 26.0, *) {
                     Text("Apple Intelligence · On-device")
@@ -145,14 +145,15 @@ struct LocalAssistantView: View {
                 HapticFeedback.impact(.light)
             } label: {
                 Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
             .glassCircle()
+            .accessibilityLabel("Reset conversation")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.base)
     }
 
     // MARK: - Message list
@@ -169,9 +170,9 @@ struct LocalAssistantView: View {
                             .id("thinking")
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .padding(.bottom, 20)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.md)
+                .padding(.bottom, AppSpacing.xl)
             }
             .onChange(of: messages.count) { _, _ in
                 withAnimation { proxy.scrollTo(messages.last?.id, anchor: .bottom) }
@@ -191,9 +192,9 @@ struct LocalAssistantView: View {
                 .tint(.accentColor)
                 .focused($focused)
                 .lineLimit(1...4)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
 
             Button {
                 guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -205,9 +206,9 @@ struct LocalAssistantView: View {
             }
             .disabled(input.isEmpty || isThinking)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
-        .liquidGlass(cornerRadius: 16)
+        .liquidGlass(cornerRadius: AppRadius.lg)
     }
 
     // MARK: - Send
@@ -293,7 +294,7 @@ private struct LocalMessageBubble: View {
             Text(message.text)
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
                 .background(
                     isUser
@@ -319,13 +320,13 @@ private struct ThinkingBubble: View {
             HStack(spacing: 5) {
                 ForEach(0..<3) { i in
                     Circle()
-                        .fill(Color.primary.opacity(0.5))
+                        .fill(Color.primary.opacity(AppOpacity.mediumText))
                         .frame(width: 7, height: 7)
                         .scaleEffect(phase == Double(i) ? 1.3 : 0.8)
                         .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             Spacer(minLength: 60)
         }

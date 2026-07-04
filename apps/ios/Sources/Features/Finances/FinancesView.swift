@@ -4,12 +4,12 @@ import Charts
 // MARK: - Main View
 
 struct FinancesView: View {
-    @EnvironmentObject var financialService: FinancialService
-    @EnvironmentObject var budgetService: BudgetService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var router: AppRouter
+    @Environment(FinancialService.self) var financialService
+    @Environment(BudgetService.self) var budgetService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddSheet    = false
     @State private var selectedType: String? = nil
@@ -65,11 +65,11 @@ struct FinancesView: View {
                         heroSection
                         kpiStrip
                         quickActionsRow
-                            .padding(.top, 20)
-                            .padding(.horizontal, 20)
+                            .padding(.top, AppSpacing.xl)
+                            .padding(.horizontal, AppSpacing.xl)
                         transactionList
-                            .padding(.top, 16)
-                            .padding(.horizontal, 20)
+                            .padding(.top, AppSpacing.lg)
+                            .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
                     .background(
@@ -108,8 +108,9 @@ struct FinancesView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddSheet = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
+                .accessibilityLabel("Add transaction")
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -139,8 +140,9 @@ struct FinancesView: View {
             Image(systemName: selectedType == nil
                   ? "line.3.horizontal.decrease"
                   : (selectedType == "income" ? "arrow.down.left" : "arrow.up.right"))
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
+        .accessibilityLabel("Filter transactions")
     }
 }

@@ -35,7 +35,7 @@ extension PlantDetailSheet {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
             }
         }
     }
@@ -91,7 +91,7 @@ extension PlantDetailSheet {
                 GlassCard(padding: 16) {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Notes", systemImage: "note.text")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(.secondary)
                         Text(notes)
                             .font(.system(size: 15))
@@ -106,7 +106,7 @@ extension PlantDetailSheet {
     private func detailRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                     .fill(iconColor.opacity(0.12))
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
@@ -119,11 +119,11 @@ extension PlantDetailSheet {
             Spacer()
             Text(value)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private var rowDivider: some View {
@@ -143,9 +143,9 @@ extension PlantDetailSheet {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                 Text("Mark as watered")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -156,7 +156,7 @@ extension PlantDetailSheet {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -180,7 +180,7 @@ extension PlantDetailSheet {
                                 .background(
                                     editedPlant.emoji == emoji
                                         ? Color.accentColor.opacity(0.18)
-                                        : Color.primary.opacity(0.06),
+                                        : Color.primary.opacity(AppOpacity.hairline),
                                     in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 )
                                 .overlay(
@@ -202,8 +202,8 @@ extension PlantDetailSheet {
                     .font(.system(size: 16))
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
-                    .padding(14)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -215,8 +215,8 @@ extension PlantDetailSheet {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -228,8 +228,8 @@ extension PlantDetailSheet {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -246,11 +246,11 @@ extension PlantDetailSheet {
                                     editedPlant.healthStatus == opt.id ? .white : Color.primary.opacity(0.65)
                                 )
                                 .padding(.horizontal, 11)
-                                .padding(.vertical, 8)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(
                                     editedPlant.healthStatus == opt.id
                                         ? plantHealthColor(opt.id)
-                                        : Color.primary.opacity(0.07),
+                                        : Color.primary.opacity(AppOpacity.subtleFill),
                                     in: Capsule()
                                 )
                         }
@@ -270,8 +270,8 @@ extension PlantDetailSheet {
                     Stepper("", value: $editedPlant.wateringIntervalDays, in: 1...30)
                         .labelsHidden()
                 }
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -284,15 +284,15 @@ extension PlantDetailSheet {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...6)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
         }
     }
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

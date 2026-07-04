@@ -6,12 +6,12 @@ import Supabase
 struct PropertyElementDetailView: View {
     let element: PropertyElement
 
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var propertyService: PropertyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyService.self) var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: DetailTab = .info
@@ -54,21 +54,21 @@ struct PropertyElementDetailView: View {
 
                 VStack(spacing: 0) {
                     coverHero
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.sm)
 
                     elementHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
+                        .padding(.bottom, AppSpacing.md)
 
                     healthSection
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.bottom, AppSpacing.lg)
 
                     DetailTabBar(selected: $selectedTab)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.bottom, AppSpacing.sm)
 
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 16) {
@@ -80,8 +80,8 @@ struct PropertyElementDetailView: View {
                             }
                             Spacer(minLength: 60)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.xxs)
                     }
                 }
             }
@@ -94,6 +94,7 @@ struct PropertyElementDetailView: View {
                             .foregroundStyle(.secondary)
                             .font(.system(size: 22))
                     }
+                    .accessibilityLabel("Close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -109,8 +110,9 @@ struct PropertyElementDetailView: View {
                                   systemImage: localElement.isFavorite ? "star.slash" : "star")
                         }
                         Button {
+                            let element = localElement
                             Task {
-                                if let u = await Task.detached(priority: .userInitiated, operation: { ElementPDFExporter.makePDF(for: localElement) }).value {
+                                if let u = await Task.detached(priority: .userInitiated, operation: { ElementPDFExporter.makePDF(for: element) }).value {
                                     exportURL = ShareURL(url: u)
                                 }
                             }
@@ -153,11 +155,11 @@ struct PropertyElementDetailView: View {
         }
         .sheet(isPresented: $showLinkDocument) {
             DocumentLinkPicker(elementId: localElement.id)
-                .environmentObject(documentService)
+                .environment(documentService)
         }
         .sheet(isPresented: $showLinkTask) {
             TaskLinkPicker(elementId: localElement.id)
-                .environmentObject(taskService)
+                .environment(taskService)
         }
         .onChange(of: photoItems) { _, items in
             Task { await uploadPhotos(items) }
@@ -173,7 +175,7 @@ struct PropertyElementDetailView: View {
         .task {
             await elementService.loadRecords(elementId: localElement.id)
         }
-        .onReceive(elementService.$elements) { updated in
+        .onChange(of: elementService.elements) { _, updated in
             if let fresh = updated.first(where: { $0.id == localElement.id }) {
                 localElement = fresh
             }
@@ -197,7 +199,7 @@ struct PropertyElementDetailView: View {
                 ForEach(urls, id: \.self) { u in
                     AsyncImage(url: URL(string: u)) { phase in
                         if case .success(let img) = phase { img.resizable().scaledToFill() }
-                        else { Color.primary.opacity(0.06) }
+                        else { Color.primary.opacity(AppOpacity.hairline) }
                     }
                     .clipped()
                 }

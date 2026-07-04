@@ -1,99 +1,109 @@
 import SwiftUI
 
-struct AppNotification: Identifiable, Codable {
-    let id: UUID
-    var title: String
-    var body: String?
-    var priority: String
-    var status: String
-    var module: String?
-    var actionUrl: String?
-    var createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, title, body, priority, status, module
-        case actionUrl  = "action_url"
-        case createdAt  = "created_at"
-    }
-
-    var isUnread: Bool { status == "unread" }
-
-    var priorityColor: Color {
-        switch priority {
-        case "critical": return .red
-        case "high":     return .orange
-        case "normal":   return .blue
-        default:         return Color.primary.opacity(0.4)
-        }
-    }
-
-    var moduleIcon: String {
-        switch module ?? "" {
-        case "maintenance": return "wrench.fill"
-        case "document":    return "doc.fill"
-        case "finance":     return "creditcard.fill"
-        case "security":    return "lock.shield.fill"
-        case "garden":      return "leaf.fill"
-        case "family":      return "person.2.fill"
-        default:            return "bell.fill"
-        }
-    }
-
-    var timeDisplay: String {
-        let f1 = ISO8601DateFormatter()
-        f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        guard let date = f1.date(from: createdAt) ?? f2.date(from: createdAt) else { return "" }
-        let diff = Date().timeIntervalSince(date)
-        if diff < 60 { return String(localized: "Just now") }
-        if diff < 3600 { return String(localized: "\(Int(diff / 60))m ago") }
-        if diff < 86400 { return String(localized: "\(Int(diff / 3600))h ago") }
-        let df = DateFormatter(); df.dateStyle = .short; df.timeStyle = .none
-        return df.string(from: date)
-    }
-}
+// MARK: - Notification center
+//
+// Live inbox over the notifications table: category chips derived from the
+// modules actually present (chat, tasks, garden, documents… and any module a
+// future feature starts writing), tap-to-navigate deep links, swipe to read/
+// dismiss, and realtime updates shared with the dashboard bell badge.
 
 struct NotificationCenterView: View {
-    @EnvironmentObject private var auth: AuthService
-    @State private var notifications: [AppNotification] = []
-    @State private var isLoading = false
-    @State private var errorMsg: String?
+    @Environment(AuthService.self) private var auth
+    @Environment(AppRouter.self) private var router
+    @Environment(\.dismiss) private var dismissSheet
 
-    var unreadCount: Int { notifications.filter(\.isUnread).count }
+    let service: NotificationService
+
+    @State private var filter: String?   // nil = All, "unread", or a module
+
+    private var userId: UUID? { auth.session?.user.id }
+
+    private var categories: [NotificationCategory] {
+        var seen = Set<String>()
+        var result: [NotificationCategory] = []
+        for n in service.notifications {
+            let cat = NotificationCategory.forModule(n.module)
+            if seen.insert(cat.module).inserted { result.append(cat) }
+        }
+        return result
+    }
+
+    private var filtered: [AppNotification] {
+        switch filter {
+        case nil:      return service.notifications
+        case "unread": return service.notifications.filter(\.isUnread)
+        case .some(let module):
+            return service.notifications.filter {
+                NotificationCategory.forModule($0.module).module == module
+            }
+        }
+    }
 
     var body: some View {
         Group {
-            if isLoading {
+            if service.isLoading {
                 VStack { Spacer(); ProgressView().tint(.primary); Spacer() }
-            } else if notifications.isEmpty {
+            } else if service.notifications.isEmpty {
                 emptyState
             } else {
-                list
+                content
             }
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            if unreadCount > 0 {
+            if !service.notifications.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Mark all read") { Task { await markAllRead() } }
-                        .font(.system(size: 14))
+                    Menu {
+                        if service.unreadCount > 0 {
+                            Button {
+                                guard let uid = userId else { return }
+                                Task { await service.markAllRead(userId: uid) }
+                            } label: {
+                                Label("Mark all read", systemImage: "checkmark.circle")
+                            }
+                        }
+                        Button(role: .destructive) {
+                            guard let uid = userId else { return }
+                            Task { await service.clearAll(userId: uid) }
+                        } label: {
+                            Label("Clear all", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
                 }
             }
         }
-        .task { await load() }
+        .task {
+            if let uid = userId {
+                await service.load(userId: uid)
+                await service.subscribeRealtime(userId: uid)
+            }
+        }
     }
 
-    private var list: some View {
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 10) {
-                ForEach(notifications) { notif in
+    // MARK: - Content
+
+    private var content: some View {
+        VStack(spacing: 0) {
+            filterChips
+                .padding(.vertical, AppSpacing.sm)
+
+            List {
+                ForEach(filtered) { notif in
                     NotificationRow(notification: notif)
-                        .swipeActions(edge: .trailing) {
+                        .listRowInsets(EdgeInsets(top: 5, leading: AppSpacing.lg,
+                                                  bottom: 5, trailing: AppSpacing.lg))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .contentShape(Rectangle())
+                        .onTapGesture { open(notif) }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
-                                Task { await dismiss(notif) }
+                                Task { await service.dismiss(notif) }
                             } label: {
                                 Label("Dismiss", systemImage: "xmark")
                             }
@@ -101,7 +111,7 @@ struct NotificationCenterView: View {
                         .swipeActions(edge: .leading) {
                             if notif.isUnread {
                                 Button {
-                                    Task { await markRead(notif) }
+                                    Task { await service.markRead(notif) }
                                 } label: {
                                     Label("Read", systemImage: "checkmark")
                                 }
@@ -110,10 +120,53 @@ struct NotificationCenterView: View {
                         }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
-            .padding(.bottom, 110)
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
+    }
+
+    private var filterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                chip(label: Text("All"), icon: nil, color: .accentColor, key: nil,
+                     count: service.notifications.count)
+                if service.unreadCount > 0 {
+                    chip(label: Text("Unread"), icon: "circle.fill", color: .blue,
+                         key: "unread", count: service.unreadCount)
+                }
+                ForEach(categories) { cat in
+                    chip(label: Text(cat.label), icon: cat.icon, color: cat.color,
+                         key: cat.module,
+                         count: service.notifications.filter {
+                             NotificationCategory.forModule($0.module).module == cat.module
+                         }.count)
+                }
+            }
+            .padding(.horizontal, AppSpacing.lg)
+        }
+    }
+
+    private func chip(label: Text, icon: String?, color: Color, key: String?, count: Int) -> some View {
+        let selected = filter == key
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.smooth(duration: 0.22)) { filter = key }
+        } label: {
+            HStack(spacing: 5) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                label.font(AppFont.captionEmphasis)
+                Text("\(count)")
+                    .font(AppFont.caption2)
+                    .opacity(0.65)
+            }
+            .foregroundStyle(selected ? Color.white : color)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(selected ? color : color.opacity(0.13), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
@@ -123,8 +176,8 @@ struct NotificationCenterView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.18))
             Text("No notifications")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.title3)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("You're all caught up!")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -132,68 +185,43 @@ struct NotificationCenterView: View {
         }
     }
 
-    private func load() async {
-        guard let uid = auth.session?.user.id else { return }
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            notifications = try await supabase
-                .from("notifications")
-                .select()
-                .eq("user_id", value: uid.uuidString)
-                .neq("status", value: "dismissed")
-                .order("created_at", ascending: false)
-                .limit(60)
-                .execute()
-                .value
-        } catch {
-            errorMsg = error.localizedDescription
+    // MARK: - Navigation
+
+    /// Marks the notification read, closes the sheet and routes to the thing
+    /// it's about. Router is captured before dismiss (same pattern as global
+    /// search) because the environment dies with the view.
+    private func open(_ notif: AppNotification) {
+        HapticFeedback.impact(.light)
+        Task { await service.markRead(notif) }
+        let r = router
+        dismissSheet()
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            r.handle(notificationModule: notif.module,
+                     actionUrl: notif.actionUrl,
+                     resourceId: notif.resourceId)
         }
-    }
-
-    private func markRead(_ notif: AppNotification) async {
-        guard let idx = notifications.firstIndex(where: { $0.id == notif.id }) else { return }
-        notifications[idx].status = "read"
-        try? await supabase
-            .from("notifications")
-            .update(["status": "read"])
-            .eq("id", value: notif.id.uuidString)
-            .execute()
-    }
-
-    private func markAllRead() async {
-        guard let uid = auth.session?.user.id else { return }
-        for i in notifications.indices { notifications[i].status = "read" }
-        try? await supabase
-            .from("notifications")
-            .update(["status": "read"])
-            .eq("user_id", value: uid.uuidString)
-            .eq("status", value: "unread")
-            .execute()
-    }
-
-    private func dismiss(_ notif: AppNotification) async {
-        notifications.removeAll { $0.id == notif.id }
-        try? await supabase
-            .from("notifications")
-            .update(["status": "dismissed"])
-            .eq("id", value: notif.id.uuidString)
-            .execute()
     }
 }
 
+// MARK: - Row
+
 private struct NotificationRow: View {
     let notification: AppNotification
+
+    private var category: NotificationCategory {
+        NotificationCategory.forModule(notification.module)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(notification.priorityColor.opacity(0.12))
+                    .fill(category.color.opacity(0.13))
                     .frame(width: 40, height: 40)
-                Image(systemName: notification.moduleIcon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(notification.priorityColor)
+                Image(systemName: category.icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(category.color)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -203,7 +231,7 @@ private struct NotificationRow: View {
                         .foregroundStyle(Color.primary)
                         .lineLimit(2)
                     Spacer()
-                    Text(LocalizedStringKey(notification.timeDisplay))
+                    Text(notification.timeDisplay)
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.38))
                 }
@@ -213,26 +241,33 @@ private struct NotificationRow: View {
                         .foregroundStyle(Color.primary.opacity(0.6))
                         .lineLimit(2)
                 }
+                HStack(spacing: 4) {
+                    Image(systemName: category.icon)
+                        .font(.system(size: 8, weight: .semibold))
+                    Text(category.label)
+                        .font(AppFont.caption2)
+                }
+                .foregroundStyle(category.color.opacity(0.85))
             }
 
             if notification.isUnread {
                 Circle()
-                    .fill(Color.blue)
+                    .fill(notification.priorityColor)
                     .frame(width: 7, height: 7)
                     .padding(.top, 5)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         .background(
             notification.isUnread
-                ? Color.primary.opacity(0.06)
+                ? Color.primary.opacity(AppOpacity.hairline)
                 : Color.primary.opacity(0.03),
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
         )
     }
 }

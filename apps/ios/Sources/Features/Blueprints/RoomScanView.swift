@@ -35,11 +35,11 @@ private struct UnsupportedScanView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
                 Button("Close") { onClose() }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
-                    .padding(.horizontal, 28).padding(.vertical, 12)
+                    .padding(.horizontal, 28).padding(.vertical, AppSpacing.md)
                     .background(Color.primary.opacity(0.12), in: Capsule())
-                    .padding(.top, 8)
+                    .padding(.top, AppSpacing.sm)
             }
         }
     }

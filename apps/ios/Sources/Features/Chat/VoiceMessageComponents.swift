@@ -1,16 +1,18 @@
 import SwiftUI
+import Observation
 import AVFoundation
 import CoreMedia
 
 // MARK: - Audio Recorder
 
 @MainActor
-final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
-    @Published var isRecording = false
-    @Published var duration: TimeInterval = 0
+@Observable
+final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
+    var isRecording = false
+    var duration: TimeInterval = 0
 
-    private var recorder: AVAudioRecorder?
-    private var timer: Timer?
+    @ObservationIgnored private var recorder: AVAudioRecorder?
+    @ObservationIgnored private var timer: Timer?
     private(set) var recordingURL: URL?
 
     func start() {
@@ -29,7 +31,7 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
     private func beginRecording() {
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
         } catch {
 #if DEBUG
@@ -88,8 +90,10 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
 
     deinit {
         // Timer was scheduled on the main RunLoop — must be invalidated there.
-        // Capture both so we don't reference self in the async block.
-        let t = timer
+        // Capture both so we don't reference self in the async block. Timer and
+        // AVAudioRecorder aren't Sendable; nonisolated(unsafe) is sound here
+        // because deinit holds the last reference — no concurrent access exists.
+        nonisolated(unsafe) let t = timer   // Timer isn't Sendable; recorder is
         let r = recorder
         DispatchQueue.main.async { t?.invalidate(); r?.stop() }
     }
@@ -103,7 +107,7 @@ final class ChatAudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelega
 // MARK: - Hold-to-record button
 
 struct VoiceRecordButton: View {
-    @ObservedObject var recorder: ChatAudioRecorder
+    var recorder: ChatAudioRecorder
     let onSend: (URL) -> Void
 
     @State private var cancelled = false
@@ -123,12 +127,12 @@ struct VoiceRecordButton: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, AppSpacing.md)
                 .transition(.opacity.combined(with: .scale))
             }
 
             Image(systemName: recorder.isRecording ? "waveform" : "mic.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(recorder.isRecording ? Color.red : Color.primary.opacity(0.55))
                 .symbolEffect(.pulse, isActive: recorder.isRecording)
                 .frame(width: 30, height: 30)
@@ -163,55 +167,49 @@ struct VoiceRecordButton: View {
 // MARK: - Audio playback bubble
 
 struct AudioBubble: View {
-    let url: URL?
+    /// Stored attachment value — a chat-media path or a legacy public URL. It is
+    /// resolved to a short-lived signed URL for playback.
+    let audioValue: String?
     let isOwn: Bool
+    var avatarURL: URL? = nil
+    var initials: String = ""
+    var avatarColor: Color = .secondary
+    var timeText: String = ""
+    var tick: AudioTick = .none
+    /// Outgoing-bubble fill — driven by the selected chat theme.
+    var bubbleColor: Color = Color.blue.opacity(0.75)
+    /// Draw the group tail — true only on the last bubble of a same-sender run.
+    var hasTail: Bool = true
 
-    @StateObject private var player = AudioPlayer()
+    enum AudioTick { case none, sent, delivered, read }
+
+    @State private var player = AudioPlayer()
     @State private var loadedDuration: TimeInterval = 0
+    /// Signed URL resolved from `audioValue` (nil while resolving).
+    @State private var url: URL?
+
+    private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(AppOpacity.mediumText) }
 
     var body: some View {
         HStack(spacing: 10) {
-            Button {
-                if player.isPlaying { player.pause() }
-                else if let url { player.play(url: url) }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(isOwn ? Color.white.opacity(0.25) : Color.accentColor.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isOwn ? .white : Color.accentColor)
-                }
+            avatar
+            playButton
+            VStack(alignment: .leading, spacing: 5) {
+                waveform
+                bottomRow
             }
-            .buttonStyle(.plain)
-            .disabled(url == nil || loadedDuration == 0)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
-                        .frame(height: 3)
-                    Capsule()
-                        .fill(isOwn ? Color.white : Color.accentColor)
-                        .frame(width: geo.size.width * player.progress, height: 3)
-                }
-                .frame(maxHeight: .infinity)
-            }
-            .frame(height: 20)
-
-            Text(player.isPlaying ? player.positionText : durationText)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(isOwn ? Color.white.opacity(0.75) : Color.primary.opacity(0.5))
-                .frame(width: 34, alignment: .trailing)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
         .background(
-            isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            isOwn ? bubbleColor : Color.primary.opacity(0.08),
+            in: ChatBubbleShape(isOwn: isOwn, hasTail: hasTail)
         )
-        .frame(minWidth: 180, maxWidth: 240)
-        .task {
+        .frame(minWidth: 230, maxWidth: 290)
+        .task(id: audioValue ?? "") {
+            guard let audioValue else { url = nil; return }
+            url = await ChatMedia.resolve(audioValue)
+        }
+        .task(id: url) {
             guard let url, loadedDuration == 0 else { return }
             let asset = AVURLAsset(url: url)
             if let cmTime = try? await asset.load(.duration) {
@@ -225,10 +223,172 @@ struct AudioBubble: View {
         .onDisappear { player.stop() }
     }
 
+    // Sender avatar with the WhatsApp-style mic badge.
+    private var avatar: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if let avatarURL {
+                    AsyncImage(url: avatarURL) { phase in
+                        if case .success(let img) = phase {
+                            img.resizable().scaledToFill()
+                        } else {
+                            avatarPlaceholder
+                        }
+                    }
+                } else {
+                    avatarPlaceholder
+                }
+            }
+            .frame(width: 46, height: 46)
+            .clipShape(Circle())
+
+            Image(systemName: "mic.fill")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(isOwn ? bubbleColor.opacity(1) : Color.accentColor)
+                .padding(AppSpacing.xxs)
+                .background(Circle().fill(.white))
+                .offset(x: 3, y: 3)
+        }
+    }
+
+    private var avatarPlaceholder: some View {
+        Circle().fill(avatarColor.opacity(0.25))
+            .overlay(
+                Text(initials)
+                    .font(AppFont.headline)
+                    .foregroundStyle(avatarColor)
+            )
+    }
+
+    private var playButton: some View {
+        Button {
+            if player.isPlaying { player.pause() }
+            else if let url { player.play(url: url) }
+        } label: {
+            Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(isOwn ? .white : Color.accentColor)
+                .frame(width: 26)
+        }
+        .buttonStyle(.plain)
+        .disabled(url == nil)
+        .accessibilityLabel(player.isPlaying ? "Pause" : "Play voice message")
+    }
+
+    // Waveform with a draggable scrubber dot.
+    private var waveform: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                VoiceWaveform(progress: player.progress, isOwn: isOwn, seed: Self.seed(for: url))
+                Circle()
+                    .fill(isOwn ? Color.white : Color.accentColor)
+                    .frame(width: 11, height: 11)
+                    .offset(x: max(0, min(geo.size.width - 11, geo.size.width * player.progress - 5.5)))
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { v in
+                        guard geo.size.width > 0 else { return }
+                        player.seek(toFraction: Double(v.location.x / geo.size.width))
+                    }
+            )
+        }
+        .frame(height: 26)
+    }
+
+    private var bottomRow: some View {
+        HStack(spacing: 6) {
+            Text(player.isPlaying ? player.positionText : durationText)
+                .font(.system(size: 11))
+                .foregroundStyle(subFg)
+            if player.isPlaying {
+                Button { player.cycleRate() } label: {
+                    Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(isOwn ? .white : Color.accentColor)
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 4)
+            if !timeText.isEmpty {
+                Text(timeText)
+                    .font(.system(size: 10))
+                    .foregroundStyle(subFg)
+            }
+            tickView
+        }
+    }
+
+    @ViewBuilder private var tickView: some View {
+        switch tick {
+        case .none:    EmptyView()
+        case .sent:      MessageTick(status: .sent, color: subFg, readColor: .white, size: 10)
+        case .delivered: MessageTick(status: .delivered, color: subFg, readColor: .white, size: 10)
+        case .read:      MessageTick(status: .read, color: subFg, readColor: .white, size: 10)
+        }
+    }
+
     private var durationText: String {
         guard loadedDuration > 0 else { return "-:--" }
         let s = Int(loadedDuration)
         return String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    /// Stable seed from the URL so each clip gets a consistent waveform shape.
+    static func seed(for url: URL?) -> UInt64 {
+        guard let s = url?.absoluteString else { return 1 }
+        var hash: UInt64 = 1469598103934665603 // FNV-1a
+        for byte in s.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 1099511628211
+        }
+        return hash
+    }
+}
+
+// MARK: - Voice waveform (stylized; deterministic from the clip URL)
+
+private struct VoiceWaveform: View {
+    let progress: Double
+    let isOwn: Bool
+    let seed: UInt64
+    private let barCount = 34
+
+    private var heights: [CGFloat] {
+        var state = seed | 1
+        return (0..<barCount).map { _ in
+            // xorshift for a deterministic pseudo-random 0.25...1.0 height
+            state ^= state << 13
+            state ^= state >> 7
+            state ^= state << 17
+            return 0.25 + CGFloat(state % 1000) / 1000.0 * 0.75
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let bars = heights
+            let played = Int((Double(barCount) * progress).rounded())
+            HStack(alignment: .center, spacing: 2) {
+                ForEach(0..<barCount, id: \.self) { i in
+                    Capsule()
+                        .fill(color(for: i, played: played))
+                        .frame(height: max(3, geo.size.height * bars[i]))
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+    }
+
+    private func color(for index: Int, played: Int) -> Color {
+        if index < played {
+            return isOwn ? Color.white : Color.accentColor
+        }
+        return isOwn ? Color.white.opacity(0.35) : Color.primary.opacity(0.2)
     }
 }
 
@@ -237,15 +397,17 @@ struct AudioBubble: View {
 // Storage (HTTPS), so AVPlayer is required here.
 
 @MainActor
-final class AudioPlayer: ObservableObject {
-    @Published var isPlaying = false
-    @Published var progress: Double = 0
-    @Published var position: TimeInterval = 0
+@Observable
+final class AudioPlayer {
+    var isPlaying = false
+    var progress: Double = 0
+    var position: TimeInterval = 0
+    var rate: Float = 1.0
     var totalDuration: TimeInterval = 0
 
-    private var player: AVPlayer?
-    private var timeObserverToken: Any?
-    private var endObserver: NSObjectProtocol?
+    @ObservationIgnored private var player: AVPlayer?
+    @ObservationIgnored private var timeObserverToken: Any?
+    @ObservationIgnored private var endObserver: NSObjectProtocol?
 
     func play(url: URL) {
         stop()
@@ -261,19 +423,42 @@ final class AudioPlayer: ObservableObject {
             object: item,
             queue: .main
         ) { [weak self] _ in
-            self?.didFinishPlaying()
+            // Delivered on .main (queue above), so main-actor access is valid.
+            MainActor.assumeIsolated { self?.didFinishPlaying() }
         }
 
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
         timeObserverToken = avPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self else { return }
-            let secs = CMTimeGetSeconds(time)
-            self.position = secs.isFinite ? secs : 0
-            self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
+            // Delivered on .main (queue above), so main-actor access is valid.
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let secs = CMTimeGetSeconds(time)
+                self.position = secs.isFinite ? secs : 0
+                self.progress = self.totalDuration > 0 ? (self.position / self.totalDuration).clamped(to: 0...1) : 0
+            }
         }
 
-        avPlayer.play()
+        avPlayer.playImmediately(atRate: rate)
         isPlaying = true
+    }
+
+    /// Seeks to a 0...1 fraction of the clip (used by the waveform scrubber).
+    func seek(toFraction f: Double) {
+        let frac = Swift.min(Swift.max(f, 0), 1)
+        progress = frac
+        position = totalDuration * frac
+        guard let player, totalDuration > 0 else { return }
+        player.seek(to: CMTime(seconds: totalDuration * frac, preferredTimescale: 600))
+    }
+
+    /// Cycles playback speed 1× → 1.5× → 2× → 1×, applying it live if playing.
+    func cycleRate() {
+        switch rate {
+        case 1.0: rate = 1.5
+        case 1.5: rate = 2.0
+        default:  rate = 1.0
+        }
+        if isPlaying { player?.rate = rate }
     }
 
     private func didFinishPlaying() {

@@ -16,10 +16,16 @@ struct Message: Identifiable, Codable {
     var isMarked: Bool?
     var editedAt: String?
     var deletedForAll: Bool?
+    /// Communities: the chat group this message belongs to. nil = property-wide main group.
+    var groupId: UUID?
+    /// Disappearing messages: when set, the server sweep deletes this row after it.
+    var expiresAt: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, body, latitude, longitude, pinned
+        case groupId       = "group_id"
+        case expiresAt     = "expires_at"
         case propertyId    = "property_id"
         case senderId      = "sender_id"
         case senderName    = "sender_name"
@@ -34,18 +40,16 @@ struct Message: Identifiable, Codable {
     }
 
     var timeDisplay: String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        let d = f.date(from: createdAt) ?? f2.date(from: createdAt) ?? Date()
-        let out = DateFormatter()
-        out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
-        return out.string(from: d)
+        let d = ISODate.date(from: createdAt) ?? Date()
+        // Only the time, like WhatsApp — the date is shown by the day separators.
+        return ISODate.timeOnly.string(from: d)
     }
+
+    var date: Date? { ISODate.date(from: createdAt) }
 
     var isLocationMessage: Bool { attachmentType == "location" }
     var isImageMessage: Bool    { attachmentType == "image" }
+    var isVideoMessage: Bool    { attachmentType == "video" }
     var isFileMessage: Bool     { attachmentType == "file" }
     var isStickerMessage: Bool  { attachmentType == "sticker" }
     var isAudioMessage: Bool    { attachmentType == "audio" }
@@ -54,6 +58,9 @@ struct Message: Identifiable, Codable {
 }
 
 struct NewMessage: Encodable {
+    // Client-generated so the row can be shown optimistically before the
+    // server acknowledges it (realtime echoes dedup on this id).
+    var id: UUID? = nil
     let property_id: UUID?
     let sender_id: UUID
     let sender_name: String
@@ -64,6 +71,8 @@ struct NewMessage: Encodable {
     let longitude: Double?
     let mentioned_ids: [String]
     var reply_to: UUID? = nil
+    var group_id: UUID? = nil
+    var expires_at: String? = nil
 }
 
 // MARK: - Emoji reactions
@@ -107,13 +116,27 @@ struct MessageRead: Identifiable, Codable, Hashable {
     }
 
     var readTimeDisplay: String {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        let d = f.date(from: readAt) ?? f2.date(from: readAt) ?? Date()
+        let d = ISODate.date(from: readAt) ?? Date()
         let out = DateFormatter()
         out.dateFormat = Calendar.current.isDateInToday(d) ? "HH:mm" : "dd MMM HH:mm"
         return out.string(from: d)
+    }
+}
+
+struct MessageDelivery: Identifiable, Codable, Hashable {
+    let id: UUID
+    var messageId: UUID
+    var propertyId: UUID?
+    var userId: UUID?
+    var delivererName: String
+    var deliveredAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case messageId    = "message_id"
+        case propertyId   = "property_id"
+        case userId       = "user_id"
+        case delivererName = "deliverer_name"
+        case deliveredAt  = "delivered_at"
     }
 }

@@ -133,14 +133,14 @@ enum ReceiptCategory {
         switch category {
         case "food":        return Color(red: 1.00, green: 0.62, blue: 0.04)
         case "cleaning":    return Color(red: 0.19, green: 0.82, blue: 0.75)
-        case "bathroom":    return Color(red: 0.35, green: 0.65, blue: 1.00)
+        case "bathroom":    return Color.brandSkyBlue
         case "garden":      return Color(red: 0.19, green: 0.82, blue: 0.35)
         case "diy":         return Color(red: 0.90, green: 0.45, blue: 0.18)
         case "electronics": return Color(red: 1.00, green: 0.85, blue: 0.10)
         case "clothing":    return Color(red: 0.75, green: 0.35, blue: 0.90)
-        case "health":      return Color(red: 0.95, green: 0.30, blue: 0.30)
+        case "health":      return Color.brandDanger
         case "dining":      return Color(red: 0.97, green: 0.45, blue: 0.55)
-        case "transport":   return Color(red: 0.30, green: 0.60, blue: 0.95)
+        case "transport":   return Color.brandSkyBlue
         default:            return Color.secondary
         }
     }

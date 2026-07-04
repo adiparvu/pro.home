@@ -4,61 +4,72 @@ import WidgetKit
 // MARK: - Main tab view
 
 struct MainTabView: View {
-    @EnvironmentObject private var auth: AuthService
-    @EnvironmentObject private var appSettings: AppSettings
-    @StateObject private var taskService = TaskService()
-    @StateObject private var propertyService = PropertyService()
-    @StateObject private var profileService = ProfileService()
-    @StateObject private var financialService = FinancialService()
-    @StateObject private var documentService = DocumentService()
-    @StateObject private var notificationScheduler = NotificationScheduler()
-    @StateObject private var budgetService = BudgetService()
-    @StateObject private var familyService = FamilyService()
-    @StateObject private var messageService = MessageService()
-    @StateObject private var currencyService = CurrencyService()
-    @StateObject private var elementService = PropertyElementService()
-    @StateObject private var zoneService = PropertyZoneService()
-    @StateObject private var supplyService = SupplyService()
-    @StateObject private var receiptService = ReceiptService()
-    @StateObject private var stickerService = StickerService()
-    @StateObject private var plantService = PlantService()
-    @StateObject private var deliveryService = DeliveryService()
-    @StateObject private var applianceService = ApplianceService()
-    @StateObject private var inventoryService = InventoryService()
-    @StateObject private var photoJournalService = PhotoJournalService()
-    @StateObject private var paintColorService = PaintColorService()
-    @StateObject private var propertyValueService = PropertyValueService()
-    @StateObject private var contractorService = ContractorService()
-    @StateObject private var directMessageService = DirectMessageService()
-    @StateObject private var proactiveEngine = ProactiveEngine()
-    @StateObject private var tabBarVis = TabBarVisibility()
-    @EnvironmentObject private var router: AppRouter
+    @Environment(AuthService.self) private var auth
+    @Environment(AppSettings.self) private var appSettings
+    @State private var taskService = TaskService()
+    @State private var propertyService = PropertyService()
+    @State private var profileService = ProfileService()
+    @State private var financialService = FinancialService()
+    @State private var documentService = DocumentService()
+    @State private var notificationScheduler = NotificationScheduler()
+    @State private var budgetService = BudgetService()
+    @State private var familyService = FamilyService()
+    @State private var messageService = MessageService()
+    @State private var currencyService = CurrencyService()
+    @State private var elementService = PropertyElementService()
+    @State private var zoneService = PropertyZoneService()
+    @State private var supplyService = SupplyService()
+    @State private var receiptService = ReceiptService()
+    @State private var stickerService = StickerService()
+    @State private var plantService = PlantService()
+    @State private var deliveryService = DeliveryService()
+    @State private var applianceService = ApplianceService()
+    @State private var inventoryService = InventoryService()
+    @State private var photoJournalService = PhotoJournalService()
+    @State private var paintColorService = PaintColorService()
+    @State private var propertyValueService = PropertyValueService()
+    @State private var contractorService = ContractorService()
+    @State private var directMessageService = DirectMessageService()
+    @State private var presenceService = PresenceService()
+    @State private var proactiveEngine = ProactiveEngine()
+    @State private var tabBarVis = TabBarVisibility()
+    @Environment(AppRouter.self) private var router
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
-            NavigationStack { DashboardView() }
-                .tabItem { Image(systemName: "house.fill") }
-                .tag(AppTab.home)
+        @Bindable var router = router
+        let visibleTabs = AppTab.visible(for: propertyService.myRole)
+        return TabView(selection: $router.selectedTab) {
+            if visibleTabs.contains(.home) {
+                NavigationStack { DashboardView() }
+                    .tabItem { Image(systemName: "house.fill") }
+                    .tag(AppTab.home)
+            }
 
-            NavigationStack { PropertyTabView() }
-                .tabItem { Image(systemName: "square.stack.3d.up.fill") }
-                .tag(AppTab.digitalTwin)
+            if visibleTabs.contains(.digitalTwin) {
+                NavigationStack { PropertyTabView() }
+                    .tabItem { Image(systemName: "square.stack.3d.up.fill") }
+                    .tag(AppTab.digitalTwin)
+            }
 
-            NavigationStack { TasksView() }
-                .tabItem { Image(systemName: "checklist") }
-                .tag(AppTab.tasks)
-                .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
+            if visibleTabs.contains(.tasks) {
+                NavigationStack { TasksView() }
+                    .tabItem { Image(systemName: "checklist") }
+                    .tag(AppTab.tasks)
+                    .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
+            }
 
             NavigationStack {
                 ConversationsView()
-                    .environmentObject(messageService)
-                    .environmentObject(directMessageService)
-                    .environmentObject(familyService)
-                    .environmentObject(propertyService)
-                    .environmentObject(profileService)
-                    .environmentObject(stickerService)
-                    .environmentObject(tabBarVis)
-                    .environmentObject(router)
+                    .environment(messageService)
+                    .environment(directMessageService)
+                    .environment(presenceService)
+                    .environment(familyService)
+                    .environment(propertyService)
+                    .environment(profileService)
+                    .environment(stickerService)
+                    .environment(tabBarVis)
+                    .environment(router)
             }
             .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
             .tag(AppTab.chat)
@@ -71,10 +82,10 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $router.showARIA) {
             NavigationStack {
                 ARIAView(onDismiss: { router.showARIA = false })
-                    .environmentObject(propertyService)
-                    .environmentObject(familyService)
-                    .environmentObject(profileService)
-                    .environmentObject(taskService)
+                    .environment(propertyService)
+                    .environment(familyService)
+                    .environment(profileService)
+                    .environment(taskService)
             }
         }
         .sheet(isPresented: $router.showAddTask) { AddTaskView() }
@@ -84,63 +95,71 @@ struct MainTabView: View {
         .sheet(isPresented: $router.showInventoryView) { NavigationStack { InventoryView() } }
         .sheet(isPresented: $router.showAddSupply) {
             AddSupplyItemSheet(list: nil, editingItem: nil)
-                .environmentObject(supplyService)
-                .environmentObject(propertyService)
+                .environment(supplyService)
+                .environment(propertyService)
         }
         .sheet(isPresented: $router.showWaterPlant) {
             NavigationStack {
                 PlantsView()
-                    .environmentObject(plantService)
-                    .environmentObject(propertyService)
+                    .environment(plantService)
+                    .environment(propertyService)
             }
         }
         .sheet(isPresented: $router.showFamilyChat) {
             NavigationStack {
                 ConversationsView()
-                    .environmentObject(messageService)
-                    .environmentObject(directMessageService)
-                    .environmentObject(familyService)
-                    .environmentObject(propertyService)
-                    .environmentObject(profileService)
-                    .environmentObject(stickerService)
-                    .environmentObject(tabBarVis)
-                    .environmentObject(router)
+                    .environment(messageService)
+                    .environment(directMessageService)
+                    .environment(presenceService)
+                    .environment(familyService)
+                    .environment(propertyService)
+                    .environment(profileService)
+                    .environment(stickerService)
+                    .environment(tabBarVis)
+                    .environment(router)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showDocuments) {
             NavigationStack {
                 DocumentsView()
-                    .environmentObject(documentService)
-                    .environmentObject(propertyService)
+                    .environment(documentService)
+                    .environment(propertyService)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showFamily) {
             NavigationStack {
                 FamilyView()
-                    .environmentObject(familyService)
-                    .environmentObject(propertyService)
+                    .environment(familyService)
+                    .environment(propertyService)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showContractors) {
             NavigationStack {
                 ContractorsView()
-                    .environmentObject(contractorService)
-                    .environmentObject(propertyService)
+                    .environment(contractorService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showDeliveries) {
+            NavigationStack {
+                DeliveriesView()
+                    .environment(deliveryService)
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $router.showFinances) {
             NavigationStack {
                 FinancesView()
-                    .environmentObject(financialService)
-                    .environmentObject(propertyService)
-                    .environmentObject(budgetService)
-                    .environmentObject(currencyService)
-                    .environmentObject(appSettings)
-                    .environmentObject(tabBarVis)
+                    .environment(financialService)
+                    .environment(propertyService)
+                    .environment(budgetService)
+                    .environment(currencyService)
+                    .environment(appSettings)
+                    .environment(tabBarVis)
             }
             .presentationDragIndicator(.visible)
         }
@@ -160,77 +179,111 @@ struct MainTabView: View {
             guard NFCScanService.isSupported else { return }
             NFCScanService.shared.scan(prompt: "Apropie iPhone-ul de tag-ul NFC") { _ in }
         }
-        .environmentObject(router)
-        .environmentObject(tabBarVis)
-        .environmentObject(taskService)
-        .environmentObject(propertyService)
-        .environmentObject(profileService)
-        .environmentObject(financialService)
-        .environmentObject(documentService)
-        .environmentObject(notificationScheduler)
-        .environmentObject(budgetService)
-        .environmentObject(familyService)
-        .environmentObject(messageService)
-        .environmentObject(currencyService)
-        .environmentObject(elementService)
-        .environmentObject(zoneService)
-        .environmentObject(supplyService)
-        .environmentObject(receiptService)
-        .environmentObject(stickerService)
-        .environmentObject(plantService)
-        .environmentObject(deliveryService)
-        .environmentObject(applianceService)
-        .environmentObject(inventoryService)
-        .environmentObject(photoJournalService)
-        .environmentObject(paintColorService)
-        .environmentObject(propertyValueService)
-        .environmentObject(contractorService)
-        .environmentObject(directMessageService)
-        .environmentObject(proactiveEngine)
+        .environment(router)
+        .environment(tabBarVis)
+        .environment(taskService)
+        .environment(propertyService)
+        .environment(profileService)
+        .environment(financialService)
+        .environment(documentService)
+        .environment(notificationScheduler)
+        .environment(budgetService)
+        .environment(familyService)
+        .environment(messageService)
+        .environment(currencyService)
+        .environment(elementService)
+        .environment(zoneService)
+        .environment(supplyService)
+        .environment(receiptService)
+        .environment(stickerService)
+        .environment(plantService)
+        .environment(deliveryService)
+        .environment(applianceService)
+        .environment(inventoryService)
+        .environment(photoJournalService)
+        .environment(paintColorService)
+        .environment(propertyValueService)
+        .environment(contractorService)
+        .environment(directMessageService)
+        .environment(presenceService)
+        .environment(proactiveEngine)
         .task {
-            await currencyService.refresh()
+            // Property + role must resolve first — the tab layout and every
+            // property-scoped load depend on them. Currency + profile are
+            // independent, so they run concurrently with that.
+            async let currency: Void = currencyService.refresh()
+            async let profile: Void = loadProfileAndSettings()
             await propertyService.load()
-            await taskService.load()
-            await financialService.load()
-            await documentService.load()
-            await familyService.load()
-            if let uid = auth.session?.user.id {
-                await profileService.load(userId: uid)
-                if let profile = profileService.profile {
-                    appSettings.loadFromProfile(profile)
-                }
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+            _ = await (currency, profile)
+
+            // Everything below is independent network I/O. Fanning it out with
+            // async let overlaps the round-trips instead of paying their sum,
+            // which is the single biggest win for cold-start latency.
+            let propId = propertyService.primary?.id
+            async let tasksLoad: Void = taskService.load()
+            async let financialLoad: Void = financialService.load()
+            async let documentsLoad: Void = documentService.load()
+            async let familyLoad: Void = familyService.load()
+            async let contractorLoad: Void = contractorService.load()
+            await tasksLoad; await financialLoad; await documentsLoad
+            await familyLoad; await contractorLoad
+
+            if let propId {
+                async let messagesLoad: Void = messageService.load(propertyId: propId)
+                async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
+                async let suppliesLoad: Void = supplyService.load(propertyId: propId)
+                async let receiptsLoad: Void = receiptService.load(propertyId: propId)
+                async let plantsLoad: Void = plantService.load(propertyId: propId)
+                async let appliancesLoad: Void = applianceService.load(propertyId: propId)
+                async let journalLoad: Void = photoJournalService.load(propertyId: propId)
+                async let paintLoad: Void = paintColorService.load(propertyId: propId)
+                async let valueLoad: Void = propertyValueService.load(propertyId: propId)
+                async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
+                async let budgetLoad: Void = budgetService.load(propertyId: propId)
+                await messagesLoad; await deliveriesLoad; await suppliesLoad
+                await receiptsLoad; await plantsLoad; await appliancesLoad
+                await journalLoad; await paintLoad; await valueLoad
+                await inventoryLoad; await budgetLoad
             }
+
             notificationScheduler.registerCategories()
             await notificationScheduler.reschedule(
                 tasks: taskService.tasks,
                 documents: documentService.documents
             )
-            if let propId = propertyService.primary?.id {
-                await messageService.load(propertyId: propId)
-            }
-            await contractorService.load()
-            if let propId = propertyService.primary?.id {
-                await deliveryService.load(propertyId: propId)
-                await supplyService.load(propertyId: propId)
-                await receiptService.load(propertyId: propId)
-                await plantService.load(propertyId: propId)
-                await applianceService.load(propertyId: propId)
-                await photoJournalService.load(propertyId: propId)
-                await paintColorService.load(propertyId: propId)
-                await propertyValueService.load(propertyId: propId)
-                await inventoryService.load(propertyId: propId)
-                await budgetService.load(propertyId: propId)
-            }
             writeWidgetSnapshot()
             updateDynamicShortcuts()
             await indexSpotlight()
             await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+            // Live Activities: property context + the "Start When App Opens" /
+            // "Start on a Schedule" preferences, now that data is loaded.
+            LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
+            LiveActivityService.shared.evaluateAutoStart(
+                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
             proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
             ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
+        }
+        .task {
+            // Presence heartbeat: advertise ourselves and refresh members' status
+            // on a slow cadence while the app is foregrounded.
+            while !Task.isCancelled {
+                await pulsePresence()
+                try? await Task.sleep(nanoseconds: 45_000_000_000)
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Beat immediately on foreground so we don't read as offline after a
+            // background gap; drop the live channel while backgrounded.
+            if phase == .active { Task { await pulsePresence() } }
+            else if phase == .background { Task { await presenceService.unsubscribe() } }
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
             Task {
+                await propertyService.loadMyRole()
+                redirectIfTabHidden()
                 await deliveryService.load(propertyId: newPropId)
                 await supplyService.load(propertyId: newPropId)
                 await receiptService.load(propertyId: newPropId)
@@ -296,6 +349,37 @@ struct MainTabView: View {
 
     // MARK: Widget + Dynamic Shortcuts
 
+    /// If the selected tab isn't available to the current role (e.g. a guest on
+    /// the Home tab), fall back to Chat, which every role can see.
+    private func redirectIfTabHidden() {
+        if !AppTab.visible(for: propertyService.myRole).contains(router.selectedTab) {
+            router.selectedTab = .chat
+        }
+    }
+
+    /// One presence beat: stamp our own heartbeat, then refresh the property's
+    /// statuses. No-op until we have a property, a session, and a display name.
+    private func pulsePresence() async {
+        guard let pid = propertyService.primary?.id,
+              let uid = auth.session?.user.id else { return }
+        let name = profileService.profile?.preferredName
+            ?? profileService.profile?.fullName ?? ""
+        guard !name.isEmpty else { return }
+        // subscribe() is idempotent per property, so this both establishes the
+        // live channel once and self-heals if the primary property changed.
+        await presenceService.subscribe(propertyId: pid)
+        await presenceService.heartbeat(propertyId: pid, userId: uid, userName: name)
+        await presenceService.load(propertyId: pid)
+    }
+
+    private func loadProfileAndSettings() async {
+        guard let uid = auth.session?.user.id else { return }
+        await profileService.load(userId: uid)
+        if let profile = profileService.profile {
+            appSettings.loadFromProfile(profile)
+        }
+    }
+
     private func writeWidgetSnapshot() {
         var snapshot = PRVIOWidgetSnapshot()
         snapshot.overdueTaskCount = taskService.overdueCount
@@ -304,14 +388,33 @@ struct MainTabView: View {
         snapshot.plantNames = Array(plantService.plantsNeedingWater.prefix(3).map(\.name))
         snapshot.activeDeliveryCount = deliveryService.activeDeliveries.count
         snapshot.propertyName = propertyService.primary?.name
+        snapshot.pendingSupplyCount = supplyService.totalPending
+        snapshot.unreadMessages = propertyService.primary.map {
+            messageService.groupUnread(propertyId: $0.id, myId: supabase.auth.currentSession?.user.id)
+        } ?? 0
+        snapshot.propertyHealthScore = propertyService.primary?.healthScore
+        snapshot.criticalTaskTitle = taskService.tasks.first { $0.isOverdue && !$0.isCompleted }?.title
+        let upcoming = taskService.tasks
+            .filter { !$0.isCompleted && !$0.isOverdue && $0.dueDate != nil }
+            .sorted { ($0.dueDate ?? "") < ($1.dueDate ?? "") }
+            .first
+        snapshot.nextMaintenanceTitle = upcoming?.title
+        snapshot.nextMaintenanceDue = upcoming?.dueDateDisplay
         SharedDataStore.write(snapshot)
 
         SharedDataStore.writeTaskCatalog(
-            taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority, isCompleted: $0.isCompleted) }
+            taskService.tasks.map { TaskCatalogEntry(id: $0.id, title: $0.title, priority: $0.priority,
+                                                     isCompleted: $0.isCompleted, isOverdue: $0.isOverdue) }
         )
         SharedDataStore.writePlantCatalog(
             plantService.plants.map { PlantCatalogEntry(id: $0.id, name: $0.name, emoji: $0.emoji, needsWatering: $0.needsWatering) }
         )
+        SharedDataStore.writeSupplyCatalog(
+            supplyService.items.map { SupplyCatalogEntry(id: $0.id, name: $0.name, isCompleted: $0.isCompleted) }
+        )
+        // Context for in-app intents (Shortcuts "send message to chat").
+        SharedDataStore.setContext(propertyId: propertyService.primary?.id,
+                                   myName: profileService.profile?.preferredName)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -338,7 +441,13 @@ struct MainTabView: View {
                 Task { await taskService.toggleComplete(task) }
             }
         }
-        if !waterIds.isEmpty || !completeIds.isEmpty {
+        let supplyIds = SharedDataStore.popPendingSupplyChecks()
+        for id in supplyIds {
+            if let item = supplyService.items.first(where: { $0.id == id }), !item.isCompleted {
+                Task { await supplyService.toggleComplete(item) }
+            }
+        }
+        if !waterIds.isEmpty || !completeIds.isEmpty || !supplyIds.isEmpty {
             writeWidgetSnapshot()
         }
     }
@@ -348,25 +457,27 @@ struct MainTabView: View {
         // We set all 4 dynamically so content is always data-driven and contextual.
         var items: [UIApplicationShortcutItem] = []
 
-        // 1. Urgent/overdue task — highest priority signal
+        // 1. Urgent/overdue task — highest priority signal. Showing a task's
+        // title must open THAT task, so its id rides along in the type string
+        // (userInfo doesn't survive our cold-launch UserDefaults hand-off).
         if let task = taskService.tasks.first(where: { $0.isOverdue }) {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.addtask",
+                type: "com.prvio.action.opentask:\(task.id.uuidString)",
                 localizedTitle: task.title,
-                localizedSubtitle: "Overdue task",
+                localizedSubtitle: String(localized: "Overdue task"),
                 icon: UIApplicationShortcutIcon(systemImageName: "exclamationmark.circle.fill")
             ))
         } else if let task = taskService.tasks.first(where: { !$0.isCompleted }) {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.addtask",
+                type: "com.prvio.action.opentask:\(task.id.uuidString)",
                 localizedTitle: task.title,
-                localizedSubtitle: "Next task",
+                localizedSubtitle: String(localized: "Next task"),
                 icon: UIApplicationShortcutIcon(systemImageName: "checklist")
             ))
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.addtask",
-                localizedTitle: "New Task",
+                localizedTitle: String(localized: "New Task"),
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "plus.circle.fill")
             ))
@@ -375,8 +486,8 @@ struct MainTabView: View {
         // 2. Plant needing water — contextual
         if let plant = plantService.plantsNeedingWater.first {
             let subtitle = plantService.plantsNeedingWater.count > 1
-                ? "\(plantService.plantsNeedingWater.count) need water"
-                : "Needs water"
+                ? String(format: String(localized: "%d need water"), plantService.plantsNeedingWater.count)
+                : String(localized: "Needs water")
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.plants",
                 localizedTitle: plant.name,
@@ -386,33 +497,34 @@ struct MainTabView: View {
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.plants",
-                localizedTitle: "My Plants",
-                localizedSubtitle: plantService.plants.isEmpty ? nil : "All watered",
+                localizedTitle: String(localized: "My Plants"),
+                localizedSubtitle: plantService.plants.isEmpty ? nil : String(localized: "All watered"),
                 icon: UIApplicationShortcutIcon(systemImageName: "leaf.fill")
             ))
         }
 
-        // 3. Active delivery or shopping list
+        // 3. Active delivery or shopping list — each opens its OWN screen
+        // (the deliveries variant previously landed on the shopping form).
         if deliveryService.activeDeliveries.count > 0 {
             items.append(UIApplicationShortcutItem(
-                type: "com.prvio.action.shopping",
-                localizedTitle: "Active Deliveries",
-                localizedSubtitle: "\(deliveryService.activeDeliveries.count) in transit",
+                type: "com.prvio.action.deliveries",
+                localizedTitle: String(localized: "Active Deliveries"),
+                localizedSubtitle: String(format: String(localized: "%d in transit"), deliveryService.activeDeliveries.count),
                 icon: UIApplicationShortcutIcon(systemImageName: "shippingbox.fill")
             ))
         } else {
             items.append(UIApplicationShortcutItem(
                 type: "com.prvio.action.shopping",
-                localizedTitle: "Shopping List",
+                localizedTitle: String(localized: "Shopping List"),
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "cart.fill")
             ))
         }
 
-        // 4. Family Chat
+        // 4. Chat
         items.append(UIApplicationShortcutItem(
             type: "com.prvio.action.chat",
-            localizedTitle: "Family Chat",
+            localizedTitle: String(localized: "Chat"),
             localizedSubtitle: nil,
             icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill")
         ))

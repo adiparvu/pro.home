@@ -4,7 +4,7 @@ import SwiftUI
 /// for Face ID / Touch ID / passcode (triggered by AppLockManager) and offers
 /// a manual retry button.
 struct LockScreenView: View {
-    @ObservedObject var manager: AppLockManager
+    var manager: AppLockManager
 
     var body: some View {
         ZStack {
@@ -24,7 +24,7 @@ struct LockScreenView: View {
                     } else {
                         Text("Authenticate to continue")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -36,11 +36,11 @@ struct LockScreenView: View {
                         Image(systemName: "faceid")
                         Text("Unlock")
                     }
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .padding(.vertical, AppSpacing.lg)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 32)
@@ -63,8 +63,8 @@ struct PrivacyCoverView: View {
             VStack(spacing: 14) {
                 PRVIOLogoView(size: 72)
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .font(AppFont.title3)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             }
         }
     }

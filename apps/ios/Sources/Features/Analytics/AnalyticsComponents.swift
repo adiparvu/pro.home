@@ -4,7 +4,7 @@ import Charts
 // MARK: - Finances Section
 
 struct FinancesSection: View {
-    @ObservedObject var service: FinancialService
+    var service: FinancialService
     @Binding var displayedMonth: Date
 
     @State var chartRange: ChartRange = .sixMonths
@@ -79,17 +79,18 @@ struct FinancesSection: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.secondary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Previous month")
 
             Spacer()
 
             VStack(spacing: 1) {
                 Text(LocalizedStringKey(monthLabel))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
                 if isCurrentMonth {
@@ -107,14 +108,15 @@ struct FinancesSection: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.2) : .secondary)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
             .disabled(isCurrentMonth)
+            .accessibilityLabel("Next month")
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, AppSpacing.sm)
     }
 
     private var monthLabel: String {
@@ -160,12 +162,12 @@ struct FinancesSection: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("Savings rate", systemImage: "leaf.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.0f%%", max(0, savingsRate)))
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(savingsRate >= 20 ? Color(red: 0.2, green: 0.8, blue: 0.4) : savingsRate >= 0 ? .orange : .red)
+                        .foregroundStyle(savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 0 ? .orange : .red)
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -173,7 +175,7 @@ struct FinancesSection: View {
                         Capsule()
                             .fill(LinearGradient(
                                 colors: savingsRate > 0
-                                    ? [Color(red: 0.3, green: 0.85, blue: 0.5), .blue]
+                                    ? [Color.brandSuccess, .blue]
                                     : [.red.opacity(0.8), .orange],
                                 startPoint: .leading, endPoint: .trailing
                             ))
@@ -202,7 +204,7 @@ struct FinancesSection: View {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Expenses by category")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
 
                 HStack(alignment: .top, spacing: 16) {
                     Chart(categoryData.prefix(6)) { cat in
@@ -226,7 +228,7 @@ struct FinancesSection: View {
                                     .lineLimit(1)
                                 Spacer()
                                 Text("\(sym)\(Int(cat.amount))")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.primary)
                             }
                         }

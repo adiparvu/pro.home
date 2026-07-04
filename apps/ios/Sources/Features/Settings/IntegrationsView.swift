@@ -1,14 +1,15 @@
 import SwiftUI
 
 struct IntegrationsView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
     @StateObject var vm = IntegrationsViewModel()
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                customIntegrationsSection
                 appleEcosystemSection
                 productivitySection
                 localControllersSection
@@ -22,8 +23,8 @@ struct IntegrationsView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Integrations")

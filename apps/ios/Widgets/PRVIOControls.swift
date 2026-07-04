@@ -24,11 +24,11 @@ struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
             ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://chat")!)) {
-                Label("Family Chat", systemImage: "message.fill")
+                Label("Chat", systemImage: "message.fill")
             }
         }
-        .displayName("Family Chat")
-        .description("Open the family chat in PRVIO.")
+        .displayName("Chat")
+        .description("Open the chat in PRVIO.")
     }
 }
 
@@ -53,7 +53,9 @@ struct ShoppingControl: ControlWidget {
 struct ScanControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://scan")!)) {
+            // prvio://receipts opens the expense/receipt capture flow —
+            // prvio://scan would open the inventory object scanner instead.
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://receipts")!)) {
                 Label("Scan Receipt", systemImage: "barcode.viewfinder")
             }
         }

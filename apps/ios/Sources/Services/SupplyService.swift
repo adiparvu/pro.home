@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 
 @MainActor
-final class SupplyService: ObservableObject {
-    @Published var lists: [SupplyList] = []
-    @Published var items: [SupplyItem] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class SupplyService {
+    var lists: [SupplyList] = []
+    var items: [SupplyItem] = []
+    var isLoading = false
+    var error: String?
 
     // MARK: Computed
 
@@ -116,6 +118,13 @@ final class SupplyService: ObservableObject {
         updated.isCompleted.toggle()
         updated.updatedAt = ISO8601DateFormatter().string(from: Date())
         await updateItem(updated)
+        // Keep the shopping Live Activity in sync with this list's progress.
+        let listId = item.listId
+        let listName = lists.first { $0.id == listId }?.name ?? String(localized: "Shopping list")
+        LiveActivityService.shared.syncShopping(
+            listName: listName,
+            bought: completedCount(for: listId),
+            total: items(for: listId).count)
     }
 
     func deleteItem(_ item: SupplyItem) async {

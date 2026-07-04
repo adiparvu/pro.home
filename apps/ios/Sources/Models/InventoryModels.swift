@@ -2,8 +2,13 @@ import Foundation
 import SwiftUI
 import CoreLocation
 
-// Used by InventoryItem.qrContent
-private let itemFoundBaseURL = "https://kwcanenheihuylaymwsl.supabase.co/functions/v1/item-found"
+// Used by InventoryItem.qrContent.
+// Points at the web app's public item page (https://xparvu.com/i/<id>) rather
+// than a Supabase Edge Function: functions on the shared *.supabase.co domain
+// are forced to text/plain with a sandbox CSP, so their HTML shows as source
+// instead of rendering. The web page renders normally and reads the public
+// `public_items` projection.
+private let itemFoundBaseURL = "https://xparvu.com/i"
 
 // MARK: - PublicProfile
 
@@ -52,7 +57,7 @@ struct InventoryItem: Identifiable, Codable {
 
     var hasLocation: Bool { latitude != nil && longitude != nil }
     var isLoaned: Bool { currentLoan != nil }
-    var qrContent: String { "\(itemFoundBaseURL)?id=\(id.uuidString)" }
+    var qrContent: String { "\(itemFoundBaseURL)/\(id.uuidString)" }
 
     var warrantyStatus: WarrantyStatus {
         guard let exp = warrantyExpiresAt else { return .none }
@@ -89,19 +94,10 @@ struct InventoryItem: Identifiable, Codable {
         case "furniture":   return Color(red: 0.7, green: 0.5, blue: 0.3)
         case "vehicles":    return .red
         case "sports":      return .cyan
-        case "security":    return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "security":    return Color.brandSuccess
         default:            return .gray
         }
     }
-}
-
-// MARK: - InventoryMapPin
-
-struct InventoryMapPin: Identifiable {
-    let id = UUID()
-    let lat: Double
-    let lon: Double
-    var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
 }
 
 // MARK: - DB-mapped types

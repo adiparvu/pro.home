@@ -203,7 +203,7 @@ final class IntegrationsViewModel: ObservableObject {
 
     private func checkCalendarAccess() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .event)
-        return status == .fullAccess || status == .authorized
+        return status == .fullAccess
     }
 
     private func requestCalendarAccess() async -> Bool {
@@ -261,7 +261,7 @@ final class IntegrationsViewModel: ObservableObject {
 
     private func checkRemindersAccess() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .reminder)
-        return status == .fullAccess || status == .authorized
+        return status == .fullAccess
     }
 
     private func requestRemindersAccess() async -> Bool {

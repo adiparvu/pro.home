@@ -4,7 +4,7 @@ import CoreLocation
 import PhotosUI
 
 struct PropertySettingsView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
 
     var body: some View {
@@ -16,7 +16,7 @@ struct PropertySettingsView: View {
                     ForEach(propertyService.properties) { p in
                         NavigationLink {
                             PropertyDetailView(propertyId: p.id)
-                                .environmentObject(propertyService)
+                                .environment(propertyService)
                         } label: {
                             propertyCard(p)
                         }
@@ -25,8 +25,8 @@ struct PropertySettingsView: View {
                 }
                 Spacer(minLength: 80)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
@@ -35,9 +35,10 @@ struct PropertySettingsView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showAdd = true } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(Color.accentColor)
                 }
+                .accessibilityLabel("Add property")
             }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }
@@ -68,14 +69,14 @@ struct PropertySettingsView: View {
                         .lineLimit(1)
                     HStack(spacing: 8) {
                         Text(LocalizedStringKey(p.propertyType.capitalized))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(.blue.opacity(0.8))
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(.blue.opacity(0.15), in: Capsule())
                         if let score = p.healthScore {
                             HStack(spacing: 3) {
                                 Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(.red.opacity(0.7))
-                                Text("\(score)").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
+                                Text("\(score)").font(AppFont.label).foregroundStyle(Color.primary.opacity(0.6))
                             }
                         }
                     }
@@ -121,7 +122,7 @@ struct PropertySettingsView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No property found")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("Your property data will appear here once it's configured.")
                 .font(.system(size: 14))
@@ -142,14 +143,14 @@ struct PropDetailRow: View {
         HStack {
             Text(label)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(.primary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
     }
 }

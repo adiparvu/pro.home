@@ -7,7 +7,7 @@ struct AddPropertyElementView: View {
     let defaultPosition: CGPoint
     let onAdd: (NewPropertyElement) -> Void
 
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -200,7 +200,7 @@ struct AddPropertyElementView: View {
                                             .keyboardType(.decimalPad)
                                             .font(.subheadline)
                                             .padding(10)
-                                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Currency")
@@ -211,8 +211,8 @@ struct AddPropertyElementView: View {
                                             }
                                         }
                                         .pickerStyle(.menu)
-                                        .padding(6)
-                                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                        .padding(AppSpacing.xs)
+                                        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                                     }
                                     .frame(width: 80)
                                 }
@@ -243,9 +243,9 @@ struct AddPropertyElementView: View {
                                                     .font(.caption.weight(selectedLayer == layer ? .semibold : .regular))
                                                     .foregroundStyle(selectedLayer == layer ? Color.white : Color.secondary)
                                                     .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
+                                                    .padding(.vertical, AppSpacing.xs)
                                                     .background(
-                                                        Capsule().fill(selectedLayer == layer ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                                                        Capsule().fill(selectedLayer == layer ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
                                                     )
                                             }
                                             .buttonStyle(.plain)
@@ -263,15 +263,15 @@ struct AddPropertyElementView: View {
                                     .frame(minHeight: 72)
                                     .scrollContentBackground(.hidden)
                                     .font(.subheadline)
-                                    .padding(8)
-                                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                    .padding(AppSpacing.sm)
+                                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("New element")
@@ -283,7 +283,7 @@ struct AddPropertyElementView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add") { save() }
                         .fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.secondary)
+                        .foregroundStyle(canSave ? Color.brandPrimaryBlue : Color.secondary)
                         .disabled(!canSave)
                 }
             }
@@ -344,7 +344,7 @@ struct AddPropertyElementView: View {
                         if let coverURL, let url = URL(string: coverURL) {
                             AsyncImage(url: url) { phase in
                                 if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                else { Color.primary.opacity(0.06) }
+                                else { Color.primary.opacity(AppOpacity.hairline) }
                             }
                         } else {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -377,10 +377,10 @@ struct AddPropertyElementView: View {
                             if let url = URL(string: urlStr) {
                                 AsyncImage(url: url) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
-                                    else { Color.primary.opacity(0.06) }
+                                    else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
                                 .frame(width: 78, height: 78)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                                 .contextMenu {
                                     Button { coverURL = urlStr } label: { Label("Set as cover", systemImage: "star") }
                                     Button(role: .destructive) { galleryURLs.removeAll { $0 == urlStr } } label: { Label("Delete", systemImage: "trash") }
@@ -390,7 +390,7 @@ struct AddPropertyElementView: View {
                         Button {
                             mediaTarget = .gallery; showSourceDialog = true
                         } label: {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 .fill(Color.primary.opacity(0.05))
                                 .frame(width: 78, height: 78)
                                 .overlay(Image(systemName: "plus").font(.system(size: 20)).foregroundStyle(Color.accentColor))
@@ -412,7 +412,7 @@ struct AddPropertyElementView: View {
                 Toggle(isOn: $isElectric) {
                     Text("Electric / automated").font(.subheadline)
                 }
-                .tint(Color(red: 0.29, green: 0.56, blue: 0.89))
+                .tint(Color.brandPrimaryBlue)
                 if isElectric {
                     fieldRow(label: "Automation system", placeholder: "e.g. Nice sliding motor, remote + app", text: $automationSystem)
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -422,9 +422,9 @@ struct AddPropertyElementView: View {
                                     Text(brandName)
                                         .font(.caption.weight(.medium))
                                         .foregroundStyle(automationSystem == brandName ? Color.white : Color.secondary)
-                                        .padding(.horizontal, 12).padding(.vertical, 6)
+                                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                                         .background(
-                                            Capsule().fill(automationSystem == brandName ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                                            Capsule().fill(automationSystem == brandName ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
                                         )
                                 }
                                 .buttonStyle(.plain)
@@ -505,10 +505,10 @@ struct AddPropertyElementView: View {
 
     private var scoreColor: Color {
         switch healthScore {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return .orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return .red
         }
     }
@@ -520,7 +520,7 @@ struct AddPropertyElementView: View {
             TextField(placeholder, text: text)
                 .font(.subheadline)
                 .padding(10)
-                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
         }
     }
 }
@@ -540,7 +540,7 @@ private struct TypeChip: View {
                     .foregroundStyle(isSelected ? type.accentColor : Color.secondary)
                     .frame(width: 32, height: 32)
                     .background(
-                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(0.06))
+                        Circle().fill(isSelected ? type.accentColor.opacity(0.15) : Color.primary.opacity(AppOpacity.hairline))
                     )
                 Text(LocalizedStringKey(type.displayName))
                     .font(.system(size: 10))
@@ -549,12 +549,12 @@ private struct TypeChip: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 56)
             }
-            .padding(6)
+            .padding(AppSpacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppRadius.md)
                     .fill(isSelected ? type.accentColor.opacity(0.08) : Color.clear)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: AppRadius.md)
                             .strokeBorder(isSelected ? type.accentColor.opacity(0.4) : Color.primary.opacity(0.08), lineWidth: 0.8)
                     )
             )

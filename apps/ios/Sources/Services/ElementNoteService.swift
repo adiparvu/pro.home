@@ -1,10 +1,12 @@
 import Foundation
 import SwiftUI
+import Observation
 
 @MainActor
-final class ElementNoteService: ObservableObject {
-    @Published var notesByElement: [UUID: [ElementNote]] = [:]
-    @Published var error: String?
+@Observable
+final class ElementNoteService {
+    var notesByElement: [UUID: [ElementNote]] = [:]
+    var error: String?
 
     func notes(for elementId: UUID) -> [ElementNote] {
         notesByElement[elementId] ?? []

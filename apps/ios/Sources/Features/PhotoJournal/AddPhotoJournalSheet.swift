@@ -4,8 +4,8 @@ import UniformTypeIdentifiers
 import Supabase
 
 struct AddPhotoJournalSheet: View {
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PhotoJournalService.self) private var photoJournalService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -41,7 +41,7 @@ struct AddPhotoJournalSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                             divider
                             fieldRow("number.sign", "Tags (comma-separated)", $tagsText)
@@ -51,13 +51,13 @@ struct AddPhotoJournalSheet: View {
                             Text(error)
                                 .font(.system(size: 13))
                                 .foregroundStyle(.red)
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AppSpacing.xl)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
 
                 if isUploading {
@@ -69,12 +69,12 @@ struct AddPhotoJournalSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .disabled(isUploading)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(Color.accentColor)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || selectedImageData == nil || isUploading)
                 }
@@ -87,11 +87,11 @@ struct AddPhotoJournalSheet: View {
     private var photoPicker: some View {
         VStack(spacing: 10) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 200)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                             .strokeBorder(
                                 selectedImageData == nil ? Color.primary.opacity(0.15) : Color.accentColor.opacity(0.4),
                                 style: StrokeStyle(lineWidth: 1.5, dash: selectedImageData == nil ? [6, 3] : [])
@@ -103,7 +103,7 @@ struct AddPhotoJournalSheet: View {
                         .resizable()
                         .scaledToFill()
                         .frame(height: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 } else {
                     VStack(spacing: 10) {
                         Image(systemName: "photo.badge.plus")
@@ -135,7 +135,7 @@ struct AddPhotoJournalSheet: View {
                         .font(.system(size: 13, weight: .medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .foregroundStyle(.primary)
                 }
 
@@ -146,7 +146,7 @@ struct AddPhotoJournalSheet: View {
                         .font(.system(size: 13, weight: .medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
@@ -187,11 +187,11 @@ struct AddPhotoJournalSheet: View {
                     .scaleEffect(1.4)
                     .tint(.white)
                 Text("Uploading photo…")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.white)
             }
             .padding(32)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         }
     }
 
@@ -200,15 +200,15 @@ struct AddPhotoJournalSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -223,7 +223,7 @@ struct AddPhotoJournalSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 

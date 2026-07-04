@@ -38,7 +38,7 @@ private enum GuestWiFiKeychain {
 // MARK: - GuestModeView
 
 struct GuestModeView: View {
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @AppStorage("prvio.guest.wifi_name") private var wifiName = ""
     @State private var wifiPass: String = GuestWiFiKeychain.load()
@@ -61,8 +61,8 @@ struct GuestModeView: View {
                     shareButtonCard
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md)
             }
         }
         .navigationTitle("Guest Mode")
@@ -77,6 +77,7 @@ struct GuestModeView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Share guest info")
             }
         }
     }
@@ -99,7 +100,7 @@ struct GuestModeView: View {
                     if let address = propertyService.primary?.addressLine1, !address.isEmpty {
                         Text(address)
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .lineLimit(2)
                     }
                     Text("Guest information sheet")
@@ -141,7 +142,7 @@ struct GuestModeView: View {
                             .frame(width: 24)
                         Text("Rules")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
                         "e.g. No smoking indoors, quiet hours after 10pm, please recycle…",
@@ -171,7 +172,7 @@ struct GuestModeView: View {
                             .frame(width: 24)
                         Text("Notes")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     TextField(
                         "e.g. Trash pickup is Monday, parking spot #4, call me if anything…",
@@ -195,14 +196,14 @@ struct GuestModeView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                 Text("Share Guest Info")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.vertical, AppSpacing.lg)
+            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -212,15 +213,15 @@ struct GuestModeView: View {
     private func sectionHeader(icon: String, title: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
                 .textCase(.uppercase)
         }
-        .padding(.leading, 6)
+        .padding(.leading, AppSpacing.xs)
     }
 
     private func editableRow(icon: String, placeholder: String, text: Binding<String>, isSecure: Bool = false) -> some View {
@@ -235,7 +236,7 @@ struct GuestModeView: View {
                 .tint(.accentColor)
                 .autocorrectionDisabled()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 

@@ -4,7 +4,7 @@ import CoreLocation
 import PhotosUI
 
 struct BuriedUtilitiesView: View {
-    @ObservedObject var service: BlueprintService
+    var service: BlueprintService
     @State private var showAdd = false
     @State private var detailItem: BuriedUtility?
 
@@ -35,7 +35,7 @@ struct BuriedUtilitiesView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
                     .padding(.bottom, 110)
                 }
             }
@@ -52,6 +52,7 @@ struct BuriedUtilitiesView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add buried line")
             }
         }
         .sheet(isPresented: $showAdd) {
@@ -65,21 +66,23 @@ struct BuriedUtilitiesView: View {
     }
 
     private var mapCard: some View {
-        Map(coordinateRegion: .constant(region), annotationItems: mapped) { u in
-            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0)) {
-                ZStack {
-                    Circle().fill(u.swiftColor).frame(width: 28, height: 28)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
-                    Image(systemName: u.icon)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.primary)
+        Map(initialPosition: .region(region)) {
+            ForEach(mapped) { u in
+                Annotation("", coordinate: CLLocationCoordinate2D(latitude: u.latitude ?? 0, longitude: u.longitude ?? 0)) {
+                    ZStack {
+                        Circle().fill(u.swiftColor).frame(width: 28, height: 28)
+                            .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                        Image(systemName: u.icon)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
+                    .shadow(radius: 3)
                 }
-                .shadow(radius: 3)
             }
         }
         .frame(height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
     private var region: MKCoordinateRegion {
@@ -118,7 +121,7 @@ struct BuriedUtilitiesView: View {
                     HStack(spacing: 5) {
                         Circle().fill(BuriedUtilityKind.color(t)).frame(width: 8, height: 8)
                         Text(LocalizedStringKey(BuriedUtilityKind.label(t)))
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.5))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
             }
@@ -132,9 +135,9 @@ struct BuriedUtilitiesView: View {
             Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.16))
             Text("No buried lines mapped")
-                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35))
+                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center).padding(.horizontal, 28)
             Spacer(minLength: 40)
         }

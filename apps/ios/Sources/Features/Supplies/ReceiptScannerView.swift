@@ -6,8 +6,8 @@ import UniformTypeIdentifiers
 // MARK: - Receipt Scanner (OCR)
 
 struct ReceiptScannerView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
@@ -26,8 +26,8 @@ struct ReceiptScannerView: View {
                     ReceiptReviewView(parsed: parsed, onSave: { p in
                         Task { await saveReceipt(p) }
                     })
-                    .environmentObject(receiptService)
-                    .environmentObject(propertyService)
+                    .environment(receiptService)
+                    .environment(propertyService)
                 } else {
                     pickPhotoState
                 }
@@ -105,7 +105,7 @@ struct ReceiptScannerView: View {
 
                 Text(String(localized: "scanner_body"))
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }
@@ -125,18 +125,18 @@ struct ReceiptScannerView: View {
                         showCamera = true
                     } label: {
                         Label(String(localized: "Fotografiază bon"), systemImage: "camera.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
                     .buttonStyle(.plain)
 
                     HStack(spacing: 12) {
                         PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                             Label(String(localized: "scanner_choose_photo"), systemImage: "photo.on.rectangle")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(Color.accentColor)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
@@ -148,11 +148,11 @@ struct ReceiptScannerView: View {
                             showFileImporter = true
                         } label: {
                             Label(String(localized: "Din fișiere"), systemImage: "doc.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.primary.opacity(0.7))
+                                .font(AppFont.footnoteEmphasis)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
-                                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
@@ -161,9 +161,9 @@ struct ReceiptScannerView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
             }
 
             Spacer()
@@ -186,24 +186,25 @@ struct ReceiptScannerView: View {
     }
 
     private func performOCR(on image: UIImage) async -> ParsedReceipt {
-        await withCheckedContinuation { continuation in
-            guard let cgImage = image.cgImage else {
-                continuation.resume(returning: ParsedReceipt())
-                return
-            }
+        guard let cgImage = image.cgImage else { return ParsedReceipt() }
+        // Vision's `.accurate` recognition is CPU-heavy (often 1s+). Running the
+        // handler on a detached task keeps it off the main actor so the
+        // "processing" animation and scrolling stay smooth.
+        return await Task.detached(priority: .userInitiated) {
+            await withCheckedContinuation { continuation in
+                let request = VNRecognizeTextRequest { req, _ in
+                    let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
+                    let lines = observations.compactMap { $0.topCandidates(1).first?.string }
+                    continuation.resume(returning: ReceiptParser.parse(lines: lines))
+                }
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = true
 
-            let request = VNRecognizeTextRequest { req, _ in
-                let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
-                let lines = observations.compactMap { $0.topCandidates(1).first?.string }
-                let result = ReceiptParser.parse(lines: lines)
-                continuation.resume(returning: result)
+                let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+                do { try handler.perform([request]) }
+                catch { continuation.resume(returning: ParsedReceipt()) }
             }
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            try? handler.perform([request])
-        }
+        }.value
     }
 
     // MARK: - Save
@@ -247,8 +248,8 @@ struct ReceiptScannerView: View {
 // MARK: - Receipt Review
 
 private struct ReceiptReviewView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State var parsed: ParsedReceipt
@@ -264,8 +265,8 @@ private struct ReceiptReviewView: View {
                     fieldLabel("STORE")
                     TextField(String(localized: "scanner_store_placeholder"), text: $parsed.storeName)
                         .font(.system(size: 16))
-                        .padding(14)
-                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(AppSpacing.base)
+                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -276,7 +277,7 @@ private struct ReceiptReviewView: View {
                     ), displayedComponents: .date)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppSpacing.xxs)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -289,10 +290,10 @@ private struct ReceiptReviewView: View {
                                         Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
                                         Text(cat.label).font(.system(size: 13))
                                     }
-                                    .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(0.7))
-                                    .padding(.horizontal, 12).padding(.vertical, 7)
+                                    .foregroundStyle(parsed.category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
+                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                                     .background(parsed.category == cat.id
-                                        ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(0.07),
+                                        ? ReceiptCategory.color(for: cat.id) : Color.primary.opacity(AppOpacity.subtleFill),
                                                 in: Capsule())
                                 }
                                 .buttonStyle(.plain)
@@ -312,11 +313,11 @@ private struct ReceiptReviewView: View {
                                         Text(item.name).font(.system(size: 13)).foregroundStyle(.primary).lineLimit(1)
                                         Spacer()
                                         Text(Receipt.format(item.totalPrice))
-                                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+                                            .font(AppFont.captionEmphasis).foregroundStyle(.secondary).monospacedDigit()
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 9)
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                                     if idx < parsed.items.count - 1 {
-                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+                                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                                     }
                                 }
                             }
@@ -329,11 +330,11 @@ private struct ReceiptReviewView: View {
                     fieldLabel("TOTAL")
                     HStack {
                         TextField("0.00", value: $parsed.total, format: .number.precision(.fractionLength(2)))
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .font(AppFont.title2)
                             .keyboardType(.decimalPad)
                     }
-                    .padding(14)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
 
                 Button {
@@ -344,24 +345,24 @@ private struct ReceiptReviewView: View {
                         if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
                         else {
                             Label(String(localized: "scanner_save"), systemImage: "checkmark")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                         }
                     }
                     .foregroundStyle(Color(UIColor.systemBackground))
                     .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(isSaving)
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 20).padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
         }
     }
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        Text(text).font(AppFont.label).foregroundStyle(.secondary)
     }
 }
 

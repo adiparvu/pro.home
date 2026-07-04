@@ -27,7 +27,7 @@ struct StarredMessagesView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(16)
+                        .padding(AppSpacing.lg)
                     }
                 }
             }
@@ -82,22 +82,22 @@ private struct StarredRow: View {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
                 Text(message.senderName)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(sender?.swiftColor ?? .primary)
                 Text(snippet)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(2)
                 Text(message.timeDisplay)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

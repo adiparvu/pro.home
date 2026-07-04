@@ -3,7 +3,7 @@ import SwiftUI
 /// Lets the user customize the floating (speed-dial) button on each page:
 /// which quick actions appear, and whether the button shows at all.
 struct QuickActionsSettingsView: View {
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(AppSettings.self) private var appSettings
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -17,12 +17,12 @@ struct QuickActionsSettingsView: View {
                 Text("If a page has a single active action, the button triggers it directly. With multiple actions, the button opens a menu.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Floating Buttons")
@@ -43,11 +43,11 @@ struct QuickActionsSettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Customize buttons")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Choose which actions appear on each page — or hide the button entirely.")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
@@ -59,9 +59,9 @@ struct QuickActionsSettingsView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(host.title)
                 .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
                 FabVisibilityRow(
@@ -91,7 +91,7 @@ struct QuickActionsSettingsView: View {
                     }
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 }
@@ -110,7 +110,7 @@ private struct FabVisibilityRow: View {
                         .fill(Color.primary.opacity(0.08))
                         .frame(width: 32, height: 32)
                     Image(systemName: isOn ? "eye.fill" : "eye.slash.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                 }
                 Text("Show button")
@@ -121,12 +121,12 @@ private struct FabVisibilityRow: View {
                     .labelsHidden()
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 0.4)
                     .padding(.leading, 58)
             }
@@ -147,7 +147,7 @@ private struct QuickActionToggleRow: View {
                         .fill(action.color.opacity(0.18))
                         .frame(width: 32, height: 32)
                     Image(systemName: action.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(action.color)
                 }
                 VStack(alignment: .leading, spacing: 1) {
@@ -156,19 +156,19 @@ private struct QuickActionToggleRow: View {
                         .foregroundStyle(.primary)
                     Text(action.subtitle)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()
                 Toggle("", isOn: $isOn)
                     .labelsHidden()
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(height: 0.4)
                     .padding(.leading, 58)
             }

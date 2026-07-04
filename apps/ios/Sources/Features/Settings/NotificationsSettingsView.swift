@@ -1,10 +1,11 @@
 import SwiftUI
 import UserNotifications
+import UIKit
 
 struct NotificationsSettingsView: View {
-    @EnvironmentObject private var scheduler: NotificationScheduler
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(NotificationScheduler.self) private var scheduler
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
 
     @State private var authStatus: UNAuthorizationStatus = .notDetermined
     @State private var showOpenSettings = false
@@ -19,8 +20,8 @@ struct NotificationsSettingsView: View {
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -45,7 +46,7 @@ struct NotificationsSettingsView: View {
             VStack(spacing: 16) {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(statusColor.opacity(0.18))
                             .frame(width: 48, height: 48)
                         Image(systemName: statusIcon)
@@ -54,11 +55,11 @@ struct NotificationsSettingsView: View {
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text(statusTitle)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text(statusSubtitle)
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                 }
@@ -68,20 +69,20 @@ struct NotificationsSettingsView: View {
                         Task { await requestPermission() }
                     } label: {
                         Text("Enable Notifications")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AppSpacing.md)
                             .glassRoundedRect(12)
                     }
                     .buttonStyle(.plain)
                 } else if authStatus == .denied {
                     Button { showOpenSettings = true } label: {
                         Text("Open iOS Settings")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AppSpacing.md)
                             .glassRoundedRect(12)
                     }
                     .buttonStyle(.plain)
@@ -117,7 +118,7 @@ struct NotificationsSettingsView: View {
                                subtitle: "Reminder to return borrowed items",
                                value: bind(\.inventoryLoans))
                 divider
-                NotifToggleRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
+                NotifToggleRow(icon: "banknote.fill", color: Color.brandSuccess,
                                title: "Financial alerts",
                                subtitle: "Upcoming rents & large transactions",
                                value: bind(\.financialAlerts))
@@ -125,8 +126,8 @@ struct NotificationsSettingsView: View {
 
             group("COMMUNICATION") {
                 NotifToggleRow(icon: "bubble.left.and.bubble.right.fill", color: .blue,
-                               title: "Family chat",
-                               subtitle: "New messages in the family chat",
+                               title: "Chat",
+                               subtitle: "New messages in chat",
                                value: bind(\.chatMessages))
                 divider
                 NotifToggleRow(icon: "at", color: .purple,
@@ -152,20 +153,20 @@ struct NotificationsSettingsView: View {
             Text("Notifications are scheduled locally on the device and fire even when the app is closed.")
                 .font(.caption)
                 .foregroundStyle(Color.primary.opacity(0.3))
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
         }
     }
 
     private func group<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) { content() }
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -191,7 +192,7 @@ struct NotificationsSettingsView: View {
 
     private var statusColor: Color {
         switch authStatus {
-        case .authorized, .provisional: return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case .authorized, .provisional: return Color.brandSuccess
         case .denied: return .orange
         default: return .blue
         }
@@ -233,7 +234,11 @@ struct NotificationsSettingsView: View {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .badge, .sound])
             authStatus = granted ? .authorized : .denied
-            if granted { reschedule() }
+            if granted {
+                reschedule()
+                // Now that the user opted in, register for APNs push too.
+                UIApplication.shared.registerForRemoteNotifications()
+            }
         } catch {
             #if DEBUG
             print("[Notifications] permission error: \(error)")
@@ -275,7 +280,7 @@ private struct NotifToggleRow: View {
             Toggle("", isOn: $value)
                 .labelsHidden()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }

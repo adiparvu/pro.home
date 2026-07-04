@@ -20,7 +20,7 @@ struct InventoryRow: View {
                     ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                    Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
                             Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
@@ -36,7 +36,7 @@ struct InventoryRow: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
                     case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)
@@ -48,7 +48,7 @@ struct InventoryRow: View {
         }
         .overlay {
             if item.isLoaned {
-                RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(.orange.opacity(0.4), lineWidth: 1.5)
             }
         }
     }
@@ -114,7 +114,7 @@ struct AddInventorySheet: View {
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
                                     DatePicker("", selection: $purchaseDate, in: ...Date(), displayedComponents: .date).tint(.accentColor)
-                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                                }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                             }
                             div
                             toggle("checkmark.shield.fill", "Has Warranty", $hasWarranty)
@@ -123,7 +123,7 @@ struct AddInventorySheet: View {
                                 HStack(spacing: 12) {
                                     Color.clear.frame(width: 28)
                                     DatePicker("Until", selection: $warrantyDate, displayedComponents: .date).tint(.accentColor).font(.system(size: 15)).foregroundStyle(.primary)
-                                }.padding(.horizontal, 16).padding(.vertical, 6)
+                                }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                             }
                         }
                         card {
@@ -131,19 +131,19 @@ struct AddInventorySheet: View {
                                 Image(systemName: "note.text").font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
                                 TextField("Note (opțional)", text: $notes, axis: .vertical)
                                     .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).lineLimit(3...5)
-                            }.padding(.horizontal, 16).padding(.vertical, 13)
+                            }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)).disabled(isSaving) }
+                ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
             }
@@ -193,7 +193,7 @@ struct AddInventorySheet: View {
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
                                         .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
                     }
@@ -210,6 +210,7 @@ struct AddInventorySheet: View {
                                         .shadow(radius: 2)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Clear photo")
                                 .padding(10)
                             }
                             Spacer()
@@ -218,9 +219,9 @@ struct AddInventorySheet: View {
                 }
             }
             .buttonStyle(.plain)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .strokeBorder(
                         selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5,
@@ -257,22 +258,22 @@ struct AddInventorySheet: View {
 
     private func card<C: View>(@ViewBuilder _ content: () -> C) -> some View {
         VStack(spacing: 0) { content() }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
     private func field(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(ph, text: b).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private func picker(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<String>, _ opts: [String]) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
-            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(0.5))
-        }.padding(.horizontal, 16).padding(.vertical, 10)
+            Picker("", selection: b) { ForEach(opts, id: \.self) { Text(LocalizedStringKey($0.capitalized)).tag($0) } }.tint(Color.primary.opacity(AppOpacity.mediumText))
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
     }
     private func toggle(_ icon: String, _ label: LocalizedStringKey, _ b: Binding<Bool>) -> some View {
         HStack(spacing: 12) {
@@ -280,7 +281,7 @@ struct AddInventorySheet: View {
             Text(label).font(.system(size: 15)).foregroundStyle(.primary)
             Spacer()
             Toggle("", isOn: b).tint(.accentColor).labelsHidden()
-        }.padding(.horizontal, 16).padding(.vertical, 12)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
     }
     private var div: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }
@@ -299,7 +300,7 @@ struct QRScannerSheet: View {
                 appBackground.ignoresSafeArea()
                 VStack(spacing: 16) {
                     Image(systemName: "camera.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.25))
-                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.5)).multilineTextAlignment(.center)
+                    Text("Camera scanner not available on this device").font(.system(size: 15)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText)).multilineTextAlignment(.center)
                 }
             }
             VStack {
@@ -308,12 +309,14 @@ struct QRScannerSheet: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 30))
                             .foregroundStyle(Color.primary.opacity(0.85)).background(Color.black.opacity(0.3), in: Circle())
-                    }.padding(20)
+                    }
+                    .accessibilityLabel("Close scanner")
+                    .padding(AppSpacing.xl)
                 }
                 Spacer()
                 Text("Point at an item's QR code")
-                    .font(.system(size: 15, weight: .medium)).foregroundStyle(.primary)
-                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .font(AppFont.body).foregroundStyle(.primary)
+                    .padding(.horizontal, AppSpacing.xl).padding(.vertical, AppSpacing.md)
                     .background(Color.black.opacity(0.5), in: Capsule())
                     .padding(.bottom, 60)
             }

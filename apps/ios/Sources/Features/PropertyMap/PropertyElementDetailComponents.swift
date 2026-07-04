@@ -12,7 +12,7 @@ struct ElementRecordRow: View {
                 ZStack {
                     Circle().fill(record.recordType.color.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: record.recordType.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(record.recordType.color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
@@ -44,7 +44,7 @@ struct ElementRecordRow: View {
                     if let cost = record.cost {
                         Text("−\(formatCost(cost)) \(record.currency)")
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.4))
+                            .foregroundStyle(Color.brandSuccess)
                     }
                 }
             }

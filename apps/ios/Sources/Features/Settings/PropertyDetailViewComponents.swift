@@ -35,8 +35,8 @@ extension PropertyDetailView {
 
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -79,20 +79,21 @@ extension PropertyDetailView {
                 if isUploadingPhoto {
                     ProgressView()
                         .tint(.white)
-                        .padding(12)
+                        .padding(AppSpacing.md)
                         .glassCircle()
                 } else {
                     Button { showPhotoMenu = true } label: {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(AppSpacing.md)
                     }
                     .buttonStyle(.plain)
                     .glassCircle()
+                    .accessibilityLabel("Change photo")
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .frame(height: 280)
     }
@@ -149,24 +150,24 @@ extension PropertyDetailView {
     private func row(_ icon: String, _ label: LocalizedStringKey, _ value: String, _ color: Color) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                     .fill(color.opacity(0.14))
                     .frame(width: 30, height: 30)
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(color)
             }
             Text(label)
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private func rowDivider() -> some View {
@@ -182,7 +183,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Story", systemImage: "text.quote")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
                 Text(story)
@@ -199,7 +200,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Renovations", systemImage: "wrench.and.screwdriver.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
 
@@ -210,7 +211,7 @@ extension PropertyDetailView {
                                 Circle()
                                     .fill(.blue)
                                     .frame(width: 10, height: 10)
-                                    .padding(.top, 4)
+                                    .padding(.top, AppSpacing.xxs)
                                 if idx < renovations.count - 1 {
                                     Rectangle()
                                         .fill(Color.accentColor.opacity(0.2))
@@ -221,7 +222,7 @@ extension PropertyDetailView {
 
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(r.title)
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                 Text(r.yearRange)
                                     .font(.system(size: 12))
                                     .foregroundStyle(.secondary)
@@ -242,7 +243,7 @@ extension PropertyDetailView {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Owners", systemImage: "person.2.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
 
@@ -256,18 +257,18 @@ extension PropertyDetailView {
                                         .frame(width: 36, height: 36)
                                     Image(systemName: "person.fill")
                                         .font(.system(size: 14))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(owner.name)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.footnoteEmphasis)
                                     Text(owner.yearRange)
                                         .font(.system(size: 12))
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                             }
-                            .padding(.vertical, 8)
+                            .padding(.vertical, AppSpacing.sm)
                             if idx < owners.count - 1 {
                                 Rectangle()
                                     .fill(Color.primary.opacity(0.05))
@@ -293,18 +294,18 @@ extension PropertyDetailView {
                         .fill(Color.orange.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: "doc.richtext.fill")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.orange)
                 }
                 Text("Property plans")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .buttonStyle(.plain)
         .liquidGlass(cornerRadius: 18)

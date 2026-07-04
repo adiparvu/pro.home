@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct AddPaintColorSheet: View {
-    @EnvironmentObject private var paintColorService: PaintColorService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PaintColorService.self) private var paintColorService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var roomName = ""
@@ -58,14 +58,14 @@ struct AddPaintColorSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Paint Color")
@@ -73,14 +73,14 @@ struct AddPaintColorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .disabled(colorName.trimmingCharacters(in: .whitespaces).isEmpty || roomName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
@@ -106,7 +106,7 @@ struct AddPaintColorSheet: View {
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
@@ -127,7 +127,7 @@ struct AddPaintColorSheet: View {
                         if roomName.isEmpty { roomName = paintColorService.roomNames.first ?? "" }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, 10)
                 divider
                 Button {
@@ -140,7 +140,7 @@ struct AddPaintColorSheet: View {
                             .foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
@@ -162,7 +162,7 @@ struct AddPaintColorSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 
@@ -180,7 +180,7 @@ struct AddPaintColorSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 
@@ -191,7 +191,7 @@ struct AddPaintColorSheet: View {
                 .foregroundStyle(hexPreviewColor)
                 .frame(width: 28)
             Text("#")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(Color.primary.opacity(0.4))
             TextField("Hex Color (e.g. F5E6D0)", text: $hexColor)
                 .font(.system(size: 15))
@@ -200,7 +200,7 @@ struct AddPaintColorSheet: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.characters)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
@@ -224,22 +224,22 @@ struct AddPaintColorSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

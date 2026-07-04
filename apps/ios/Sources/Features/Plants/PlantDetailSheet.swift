@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - PlantDetailSheet
 
 struct PlantDetailSheet: View {
-    @EnvironmentObject var plantService: PlantService
+    @Environment(PlantService.self) var plantService
     @Environment(\.dismiss) var dismiss
 
     let plant: Plant
@@ -35,8 +35,8 @@ struct PlantDetailSheet: View {
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(plant.name)
@@ -61,7 +61,7 @@ struct PlantDetailSheet: View {
                                 ProgressView().tint(.accentColor)
                             } else {
                                 Text("Save")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(Color.accentColor)
                             }
                         }

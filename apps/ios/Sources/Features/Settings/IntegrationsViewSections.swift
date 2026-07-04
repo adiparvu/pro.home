@@ -4,6 +4,43 @@ import SwiftUI
 
 extension IntegrationsView {
 
+    var customIntegrationsSection: some View {
+        NavigationLink {
+            CustomIntegrationsView()
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Connect anything")
+                        .font(AppFont.headline)
+                        .foregroundStyle(.primary)
+                    Text("Create your own integrations — each service gets its own secret key and posts straight into your chat.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(AppSpacing.base)
+            .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+        .buttonStyle(.plain)
+    }
+
     var appleEcosystemSection: some View {
         IntegrationGroup(title: "iOS & Apple Ecosystem") {
             Button { vm.activeSheet = .siriShortcuts } label: {
@@ -15,7 +52,7 @@ extension IntegrationsView {
             }
             .buttonStyle(.plain)
 
-            IntegrationRow(icon: "magnifyingglass", color: Color(red: 0.2, green: 0.6, blue: 0.95),
+            IntegrationRow(icon: "magnifyingglass", color: Color.brandSkyBlue,
                 title: "Spotlight Search",
                 description: "Tasks, plants, and documents appear in iOS Spotlight search results.",
                 status: .active("Active"), action: nil)
@@ -37,7 +74,7 @@ extension IntegrationsView {
                 })
 
             IntegrationRow(
-                icon: "person.2.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15),
+                icon: "person.2.fill", color: Color.brandWarning,
                 title: "Apple Contacts",
                 description: "Sync family members to your iPhone Contacts.",
                 status: vm.contactsStatus,
@@ -55,7 +92,7 @@ extension IntegrationsView {
                     }
                 })
 
-            IntegrationRow(icon: "icloud.fill", color: Color(red: 0.25, green: 0.55, blue: 0.95),
+            IntegrationRow(icon: "icloud.fill", color: Color.brandSkyBlue,
                 title: "iCloud Backup",
                 description: "App data is included in your iPhone iCloud backup automatically.",
                 status: .active("Automatic"), action: nil)
@@ -118,12 +155,12 @@ extension IntegrationsView {
                 description: "Sync tasks and maintenance reminders to your calendar.",
                 status: vm.calendarStatus,
                 action: { Task { await vm.toggleCalendar() } })
-            IntegrationRow(icon: "checklist", color: Color(red: 0.25, green: 0.5, blue: 0.95),
+            IntegrationRow(icon: "checklist", color: Color.brandSkyBlue,
                 title: "Apple Reminders",
                 description: "Add overdue tasks to Reminders for quick action.",
                 status: vm.remindersStatus,
                 action: { Task { await vm.toggleReminders() } })
-            IntegrationRow(icon: "calendar.badge.clock", color: Color(red: 0.25, green: 0.7, blue: 1.0),
+            IntegrationRow(icon: "calendar.badge.clock", color: Color.brandSkyBlue,
                 title: "Google Calendar",
                 description: "Sync household schedules with Google Calendar.",
                 status: .deepLink("Open"),
@@ -166,7 +203,7 @@ extension IntegrationsView {
             .buttonStyle(.plain)
             Button { vm.activeSheet = .iotHub } label: {
                 IntegrationRowContent(
-                    icon: "network", color: Color(red: 0.35, green: 0.55, blue: 0.95),
+                    icon: "network", color: Color.brandSkyBlue,
                     title: "RS485 Modbus",
                     description: "Read Modbus TCP registers from industrial RS485 gateways (port 502).",
                     status: .deepLink("Manage"))
@@ -202,7 +239,7 @@ extension IntegrationsView {
                 description: "Manage whole-home audio from your property dashboard.",
                 status: .comingSoon,
                 action: { if let url = URL(string: "sonos://") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "lock.shield.fill", color: Color(red: 0.3, green: 0.65, blue: 0.95),
+            IntegrationRow(icon: "lock.shield.fill", color: Color.brandSkyBlue,
                 title: "August / Smart Lock",
                 description: "Grant guest access and monitor door activity.",
                 status: .comingSoon,
@@ -212,7 +249,7 @@ extension IntegrationsView {
                 description: "Control IKEA smart lighting and blinds.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://www.ikea.com/us/en/customer-service/smart-home/") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "atom", color: Color(red: 0.4, green: 0.7, blue: 0.95),
+            IntegrationRow(icon: "atom", color: Color.brandSkyBlue,
                 title: "Matter & Thread",
                 description: "Compatible Matter devices work automatically via Apple Home.",
                 status: .active("Via HomeKit"), action: nil)
@@ -246,7 +283,7 @@ extension IntegrationsView {
                 description: "Auto-import home expenses from your bank transactions.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://app.revolut.com") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "creditcard.fill", color: Color(red: 0.25, green: 0.5, blue: 0.95),
+            IntegrationRow(icon: "creditcard.fill", color: Color.brandSkyBlue,
                 title: "Open Banking",
                 description: "Connect your bank for automatic expense categorization.",
                 status: .deepLink("Learn More"),
@@ -268,7 +305,7 @@ extension IntegrationsView {
                 description: "Manage short-term rental bookings and guest access.",
                 status: .deepLink("Open"),
                 action: { if let url = URL(string: "https://www.booking.com") { UIApplication.shared.open(url) } })
-            IntegrationRow(icon: "airplane.circle.fill", color: Color(red: 1.0, green: 0.3, blue: 0.3),
+            IntegrationRow(icon: "airplane.circle.fill", color: Color.brandDanger,
                 title: "Airbnb",
                 description: "Sync Airbnb calendar and automate guest check-ins.",
                 status: .deepLink("Open"),
@@ -329,7 +366,7 @@ extension IntegrationsView {
 
     var energySection: some View {
         IntegrationGroup(title: "Energy & Environment") {
-            IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5),
+            IntegrationRow(icon: "bolt.horizontal.circle.fill", color: Color.brandSuccess,
                 title: "Energy Provider",
                 description: "Import utility bills automatically from your energy supplier.",
                 status: .deepLink("Set Up"),
@@ -363,13 +400,13 @@ struct IntegrationGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) { content }
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 }
@@ -389,7 +426,7 @@ struct IntegrationRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
@@ -401,8 +438,8 @@ struct IntegrationRow: View {
 
                 statusBadge
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             Rectangle()
                 .fill(Color.primary.opacity(0.05))
@@ -437,16 +474,16 @@ struct IntegrationRow: View {
 
         case .comingSoon:
             Text("Soon")
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(Color.primary.opacity(0.3))
-                .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(Color.primary.opacity(0.06), in: Capsule())
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
+                .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
 
         case .active(let label):
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(AppFont.caption2)
                 .foregroundStyle(.green)
-                .padding(.horizontal, 8).padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                 .background(Color.green.opacity(0.12), in: Capsule())
 
         case .deepLink(let label):
@@ -454,7 +491,7 @@ struct IntegrationRow: View {
                 action?()
             } label: {
                 Text(label)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Color.accentColor.opacity(0.12), in: Capsule())
@@ -478,7 +515,7 @@ struct IntegrationRowContent: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text(description)
                         .font(.system(size: 11))
@@ -489,11 +526,11 @@ struct IntegrationRowContent: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             Rectangle()
                 .fill(Color.primary.opacity(0.05))

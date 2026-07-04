@@ -1,15 +1,17 @@
 import AppIntents
 
+// All phrases are written in English (the catalog keys) and localized to
+// Romanian in Resources/AppShortcuts.xcstrings — without that catalog Siri
+// only matched the literal strings below, so a Romanian device couldn't
+// invoke most shortcuts by voice.
 struct PRVIOShortcutsProvider: AppShortcutsProvider {
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: PRVIOActionButtonIntent(),
             phrases: [
-                "Deschide \(.applicationName)",
-                "Adaugă task în \(.applicationName)",
-                "Udă plantele în \(.applicationName)",
-                "Deschide asistentul \(.applicationName)"
+                "Quick action in \(.applicationName)",
+                "Run my \(.applicationName) action"
             ],
             shortTitle: "PRVIO Quick Action",
             systemImageName: "house.fill"
@@ -34,6 +36,24 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
             systemImageName: "drop.fill"
         )
         AppShortcut(
+            intent: CompleteTaskIntent(),
+            phrases: [
+                "Complete task in \(.applicationName)",
+                "Mark task done in \(.applicationName)"
+            ],
+            shortTitle: "Complete task",
+            systemImageName: "checkmark.circle.fill"
+        )
+        AppShortcut(
+            intent: CheckSupplyItemIntent(),
+            phrases: [
+                "Check off item in \(.applicationName)",
+                "Mark item as bought in \(.applicationName)"
+            ],
+            shortTitle: "Check off item",
+            systemImageName: "cart.badge.minus"
+        )
+        AppShortcut(
             intent: ShowPlantsIntent(),
             phrases: [
                 "Open plants in \(.applicationName)",
@@ -54,10 +74,10 @@ struct PRVIOShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: OpenChatIntent(),
             phrases: [
-                "Open family chat in \(.applicationName)",
-                "Family chat in \(.applicationName)"
+                "Open chat in \(.applicationName)",
+                "Chat in \(.applicationName)"
             ],
-            shortTitle: "Family chat",
+            shortTitle: "Chat",
             systemImageName: "message.fill"
         )
         AppShortcut(
@@ -91,7 +111,7 @@ struct OpenDashboardIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.openDashboard")
+        SharedDataStore.setIntentFlag("prvio.intent.openDashboard")
         return .result()
     }
 }
@@ -104,7 +124,7 @@ struct AskARIAIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.openARIA")
+        SharedDataStore.setIntentFlag("prvio.intent.openARIA")
         return .result()
     }
 }

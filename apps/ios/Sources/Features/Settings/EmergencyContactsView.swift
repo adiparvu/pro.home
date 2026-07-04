@@ -21,7 +21,7 @@ struct EmergencyContactsView: View {
                 addButton
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20).padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -61,18 +61,18 @@ struct EmergencyContactsView: View {
     private var addButton: some View {
         Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
             Label("Add Contact", systemImage: "plus")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
 
     private func sectionHeader(_ t: LocalizedStringKey) -> some View {
-        Text(t).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+        Text(t).font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
     }
 
     private let systemContacts: [EmergencyContact] = [
@@ -99,7 +99,7 @@ private struct EmergencyRow: View {
         switch contact.color {
         case "blue": return .blue
         case "orange": return .orange
-        case "green": return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "green": return Color.brandSuccess
         default: return .red
         }
     }
@@ -107,11 +107,11 @@ private struct EmergencyRow: View {
         GlassCard {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous).fill(color.opacity(0.18)).frame(width: 44, height: 44)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).fill(color.opacity(0.18)).frame(width: 44, height: 44)
                     Image(systemName: isSystem ? "phone.fill" : "person.fill").font(.system(size: 18)).foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contact.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                    Text(contact.name).font(AppFont.subheadline).foregroundStyle(.primary)
                     Text(contact.role).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
                 }
                 Spacer()
@@ -124,7 +124,7 @@ private struct EmergencyRow: View {
                     Text(contact.phone)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                 }
                 .glassCapsule()
             }
@@ -149,19 +149,19 @@ private struct AddEmergencySheet: View {
                     divider
                     fieldRow("phone.fill", "Phone number", $phone, keyboard: .phonePad)
                 }
-                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                .padding(.horizontal, 20).padding(.top, 8)
+                .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 Spacer()
             }
             .navigationTitle("Add Contact").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(EmergencyContact(name: name, role: role, phone: phone))
                         dismiss()
-                    }.font(.system(size: 15, weight: .semibold)).foregroundStyle(.blue).disabled(name.isEmpty || phone.isEmpty)
+                    }.font(AppFont.subheadline).foregroundStyle(.blue).disabled(name.isEmpty || phone.isEmpty)
                 }
             }
         }
@@ -171,7 +171,7 @@ private struct AddEmergencySheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(.blue).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 }

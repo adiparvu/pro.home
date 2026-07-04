@@ -3,9 +3,9 @@ import EventKit
 import UserNotifications
 
 struct AddTaskView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
 
     var editing: MaintenanceTask? = nil
@@ -54,8 +54,8 @@ struct AddTaskView: View {
                         saveButton
                         Spacer(minLength: 24)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(editing != nil ? String(localized: "Edit Task") : String(localized: "New Task"))
@@ -102,8 +102,8 @@ struct AddTaskView: View {
             TextField("What needs to be done?", text: $title)
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -114,8 +114,8 @@ struct AddTaskView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .lineLimit(3...6)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -128,8 +128,8 @@ struct AddTaskView: View {
                         Text(LocalizedStringKey(p.capitalized))
                             .font(.system(size: 13, weight: priority == p ? .semibold : .regular))
                             .foregroundStyle(priority == p ? Color.black : Color.primary.opacity(0.6))
-                            .padding(.horizontal, 13).padding(.vertical, 8)
-                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(0.07), in: Capsule())
+                            .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
+                            .background(priority == p ? priorityColor(p) : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -147,8 +147,8 @@ struct AddTaskView: View {
                             Text(LocalizedStringKey(cat.capitalized))
                                 .font(.system(size: 13, weight: category == cat ? .semibold : .regular))
                                 .foregroundStyle(category == cat ? Color.black : Color.primary.opacity(0.6))
-                                .padding(.horizontal, 13).padding(.vertical, 8)
-                                .background(category == cat ? Color.white : Color.primary.opacity(0.07), in: Capsule())
+                                .padding(.horizontal, 13).padding(.vertical, AppSpacing.sm)
+                                .background(category == cat ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -175,10 +175,10 @@ struct AddTaskView: View {
                     } label: {
                         Label(hasDueTime ? "Remove time" : "Add time", systemImage: "clock")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(0.45))
+                            .foregroundStyle(hasDueTime ? .accentColor : Color.primary.opacity(AppOpacity.secondaryText))
                             .labelStyle(.iconOnly)
-                            .padding(8)
-                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.07),
+                            .padding(AppSpacing.sm)
+                            .background(hasDueTime ? Color.accentColor.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Circle())
                     }
                     .buttonStyle(.plain)
@@ -221,7 +221,7 @@ struct AddTaskView: View {
                         }
                         Text(assigneeNames.joined(separator: ", "))
                             .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(0.7))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                             .lineLimit(1)
                     }
                     Spacer()
@@ -229,8 +229,8 @@ struct AddTaskView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
             }
             .buttonStyle(.plain)
         }
@@ -251,7 +251,7 @@ struct AddTaskView: View {
             HStack(spacing: 12) {
                 Image(systemName: calendarAdded ? "calendar.badge.checkmark" : "calendar.badge.plus")
                     .font(.system(size: 14))
-                    .foregroundStyle(calendarAdded ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.accentColor)
+                    .foregroundStyle(calendarAdded ? Color.brandSuccess : Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar"))
@@ -269,10 +269,10 @@ struct AddTaskView: View {
                     .labelsHidden()
                     .disabled(!hasDueDate)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         .opacity(hasDueDate ? 1 : 0.5)
     }
 
@@ -285,12 +285,12 @@ struct AddTaskView: View {
                     ProgressView().tint(.black)
                 } else {
                     Text(LocalizedStringKey(editing != nil ? "Save Changes" : "Add Task"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(canSave ? Color.white : Color.primary.opacity(0.35))
+            .padding(.vertical, AppSpacing.lg)
+            .background(canSave ? Color.white : Color.primary.opacity(AppOpacity.disabled))
             .foregroundStyle(.black)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
@@ -419,12 +419,12 @@ struct AddTaskView: View {
     // MARK: - Helpers
 
     private func fieldLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(0.5))
+        Text(key).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
     }
 
     private func priorityColor(_ p: String) -> Color {
         switch p {
-        case "critical": return Color(red: 1, green: 0.25, blue: 0.25)
+        case "critical": return Color.brandDanger
         case "high":     return .orange
         case "medium":   return Color(red: 1, green: 0.85, blue: 0.25)
         default:         return Color(red: 0.3, green: 0.9, blue: 0.5)

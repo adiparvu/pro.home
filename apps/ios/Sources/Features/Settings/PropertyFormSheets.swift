@@ -1,12 +1,14 @@
 import SwiftUI
+import Observation
 import MapKit
 import CoreLocation
 
 // MARK: - Address Autocomplete
 
 @MainActor
-final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate, @unchecked Sendable {
-    @Published var suggestions: [MKLocalSearchCompletion] = []
+@Observable
+final class AddressCompleter: NSObject, MKLocalSearchCompleterDelegate, @unchecked Sendable {
+    var suggestions: [MKLocalSearchCompletion] = []
     private let completer = MKLocalSearchCompleter()
 
     // Bounding boxes for supported countries
@@ -58,8 +60,8 @@ final class AddressCompleter: NSObject, ObservableObject, MKLocalSearchCompleter
 
 func formFieldGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     VStack(spacing: 0) { content() }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 }
 
 func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
@@ -74,7 +76,7 @@ func formFieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<Stri
             .tint(.accentColor)
             .keyboardType(keyboard)
     }
-    .padding(.horizontal, 16).padding(.vertical, 13)
+    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
 }
 
 func formDivider() -> some View {
@@ -91,7 +93,7 @@ func formCoordField(_ label: String, text: Binding<String>, placeholder: String)
             .foregroundStyle(.primary)
             .tint(.accentColor)
             .keyboardType(.decimalPad)
-            .padding(.horizontal, 10).padding(.vertical, 8)
+            .padding(.horizontal, 10).padding(.vertical, AppSpacing.sm)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
     .frame(maxWidth: .infinity)
@@ -116,7 +118,7 @@ struct AddressAutocompleteField: View {
     @Binding var longitude: Double?
     var onPicked: () -> Void = {}
 
-    @StateObject private var completer = AddressCompleter()
+    @State private var completer = AddressCompleter()
     @State private var showSuggestions = false
     @State private var isApplying = false
     @FocusState private var focused: Bool
@@ -144,9 +146,10 @@ struct AddressAutocompleteField: View {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.3))
                         }.buttonStyle(.plain)
+                        .accessibilityLabel("Clear address")
                     }
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                 formDivider()
                 formFieldRow("building.2.fill", "City", $city)
                 formDivider()
@@ -179,23 +182,23 @@ struct AddressAutocompleteField: View {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 16)).foregroundStyle(Color.accentColor)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(s.title).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                            Text(s.title).font(AppFont.footnote).foregroundStyle(.primary)
                             if !s.subtitle.isEmpty {
-                                Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                                Text(s.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
                         Spacer(minLength: 0)
                     }
                     .contentShape(Rectangle())
-                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 11)
                 }
                 .buttonStyle(.plain)
                 if idx < items.count - 1 { Divider().padding(.leading, 44) }
             }
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        .padding(.top, 6)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .padding(.top, AppSpacing.xs)
     }
 
     private func pick(_ s: MKLocalSearchCompletion) {
@@ -245,7 +248,7 @@ struct AddressAutocompleteField: View {
 
 struct AddPropertySheet: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var name = ""
     @State private var addressLine1 = ""
@@ -293,33 +296,33 @@ struct AddPropertySheet: View {
                                 }
                             }
                         )
-                        .padding(.top, 16)
+                        .padding(.top, AppSpacing.lg)
 
                         Button { withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showMap.toggle() } } label: {
                             HStack {
                                 Image(systemName: "map.fill").foregroundStyle(Color.accentColor)
-                                Text("Location on map").font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                Text("Location on map").font(AppFont.footnote).foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: showMap ? "chevron.up" : "chevron.down").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                                 if latitude != nil { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.system(size: 14)) }
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 13)
-                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                        }.buttonStyle(.plain).padding(.top, 12)
+                            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+                            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                        }.buttonStyle(.plain).padding(.top, AppSpacing.md)
 
-                        if showMap { mapPickerSection.padding(.top, 8) }
+                        if showMap { mapPickerSection.padding(.top, AppSpacing.sm) }
 
-                        Text("TYPE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35))
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4).padding(.top, 20).padding(.bottom, 8)
+                        Text("TYPE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl).padding(.bottom, AppSpacing.sm)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(propertyTypes, id: \.self) { type in
                                     Button { propertyType = type } label: {
                                         Text(LocalizedStringKey(type.capitalized))
                                             .font(.system(size: 13, weight: propertyType == type ? .semibold : .regular))
-                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(0.7))
-                                            .padding(.horizontal, 14).padding(.vertical, 8)
+                                            .foregroundStyle(propertyType == type ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
+                                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                             .background(propertyType == type ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                                     }.buttonStyle(.plain)
                                 }
@@ -329,19 +332,19 @@ struct AddPropertySheet: View {
                             formFieldRow("ruler.fill", "Area (m²)", $sizeSqmText, keyboard: .decimalPad)
                             formDivider()
                             formFieldRow("door.left.hand.open", "Rooms", $numRoomsText, keyboard: .numberPad)
-                        }.padding(.top, 16)
+                        }.padding(.top, AppSpacing.lg)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 40)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, 40)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("Add Property").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
+                        else { Text("Add").font(AppFont.subheadline).foregroundStyle(name.isEmpty || addressLine1.isEmpty ? Color.primary.opacity(0.3) : Color.accentColor) }
                     }.disabled(name.isEmpty || addressLine1.isEmpty || isSaving)
                 }
             }
@@ -351,7 +354,7 @@ struct AddPropertySheet: View {
     private var mapPickerSection: some View {
         VStack(spacing: 8) {
             ZStack {
-                Map(position: $mapPosition).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Map(position: $mapPosition).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     .onMapCameraChange { ctx in
                         latitude = ctx.camera.centerCoordinate.latitude; longitude = ctx.camera.centerCoordinate.longitude
                         latText = String(format: "%.6f", ctx.camera.centerCoordinate.latitude)
@@ -365,7 +368,7 @@ struct AddPropertySheet: View {
                 VStack { Spacer(); HStack {
                     Button { Task { await reverseGeocode() } } label: {
                         Label("Apply address", systemImage: "arrow.up.left.square.fill")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                            .font(AppFont.captionStrong).foregroundStyle(.white)
                             .padding(.horizontal, 10).padding(.vertical, 7).background(.blue, in: Capsule())
                     }.buttonStyle(.plain).padding(.leading, 10).padding(.bottom, 10)
                     Spacer()
@@ -378,7 +381,7 @@ struct AddPropertySheet: View {
                     }.buttonStyle(.plain).padding(.trailing, 10).padding(.bottom, 10)
                 }}
             }
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
 
             HStack(spacing: 8) {
                 formCoordField("Latitude", text: $latText, placeholder: "e.g. 44.426800")
@@ -386,6 +389,7 @@ struct AddPropertySheet: View {
                 Button { applyManualCoords() } label: {
                     Image(systemName: "arrow.right.circle.fill").font(.system(size: 28)).foregroundStyle(Color.accentColor)
                 }.buttonStyle(.plain)
+                .accessibilityLabel("Apply coordinates")
             }
         }
     }

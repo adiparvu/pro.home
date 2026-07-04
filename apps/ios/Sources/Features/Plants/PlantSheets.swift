@@ -4,8 +4,8 @@ import PhotosUI
 // MARK: - AddPlantSheet
 
 struct AddPlantSheet: View {
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(PlantService.self) private var plantService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -51,8 +51,8 @@ struct AddPlantSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New Plant")
@@ -107,11 +107,11 @@ struct AddPlantSheet: View {
                                 .background(
                                     selectedEmoji == emoji
                                         ? Color.accentColor.opacity(0.15)
-                                        : Color.primary.opacity(0.06),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        : Color.primary.opacity(AppOpacity.hairline),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(
                                             selectedEmoji == emoji ? Color.accentColor : Color.clear,
                                             lineWidth: 2
@@ -149,7 +149,7 @@ struct AddPlantSheet: View {
                                         .foregroundStyle(Color.accentColor.opacity(0.7))
                                     Text("Adaugă fotografie")
                                         .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.primary.opacity(0.45))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 }
                             )
                     }
@@ -166,6 +166,7 @@ struct AddPlantSheet: View {
                                         .shadow(radius: 2)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel("Remove photo")
                                 .padding(10)
                             }
                             Spacer()
@@ -174,9 +175,9 @@ struct AddPlantSheet: View {
                 }
             }
             .buttonStyle(.plain)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .strokeBorder(
                         selectedImageData != nil ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.08),
                         lineWidth: selectedImageData != nil ? 1.5 : 0.5
@@ -200,10 +201,10 @@ struct AddPlantSheet: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -215,10 +216,10 @@ struct AddPlantSheet: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -230,10 +231,10 @@ struct AddPlantSheet: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -246,10 +247,10 @@ struct AddPlantSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(3...5)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -275,7 +276,7 @@ struct AddPlantSheet: View {
                             .background(
                                 healthStatus == opt.id
                                     ? healthColorFor(opt.id)
-                                    : Color.primary.opacity(0.07),
+                                    : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                             )
                     }
@@ -303,10 +304,10 @@ struct AddPlantSheet: View {
                 Stepper("", value: $wateringIntervalDays, in: 1...30)
                     .labelsHidden()
             }
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(
-                Color.primary.opacity(0.07),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                Color.primary.opacity(AppOpacity.subtleFill),
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             )
         }
     }
@@ -320,14 +321,14 @@ struct AddPlantSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text("Add plant")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
                 canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
             .foregroundStyle(
                 canSave ? Color.white : Color.primary.opacity(0.4)
@@ -341,7 +342,7 @@ struct AddPlantSheet: View {
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

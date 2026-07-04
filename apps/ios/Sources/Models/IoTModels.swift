@@ -38,7 +38,7 @@ struct IoTDevice: Identifiable, Codable {
             switch self {
             case .esp32:        return Color(red: 0.05, green: 0.75, blue: 0.45)
             case .raspberryPi:  return Color(red: 0.85, green: 0.15, blue: 0.35)
-            case .rs485Modbus:  return Color(red: 0.35, green: 0.55, blue: 0.95)
+            case .rs485Modbus:  return Color.brandSkyBlue
             }
         }
         var defaultPort: Int {
@@ -117,7 +117,7 @@ struct IoTSensor: Identifiable, Codable {
             switch self {
             case .temperature: return Color(red: 1.0, green: 0.35, blue: 0.15)
             case .humidity:    return Color(red: 0.15, green: 0.55, blue: 0.95)
-            case .motion:      return Color(red: 0.55, green: 0.35, blue: 0.95)
+            case .motion:      return Color.brandPurple
             case .doorWindow:  return Color(red: 0.35, green: 0.75, blue: 0.55)
             case .co2:         return Color(red: 0.35, green: 0.65, blue: 0.45)
             case .pressure:    return Color(red: 0.55, green: 0.55, blue: 0.95)
@@ -125,7 +125,7 @@ struct IoTSensor: Identifiable, Codable {
             case .noise:       return Color(red: 0.75, green: 0.45, blue: 0.95)
             case .current:     return Color(red: 0.95, green: 0.75, blue: 0.15)
             case .voltage:     return Color(red: 0.95, green: 0.55, blue: 0.15)
-            case .power:       return Color(red: 0.95, green: 0.45, blue: 0.15)
+            case .power:       return Color.brandWarning
             case .energy:      return Color(red: 0.35, green: 0.85, blue: 0.45)
             case .water:       return Color(red: 0.15, green: 0.65, blue: 0.95)
             case .smoke:       return Color(red: 0.65, green: 0.55, blue: 0.45)

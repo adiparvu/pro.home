@@ -1,8 +1,10 @@
 import Foundation
+import Observation
 
 @MainActor
-final class DeliveryService: ObservableObject {
-    @Published var deliveries: [Delivery] = []
+@Observable
+final class DeliveryService {
+    var deliveries: [Delivery] = []
     private(set) var currentPropertyId: UUID?
 
     // MARK: Computed
@@ -43,6 +45,8 @@ final class DeliveryService: ObservableObject {
                 .execute()
                 .value
             deliveries.insert(result, at: 0)
+            // A new active package gets a Live Activity right away.
+            LiveActivityService.shared.syncDelivery(result)
         } catch {
             #if DEBUG
             print("DeliveryService.add error:", error)
@@ -70,6 +74,9 @@ final class DeliveryService: ObservableObject {
             if let i = deliveries.firstIndex(where: { $0.id == delivery.id }) {
                 deliveries[i] = result
             }
+            // Status changes flow into the Live Activity (ends it when the
+            // package is delivered / returned / missed).
+            LiveActivityService.shared.syncDelivery(result)
         } catch {
             #if DEBUG
             print("DeliveryService.update error:", error)
@@ -85,6 +92,7 @@ final class DeliveryService: ObservableObject {
                 .eq("id", value: delivery.id.uuidString)
                 .execute()
             deliveries.removeAll { $0.id == delivery.id }
+            LiveActivityService.shared.endDelivery(id: delivery.id)
         } catch {
             #if DEBUG
             print("DeliveryService.delete error:", error)

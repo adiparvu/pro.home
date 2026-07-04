@@ -4,8 +4,8 @@ import Foundation
 // MARK: - Tenant Management
 
 struct TenantManagementView: View {
-    @EnvironmentObject private var familyService:   FamilyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd        = false
     @State private var selectedTenant: FamilyMember?
@@ -39,8 +39,8 @@ struct TenantManagementView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
                         Spacer(minLength: 100)
                     }
                 }
@@ -58,6 +58,7 @@ struct TenantManagementView: View {
                         .font(.system(size: 19, weight: .medium))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add tenant")
             }
         }
         .task { await familyService.load() }
@@ -67,11 +68,11 @@ struct TenantManagementView: View {
                 propertyName: propertyService.primary?.name,
                 preselectedRole: "tenant"
             )
-            .environmentObject(familyService)
+            .environment(familyService)
         }
         .sheet(item: $selectedTenant) { tenant in
             MemberProfileSheet(member: tenant)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
     }
 
@@ -86,7 +87,7 @@ struct TenantManagementView: View {
                 statCell(value: "\(waCount)", label: "WhatsApp", icon: "message.fill", color: Color(red: 0.16, green: 0.72, blue: 0.37))
             }
             if phoneCount > 0 {
-                statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4))
+                statCell(value: "\(phoneCount)", label: "With Phone", icon: "phone.fill", color: Color.brandSuccess)
             }
         }
     }
@@ -95,14 +96,14 @@ struct TenantManagementView: View {
         GlassCard(padding: 12) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(color)
                 Text(value)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(.primary)
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -119,7 +120,7 @@ struct TenantManagementView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(tenant.name)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
 
                         HStack(spacing: 6) {
@@ -127,22 +128,22 @@ struct TenantManagementView: View {
                                 .font(.system(size: 10))
                                 .foregroundStyle(tenant.swiftColor)
                             Text("Tenant")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(AppFont.caption)
                                 .foregroundStyle(tenant.swiftColor)
                         }
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                         .background(tenant.swiftColor.opacity(0.12), in: Capsule())
 
                         if let email = tenant.email, !email.isEmpty {
                             Label(email, systemImage: "envelope.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.5))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 .lineLimit(1)
                         }
 
                         Label(memberSinceLabel(tenant), systemImage: "calendar")
                             .font(.system(size: 11))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
 
                     Spacer()
@@ -150,12 +151,12 @@ struct TenantManagementView: View {
                     // Quick action buttons (vertical stack)
                     VStack(spacing: 6) {
                         if let phone = tenant.phone, !phone.isEmpty {
-                            quickActionButton(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                            quickActionButton(icon: "phone.fill", color: Color.brandSuccess) {
                                 if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") {
                                     UIApplication.shared.open(url)
                                 }
                             }
-                            quickActionButton(icon: "message.fill", color: Color(red: 0.2, green: 0.65, blue: 1.0)) {
+                            quickActionButton(icon: "message.fill", color: Color.brandSkyBlue) {
                                 if let url = URL(string: "sms:\(phone.filter { $0.isNumber })") {
                                     UIApplication.shared.open(url)
                                 }
@@ -182,9 +183,9 @@ struct TenantManagementView: View {
                                 } label: {
                                     HStack(spacing: 5) {
                                         Image(systemName: link.platformIcon)
-                                            .font(.system(size: 11, weight: .semibold))
+                                            .font(AppFont.label)
                                         Text(link.platformLabel)
-                                            .font(.system(size: 12, weight: .medium))
+                                            .font(AppFont.caption)
                                     }
                                     .foregroundStyle(link.platformColor)
                                     .padding(.horizontal, 10).padding(.vertical, 5)
@@ -208,6 +209,11 @@ struct TenantManagementView: View {
                 .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(
+            icon == "phone.fill" ? "Call tenant"
+            : icon == "message.fill" ? "Send SMS"
+            : "Email tenant"
+        )
     }
 
     private func memberSinceLabel(_ tenant: FamilyMember) -> String {
@@ -232,11 +238,11 @@ struct TenantManagementView: View {
                     .foregroundStyle(Color.purple.opacity(0.45))
             }
             Text("No tenants yet")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.title3)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Add tenants to manage their contact info\nand lease details in one place.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button {
@@ -244,9 +250,9 @@ struct TenantManagementView: View {
                 HapticFeedback.impact(.medium)
             } label: {
                 Label("Add Tenant", systemImage: "person.badge.plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 24).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)

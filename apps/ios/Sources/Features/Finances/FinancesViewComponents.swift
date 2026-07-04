@@ -20,7 +20,7 @@ private let categoryIcons: [String: (icon: String, color: Color)] = [
 ]
 
 private func catStyle(_ category: String) -> (icon: String, color: Color) {
-    categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(0.5))
+    categoryIcons[category.lowercased()] ?? ("ellipsis.circle.fill", Color.primary.opacity(AppOpacity.mediumText))
 }
 
 // MARK: - FinancesView sections
@@ -38,14 +38,15 @@ extension FinancesView {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Previous month")
 
                 Text(monthLabel)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
                     .contentTransition(.identity)
                     .id(displayedMonth)
@@ -57,19 +58,20 @@ extension FinancesView {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.15) : Color.primary.opacity(0.45))
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(isCurrentMonth ? Color.primary.opacity(0.15) : Color.primary.opacity(AppOpacity.secondaryText))
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
                 .disabled(isCurrentMonth)
+                .accessibilityLabel("Next month")
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
 
             VStack(spacing: 4) {
                 Text(LocalizedStringKey(isCurrentMonth ? "Current month balance" : "Balance"))
                     .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
 
                 Text(fmtSigned(net))
                     .font(.system(size: 44, weight: .bold, design: .rounded))
@@ -77,28 +79,28 @@ extension FinancesView {
                     .contentTransition(.numericText(countsDown: net < 0))
                     .animation(.spring(response: 0.4), value: net)
             }
-            .padding(.top, 6)
-            .padding(.bottom, 24)
+            .padding(.top, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.xxl)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: KPI Strip
 
     var kpiStrip: some View {
         HStack(spacing: 0) {
-            kpiCell(label: "Income", value: fmt(income), color: Color(red: 0.25, green: 0.82, blue: 0.5), icon: "arrow.down.left")
+            kpiCell(label: "Income", value: fmt(income), color: Color.brandSuccess, icon: "arrow.down.left")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
             kpiCell(label: "Expenses", value: fmt(expenses), color: .red, icon: "arrow.up.right")
             Divider().frame(height: 36).background(Color.primary.opacity(0.1))
             let savingsRate = income > 0 ? max(0, (income - expenses) / income * 100) : 0
             kpiCell(label: "Savings", value: String(format: "%.0f%%", savingsRate),
-                    color: savingsRate >= 20 ? Color(red: 0.25, green: 0.82, blue: 0.5) : savingsRate >= 10 ? .orange : .red,
+                    color: savingsRate >= 20 ? Color.brandSuccess : savingsRate >= 10 ? .orange : .red,
                     icon: "percent")
         }
-        .padding(.vertical, 16)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .padding(.horizontal, 20)
+        .padding(.vertical, AppSpacing.lg)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     private func kpiCell(label: LocalizedStringKey, value: String, color: Color, icon: String) -> some View {
@@ -126,8 +128,8 @@ extension FinancesView {
         HStack(spacing: 12) {
             NavigationLink {
                 BudgetView()
-                    .environmentObject(budgetService)
-                    .environmentObject(financialService)
+                    .environment(budgetService)
+                    .environment(financialService)
             } label: {
                 actionTile(icon: "chart.pie.fill", label: "Budget", color: .blue)
             }
@@ -147,19 +149,19 @@ extension FinancesView {
                     .fill(color.opacity(0.18))
                     .frame(width: 36, height: 36)
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(color)
             }
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.system(size: 11))
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     // MARK: Transaction List
@@ -174,7 +176,7 @@ extension FinancesView {
                     VStack(spacing: 0) {
                         HStack {
                             Text(groupDateLabel(group.date))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .foregroundStyle(Color.primary.opacity(0.4))
                                 .textCase(.uppercase)
                                 .kerning(0.5)
@@ -184,10 +186,10 @@ extension FinancesView {
                                 return sum + (r.isIncome ? v : -v)
                             }
                             Text(fmtSigned(dayTotal))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(dayTotal >= 0 ? Color(red: 0.25, green: 0.82, blue: 0.5) : .red)
+                                .font(AppFont.captionStrong)
+                                .foregroundStyle(dayTotal >= 0 ? Color.brandSuccess : .red)
                         }
-                        .padding(.bottom, 8)
+                        .padding(.bottom, AppSpacing.sm)
 
                         VStack(spacing: 0) {
                             ForEach(Array(group.records.enumerated()), id: \.element.id) { idx, record in
@@ -215,7 +217,7 @@ extension FinancesView {
         VStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 72, height: 72)
                 Image(systemName: "banknote")
                     .font(.system(size: 28))
@@ -226,7 +228,7 @@ extension FinancesView {
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("Add your first transaction by tapping +")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 48)
@@ -272,7 +274,7 @@ struct FinancialRecordRow: View {
         let style = catStyle(record.category)
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(style.color.opacity(0.15))
                     .frame(width: 44, height: 44)
                 Image(systemName: style.icon)
@@ -282,7 +284,7 @@ struct FinancialRecordRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(record.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(LocalizedStringKey(record.category.capitalized))
                     .font(.system(size: 12))
@@ -293,14 +295,14 @@ struct FinancialRecordRow: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(record.isIncome ? "+" : "-")\(displayAmount)")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(record.isIncome ? Color(red: 0.25, green: 0.82, blue: 0.5) : .primary)
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(record.isIncome ? Color.brandSuccess : .primary)
                 Text(record.dateFormatted)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }

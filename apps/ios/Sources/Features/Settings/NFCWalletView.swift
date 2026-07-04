@@ -85,8 +85,8 @@ struct NFCWalletView: View {
                                 cardSection(tag)
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.md)
                         Spacer(minLength: 100)
                     }
                 }
@@ -155,13 +155,14 @@ struct NFCWalletView: View {
                     rescanTag(tag)
                 } label: {
                     Image(systemName: "wave.3.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.blue)
                         .frame(width: 44, height: 44)
                         .background(Color.blue.opacity(0.1),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Rescan tag")
 
                 Button(role: .destructive) {
                     HapticFeedback.warning()
@@ -171,11 +172,11 @@ struct NFCWalletView: View {
                     }
                 } label: {
                     Image(systemName: "trash")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                         .background(Color.red.opacity(0.1),
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
@@ -232,7 +233,7 @@ struct NFCWalletView: View {
                             .foregroundStyle(.white.opacity(0.55))
                             .tracking(1.5)
                         Text(tag.linkedName.isEmpty ? "Standalone" : tag.linkedName)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.white.opacity(0.88))
                             .lineLimit(1)
                     }
@@ -245,7 +246,7 @@ struct NFCWalletView: View {
             .padding(22)
         }
         .frame(height: 175)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .shadow(color: (tag.cardGradient.first ?? .blue).opacity(0.45),
                 radius: 14, y: 7)
     }
@@ -305,18 +306,18 @@ struct NFCWalletView: View {
                     .foregroundStyle(Color.blue.opacity(0.45))
             }
             Text("No NFC tags yet")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.title3)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Scan an NFC tag to link it to a room,\nappliance, or element in your property.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button { scanForNewTag() } label: {
                 Label("Scan First Tag", systemImage: "wave.3.right.circle.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 24).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -374,16 +375,16 @@ struct NFCTagNameSheet: View {
                                     .frame(width: 26)
                                 Text("Tag ID: \(uid.prefix(16))…")
                                     .font(.system(size: 13, design: .monospaced))
-                                    .foregroundStyle(Color.primary.opacity(0.5))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Name
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Name")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Front Door, Garage, Boiler Room", text: $name)
@@ -392,13 +393,13 @@ struct NFCTagNameSheet: View {
                                     .tint(.accentColor)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Linked type
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Links to")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 Picker("", selection: $linkedType) {
@@ -414,17 +415,17 @@ struct NFCTagNameSheet: View {
                                         .font(.system(size: 15))
                                         .foregroundStyle(.primary)
                                         .tint(.accentColor)
-                                        .padding(.top, 4)
+                                        .padding(.top, AppSpacing.xxs)
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Icon picker
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Icon")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
@@ -435,12 +436,12 @@ struct NFCTagNameSheet: View {
                                         } label: {
                                             Image(systemName: icon)
                                                 .font(.system(size: 18, weight: .medium))
-                                                .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(0.5))
+                                                .foregroundStyle(selectedIcon == icon ? .blue : Color.primary.opacity(AppOpacity.mediumText))
                                                 .frame(width: 44, height: 44)
                                                 .background(
                                                     selectedIcon == icon
                                                         ? Color.blue.opacity(0.14)
-                                                        : Color.primary.opacity(0.06),
+                                                        : Color.primary.opacity(AppOpacity.hairline),
                                                     in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                                                 )
                                         }
@@ -449,10 +450,10 @@ struct NFCTagNameSheet: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 40)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Register Tag")
@@ -460,7 +461,7 @@ struct NFCTagNameSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -476,7 +477,7 @@ struct NFCTagNameSheet: View {
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }

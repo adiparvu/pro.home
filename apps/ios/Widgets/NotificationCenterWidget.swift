@@ -79,15 +79,16 @@ struct NotificationCenterSmallView: View {
             VStack(spacing: 0) {
                 // Health arc header
                 ZStack {
+                    // Track first, progress on top — the reverse hid the arc
+                    // under the gray ring.
+                    Circle()
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 4)
+                        .frame(width: 52, height: 52)
+
                     Circle()
                         .trim(from: 0, to: CGFloat(healthScore) / 100)
                         .stroke(statusColor.opacity(0.9), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                        .frame(width: 52, height: 52)
-
-                    Circle()
-                        .trim(from: 0, to: 1)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 4)
                         .frame(width: 52, height: 52)
 
                     VStack(spacing: 0) {

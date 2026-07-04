@@ -3,15 +3,15 @@ import SwiftUI
 // MARK: - Property Tab — Zones | Objects | Map segment picker
 
 struct PropertyTabView: View {
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(AppRouter.self) var router
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum Segment: String, CaseIterable {
         case zones   = "Zones"
@@ -32,9 +32,9 @@ struct PropertyTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             segmentPicker
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xxs)
 
             Divider().opacity(0.10)
 
@@ -61,11 +61,11 @@ struct PropertyTabView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: seg.icon)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                         Text(LocalizedStringKey(seg.rawValue))
                             .font(.system(size: 13, weight: segment == seg ? .semibold : .medium))
                     }
-                    .foregroundStyle(segment == seg ? .primary : Color.primary.opacity(0.45))
+                    .foregroundStyle(segment == seg ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     .frame(maxWidth: .infinity)
                     .frame(height: 36)
                     .background {
@@ -82,7 +82,7 @@ struct PropertyTabView: View {
         .padding(3)
         .background {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(AppOpacity.hairline))
         }
     }
 }

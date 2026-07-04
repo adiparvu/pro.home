@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class PlantService: ObservableObject {
-    @Published var plants: [Plant] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PlantService {
+    var plants: [Plant] = []
+    var isLoading = false
+    var error: String?
 
     // MARK: Computed
 
@@ -59,11 +61,18 @@ final class PlantService: ObservableObject {
     }
 
     func markWatered(_ plant: Plant) async {
+        let neededWater = plant.needsWatering
         let now = ISO8601DateFormatter().string(from: Date())
         let upd = PlantWateringUpdate(lastWateredAt: now, updatedAt: now)
         if let i = plants.firstIndex(where: { $0.id == plant.id }) {
             plants[i].lastWateredAt = now
             plants[i].updatedAt = now
+        }
+        // Watering-session Live Activity: progress over the plants that still
+        // needed water when the session started.
+        if neededWater {
+            LiveActivityService.shared.plantWatered(
+                name: plant.name, remainingAfter: plantsNeedingWater.count)
         }
         do {
             try await supabase

@@ -1,13 +1,15 @@
 import Foundation
+import Observation
 import SwiftUI
 
 @MainActor
-final class ReceiptService: ObservableObject {
-    @Published var receipts: [Receipt] = []
-    @Published var receiptItems: [ReceiptItem] = []
-    @Published var budgets: [HouseholdBudget] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class ReceiptService {
+    var receipts: [Receipt] = []
+    var receiptItems: [ReceiptItem] = []
+    var budgets: [HouseholdBudget] = []
+    var isLoading = false
+    var error: String?
 
     private let isoDate: DateFormatter = {
         let f = DateFormatter()

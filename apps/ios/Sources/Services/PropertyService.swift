@@ -1,17 +1,33 @@
 import Foundation
+import Observation
 import Supabase
 import UIKit
 
 @MainActor
-final class PropertyService: ObservableObject {
-    @Published var properties: [PropertyModel] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PropertyService {
+    var properties: [PropertyModel] = []
+    var isLoading = false
+    var error: String?
+
+    /// The current user's role on the primary property (from property_members),
+    /// e.g. owner / partner / tenant / service_provider / guest. Drives role-based
+    /// UI gating. nil = unknown → treat as full access (fail-open; real security
+    /// is server-side RLS).
+    var myRole: String?
+
+    /// Bumped when the UserDefaults-backed selection changes. Since
+    /// `selectedPropertyId` isn't an observable stored property, its getter
+    /// touches this so consumers (and `primary`) refresh when it changes.
+    private var selectionRevision = 0
 
     var selectedPropertyId: UUID? {
-        get { UUID(uuidString: UserDefaults.standard.string(forKey: "prvio.selectedPropertyId") ?? "") }
+        get {
+            _ = selectionRevision
+            return UUID(uuidString: UserDefaults.standard.string(forKey: "prvio.selectedPropertyId") ?? "")
+        }
         set {
-            objectWillChange.send()
+            selectionRevision &+= 1
             UserDefaults.standard.set(newValue?.uuidString, forKey: "prvio.selectedPropertyId")
         }
     }
@@ -22,6 +38,29 @@ final class PropertyService: ObservableObject {
     }
 
     func select(_ property: PropertyModel) { selectedPropertyId = property.id }
+
+    /// Load the current user's role on the primary property. Silent on error →
+    /// leaves myRole nil (fail-open).
+    func loadMyRole() async {
+        guard let pid = primary?.id, let uid = supabase.auth.currentSession?.user.id else {
+            myRole = nil; return
+        }
+        struct Row: Decodable { let role: String }
+        do {
+            let rows: [Row] = try await supabase
+                .from("property_members")
+                .select("role")
+                .eq("property_id", value: pid.uuidString)
+                .eq("user_id", value: uid.uuidString)
+                .eq("status", value: "active")
+                .limit(1)
+                .execute()
+                .value
+            myRole = rows.first?.role
+        } catch {
+            myRole = nil
+        }
+    }
 
     func load() async {
         isLoading = true
@@ -78,7 +117,7 @@ final class PropertyService: ObservableObject {
                 .value
             properties.append(created)
             // Ensure creator is in property_members as owner (trigger handles this too)
-            try? await supabase
+            _ = try? await supabase
                 .from("property_members")
                 .upsert(MemberInsert(property_id: created.id, user_id: uid, role: "owner", status: "active"),
                         onConflict: "property_id,user_id")

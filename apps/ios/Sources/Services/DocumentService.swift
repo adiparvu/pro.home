@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import Supabase
 
 @MainActor
-final class DocumentService: ObservableObject {
-    @Published var documents: [DocumentModel] = []
-    @Published var isLoading = false
-    @Published var isSaving = false
-    @Published var error: String?
+@Observable
+final class DocumentService {
+    var documents: [DocumentModel] = []
+    var isLoading = false
+    var isSaving = false
+    var error: String?
 
     var criticalDocs: [DocumentModel] { documents.filter { $0.isCritical } }
     var expiringDocs: [DocumentModel] { documents.filter { $0.isExpiringSoon } }
@@ -35,7 +37,8 @@ final class DocumentService: ObservableObject {
         fileName: String,
         mimeType: String,
         expiresAt: String?,
-        isCritical: Bool
+        isCritical: Bool,
+        sharedMemberIds: [String] = []
     ) async throws {
         guard let userId = supabase.auth.currentSession?.user.id else {
             throw DocumentError.notAuthenticated
@@ -62,6 +65,7 @@ final class DocumentService: ObservableObject {
             let expires_at: String?
             let is_critical: Bool
             let tags: [String]
+            let shared_member_ids: [String]
         }
 
         let payload = DocInsert(
@@ -74,7 +78,8 @@ final class DocumentService: ObservableObject {
             mime_type: mimeType,
             expires_at: expiresAt,
             is_critical: isCritical,
-            tags: []
+            tags: [],
+            shared_member_ids: sharedMemberIds
         )
 
         let newDoc: DocumentModel = try await supabase
@@ -120,7 +125,7 @@ final class DocumentService: ObservableObject {
                 if let bucketIdx = components.firstIndex(of: "documents"),
                    bucketIdx + 1 < components.count {
                     let storagePath = components[(bucketIdx + 1)...].joined(separator: "/")
-                    try? await supabase.storage.from("documents").remove(paths: [storagePath])
+                    _ = try? await supabase.storage.from("documents").remove(paths: [storagePath])
                 }
             }
             try await supabase

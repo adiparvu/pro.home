@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Add Receipt (manual entry)
 
 struct AddReceiptSheet: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var storeName = ""
@@ -34,7 +34,7 @@ struct AddReceiptSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "add_receipt_title"))
@@ -53,8 +53,8 @@ struct AddReceiptSheet: View {
         formField("STORE") {
             TextField(String(localized: "add_receipt_store_placeholder"), text: $storeName)
                 .font(.system(size: 16))
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -63,7 +63,7 @@ struct AddReceiptSheet: View {
             DatePicker("", selection: $date, in: ...Date(), displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -77,11 +77,11 @@ struct AddReceiptSheet: View {
                                 Image(systemName: ReceiptCategory.icon(for: cat.id)).font(.system(size: 11))
                                 Text(LocalizedStringKey(cat.label)).font(.system(size: 13))
                             }
-                            .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.7))
-                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(AppOpacity.emphasis))
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(category == cat.id
                                 ? ReceiptCategory.color(for: cat.id)
-                                : Color.primary.opacity(0.07), in: Capsule())
+                                : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -94,7 +94,7 @@ struct AddReceiptSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("ITEMS")
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                    .font(AppFont.label).foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     items.append(EditableReceiptItem())
@@ -104,6 +104,7 @@ struct AddReceiptSheet: View {
                         .font(.system(size: 16)).foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Add item")
             }
 
             if !items.isEmpty {
@@ -115,7 +116,7 @@ struct AddReceiptSheet: View {
                                     .font(.system(size: 13))
                                     .frame(maxWidth: .infinity)
                                 TextField("0.00", text: $item.priceText)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 70)
@@ -128,7 +129,7 @@ struct AddReceiptSheet: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, AppSpacing.xxs)
                         }
                     }
                 }
@@ -144,7 +145,7 @@ struct AddReceiptSheet: View {
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
                 }
             }
         }
@@ -153,10 +154,10 @@ struct AddReceiptSheet: View {
     private var totalField: some View {
         formField("TOTAL") {
             TextField("0.00", text: $total)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(AppFont.title2)
                 .keyboardType(.decimalPad)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -165,8 +166,8 @@ struct AddReceiptSheet: View {
             TextField(String(localized: "add_receipt_notes_placeholder"), text: $notes, axis: .vertical)
                 .font(.system(size: 15))
                 .lineLimit(2...4)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -176,13 +177,13 @@ struct AddReceiptSheet: View {
                 if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
                 else {
                     Text(String(localized: "add_receipt_save"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .foregroundStyle(Color(UIColor.systemBackground))
             .frame(maxWidth: .infinity).frame(height: 52)
             .background(canSave ? Color.accentColor : Color.primary.opacity(0.25),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!canSave || isSaving)
@@ -195,7 +196,7 @@ struct AddReceiptSheet: View {
 
     private func formField<C: View>(_ label: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(LocalizedStringKey(label)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(label)).font(AppFont.label).foregroundStyle(.secondary)
             content()
         }
     }

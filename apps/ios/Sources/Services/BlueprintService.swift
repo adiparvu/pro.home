@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 import UIKit
 
 @MainActor
-final class BlueprintService: ObservableObject {
-    @Published var scans: [HomeScan] = []
-    @Published var utilities: [BuriedUtility] = []
+@Observable
+final class BlueprintService {
+    var scans: [HomeScan] = []
+    var utilities: [BuriedUtility] = []
 
     private let scansKey = "prvio.blueprints.scans"
     private let utilsKey = "prvio.blueprints.utilities"

@@ -36,7 +36,7 @@ struct SupervisionSettings {
         var color: Color {
             switch self {
             case .tasks:       return .blue
-            case .finances:    return Color(red: 0.2, green: 0.78, blue: 0.45)
+            case .finances:    return Color.brandSuccess
             case .documents:   return .orange
             case .inventory:   return .indigo
             case .contractors: return .teal
@@ -80,7 +80,7 @@ struct SupervisionSettings {
 // MARK: - Main supervision view
 
 struct SupervisionView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @State private var selectedMember: FamilyMember? = nil
     @State private var tick = false
 
@@ -94,8 +94,8 @@ struct SupervisionView: View {
                     memberList
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.lg)
             }
         }
         .background(appBackground.ignoresSafeArea())
@@ -103,7 +103,7 @@ struct SupervisionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $selectedMember) { member in
             MemberSupervisionDetailView(member: member, tick: $tick)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .task { await familyService.load() }
     }
@@ -143,7 +143,7 @@ struct SupervisionView: View {
                         .foregroundStyle(.white.opacity(0.82))
                         .lineSpacing(3)
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
         }
     }
@@ -153,9 +153,9 @@ struct SupervisionView: View {
     private var memberList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("MEMBERS")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             if familyService.members.isEmpty {
                 GlassCard(padding: 24) {
@@ -164,8 +164,8 @@ struct SupervisionView: View {
                             .font(.system(size: 32))
                             .foregroundStyle(Color.primary.opacity(0.18))
                         Text("No members added")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .font(AppFont.footnote)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         Text("Add members in the Family Members section to configure supervision.")
                             .font(.system(size: 12))
                             .foregroundStyle(Color.primary.opacity(0.3))
@@ -193,7 +193,7 @@ struct SupervisionView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.name)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                         Text(LocalizedStringKey(member.role.capitalized))
                             .font(.system(size: 12))
@@ -204,17 +204,17 @@ struct SupervisionView: View {
 
                     let supervised = SupervisionSettings.isSupervised(member.id)
                     Text(LocalizedStringKey(supervised ? "Active" : "Inactive"))
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.3))
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(supervised ? Color(red: 0.2, green: 0.78, blue: 0.45).opacity(0.12) : Color.primary.opacity(0.06),
+                        .font(AppFont.label)
+                        .foregroundStyle(supervised ? Color.brandSuccess : Color.primary.opacity(0.3))
+                        .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
+                        .background(supervised ? Color.brandSuccess.opacity(0.12) : Color.primary.opacity(AppOpacity.hairline),
                                     in: Capsule())
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

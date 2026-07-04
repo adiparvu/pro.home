@@ -25,13 +25,13 @@ private struct PerspectiveHighlight: Identifiable {
 // MARK: - PropertyPerspectivesView
 
 struct PropertyPerspectivesView: View {
-    @EnvironmentObject private var propertyService:  PropertyService
-    @EnvironmentObject private var taskService:      TaskService
-    @EnvironmentObject private var documentService:  DocumentService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var familyService:    FamilyService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var router:           AppRouter
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(AppRouter.self) private var router
 
     @State private var selectedRole = "owner"
 
@@ -54,7 +54,7 @@ struct PropertyPerspectivesView: View {
                     .init(icon: "banknote.fill",         label: "Net Balance",   value: "\(financialService.currencySymbol)\(Int(income - expenses))", color: income >= expenses ? .green : .red, tab: .settings),
                     .init(icon: "checkmark.circle.fill", label: "Open Tasks",    value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange, tab: .tasks),
                     .init(icon: "doc.text.fill",         label: "Documents",     value: "\(documentService.documents.count)", color: .purple,  tab: .settings),
-                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color.brandPrimaryBlue, tab: .settings),
                     .init(icon: "person.2.fill",         label: "Family",        value: "\(familyService.members.count)", color: .teal, tab: .settings),
                 ]
             ),
@@ -92,7 +92,7 @@ struct PropertyPerspectivesView: View {
                 description: "Service access — maintenance tasks, systems, and appliances.",
                 highlights: [
                     .init(icon: "checkmark.circle.fill", label: "Maintenance Tasks", value: "\(tasks.filter { $0.category == "maintenance" && !$0.isCompleted }.count)", color: .orange, tab: .tasks),
-                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color(red: 0.2, green: 0.55, blue: 0.95), tab: .settings),
+                    .init(icon: "washer.fill",       label: "Appliances",  value: "\(applianceService.appliances.count)", color: Color.brandPrimaryBlue, tab: .settings),
                     .init(icon: "exclamationmark.circle.fill", label: "Overdue", value: "\(overdue.count)", color: overdue.isEmpty ? .green : .red, tab: .tasks),
                     .init(icon: "shield.lefthalf.filled", label: "Under Warranty", value: "\(applianceService.appliances.filter { $0.warrantyUntil != nil }.count)", color: .teal, tab: .settings),
                 ]
@@ -117,12 +117,12 @@ struct PropertyPerspectivesView: View {
                             } label: {
                                 HStack(spacing: 7) {
                                     Image(systemName: p.icon)
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(AppFont.captionStrong)
                                     Text(p.title)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(AppFont.captionEmphasis)
                                 }
                                 .foregroundStyle(selectedRole == p.role ? .white : p.color)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(
                                     selectedRole == p.role ? AnyShapeStyle(p.color) : AnyShapeStyle(p.color.opacity(0.12)),
                                     in: Capsule()
@@ -133,7 +133,7 @@ struct PropertyPerspectivesView: View {
                         Spacer(minLength: 20)
                     }
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, AppSpacing.md)
 
                 ScrollView(showsIndicators: false) {
                     if let p = perspectives.first(where: { $0.role == selectedRole }) {
@@ -169,7 +169,7 @@ struct PropertyPerspectivesView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.xl)
 
             // Stats grid
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -184,7 +184,7 @@ struct PropertyPerspectivesView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(spacing: 8) {
                                     Image(systemName: h.icon)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.footnoteEmphasis)
                                         .foregroundStyle(h.color)
                                     Text(h.label)
                                         .font(.system(size: 12))
@@ -207,11 +207,11 @@ struct PropertyPerspectivesView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AppSpacing.xl)
 
             // Perspective-specific tips
             tipCard(for: p)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.97)))
     }
@@ -251,7 +251,7 @@ struct PropertyPerspectivesView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(.yellow)
                     Text("Tips for this view")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                 }
                 ForEach(tips, id: \.self) { tip in
                     HStack(alignment: .top, spacing: 8) {

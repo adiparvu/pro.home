@@ -4,9 +4,9 @@ import PhotosUI
 import UniformTypeIdentifiers
 
 struct BlueprintsView: View {
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @StateObject private var service = BlueprintService()
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @State private var service = BlueprintService()
     @State private var showRoomScan = false
     @State private var showAddPlan = false
     @State private var previewItem: HomeScan?
@@ -31,8 +31,8 @@ struct BlueprintsView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
@@ -114,20 +114,20 @@ struct BlueprintsView: View {
             GlassCard {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(LinearGradient(colors: [.orange, .brown], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 44, height: 44)
                         Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppFont.title3)
                             .foregroundStyle(.primary)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Underground Map")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Text("Cables, pipes & buried lines — depth & location")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     if !service.utilities.isEmpty {
@@ -149,9 +149,9 @@ struct BlueprintsView: View {
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("SAVED PLANS & MODELS")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(service.scans) { scan in
@@ -179,11 +179,11 @@ struct BlueprintsView: View {
                 .font(.system(size: 46))
                 .foregroundStyle(Color.primary.opacity(0.16))
             Text("No plans yet")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
             Spacer(minLength: 30)

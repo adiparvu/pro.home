@@ -2,11 +2,11 @@ import SwiftUI
 import PhotosUI
 
 struct ProfileView: View {
-    @EnvironmentObject private var auth: AuthService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var notificationScheduler: NotificationScheduler
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(AuthService.self) private var auth
+    @Environment(ProfileService.self) private var profileService
+    @Environment(NotificationScheduler.self) private var notificationScheduler
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
 
     @State private var showEdit = false
     @State private var showChangeEmail = false
@@ -30,14 +30,14 @@ struct ProfileView: View {
                 accountSection
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.xl)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showEdit) {
-            EditProfileView().environmentObject(profileService)
+            EditProfileView().environment(profileService)
         }
         .sheet(isPresented: $showChangeEmail) {
             ChangeEmailSheet { newEmail in
@@ -112,7 +112,7 @@ struct ProfileView: View {
                             ProgressView().tint(.white).scaleEffect(0.7)
                         } else {
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(AppFont.captionEmphasis)
                                 .foregroundStyle(.white)
                         }
                     }
@@ -127,7 +127,7 @@ struct ProfileView: View {
                 .foregroundStyle(.primary)
             Text(auth.session?.user.email ?? "")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
 
             ringColorPicker
         }
@@ -231,15 +231,15 @@ struct ProfileView: View {
 
     private func infoRow(_ label: LocalizedStringKey, _ value: String) -> some View {
         HStack {
-            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.5))
+            Text(label).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
-            Text(value).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
+            Text(value).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 16)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.5).padding(.leading, AppSpacing.lg)
     }
 
     // MARK: - Account actions
@@ -247,25 +247,25 @@ struct ProfileView: View {
     private var accountSection: some View {
         SettingsGroup(title: "Account") {
             NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit profile") {
-                EditProfileView().environmentObject(profileService)
+                EditProfileView().environment(profileService)
             }
             TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change email") {
                 showChangeEmail = true
             }
-            TapSettingsRow(icon: "key.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Change password") {
+            TapSettingsRow(icon: "key.fill", color: Color.brandSuccess, label: "Change password") {
                 showChangePassword = true
             }
             NavSettingsRow(icon: "shield.fill", color: .purple, label: "Safety and security") {
-                SecurityView().environmentObject(auth)
+                SecurityView().environment(auth)
             }
-            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color(red: 0.25, green: 0.55, blue: 1.0), label: "Trusted contact") {
-                TrustedContactView().environmentObject(auth)
+            NavSettingsRow(icon: "person.badge.shield.checkmark.fill", color: Color.brandSkyBlue, label: "Trusted contact") {
+                TrustedContactView().environment(auth)
             }
             NavSettingsRow(icon: "bell.fill", color: .red, label: "Notifications") {
                 NotificationsSettingsView()
-                    .environmentObject(notificationScheduler)
-                    .environmentObject(taskService)
-                    .environmentObject(documentService)
+                    .environment(notificationScheduler)
+                    .environment(taskService)
+                    .environment(documentService)
             }
         }
     }
@@ -312,10 +312,10 @@ struct ProfileView: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(isError ? .red.opacity(0.85) : Color(red: 0.15, green: 0.15, blue: 0.18).opacity(0.95),
                         in: Capsule())
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Helpers

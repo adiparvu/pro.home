@@ -16,12 +16,12 @@ struct MapStylePickerSheet: View {
                 .fill(Color.primary.opacity(0.18))
                 .frame(width: 36, height: 4)
                 .padding(.top, 10)
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
             Text("Map Style")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.primary)
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
             HStack(spacing: 12) {
                 ForEach(styles, id: \.id) { style in
@@ -37,7 +37,7 @@ struct MapStylePickerSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
 
             Spacer()
         }
@@ -68,19 +68,19 @@ private struct StyleCard: View {
                         }
                     }
                     .frame(height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
 
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .strokeBorder(Color.accentColor, lineWidth: 2.5)
                         VStack {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(AppFont.headline)
                                     .foregroundStyle(.white)
                                     .background(Color.accentColor, in: Circle())
-                                    .padding(6)
+                                    .padding(AppSpacing.xs)
                             }
                             Spacer()
                         }
@@ -89,15 +89,15 @@ private struct StyleCard: View {
 
                 VStack(spacing: 2) {
                     Text(title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     Text(subtitle)
                         .font(.system(size: 10))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         .lineLimit(1)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xxs)
             }
         }
         .buttonStyle(.plain)

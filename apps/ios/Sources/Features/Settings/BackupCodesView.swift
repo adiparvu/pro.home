@@ -21,8 +21,8 @@ struct BackupCodesView: View {
                         regenerateButton
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Coduri de rezervă")
@@ -51,14 +51,14 @@ struct BackupCodesView: View {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Păstrează-le în siguranță")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                 Text("Stochează aceste coduri undeva sigur. Fiecare cod poate fi folosit o singură dată.")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.55))
             }
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
@@ -72,16 +72,16 @@ struct BackupCodesView: View {
     private var codesGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("CODURI DE REZERVĂ")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 0) {
                 ForEach(Array(codes.enumerated()), id: \.offset) { idx, code in
                     HStack {
                         Text("\(idx + 1).")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .frame(width: 20, alignment: .trailing)
                         Text(code)
                             .font(.system(size: 15, weight: .semibold, design: .monospaced))
@@ -89,25 +89,25 @@ struct BackupCodesView: View {
                             .tracking(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, AppSpacing.base)
                     .padding(.vertical, 13)
                     .overlay(alignment: .bottom) {
                         if idx < codes.count - 2 {
                             Rectangle()
-                                .fill(Color.primary.opacity(0.06))
+                                .fill(Color.primary.opacity(AppOpacity.hairline))
                                 .frame(height: 0.4)
                         }
                     }
                     .overlay(alignment: .trailing) {
                         if idx % 2 == 0 {
                             Rectangle()
-                                .fill(Color.primary.opacity(0.06))
+                                .fill(Color.primary.opacity(AppOpacity.hairline))
                                 .frame(width: 0.4)
                         }
                     }
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 
@@ -117,22 +117,22 @@ struct BackupCodesView: View {
         HStack(spacing: 12) {
             Button { copyAll() } label: {
                 Label("Copiază tot", systemImage: showCopyConfirm ? "checkmark" : "doc.on.doc.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(showCopyConfirm ? Color(red: 0.3, green: 0.82, blue: 0.45) : .primary)
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(showCopyConfirm ? Color.brandSuccess : .primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)
 
             Button { shareAll() } label: {
                 Label("Descarcă", systemImage: "square.and.arrow.up.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
             }
             .buttonStyle(.plain)
@@ -147,7 +147,7 @@ struct BackupCodesView: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 13))
                 Text("Generează coduri noi")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)

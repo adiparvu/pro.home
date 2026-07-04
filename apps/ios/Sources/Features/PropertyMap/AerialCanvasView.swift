@@ -349,10 +349,10 @@ struct AerialCanvasView: View {
             }
             VStack {
                 Text("Tap to add corners (\(draftZonePoints.count))")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .font(AppFont.captionEmphasis).foregroundStyle(.white)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                     .background(.black.opacity(0.65), in: Capsule())
-                    .padding(.top, 14)
+                    .padding(.top, AppSpacing.base)
                 Spacer()
             }
         }
@@ -366,12 +366,12 @@ struct AerialCanvasView: View {
             HStack(spacing: 6) {
                 Image(systemName: "hand.tap.fill")
                 Text("Tap the photo to place an element")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 14).padding(.vertical, 9)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
             .background(.black.opacity(0.65), in: Capsule())
-            .padding(.top, 14)
+            .padding(.top, AppSpacing.base)
             Spacer()
         }
         .allowsHitTesting(false)
@@ -445,7 +445,7 @@ private struct AerialElementPin: View {
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                     .background(.ultraThinMaterial, in: Capsule())
             }
         }

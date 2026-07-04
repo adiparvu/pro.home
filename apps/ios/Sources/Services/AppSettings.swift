@@ -1,15 +1,45 @@
 import SwiftUI
+import Observation
 
 @MainActor
-final class AppSettings: ObservableObject {
-    @AppStorage("prvio.theme")              var theme:                 String = "dark"
-    @AppStorage("prvio.locale")             var locale:                String = "ro"
-    @AppStorage("prvio.followSystemLang")   var followSystemLanguage:  Bool   = false
-    @AppStorage("prvio.currency")           var preferredCurrency:     String = "EUR"
-    @AppStorage("prvio.accentColor")        var accentColor:           String = "blue"
-    @AppStorage("prvio.accentOn")           var accentEnabled:         Bool   = true
-    @AppStorage("prvio.hapticOn")           var hapticEnabled:         Bool   = true
-    @AppStorage("prvio.voiceInput")         var voiceInputEnabled:     Bool   = true
+@Observable
+final class AppSettings {
+    // Each setting is an observation-tracked stored property that persists to
+    // UserDefaults in its didSet. This replaces @AppStorage, which the
+    // @Observable macro can't wrap (it's already a computed wrapper) and which
+    // — inside a reference type — never drove SwiftUI updates anyway. Tracked
+    // properties give proper fine-grained observation: reading e.g. `theme`
+    // now establishes a dependency, so changes refresh consumers directly,
+    // with no manual objectWillChange broadcast.
+    var theme: String = UserDefaults.standard.string(forKey: "prvio.theme") ?? "dark" {
+        didSet { UserDefaults.standard.set(theme, forKey: "prvio.theme") }
+    }
+    var locale: String = UserDefaults.standard.string(forKey: "prvio.locale") ?? "ro" {
+        didSet { UserDefaults.standard.set(locale, forKey: "prvio.locale") }
+    }
+    var followSystemLanguage: Bool = (UserDefaults.standard.object(forKey: "prvio.followSystemLang") as? Bool) ?? false {
+        didSet { UserDefaults.standard.set(followSystemLanguage, forKey: "prvio.followSystemLang") }
+    }
+    var preferredCurrency: String = UserDefaults.standard.string(forKey: "prvio.currency") ?? "EUR" {
+        didSet { UserDefaults.standard.set(preferredCurrency, forKey: "prvio.currency") }
+    }
+    var accentColor: String = UserDefaults.standard.string(forKey: "prvio.accentColor") ?? "blue" {
+        didSet { UserDefaults.standard.set(accentColor, forKey: "prvio.accentColor") }
+    }
+    var accentEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.accentOn") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(accentEnabled, forKey: "prvio.accentOn") }
+    }
+    var hapticEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.hapticOn") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(hapticEnabled, forKey: "prvio.hapticOn") }
+    }
+    var voiceInputEnabled: Bool = (UserDefaults.standard.object(forKey: "prvio.voiceInput") as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(voiceInputEnabled, forKey: "prvio.voiceInput") }
+    }
+
+    /// Bumped when the per-page floating-button config changes. Those live in
+    /// UserDefaults under dynamic keys (not observable stored properties), so
+    /// the speed-dial reads touch this to register a dependency and refresh.
+    private var fabRevision = 0
 
     init() {
         // Restore language on every launch so the bundle swizzle is always active.
@@ -32,6 +62,30 @@ final class AppSettings: ObservableObject {
         return Language(rawValue: locale) ?? Language.devicePreferred
     }
 
+    /// Switches the app language immediately, with no relaunch.
+    ///
+    /// Persisting `locale` (an observation-tracked property) recomputes `appLocale`,
+    /// which the app root feeds into `.environment(\.locale, …)`; that environment
+    /// change invalidates the whole view tree, so every `String(localized:)` — which
+    /// resolves through `LanguageManager`'s freshly-rebuilt string table — re-reads
+    /// in the new language on the next frame.
+    func setLanguage(_ language: Language) {
+        LanguageManager.apply(language.rawValue)
+        followSystemLanguage = false
+        locale = language.rawValue
+        UserDefaults.standard.set([language.rawValue], forKey: "AppleLanguages")
+    }
+
+    /// Follows the device language (best match among the supported languages).
+    func useSystemLanguage() {
+        LanguageManager.applySystemLanguage()
+        followSystemLanguage = true
+        UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        // Keep `locale` pointed at the resolved match so `currentLanguage` and the
+        // checkmark in the picker reflect what's actually showing.
+        locale = Language.devicePreferred.rawValue
+    }
+
     // Customizable floating (speed-dial) buttons — per page.
     // Stored in UserDefaults, keyed by host, so this scales to any number of pages.
     // (Home keeps its legacy key for backward compatibility.)
@@ -44,18 +98,20 @@ final class AppSettings: ObservableObject {
     }
 
     func fabActions(_ host: FloatingButtonHost) -> [DashboardQuickAction] {
+        _ = fabRevision  // observe floating-button config changes
         let raw = UserDefaults.standard.string(forKey: actionsKey(host)) ?? host.defaultActionsRaw
         return raw.split(separator: ",").compactMap { DashboardQuickAction(rawValue: String($0)) }
     }
 
     func fabVisible(_ host: FloatingButtonHost) -> Bool {
+        _ = fabRevision  // observe floating-button config changes
         if UserDefaults.standard.object(forKey: visibleKey(host)) == nil { return host.defaultVisible }
         return UserDefaults.standard.bool(forKey: visibleKey(host))
     }
 
     func setFabVisible(_ host: FloatingButtonHost, _ on: Bool) {
-        // Direct UserDefaults writes don't auto-publish, so notify observers explicitly.
-        objectWillChange.send()
+        // Direct UserDefaults writes aren't observable, so bump the revision.
+        fabRevision &+= 1
         UserDefaults.standard.set(on, forKey: visibleKey(host))
     }
 
@@ -75,7 +131,7 @@ final class AppSettings: ObservableObject {
             .filter { current.contains($0) }
             .map(\.rawValue)
             .joined(separator: ",")
-        objectWillChange.send()
+        fabRevision &+= 1
         UserDefaults.standard.set(raw, forKey: actionsKey(host))
     }
 
@@ -98,7 +154,7 @@ final class AppSettings: ObservableObject {
                     case locale, theme; case updatedAt = "updated_at"
                 }
             }
-            try? await supabase
+            _ = try? await supabase
                 .from("profiles")
                 .update(Prefs(locale: locale, theme: theme, updatedAt: ISO8601DateFormatter().string(from: Date())))
                 .eq("id", value: userId.uuidString)
@@ -137,6 +193,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
     case finances
     case addSupply
     case waterPlant
+    case documents
+    case deliveries
+    case digitalTwin
 
     var id: String { rawValue }
 
@@ -151,6 +210,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return String(localized: "Finances")
         case .addSupply:  return String(localized: "New Item")
         case .waterPlant: return String(localized: "Water Plants")
+        case .documents:  return String(localized: "Documents")
+        case .deliveries: return String(localized: "Deliveries")
+        case .digitalTwin: return String(localized: "Digital Twin")
         }
     }
 
@@ -165,6 +227,9 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return String(localized: "Open finances")
         case .addSupply:  return String(localized: "Add to supplies")
         case .waterPlant: return String(localized: "Mark as watered")
+        case .documents:  return String(localized: "Open documents")
+        case .deliveries: return String(localized: "Track packages")
+        case .digitalTwin: return String(localized: "Property map")
         }
     }
 
@@ -179,20 +244,26 @@ enum DashboardQuickAction: String, CaseIterable, Identifiable {
         case .finances:   return "chart.pie.fill"
         case .addSupply:  return "cart.badge.plus"
         case .waterPlant: return "drop.fill"
+        case .documents:  return "doc.fill"
+        case .deliveries: return "shippingbox.fill"
+        case .digitalTwin: return "map.fill"
         }
     }
 
     var color: Color {
         switch self {
-        case .aria:       return Color(red: 0.6,  green: 0.35, blue: 0.95)
-        case .newTask:    return Color(red: 0.3,  green: 0.85, blue: 0.45)
-        case .chat:       return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .aria:       return Color.brandPurple
+        case .newTask:    return Color.brandSuccess
+        case .chat:       return Color.brandSkyBlue
         case .scan:       return Color(red: 1.0,  green: 0.65, blue: 0.15)
         case .addItem:    return Color(red: 0.0,  green: 0.6,  blue: 0.85)
         case .addExpense: return Color(red: 0.2,  green: 0.78, blue: 0.6)
         case .finances:   return Color(red: 0.55, green: 0.55, blue: 0.95)
-        case .addSupply:  return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .addSupply:  return Color.brandSkyBlue
         case .waterPlant: return Color(red: 0.15, green: 0.80, blue: 0.40)
+        case .documents:  return Color(red: 1.0,  green: 0.6,  blue: 0.0)
+        case .deliveries: return Color(red: 0.95, green: 0.55, blue: 0.1)
+        case .digitalTwin: return Color(red: 0.2,  green: 0.72, blue: 0.6)
         }
     }
 }

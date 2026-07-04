@@ -39,8 +39,8 @@ struct TrustedPersonsView: View {
                 footerText
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Persoane de încredere")
@@ -59,15 +59,15 @@ struct TrustedPersonsView: View {
     private var personsList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("PERSOANE DE ÎNCREDERE")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) {
                 ForEach(Array(persons.enumerated()), id: \.element.id) { idx, person in
                     if idx > 0 {
                         Rectangle()
-                            .fill(Color.primary.opacity(0.06))
+                            .fill(Color.primary.opacity(AppOpacity.hairline))
                             .frame(height: 0.4)
                             .padding(.leading, 62)
                     }
@@ -82,7 +82,7 @@ struct TrustedPersonsView: View {
                         }
                 }
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 
@@ -92,7 +92,7 @@ struct TrustedPersonsView: View {
             ZStack {
                 Circle()
                     .fill(LinearGradient(
-                        colors: [Color(red: 0.35, green: 0.5, blue: 1.0), Color(red: 0.55, green: 0.3, blue: 1.0)],
+                        colors: [Color.brandSkyBlue, Color(red: 0.55, green: 0.3, blue: 1.0)],
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ))
                     .frame(width: 40, height: 40)
@@ -103,7 +103,7 @@ struct TrustedPersonsView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(person.name)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Text(person.email)
                     .font(.system(size: 12))
@@ -115,8 +115,8 @@ struct TrustedPersonsView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private func permissionTags(_ person: TrustedPerson) -> some View {
@@ -137,7 +137,7 @@ struct TrustedPersonsView: View {
         Text(LocalizedStringKey(label))
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, AppSpacing.xs)
             .padding(.vertical, 2)
             .background(color.opacity(0.12), in: Capsule())
     }
@@ -148,14 +148,14 @@ struct TrustedPersonsView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(0.06))
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.2.badge.key.fill")
                     .font(.system(size: 26))
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
             Text("Nicio persoană de încredere")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
             Text("Adaugă persoane care te pot ajuta cu recuperarea contului")
                 .font(.system(size: 13))
@@ -174,11 +174,11 @@ struct TrustedPersonsView: View {
             HapticFeedback.impact(.medium)
         } label: {
             Label("Adaugă persoană", systemImage: "plus")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
@@ -189,7 +189,7 @@ struct TrustedPersonsView: View {
             .font(.system(size: 12))
             .foregroundStyle(Color.primary.opacity(0.38))
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, AppSpacing.sm)
     }
 
     // MARK: - Persistence
@@ -233,24 +233,24 @@ private struct AddTrustedPersonSheet: View {
                         // Info fields
                         VStack(alignment: .leading, spacing: 8) {
                             Text("DETALII")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Color.primary.opacity(0.35))
-                                .padding(.leading, 4)
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .padding(.leading, AppSpacing.xxs)
 
                             VStack(spacing: 0) {
                                 fieldRow(icon: "person.fill", color: .blue, placeholder: "Nume complet", text: $name, keyboard: .default)
                                 rowDivider
                                 fieldRow(icon: "envelope.fill", color: .indigo, placeholder: "Adresă email", text: $email, keyboard: .emailAddress)
                             }
-                            .liquidGlass(cornerRadius: 16)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
                         }
 
                         // Permissions
                         VStack(alignment: .leading, spacing: 8) {
                             Text("PERMISIUNI")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Color.primary.opacity(0.35))
-                                .padding(.leading, 4)
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .padding(.leading, AppSpacing.xxs)
 
                             VStack(spacing: 0) {
                                 toggleRow(icon: "exclamationmark.shield.fill", color: .orange,
@@ -268,13 +268,13 @@ private struct AddTrustedPersonSheet: View {
                                           subtitle: "Poate prelua proprietatea contului",
                                           isOn: $canTransferOwnership)
                             }
-                            .liquidGlass(cornerRadius: 16)
+                            .liquidGlass(cornerRadius: AppRadius.lg)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("Adaugă persoană")
@@ -282,7 +282,7 @@ private struct AddTrustedPersonSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Anulează") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Salvează") {
@@ -296,7 +296,7 @@ private struct AddTrustedPersonSheet: View {
                         onSave(person)
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(isValid ? .blue : Color.primary.opacity(0.3))
                     .disabled(!isValid)
                 }
@@ -315,7 +315,7 @@ private struct AddTrustedPersonSheet: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 
@@ -335,13 +335,13 @@ private struct AddTrustedPersonSheet: View {
                 .labelsHidden()
                 .tint(color)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 54)
     }

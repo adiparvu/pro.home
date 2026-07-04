@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class TaskService: ObservableObject {
-    @Published var tasks: [MaintenanceTask] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class TaskService {
+    var tasks: [MaintenanceTask] = []
+    var isLoading = false
+    var error: String?
 
     var openCount: Int {
         tasks.filter { $0.status == "pending" || $0.status == "in_progress" }.count
@@ -89,6 +91,10 @@ final class TaskService: ObservableObject {
             if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
                 tasks[idx].status = newStatus
                 tasks[idx].updatedAt = update.updatedAt
+            }
+            // Completing a tracked task finishes its Live Activity.
+            if newStatus == "completed" {
+                LiveActivityService.shared.completeMaintenance(taskTitle: task.title)
             }
         } catch {
             self.error = error.localizedDescription

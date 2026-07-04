@@ -1,5 +1,4 @@
 import SwiftUI
-import CoreImage.CIFilterBuiltins
 import Supabase
 
 /// End-to-end TOTP (authenticator app) enrollment via Supabase MFA:
@@ -38,8 +37,8 @@ struct TOTPEnrollView: View {
                             verifyButton
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
                     .padding(.bottom, 40)
                 }
             }
@@ -67,21 +66,16 @@ struct TOTPEnrollView: View {
 
     private var qrCard: some View {
         VStack {
-            if let img = qrImage(from: otpauthURI) {
-                Image(uiImage: img)
-                    .interpolation(.none)
-                    .resizable()
-                    .frame(width: 200, height: 200)
-                    .padding(16)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            }
+            // High-contrast, unobstructed style so third-party authenticator
+            // apps scan it reliably.
+            QRCodeImage(content: otpauthURI, size: 200, style: .plain)
         }
         .frame(maxWidth: .infinity)
     }
 
     private var secretCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("MANUAL KEY").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("MANUAL KEY").font(AppFont.label).foregroundStyle(.secondary)
             HStack {
                 Text(secret)
                     .font(.system(size: 15, weight: .medium, design: .monospaced))
@@ -95,21 +89,22 @@ struct TOTPEnrollView: View {
                     Image(systemName: "doc.on.doc").foregroundStyle(.tint)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Copy secret code")
             }
-            .padding(14)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(AppSpacing.base)
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
     private var codeEntry: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("6-DIGIT CODE").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text("6-DIGIT CODE").font(AppFont.label).foregroundStyle(.secondary)
             TextField("000000", text: $code)
                 .font(.system(size: 22, weight: .semibold, design: .monospaced))
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
-                .padding(14)
-                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 .onChange(of: code) { _, v in
                     code = String(v.filter(\.isNumber).prefix(6))
                 }
@@ -120,12 +115,12 @@ struct TOTPEnrollView: View {
         Button { Task { await verify() } } label: {
             Group {
                 if isVerifying { ProgressView().tint(.white) }
-                else { Text("Activate").font(.system(size: 16, weight: .semibold)) }
+                else { Text("Activate").font(AppFont.headline) }
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(code.count == 6 ? Color.blue : Color.gray, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.vertical, AppSpacing.lg)
+            .background(code.count == 6 ? Color.blue : Color.gray, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(code.count != 6 || isVerifying)
@@ -135,7 +130,7 @@ struct TOTPEnrollView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.shield.fill").font(.system(size: 40)).foregroundStyle(.orange)
             Text("Could not start enrollment")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
             Text(LocalizedStringKey(message))
                 .font(.system(size: 13)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -150,8 +145,8 @@ struct TOTPEnrollView: View {
         defer { isLoading = false }
         do {
             let response = try await supabase.auth.mfa.enroll(
-                params: MFAEnrollParams(issuer: "PRVIO",
-                                        friendlyName: "PRVIO-\(UUID().uuidString.prefix(6))")
+                params: MFATotpEnrollParams(issuer: "PRVIO",
+                                            friendlyName: "PRVIO-\(UUID().uuidString.prefix(6))")
             )
             factorId = response.id
             secret = response.totp?.secret ?? ""
@@ -185,16 +180,5 @@ struct TOTPEnrollView: View {
             Task { try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factorId)) }
         }
         dismiss()
-    }
-
-    private func qrImage(from string: String) -> UIImage? {
-        guard !string.isEmpty else { return nil }
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)),
-              let cg = context.createCGImage(output, from: output.extent) else { return nil }
-        return UIImage(cgImage: cg)
     }
 }

@@ -4,9 +4,9 @@ import Charts
 // MARK: - Expense Dashboard (Revolut-style)
 
 struct ExpenseDashboardView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var supplyService: SupplyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(SupplyService.self) private var supplyService
 
     @Binding var activeTab: ExpenseTab
     @Binding var showScanner: Bool
@@ -33,8 +33,8 @@ struct ExpenseDashboardView: View {
                 if !recurring.isEmpty { recurringSection(recurring) }
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -43,8 +43,8 @@ struct ExpenseDashboardView: View {
         }
         .sheet(item: $selectedReceipt) { receipt in
             ReceiptDetailView(receipt: receipt)
-                .environmentObject(receiptService)
-                .environmentObject(propertyService)
+                .environment(receiptService)
+                .environment(propertyService)
         }
         .onAppear {
             if selectedMonth.isEmpty { selectedMonth = receiptService.currentMonthKey }
@@ -85,107 +85,118 @@ struct ExpenseDashboardView: View {
     // MARK: - Month + Total card
 
     private var monthTotalCard: some View {
-        GlassCard(padding: 20) {
-            VStack(spacing: 16) {
-                // Month picker
-                HStack(spacing: 12) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedMonth = receiptService.previousMonthKey(from: selectedMonth)
-                        }
-                        HapticFeedback.selection()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 32, height: 32)
-                            .background(Color.primary.opacity(0.07), in: Circle())
+        let total = receiptService.totalSpent(in: selectedMonth)
+        let prevTotal = receiptService.totalSpent(in: receiptService.previousMonthKey(from: selectedMonth))
+        let count = receiptService.receiptsForMonth(selectedMonth).count
+        let isCurrent = selectedMonth == receiptService.currentMonthKey
+
+        return VStack(spacing: 18) {
+            // Month navigator, sitting on the gradient
+            HStack(spacing: 12) {
+                monthNavButton("chevron.left", enabled: true) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedMonth = receiptService.previousMonthKey(from: selectedMonth)
                     }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Text(receiptService.monthDisplayName(selectedMonth))
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .contentTransition(.numericText())
-
-                    Spacer()
-
-                    Button {
-                        let next = receiptService.nextMonthKey(from: selectedMonth)
-                        if next != selectedMonth {
-                            withAnimation(.easeInOut(duration: 0.2)) { selectedMonth = next }
-                            HapticFeedback.selection()
-                        }
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(selectedMonth == receiptService.currentMonthKey
-                                ? Color.primary.opacity(0.2) : .secondary)
-                            .frame(width: 32, height: 32)
-                            .background(Color.primary.opacity(selectedMonth == receiptService.currentMonthKey ? 0.03 : 0.07), in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(selectedMonth == receiptService.currentMonthKey)
+                    HapticFeedback.selection()
                 }
+                Spacer()
+                Text(receiptService.monthDisplayName(selectedMonth))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+                Spacer()
+                monthNavButton("chevron.right", enabled: !isCurrent) {
+                    let next = receiptService.nextMonthKey(from: selectedMonth)
+                    if next != selectedMonth {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedMonth = next }
+                        HapticFeedback.selection()
+                    }
+                }
+            }
 
-                // Big total
-                let total = receiptService.totalSpent(in: selectedMonth)
-                let prevTotal = receiptService.totalSpent(in: receiptService.previousMonthKey(from: selectedMonth))
-                let count = receiptService.receiptsForMonth(selectedMonth).count
+            VStack(spacing: 8) {
+                Text(Receipt.format(total))
+                    .font(.system(size: 46, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
 
-                VStack(spacing: 6) {
-                    Text(Receipt.format(total))
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                        .contentTransition(.numericText())
+                HStack(spacing: 10) {
+                    Text("\(count) \(String(localized: "expense_receipts"))")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
 
-                    HStack(spacing: 10) {
-                        Text("\(count) \(String(localized: "expense_receipts"))")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-
-                        if prevTotal > 0 {
-                            let delta = total - prevTotal
-                            let pct = abs(delta / prevTotal * 100)
-                            HStack(spacing: 3) {
-                                Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
-                                    .font(.system(size: 10, weight: .bold))
-                                Text(String(format: "%.0f%%", pct))
-                                    .font(.system(size: 12, weight: .semibold))
-                            }
-                            .foregroundStyle(delta <= 0
-                                ? Color(red: 0.2, green: 0.78, blue: 0.45)
-                                : Color.orange)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background((delta <= 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.orange).opacity(0.12),
-                                        in: Capsule())
+                    if prevTotal > 0 {
+                        let delta = total - prevTotal
+                        let pct = abs(delta / prevTotal * 100)
+                        HStack(spacing: 3) {
+                            Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
+                                .font(.system(size: 10, weight: .bold))
+                            Text(String(format: "%.0f%%", pct))
+                                .font(AppFont.captionStrong)
                         }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
+                        .background(.white.opacity(0.2), in: Capsule())
                     }
                 }
 
                 if count == 0 {
                     Text(String(localized: "expense_no_receipts_month"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
+                        .padding(.top, 2)
                 }
             }
         }
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, 22)
+        .frame(maxWidth: .infinity)
+        // A ZStack isn't a ShapeStyle, so the `.background(_:in:)` form can't take
+        // it — build the rounded card as a filled shape and clip the sheen to it.
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.15, green: 0.34, blue: 0.76),
+                                 Color(red: 0.40, green: 0.22, blue: 0.70)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
+                )
+                // Soft highlight sheen in the top-right for depth.
+                .overlay(
+                    RadialGradient(colors: [.white.opacity(0.18), .clear],
+                                   center: .topTrailing, startRadius: 8, endRadius: 220)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        )
+        .shadow(color: Color(red: 0.25, green: 0.2, blue: 0.6).opacity(0.28), radius: 18, y: 10)
+    }
+
+    private func monthNavButton(_ icon: String, enabled: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white.opacity(enabled ? 0.95 : 0.35))
+                .frame(width: 32, height: 32)
+                .background(.white.opacity(enabled ? 0.16 : 0.06), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 
     // MARK: - Daily chart
 
+    @ViewBuilder
     private var dailyChartCard: some View {
         let days = receiptService.spendByDay(in: selectedMonth)
-        guard !days.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !days.isEmpty {
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(String(localized: "expense_section_daily"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
 
@@ -229,7 +240,7 @@ struct ExpenseDashboardView: View {
                     }
                 }
             }
-        )
+        }
     }
 
     // MARK: - Quick actions
@@ -272,16 +283,15 @@ struct ExpenseDashboardView: View {
 
     // MARK: - Category breakdown
 
+    @ViewBuilder
     private var categoryBreakdownCard: some View {
         let cats = receiptService.spendByCategory(in: selectedMonth)
-        guard !cats.isEmpty else { return AnyView(EmptyView()) }
-        let total = cats.reduce(0) { $0 + $1.total }
-
-        return AnyView(
+        if !cats.isEmpty {
+            let total = cats.reduce(0) { $0 + $1.total }
             GlassCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(String(localized: "expense_section_categories"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
 
@@ -310,7 +320,7 @@ struct ExpenseDashboardView: View {
                                     Spacer()
                                     let pct = total > 0 ? cat.total / total * 100 : 0
                                     Text(String(format: "%.0f%%", pct))
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(AppFont.label)
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -324,7 +334,7 @@ struct ExpenseDashboardView: View {
                     }
                 }
             }
-        )
+        }
     }
 
     // MARK: - Budget progress
@@ -338,7 +348,7 @@ struct ExpenseDashboardView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text(String(localized: "expense_section_budgets"))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.secondary)
                         .tracking(0.8)
                     Spacer()
@@ -358,14 +368,14 @@ struct ExpenseDashboardView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack {
                             Image(systemName: ReceiptCategory.icon(for: budget.category))
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(ReceiptCategory.color(for: budget.category))
                             Text(ReceiptCategory.label(for: budget.category))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text("\(Receipt.format(spent)) / \(Receipt.format(budget.monthlyLimit))")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(isOver ? .red : .secondary)
                         }
 
@@ -388,17 +398,16 @@ struct ExpenseDashboardView: View {
 
     // MARK: - Recent receipts
 
+    @ViewBuilder
     private var recentReceiptsSection: some View {
         let recent = receiptService.receiptsForMonth(selectedMonth)
-        guard !recent.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !recent.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text(String(localized: "expense_section_recent"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                     .tracking(0.8)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
 
                 GlassCard(padding: 0) {
                     VStack(spacing: 0) {
@@ -425,7 +434,7 @@ struct ExpenseDashboardView: View {
                     .buttonStyle(.plain)
                 }
             }
-        )
+        }
     }
 
     private func receiptRow(_ receipt: Receipt, isLast: Bool) -> some View {
@@ -436,13 +445,13 @@ struct ExpenseDashboardView: View {
                         .fill(receipt.categoryColor.opacity(0.15))
                         .frame(width: 40, height: 40)
                     Image(systemName: receipt.categoryIcon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(receipt.categoryColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(receipt.formattedDate)
@@ -453,11 +462,11 @@ struct ExpenseDashboardView: View {
                 Spacer()
 
                 Text(receipt.formattedTotal)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                     .monospacedDigit()
             }
-            .padding(.horizontal, 14).padding(.vertical, 11)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
             .contentShape(Rectangle())
 
             if !isLast {
@@ -471,10 +480,10 @@ struct ExpenseDashboardView: View {
     private func recurringSection(_ items: [RecurringItem]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "expense_section_recurring"))
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
                 .tracking(0.8)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -482,23 +491,23 @@ struct ExpenseDashboardView: View {
                         VStack(spacing: 0) {
                             HStack(spacing: 12) {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                                         .fill(Color.accentColor.opacity(0.12)).frame(width: 36, height: 36)
                                     Image(systemName: "arrow.triangle.2.circlepath")
-                                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.accentColor)
+                                        .font(AppFont.captionEmphasis).foregroundStyle(Color.accentColor)
                                 }
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary).lineLimit(1)
+                                    Text(item.name).font(AppFont.footnote).foregroundStyle(.primary).lineLimit(1)
                                     Text(String(format: String(localized: "expense_recurring_times"), item.count))
                                         .font(.system(size: 11)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text("~\(Receipt.format(item.avgPrice))")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.accentColor)
                                     .monospacedDigit()
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                             if idx < items.count - 1 {
                                 Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                             }

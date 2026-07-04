@@ -32,10 +32,7 @@ struct ChatEvent: Codable {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
         return String(data: data, encoding: .utf8)
     }
-    var parsedDate: Date? {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]
-        return f.date(from: date)
-    }
+    var parsedDate: Date? { ISODate.date(from: date) }
     var dateDisplay: String {
         guard let d = parsedDate else { return date }
         let out = DateFormatter(); out.dateFormat = "EEE, d MMM • HH:mm"; out.locale = .current
@@ -64,14 +61,23 @@ struct PollVote: Identifiable, Codable {
 // MARK: - Poll tally (pure, testable)
 
 enum PollTally {
-    static func totalVoters(_ votes: [PollVote]) -> Int {
-        Set(votes.map { $0.userId }).count
+    /// Stable per-voter identity. Falls back to the voter name when there is no
+    /// user id, so multiple anonymous/guest voters are not collapsed into one.
+    static func voterKey(_ v: PollVote) -> String {
+        if let id = v.userId { return "id:\(id.uuidString)" }
+        return "name:\(v.voterName)"
     }
+    static func totalVoters(_ votes: [PollVote]) -> Int {
+        Set(votes.map(voterKey)).count
+    }
+    /// Distinct voters who picked this option (deduped against repeated votes).
     static func count(_ votes: [PollVote], option: Int) -> Int {
-        votes.filter { $0.optionIndex == option }.count
+        Set(votes.filter { $0.optionIndex == option }.map(voterKey)).count
     }
     static func didVote(_ votes: [PollVote], option: Int, userId: UUID?) -> Bool {
-        votes.contains { $0.optionIndex == option && $0.userId == userId }
+        // Without a resolved identity we cannot claim the current user voted.
+        guard let userId else { return false }
+        return votes.contains { $0.optionIndex == option && $0.userId == userId }
     }
     static func fraction(_ votes: [PollVote], option: Int) -> Double {
         let total = totalVoters(votes)
@@ -86,6 +92,7 @@ struct PollBubble: View {
     let votes: [PollVote]
     let myUserId: UUID?
     let isOwn: Bool
+    var bubbleColor: Color = Color.blue.opacity(0.75)
     let onVote: (Int) -> Void
 
     @State private var showVotes = false
@@ -99,12 +106,12 @@ struct PollBubble: View {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill").font(.system(size: 12))
                 Text(poll.multi ? "Selectează una sau mai multe" : "Selectează una")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
             }
             .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.accentColor)
 
             Text(poll.q)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(isOwn ? .white : .primary)
 
             VStack(spacing: 8) {
@@ -116,13 +123,13 @@ struct PollBubble: View {
 
             Text(totalVoters == 1 ? "1 vot" : "\(totalVoters) voturi")
                 .font(.system(size: 11))
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(0.45))
+                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
 
             Divider().overlay(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
 
             Button { showVotes = true } label: {
                 Text("Afișează voturile")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(isOwn ? .white : Color.accentColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
@@ -131,9 +138,9 @@ struct PollBubble: View {
             .disabled(totalVoters == 0)
             .opacity(totalVoters == 0 ? 0.45 : 1)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: 260, alignment: .leading)
-        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+        .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .sheet(isPresented: $showVotes) {
             PollVotesSheet(poll: poll, votes: votes)
@@ -154,8 +161,8 @@ struct PollBubble: View {
                     .foregroundStyle(isOwn ? .white : .primary)
                 Spacer()
                 Text("\(c)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(0.5))
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(AppOpacity.mediumText))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -211,22 +218,23 @@ struct PollVotesSheet: View {
 struct EventBubble: View {
     let event: ChatEvent
     let isOwn: Bool
+    var bubbleColor: Color = Color.blue.opacity(0.75)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar").font(.system(size: 12))
-                Text("Event").font(.system(size: 11, weight: .semibold))
+                Text("Event").font(AppFont.label)
             }
             .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.red)
 
             Text(event.t)
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(isOwn ? .white : .primary)
 
             if let d = event.d, !d.isEmpty {
                 Text(d).font(.system(size: 13))
-                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.7))
+                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(3)
             }
 
@@ -243,34 +251,43 @@ struct EventBubble: View {
 
             Button { addToCalendar() } label: {
                 Text("Add to Calendar")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(isOwn ? .white : Color.accentColor)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                     .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
         .frame(maxWidth: 260, alignment: .leading)
-        .background(isOwn ? Color.blue.opacity(0.75) : Color.primary.opacity(0.08),
+        .background(isOwn ? bubbleColor : Color.primary.opacity(0.08),
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func addToCalendar() {
-        guard let start = event.parsedDate else { return }
+        guard let start = event.parsedDate else { HapticFeedback.warning(); return }
         let store = EKEventStore()
-        store.requestWriteOnlyAccessToEvents { granted, _ in
-            guard granted else { return }
+        // Full access so we can resolve a writable calendar (write-only access
+        // hides defaultCalendarForNewEvents, which is why saving used to fail).
+        store.requestFullAccessToEvents { granted, _ in
+            guard granted else { DispatchQueue.main.async { HapticFeedback.warning() }; return }
+            let calendar = store.defaultCalendarForNewEvents
+                ?? store.calendars(for: .event).first(where: { $0.allowsContentModifications })
+            guard let calendar else { DispatchQueue.main.async { HapticFeedback.warning() }; return }
             let ek = EKEvent(eventStore: store)
             ek.title = event.t
             ek.startDate = start
             ek.endDate = start.addingTimeInterval(3600)
             ek.notes = event.d
             ek.location = event.loc
-            ek.calendar = store.defaultCalendarForNewEvents
-            try? store.save(ek, span: .thisEvent)
-            DispatchQueue.main.async { HapticFeedback.success() }
+            ek.calendar = calendar
+            do {
+                try store.save(ek, span: .thisEvent)
+                DispatchQueue.main.async { HapticFeedback.success() }
+            } catch {
+                DispatchQueue.main.async { HapticFeedback.warning() }
+            }
         }
     }
 }

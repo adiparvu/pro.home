@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - AppliancesView
 
 struct AppliancesView: View {
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var showAdd = false
     @State private var selectedAppliance: Appliance? = nil
@@ -50,16 +50,17 @@ struct AppliancesView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add appliance")
             }
         }
         .sheet(isPresented: $showAdd) {
             AddApplianceSheet()
-                .environmentObject(applianceService)
-                .environmentObject(propertyService)
+                .environment(applianceService)
+                .environment(propertyService)
         }
         .sheet(item: $selectedAppliance) { appliance in
             ApplianceDetailSheet(appliance: appliance)
-                .environmentObject(applianceService)
+                .environment(applianceService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -81,8 +82,8 @@ struct AppliancesView: View {
                 appliances
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -101,26 +102,26 @@ struct AppliancesView: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     private var warrantyBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.orange)
             Text("\(applianceService.appliancesExpiringWarranty.count) warranty expiring soon")
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(.orange)
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
-        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .strokeBorder(Color.orange.opacity(0.25), lineWidth: 0.8)
         )
     }
@@ -147,8 +148,8 @@ struct AppliancesView: View {
         Button(action: action) {
             Text(verbatim: label)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
-                .padding(.horizontal, 14)
+                .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 7)
                 .background(
                     isSelected ? Color.accentColor : Color.primary.opacity(0.08),
@@ -187,18 +188,18 @@ struct AppliancesView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("No appliances yet")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Track warranties, model numbers, and maintenance for all your home appliances.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
                 showAdd = true
             } label: {
                 Label("Add your first appliance", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -233,7 +234,7 @@ private struct ApplianceRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(appliance.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -241,7 +242,7 @@ private struct ApplianceRow: View {
                         if let brand = appliance.brand, !brand.isEmpty {
                             Text(brand)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let model = appliance.modelNumber, !model.isEmpty {
                             if appliance.brand?.isEmpty == false {
@@ -249,15 +250,15 @@ private struct ApplianceRow: View {
                             }
                             Text(model)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         }
                     }
 
                     HStack(spacing: 6) {
                         Text(appliance.warrantyStatus)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.caption2)
                             .foregroundStyle(appliance.warrantyColor)
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, AppSpacing.sm)
                             .padding(.vertical, 3)
                             .background(appliance.warrantyColor.opacity(0.12), in: Capsule())
 
@@ -265,9 +266,9 @@ private struct ApplianceRow: View {
                             Text(location)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.primary.opacity(0.4))
-                                .padding(.horizontal, 8)
+                                .padding(.horizontal, AppSpacing.sm)
                                 .padding(.vertical, 3)
-                                .background(Color.primary.opacity(0.06), in: Capsule())
+                                .background(Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                         }
                     }
                 }
@@ -275,7 +276,7 @@ private struct ApplianceRow: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
         }

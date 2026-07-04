@@ -3,13 +3,13 @@ import SwiftUI
 // MARK: - Objects List — matches dark mockup (filter chips + object rows)
 
 struct ObjectsListView: View {
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var filter: ObjectFilter = .all
     @State private var favoritesOnly = false
@@ -62,8 +62,8 @@ struct ObjectsListView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.base)
 
                 if filteredElements.isEmpty {
                     emptyState
@@ -85,12 +85,12 @@ struct ObjectsListView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -100,7 +100,7 @@ struct ObjectsListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredElements.count)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
@@ -108,11 +108,11 @@ struct ObjectsListView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
+                .environment(documentService)
+                .environment(taskService)
         }
     }
 
@@ -125,11 +125,11 @@ struct ObjectsListView: View {
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: favoritesOnly ? "star.fill" : "star")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("Favorites").font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.label)
+                        Text("Favorites").font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(favoritesOnly ? Color.black : Color.yellow)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
                     .background(favoritesOnly ? Color.yellow : Color.primary.opacity(0.08), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -143,9 +143,9 @@ struct ObjectsListView: View {
                     HapticFeedback.selection()
                 } label: {
                     Image(systemName: filterMode == .categories ? "square.grid.2x2.fill" : "square.3.layers.3d")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 11).padding(.vertical, 8)
+                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.sm)
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                 }
                 .buttonStyle(.plain)
@@ -177,8 +177,8 @@ struct ObjectsListView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No objects")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Add objects to your property zones from the Digital Twin")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -203,7 +203,7 @@ struct ObjectListRow: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(element.layer.color.opacity(0.18))
                     .frame(width: 46, height: 46)
                 Image(systemName: element.elementType.icon)
@@ -213,16 +213,16 @@ struct ObjectListRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(element.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.primary)
                 if let zone = zoneName {
                     Text(zone)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 } else {
                     Text(element.elementType.displayName)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
 
@@ -230,7 +230,7 @@ struct ObjectListRow: View {
 
             Button { onToggleFavorite() } label: {
                 Image(systemName: element.isFavorite ? "star.fill" : "star")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(element.isFavorite ? .yellow : Color.primary.opacity(0.3))
                     .frame(width: 30, height: 30)
             }
@@ -241,13 +241,13 @@ struct ObjectListRow: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(element.healthColor)
                 .frame(width: 36, height: 28)
-                .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(element.healthColor.opacity(0.15), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(0.25))
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)

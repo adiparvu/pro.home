@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 // MARK: - AddApplianceSheet
 
 struct AddApplianceSheet: View {
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -91,8 +91,8 @@ struct AddApplianceSheet: View {
                                 }
                             }
                             .tint(.accentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
 
                             if hasPurchaseDate {
                                 divider
@@ -100,7 +100,7 @@ struct AddApplianceSheet: View {
                                     .datePickerStyle(.compact)
                                     .labelsHidden()
                                     .tint(.accentColor)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppSpacing.lg)
                                     .padding(.vertical, 10)
                             }
 
@@ -118,8 +118,8 @@ struct AddApplianceSheet: View {
                                 }
                             }
                             .tint(.accentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, AppSpacing.lg)
+                            .padding(.vertical, AppSpacing.md)
 
                             if hasWarrantyDate {
                                 divider
@@ -127,7 +127,7 @@ struct AddApplianceSheet: View {
                                     .datePickerStyle(.compact)
                                     .labelsHidden()
                                     .tint(.accentColor)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, AppSpacing.lg)
                                     .padding(.vertical, 10)
                             }
 
@@ -148,14 +148,14 @@ struct AddApplianceSheet: View {
                                     .tint(.accentColor)
                                     .lineLimit(3...6)
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, 13)
                         }
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Appliance")
@@ -173,14 +173,14 @@ struct AddApplianceSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView().tint(.accentColor)
                     } else {
                         Button("Save") { Task { await save() } }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(Color.accentColor)
                             .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
@@ -192,16 +192,16 @@ struct AddApplianceSheet: View {
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
-                .padding(.bottom, 6)
+                .padding(.leading, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
                 .textCase(.uppercase)
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -217,7 +217,7 @@ struct AddApplianceSheet: View {
                 .tint(.accentColor)
                 .keyboardType(keyboard)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
     }
 
@@ -235,7 +235,7 @@ struct AddApplianceSheet: View {
             .tint(.accentColor)
             .font(.system(size: 15))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 10)
     }
 

@@ -1,19 +1,21 @@
 import Foundation
+import Observation
 import UserNotifications
 
 @MainActor
-final class NotificationScheduler: ObservableObject {
+@Observable
+final class NotificationScheduler {
 
     // Persisted preferences
-    @Published var taskReminders: Bool  { didSet { UserDefaults.standard.set(taskReminders,  forKey: Keys.taskReminders) } }
-    @Published var documentExpiry: Bool { didSet { UserDefaults.standard.set(documentExpiry, forKey: Keys.documentExpiry) } }
-    @Published var financialAlerts: Bool { didSet { UserDefaults.standard.set(financialAlerts, forKey: Keys.financialAlerts) } }
-    @Published var warrantyAlerts: Bool { didSet { UserDefaults.standard.set(warrantyAlerts, forKey: Keys.warrantyAlerts) } }
-    @Published var inventoryLoans: Bool { didSet { UserDefaults.standard.set(inventoryLoans, forKey: Keys.inventoryLoans) } }
-    @Published var chatMessages: Bool   { didSet { UserDefaults.standard.set(chatMessages,   forKey: Keys.chatMessages) } }
-    @Published var mentions: Bool       { didSet { UserDefaults.standard.set(mentions,        forKey: Keys.mentions) } }
-    @Published var automationAlerts: Bool { didSet { UserDefaults.standard.set(automationAlerts, forKey: Keys.automationAlerts) } }
-    @Published var weeklyDigest: Bool   { didSet { UserDefaults.standard.set(weeklyDigest,   forKey: Keys.weeklyDigest) } }
+    var taskReminders: Bool  { didSet { UserDefaults.standard.set(taskReminders,  forKey: Keys.taskReminders) } }
+    var documentExpiry: Bool { didSet { UserDefaults.standard.set(documentExpiry, forKey: Keys.documentExpiry) } }
+    var financialAlerts: Bool { didSet { UserDefaults.standard.set(financialAlerts, forKey: Keys.financialAlerts) } }
+    var warrantyAlerts: Bool { didSet { UserDefaults.standard.set(warrantyAlerts, forKey: Keys.warrantyAlerts) } }
+    var inventoryLoans: Bool { didSet { UserDefaults.standard.set(inventoryLoans, forKey: Keys.inventoryLoans) } }
+    var chatMessages: Bool   { didSet { UserDefaults.standard.set(chatMessages,   forKey: Keys.chatMessages) } }
+    var mentions: Bool       { didSet { UserDefaults.standard.set(mentions,        forKey: Keys.mentions) } }
+    var automationAlerts: Bool { didSet { UserDefaults.standard.set(automationAlerts, forKey: Keys.automationAlerts) } }
+    var weeklyDigest: Bool   { didSet { UserDefaults.standard.set(weeklyDigest,   forKey: Keys.weeklyDigest) } }
 
     enum Keys {
         static let taskReminders   = "prvio.notif.tasks"

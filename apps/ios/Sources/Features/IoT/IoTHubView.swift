@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - IoT Hub (Controllers / Sensors / Automations)
 
 struct IoTHubView: View {
-    @StateObject private var service = IoTService.shared
+    @State private var service = IoTService.shared
     @State private var tab: HubTab = .controllers
     @State private var showAddController = false
     @State private var showAddSensor = false
@@ -52,15 +52,17 @@ struct IoTHubView: View {
                     } else {
                         Button { Task { await service.pollAllDevices() } } label: {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 15, weight: .medium))
+                                .font(AppFont.body)
                                 .foregroundStyle(.primary)
                         }
+                        .accessibilityLabel("Refresh devices")
                     }
                     Button { addAction() } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Add item")
                 }
             }
         }
@@ -112,8 +114,8 @@ struct IoTHubView: View {
             Color.primary.opacity(0.04),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
-        .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.bottom, AppSpacing.sm)
     }
 
     private func addAction() {
@@ -141,8 +143,8 @@ struct IoTHubView: View {
                             deviceCard(device)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }
@@ -153,7 +155,7 @@ struct IoTHubView: View {
         GlassCard(padding: 16) {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         .fill(device.type.color.opacity(0.15))
                         .frame(width: 48, height: 48)
                     Image(systemName: device.type.icon)
@@ -164,7 +166,7 @@ struct IoTHubView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(device.name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                         Circle()
                             .fill(device.isConnected ? Color.green : Color.red)
@@ -172,7 +174,7 @@ struct IoTHubView: View {
                     }
                     Text("\(device.host):\(device.port) · \(device.connectionProtocol.rawValue)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     HStack(spacing: 4) {
                         Image(systemName: "sensor.tag.radiowaves.forward.fill")
                             .font(.system(size: 9))
@@ -192,6 +194,7 @@ struct IoTHubView: View {
                         .foregroundStyle(Color.primary.opacity(0.25))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Show device options")
             }
         }
         .swipeActions(edge: .trailing) {
@@ -224,8 +227,8 @@ struct IoTHubView: View {
                                 .onTapGesture { selectedSensor = sensor }
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }
@@ -241,7 +244,7 @@ struct IoTHubView: View {
                             .fill(sensor.type.color.opacity(0.15))
                             .frame(width: 36, height: 36)
                         Image(systemName: sensor.type.icon)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(sensor.type.color)
                     }
                     Spacer()
@@ -253,14 +256,14 @@ struct IoTHubView: View {
                 }
 
                 Text(sensor.displayValue)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(AppFont.title2)
                     .foregroundStyle(sensor.isAlerting ? .orange : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(sensor.name)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if !sensor.linkedZoneName.isEmpty {
@@ -270,7 +273,7 @@ struct IoTHubView: View {
                     } else if let updated = sensor.lastUpdated {
                         Text(relativeTime(updated))
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
             }
@@ -294,8 +297,8 @@ struct IoTHubView: View {
                             automationRow(auto)
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.xxs)
                     Spacer(minLength: 100)
                 }
             }
@@ -316,11 +319,11 @@ struct IoTHubView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(auto.name)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text("IF \(auto.conditionDescription)")
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Text("THEN \(auto.action.rawValue)")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.accentColor.opacity(0.7))
@@ -357,18 +360,18 @@ struct IoTHubView: View {
             }
             Text(title)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text(body)
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             Button { addAction() } label: {
                 Label("Add", systemImage: "plus")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 11)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             }
             .buttonStyle(.plain)
             Spacer()

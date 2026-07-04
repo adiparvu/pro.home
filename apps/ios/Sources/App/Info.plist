@@ -47,99 +47,6 @@
 	</array>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
-	<key>CFBundleAlternateIcons</key>
-	<dict>
-		<key>AppIconMidnight</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconMidnight</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconSunset</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconSunset</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconForest</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconForest</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconLavender</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconLavender</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconRoseGold</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconRoseGold</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconArctic</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconArctic</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconCarbon</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconCarbon</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconCrimson</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconCrimson</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconEmerald</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconEmerald</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconClassicDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconClassicDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconForestDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconForestDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconEmeraldDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconEmeraldDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconRoseGoldDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconRoseGoldDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconArcticDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconArcticDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-		<key>AppIconCarbonDark</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array><string>AppIconCarbonDark</string></array>
-			<key>UIPrerenderedIcon</key><false/>
-		</dict>
-	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to scan documents and capture property photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -149,7 +56,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Used to convert your voice into search queries across your property data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Used to share your location in Family Chat and tag item locations in Inventory.</string>
+	<string>Used to share your location in Chat and tag item locations in Inventory.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
@@ -197,6 +104,11 @@
 			</array>
 		</dict>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>waze</string>
+	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>com.prvio.task</string>
@@ -208,6 +120,10 @@
 	<array>
 		<string>com.prvio.spotlight.refresh</string>
 		<string>com.prvio.app.proactive</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
 	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>
@@ -239,7 +155,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>bubble.left.and.bubble.right.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Family Chat</string>
+			<string>Chat</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.chat</string>
 		</dict>

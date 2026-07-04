@@ -14,22 +14,27 @@ private struct ChatBottomKey: PreferenceKey {
 }
 
 struct ChatView: View {
-    @EnvironmentObject var messageService: MessageService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var stickerService: StickerService
-    @EnvironmentObject private var router: AppRouter
+    @Environment(MessageService.self) var messageService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(StickerService.self) private var stickerService
+    @Environment(PresenceService.self) private var presenceService
+    @Environment(AppRouter.self) private var router
     @State var text = ""
     @State var photoPickerItems: [PhotosPickerItem] = []
     @State private var searchText = ""
     @State private var showSearch = false
     @State private var showJumpToLatest = false
+    /// First unread message on open — anchors the "unread messages" divider.
+    /// Frozen for the lifetime of this view so it doesn't chase read receipts.
+    @State private var unreadDividerId: UUID? = nil
     @State private var showStarred = false
     @State private var showGroupInfo = false
     @State private var showAddMember = false
     @State private var scrollTarget: UUID? = nil
+    @State private var highlightedMessageId: UUID? = nil
     @State private var menuMessage: Message?
     @State private var deleteCandidate: Message?
     @State private var editingMessage: Message? = nil
@@ -56,11 +61,13 @@ struct ChatView: View {
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
+    @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
+    @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
-    @StateObject private var audioRecorder = ChatAudioRecorder()
-    @StateObject var outbox = OfflineOutbox()
+    @State private var audioRecorder = ChatAudioRecorder()
+    @State var outbox = OfflineOutbox()
 
-    private var chatTheme: ChatTheme { .theme(for: chatThemeID) }
+    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
     private var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
         return outbox.pending(for: pid)
@@ -71,16 +78,35 @@ struct ChatView: View {
     private var draftKey: String { "draft.group.\(propertyId?.uuidString ?? "none")" }
 
     private func sameDay(_ a: Message, _ b: Message) -> Bool {
-        let f  = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-        let dA = f.date(from: a.createdAt) ?? f2.date(from: a.createdAt) ?? Date()
-        let dB = f.date(from: b.createdAt) ?? f2.date(from: b.createdAt) ?? Date()
+        let dA = a.date ?? Date()
+        let dB = b.date ?? Date()
         return Calendar.current.isDate(dA, inSameDayAs: dB)
     }
 
+    /// Scroll to a message (e.g. from tapping a reply's quote) and flash it. No-op
+    /// if it isn't in the loaded window — older pages aren't force-loaded here.
+    private func jumpToMessage(_ id: UUID) {
+        guard filteredMessages.contains(where: { $0.id == id }) else { return }
+        scrollTarget = id
+        HapticFeedback.impact(.light)
+        withAnimation(.easeInOut(duration: 0.25)) { highlightedMessageId = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(.easeInOut(duration: 0.4)) {
+                if highlightedMessageId == id { highlightedMessageId = nil }
+            }
+        }
+    }
+
+    /// Messages after the "clear conversation" cutoff and disappearing-message
+    /// rules, before any search filter. Shared by the list, pins and counts so
+    /// none of them show messages the user has cleared or that have expired.
+    private var visibleMessages: [Message] {
+        let kept = ConversationClearStore.filter(messageService.messages, convId: "group") { $0.date }
+        return ChatDisappearStore.filter(kept, convId: "group") { $0.date }
+    }
     private var filteredMessages: [Message] {
-        guard showSearch && !searchText.isEmpty else { return messageService.messages }
-        return messageService.messages.filter {
+        guard showSearch && !searchText.isEmpty else { return visibleMessages }
+        return visibleMessages.filter {
             ($0.body ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -90,7 +116,30 @@ struct ChatView: View {
         if names.count == 1 { return String(format: String(localized: "%@ is typing…"), first) }
         return String(format: String(localized: "%d people are typing…"), names.count)
     }
-    private var pinnedMessages: [Message] { messageService.messages.filter { $0.pinned == true } }
+    /// Family members (other than me) currently online, for the header subtitle.
+    private var onlineText: String? {
+        let me = senderName
+        let online = familyService.members
+            .map(\.name)
+            .filter { $0 != me && presenceService.status(for: $0) == .online }
+            .sorted()
+        guard let first = online.first else { return nil }
+        if online.count == 1 { return String(format: String(localized: "%@ is online"), first) }
+        if online.count == 2 { return String(format: String(localized: "%@ and %@ online"), first, online[1]) }
+        return String(format: String(localized: "%d online"), online.count)
+    }
+    private var sharedMediaURLs: [URL] {
+        messageService.messages.compactMap { m in
+            guard m.isImageMessage, let s = m.attachmentUrl else { return nil }
+            return URL(string: s)
+        }
+    }
+    private var exportTranscript: String {
+        ChatExport.transcript(title: "Group", lines: messageService.messages.map {
+            (sender: $0.senderName, time: $0.timeDisplay, body: $0.body ?? "")
+        })
+    }
+    private var pinnedMessages: [Message] { visibleMessages.filter { $0.pinned == true && $0.deletedForAll != true } }
     private var markedMessages: [Message] { messageService.messages.filter { $0.isMarked == true } }
 
     @ViewBuilder
@@ -99,7 +148,7 @@ struct ChatView: View {
         ChatActionOverlay(
             previewText: pinnedSnippet(m),
             isOwn: own,
-            bubbleColor: chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+            bubbleColor: chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
             myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
             onReact: { e in
                 if let pid = propertyId {
@@ -107,7 +156,8 @@ struct ChatView: View {
                 }
             },
             actions: messageActions(m),
-            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } }
+            onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
+            imageStored: m.isImageMessage ? m.attachmentUrl : nil
         )
         .transition(.opacity)
     }
@@ -122,19 +172,27 @@ struct ChatView: View {
             ChatActionItem(m.pinned == true ? "Unpin" : "Pin", "pin") { Task { await messageService.togglePin(m) } }
         ]
         if own, m.body?.isEmpty == false, m.attachmentType == nil {
-            items.append(ChatActionItem("Edit", "pencil") { editingMessage = m; editText = m.body ?? "" })
+            items.append(ChatActionItem("Edit", "pencil") {
+                editingMessage = m; editText = m.body ?? ""
+                replyingTo = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
+            })
         }
         items.append(ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m })
         return items
     }
 
     private func pinnedSnippet(_ m: Message) -> String {
-        if let b = m.body, !b.isEmpty { return b }
+        // Structured types first, so a poll/event never shows its JSON body.
+        if m.isPollMessage { return "📊 Poll" }
+        if m.isEventMessage { return "📅 Event" }
         if m.isImageMessage { return "📷 Photo" }
+        if m.isVideoMessage { return "🎥 Video" }
         if m.isAudioMessage { return "🎤 Voice message" }
         if m.isLocationMessage { return "📍 Location" }
         if m.isFileMessage { return "📎 File" }
         if m.isStickerMessage { return "😀 Sticker" }
+        if let b = m.body, !b.isEmpty { return b }
         return String(localized: "Attachment")
     }
     var senderName: String {
@@ -169,8 +227,9 @@ struct ChatView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 HStack(spacing: 10) {
-                    MemberAvatarStack(
+                    GroupHeaderAvatar(
                         members: familyService.members,
+                        photoUrl: propertyService.primary?.photoUrl,
                         ownerAvatarUrl: profileService.profile?.avatarUrl,
                         ownerInitial: ownerInitial,
                         ringColor: avatarRingColor(for: avatarRingColorName)
@@ -178,16 +237,21 @@ struct ChatView: View {
                         showGroupInfo = true
                     }
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(String(localized: "Chat Grup"))
-                            .font(.system(size: 16, weight: .semibold))
+                        // The group name is stored as the property name (renaming
+                        // the group from group details updates it) — reflect it
+                        // here instead of a hardcoded label.
+                        Text((propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 }
+                             ?? String(localized: "Chat Grup"))
+                            .font(AppFont.headline)
+                        // Transient typing status wins; otherwise show who's online.
                         if let t = typingText {
                             Text(t)
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.accentColor)
-                        } else {
-                            Text("Grup · \(familyService.members.count + 1) membri")
+                        } else if let o = onlineText {
+                            Text(o)
                                 .font(.system(size: 11))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.brandSuccess)
                         }
                     }
                     .contentShape(Rectangle())
@@ -197,7 +261,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showVideoSheet = true } label: {
                     Image(systemName: "video.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Video call")
@@ -205,7 +269,7 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showCallSheet = true } label: {
                     Image(systemName: "phone.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Call")
@@ -213,10 +277,18 @@ struct ChatView: View {
         }
         .task {
             guard let pid = propertyId else { return }
+            // Freeze where the reader left off BEFORE marking anything read, so
+            // the "unread messages" divider lands at the first new message.
+            let seen = messageService.lastSeen(propertyId: pid)
             await messageService.load(propertyId: pid)
+            unreadDividerId = messageService.firstUnreadId(
+                since: seen, myId: supabase.auth.currentSession?.user.id)
             messageService.resetUnread()
+            await presenceService.load(propertyId: pid)
             await messageService.loadReads(propertyId: pid)
+            await messageService.loadDeliveries(propertyId: pid)
             await messageService.loadReactions(propertyId: pid)
+            await messageService.markDelivered(propertyId: pid, delivererName: senderName)
             await messageService.markRead(propertyId: pid, readerName: senderName)
         }
         .task {
@@ -227,6 +299,10 @@ struct ChatView: View {
         .task {
             guard let pid = propertyId else { return }
             await messageService.subscribeReads(propertyId: pid)
+        }
+        .task {
+            guard let pid = propertyId else { return }
+            await messageService.subscribeDeliveries(propertyId: pid)
         }
         .task {
             guard let pid = propertyId else { return }
@@ -247,10 +323,17 @@ struct ChatView: View {
         }
         .onDisappear {
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
+            // Remember we've now seen everything, so the next open computes the
+            // unread divider from this point forward.
+            if let pid = propertyId { messageService.markSeen(propertyId: pid) }
+            // The main messages channel is owned by the chat tab (ConversationsView)
+            // so the conversation list keeps its preview + unread badge live; only
+            // the per-message receipt channels are thread-scoped, so tear those down.
             Task {
-                await messageService.unsubscribe()
                 await messageService.unsubscribeReads()
+                await messageService.unsubscribeDeliveries()
                 await messageService.unsubscribeReactions()
+                await messageService.unsubscribePollVotes()
             }
         }
         .onChange(of: text) { _, newValue in
@@ -267,10 +350,10 @@ struct ChatView: View {
             if newValue.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
             else { UserDefaults.standard.set(newValue, forKey: draftKey) }
         }
-        .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 1, matching: .images)
+        .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
         .sheet(isPresented: $showLocationSheet) {
-            LocationShareSheet { lat, lon in
+            LocationShareSheet(propertyId: propertyId, myName: senderName) { lat, lon in
                 Task { await sendLocation(lat: lat, lon: lon) }
             }
         }
@@ -287,7 +370,7 @@ struct ChatView: View {
             StickerPicker { sticker in
                 Task { await sendSticker(sticker) }
             }
-            .environmentObject(stickerService)
+            .environment(stickerService)
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)
         }
@@ -300,7 +383,7 @@ struct ChatView: View {
         .sheet(isPresented: $showThemePicker) {
             ChatThemePicker()
         }
-        .sheet(isPresented: $showGroupInfo) {
+        .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
                 groupName: (propertyService.primary?.name).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Chat Grup"),
                 members: familyService.members,
@@ -310,12 +393,17 @@ struct ChatView: View {
                 onAddMember: { showAddMember = true },
                 onSearch: { withAnimation(.spring(response: 0.3)) { showSearch = true } },
                 onStarred: { showStarred = true },
-                onTheme: { showThemePicker = true }
+                onTheme: { showThemePicker = true },
+                mediaURLs: sharedMediaURLs,
+                inviteLink: "https://prvhouse.app/invite/\(propertyId?.uuidString ?? "")",
+                propertyId: propertyId,
+                exportText: exportTranscript
             )
+            .environment(propertyService)
         }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .sheet(isPresented: $showAttachmentSheet) {
             ChatAttachmentSheet(
@@ -361,26 +449,12 @@ struct ChatView: View {
                 Button("Cancel", role: .cancel) { deleteCandidate = nil }
             }
         }
-        .alert("Edit message", isPresented: .init(
-            get: { editingMessage != nil },
-            set: { if !$0 { editingMessage = nil } }
-        )) {
-            TextField("Message", text: $editText)
-            Button("Cancel", role: .cancel) { editingMessage = nil }
-            Button("Save") {
-                if let m = editingMessage {
-                    let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !newText.isEmpty {
-                        Task { await messageService.editMessage(id: m.id, newBody: newText) }
-                    }
-                }
-                editingMessage = nil
-            }
-        }
         .fullScreenCover(isPresented: $showCameraSheet) {
             CameraPickerView { image in
                 Task { await sendCameraPhoto(image) }
             }
+            .ignoresSafeArea()
+            .background(Color.black.ignoresSafeArea())
         }
         .fileImporter(
             isPresented: $showFileImporter,
@@ -431,13 +505,14 @@ struct ChatView: View {
                                     .foregroundStyle(Color.primary.opacity(0.4))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Clear search")
                         }
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, AppSpacing.base)
                     .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: 16)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .liquidGlass(cornerRadius: AppRadius.lg)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.top, AppSpacing.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -454,7 +529,7 @@ struct ChatView: View {
                                 Text(pinnedMessages.count > 1
                                      ? String(format: String(localized: "%d pinned messages"), pinnedMessages.count)
                                      : String(localized: "Pinned message"))
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .foregroundStyle(Color.accentColor)
                                 Text(pinnedSnippet(pinned))
                                     .font(.system(size: 12))
@@ -471,27 +546,67 @@ struct ChatView: View {
                                     .frame(width: 26, height: 26)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Unpin message")
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                         .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, 16).padding(.top, 8)
+                        .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.sm)
                     }
                     .buttonStyle(.plain)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
+            // Capture the list ONCE per render. `filteredMessages` is a computed
+            // property that re-runs two filter passes on every access; the rows
+            // below read neighbours (idx±1), which made scrolling O(n²). The
+            // reply lookup gets the same treatment (dictionary instead of a
+            // linear scan per bubble).
+            let msgs = filteredMessages
+            let messagesById = Dictionary(messageService.messages.map { ($0.id, $0) },
+                                          uniquingKeysWith: { a, _ in a })
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 6) {
-                    ForEach(Array(filteredMessages.enumerated()), id: \.element.id) { idx, msg in
-                        if idx == 0 || !sameDay(filteredMessages[idx - 1], msg) {
+                LazyVStack(spacing: 2) {
+                    if messageService.hasMoreOlder && (!showSearch || searchText.isEmpty) {
+                        Button {
+                            if let pid = propertyId { Task { await messageService.loadOlder(propertyId: pid) } }
+                        } label: {
+                            if messageService.isLoadingOlder {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Text("Load older messages")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .disabled(messageService.isLoadingOlder)
+                    }
+                    ForEach(Array(msgs.enumerated()), id: \.element.id) { idx, msg in
+                        let showDate = idx == 0 || !sameDay(msgs[idx - 1], msg)
+                        // Consecutive messages from the same sender on the same day form a
+                        // visual group: only the first shows the name, only the last the
+                        // avatar. Searching yields a sparse subset, so grouping is disabled.
+                        let grouping = !(showSearch && !searchText.isEmpty)
+                        let prevSameSender = grouping && !showDate && idx > 0
+                            && msgs[idx - 1].senderName == msg.senderName
+                        let nextSameSender = grouping && idx < msgs.count - 1
+                            && sameDay(msg, msgs[idx + 1])
+                            && msgs[idx + 1].senderName == msg.senderName
+                        if showDate {
                             ChatDateSeparator(dateStr: msg.createdAt)
+                        }
+                        if grouping, msg.id == unreadDividerId {
+                            UnreadDivider().id("UNREAD_DIVIDER")
                         }
                         MessageBubble(
                             message: msg,
                             isOwn: msg.senderId == supabase.auth.currentSession?.user.id,
                             members: familyService.members,
-                            outgoingColor: chatThemeID == "appDefault" ? nil : chatTheme.outgoingBubble,
+                            outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
                             readers: messageService.reads[msg.id] ?? [],
+                            deliverers: messageService.deliveries[msg.id] ?? [],
                             persistedReactions: {
                                 let rows = messageService.reactions[msg.id] ?? []
                                 return Dictionary(rows.map { ($0.emoji, 1) }, uniquingKeysWith: +)
@@ -504,42 +619,69 @@ struct ChatView: View {
                                     messageId: msg.id, propertyId: pid,
                                     emoji: emoji, reactorName: senderName) }
                             },
-                            repliedMessage: msg.replyTo.flatMap { rid in messageService.messages.first { $0.id == rid } },
+                            repliedMessage: msg.replyTo.flatMap { messagesById[$0] },
                             onReply: { withAnimation(.spring(response: 0.3)) { replyingTo = msg } },
                             onPin: { Task { await messageService.togglePin(msg) } },
                             onMark: { Task { await messageService.toggleMark(msg) } },
                             onForward: { forwardingMessage = msg },
-                            onEdit: { editingMessage = msg; editText = msg.body ?? "" },
+                            onEdit: {
+                                editingMessage = msg; editText = msg.body ?? ""
+                                replyingTo = nil
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { focused = true }
+                            },
                             onDeleteForEveryone: { Task { await messageService.deleteForEveryone(id: msg.id) } },
                             onDeleteForMe: { messageService.deleteForMe(id: msg.id) },
                             pollVotes: messageService.pollVotes[msg.id] ?? [],
                             myUserId: supabase.auth.currentSession?.user.id,
+                            myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                             onPollVote: { idx in
                                 guard let pid = propertyId, let poll = ChatPoll.decode(msg.body) else { return }
                                 Task { await messageService.togglePollVote(
                                     messageId: msg.id, propertyId: pid,
                                     optionIndex: idx, voterName: senderName, multi: poll.multi) }
                             },
-                            onLongPress: { menuMessage = msg }
+                            onLongPress: { menuMessage = msg },
+                            isGroupStart: !prevSameSender,
+                            isGroupEnd: !nextSameSender,
+                            onQuotedTap: { if let rid = msg.replyTo { jumpToMessage(rid) } },
+                            isHighlighted: highlightedMessageId == msg.id
                         )
+                        .padding(.top, prevSameSender ? 0 : (showDate ? 0 : 6))
                         .id(msg.id)
                     }
                     // Pending (offline) messages — shown optimistically with a clock.
                     ForEach(pendingOutbox) { pm in
-                        HStack {
-                            Spacer(minLength: 60)
-                            HStack(spacing: 6) {
-                                Text(pm.body ?? "")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
-                                Image(systemName: "clock")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.75))
+                        VStack(alignment: .trailing, spacing: 2) {
+                            HStack {
+                                Spacer(minLength: 60)
+                                HStack(spacing: 6) {
+                                    Text(pm.body ?? "")
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(.white)
+                                    Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.white.opacity(0.75))
+                                }
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+                                .background(chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+                                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .opacity(0.85)
+                                .onTapGesture { Task { await flushOutbox() } }
+                                .contextMenu {
+                                    Button { Task { await flushOutbox() } } label: {
+                                        Label("Retry", systemImage: "arrow.clockwise")
+                                    }
+                                    Button(role: .destructive) { outbox.remove(pm.id) } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 9)
-                            .background(chatThemeID == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
-                                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .opacity(0.85)
+                            if !outbox.isOnline {
+                                Text("Not delivered · tap to retry")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                                    .padding(.trailing, AppSpacing.xxs)
+                            }
                         }
                     }
                     // Clearance so the newest message rests above the overlaid
@@ -551,9 +693,9 @@ struct ChatView: View {
                                                    value: g.frame(in: .named("CHATOUTER")).maxY)
                         })
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: filteredMessages.count)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
             .onPreferenceChange(ChatBottomKey.self) { maxY in
@@ -570,12 +712,21 @@ struct ChatView: View {
                     withAnimation { proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom) }
                 }
                 if let pid = propertyId {
-                    Task { await messageService.markRead(propertyId: pid, readerName: senderName) }
+                    Task {
+                        await messageService.markDelivered(propertyId: pid, delivererName: senderName)
+                        await messageService.markRead(propertyId: pid, readerName: senderName)
+                    }
                 }
             }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                    // Land on the unread divider when there's a backlog, otherwise
+                    // rest at the newest message like usual.
+                    if unreadDividerId != nil {
+                        proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
+                    } else {
+                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
+                    }
                 }
             }
             .onChange(of: scrollTarget) { _, target in
@@ -593,7 +744,7 @@ struct ChatView: View {
                         HapticFeedback.impact(.light)
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                             .frame(width: 40, height: 40)
                     }
@@ -602,6 +753,7 @@ struct ChatView: View {
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.bottom, chatBottomInset + 8)
                     .transition(.scale.combined(with: .opacity))
+                    .accessibilityLabel("Jump to latest message")
                 }
             }
             } // end ScrollViewReader
@@ -613,22 +765,33 @@ struct ChatView: View {
 
     private var inputBar: some View {
         VStack(spacing: 0) {
-            if let replyingTo {
+            if editingMessage != nil {
                 HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 2).fill(Color.accentColor).frame(width: 3, height: 30)
+                    Image(systemName: "pencil")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 18)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(String(format: String(localized: "Reply to %@"), replyingTo.senderName))
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.accentColor)
-                        Text(replyingTo.body?.isEmpty == false ? (replyingTo.body ?? "") : String(localized: "Attachment"))
+                        Text("Edit message")
+                            .font(AppFont.label).foregroundStyle(Color.accentColor)
+                        Text(editingMessage?.body ?? "")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6)).lineLimit(1)
                     }
                     Spacer()
-                    Button { withAnimation { self.replyingTo = nil } } label: {
+                    Button {
+                        withAnimation { editingMessage = nil; editText = "" }
+                    } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.4))
                     }.buttonStyle(.plain)
+                    .accessibilityLabel("Cancel edit")
                 }
-                .padding(.horizontal, 14).padding(.vertical, 8)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                 .background(Color.primary.opacity(0.05))
+            }
+            if let replyingTo {
+                ChatReplyBanner(sender: replyingTo.senderName, snippet: pinnedSnippet(replyingTo)) {
+                    withAnimation { self.replyingTo = nil }
+                }
             }
             if !mentionedNames.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -636,20 +799,21 @@ struct ChatView: View {
                         ForEach(Array(zip(mentionedIds, mentionedNames)), id: \.0) { id, name in
                             HStack(spacing: 4) {
                                 Text("@\(name)")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(AppFont.caption)
                                     .foregroundStyle(Color.accentColor)
                                 Button {
                                     mentionedIds.removeAll { $0 == id }
                                     mentionedNames.removeAll { $0 == name }
                                 } label: {
-                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(0.5))
+                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                                 }
+                                .accessibilityLabel("Remove mention of \(name)")
                             }
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                             .background(.blue.opacity(0.15), in: Capsule())
                         }
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.xs)
                 }
             }
 
@@ -661,37 +825,24 @@ struct ChatView: View {
                         HapticFeedback.warning()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(Color.primary.opacity(0.55))
                             .frame(width: 30, height: 30)
                             .background(Circle().fill(Color.primary.opacity(0.1)))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Cancel recording")
 
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 8, height: 8)
-                            .symbolEffect(.pulse)
-                        Text(audioRecorder.durationText)
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text("← Slide to cancel")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                    }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
-                    .liquidGlass(cornerRadius: 22)
-                    .gesture(
-                        DragGesture(minimumDistance: 40)
-                            .onEnded { val in
-                                if val.translation.width < -40 {
-                                    _ = audioRecorder.stop()
-                                    HapticFeedback.warning()
+                    ChatRecordingIndicator(durationText: audioRecorder.durationText)
+                        .gesture(
+                            DragGesture(minimumDistance: 40)
+                                .onEnded { val in
+                                    if val.translation.width < -40 {
+                                        _ = audioRecorder.stop()
+                                        HapticFeedback.warning()
+                                    }
                                 }
-                            }
-                    )
+                        )
 
                     Button {
                         if let url = audioRecorder.stop() {
@@ -707,12 +858,12 @@ struct ChatView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    TextField("Message…", text: $text, axis: .vertical)
+                    TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                         .tint(.accentColor)
@@ -725,27 +876,49 @@ struct ChatView: View {
                             showAttachmentSheet = true
                         } label: {
                             Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(Color.primary.opacity(0.55))
                                 .frame(width: 30, height: 30)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Add attachment")
 
                         Button {
                             focused = false
                             showStickerPicker = true
                         } label: {
                             Image(systemName: "face.smiling")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .foregroundStyle(Color.primary.opacity(0.55))
                                 .frame(width: 30, height: 30)
                         }
                         .buttonStyle(.plain)
                         .padding(.leading, 2)
+                        .accessibilityLabel("Stickers")
 
                         Spacer()
 
-                        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if editingMessage != nil {
+                            // Confirm edit (WhatsApp-style inline edit)
+                            Button {
+                                guard let m = editingMessage else { return }
+                                let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !newText.isEmpty, newText != (m.body ?? "") {
+                                    Task { await messageService.editMessage(id: m.id, newBody: newText) }
+                                }
+                                editingMessage = nil; editText = ""; focused = false
+                            } label: {
+                                ZStack {
+                                    Circle().fill(Color.accentColor).frame(width: 30, height: 30)
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityLabel("Confirm edit")
+                        } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             // Mic button — hold to record
                             ZStack {
                                 Circle()
@@ -753,7 +926,7 @@ struct ChatView: View {
                                     .frame(width: 30, height: 30)
                                 Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
                                     .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(0.45))
+                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.secondaryText))
                                     .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
                             }
                             .onLongPressGesture(minimumDuration: 0.3) {
@@ -761,6 +934,9 @@ struct ChatView: View {
                                 audioRecorder.start()
                                 HapticFeedback.impact(.medium)
                             }
+                            .accessibilityLabel("Record voice message")
+                            .accessibilityHint("Double-tap and hold to record")
+                            .accessibilityAddTraits(.isButton)
                         } else {
                             // Send button
                             Button {
@@ -771,23 +947,30 @@ struct ChatView: View {
                                     Circle()
                                         .fill(Color.accentColor)
                                         .frame(width: 30, height: 30)
-                                    Image(systemName: isSending ? "stop.fill" : "arrow.up")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundStyle(.white)
+                                    if isSending {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: "arrow.up")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundStyle(.white)
+                                    }
                                 }
                             }
                             .buttonStyle(.plain)
                             .disabled(isSending)
+                            .accessibilityLabel("Send")
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.top, AppSpacing.md)
                 .padding(.bottom, 10)
                 .liquidGlass(cornerRadius: 22)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
             }
         }
     }

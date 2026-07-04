@@ -40,11 +40,11 @@ private enum ActivityCategory: String, CaseIterable {
     var color: Color {
         switch self {
         case .all:        return .blue
-        case .tasks:      return Color(red: 0.2, green: 0.78, blue: 0.45)
-        case .finances:   return Color(red: 0.3, green: 0.6, blue: 1.0)
+        case .tasks:      return Color.brandSuccess
+        case .finances:   return Color.brandSkyBlue
         case .documents:  return .orange
         case .elements:   return .purple
-        case .appliances: return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .appliances: return Color.brandPrimaryBlue
         case .plants:     return Color(red: 0.15, green: 0.75, blue: 0.40)
         }
     }
@@ -64,14 +64,14 @@ private struct ActivityEvent: Identifiable {
 // MARK: - View
 
 struct ActivityFeedView: View {
-    @EnvironmentObject private var financialService:  FinancialService
-    @EnvironmentObject private var documentService:   DocumentService
-    @EnvironmentObject private var familyService:     FamilyService
-    @EnvironmentObject private var appSettings:       AppSettings
-    @EnvironmentObject private var taskService:       TaskService
-    @EnvironmentObject private var elementService:    PropertyElementService
-    @EnvironmentObject private var applianceService:  ApplianceService
-    @EnvironmentObject private var plantService:      PlantService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(PlantService.self) private var plantService
 
     @State private var period:           ActivityPeriod   = .month
     @State private var selectedMember:   String?          = nil
@@ -92,7 +92,7 @@ struct ActivityFeedView: View {
             let isIncome = r.type == "income"
             events.append(ActivityEvent(
                 icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                color:    isIncome ? Color(red: 0.2, green: 0.78, blue: 0.45) : .red,
+                color:    isIncome ? Color.brandSuccess : .red,
                 title:    isIncome ? "Income added" : "Expense recorded",
                 subtitle: "\(r.title) · \(financialService.currencySymbol)\(Int(r.amount))",
                 date:     date,
@@ -123,7 +123,7 @@ struct ActivityFeedView: View {
             if task.isCompleted {
                 events.append(ActivityEvent(
                     icon:     "checkmark.circle.fill",
-                    color:    Color(red: 0.2, green: 0.78, blue: 0.45),
+                    color:    Color.brandSuccess,
                     title:    "Task completed",
                     subtitle: task.title,
                     date:     date,
@@ -199,7 +199,7 @@ struct ActivityFeedView: View {
             let date = isoTask(ap.createdAt) ?? Date()
             events.append(ActivityEvent(
                 icon:     ap.categoryIcon,
-                color:    Color(red: 0.2, green: 0.55, blue: 0.95),
+                color:    Color.brandPrimaryBlue,
                 title:    "Appliance added",
                 subtitle: [ap.brand, ap.name].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " "),
                 date:     date,
@@ -250,16 +250,16 @@ struct ActivityFeedView: View {
             PageHeader(titleKey: "Activity", subtitleKey: "PROPERTY")
 
             periodRow
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.sm)
 
             categoryRow
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
 
             memberRow
-                .padding(.top, 6)
+                .padding(.top, AppSpacing.xs)
 
-            Divider().opacity(0.3).padding(.top, 8)
+            Divider().opacity(0.3).padding(.top, AppSpacing.sm)
 
             if filteredEvents.isEmpty {
                 emptyState
@@ -283,7 +283,7 @@ struct ActivityFeedView: View {
                     Text(LocalizedStringKey(p.rawValue))
                         .font(.system(size: 12, weight: period == p ? .semibold : .regular))
                         .foregroundStyle(period == p ? .white : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 13).padding(.vertical, 6)
+                        .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
                         .background(period == p ? Color.accentColor : Color.primary.opacity(0.08),
                                     in: Capsule())
                 }
@@ -291,9 +291,9 @@ struct ActivityFeedView: View {
             }
             Spacer()
             Text("\(filteredEvents.count)")
-                .font(.system(size: 12, weight: .medium))
+                .font(AppFont.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 10).padding(.vertical, 6)
+                .padding(.horizontal, 10).padding(.vertical, AppSpacing.xs)
                 .background(.regularMaterial, in: Capsule())
         }
     }
@@ -311,14 +311,14 @@ struct ActivityFeedView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: cat.icon)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                             Text(LocalizedStringKey(cat.rawValue))
                                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                         }
                         .foregroundStyle(isSelected ? cat.color : Color.primary.opacity(0.6))
-                        .padding(.horizontal, 11).padding(.vertical, 6)
+                        .padding(.horizontal, 11).padding(.vertical, AppSpacing.xs)
                         .background(
-                            isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(0.07),
+                            isSelected ? cat.color.opacity(0.14) : Color.primary.opacity(AppOpacity.subtleFill),
                             in: Capsule()
                         )
                         .overlay(
@@ -350,11 +350,11 @@ struct ActivityFeedView: View {
                                 .font(.system(size: 13, weight: selectedMember == name ? .semibold : .regular))
                                 .foregroundStyle(selectedMember == name ? .blue : .primary)
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                         .background(
                             selectedMember == name
                                 ? Color.accentColor.opacity(0.12)
-                                : Color.primary.opacity(0.07),
+                                : Color.primary.opacity(AppOpacity.subtleFill),
                             in: Capsule()
                         )
                     }
@@ -368,8 +368,8 @@ struct ActivityFeedView: View {
                         Text("All")
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.primary.opacity(0.07), in: Capsule())
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
+                            .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
@@ -393,27 +393,27 @@ struct ActivityFeedView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                     } header: {
                         dayHeader(LocalizedStringKey(group.label))
                     }
                 }
                 Spacer(minLength: 100)
             }
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
         }
     }
 
     private func dayHeader(_ label: LocalizedStringKey) -> some View {
         HStack {
             Text(label).textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
         }
         .padding(.horizontal, 28)
-        .padding(.vertical, 6)
+        .padding(.vertical, AppSpacing.xs)
         .background(appBackground)
     }
 
@@ -425,13 +425,13 @@ struct ActivityFeedView: View {
                         .fill(event.color.opacity(0.14))
                         .frame(width: 36, height: 36)
                     Image(systemName: event.icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(event.color)
                         .symbolRenderingMode(.hierarchical)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(event.title))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(.primary)
                     Text(event.subtitle)
                         .font(.system(size: 12))
@@ -442,11 +442,11 @@ struct ActivityFeedView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(timeString(event.date))
                         .font(.system(size: 11))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     memberAvatar(name: event.member, size: 18)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
 
             if !isLast {
                 Rectangle()
@@ -466,8 +466,8 @@ struct ActivityFeedView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No activity in this period")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Activities appear automatically as you\nadd tasks, documents, and transactions.")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))

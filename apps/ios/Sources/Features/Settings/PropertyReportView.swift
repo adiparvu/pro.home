@@ -3,12 +3,12 @@ import PDFKit
 import MapKit
 
 struct PropertyReportView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(TaskService.self) private var taskService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
 
     @State private var isGenerating = false
     @State private var pdfURL: URL? = nil
@@ -27,8 +27,8 @@ struct PropertyReportView: View {
                 generateButton
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.xxs)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -71,8 +71,8 @@ struct PropertyReportView: View {
                         .font(.system(size: 18))
                         .foregroundStyle(.white.opacity(0.5))
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)
             }
             .frame(height: 88)
 
@@ -88,7 +88,7 @@ struct PropertyReportView: View {
                 statCell(icon: "banknote",
                          value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
                          label: String(localized: "this month"),
-                         color: Color(red: 0.25, green: 0.82, blue: 0.5))
+                         color: Color.brandSuccess)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "doc.fill",
                          value: "\(documentService.documents.count)",
@@ -97,18 +97,18 @@ struct PropertyReportView: View {
                              : "\(documentService.expiringDocs.count) \(String(localized: "expiring"))",
                          color: documentService.expiringDocs.isEmpty ? .orange : .red)
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, AppSpacing.base)
             .background(Color.primary.opacity(0.04))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
             .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
     }
 
     private func statCell(icon: String, value: String, label: String, color: Color) -> some View {
         VStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(color)
             Text(value)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
@@ -125,23 +125,23 @@ struct PropertyReportView: View {
     private var sectionToggles: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("INCLUDE IN REPORT")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 4)
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 0) {
                 toggleRow("checklist", .blue, "Tasks & Maintenance", $includesTasks)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
-                toggleRow("banknote.fill", Color(red: 0.25, green: 0.82, blue: 0.5), "Financial summary", $includesFinances)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
+                toggleRow("banknote.fill", Color.brandSuccess, "Financial summary", $includesFinances)
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("doc.text.fill", .orange, "Documents", $includesDocuments)
-                Divider().padding(.leading, 54).background(Color.primary.opacity(0.06))
+                Divider().padding(.leading, 54).background(Color.primary.opacity(AppOpacity.hairline))
                 toggleRow("map.fill", .indigo, "Digital Twin & Zones", $includesTwin)
             }
             .background(Color.primary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -156,8 +156,8 @@ struct PropertyReportView: View {
                 .labelsHidden()
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Generate Button
@@ -178,7 +178,7 @@ struct PropertyReportView: View {
                     ProgressView().tint(.white)
                 } else {
                     Label("Generate PDF", systemImage: "arrow.down.doc.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(.white)
                 }
             }
@@ -204,9 +204,11 @@ struct PropertyReportView: View {
     private func generate() async {
         isGenerating = true
         let twinImage = includesTwin ? await twinSnapshot() : nil
-        let url = await Task.detached(priority: .userInitiated) { [self] in
-            return generatePDF(twinImage: twinImage)
-        }.value
+        // generatePDF reads main-actor service/view state (properties, zones,
+        // elements, toggles), so it must run on the main actor — detaching it
+        // was a latent data race. The render is fast and the spinner is
+        // already visible from the awaited snapshot above.
+        let url = generatePDF(twinImage: twinImage)
         pdfURL = url
         isGenerating = false
         HapticFeedback.success()
@@ -301,7 +303,6 @@ struct PropertyReportView: View {
             y += 20
 
             let bodyAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 13), .foregroundColor: UIColor.white]
-            let secondaryAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12), .foregroundColor: UIColor.white.withAlphaComponent(0.5)]
             let sectionAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .semibold), .foregroundColor: UIColor.white.withAlphaComponent(0.4)]
 
             if includesTasks {

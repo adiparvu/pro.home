@@ -6,7 +6,7 @@ import SwiftUI
 struct ElementObjectsSection: View {
     let element: PropertyElement
 
-    @StateObject private var inv = InventoryService()
+    @State private var inv = InventoryService()
     @State private var showLink = false
 
     private var linked: [InventoryItem] { inv.items.filter { $0.elementId == element.id } }
@@ -21,6 +21,7 @@ struct ElementObjectsSection: View {
                     Button { showLink = true } label: {
                         Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Link object")
                 }
 
                 if linked.isEmpty {
@@ -31,7 +32,7 @@ struct ElementObjectsSection: View {
                             Image(systemName: item.categoryIcon)
                                 .font(.system(size: 14)).foregroundStyle(item.categoryColor).frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(item.name).font(.system(size: 14, weight: .medium))
+                                Text(item.name).font(AppFont.footnote)
                                 if !item.brand.isEmpty {
                                     Text(item.brand).font(.system(size: 11)).foregroundStyle(.secondary)
                                 }
@@ -62,7 +63,7 @@ struct ElementObjectsSection: View {
 // Pick inventory items to attach to this element.
 private struct LinkObjectsSheet: View {
     let elementId: UUID
-    @ObservedObject var inv: InventoryService
+    var inv: InventoryService
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 

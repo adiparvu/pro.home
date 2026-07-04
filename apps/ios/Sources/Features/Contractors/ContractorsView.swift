@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 struct ContractorModel: Identifiable, Codable {
     let id: UUID
@@ -34,19 +35,23 @@ struct ContractorModel: Identifiable, Codable {
 }
 
 @MainActor
-final class ContractorService: ObservableObject {
-    @Published var contractors: [ContractorModel] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class ContractorService {
+    var contractors: [ContractorModel] = []
+    var isLoading = false
+    var error: String?
 
     func load() async {
         isLoading = true
         defer { isLoading = false }
         do {
+            // RLS already scopes this to the caller's household; the cap just
+            // prevents an unbounded select as the table grows over the years.
             contractors = try await supabase
                 .from("contractors")
                 .select()
                 .order("name")
+                .limit(500)
                 .execute()
                 .value
         } catch {
@@ -115,9 +120,9 @@ struct NewContractor: Encodable {
 }
 
 struct ContractorsView: View {
-    @EnvironmentObject private var service: ContractorService
-    @EnvironmentObject private var auth: AuthService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ContractorService.self) private var service
+    @Environment(AuthService.self) private var auth
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedContractor: ContractorModel? = nil
     @State private var search = ""
@@ -139,9 +144,9 @@ struct ContractorsView: View {
                         Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(.horizontal, 20).padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    .padding(.horizontal, AppSpacing.xl).padding(.bottom, AppSpacing.md)
                 }
 
                 if service.isLoading {
@@ -150,7 +155,7 @@ struct ContractorsView: View {
                     VStack(spacing: 14) {
                         Spacer()
                         Image(systemName: "person.badge.key.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-                        Text(LocalizedStringKey(service.contractors.isEmpty ? "No contractors yet" : "No results")).font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+                        Text(LocalizedStringKey(service.contractors.isEmpty ? "No contractors yet" : "No results")).font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                         if service.contractors.isEmpty {
                             Button("Add your first contractor") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         }
@@ -174,7 +179,7 @@ struct ContractorsView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20).padding(.bottom, 110)
+                        .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
                 }
             }
@@ -202,6 +207,7 @@ struct ContractorsView: View {
                 Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
                     Image(systemName: "plus").font(.system(size: 17, weight: .semibold)).foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add contractor")
             }
         }
     }
@@ -214,8 +220,8 @@ private struct ContractorRow: View {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: contractor.specialtyIcon, color: .blue, size: 44)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(contractor.name).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                    Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.45))
+                    Text(contractor.name).font(AppFont.subheadline).foregroundStyle(.primary)
+                    Text(LocalizedStringKey(contractor.specialty.capitalized)).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                 }
                 Spacer()
                 if let phone = contractor.phone, !phone.isEmpty {
@@ -231,6 +237,7 @@ private struct ContractorRow: View {
                             .frame(width: 38, height: 38)
                     }
                     .glassCircle()
+                    .accessibilityLabel("Call contractor")
                 }
             }
         }
@@ -238,7 +245,7 @@ private struct ContractorRow: View {
 }
 
 private struct AddContractorSheet: View {
-    @ObservedObject var service: ContractorService
+    var service: ContractorService
     let propertyId: UUID?
     let userId: UUID?
     @Environment(\.dismiss) private var dismiss
@@ -263,17 +270,17 @@ private struct AddContractorSheet: View {
                             fieldRow("note.text", "Notes (optional)", $notes)
                         }
                     }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Contractor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7)) }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.isEmpty || category.isEmpty || isSaving)
                 }
             }
@@ -284,7 +291,7 @@ private struct AddContractorSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
     private var divider: some View { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52) }
 

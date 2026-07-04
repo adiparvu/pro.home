@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Observation
 
 struct UtilityEntry: Identifiable, Codable {
     var id: UUID
@@ -44,8 +45,9 @@ struct NewUtilityEntry: Encodable {
 }
 
 @MainActor
-final class UtilityService: ObservableObject {
-    @Published var entries: [UtilityEntry] = []
+@Observable
+final class UtilityService {
+    var entries: [UtilityEntry] = []
     private(set) var currentPropertyId: UUID?
 
     // MARK: Derived helpers
@@ -138,8 +140,8 @@ final class UtilityService: ObservableObject {
 // MARK: - Main View
 
 struct UtilityView: View {
-    @StateObject private var service = UtilityService()
-    @EnvironmentObject private var propertyService: PropertyService
+    @State private var service = UtilityService()
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedType = "electricity"
 
@@ -147,7 +149,7 @@ struct UtilityView: View {
         ("electricity", "bolt.fill",      .yellow,                                  String(localized: "Electricity"), "kWh"),
         ("water",       "drop.fill",      .blue,                                    String(localized: "Water"),       "m³"),
         ("gas",         "flame.fill",     .orange,                                  String(localized: "Gas"),         "m³"),
-        ("internet",    "wifi",           Color(red: 0.3, green: 0.85, blue: 0.5), String(localized: "Internet"),    "Mbps"),
+        ("internet",    "wifi",           Color.brandSuccess, String(localized: "Internet"),    "Mbps"),
     ]
 
     var body: some View {
@@ -168,9 +170,9 @@ struct UtilityView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
                 }
-                .padding(.bottom, 16)
+                .padding(.bottom, AppSpacing.lg)
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
@@ -199,7 +201,7 @@ struct UtilityView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.bottom, 110)
+                    .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                 }
             }
         }
@@ -221,6 +223,7 @@ struct UtilityView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add utility bill")
             }
         }
         .sheet(isPresented: $showAdd) {
@@ -234,7 +237,7 @@ struct UtilityView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Last \(data.count) months")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
                 Chart(data, id: \.id) { e in
                     BarMark(
@@ -246,13 +249,13 @@ struct UtilityView: View {
                     .annotation(position: .top) {
                         Text("€\(String(format: "%.0f", e.amount))")
                             .font(.system(size: 9))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                 }
                 .frame(height: 130)
                 .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(.secondary) } }
                 .chartYAxis { AxisMarks { _ in
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.primary.opacity(0.06))
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Color.primary.opacity(AppOpacity.hairline))
                     AxisValueLabel().foregroundStyle(.secondary)
                 }}
                 HStack {
@@ -300,7 +303,7 @@ struct UtilityView: View {
             Image(systemName: type?.icon ?? "bolt.fill")
                 .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
             Text(String(format: String(localized: "No %@ bills yet"), type?.label ?? ""))
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.45))
+                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("Tap + to add manually or scan an invoice to extract data automatically.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
@@ -320,10 +323,10 @@ private struct UtilitySummaryCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: type.icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(isSelected ? .black : type.color)
                 Text(type.label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(isSelected ? .black : .white)
             }
             if let entry = currentEntry {
@@ -341,8 +344,8 @@ private struct UtilitySummaryCard: View {
                     .foregroundStyle(isSelected ? .black.opacity(0.5) : Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(isSelected ? type.color : Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
+        .background(isSelected ? type.color : Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isSelected ? .clear : type.color.opacity(0.25), lineWidth: 1)
@@ -366,7 +369,7 @@ private struct UtilityEntryRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(displayMonth)
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     if entry.consumption > 0 {
                         Text("\(String(format: "%.0f", entry.consumption)) \(entry.unit)")
                             .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))

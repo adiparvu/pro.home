@@ -2,8 +2,8 @@ import SwiftUI
 
 struct ContractorDetailSheet: View {
     let contractor: ContractorModel
-    @ObservedObject var service: ContractorService
-    @EnvironmentObject private var router: AppRouter
+    var service: ContractorService
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEdit = false
@@ -34,8 +34,8 @@ struct ContractorDetailSheet: View {
                         actionsSection
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("")
@@ -58,6 +58,7 @@ struct ContractorDetailSheet: View {
                             .font(.system(size: 15))
                             .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Menu")
                 }
             }
             .confirmationDialog("Delete \(contractor.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -97,7 +98,7 @@ struct ContractorDetailSheet: View {
             ratingStars
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 8)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var ratingStars: some View {
@@ -165,10 +166,10 @@ struct ContractorDetailSheet: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(Color.primary.opacity(0.25))
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
         }
         .buttonStyle(.plain)
     }
@@ -183,7 +184,7 @@ struct ContractorDetailSheet: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Notes", systemImage: "note.text")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(AppFont.captionStrong)
                     .foregroundStyle(.secondary)
                 Text(currentContractor.notes ?? "")
                     .font(.system(size: 14))
@@ -239,14 +240,14 @@ struct ContractorDetailSheet: View {
                     Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
                 }
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(.horizontal, 16).padding(.vertical, 14)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
             )
         }
@@ -258,7 +259,7 @@ struct ContractorDetailSheet: View {
 
 private struct EditContractorSheet: View {
     let contractor: ContractorModel
-    @ObservedObject var service: ContractorService
+    var service: ContractorService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
@@ -296,19 +297,19 @@ private struct EditContractorSheet: View {
                             fieldRow("note.text", "Notes", $notes)
                         }
                     }
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Edit Contractor").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { Task { await save() } }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                         .disabled(name.isEmpty || category.isEmpty || isSaving)
                 }
             }
@@ -319,7 +320,7 @@ private struct EditContractorSheet: View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 14)).foregroundStyle(Color.accentColor).frame(width: 28)
             TextField(placeholder, text: binding).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor).keyboardType(keyboard)
-        }.padding(.horizontal, 16).padding(.vertical, 13)
+        }.padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var divider: some View {

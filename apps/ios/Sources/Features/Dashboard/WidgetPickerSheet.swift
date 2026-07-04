@@ -92,13 +92,13 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .tasks:       return .blue
-        case .finances:    return Color(red: 0.3, green: 0.85, blue: 0.45)
+        case .finances:    return Color.brandSuccess
         case .documents:   return Color(red: 0.55, green: 0.55, blue: 0.95)
         case .family:      return Color(red: 0.7, green: 0.45, blue: 0.95)
         case .healthScore: return .red
         case .inventory:   return .orange
         case .contractors: return Color(red: 0.9, green: 0.65, blue: 0.2)
-        case .weather:     return Color(red: 0.2, green: 0.55, blue: 0.95)
+        case .weather:     return Color.brandPrimaryBlue
         case .plants:      return Color(red: 0.25, green: 0.78, blue: 0.45)
         case .calendar:    return .teal
         }
@@ -120,7 +120,6 @@ enum HomeWidgetType: String, CaseIterable, Identifiable {
 // MARK: - Widget picker sheet
 
 struct WidgetPickerSheet: View {
-    @EnvironmentObject private var appSettings: AppSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var active: [HomeWidgetType] = HomeWidgetType.load()
@@ -148,7 +147,7 @@ struct WidgetPickerSheet: View {
                         }
                     } header: {
                         Text("Active — trage pentru reordonare")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -169,7 +168,7 @@ struct WidgetPickerSheet: View {
                         }
                     } header: {
                         Text("Disponibile")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
                 }
@@ -184,11 +183,10 @@ struct WidgetPickerSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Gata") {
                         HomeWidgetType.save(active)
-                        appSettings.objectWillChange.send()
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }
@@ -202,13 +200,13 @@ struct WidgetPickerSheet: View {
                     .fill(type.color.opacity(0.18))
                     .frame(width: 40, height: 40)
                 Image(systemName: type.icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(type.color)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(type.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 if type.isFullWidth {
                     Text("Lățime completă")
@@ -229,7 +227,7 @@ struct WidgetPickerSheet: View {
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppSpacing.xxs)
         .contentShape(Rectangle())
     }
 }

@@ -49,7 +49,7 @@ enum StickerCatalog {
             Sticker(id: "goal_hit",     emoji: "🎯", label: "Goal hit!",      categoryId: "tasks"),
         ]),
         StickerCategory(id: "supplies", name: "Supplies",
-                        icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), stickers: [
+                        icon: "cart.fill", color: Color.brandSkyBlue, stickers: [
             Sticker(id: "shopping_time",   emoji: "🛒", label: "Shopping time",   categoryId: "supplies"),
             Sticker(id: "dont_run_out",    emoji: "🧻", label: "Don't run out!",   categoryId: "supplies"),
             Sticker(id: "need_more_juice", emoji: "🔋", label: "Need more juice",  categoryId: "supplies"),
@@ -74,7 +74,7 @@ enum StickerCatalog {
             Sticker(id: "recharge",  emoji: "🔌", label: "Recharge",   categoryId: "mood"),
         ]),
         StickerCategory(id: "extras", name: "Extras",
-                        icon: "sparkles", color: Color(red: 0.6, green: 0.35, blue: 0.95), stickers: [
+                        icon: "sparkles", color: Color.brandPurple, stickers: [
             Sticker(id: "new_stuff",   emoji: "🎁", label: "New stuff!",   categoryId: "extras"),
             Sticker(id: "memories",    emoji: "📷", label: "Memories",    categoryId: "extras"),
             Sticker(id: "important",   emoji: "📌", label: "Important!",   categoryId: "extras"),

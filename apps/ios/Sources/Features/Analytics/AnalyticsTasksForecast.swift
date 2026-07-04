@@ -4,7 +4,7 @@ import Charts
 // MARK: - Tasks Section
 
 struct TasksSection: View {
-    @ObservedObject var service: TaskService
+    var service: TaskService
 
     var tasksByPriority: [(priority: String, count: Int, color: Color)] {
         let urgentCount = service.tasks.filter { $0.priority == "urgent" }.count
@@ -40,18 +40,18 @@ struct TasksSection: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Completion rate")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                         Spacer()
                         Text(String(format: "%.0f%%", completionRate))
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(completionRate >= 70 ? Color(red: 0.2, green: 0.8, blue: 0.4) : .orange)
+                            .foregroundStyle(completionRate >= 70 ? Color.brandSuccess : .orange)
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.primary.opacity(0.08)).frame(height: 10)
                             Capsule()
                                 .fill(LinearGradient(
-                                    colors: [.blue, Color(red: 0.3, green: 0.85, blue: 0.5)],
+                                    colors: [.blue, Color.brandSuccess],
                                     startPoint: .leading, endPoint: .trailing
                                 ))
                                 .frame(width: geo.size.width * (completionRate / 100), height: 10)
@@ -66,7 +66,7 @@ struct TasksSection: View {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("By priority")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
 
                         Chart(tasksByPriority, id: \.priority) { item in
                             BarMark(
@@ -102,7 +102,7 @@ struct TasksSection: View {
 // MARK: - Forecast Section
 
 struct ForecastSection: View {
-    @ObservedObject var financialService: FinancialService
+    var financialService: FinancialService
 
     var projectedIncome: Double {
         let months = financialService.monthlyData
@@ -124,7 +124,7 @@ struct ForecastSection: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("12-month projection")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                             Text("Based on the last \(financialService.monthlyData.count) months")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
@@ -133,7 +133,7 @@ struct ForecastSection: View {
                         Label("AI", systemImage: "sparkles")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                             .background(Color.primary.opacity(0.08), in: Capsule())
                     }
 
@@ -141,11 +141,11 @@ struct ForecastSection: View {
                         ForecastRow(label: "Projected income",
                                     value: "\(sym)\(Int(projectedIncome))",
                                     sub: "annual", positive: true)
-                        Divider().background(Color.primary.opacity(0.07))
+                        Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Projected expenses",
                                     value: "\(sym)\(Int(projectedExpenses))",
                                     sub: "annual", positive: false)
-                        Divider().background(Color.primary.opacity(0.07))
+                        Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Estimated net profit",
                                     value: "\(netProfit >= 0 ? "+" : "")\(sym)\(Int(netProfit))",
                                     sub: "estimated", positive: netProfit >= 0)
@@ -157,7 +157,7 @@ struct ForecastSection: View {
                 GlassCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Expense trend")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
 
                         Chart {
                             ForEach(financialService.monthlyData, id: \.month) { item in
@@ -201,7 +201,7 @@ struct ForecastSection: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                 }
             }
         }
@@ -223,7 +223,7 @@ struct ForecastRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text(value)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(positive ? Color(red: 0.2, green: 0.8, blue: 0.4) : .primary)
+                    .foregroundStyle(positive ? Color.brandSuccess : .primary)
                 Text(sub).font(.caption2).foregroundStyle(.secondary)
             }
         }

@@ -28,7 +28,9 @@ final class HomeKitService: NSObject, ObservableObject {
     }
 
     var primaryHome: HMHome? {
-        _manager?.primaryHome
+        // HMHomeManager.primaryHome was deprecated (iOS 16.1) with no
+        // replacement; use the first configured home instead.
+        _manager?.homes.first
     }
 
     func requestAccess() {

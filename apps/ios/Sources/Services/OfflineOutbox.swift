@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import Observation
 
 // MARK: - Offline outbox
 // Persists messages that failed to send (or were composed offline) and
@@ -11,6 +12,9 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     let propertyId: UUID
     let senderName: String
     let recipientName: String?     // nil = group chat; set = DM recipient
+    /// family_members.id of the DM recipient. Required for the row to be
+    /// visible to the recipient under id-based RLS; nil for group messages.
+    let recipientMemberId: UUID?
     let body: String?
     let attachmentUrl: String?
     let attachmentType: String?
@@ -19,19 +23,22 @@ struct PendingMessage: Identifiable, Codable, Equatable {
     let createdAt: Date
 
     init(id: UUID = UUID(), propertyId: UUID, senderName: String, recipientName: String? = nil,
+         recipientMemberId: UUID? = nil,
          body: String?, attachmentUrl: String? = nil, attachmentType: String? = nil,
          mentionedIds: [String] = [], replyTo: UUID? = nil, createdAt: Date = Date()) {
         self.id = id; self.propertyId = propertyId; self.senderName = senderName
         self.recipientName = recipientName
+        self.recipientMemberId = recipientMemberId
         self.body = body; self.attachmentUrl = attachmentUrl; self.attachmentType = attachmentType
         self.mentionedIds = mentionedIds; self.replyTo = replyTo; self.createdAt = createdAt
     }
 }
 
 @MainActor
-final class OfflineOutbox: ObservableObject {
-    @Published private(set) var pending: [PendingMessage] = []
-    @Published private(set) var isOnline = true
+@Observable
+final class OfflineOutbox {
+    private(set) var pending: [PendingMessage] = []
+    private(set) var isOnline = true
 
     private let monitor = NWPathMonitor()
     private var flushing = false

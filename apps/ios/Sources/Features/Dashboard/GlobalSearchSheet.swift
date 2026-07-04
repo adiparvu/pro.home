@@ -1,22 +1,45 @@
 import SwiftUI
 
+/// Lightweight server-side chat search hit (full Message model isn't needed).
+struct ChatSearchHit: Decodable, Identifiable {
+    let id: UUID
+    let senderName: String?
+    let body: String?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, body
+        case senderName = "sender_name"
+        case createdAt  = "created_at"
+    }
+}
+
 struct GlobalSearchSheet: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var inventoryService: InventoryService
-    @EnvironmentObject private var router: AppRouter
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(PlantService.self) private var plantService
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(InventoryService.self) private var inventoryService
+    @Environment(ContractorService.self) private var contractorService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PaintColorService.self) private var paintColorService
+    @Environment(PhotoJournalService.self) private var photoJournalService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
     @FocusState private var focused: Bool
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
+
+    /// Chat search is server-side (messages aren't kept in memory app-wide),
+    /// debounced per keystroke via .task(id:).
+    @State private var chatHits: [ChatSearchHit] = []
 
     // Detail sheet selection state
     @State private var selectedMember: FamilyMember?
@@ -106,20 +129,57 @@ struct GlobalSearchSheet: View {
         }
     }
 
+    private var contractorResults: [ContractorModel] {
+        guard active else { return [] }
+        return contractorService.contractors.filter {
+            $0.name.lowercased().contains(q) ||
+            $0.category.lowercased().contains(q) ||
+            ($0.phone?.contains(q) ?? false) ||
+            ($0.email?.lowercased().contains(q) ?? false) ||
+            ($0.notes?.lowercased().contains(q) ?? false)
+        }
+    }
+    private var zoneResults: [PropertyZone] {
+        guard active else { return [] }
+        return zoneService.zones.filter {
+            $0.name.lowercased().contains(q) ||
+            ($0.notes?.lowercased().contains(q) ?? false)
+        }
+    }
+    private var paintResults: [PaintColor] {
+        guard active else { return [] }
+        return paintColorService.colors.filter {
+            $0.colorName.lowercased().contains(q) ||
+            $0.roomName.lowercased().contains(q) ||
+            ($0.brand?.lowercased().contains(q) ?? false) ||
+            ($0.code?.lowercased().contains(q) ?? false)
+        }
+    }
+    private var journalResults: [PhotoJournalEntry] {
+        guard active else { return [] }
+        return photoJournalService.entries.filter {
+            $0.title.lowercased().contains(q) ||
+            ($0.caption?.lowercased().contains(q) ?? false) ||
+            ($0.tags?.contains { $0.lowercased().contains(q) } ?? false)
+        }
+    }
+
     private var hasResults: Bool {
         !shortcutResults.isEmpty || !taskResults.isEmpty || !docResults.isEmpty ||
         !plantResults.isEmpty || !deliveryResults.isEmpty || !peopleResults.isEmpty ||
         !financialResults.isEmpty || !elementResults.isEmpty || !applianceResults.isEmpty ||
-        !supplyResults.isEmpty || !inventoryResults.isEmpty
+        !supplyResults.isEmpty || !inventoryResults.isEmpty ||
+        !contractorResults.isEmpty || !zoneResults.isEmpty || !paintResults.isEmpty ||
+        !journalResults.isEmpty || !chatHits.isEmpty
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 searchBar
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
+                    .padding(.bottom, AppSpacing.md)
                 Divider().opacity(0.3)
                 Group {
                     if !active {
@@ -137,34 +197,57 @@ struct GlobalSearchSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Close") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                 }
             }
         }
         .onAppear { focused = true }
+        .task {
+            // Sources that aren't loaded app-wide at launch — hydrate once so
+            // search covers them too. Cheap no-ops when already loaded.
+            guard let pid = propertyService.primary?.id else { return }
+            if contractorService.contractors.isEmpty { await contractorService.load() }
+            if zoneService.zones.isEmpty { await zoneService.load(propertyId: pid) }
+            if paintColorService.colors.isEmpty { await paintColorService.load(propertyId: pid) }
+            if photoJournalService.entries.isEmpty { await photoJournalService.load(propertyId: pid) }
+        }
+        .task(id: query) {
+            // Server-side chat search, debounced.
+            guard active, let pid = propertyService.primary?.id else { chatHits = []; return }
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            chatHits = (try? await supabase
+                .from("messages")
+                .select("id, sender_name, body, created_at")
+                .eq("property_id", value: pid.uuidString)
+                .ilike("body", pattern: "%\(query)%")
+                .order("created_at", ascending: false)
+                .limit(8)
+                .execute().value) ?? []
+        }
         .sheet(item: $selectedMember) { m in
             MemberProfileSheet(member: m)
-                .environmentObject(familyService)
+                .environment(familyService)
         }
         .sheet(item: $selectedAppliance) { a in
             ApplianceDetailSheet(appliance: a)
-                .environmentObject(applianceService)
+                .environment(applianceService)
         }
         .sheet(item: $selectedElement) { e in
             PropertyElementDetailView(element: e)
-                .environmentObject(elementService)
-                .environmentObject(documentService)
+                .environment(elementService)
+                .environment(documentService)
         }
         .sheet(item: $selectedInventoryItem) { i in
             ItemDetailView(item: i, service: inventoryService)
         }
         .sheet(item: $selectedPlant) { p in
             PlantDetailSheet(plant: p)
-                .environmentObject(plantService)
+                .environment(plantService)
         }
         .sheet(item: $selectedDelivery) { d in
             DeliveryFormSheet(editingDelivery: d)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
     }
 
@@ -173,7 +256,7 @@ struct GlobalSearchSheet: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .foregroundStyle(.secondary)
             TextField("People, tasks, documents, appliances…", text: $query)
                 .font(.system(size: 16))
@@ -185,14 +268,15 @@ struct GlobalSearchSheet: View {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
-        .background(Color.primary.opacity(0.06),
+        .background(Color.primary.opacity(AppOpacity.hairline),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -205,9 +289,9 @@ struct GlobalSearchSheet: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("Search the entire app")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
-            Text("Tasks · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries")
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text("Tasks · Chat · Settings · \(assistantName) · Map · Plants · Documents · Finances · Appliances · Inventory · Supplies · People · Deliveries · Contractors · Zones · Paint · Photos")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
@@ -225,9 +309,9 @@ struct GlobalSearchSheet: View {
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No results for")
                 .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("\"\(query)\"")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Spacer()
         }
@@ -241,6 +325,7 @@ struct GlobalSearchSheet: View {
             VStack(spacing: 20) {
                 shortcutsSectionView
                 peopleSectionView
+                chatSectionView
                 tasksSectionView
                 documentsSectionView
                 appliancesSectionView
@@ -250,10 +335,14 @@ struct GlobalSearchSheet: View {
                 suppliesSectionView
                 plantsSectionView
                 deliveriesSectionView
+                contractorsSectionView
+                zonesSectionView
+                paintSectionView
+                journalSectionView
                 Spacer(minLength: 60)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
         }
     }
 
@@ -275,7 +364,7 @@ struct GlobalSearchSheet: View {
         let green  = Color(red: 0.20, green: 0.78, blue: 0.35)
         let pGreen = Color(red: 0.15, green: 0.80, blue: 0.40)
         let purple = Color(red: 0.45, green: 0.30, blue: 0.95)
-        let chart  = Color(red: 0.40, green: 0.60, blue: 1.0)
+        let chart  = Color.brandSkyBlue
         let gray   = Color(.systemGray)
         return [
             // ── Main tabs ──────────────────────────────────────────────────────
@@ -285,9 +374,12 @@ struct GlobalSearchSheet: View {
             AppShortcut(name: "Add Task", subtitle: "Create a new task",
                         synonyms: ["add task", "new task", "sarcina noua", "adauga sarcina"],
                         icon: "plus.circle.fill", color: .blue, tab: .tasks, extra: { r in r.showAddTask = true }),
-            AppShortcut(name: "ARIA Chat", subtitle: "AI assistant",
+            AppShortcut(name: "Chat", subtitle: "House chat",
+                        synonyms: ["chat", "mesaje", "messages", "conversatie", "conversație", "house chat"],
+                        icon: "bubble.left.and.bubble.right.fill", color: .blue, tab: .chat, extra: nil),
+            AppShortcut(name: "ARIA", subtitle: "AI assistant",
                         synonyms: ["aria", "chat ai", "ai", "assistant", "asistent", "gpt", "inteligenta artificiala"],
-                        icon: "sparkles", color: purple, tab: .chat, extra: nil),
+                        icon: "sparkles", color: purple, tab: .home, extra: { r in r.showARIA = true }),
             AppShortcut(name: "Digital Twin", subtitle: "Property map & zones",
                         synonyms: ["twin", "digital twin", "map", "harta", "hartă", "zone", "zones", "proprietate map"],
                         icon: "map.fill", color: .teal, tab: .digitalTwin, extra: nil),
@@ -366,9 +458,24 @@ struct GlobalSearchSheet: View {
             AppShortcut(name: "Integrations", subtitle: "Google Calendar & more",
                         synonyms: ["integration", "integrations", "integrari", "integrări", "google", "calendar", "sync", "connect"],
                         icon: "link", color: .blue, tab: .settings, extra: nil),
-            AppShortcut(name: "Family Members", subtitle: "Manage family & housemates",
-                        synonyms: ["family", "familie", "member", "members", "housemate", "colocatar", "persoane"],
+            AppShortcut(name: "Members", subtitle: "Family, invitations & supervision",
+                        synonyms: ["family", "familie", "member", "members", "membri", "housemate", "colocatar", "persoane", "invitation", "invitatie", "invitație", "supraveghere", "supervision"],
                         icon: "person.2.fill", color: .purple, tab: .settings, extra: nil),
+            AppShortcut(name: "Custom Integrations", subtitle: "Connect anything with its own key",
+                        synonyms: ["custom integration", "integrari personalizate", "webhook", "token", "cheie", "connect anything", "conecteaza orice"],
+                        icon: "sparkles", color: .purple, tab: .settings, extra: nil),
+            AppShortcut(name: "Cross-app Messaging", subtitle: "Messages from other apps into chat",
+                        synonyms: ["cross-app", "cross app", "mesaje externe", "external", "gateway", "shortcuts automation", "zapier chat"],
+                        icon: "arrow.left.arrow.right", color: .blue, tab: .settings, extra: nil),
+            AppShortcut(name: "App Icon", subtitle: "Choose your app icon",
+                        synonyms: ["app icon", "icon", "iconita", "iconiță", "pictograma", "logo"],
+                        icon: "app.fill", color: .purple, tab: .settings, extra: nil),
+            AppShortcut(name: "Live Activities", subtitle: "Lock Screen & Dynamic Island",
+                        synonyms: ["live activity", "live activities", "dynamic island", "lock screen", "ecran blocare", "activitati live", "activități live"],
+                        icon: "bolt.badge.clock.fill", color: .blue, tab: .settings, extra: nil),
+            AppShortcut(name: "Widgets", subtitle: "Home & Lock Screen widgets",
+                        synonyms: ["widget", "widgets", "widgeturi", "home screen", "control center"],
+                        icon: "square.grid.2x2", color: .teal, tab: .settings, extra: nil),
             AppShortcut(name: "Trusted Contacts", subtitle: "Trusted people for property",
                         synonyms: ["trusted", "contact", "contacts", "incredere", "încredere", "persoane de contact"],
                         icon: "person.badge.shield.checkmark.fill", color: .purple, tab: .settings, extra: nil),
@@ -564,7 +671,83 @@ struct GlobalSearchSheet: View {
         }
     }
 
+    @ViewBuilder private var chatSectionView: some View {
+        if !chatHits.isEmpty {
+            resultSection("Chat", icon: "bubble.left.and.bubble.right.fill", color: .blue) {
+                ForEach(chatHits) { hit in
+                    resultRow(hit.body ?? "", subtitle: hit.senderName ?? "",
+                              icon: "bubble.left.fill", color: .blue,
+                              isLast: hit.id == chatHits.last?.id) {
+                        navigateAway(to: .chat)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var contractorsSectionView: some View {
+        if !contractorResults.isEmpty {
+            resultSection("Contractors", icon: "wrench.and.screwdriver.fill", color: .orange) {
+                ForEach(contractorResults.prefix(8)) { c in
+                    resultRow(c.name, subtitle: c.category,
+                              icon: "wrench.and.screwdriver.fill", color: .orange,
+                              isLast: c.id == contractorResults.prefix(8).last?.id) {
+                        navigateAway(to: .digitalTwin) { r in r.showContractors = true }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var zonesSectionView: some View {
+        if !zoneResults.isEmpty {
+            resultSection("Property Zones", icon: "square.grid.2x2.fill", color: .teal) {
+                ForEach(zoneResults.prefix(8)) { z in
+                    resultRow(z.name, subtitle: z.notes ?? "",
+                              icon: z.icon, color: Color(hex: z.colorHex) ?? .teal,
+                              isLast: z.id == zoneResults.prefix(8).last?.id) {
+                        navigateAway(to: .digitalTwin)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var paintSectionView: some View {
+        if !paintResults.isEmpty {
+            resultSection("Paint Colors", icon: "paintpalette.fill", color: .pink) {
+                ForEach(paintResults.prefix(8)) { p in
+                    resultRow(p.colorName, subtitle: paintSubtitle(p),
+                              icon: "paintpalette.fill",
+                              color: Color(hex: p.hexColor ?? "") ?? .pink,
+                              isLast: p.id == paintResults.prefix(8).last?.id) {
+                        navigateAway(to: .home)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var journalSectionView: some View {
+        if !journalResults.isEmpty {
+            resultSection("Photo Journal", icon: "photo.fill", color: .pink) {
+                ForEach(journalResults.prefix(8)) { e in
+                    resultRow(e.title, subtitle: e.caption ?? "",
+                              icon: "photo.fill", color: .pink,
+                              isLast: e.id == journalResults.prefix(8).last?.id) {
+                        navigateAway(to: .home)
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Subtitle helpers (extracted to avoid type-checker timeout)
+
+    private func paintSubtitle(_ p: PaintColor) -> String {
+        let parts: [String?] = [p.roomName, p.brand, p.code]
+        return parts.compactMap { $0 }.joined(separator: " · ")
+    }
 
     private func applianceSubtitle(_ a: Appliance) -> String {
         let parts: [String?] = [a.brand, a.category.displayName]
@@ -598,10 +781,10 @@ struct GlobalSearchSheet: View {
         let body = content()
         return VStack(alignment: .leading, spacing: 8) {
             Label(LocalizedStringKey(title), systemImage: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(color)
                 .tracking(0.5)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
             GlassCard(padding: 0) {
                 VStack(spacing: 0) { body }
             }
@@ -615,16 +798,16 @@ struct GlobalSearchSheet: View {
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                             .fill(color.opacity(0.14))
                             .frame(width: 30, height: 30)
                         Image(systemName: icon)
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(AppFont.captionStrong)
                             .foregroundStyle(color)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         if !subtitle.isEmpty {
@@ -639,7 +822,7 @@ struct GlobalSearchSheet: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.22))
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 11)
                 if !isLast {
                     Rectangle()

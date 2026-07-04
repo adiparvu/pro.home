@@ -23,11 +23,11 @@ struct QuickActionButton: View {
                     .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.7))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 110)
-            .padding(14)
+            .padding(AppSpacing.base)
             .background(
                 LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
                 in: RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -66,7 +66,7 @@ struct ScanCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(scan.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(scan.kindLabel))
@@ -76,9 +76,9 @@ struct ScanCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
         }
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 }
 
@@ -125,13 +125,13 @@ struct AddPlanSheet: View {
                         kindPicker
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Add Plan").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -139,7 +139,7 @@ struct AddPlanSheet: View {
                         onSave(name, kind, data, pickedExt, pickedFormat)
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(canSave ? Color.accentColor : Color.primary.opacity(0.3))
                     .disabled(!canSave)
                 }
@@ -205,11 +205,11 @@ struct AddPlanSheet: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.caption)
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, AppSpacing.lg)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5))
         }
@@ -227,10 +227,10 @@ struct AddPlanSheet: View {
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "doc.richtext.fill").foregroundStyle(.red).font(.system(size: 22))
-                    Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.7))
+                    Text("PDF ready to save").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                     Spacer()
                 }
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
             }
         }
@@ -242,22 +242,22 @@ struct AddPlanSheet: View {
             TextField("Name", text: $name)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var kindPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("CATEGORY").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("CATEGORY").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(kinds, id: \.self) { k in
                         Button { kind = k } label: {
                             Text(LocalizedStringKey(kindLabel(k)))
                                 .font(.system(size: 13, weight: kind == k ? .semibold : .regular))
-                                .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(0.7))
-                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .foregroundStyle(kind == k ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
+                                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                                 .background(kind == k ? Color.white : Color.primary.opacity(0.08), in: Capsule())
                         }.buttonStyle(.plain)
                     }

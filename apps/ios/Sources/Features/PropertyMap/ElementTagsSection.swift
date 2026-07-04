@@ -5,7 +5,7 @@ import SwiftUI
 struct ElementTagsSection: View {
     let elementId: UUID
 
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyElementService.self) private var elementService
     @State private var newTag = ""
 
     private var element: PropertyElement? { elementService.elements.first { $0.id == elementId } }
@@ -27,9 +27,10 @@ struct ElementTagsSection: View {
                                             Image(systemName: "xmark.circle.fill").font(.system(size: 12))
                                         }
                                         .buttonStyle(.plain)
+                                        .accessibilityLabel("Remove tag \(tag)")
                                     }
                                     .foregroundStyle(Color.accentColor)
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .padding(.horizontal, 10).padding(.vertical, AppSpacing.xs)
                                     .background(Color.accentColor.opacity(0.12), in: Capsule())
                                 }
                             }
@@ -42,13 +43,14 @@ struct ElementTagsSection: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .padding(10)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             .onSubmit { add(el) }
                         Button { add(el) } label: {
                             Image(systemName: "plus.circle.fill").font(.system(size: 22)).foregroundStyle(Color.accentColor)
                         }
                         .buttonStyle(.plain)
                         .disabled(newTag.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityLabel("Add tag")
                     }
                 }
             }

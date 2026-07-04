@@ -3,11 +3,11 @@ import SwiftUI
 /// ARIA insights for the Digital Twin — a quick rule-based summary of the
 /// property plus an on-demand AI analysis via the aria-chat edge function.
 struct TwinInsightsSheet: View {
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AppSettings.self) private var appSettings
     @Environment(\.dismiss) private var dismiss
 
     @State private var aiReply: String?
@@ -24,7 +24,7 @@ struct TwinInsightsSheet: View {
 
     private var healthColor: Color {
         switch avgHealth {
-        case 80...:   return Color(red: 0.2, green: 0.8, blue: 0.45)
+        case 80...:   return Color.brandSuccess
         case 50..<80: return .orange
         default:      return .red
         }
@@ -39,7 +39,7 @@ struct TwinInsightsSheet: View {
                     if !critical.isEmpty { criticalCard }
                     aiCard
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("\(assistantName) Insights")
@@ -59,7 +59,7 @@ struct TwinInsightsSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(
-                    LinearGradient(colors: [Color(red: 0.6, green: 0.35, blue: 0.95),
+                    LinearGradient(colors: [Color.brandPurple,
                                             Color(red: 0.35, green: 0.4, blue: 0.95)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -89,20 +89,20 @@ struct TwinInsightsSheet: View {
 
     private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundStyle(color)
+            Image(systemName: icon).font(AppFont.headline).foregroundStyle(color)
             Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(.primary)
             Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(AppSpacing.base)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     private var criticalCard: some View {
         GlassCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Needs attention", systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.orange)
                 ForEach(critical.prefix(5)) { obj in
                     HStack(spacing: 10) {
@@ -123,8 +123,8 @@ struct TwinInsightsSheet: View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Label("\(assistantName) Analysis", systemImage: "sparkles")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.brandPurple)
 
                 if let aiReply {
                     Text(LocalizedStringKey(aiReply))
@@ -149,12 +149,12 @@ struct TwinInsightsSheet: View {
                         Image(systemName: "sparkles")
                         Text(aiReply == nil ? String(localized: "Ask") + " \(assistantName)" : String(localized: "Re-analyze"))
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
                     .background(
-                        LinearGradient(colors: [Color(red: 0.6, green: 0.35, blue: 0.95),
+                        LinearGradient(colors: [Color.brandPurple,
                                                 Color(red: 0.35, green: 0.4, blue: 0.95)],
                                        startPoint: .leading, endPoint: .trailing),
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))

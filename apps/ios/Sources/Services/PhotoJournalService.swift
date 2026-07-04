@@ -1,10 +1,12 @@
 import Foundation
+import Observation
 
 @MainActor
-final class PhotoJournalService: ObservableObject {
-    @Published var entries: [PhotoJournalEntry] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PhotoJournalService {
+    var entries: [PhotoJournalEntry] = []
+    var isLoading = false
+    var error: String?
 
     var entriesByZone: [UUID?: [PhotoJournalEntry]] {
         Dictionary(grouping: entries, by: { $0.zoneId })

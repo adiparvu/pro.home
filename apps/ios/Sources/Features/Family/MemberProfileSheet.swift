@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MemberProfileSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     let member: FamilyMember
     @State private var showEdit = false
@@ -29,18 +29,18 @@ struct MemberProfileSheet: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.md)
                 }
             }
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Close") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Edit") { showEdit = true }
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                        .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
             .sheet(isPresented: $showEdit, onDismiss: {
@@ -64,9 +64,9 @@ struct MemberProfileSheet: View {
                 .foregroundStyle(.primary)
             Text(LocalizedStringKey(resolvedMember.roleLabel))
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(resolvedMember.swiftColor)
-                .padding(.horizontal, 12).padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xxs)
                 .background(resolvedMember.swiftColor.opacity(0.12), in: Capsule())
         }
     }
@@ -74,7 +74,7 @@ struct MemberProfileSheet: View {
     private var quickActions: some View {
         HStack(spacing: 12) {
             if let phone = resolvedMember.phone, !phone.isEmpty {
-                profileActionBtn(icon: "phone.fill", label: "Call", color: Color(red: 0.2, green: 0.8, blue: 0.4)) {
+                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
                 profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
@@ -108,14 +108,14 @@ struct MemberProfileSheet: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(color)
                     .frame(width: 52, height: 52)
                     .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(color.opacity(0.2), lineWidth: 0.5))
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))
             }
         }
@@ -134,15 +134,15 @@ struct MemberProfileSheet: View {
                     }
                 }
                 if let phone = resolvedMember.phone, !phone.isEmpty {
-                    contactRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), value: phone)
+                    contactRow(icon: "phone.fill", color: Color.brandSuccess, value: phone)
                     if resolvedMember.birthday != nil { divider }
                 }
                 if let bd = resolvedMember.birthdayDate {
                     contactRow(icon: "gift.fill", color: .pink, value: formatted(bd))
                 }
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
@@ -164,6 +164,7 @@ struct MemberProfileSheet: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(link.platformLabel) profile")
                 }
             }
         }
@@ -175,7 +176,7 @@ struct MemberProfileSheet: View {
             Text(value).font(.system(size: 14)).foregroundStyle(.primary)
             Spacer()
         }
-        .padding(.horizontal, 14).padding(.vertical, 11)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
     }
 
     private var divider: some View {
@@ -184,9 +185,9 @@ struct MemberProfileSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color.primary.opacity(0.35))
-            .padding(.leading, 4)
+            .font(AppFont.label)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .padding(.leading, AppSpacing.xxs)
     }
 
     private func formatted(_ date: Date) -> String {

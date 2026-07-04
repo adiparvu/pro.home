@@ -25,9 +25,9 @@ let supplyPriorities: [(id: String, label: String)] = [
 enum ExpenseTab: Hashable { case overview, lists, toBuy, completed }
 
 struct SuppliesView: View {
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
 
     @State private var activeTab: ExpenseTab = .overview
     @State private var showAddList = false
@@ -51,8 +51,8 @@ struct SuppliesView: View {
             )
 
             tabBar
-                .padding(.horizontal, 20)
-                .padding(.bottom, 4)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.bottom, AppSpacing.xxs)
 
             Divider().opacity(0.2)
 
@@ -65,9 +65,9 @@ struct SuppliesView: View {
                     showBudgets: $showBudgets,
                     showReports: $showReports
                 )
-                .environmentObject(receiptService)
-                .environmentObject(propertyService)
-                .environmentObject(supplyService)
+                .environment(receiptService)
+                .environment(propertyService)
+                .environment(supplyService)
             case .lists:
                 shoppingListsContent
             case .toBuy:
@@ -83,8 +83,9 @@ struct SuppliesView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if activeTab == .lists {
                     Button { showAddList = true; HapticFeedback.impact(.light) } label: {
-                        Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary)
+                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Add list")
                 } else {
                     Menu {
                         Button { showScanner = true; HapticFeedback.impact(.light) } label: {
@@ -101,25 +102,25 @@ struct SuppliesView: View {
                             Label(String(localized: "expense_reports"), systemImage: "chart.bar.doc.horizontal")
                         }
                     } label: {
-                        Image(systemName: "plus").font(.system(size: 18, weight: .semibold)).foregroundStyle(.primary)
+                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                     }
                 }
             }
         }
         .sheet(isPresented: $showAddList) {
-            AddSupplyListSheet().environmentObject(supplyService).environmentObject(propertyService)
+            AddSupplyListSheet().environment(supplyService).environment(propertyService)
         }
         .sheet(isPresented: $showScanner) {
-            ReceiptScannerView().environmentObject(receiptService).environmentObject(propertyService)
+            ReceiptScannerView().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showAddReceipt) {
-            AddReceiptSheet().environmentObject(receiptService).environmentObject(propertyService)
+            AddReceiptSheet().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showBudgets) {
-            BudgetManagementView().environmentObject(receiptService).environmentObject(propertyService)
+            BudgetManagementView().environment(receiptService).environment(propertyService)
         }
         .sheet(isPresented: $showReports) {
-            SpendingReportView().environmentObject(receiptService)
+            SpendingReportView().environment(receiptService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -163,13 +164,13 @@ struct SuppliesView: View {
                             .frame(height: 2).clipShape(Capsule())
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                 }
                 .buttonStyle(.plain)
             }
         }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 1)
         }
     }
 
@@ -196,7 +197,7 @@ struct SuppliesView: View {
                 if supplyService.totalPending > 0 { urgentSection }
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20).padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -208,16 +209,16 @@ struct SuppliesView: View {
     private var listsGrid: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "supply_section_lists"))
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                 ForEach(supplyService.lists) { list in
                     NavigationLink(destination:
                         SupplyListDetailView(list: list)
-                            .environmentObject(supplyService)
-                            .environmentObject(propertyService)
+                            .environment(supplyService)
+                            .environment(propertyService)
                     ) {
-                        SupplyListCard(list: list).environmentObject(supplyService)
+                        SupplyListCard(list: list).environment(supplyService)
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -233,7 +234,7 @@ struct SuppliesView: View {
     private var urgentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("URGENT")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
                     let urgent = supplyService.items
@@ -254,16 +255,16 @@ struct SuppliesView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(item.categoryColor.opacity(0.14)).frame(width: 30, height: 30)
-                    Image(systemName: item.categoryIcon).font(.system(size: 13, weight: .semibold)).foregroundStyle(item.categoryColor)
+                    Image(systemName: item.categoryIcon).font(AppFont.captionEmphasis).foregroundStyle(item.categoryColor)
                 }
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                    Text(item.name).font(AppFont.footnote).foregroundStyle(.primary)
                     Text(listName).font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(item.priorityColor).frame(width: 3, height: 22)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
             if !isLast { Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 54) }
         }
     }
@@ -279,7 +280,7 @@ struct SuppliesView: View {
                     Image(systemName: "cart.badge.checkmark")
                         .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_all_done"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -299,10 +300,10 @@ struct SuppliesView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
         }
@@ -317,7 +318,7 @@ struct SuppliesView: View {
                     Image(systemName: "tray")
                         .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.12))
                     Text(String(localized: "supply_empty_title"))
-                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -337,10 +338,10 @@ struct SuppliesView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
         }
@@ -352,11 +353,11 @@ struct SuppliesView: View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "cart.badge.plus").font(.system(size: 56)).foregroundStyle(Color.primary.opacity(0.12))
-            Text(String(localized: "supply_empty_title")).font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
-            Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center)
+            Text(String(localized: "supply_empty_title")).font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
+            Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center)
             Button { showAddList = true } label: {
                 Label(String(localized: "supply_add_first"), systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                    .font(AppFont.subheadline).foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 13)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -374,7 +375,7 @@ struct SuppliesView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "house.slash").font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
-            Text("No property added").font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No property added").font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -384,7 +385,7 @@ struct SuppliesView: View {
 // MARK: - List card
 
 struct SupplyListCard: View {
-    @EnvironmentObject private var supplyService: SupplyService
+    @Environment(SupplyService.self) private var supplyService
     let list: SupplyList
 
     var body: some View {
@@ -396,16 +397,16 @@ struct SupplyListCard: View {
                         startPoint: .topLeading, endPoint: .bottomTrailing
                     ).frame(height: 72)
                     Image(systemName: list.icon)
-                        .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(14)
+                        .font(.system(size: 28, weight: .semibold)).foregroundStyle(.white.opacity(0.92)).padding(AppSpacing.base)
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(list.name).font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary).lineLimit(1)
+                    Text(list.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
                     let pending = supplyService.pendingCount(for: list.id)
                     Text(pending == 0 ? String(localized: "supply_all_done") : "\(pending) \(String(localized: "supply_to_buy_short"))")
                         .font(.system(size: 11))
-                        .foregroundStyle(pending == 0 ? Color(red: 0.2, green: 0.78, blue: 0.45) : Color.primary.opacity(0.45))
+                        .foregroundStyle(pending == 0 ? Color.brandSuccess : Color.primary.opacity(AppOpacity.secondaryText))
                 }
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             }
         }
     }
@@ -427,7 +428,7 @@ struct SupplyItemRow: View {
                     Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
                         .foregroundStyle(item.isCompleted
-                            ? Color(red: 0.2, green: 0.78, blue: 0.45)
+                            ? Color.brandSuccess
                             : Color.primary.opacity(0.28))
                         .symbolEffect(.bounce, value: item.isCompleted)
                 }
@@ -436,22 +437,22 @@ struct SupplyItemRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.name)
-                            .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(0.35) : .primary)
+                            .font(.system(size: 15)).foregroundStyle(item.isCompleted ? Color.primary.opacity(AppOpacity.disabled) : .primary)
                             .strikethrough(item.isCompleted, color: .secondary).lineLimit(1)
                         if let qty = item.quantity, !qty.isEmpty {
-                            Text(qty).font(.system(size: 11, weight: .semibold)).foregroundStyle(item.categoryColor)
-                                .padding(.horizontal, 6).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
+                            Text(qty).font(AppFont.label).foregroundStyle(item.categoryColor)
+                                .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2).background(item.categoryColor.opacity(0.12), in: Capsule())
                         }
                     }
                     if let loc = item.location, !loc.isEmpty {
-                        Label(loc, systemImage: "mappin.circle").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
+                        Label(loc, systemImage: "mappin.circle").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     }
                 }
                 Spacer()
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(item.isCompleted ? Color.clear : item.priorityColor).frame(width: 3, height: 24)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
             .contextMenu {
                 Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
@@ -469,7 +470,7 @@ struct SupplyItemRow: View {
                 Label(LocalizedStringKey(item.isCompleted ? "Undo" : "Complete"),
                       systemImage: item.isCompleted ? "arrow.uturn.backward" : "checkmark")
             }
-            .tint(item.isCompleted ? .orange : Color(red: 0.2, green: 0.78, blue: 0.45))
+            .tint(item.isCompleted ? .orange : Color.brandSuccess)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) { onDelete() } label: { Label("Delete", systemImage: "trash") }

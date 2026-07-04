@@ -29,7 +29,7 @@ final class ApplePayService: NSObject, ObservableObject {
         let request = PKPaymentRequest()
         request.merchantIdentifier = Self.merchantID
         request.supportedNetworks = Self.supportedNetworks
-        request.merchantCapabilities = .capability3DS
+        request.merchantCapabilities = .threeDSecure
         request.countryCode = countryCode
         request.currencyCode = currency
         request.paymentSummaryItems = [
@@ -79,6 +79,7 @@ extension ApplePayService: PKPaymentAuthorizationViewControllerDelegate {
     }
 
     nonisolated func paymentAuthorizationViewControllerDidFinish(_ controller: PKPaymentAuthorizationViewController) {
-        controller.dismiss(animated: true)
+        // PassKit delivers this delegate callback on the main thread.
+        MainActor.assumeIsolated { controller.dismiss(animated: true) }
     }
 }

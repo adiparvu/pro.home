@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - SeasonalChecklistView
 
 struct SeasonalChecklistView: View {
-    @StateObject var service = SeasonalChecklistService()
+    @State private var service = SeasonalChecklistService()
     @State var selectedSeason: Season = .current
     @State private var showAddSheet = false
     @State private var editingItem: CustomSeasonalItem?
@@ -35,8 +35,8 @@ struct SeasonalChecklistView: View {
                     checklistContent
                     Spacer(minLength: 110)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md)
             }
         }
         .navigationTitle("Seasonal Checklists")
@@ -51,6 +51,7 @@ struct SeasonalChecklistView: View {
                         .font(.system(size: 17, weight: .semibold))
                 }
                 .tint(.accentColor)
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -91,9 +92,9 @@ struct SeasonalChecklistView: View {
                         .padding(.vertical, 10)
                         .background {
                             if selectedSeason == season {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     .fill(.regularMaterial)
-                                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(season.color.opacity(0.5), lineWidth: 1))
                             }
                         }
@@ -121,9 +122,9 @@ struct SeasonalChecklistView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("\(completedCount) of \(totalCount) done")
-                        .font(.system(size: 16, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.headline).foregroundStyle(.primary)
                     Text("\(selectedSeason.displayName) maintenance checklist")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
@@ -144,7 +145,7 @@ struct SeasonalChecklistView: View {
                 Spacer()
             }
         }
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
             .strokeBorder(selectedSeason.color.opacity(0.35), lineWidth: 1))
     }
 
@@ -162,9 +163,9 @@ struct SeasonalChecklistView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey(category))
                 .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 6)
+                .padding(.leading, AppSpacing.xs)
 
             GlassCard(padding: 0) {
                 LazyVStack(spacing: 0) {
@@ -197,9 +198,9 @@ struct SeasonalChecklistView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.title)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(done ? Color.primary.opacity(0.35) : .primary)
-                            .strikethrough(done, color: Color.primary.opacity(0.35))
+                            .font(AppFont.body)
+                            .foregroundStyle(done ? Color.primary.opacity(AppOpacity.disabled) : .primary)
+                            .strikethrough(done, color: Color.primary.opacity(AppOpacity.disabled))
                             .animation(.easeInOut(duration: 0.2), value: done)
                         if item.isCustom {
                             Image(systemName: "pencil.circle.fill")
@@ -216,7 +217,7 @@ struct SeasonalChecklistView: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, 13)
             .contentShape(Rectangle())
         }
@@ -267,44 +268,44 @@ struct AddCustomSeasonalItemSheet: View {
                         // Title
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Title")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
                             TextField("What needs to be done?", text: $title)
                                 .font(.system(size: 16))
-                                .padding(14)
-                                .background(Color.primary.opacity(0.07),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .padding(AppSpacing.base)
+                                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         }
 
                         // Description
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Description (optional)")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
                             TextField("Add details…", text: $description, axis: .vertical)
                                 .font(.system(size: 15))
                                 .lineLimit(3...5)
-                                .padding(14)
-                                .background(Color.primary.opacity(0.07),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .padding(AppSpacing.base)
+                                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                         }
 
                         // Category
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Category")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.captionStrong)
                                 .textCase(.uppercase)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, 4)
+                                .padding(.leading, AppSpacing.xxs)
                             TextField("E.g. Plumbing, Safety, Custom…", text: $category)
                                 .font(.system(size: 15))
-                                .padding(14)
-                                .background(Color.primary.opacity(0.07),
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .padding(AppSpacing.base)
+                                .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
 
                             // Quick picks
                             if !existingCategories.isEmpty {
@@ -316,8 +317,8 @@ struct AddCustomSeasonalItemSheet: View {
                                             } label: {
                                                 Text(LocalizedStringKey(cat))
                                                     .font(.system(size: 12, weight: category == cat ? .semibold : .regular))
-                                                    .foregroundStyle(category == cat ? .white : Color.primary.opacity(0.7))
-                                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                                    .foregroundStyle(category == cat ? .white : Color.primary.opacity(AppOpacity.emphasis))
+                                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                                                     .background(category == cat ? season.color : Color.primary.opacity(0.08),
                                                                 in: Capsule())
                                             }
@@ -351,9 +352,9 @@ struct AddCustomSeasonalItemSheet: View {
                             dismiss()
                         } label: {
                             Text(isEditing ? "Save Changes" : "Add Item")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(AppFont.headline)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
+                                .padding(.vertical, AppSpacing.lg)
                                 .background(canSave ? season.color : Color.primary.opacity(0.3),
                                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 .foregroundStyle(canSave ? .white : Color.primary.opacity(0.4))
@@ -363,8 +364,8 @@ struct AddCustomSeasonalItemSheet: View {
 
                         Spacer(minLength: 24)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(isEditing ? "Edit Item" : "New Item")

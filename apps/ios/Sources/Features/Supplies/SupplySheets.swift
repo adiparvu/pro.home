@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Add supply list sheet
 
 struct AddSupplyListSheet: View {
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -32,7 +32,7 @@ struct AddSupplyListSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New List")
@@ -58,14 +58,14 @@ struct AddSupplyListSheet: View {
                     Image(systemName: selectedIcon)
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.92))
-                        .padding(14)
+                        .padding(AppSpacing.base)
                 }
                 Group {
                     if name.isEmpty { Text("List name") } else { Text(name) }
                 }
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(name.isEmpty ? Color.primary.opacity(0.3) : .primary)
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
             }
         }
         .frame(width: 150)
@@ -75,44 +75,44 @@ struct AddSupplyListSheet: View {
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NAME")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             TextField("e.g. Supermarket, Garden, Bathroom…", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("NOTE (OPTIONAL)")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             TextField("Note about this list…", text: $note, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .lineLimit(2...4).padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .lineLimit(2...4).padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
     private var iconPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ICON")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             let color = Color(hex: selectedColor) ?? .blue
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
                 ForEach(iconOptions, id: \.self) { icon in
                     Button { selectedIcon = icon; HapticFeedback.selection() } label: {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(selectedIcon == icon ? color.opacity(0.18) : Color.primary.opacity(0.07))
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                                .fill(selectedIcon == icon ? color.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
                                 .frame(height: 52)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                         .strokeBorder(selectedIcon == icon ? color : Color.clear, lineWidth: 2)
                                 )
                             Image(systemName: icon)
                                 .font(.system(size: 22, weight: .medium))
-                                .foregroundStyle(selectedIcon == icon ? color : Color.primary.opacity(0.5))
+                                .foregroundStyle(selectedIcon == icon ? color : Color.primary.opacity(AppOpacity.mediumText))
                         }
                     }
                     .buttonStyle(.plain)
@@ -124,7 +124,7 @@ struct AddSupplyListSheet: View {
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("COLOR")
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                .font(AppFont.label).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(SupplyList.colorOptions, id: \.hex) { opt in
                     let c = Color(hex: opt.hex) ?? .blue
@@ -181,14 +181,14 @@ struct AddSupplyListSheet: View {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
                     Text("Create list")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 52)
             .background(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.2)
                 : Color.primary,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.4)
                 : Color(UIColor.systemBackground))

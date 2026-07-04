@@ -10,6 +10,7 @@ struct PRVIOWidgetEntry: TimelineEntry {
     let snapshot: PRVIOWidgetSnapshot
     let taskCatalog: [TaskCatalogEntry]
     let plantCatalog: [PlantCatalogEntry]
+    var supplyCatalog: [SupplyCatalogEntry] = []
 }
 
 // MARK: - Shared Timeline Provider
@@ -26,7 +27,8 @@ struct PRVIOTimelineProvider: TimelineProvider {
             relevance: relevance,
             snapshot: snap,
             taskCatalog: SharedDataStore.readTaskCatalog(),
-            plantCatalog: SharedDataStore.readPlantCatalog()
+            plantCatalog: SharedDataStore.readPlantCatalog(),
+            supplyCatalog: SharedDataStore.readSupplyCatalog()
         )
     }
 
@@ -47,6 +49,7 @@ struct PRVIOTimelineProvider: TimelineProvider {
 @main
 struct PRVIOWidgetBundle: WidgetBundle {
     var body: some Widget {
+        BrandWidget()
         TasksWidget()
         PlantsWidget()
         DashboardWidget()
@@ -54,6 +57,10 @@ struct PRVIOWidgetBundle: WidgetBundle {
         LockScreenTasksWidget()
         LockScreenPlantsWidget()
         LockScreenDashboardWidget()
+        LockScreenHealthWidget()
+        LockScreenDeliveriesWidget()
+        LockScreenMessagesWidget()
+        LockScreenNextTaskWidget()
         // Live Activities
         ShoppingLiveActivity()
         MaintenanceLiveActivity()

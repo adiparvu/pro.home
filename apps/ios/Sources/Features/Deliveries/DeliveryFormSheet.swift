@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - DeliveryFormSheet (Add + Edit)
 
 struct DeliveryFormSheet: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(DeliveryService.self) private var deliveryService
     @Environment(\.dismiss) private var dismiss
 
     let editingDelivery: Delivery?
@@ -67,8 +67,8 @@ struct DeliveryFormSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(isEditing ? String(localized: "Edit delivery") : String(localized: "New delivery"))
@@ -90,10 +90,10 @@ struct DeliveryFormSheet: View {
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -107,10 +107,10 @@ struct DeliveryFormSheet: View {
                 .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.characters)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -123,10 +123,10 @@ struct DeliveryFormSheet: View {
                 .foregroundStyle(.primary)
                 .tint(.accentColor)
                 .lineLimit(2...4)
-                .padding(14)
+                .padding(AppSpacing.base)
                 .background(
-                    Color.primary.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    Color.primary.opacity(AppOpacity.subtleFill),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 )
         }
     }
@@ -146,10 +146,10 @@ struct DeliveryFormSheet: View {
                             Text(c)
                                 .font(.system(size: 13, weight: carrier == c ? .semibold : .regular))
                                 .foregroundStyle(carrier == c ? .white : Color.primary.opacity(0.65))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, AppSpacing.base)
+                                .padding(.vertical, AppSpacing.sm)
                                 .background(
-                                    carrier == c ? Color.accentColor : Color.primary.opacity(0.07),
+                                    carrier == c ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                     in: Capsule()
                                 )
                         }
@@ -178,7 +178,7 @@ struct DeliveryFormSheet: View {
                                     .fill(statusColor(for: opt.id).opacity(0.15))
                                     .frame(width: 32, height: 32)
                                 Image(systemName: statusIcon(for: opt.id))
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                     .foregroundStyle(statusColor(for: opt.id))
                             }
                             Text(LocalizedStringKey(opt.label))
@@ -187,12 +187,12 @@ struct DeliveryFormSheet: View {
                             Spacer()
                             if status == opt.id {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(AppFont.captionEmphasis)
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -205,7 +205,7 @@ struct DeliveryFormSheet: View {
                     }
                 }
             }
-            .liquidGlass(cornerRadius: 16)
+            .liquidGlass(cornerRadius: AppRadius.lg)
         }
     }
 
@@ -213,7 +213,7 @@ struct DeliveryFormSheet: View {
         switch id {
         case "expected":         return .blue
         case "out_for_delivery": return .orange
-        case "delivered":        return Color(red: 0.2, green: 0.80, blue: 0.4)
+        case "delivered":        return Color.brandSuccess
         case "missed":           return .red
         case "returned":         return .gray
         default:                 return .gray
@@ -278,14 +278,14 @@ struct DeliveryFormSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text(LocalizedStringKey(isEditing ? "Save changes" : "Add delivery"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
                 canSave ? Color.accentColor : Color.primary.opacity(0.2),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             )
             .foregroundStyle(
                 canSave ? Color.white : Color.primary.opacity(0.4)
@@ -299,7 +299,7 @@ struct DeliveryFormSheet: View {
 
     private func fieldLabel(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
     }
 

@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - DeliveriesView
 
 struct DeliveriesView: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showAddDelivery = false
     @State private var editingDelivery: Delivery? = nil
@@ -30,18 +30,19 @@ struct DeliveriesView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add delivery")
             }
         }
         .sheet(isPresented: $showAddDelivery) {
             DeliveryFormSheet(editingDelivery: nil)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
         .sheet(item: $editingDelivery) { delivery in
             DeliveryFormSheet(editingDelivery: delivery)
-                .environmentObject(deliveryService)
+                .environment(deliveryService)
         }
     }
 
@@ -60,8 +61,8 @@ struct DeliveriesView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(
@@ -96,7 +97,7 @@ struct DeliveriesView: View {
                 .frame(width: 1, height: 14)
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(red: 0.2, green: 0.80, blue: 0.4))
+                    .fill(Color.brandSuccess)
                     .frame(width: 8, height: 8)
                 Text("\(delivered) delivered")
                     .font(.system(size: 13, weight: .medium))
@@ -111,7 +112,7 @@ struct DeliveriesView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(.orange)
                     Text("\(deliveryService.todayDeliveries.count) today")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(.orange)
                 }
             }
@@ -128,21 +129,21 @@ struct DeliveriesView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(Color.accentColor)
                 Text("IN PROGRESS · \(deliveryService.activeDeliveries.count)")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 10) {
                 ForEach(deliveryService.activeDeliveries) { delivery in
                     DeliveryRow(delivery: delivery) {
                         editingDelivery = delivery
                     }
-                    .environmentObject(deliveryService)
+                    .environment(deliveryService)
                 }
             }
         }
@@ -150,11 +151,10 @@ struct DeliveriesView: View {
 
     // MARK: - Completed section
 
+    @ViewBuilder
     private var completedSection: some View {
         let completed = deliveryService.deliveries.filter { !$0.isActive }
-        guard !completed.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
+        if !completed.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Button {
                     withAnimation(.spring(response: 0.35)) { showCompleted.toggle() }
@@ -164,12 +164,12 @@ struct DeliveriesView: View {
                         Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
                             .font(.system(size: 10, weight: .semibold))
                         Text("DELIVERED · \(completed.count)")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .tracking(0.5)
                         Spacer()
                     }
-                    .foregroundStyle(Color(red: 0.2, green: 0.80, blue: 0.4))
-                    .padding(.leading, 4)
+                    .foregroundStyle(Color.brandSuccess)
+                    .padding(.leading, AppSpacing.xxs)
                 }
                 .buttonStyle(.plain)
 
@@ -179,13 +179,13 @@ struct DeliveriesView: View {
                             DeliveryRow(delivery: delivery) {
                                 editingDelivery = delivery
                             }
-                            .environmentObject(deliveryService)
+                            .environment(deliveryService)
                         }
                     }
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-        )
+        }
     }
 
     // MARK: - Empty state
@@ -197,15 +197,15 @@ struct DeliveriesView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No deliveries tracked")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add packages to track\nyour deliveries.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
             Button { showAddDelivery = true } label: {
                 Label("Add first delivery", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -225,7 +225,7 @@ struct DeliveriesView: View {
 // MARK: - DeliveryRow
 
 struct DeliveryRow: View {
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(DeliveryService.self) private var deliveryService
     let delivery: Delivery
     let onEdit: () -> Void
 
@@ -237,13 +237,13 @@ struct DeliveryRow: View {
                         .fill(delivery.statusColor.opacity(0.15))
                         .frame(width: 44, height: 44)
                     Image(systemName: delivery.statusIcon)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(delivery.statusColor)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(delivery.description)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -259,7 +259,7 @@ struct DeliveryRow: View {
                                 .foregroundStyle(Color.primary.opacity(0.3))
                             Text(tn)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
                     }
@@ -268,7 +268,7 @@ struct DeliveryRow: View {
                         HStack(spacing: 4) {
                             Image(systemName: "calendar")
                                 .font(.system(size: 10))
-                                .foregroundStyle(Color.primary.opacity(0.35))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             Text(expected)
                                 .font(.system(size: 11))
                                 .foregroundStyle(
@@ -283,7 +283,7 @@ struct DeliveryRow: View {
                 Spacer()
 
                 Text(LocalizedStringKey(delivery.statusLabel))
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(delivery.statusColor)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)

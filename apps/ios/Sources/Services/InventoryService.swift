@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 import UserNotifications
 
 @MainActor
-final class InventoryService: ObservableObject {
-    @Published var items: [InventoryItem] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class InventoryService {
+    var items: [InventoryItem] = []
+    var isLoading = false
+    var error: String?
 
     private(set) var currentPropertyId: UUID?
     private(set) var currentUserId: UUID?
@@ -128,11 +130,11 @@ final class InventoryService: ObservableObject {
                         owner_name: profile.ownerName, owner_phone: profile.ownerPhone,
                         owner_address: profile.ownerAddress, property_name: profile.propertyName,
                         user_id: uid.uuidString)
-        try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
+        _ = try? await supabase.from("public_items").upsert(p, onConflict: "item_uuid").execute()
     }
 
     func removePublicProfile(for item: InventoryItem) async {
-        try? await supabase.from("public_items").delete().eq("item_uuid", value: item.id.uuidString).execute()
+        _ = try? await supabase.from("public_items").delete().eq("item_uuid", value: item.id.uuidString).execute()
     }
 
     var totalValue: Double { items.reduce(0) { $0 + $1.purchasePrice } }

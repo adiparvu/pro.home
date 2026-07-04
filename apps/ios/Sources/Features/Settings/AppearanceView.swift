@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct AppearanceView: View {
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AuthService.self) private var auth
 
     private let accentOptions: [(name: String, color: Color, labelKey: LocalizedStringKey)] = [
         ("blue",   .blue,                                              "Blue"),
@@ -54,8 +54,8 @@ struct AppearanceView: View {
                 currencySection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -102,11 +102,11 @@ struct AppearanceView: View {
                         HStack(spacing: 14) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(0.07))
+                                    .fill(isSelected ? Color.primary.opacity(0.18) : Color.primary.opacity(AppOpacity.subtleFill))
                                     .frame(width: 40, height: 40)
                                 Text(cur.symbol)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.5))
+                                    .font(AppFont.subheadline)
+                                    .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(AppOpacity.mediumText))
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -124,7 +124,7 @@ struct AppearanceView: View {
                             Spacer()
 
                             if currencyService.isLoading && isSelected {
-                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(0.5))
+                                ProgressView().scaleEffect(0.7).tint(Color.primary.opacity(AppOpacity.mediumText))
                             } else if isSelected {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 20))
@@ -136,8 +136,8 @@ struct AppearanceView: View {
                                     .frame(width: 20, height: 20)
                             }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, AppSpacing.base)
+                        .padding(.vertical, AppSpacing.md)
                     }
                     .buttonStyle(.plain)
 
@@ -146,8 +146,8 @@ struct AppearanceView: View {
                     }
                 }
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
 
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -156,19 +156,19 @@ struct AppearanceView: View {
                     .font(.system(size: 11))
             }
             .foregroundStyle(Color.primary.opacity(0.3))
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             Button {
                 Task { await forceFetch() }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                     Text("Refresh rates now")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                 }
                 .foregroundStyle(.tint)
-                .padding(.leading, 4)
+                .padding(.leading, AppSpacing.xxs)
             }
             .buttonStyle(.plain)
             .disabled(currencyService.isLoading)
@@ -197,7 +197,6 @@ struct AppearanceView: View {
                     Toggle("", isOn: Binding(
                         get: { appSettings.accentEnabled },
                         set: { newVal in
-                            appSettings.objectWillChange.send()
                             appSettings.accentEnabled = newVal
                             HapticFeedback.selection()
                             if let uid = auth.session?.user.id { appSettings.syncToProfile(userId: uid) }
@@ -205,10 +204,10 @@ struct AppearanceView: View {
                     ))
                     .labelsHidden().tint(accentPreviewColor)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
 
                 if appSettings.accentEnabled {
-                    Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
 
                 HStack(spacing: 10) {
                     ForEach(accentOptions, id: \.name) { opt in
@@ -253,7 +252,7 @@ struct AppearanceView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 14)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.base)
                 }
             }
         }
@@ -262,7 +261,8 @@ struct AppearanceView: View {
     // MARK: - Haptic
 
     private var hapticSection: some View {
-        SettingsGroup(title: "General") {
+        @Bindable var appSettings = appSettings
+        return SettingsGroup(title: "General") {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: "iphone.radiowaves.left.and.right", color: .orange)
                 VStack(alignment: .leading, spacing: 2) {
@@ -278,15 +278,15 @@ struct AppearanceView: View {
                         if on { HapticFeedback.impact(.medium) }
                     }
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
     }
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color.primary.opacity(0.35))
-            .padding(.leading, 4)
+            .font(AppFont.label)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            .padding(.leading, AppSpacing.xxs)
             .textCase(.uppercase)
     }
 }
@@ -316,7 +316,7 @@ private struct ThemeOptionRow: View {
                         .frame(width: 20, height: 20)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
         .buttonStyle(.plain)
     }

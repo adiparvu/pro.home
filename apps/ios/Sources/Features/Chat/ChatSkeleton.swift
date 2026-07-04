@@ -23,8 +23,8 @@ struct MessageSkeleton: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.top, AppSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .opacity(shimmer ? 0.55 : 1)
         .onAppear {

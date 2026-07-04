@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Sticker Picker (bottom sheet)
 
 struct StickerPicker: View {
-    @EnvironmentObject private var stickerService: StickerService
+    @Environment(StickerService.self) private var stickerService
     let onSelect: (Sticker) -> Void
 
     @State private var selectedCategoryId: String = "recent"
@@ -37,7 +37,7 @@ struct StickerPicker: View {
             categoryTabs
 
             Divider()
-                .background(Color.primary.opacity(0.06))
+                .background(Color.primary.opacity(AppOpacity.hairline))
 
             if displayedStickers.isEmpty {
                 emptyState
@@ -70,9 +70,10 @@ struct StickerPicker: View {
                     .symbolRenderingMode(.hierarchical)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Close")
         }
         .padding(.horizontal, 18)
-        .padding(.bottom, 8)
+        .padding(.bottom, AppSpacing.sm)
     }
 
     private var categoryTabs: some View {
@@ -91,8 +92,8 @@ struct StickerPicker: View {
                     categoryButton(id: cat.id, icon: cat.icon, color: cat.color)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -104,7 +105,7 @@ struct StickerPicker: View {
             let selected = selectedCategoryId == id
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(selected ? color.opacity(0.16) : Color.primary.opacity(0.06))
+                    .fill(selected ? color.opacity(0.16) : Color.primary.opacity(AppOpacity.hairline))
                 Image(systemName: icon)
                     .font(.system(size: 15, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? color : Color.primary.opacity(0.4))
@@ -139,8 +140,8 @@ struct StickerPicker: View {
                     }
                 }
             }
-            .padding(12)
-            .padding(.bottom, 24)
+            .padding(AppSpacing.md)
+            .padding(.bottom, AppSpacing.xxl)
         }
         .transition(.opacity)
         .animation(.easeInOut(duration: 0.18), value: selectedCategoryId)
@@ -190,14 +191,14 @@ struct StickerCell: View {
                         .frame(height: 60)
                         .background(
                             Color.primary.opacity(pressed ? 0.10 : 0.04),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         )
 
                     if isFavorite {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 8))
                             .foregroundStyle(.pink)
-                            .padding(4)
+                            .padding(AppSpacing.xxs)
                     }
                 }
 
@@ -246,7 +247,7 @@ struct StickerBubble: View {
                 .opacity(appeared ? 1.0 : 0.0)
             if let label = sticker?.label {
                 Text(LocalizedStringKey(label))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.38))
                     .opacity(appeared ? 1.0 : 0.0)
             }

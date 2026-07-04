@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Receipt Detail
 
 struct ReceiptDetailView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(ReceiptService.self) private var receiptService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     let receipt: Receipt
@@ -22,7 +22,7 @@ struct ReceiptDetailView: View {
                     deleteButton
                     Spacer(minLength: 40)
                 }
-                .padding(.horizontal, 20).padding(.top, 16)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle(receipt.storeName.isEmpty ? String(localized: "expense_unknown_store") : receipt.storeName)
@@ -49,7 +49,7 @@ struct ReceiptDetailView: View {
         GlassCard(padding: 20) {
             HStack(spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .fill(receipt.categoryColor.opacity(0.15))
                         .frame(width: 60, height: 60)
                     Image(systemName: receipt.categoryIcon)
@@ -67,9 +67,9 @@ struct ReceiptDetailView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                         Text(ReceiptCategory.label(for: receipt.category))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.caption)
                             .foregroundStyle(receipt.categoryColor)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
                             .background(receipt.categoryColor.opacity(0.12), in: Capsule())
                     }
                 }
@@ -78,7 +78,7 @@ struct ReceiptDetailView: View {
 
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(receipt.formattedTotal)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(AppFont.title2)
                         .foregroundStyle(.primary)
                         .monospacedDigit()
                     Text(String(localized: "receipt_total_label"))
@@ -94,7 +94,7 @@ struct ReceiptDetailView: View {
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(String(localized: "receipt_items_section"))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             GlassCard(padding: 0) {
                 VStack(spacing: 0) {
@@ -103,7 +103,7 @@ struct ReceiptDetailView: View {
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.name)
-                                        .font(.system(size: 14, weight: .medium))
+                                        .font(AppFont.footnote)
                                         .foregroundStyle(.primary)
                                         .lineLimit(2)
                                     if item.quantity != 1 {
@@ -114,13 +114,13 @@ struct ReceiptDetailView: View {
                                 }
                                 Spacer()
                                 Text(Receipt.format(item.totalPrice))
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(AppFont.footnoteEmphasis)
                                     .foregroundStyle(.primary)
                                     .monospacedDigit()
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 10)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                             if idx < items.count - 1 {
-                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 14)
+                                Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, AppSpacing.base)
                             }
                         }
                     }
@@ -129,12 +129,12 @@ struct ReceiptDetailView: View {
                     Rectangle().fill(Color.primary.opacity(0.08)).frame(height: 1)
                     HStack {
                         Text(String(localized: "receipt_total_label"))
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                         Spacer()
                         Text(receipt.formattedTotal)
                             .font(.system(size: 15, weight: .bold)).foregroundStyle(.primary).monospacedDigit()
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                 }
             }
         }
@@ -147,11 +147,11 @@ struct ReceiptDetailView: View {
         if let notes = receipt.notes, !notes.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("NOTES")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).padding(.leading, 4)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
                 GlassCard(padding: 14) {
                     Text(notes)
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
@@ -165,11 +165,11 @@ struct ReceiptDetailView: View {
             showDeleteConfirm = true
         } label: {
             Label(String(localized: "receipt_delete"), systemImage: "trash")
-                .font(.system(size: 15, weight: .semibold))
+                .font(AppFont.subheadline)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
                 .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .padding(.top, 4)
+        .padding(.top, AppSpacing.xxs)
     }
 }

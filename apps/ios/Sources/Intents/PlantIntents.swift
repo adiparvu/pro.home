@@ -14,6 +14,8 @@ struct WaterPlantIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         SharedDataStore.appendPendingWatering(plant.id)
+        // Instant widget feedback; Supabase reconciles on next app foreground.
+        SharedDataStore.applyLocalWatering(plant.id)
         WidgetCenter.shared.reloadAllTimelines()
         return .result(dialog: "\(plant.emoji) \(plant.name) has been watered!")
     }
@@ -27,7 +29,7 @@ struct ShowPlantsIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "prvio.intent.showPlants")
+        SharedDataStore.setIntentFlag("prvio.intent.showPlants")
         return .result()
     }
 }

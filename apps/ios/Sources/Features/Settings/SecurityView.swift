@@ -3,7 +3,7 @@ import LocalAuthentication
 import Supabase
 
 struct SecurityView: View {
-    @EnvironmentObject var auth: AuthService
+    @Environment(AuthService.self) var auth
     @AppStorage("prvio.biometrics") var biometricsEnabled = false
     @AppStorage("prvio.lockMode") private var lockModeEnabled = false
     @State var biometricType: LABiometryType = .none
@@ -35,8 +35,8 @@ struct SecurityView: View {
                 dataSection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -94,20 +94,20 @@ struct SecurityView: View {
                     }
                     Spacer()
                     if totpFactorId != nil {
-                        Text("Enabled").font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
+                        Text("Enabled").font(AppFont.captionEmphasis)
+                            .foregroundStyle(Color.brandSuccess)
                     } else {
                         Text("Disabled").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
                     }
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             divider
-            statusRow(icon: "message.fill", color: Color(red: 0.3, green: 0.82, blue: 0.45), title: "Text messages", status: "Coming soon")
+            statusRow(icon: "message.fill", color: Color.brandSuccess, title: "Text messages", status: "Coming soon")
             divider
             Button { showBackupCodes = true } label: {
                 HStack(spacing: 12) {
@@ -120,9 +120,9 @@ struct SecurityView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -144,9 +144,9 @@ struct SecurityView: View {
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -159,9 +159,9 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -174,9 +174,9 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
         }
@@ -202,10 +202,10 @@ struct SecurityView: View {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                     } else {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -223,7 +223,7 @@ struct SecurityView: View {
                 Toggle("", isOn: $lockModeEnabled)
                     .labelsHidden().tint(.purple)
             }
-            .padding(.horizontal, 14).padding(.vertical, 13)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
         }
     }
 
@@ -235,7 +235,7 @@ struct SecurityView: View {
                 HStack(spacing: 12) {
                     ColoredIconBadge(
                         icon: biometricType == .faceID ? "faceid" : "touchid",
-                        color: Color(red: 0.3, green: 0.82, blue: 0.45)
+                        color: Color.brandSuccess
                     )
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LocalizedStringKey(biometricType == .faceID ? "Require Face ID" : "Require Touch ID"))
@@ -250,7 +250,7 @@ struct SecurityView: View {
                             if newVal { Task { await authenticateBiometric() } }
                         }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
 
                 divider
             }
@@ -268,9 +268,9 @@ struct SecurityView: View {
                     Text(autoLockLabel)
                         .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -291,10 +291,10 @@ struct SecurityView: View {
                         ProgressView().scaleEffect(0.8)
                     } else {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                            .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                     }
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
 
@@ -307,9 +307,9 @@ struct SecurityView: View {
                         .font(.system(size: 15)).foregroundStyle(.red)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.primary.opacity(0.28))
+                        .font(AppFont.caption).foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
         }
@@ -320,19 +320,19 @@ struct SecurityView: View {
     private func secGroup<Content: View>(title: LocalizedStringKey, footer: LocalizedStringKey? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
                 .textCase(.uppercase)
 
             VStack(spacing: 0) { content() }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
 
             if let footer {
                 Text(footer)
                     .font(.system(size: 12))
                     .foregroundStyle(Color.primary.opacity(0.38))
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppSpacing.sm)
                     .padding(.top, 2)
             }
         }
@@ -347,11 +347,11 @@ struct SecurityView: View {
             Text(status)
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.38))
         }
-        .padding(.horizontal, 14).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.4).padding(.leading, 52)
+        Rectangle().fill(Color.primary.opacity(AppOpacity.hairline)).frame(height: 0.4).padding(.leading, 52)
     }
 
     private var autoLockLabel: String {

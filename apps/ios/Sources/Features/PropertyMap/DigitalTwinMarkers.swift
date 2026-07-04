@@ -9,8 +9,8 @@ struct PropertyHomeMarker: View {
             .foregroundStyle(.white)
             .frame(width: 34, height: 34)
             .background(
-                LinearGradient(colors: [Color(red: 0.2, green: 0.7, blue: 0.95),
-                                        Color(red: 0.25, green: 0.5, blue: 0.95)],
+                LinearGradient(colors: [Color.brandSkyBlue,
+                                        Color.brandSkyBlue],
                                startPoint: .topLeading, endPoint: .bottomTrailing),
                 in: Circle()
             )
@@ -42,7 +42,7 @@ struct ZoneBadge: View {
                 Text(zone.name)
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                     .background(.black.opacity(0.45), in: Capsule())
             }
             .scaleEffect(selected ? 1.12 : 1.0)

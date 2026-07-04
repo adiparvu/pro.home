@@ -3,11 +3,11 @@ import SwiftUI
 @main
 struct PRVIOApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var auth        = AuthService.shared
-    @StateObject private var appSettings = AppSettings()
-    @StateObject private var lock        = AppLockManager()
-    @StateObject private var router      = AppRouter()
-    @StateObject private var iconManager = IconManager()
+    @State private var auth        = AuthService.shared
+    @State private var appSettings = AppSettings()
+    @State private var lock        = AppLockManager()
+    @State private var router      = AppRouter()
+    @State private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -22,9 +22,9 @@ struct PRVIOApp: App {
                         SplashView()
                     } else if auth.session != nil {
                         MainTabView()
-                            .environmentObject(appSettings)
-                            .environmentObject(router)
-                            .environmentObject(iconManager)
+                            .environment(appSettings)
+                            .environment(router)
+                            .environment(iconManager)
                             .environment(\.appLanguage, appSettings.currentLanguage)
                     } else {
                         LoginView()
@@ -33,8 +33,8 @@ struct PRVIOApp: App {
                 .preferredColorScheme(appSettings.resolvedColorScheme)
                 .tint(appSettings.accentEnabled ? avatarRingColor(for: appSettings.accentColor) : .blue)
                 .environment(\.locale, appSettings.appLocale)
-                .environmentObject(auth)
-                .environmentObject(lock)
+                .environment(auth)
+                .environment(lock)
 
                 if auth.session != nil {
                     if lock.isLocked {
@@ -61,30 +61,30 @@ struct PRVIOApp: App {
                         UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
                         router.handle(quickActionType: quickAction)
                     }
-                    // Process App Intent-triggered actions
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openNewTask") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openNewTask")
+                    // Process App Intent-triggered actions. Flags live in the
+                    // app-group suite so intents running in the widget-extension
+                    // process reach us too (consumeIntentFlag also drains the
+                    // legacy .standard location).
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openNewTask") {
                         router.showAddTask = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openARIA") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openARIA")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openARIA") {
                         router.showARIA = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.openDashboard") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.openDashboard")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.openDashboard") {
                         router.selectedTab = .home
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showPlants") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showPlants")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showPlants") {
                         router.showWaterPlant = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showChat") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showChat")
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showChat") {
                         router.showFamilyChat = true
                     }
-                    if UserDefaults.standard.bool(forKey: "prvio.intent.showShopping") {
-                        UserDefaults.standard.removeObject(forKey: "prvio.intent.showShopping")
-                        router.showAddSupply = true
+                    if SharedDataStore.consumeIntentFlag("prvio.intent.showShopping") {
+                        // OpenShoppingListIntent opens the LIST, not the add-item
+                        // form (matches the quick action in AppRouter).
+                        router.selectedTab = .settings
+                        router.showSuppliesView = true
                     }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
@@ -94,12 +94,26 @@ struct PRVIOApp: App {
             .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
             .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
             .onOpenURL { url in
-                router.handle(deepLink: url)
+                // Magic-link / invite callbacks establish a session; anything
+                // else is an ordinary deep link handled by the router.
+                Task {
+                    if await auth.handleOpenURL(url) { return }
+                    router.handle(deepLink: url)
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: .prvioQuickAction)) { notif in
                 if let type = notif.object as? String {
                     router.handle(quickActionType: type)
                 }
+            }
+            // Invited accounts must set a strong password on first sign-in.
+            .fullScreenCover(isPresented: Binding(
+                get: { auth.needsPasswordSetup },
+                set: { _ in }
+            )) {
+                ForcePasswordView()
+                    .environment(auth)
+                    .interactiveDismissDisabled()
             }
             .onContinueUserActivity("com.prvio.task")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.plants")   { router.handle(userActivity: $0) }
@@ -117,7 +131,26 @@ extension PRVIOApp {
         let c: UIColor = appSettings.accentEnabled
             ? UIColor(avatarRingColor(for: appSettings.accentColor))
             : .systemBlue
+        // The appearance proxy only tints nav bars created AFTER this point, so
+        // changing the accent left every on-screen back button its old color.
+        // Update the live bars too so the accent applies instantly everywhere.
         UINavigationBar.appearance().tintColor = c
+        for scene in UIApplication.shared.connectedScenes {
+            guard let ws = scene as? UIWindowScene else { continue }
+            for window in ws.windows {
+                window.tintColor = c
+                applyTint(c, in: window.rootViewController)
+            }
+        }
+    }
+
+    private func applyTint(_ c: UIColor, in vc: UIViewController?) {
+        guard let vc else { return }
+        if let nav = vc as? UINavigationController {
+            nav.navigationBar.tintColor = c
+        }
+        vc.children.forEach { applyTint(c, in: $0) }
+        applyTint(c, in: vc.presentedViewController)
     }
 }
 

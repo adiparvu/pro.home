@@ -22,9 +22,14 @@ struct ChatActionOverlay: View {
     let onReact: (String) -> Void
     let actions: [ChatActionItem]
     let onDismiss: () -> Void
+    /// When the pressed message is a photo, its stored attachment value so the
+    /// overlay elevates the real image instead of a "📷 Photo" text preview.
+    var imageStored: String? = nil
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
+    @State private var showEmojiPicker = false
+    @State private var imageURL: URL?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -39,14 +44,14 @@ struct ChatActionOverlay: View {
                 bubble
                 menu
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
             .frame(maxWidth: .infinity, alignment: isOwn ? .trailing : .leading)
             .scaleEffect(reduceMotion ? 1 : (appear ? 1 : 0.92))
             .opacity(appear ? 1 : 0)
         }
         .onAppear {
             if reduceMotion { appear = true }
-            else { withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) { appear = true } }
+            else { withAnimation(.spring(response: 0.2, dampingFraction: 0.82)) { appear = true } }
         }
     }
 
@@ -59,31 +64,64 @@ struct ChatActionOverlay: View {
                     Text(e)
                         .font(.system(size: 28))
                         .scaleEffect(myReaction == e ? 1.2 : 1)
-                        .padding(4)
+                        .padding(AppSpacing.xxs)
                         .background(myReaction == e ? Color.accentColor.opacity(0.18) : Color.clear, in: Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("React with \(e)")
+                .accessibilityAddTraits(myReaction == e ? [.isButton, .isSelected] : .isButton)
             }
-            Image(systemName: "plus")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
-                .frame(width: 34, height: 34)
-                .background(Color.primary.opacity(0.08), in: Circle())
+            Button {
+                HapticFeedback.impact(.light); showEmojiPicker = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(AppFont.title3)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .frame(width: 34, height: 34)
+                    .background(Color.primary.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("More reactions")
         }
-        .padding(.horizontal, 14).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
         .background(.regularMaterial, in: Capsule())
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
+        .sheet(isPresented: $showEmojiPicker) {
+            EmojiGridPicker { e in
+                onReact(e)
+                showEmojiPicker = false
+                onDismiss()
+            }
+        }
     }
 
+    @ViewBuilder
     private var bubble: some View {
-        Text(previewText)
-            .font(.system(size: 15))
-            .foregroundStyle(isOwn ? .white : .primary)
-            .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .frame(maxWidth: 280, alignment: isOwn ? .trailing : .leading)
-            .lineLimit(6)
+        if imageStored != nil {
+            AsyncImage(url: imageURL) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
+                        .overlay(ProgressView())
+                }
+            }
+            .frame(maxWidth: 240, maxHeight: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+            .task(id: imageStored) {
+                if let s = imageStored { imageURL = await ChatMedia.resolve(s) }
+            }
+        } else {
+            Text(previewText)
+                .font(.system(size: 15))
+                .foregroundStyle(isOwn ? .white : .primary)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+                .background(isOwn ? bubbleColor : Color(.secondarySystemBackground),
+                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .frame(maxWidth: 280, alignment: isOwn ? .trailing : .leading)
+                .lineLimit(6)
+        }
     }
 
     private var menu: some View {
@@ -100,15 +138,65 @@ struct ChatActionOverlay: View {
                             .font(.system(size: 17))
                     }
                     .foregroundStyle(item.destructive ? Color.red : Color.primary)
-                    .padding(.horizontal, 16).padding(.vertical, 13)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if idx < actions.count - 1 { Divider().padding(.leading, 16) }
+                if idx < actions.count - 1 { Divider().padding(.leading, AppSpacing.lg) }
             }
         }
         .frame(width: 240)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+    }
+}
+
+// MARK: - Full emoji picker (opened from the reaction pill "+")
+
+struct EmojiGridPicker: View {
+    let onSelect: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    // Curated set grouped like the system picker — covers the common reactions.
+    private static let groups: [(String, [String])] = [
+        ("Smileys", ["😀","😃","😄","😁","😆","😅","😂","🤣","🥲","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳","🤗","🤔","🤭","🤫","😏","😒","🙄","😬","😯","😪","😴"]),
+        ("Gestures", ["👍","👎","👏","🙌","👐","🤲","🤝","🙏","✌️","🤞","🤟","🤘","👌","🤌","🤏","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","👋","💪","🦾","✍️","💅"]),
+        ("Hearts", ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","♥️"]),
+        ("Emotion", ["😢","😭","😤","😠","😡","🤬","😳","🥵","🥶","😱","😨","😰","😥","😓","🤯","😵","🥴","🤢","🤮","🤧","😷","🤒","🤕","🥱","😈","👿","💀","☠️","👻","🎉","🔥","⭐","✨","💯","🙈","🙉","🙊"]),
+    ]
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
+
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(Self.groups, id: \.0) { title, emojis in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(title.uppercased())
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(0.4))
+                            LazyVGrid(columns: columns, spacing: 6) {
+                                ForEach(emojis, id: \.self) { e in
+                                    Button {
+                                        HapticFeedback.impact(.light); onSelect(e)
+                                    } label: {
+                                        Text(e).font(.system(size: 30))
+                                            .frame(maxWidth: .infinity, minHeight: 42)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(AppSpacing.lg)
+            }
+            .background(appBackground.ignoresSafeArea())
+            .navigationTitle("Reactions")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

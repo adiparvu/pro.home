@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UserNotifications
 import Supabase
+import UniformTypeIdentifiers
 
 // MARK: - ChatView send actions
 
@@ -56,25 +57,35 @@ extension ChatView {
 
     func forward(_ message: Message, to dest: ForwardDestination) async {
         guard let pid = propertyId else { return }
-        switch dest {
-        case .group:
-            try? await messageService.send(
-                propertyId: pid, senderName: senderName,
-                body: message.body, attachmentUrl: message.attachmentUrl,
-                attachmentType: message.attachmentType,
-                latitude: message.latitude, longitude: message.longitude
-            )
-        case .member(let m):
-            struct DMForward: Encodable {
-                let sender_name: String; let recipient_name: String
-                let body: String; let property_id: String?
+        do {
+            switch dest {
+            case .group:
+                try await messageService.send(
+                    propertyId: pid, senderName: senderName,
+                    body: message.body, attachmentUrl: message.attachmentUrl,
+                    attachmentType: message.attachmentType,
+                    latitude: message.latitude, longitude: message.longitude
+                )
+            case .member(let m):
+                struct DMForward: Encodable {
+                    let sender_name: String; let recipient_name: String
+                    let body: String; let property_id: String?
+                    // Required by direct_messages RLS: sender_id must equal the
+                    // caller and recipient_member_id lets the recipient read it.
+                    let sender_id: String?; let recipient_member_id: String
+                }
+                try await supabase.from("direct_messages").insert(
+                    DMForward(sender_name: senderName, recipient_name: m.name,
+                              body: message.body ?? "📎", property_id: pid.uuidString,
+                              sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                              recipient_member_id: m.id.uuidString)
+                ).execute()
             }
-            try? await supabase.from("direct_messages").insert(
-                DMForward(sender_name: senderName, recipient_name: m.name,
-                          body: message.body ?? "📎", property_id: pid.uuidString)
-            ).execute()
+            HapticFeedback.success()
+        } catch {
+            sendError = error.localizedDescription
+            HapticFeedback.warning()
         }
-        HapticFeedback.success()
     }
 
     func sendSticker(_ sticker: Sticker) async {
@@ -117,20 +128,30 @@ extension ChatView {
     }
 
     func sendPhoto(_ items: [PhotosPickerItem]) async {
-        guard let pid = propertyId, let item = items.first else { return }
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        guard let pid = propertyId, !items.isEmpty else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString).jpg"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
-        try? await messageService.send(
-            propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image",
-            mentionedIds: mentionedIds
-        )
+        // A caption typed in the composer is attached to the first image, then cleared.
+        let caption = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        text = ""
+        // Send each selected item as its own message (preserves order). Images
+        // and videos are both supported by the picker.
+        for (index, item) in items.enumerated() {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
+            let isQuickTime = item.supportedContentTypes.contains { $0.conforms(to: .quickTimeMovie) }
+            let ext = isVideo ? (isQuickTime ? "mov" : "mp4") : "jpg"
+            let contentType = isVideo ? (isQuickTime ? "video/quicktime" : "video/mp4") : "image/jpeg"
+            // Images and videos → private chat-media bucket (signed URL at display).
+            let attachmentValue = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                                         ext: ext, contentType: contentType)
+            try? await messageService.send(
+                propertyId: pid, senderName: senderName,
+                body: (index == 0 && !caption.isEmpty) ? caption : nil,
+                attachmentUrl: attachmentValue, attachmentType: isVideo ? "video" : "image",
+                mentionedIds: mentionedIds
+            )
+        }
         HapticFeedback.success()
         photoPickerItems = []
         mentionedIds = []; mentionedNames = []
@@ -141,14 +162,12 @@ extension ChatView {
               let data = image.jpegData(compressionQuality: 0.8) else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString).jpg"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "image/jpeg", upsert: false))
-        let url = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at display via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "chat",
+                                          ext: "jpg", contentType: "image/jpeg")
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: url?.absoluteString, attachmentType: "image",
+            attachmentUrl: path, attachmentType: "image",
             mentionedIds: mentionedIds
         )
         HapticFeedback.success()
@@ -174,14 +193,12 @@ extension ChatView {
         guard let data = try? Data(contentsOf: url) else { return }
         isSending = true
         defer { isSending = false; try? FileManager.default.removeItem(at: url) }
-        let fileName = "\(UUID().uuidString).m4a"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/audio/\(fileName)"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: "audio/mp4", upsert: false))
-        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at playback via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "audio",
+                                          ext: "m4a", contentType: "audio/mp4")
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: nil,
-            attachmentUrl: remoteURL?.absoluteString, attachmentType: "audio",
+            attachmentUrl: path, attachmentType: "audio",
             mentionedIds: []
         )
         HapticFeedback.success()
@@ -194,16 +211,15 @@ extension ChatView {
         guard let data = try? Data(contentsOf: url) else { return }
         isSending = true
         defer { isSending = false }
-        let fileName = "\(UUID().uuidString)_\(url.lastPathComponent)"
-        let filePath = "\(supabase.auth.currentSession?.user.id.uuidString ?? "anon")/chat/files/\(fileName)"
+        let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
         let mime = url.pathExtension.lowercased() == "pdf" ? "application/pdf" : "application/octet-stream"
-        try? await supabase.storage.from("documents")
-            .upload(filePath, data: data, options: FileOptions(contentType: mime, upsert: false))
-        let remoteURL = try? supabase.storage.from("documents").getPublicURL(path: filePath)
+        // Private bucket + signed URL (resolved at preview via ChatMedia).
+        let path = await ChatMedia.upload(data, propertyId: pid, subdir: "files",
+                                          ext: ext, contentType: mime)
         try? await messageService.send(
             propertyId: pid, senderName: senderName,
             body: url.lastPathComponent,
-            attachmentUrl: remoteURL?.absoluteString, attachmentType: "file",
+            attachmentUrl: path, attachmentType: "file",
             mentionedIds: []
         )
         HapticFeedback.success()

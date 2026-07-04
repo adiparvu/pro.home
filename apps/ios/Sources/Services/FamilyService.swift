@@ -1,11 +1,13 @@
 import Foundation
+import Observation
 import EventKit
 
 @MainActor
-final class FamilyService: ObservableObject {
-    @Published var members: [FamilyMember] = []
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class FamilyService {
+    var members: [FamilyMember] = []
+    var isLoading = false
+    var error: String?
 
     func load() async {
         isLoading = true
@@ -52,7 +54,54 @@ final class FamilyService: ObservableObject {
         members.sort { $0.name < $1.name }
     }
 
-    func update(_ member: FamilyMember) async {
+    /// WhatsApp-style invite: a contact with an email is sent an invitation that
+    /// (server-side) creates their account, grants property membership, and
+    /// links this contact row to their real user.
+    ///
+    /// Returns `nil` on success (or when there's no email — nothing to send), or
+    /// a human-readable message when the invite failed. We deliberately do NOT
+    /// swallow the error: a silently-failing invite is exactly the bug that made
+    /// invitations "disappear", so callers surface this to the inviter.
+    @discardableResult
+    func sendInvite(to email: String, name: String, role: String,
+                    propertyId: UUID?, propertyName: String?) async -> String? {
+        guard !email.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        struct InvitePayload: Encodable {
+            let to: String
+            let name: String
+            let propertyId: String?
+            let propertyName: String?
+            let role: String
+            let inviterEmail: String?
+            let locale: String
+        }
+        let inviterEmail = try? await supabase.auth.session.user.email
+        // App language so the invite email is localized (server also falls back
+        // to the inviter's profile locale, then Romanian).
+        let locale = Locale.current.language.languageCode?.identifier ?? "ro"
+        let payload = InvitePayload(
+            to: email, name: name,
+            propertyId: propertyId?.uuidString, propertyName: propertyName,
+            role: role, inviterEmail: inviterEmail, locale: locale
+        )
+        do {
+            _ = try await supabase.functions.invoke("send-invite-email", options: .init(body: payload))
+            return nil
+        } catch {
+            let message = error.localizedDescription
+            self.error = message
+            #if DEBUG
+            print("[FamilyService] sendInvite failed: \(error)")
+            #endif
+            return message
+        }
+    }
+
+    /// Returns true on success. On failure it sets `error` AND returns false so
+    /// the caller can keep its editor open instead of falsely reporting "saved"
+    /// (an RLS-rejected edit used to dismiss and silently revert on next load).
+    @discardableResult
+    func update(_ member: FamilyMember) async -> Bool {
         struct Payload: Encodable {
             let name: String
             let role: String
@@ -76,8 +125,10 @@ final class FamilyService: ObservableObject {
             if let i = members.firstIndex(where: { $0.id == member.id }) {
                 members[i] = updated
             }
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 

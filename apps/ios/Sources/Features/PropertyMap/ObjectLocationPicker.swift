@@ -7,8 +7,8 @@ import CoreLocation
 struct ObjectLocationPicker: View {
     let element: PropertyElement
 
-    @EnvironmentObject private var zoneService: PropertyZoneService
-    @EnvironmentObject private var elementService: PropertyElementService
+    @Environment(PropertyZoneService.self) private var zoneService
+    @Environment(PropertyElementService.self) private var elementService
     @Environment(\.dismiss) private var dismiss
 
     @State private var camera: MapCameraPosition
@@ -85,12 +85,12 @@ struct ObjectLocationPicker: View {
                 Text("Outside all zones")
             }
         }
-            .font(.system(size: 13, weight: .semibold))
+            .font(AppFont.captionEmphasis)
             .foregroundStyle(.primary)
-            .padding(.horizontal, 16).padding(.vertical, 10)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, 10)
             .glassCapsule()
             .allowsHitTesting(false)
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
     }
 
@@ -99,16 +99,16 @@ struct ObjectLocationPicker: View {
             Task { await save() }
         } label: {
             Text("Save location")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 15)
                 .background(picked == nil ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.blue),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(picked == nil)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
         .padding(.bottom, 28)
     }
 

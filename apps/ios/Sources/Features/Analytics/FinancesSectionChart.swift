@@ -86,7 +86,7 @@ extension FinancesSection {
                             .foregroundStyle(chartRange == r ? .white : Color.primary.opacity(0.6))
                             .padding(.horizontal, 11)
                             .padding(.vertical, 5)
-                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(0.07),
+                            .background(chartRange == r ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -101,7 +101,7 @@ extension FinancesSection {
         GlassCard(padding: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Monthly evolution")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
 
                 rangeChips
 
@@ -119,8 +119,8 @@ extension FinancesSection {
                             )
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.18),
-                                             Color(red: 0.3, green: 0.85, blue: 0.5).opacity(0.02)],
+                                    colors: [Color.brandSuccess.opacity(0.18),
+                                             Color.brandSuccess.opacity(0.02)],
                                     startPoint: .top, endPoint: .bottom
                                 )
                             )
@@ -130,7 +130,7 @@ extension FinancesSection {
                                 x: .value("Period", item.label),
                                 y: .value("Income", item.income)
                             )
-                            .foregroundStyle(Color(red: 0.3, green: 0.85, blue: 0.5))
+                            .foregroundStyle(Color.brandSuccess)
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .interpolationMethod(.catmullRom)
                             .symbol(Circle().strokeBorder(lineWidth: 1.5))
@@ -176,7 +176,7 @@ extension FinancesSection {
                 }
 
                 HStack(spacing: 16) {
-                    legendItem(color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Income", solid: true)
+                    legendItem(color: Color.brandSuccess, label: "Income", solid: true)
                     legendItem(color: .red.opacity(0.75), label: "Expenses", solid: false)
                 }
             }
@@ -201,7 +201,7 @@ extension FinancesSection {
                             withAnimation(.easeInOut(duration: 0.18)) { chartRange = .custom }
                             showCustomSheet = false
                         }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     }
                 }
             }

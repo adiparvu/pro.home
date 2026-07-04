@@ -3,9 +3,7 @@ import SwiftUI
 // MARK: - Shared bits
 
 private func detailDateTime(_ iso: String) -> String {
-    let f1 = ISO8601DateFormatter(); f1.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    let f2 = ISO8601DateFormatter(); f2.formatOptions = [.withInternetDateTime]
-    let d = f1.date(from: iso) ?? f2.date(from: iso) ?? Date()
+    let d = ISODate.date(from: iso) ?? Date()
     let out = DateFormatter(); out.dateFormat = "dd.MM.yyyy HH:mm"; out.locale = .current
     return out.string(from: d)
 }
@@ -18,7 +16,7 @@ private struct DeliveryCheck: View {
             Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).offset(x: 5)
         }
         .frame(width: 22, alignment: .leading)
-        .foregroundStyle(read ? Color.blue : Color.primary.opacity(0.45))
+        .foregroundStyle(read ? Color.blue : Color.primary.opacity(AppOpacity.secondaryText))
     }
 }
 
@@ -37,12 +35,12 @@ private struct DetailRow: View {
             if let dateTime {
                 Text(dateTime)
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.primary.opacity(0.5))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             } else {
                 Text("—").foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
     }
 }
 
@@ -50,6 +48,7 @@ private struct DetailsCard<Header: View>: View {
     let themeID: String
     let createdAt: String
     let readTime: String?
+    var deliveredTime: String?
     @ViewBuilder let header: () -> Header
     @Environment(\.dismiss) private var dismiss
 
@@ -62,13 +61,13 @@ private struct DetailsCard<Header: View>: View {
                     if let cols = theme.backgroundColors {
                         LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom)
                     } else {
-                        Color.primary.opacity(0.06)
+                        Color.primary.opacity(AppOpacity.hairline)
                     }
                     VStack(spacing: 8) {
                         ChatDateSeparator(dateStr: createdAt)
                         header()
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, 18)
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -76,11 +75,11 @@ private struct DetailsCard<Header: View>: View {
                 VStack(spacing: 0) {
                     DetailRow(read: true, label: "Read", dateTime: readTime)
                     Divider().padding(.leading, 50)
-                    DetailRow(read: false, label: "Delivered", dateTime: detailDateTime(createdAt))
+                    DetailRow(read: false, label: "Delivered", dateTime: deliveredTime)
                 }
                 .background(Color(.secondarySystemGroupedBackground),
-                            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(16)
+                            in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .padding(AppSpacing.lg)
 
                 Spacer()
             }
@@ -123,14 +122,15 @@ struct MessageDetailsView: View {
     }
 
     var body: some View {
-        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime) {
+        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
+                    deliveredTime: detailDateTime(message.createdAt)) {
             HStack {
                 Spacer(minLength: 50)
                 VStack(alignment: .trailing, spacing: 3) {
                     Text(summary)
                         .font(.system(size: 15))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(bubbleColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     HStack(spacing: 4) {
                         Text(message.timeDisplay)
@@ -160,6 +160,9 @@ struct DMMessageDetailsView: View {
         guard let r = message.readAt else { return nil }
         return detailDateTime(r)
     }
+    private var deliveredTime: String? {
+        message.deliveredAt.map(detailDateTime)
+    }
     private var summary: String {
         let lower = message.body.lowercased()
         if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
@@ -168,14 +171,15 @@ struct DMMessageDetailsView: View {
     }
 
     var body: some View {
-        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime) {
+        DetailsCard(themeID: themeID, createdAt: message.createdAt, readTime: readTime,
+                    deliveredTime: deliveredTime) {
             HStack {
                 if isOwn { Spacer(minLength: 50) }
                 VStack(alignment: isOwn ? .trailing : .leading, spacing: 3) {
                     Text(summary)
                         .font(.system(size: 15))
                         .foregroundStyle(isOwn ? .white : .primary)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                         .background(isOwn ? bubbleColor : Color.primary.opacity(0.12),
                                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     Text(message.timeDisplay)

@@ -4,7 +4,7 @@ import Charts
 // MARK: - Spending Report View
 
 struct SpendingReportView: View {
-    @EnvironmentObject private var receiptService: ReceiptService
+    @Environment(ReceiptService.self) private var receiptService
     @Environment(\.dismiss) private var dismiss
 
     enum ReportPeriod: String, CaseIterable {
@@ -38,7 +38,7 @@ struct SpendingReportView: View {
                         }
                         Spacer(minLength: 80)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(String(localized: "report_title"))
@@ -75,7 +75,7 @@ struct SpendingReportView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(4)
+            .padding(AppSpacing.xxs)
         }
     }
 
@@ -140,12 +140,12 @@ struct SpendingReportView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
-                        .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                        .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                Text("\(selectedYear)").font(.system(size: 15, weight: .semibold))
+                Text("\(selectedYear)").font(AppFont.subheadline)
                 Spacer()
                 Button {
                     if selectedYear < Calendar.current.component(.year, from: Date()) {
@@ -153,13 +153,13 @@ struct SpendingReportView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(selectedYear < Calendar.current.component(.year, from: Date()) ? .secondary : Color.primary.opacity(0.2))
-                        .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                        .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, AppSpacing.xxs)
 
             if !data.isEmpty {
                 reportChartCard(title: String(format: String(localized: "report_year_spending"), selectedYear), data: data, unit: .month)
@@ -177,31 +177,33 @@ struct SpendingReportView: View {
                 HapticFeedback.selection()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                    .font(AppFont.captionEmphasis).foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Previous month")
             Spacer()
-            Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(.system(size: 15, weight: .semibold))
+            Text(LocalizedStringKey(receiptService.monthDisplayName(selectedMonth))).font(AppFont.subheadline)
             Spacer()
             Button {
                 let next = receiptService.nextMonthKey(from: selectedMonth)
                 if next != selectedMonth { selectedMonth = next; HapticFeedback.selection() }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(selectedMonth == receiptService.currentMonthKey ? Color.primary.opacity(0.2) : .secondary)
-                    .frame(width: 32, height: 32).background(Color.primary.opacity(0.07), in: Circle())
+                    .frame(width: 32, height: 32).background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
             .buttonStyle(.plain)
             .disabled(selectedMonth == receiptService.currentMonthKey)
+            .accessibilityLabel("Next month")
         }
     }
 
     private func reportChartCard(title: String, data: [DailySpend], unit: Calendar.Component) -> some View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).tracking(0.8)
+                Text(title).font(AppFont.captionStrong).foregroundStyle(.secondary).tracking(0.8)
 
                 let calUnit: Calendar.Component = unit
                 Chart(data) { day in
@@ -244,7 +246,7 @@ struct SpendingReportView: View {
                     HStack {
                         statBadge(icon: "arrow.up.circle.fill", value: Receipt.format(maxDay.total), color: .orange)
                         Spacer()
-                        statBadge(icon: "arrow.down.circle.fill", value: Receipt.format(minDay.total), color: Color(red: 0.2, green: 0.78, blue: 0.45))
+                        statBadge(icon: "arrow.down.circle.fill", value: Receipt.format(minDay.total), color: Color.brandSuccess)
                     }
                 }
             }
@@ -254,7 +256,7 @@ struct SpendingReportView: View {
     private func statBadge(icon: String, value: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon).font(.system(size: 11)).foregroundStyle(color)
-            Text(value).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+            Text(value).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
         }
     }
 
@@ -282,7 +284,7 @@ struct SpendingReportView: View {
         GlassCard(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(String(localized: "expense_section_categories"))
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).tracking(0.8)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary).tracking(0.8)
 
                 let total = cats.reduce(0) { $0 + $1.total }
                 ForEach(cats.prefix(8)) { cat in
@@ -291,7 +293,7 @@ struct SpendingReportView: View {
                             Image(systemName: cat.icon).font(.system(size: 11)).foregroundStyle(cat.color)
                             Text(cat.label).font(.system(size: 13, weight: .medium))
                             Spacer()
-                            Text(Receipt.format(cat.total)).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary).monospacedDigit()
+                            Text(Receipt.format(cat.total)).font(AppFont.captionStrong).foregroundStyle(.secondary).monospacedDigit()
                             let pct = total > 0 ? cat.total / total * 100 : 0
                             Text(String(format: "%.0f%%", pct))
                                 .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
@@ -300,7 +302,7 @@ struct SpendingReportView: View {
                         GeometryReader { geo in
                             let pct = total > 0 ? cat.total / total : 0
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(0.07)).frame(height: 5)
+                                RoundedRectangle(cornerRadius: 3, style: .continuous).fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(height: 5)
                                 RoundedRectangle(cornerRadius: 3, style: .continuous).fill(cat.color).frame(width: geo.size.width * pct, height: 5)
                             }
                         }

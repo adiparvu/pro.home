@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct CalendarView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
     @State private var displayedMonth = Date()
     @State private var selectedDay: Date? = nil
 
@@ -15,7 +15,7 @@ struct CalendarView: View {
                 monthHeader
                 weekdayRow
                 daysGrid
-                Divider().background(Color.primary.opacity(0.06)).padding(.top, 8)
+                Divider().background(Color.primary.opacity(AppOpacity.hairline)).padding(.top, AppSpacing.sm)
                 dayDetail
             }
         }
@@ -33,11 +33,12 @@ struct CalendarView: View {
                 }
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.07), in: Circle())
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
+            .accessibilityLabel("Previous month")
             Spacer()
             Text(LocalizedStringKey(monthTitle))
                 .font(.system(size: 17, weight: .semibold))
@@ -49,14 +50,15 @@ struct CalendarView: View {
                 }
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.07), in: Circle())
+                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
             }
+            .accessibilityLabel("Next month")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Weekday labels
@@ -65,12 +67,12 @@ struct CalendarView: View {
         HStack(spacing: 0) {
             ForEach(["Mo","Tu","We","Th","Fr","Sa","Su"], id: \.self) { d in
                 Text(d)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.3))
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppSpacing.md)
     }
 
     // MARK: - Days grid
@@ -95,8 +97,8 @@ struct CalendarView: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.xxs)
     }
 
     // MARK: - Day detail
@@ -115,7 +117,7 @@ struct CalendarView: View {
                         .foregroundStyle(Color.primary.opacity(0.2))
                     Text("Nothing scheduled")
                         .font(.subheadline)
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                     Spacer()
                 }
             } else {
@@ -138,8 +140,8 @@ struct CalendarView: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.vertical, AppSpacing.md)
                     .padding(.bottom, 100)
                 }
             }
@@ -253,7 +255,7 @@ private struct CalendarEventRow: View {
             ColoredIconBadge(icon: icon, color: color, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(LocalizedStringKey(subtitle))
@@ -262,10 +264,10 @@ private struct CalendarEventRow: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
     }
 }

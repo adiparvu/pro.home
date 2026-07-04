@@ -1,8 +1,10 @@
 import SwiftUI
+import Observation
 
-final class TabBarVisibility: ObservableObject {
-    @Published var isHidden = false
-    @Published var scrollOffset: CGFloat = 0
+@Observable
+final class TabBarVisibility {
+    var isHidden = false
+    var scrollOffset: CGFloat = 0
 
     // 0 = fully shown, 1 = fully hidden — drives continuous zoom-out
     var hideProgress: CGFloat {
@@ -53,12 +55,29 @@ enum AppTab: String, CaseIterable {
         case .settings:    return String(localized: "You")
         }
     }
+
+    /// Tabs a property role may see. Fail-open: nil / owner / partner / adult /
+    /// elderly see everything; only explicitly-scoped roles are trimmed. This is
+    /// navigation convenience — real per-module data security is server-side RLS
+    /// (Phase 3). Chat + settings (your own profile) stay available to everyone.
+    static func visible(for role: String?) -> Set<AppTab> {
+        switch role {
+        case "guest":
+            return [.chat, .settings]
+        case "service_provider":
+            return [.tasks, .chat, .settings]
+        case "tenant", "family_child", "family_teen":
+            return [.home, .tasks, .chat, .settings]
+        default:
+            return Set(AppTab.allCases)
+        }
+    }
 }
 
 // MARK: - Scroll-direction tracker (Instagram-style tab hide)
 
 struct TabScrollDetector: ViewModifier {
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     func body(content: Content) -> some View {
         content
@@ -93,7 +112,7 @@ struct AnimatedTabBar: View {
     let bottomPad: CGFloat
     let hideProgress: CGFloat
 
-    @EnvironmentObject private var profileService: ProfileService
+    @Environment(ProfileService.self) private var profileService
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -121,9 +140,9 @@ struct AnimatedTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, AppSpacing.xs)
         .glassEffect(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
         .padding(.bottom, bottomPad + 4)
         .scaleEffect(1.0 - hideProgress * 0.08, anchor: .bottom)
         .opacity(max(0, 1.0 - hideProgress * 2.2))
@@ -148,7 +167,7 @@ struct AnimatedTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, AppSpacing.sm)
         .padding(.bottom, bottomPad)
         .background {
             Rectangle()
@@ -193,7 +212,7 @@ struct AnimatedTabBar: View {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)
                     .background(Color.red, in: Capsule())
                     .offset(x: 8, y: -1)
@@ -228,7 +247,7 @@ struct AnimatedTabBar: View {
                 Text(overdueCount < 10 ? "\(overdueCount)" : "9+")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppSpacing.xxs)
                     .padding(.vertical, 2)
                     .background(Color.red, in: Capsule())
                     .offset(x: 8, y: -1)

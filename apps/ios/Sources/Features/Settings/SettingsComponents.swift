@@ -10,12 +10,12 @@ struct SettingsGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) { content }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 }
@@ -40,17 +40,17 @@ struct NavSettingsRow<D: View>: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             Rectangle()
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(AppOpacity.hairline))
                 .frame(height: 0.4)
                 .padding(.leading, 52)
         }
@@ -76,8 +76,8 @@ struct TapSettingsRow: View {
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -105,8 +105,8 @@ struct ToggleSettingsRow: View {
                 .labelsHidden()
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
@@ -131,8 +131,8 @@ struct InfoSettingsRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.38))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -151,7 +151,7 @@ struct ColoredIconBadge: View {
                 .frame(width: size, height: size)
                 .overlay {
                     RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                        .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
                 }
             Image(systemName: icon)
                 .font(.system(size: size * 0.44, weight: .medium))
@@ -180,15 +180,15 @@ struct SettingsPlaceholder: View {
                 .foregroundStyle(.primary)
             Text(description)
                 .font(.system(size: 15))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Text("Coming soon")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.primary.opacity(0.07), in: Capsule())
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
             Spacer()
         }
         .background(appBackground.ignoresSafeArea())

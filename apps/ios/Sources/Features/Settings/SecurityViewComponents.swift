@@ -5,7 +5,7 @@ import Supabase
 
 struct ActiveSessionsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
 
     var body: some View {
         NavigationStack {
@@ -17,28 +17,28 @@ struct ActiveSessionsSheet: View {
                             icon: "iphone",
                             title: "This device",
                             subtitle: "Current session · active now",
-                            color: Color(red: 0.3, green: 0.82, blue: 0.45),
+                            color: Color.brandSuccess,
                             isCurrent: true
                         )
                     }
-                    .liquidGlass(cornerRadius: 20)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .liquidGlass(cornerRadius: AppRadius.xl)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
 
                     Text("You can sign out other sessions if you notice suspicious activity.")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.38))
-                        .multilineTextAlignment(.center).padding(.horizontal, 28).padding(.top, 16)
+                        .multilineTextAlignment(.center).padding(.horizontal, 28).padding(.top, AppSpacing.lg)
 
                     Button {
                         Task { try? await supabase.auth.signOut(scope: .others) }
                     } label: {
                         Text("Sign out all other sessions")
-                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(.red)
-                            .frame(maxWidth: .infinity).padding(.vertical, 14)
+                            .font(AppFont.footnoteEmphasis).foregroundStyle(.red)
+                            .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.base)
                             .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, 20).padding(.top, 20)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
                 }
             }
             .navigationTitle("Active sessions")
@@ -60,7 +60,7 @@ struct ActiveSessionsSheet: View {
                     if isCurrent {
                         Text("CURRENT")
                             .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                             .background(color, in: Capsule())
                     }
                 }
@@ -68,7 +68,7 @@ struct ActiveSessionsSheet: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 14).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 13)
     }
 }
 

@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Add supply item sheet
 
 struct AddSupplyItemSheet: View {
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(PropertyService.self) private var propertyService
     @Environment(\.dismiss) private var dismiss
 
     let list: SupplyList?
@@ -54,7 +54,7 @@ struct AddSupplyItemSheet: View {
                         saveButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(editingItem == nil ? String(localized: "New Item") : String(localized: "Edit Item"))
@@ -71,7 +71,7 @@ struct AddSupplyItemSheet: View {
     }
 
     private func fieldLabel(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        Text(text).font(AppFont.label).foregroundStyle(.secondary)
     }
 
     private var nameField: some View {
@@ -79,8 +79,8 @@ struct AddSupplyItemSheet: View {
             fieldLabel("NAME")
             TextField("What needs to be bought?", text: $name)
                 .font(.system(size: 16)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -89,8 +89,8 @@ struct AddSupplyItemSheet: View {
             fieldLabel("QUANTITY (OPTIONAL)")
             TextField("e.g. 2 pcs, 500 ml, 1 kg…", text: $quantity)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -99,8 +99,8 @@ struct AddSupplyItemSheet: View {
             fieldLabel("LOCATION (OPTIONAL)")
             TextField("e.g. Pantry, Bathroom, Kitchen…", text: $location)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -109,8 +109,8 @@ struct AddSupplyItemSheet: View {
             fieldLabel("NOTES (OPTIONAL)")
             TextField("Additional notes…", text: $notes, axis: .vertical)
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                .lineLimit(2...5).padding(14)
-                .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .lineLimit(2...5).padding(AppSpacing.base)
+                .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -126,7 +126,7 @@ struct AddSupplyItemSheet: View {
                                 Text(l.name).font(.system(size: 13))
                             }
                             .foregroundStyle(selectedListId == l.id ? .white : .primary)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
                             .background(selectedListId == l.id ? l.swiftColor : Color.primary.opacity(0.08),
                                         in: Capsule())
                         }
@@ -148,7 +148,7 @@ struct AddSupplyItemSheet: View {
                                 .font(.system(size: 13, weight: category == cat.id ? .semibold : .regular))
                                 .foregroundStyle(category == cat.id ? .white : Color.primary.opacity(0.65))
                                 .padding(.horizontal, 13).padding(.vertical, 7)
-                                .background(category == cat.id ? Color.accentColor : Color.primary.opacity(0.07),
+                                .background(category == cat.id ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill),
                                             in: Capsule())
                         }
                         .buttonStyle(.plain)
@@ -171,8 +171,8 @@ struct AddSupplyItemSheet: View {
                         Text(p.label)
                             .font(.system(size: 13, weight: priority == p.id ? .semibold : .regular))
                             .foregroundStyle(priority == p.id ? .white : Color.primary.opacity(0.65))
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(priority == p.id ? item.priorityColor : Color.primary.opacity(0.07),
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
+                            .background(priority == p.id ? item.priorityColor : Color.primary.opacity(AppOpacity.subtleFill),
                                         in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -187,13 +187,13 @@ struct AddSupplyItemSheet: View {
                 if isSaving { ProgressView().tint(.primary) }
                 else {
                     Text(LocalizedStringKey(editingItem == nil ? "Add item" : "Save changes"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 52)
             .background(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.2) : Color.primary,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
             .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
                 ? Color.primary.opacity(0.4) : Color(UIColor.systemBackground))
         }

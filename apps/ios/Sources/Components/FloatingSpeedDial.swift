@@ -76,9 +76,9 @@ struct FloatingSpeedDial: View {
         } label: {
             HStack(spacing: 10) {
                 Text(action.title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.primary)
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, 7)
                     .glassCapsule()
                     .allowsHitTesting(false)
@@ -89,7 +89,7 @@ struct FloatingSpeedDial: View {
                         .fill(action.color.opacity(0.18))
                         .frame(width: 44, height: 44)
                     Image(systemName: action.icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(action.color)
                 }
                 .shadow(color: action.color.opacity(0.25), radius: 8, y: 3)
@@ -116,8 +116,8 @@ extension View {
 private struct FloatingSpeedDialModifier: ViewModifier {
     let host: FloatingButtonHost
     var bottomPadding: CGFloat
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var router: AppRouter
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(AppRouter.self) private var router
 
     func body(content: Content) -> some View {
         content.overlay(alignment: .bottomTrailing) {

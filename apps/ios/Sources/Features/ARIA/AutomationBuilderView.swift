@@ -42,7 +42,7 @@ struct AutomationRule: Identifiable, Codable {
             actionIcon: "bell.badge.fill",
             actionLabel: "Notify &\nCreate Task",
             isActive: true,
-            color: Color(red: 0.95, green: 0.45, blue: 0.15)
+            color: Color.brandWarning
         ),
         .init(
             name: "Plant Watering",
@@ -140,11 +140,11 @@ private struct AutomationPickerRow: View {
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(Color.accentColor)
                 }
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(isSelected ? Color.accentColor.opacity(0.06) : Color.clear)
         }
         .buttonStyle(.plain)
@@ -161,7 +161,7 @@ private struct AddAutomationSheet: View {
     @State private var actionType     = 0
 
     private let triggerOptions: [TriggerOption] = [
-        TriggerOption(label: "Warranty expires",       icon: "shield.lefthalf.filled",       color: Color(red: 0.95, green: 0.45, blue: 0.15)),
+        TriggerOption(label: "Warranty expires",       icon: "shield.lefthalf.filled",       color: Color.brandWarning),
         TriggerOption(label: "Task overdue",            icon: "exclamationmark.circle.fill",   color: .red),
         TriggerOption(label: "Plant needs water",       icon: "drop.fill",                    color: Color(red: 0.15, green: 0.72, blue: 0.37)),
         TriggerOption(label: "Document expires",        icon: "doc.badge.clock.fill",          color: .purple),
@@ -201,7 +201,7 @@ private struct AddAutomationSheet: View {
                         GlassCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Rule Name")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 TextField("e.g. Warranty Alert", text: $name)
@@ -210,16 +210,16 @@ private struct AddAutomationSheet: View {
                                     .tint(Color.accentColor)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Trigger picker
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("When (Trigger)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<triggerOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: triggerOptions[i].icon,
@@ -234,24 +234,24 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Condition picker
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("If (Condition)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<conditionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: conditionOptions[i].icon,
                                         label: conditionOptions[i].label,
-                                        accentColor: Color(red: 0.2, green: 0.55, blue: 0.95),
+                                        accentColor: Color.brandPrimaryBlue,
                                         isSelected: conditionType == i
                                     ) {
                                         conditionType = i
@@ -261,19 +261,19 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         // Action picker
                         GlassCard(padding: 0) {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("Then (Action)")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                                    .padding(.horizontal, AppSpacing.lg).padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
                                 ForEach(0..<actionOptions.count, id: \.self) { i in
                                     AutomationPickerRow(
                                         icon: actionOptions[i].icon,
@@ -288,14 +288,14 @@ private struct AddAutomationSheet: View {
                                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 56)
                                     }
                                 }
-                                .padding(.bottom, 8)
+                                .padding(.bottom, AppSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle("New Automation")
@@ -303,7 +303,7 @@ private struct AddAutomationSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
@@ -325,7 +325,7 @@ private struct AddAutomationSheet: View {
                         HapticFeedback.success()
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(Color.accentColor)
                 }
             }
@@ -336,8 +336,8 @@ private struct AddAutomationSheet: View {
 // MARK: - AutomationBuilderView
 
 struct AutomationBuilderView: View {
-    @EnvironmentObject private var propertyService: PropertyService
-    @StateObject private var cloud = GlobalAutomationService()
+    @Environment(PropertyService.self) private var propertyService
+    @State private var cloud = GlobalAutomationService()
     @State private var automations: [AutomationRule] = AutomationRule.prvioTemplates
     @State private var activeFlowIndex = 0
     @State private var isDeployed      = false
@@ -372,7 +372,7 @@ struct AutomationBuilderView: View {
                 savedSection
                 Spacer(minLength: 100)
             }
-            .padding(16)
+            .padding(AppSpacing.lg)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Automations")
@@ -385,6 +385,7 @@ struct AutomationBuilderView: View {
                         .font(.system(size: 20))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add automation")
             }
         }
         .sheet(isPresented: $showAdd) {
@@ -401,21 +402,21 @@ struct AutomationBuilderView: View {
     private var statsRow: some View {
         let active = automations.filter(\.isActive).count
         return HStack(spacing: 12) {
-            statPill(icon: "bolt.fill", label: "\(automations.count) Rules", color: Color(red: 0.45, green: 0.60, blue: 1.0))
-            statPill(icon: "checkmark.circle.fill", label: "\(active) Active", color: Color(red: 0.2, green: 0.78, blue: 0.45))
+            statPill(icon: "bolt.fill", label: "\(automations.count) Rules", color: Color.brandSkyBlue)
+            statPill(icon: "checkmark.circle.fill", label: "\(active) Active", color: Color.brandSuccess)
             statPill(icon: "bell.badge.fill", label: "\(automations.count - active) Paused", color: .orange)
         }
     }
 
     private func statPill(icon: String, label: String, color: Color) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 11, weight: .semibold)).foregroundStyle(color)
-            Text(label).font(.system(size: 12, weight: .medium)).foregroundStyle(.primary)
+            Image(systemName: icon).font(AppFont.label).foregroundStyle(color)
+            Text(label).font(AppFont.caption).foregroundStyle(.primary)
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
+        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
         .frame(maxWidth: .infinity)
-        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.2), lineWidth: 0.5))
+        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).strokeBorder(color.opacity(0.2), lineWidth: 0.5))
     }
 
     // MARK: - Flow canvas card
@@ -435,10 +436,10 @@ struct AutomationBuilderView: View {
                                     .fill(a.isActive ? a.color : Color.primary.opacity(0.25))
                                     .frame(width: 6, height: 6)
                                 Text(a.name)
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(AppFont.captionStrong)
                                     .foregroundStyle(activeFlowIndex == i ? .white : .secondary)
                             }
-                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
                             .background(
                                 activeFlowIndex == i
                                     ? AnyShapeStyle(a.color)
@@ -449,22 +450,22 @@ struct AutomationBuilderView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, 2)
             }
-            .padding(.top, 14).padding(.bottom, 8)
+            .padding(.top, AppSpacing.base).padding(.bottom, AppSpacing.sm)
 
             GeometryReader { geo in
                 nodeRedCanvas(rule: rule, width: geo.size.width)
             }
             .frame(height: 260)
-            .padding(.horizontal, 16).padding(.bottom, 16)
+            .padding(.horizontal, AppSpacing.lg).padding(.bottom, AppSpacing.lg)
         }
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                         .strokeBorder(rule.color.opacity(0.20), lineWidth: 1)
                 )
         }
@@ -530,17 +531,17 @@ struct AutomationBuilderView: View {
                 Text(LocalizedStringKey(headerLabel)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white.opacity(0.9))
                 Spacer()
             }
-            .padding(.horizontal, 8).padding(.vertical, 5)
+            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 5)
             .background(color)
 
             Text(LocalizedStringKey(bodyText))
-                .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
-                .padding(.horizontal, 8).padding(.vertical, 7)
+                .font(AppFont.captionStrong).foregroundStyle(.white)
+                .padding(.horizontal, AppSpacing.sm).padding(.vertical, 7)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(color.opacity(0.35))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(color.opacity(0.6), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous).strokeBorder(color.opacity(0.6), lineWidth: 1))
     }
 
     // MARK: - Test Automation
@@ -566,7 +567,7 @@ struct AutomationBuilderView: View {
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            actionButton(icon: "plus", label: "+ Node", color: Color(red: 0.45, green: 0.60, blue: 1.0)) {
+            actionButton(icon: "plus", label: "+ Node", color: Color.brandSkyBlue) {
                 showAdd = true
             }
             actionButton(icon: "play.fill", label: "Test", color: Color(red: 0.2, green: 0.75, blue: 0.45)) {
@@ -582,17 +583,17 @@ struct AutomationBuilderView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: isDeployed ? "checkmark.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                     Text(isDeployed ? "Deployed ✓" : "Deploy")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                 }
-                .foregroundStyle(isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95))
+                .foregroundStyle(isDeployed ? Color.brandSuccess : Color.brandPurple)
                 .frame(maxWidth: .infinity).frame(height: 44)
                 .background(
-                    (isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder((isDeployed ? Color(red: 0.20, green: 0.87, blue: 0.48) : Color(red: 0.65, green: 0.45, blue: 0.95)).opacity(0.30), lineWidth: 1))
+                    (isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder((isDeployed ? Color.brandSuccess : Color.brandPurple).opacity(0.30), lineWidth: 1))
                 .animation(.spring(response: 0.35), value: isDeployed)
             }
             .buttonStyle(.plain)
@@ -605,13 +606,13 @@ struct AutomationBuilderView: View {
             HapticFeedback.impact(.light)
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
-                Text(LocalizedStringKey(label)).font(.system(size: 13, weight: .semibold))
+                Image(systemName: icon).font(AppFont.captionStrong)
+                Text(LocalizedStringKey(label)).font(AppFont.captionEmphasis)
             }
             .foregroundStyle(color)
             .frame(maxWidth: .infinity).frame(height: 44)
-            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.3), lineWidth: 1))
+            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).strokeBorder(color.opacity(0.3), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -625,8 +626,8 @@ struct AutomationBuilderView: View {
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(.primary)
                 Spacer()
                 Text("\(automations.count)")
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .font(AppFont.captionStrong).foregroundStyle(.secondary)
+                    .padding(.horizontal, AppSpacing.sm).padding(.vertical, AppSpacing.xxs)
                     .background(.regularMaterial, in: Capsule())
             }
 
@@ -654,12 +655,12 @@ struct AutomationBuilderView: View {
             ZStack {
                 Circle().fill(rule.color.opacity(0.15)).frame(width: 40, height: 40)
                 Image(systemName: rule.triggerIcon)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(rule.color)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(rule.name)
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                    .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                 Text("\(rule.triggerLabel.replacingOccurrences(of: "\n", with: " ")) → \(rule.actionLabel.replacingOccurrences(of: "\n", with: " "))")
                     .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
             }
@@ -670,9 +671,9 @@ struct AutomationBuilderView: View {
                 .labelsHidden().scaleEffect(0.8)
                 .onChange(of: automations[index].isActive) { _, _ in HapticFeedback.selection(); persist() }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
             .strokeBorder(rule.isActive ? rule.color.opacity(0.20) : Color.white.opacity(0.06), lineWidth: 1))
         .opacity(rule.isActive ? 1.0 : 0.6)
         .onTapGesture {

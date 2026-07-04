@@ -30,8 +30,8 @@ struct PropertyHealthDetailView: View {
 
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.lg)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Property Health")
@@ -39,7 +39,7 @@ struct PropertyHealthDetailView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
             }
         }
     }
@@ -84,14 +84,14 @@ struct PropertyHealthDetailView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.xl)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(24)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(AppSpacing.xxl)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xxl, style: .continuous)
                 .strokeBorder(scoreColor.opacity(0.20), lineWidth: 1)
         )
         .shadow(color: scoreColor.opacity(0.18), radius: 20, y: 6)
@@ -118,7 +118,7 @@ struct PropertyHealthDetailView: View {
                 label: "Utilities",
                 detail: utilitiesDetail,
                 pct: utilitiesPct,
-                color: Color(red: 0.35, green: 0.65, blue: 1.0)
+                color: Color.brandSkyBlue
             )
             Divider().opacity(0.3)
             categoryRow(
@@ -126,7 +126,7 @@ struct PropertyHealthDetailView: View {
                 label: "Security",
                 detail: securityDetail,
                 pct: securityPct,
-                color: Color(red: 0.48, green: 0.41, blue: 0.93)
+                color: Color.brandPurple
             )
             Divider().opacity(0.3)
             categoryRow(
@@ -134,13 +134,13 @@ struct PropertyHealthDetailView: View {
                 label: "Tasks",
                 detail: tasksDetail,
                 pct: tasksPct,
-                color: Color(red: 0.20, green: 0.82, blue: 0.48)
+                color: Color.brandSuccess
             )
         }
-        .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(AppSpacing.xl)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
     }
@@ -148,15 +148,15 @@ struct PropertyHealthDetailView: View {
     private func categoryRow(icon: String, label: String, detail: String, pct: Int, color: Color) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(color)
                 .frame(width: 32, height: 32)
-                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(label)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Spacer()
                     Text("\(pct)%")
@@ -174,7 +174,7 @@ struct PropertyHealthDetailView: View {
                 .frame(height: 5)
                 Text(detail)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
     }
@@ -185,8 +185,8 @@ struct PropertyHealthDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.6, green: 0.35, blue: 0.95))
+                    .font(AppFont.footnoteEmphasis)
+                    .foregroundStyle(Color.brandPurple)
                 Text("How to Improve")
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.primary)
@@ -195,14 +195,14 @@ struct PropertyHealthDetailView: View {
             ForEach(suggestions, id: \.title) { tip in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: tip.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(tip.color)
                         .frame(width: 30, height: 30)
                         .background(tip.color.opacity(0.13), in: Circle())
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(tip.title)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(.primary)
                         Text(tip.body)
                             .font(.system(size: 12))
@@ -218,10 +218,10 @@ struct PropertyHealthDetailView: View {
                 }
             }
         }
-        .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(AppSpacing.xl)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
     }
@@ -231,21 +231,21 @@ struct PropertyHealthDetailView: View {
     private var howItWorksCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("How the Score Works")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text("The property health score is calculated from four categories: Maintenance (30%), Utilities (25%), Security (25%), and Tasks completion (20%). Completing tasks, keeping documents current, and resolving alerts all raise your score.")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.primary.opacity(0.4))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(AppSpacing.lg)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
     }
 
     // MARK: - Computed helpers
 
     private var scoreColor: Color {
-        score >= 80 ? Color(red: 0.20, green: 0.82, blue: 0.48) :
+        score >= 80 ? Color.brandSuccess :
         score >= 55 ? .orange : .red
     }
 
@@ -303,19 +303,19 @@ struct PropertyHealthDetailView: View {
                 points: 8))
         }
         if utilitiesPct < 90 {
-            tips.append(.init(icon: "bolt.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0),
+            tips.append(.init(icon: "bolt.fill", color: Color.brandSkyBlue,
                 title: "Actualizează facturile",
                 body: "Introduc chitanțele de utilități pentru a menține istoricul complet.",
                 points: 5))
         }
         if securityPct < 85 {
-            tips.append(.init(icon: "lock.shield.fill", color: Color(red: 0.48, green: 0.41, blue: 0.93),
+            tips.append(.init(icon: "lock.shield.fill", color: Color.brandPurple,
                 title: "Îmbunătățește securitatea",
                 body: "Adaugă camere sau senzori în zonele neacoperite ale proprietății.",
                 points: 7))
         }
         if tasksPct < 80 {
-            tips.append(.init(icon: "checklist", color: Color(red: 0.20, green: 0.82, blue: 0.48),
+            tips.append(.init(icon: "checklist", color: Color.brandSuccess,
                 title: "Rezolvă sarcinile restante",
                 body: "Completează sarcinile scadente — fiecare task finalizat ridică scorul.",
                 points: 3))

@@ -3,9 +3,10 @@ import SwiftUI
 // MARK: - PlantsView
 
 struct PlantsView: View {
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(PlantService.self) private var plantService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
@@ -34,19 +35,20 @@ struct PlantsView: View {
                     HapticFeedback.impact(.light)
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add plant")
             }
         }
         .sheet(isPresented: $showAddPlant) {
             AddPlantSheet()
-                .environmentObject(plantService)
-                .environmentObject(propertyService)
+                .environment(plantService)
+                .environment(propertyService)
         }
         .sheet(item: $selectedPlant) { plant in
             PlantDetailSheet(plant: plant)
-                .environmentObject(plantService)
+                .environment(plantService)
         }
         .alert("Error", isPresented: Binding(
             get: { plantService.error != nil },
@@ -61,6 +63,10 @@ struct PlantsView: View {
                 await plantService.load(propertyId: id)
             }
         }
+        // Deep link: a garden notification / Spotlight / prvio://plants/<id> opens
+        // this sheet and asks for a specific plant — resolve once loaded.
+        .onChange(of: router.deepLinkPlantId) { resolvePlantDeepLink() }
+        .task(id: plantService.plants.count) { resolvePlantDeepLink() }
         .refreshable {
             if let id = propertyService.primary?.id {
                 await plantService.load(propertyId: id)
@@ -74,6 +80,13 @@ struct PlantsView: View {
         }
     }
 
+    private func resolvePlantDeepLink() {
+        guard let id = router.deepLinkPlantId,
+              let plant = plantService.plants.first(where: { $0.id == id }) else { return }
+        selectedPlant = plant
+        router.deepLinkPlantId = nil
+    }
+
     // MARK: - Main content
 
     private var content: some View {
@@ -83,8 +96,8 @@ struct PlantsView: View {
                 plantsGrid
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.lg)
             .background(
                 GeometryReader { geo in
                     Color.clear.preference(
@@ -172,14 +185,14 @@ struct PlantsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(iconColor)
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(
                 columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -189,7 +202,7 @@ struct PlantsView: View {
                     PlantCard(plant: plant) {
                         selectedPlant = plant
                     }
-                    .environmentObject(plantService)
+                    .environment(plantService)
                 }
             }
         }
@@ -203,15 +216,15 @@ struct PlantsView: View {
             Text("🪴")
                 .font(.system(size: 60))
             Text("No plants added")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Add plants to track\nwatering and their health status.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
             Button { showAddPlant = true } label: {
                 Label("Add first plant", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
@@ -243,8 +256,8 @@ struct PlantsView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.primary.opacity(0.12))
             Text("No property added")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -254,7 +267,7 @@ struct PlantsView: View {
 // MARK: - PlantCard
 
 struct PlantCard: View {
-    @EnvironmentObject private var plantService: PlantService
+    @Environment(PlantService.self) private var plantService
     let plant: Plant
     let onTap: () -> Void
 
@@ -282,7 +295,7 @@ struct PlantCard: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(plant.name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -294,7 +307,7 @@ struct PlantCard: View {
                         }
 
                         Text(LocalizedStringKey(plant.wateringLabel))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.caption)
                             .foregroundStyle(
                                 plant.needsWatering
                                     ? Color(red: 1.0, green: 0.62, blue: 0.1)
@@ -311,7 +324,7 @@ struct PlantCard: View {
                                 .foregroundStyle(Color.primary.opacity(0.4))
                         }
                     }
-                    .padding(12)
+                    .padding(AppSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }

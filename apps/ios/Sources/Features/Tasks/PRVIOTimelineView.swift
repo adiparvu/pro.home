@@ -3,9 +3,9 @@ import SwiftUI
 // MARK: - PRVIO Timeline — matches dark mockup (chronological events + filter chips)
 
 struct PRVIOTimelineView: View {
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     enum TimeFilter: String, CaseIterable {
         case today  = "Today"
@@ -48,8 +48,8 @@ struct PRVIOTimelineView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 filterChipsRow
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.top, AppSpacing.xxs)
                     .padding(.bottom, 10)
 
                 if groupedEvents.isEmpty {
@@ -58,9 +58,9 @@ struct PRVIOTimelineView: View {
                 } else {
                     ForEach(groupedEvents, id: \.0) { group, events in
                         sectionHeader(LocalizedStringKey(group))
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppSpacing.lg)
                             .padding(.top, 18)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, AppSpacing.sm)
 
                         ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
                             HStack(alignment: .top, spacing: 0) {
@@ -78,12 +78,12 @@ struct PRVIOTimelineView: View {
                                     }
                                 }
                                 .frame(width: 30)
-                                .padding(.leading, 16)
+                                .padding(.leading, AppSpacing.lg)
 
                                 // Event card
                                 TimelineEventCard(event: event)
                                     .padding(.horizontal, 10)
-                                    .padding(.bottom, 8)
+                                    .padding(.bottom, AppSpacing.sm)
                             }
                         }
                     }
@@ -91,7 +91,7 @@ struct PRVIOTimelineView: View {
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 8)
+            .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
         .background(appBackground.ignoresSafeArea())
@@ -100,7 +100,7 @@ struct PRVIOTimelineView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Text("\(filteredEvents.count)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.regularMaterial, in: Capsule())
@@ -127,8 +127,8 @@ struct PRVIOTimelineView: View {
                 .font(.system(size: 42, weight: .light))
                 .foregroundStyle(Color.primary.opacity(0.2))
             Text("No events")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.45))
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             Text("No activity in this time range")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.primary.opacity(0.3))
@@ -139,8 +139,8 @@ struct PRVIOTimelineView: View {
     private func sectionHeader(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .textCase(.uppercase)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color.primary.opacity(0.35))
+            .font(AppFont.label)
+            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             .kerning(0.8)
     }
 
@@ -154,7 +154,7 @@ struct PRVIOTimelineView: View {
             events.append(.init(
                 id: task.id,
                 icon: "checkmark.circle.fill",
-                color: Color(red: 0.20, green: 0.82, blue: 0.48),
+                color: Color.brandSuccess,
                 title: task.title,
                 subtitle: task.category.capitalized,
                 date: date
@@ -254,35 +254,35 @@ struct TimelineEventCard: View {
                     .fill(event.color.opacity(0.15))
                     .frame(width: 40, height: 40)
                 Image(systemName: event.icon)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(event.color)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(event.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                 Text(LocalizedStringKey(event.subtitle))
                     .font(.system(size: 12))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
 
             Spacer()
 
             if !event.timeLabel.isEmpty {
                 Text(event.timeLabel)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.3))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
         .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
                 )
         }

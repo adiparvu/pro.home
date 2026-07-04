@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Edit sheet
 
 struct EditFamilyMemberSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     var member: FamilyMember
 
@@ -19,6 +19,7 @@ struct EditFamilyMemberSheet: View {
     @State private var isSaving = false
     @State private var showDeleteConfirm = false
     @State private var showAddSocial = false
+    @State private var saveError: String?
 
     init(member: FamilyMember) {
         self.member = member
@@ -55,19 +56,19 @@ struct EditFamilyMemberSheet: View {
                         deleteButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
                 .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor) }
+                        else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
                     }
                     .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
@@ -81,6 +82,13 @@ struct EditFamilyMemberSheet: View {
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
             }
+            .alert("Couldn't save", isPresented: Binding(
+                get: { saveError != nil }, set: { if !$0 { saveError = nil } }
+            )) {
+                Button("OK", role: .cancel) { saveError = nil }
+            } message: {
+                Text(saveError ?? "")
+            }
         }
     }
 
@@ -91,7 +99,7 @@ struct EditFamilyMemberSheet: View {
             Text(fullName.isEmpty ? "?" : String(fullName.prefix(2)).uppercased())
                 .font(.system(size: 28, weight: .bold)).foregroundStyle(Color(hex: color) ?? .blue)
         }
-        .frame(width: 80, height: 80).padding(.top, 8)
+        .frame(width: 80, height: 80).padding(.top, AppSpacing.sm)
     }
 
     private var colorRow: some View {
@@ -114,12 +122,12 @@ struct EditFamilyMemberSheet: View {
             div
             fieldRow(icon: "envelope.fill", color: .orange, placeholder: "E-mail", text: $email, keyboard: .emailAddress, autocap: .never)
             div
-            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Phone", text: $phone, keyboard: .phonePad)
+            fieldRow(icon: "phone.fill", color: Color.brandSuccess, placeholder: "Phone", text: $phone, keyboard: .phonePad)
             div
             birthdayRow
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
@@ -129,33 +137,33 @@ struct EditFamilyMemberSheet: View {
                     Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
                         .font(.system(size: 15))
-                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(0.45))
+                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
             if showBirthday {
                 DatePicker("", selection: $birthday, displayedComponents: .date)
                     .datePickerStyle(.wheel).labelsHidden()
-                    .padding(.horizontal, 8).padding(.bottom, 8)
+                    .padding(.horizontal, AppSpacing.sm).padding(.bottom, AppSpacing.sm)
             }
         }
     }
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.subheadline).foregroundStyle(.primary)
                     if role == "tenant" {
                         Text("Limited access — tasks and chat")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -166,21 +174,21 @@ struct EditFamilyMemberSheet: View {
                 }
                 .pickerStyle(.menu).tint(.accentColor)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                             TextField("@username", text: Binding(
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
@@ -193,7 +201,7 @@ struct EditFamilyMemberSheet: View {
                             Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     if idx < socialLinks.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                     }
@@ -207,21 +215,21 @@ struct EditFamilyMemberSheet: View {
                         Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var deleteButton: some View {
         Button { showDeleteConfirm = true } label: {
             Label("Remove member", systemImage: "trash")
-                .font(.system(size: 14, weight: .medium)).foregroundStyle(.red)
-                .frame(maxWidth: .infinity).padding(.vertical, 14)
-                .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .font(AppFont.footnote).foregroundStyle(.red)
+                .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.base)
+                .background(.red.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.md))
         }
         .buttonStyle(.plain)
     }
@@ -234,7 +242,7 @@ struct EditFamilyMemberSheet: View {
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View {
@@ -267,8 +275,12 @@ struct EditFamilyMemberSheet: View {
         updated.color = color
         updated.birthday = birthdayString()
         updated.socialLinks = socialLinks
-        await familyService.update(updated)
-        HapticFeedback.success()
-        dismiss()
+        if await familyService.update(updated) {
+            HapticFeedback.success()
+            dismiss()
+        } else {
+            saveError = familyService.error ?? String(localized: "Couldn't save changes.")
+            HapticFeedback.warning()
+        }
     }
 }

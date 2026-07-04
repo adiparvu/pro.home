@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct PropertyMapView: View {
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(TabBarVisibility.self) private var tabBarVis
 
     @State private var showHealthDashboard = false
     @State var selectedLayer: PropertyLayer? = nil
@@ -19,7 +19,7 @@ struct PropertyMapView: View {
             PageHeader(
                 titleKey: "Map",
                 subtitleKey: "PROPERTY",
-                trailing: AnyView(
+                trailing: {
                     HStack(spacing: 10) {
                         Button {
                             HapticFeedback.selection()
@@ -34,7 +34,7 @@ struct PropertyMapView: View {
                             withAnimation(.spring(response: 0.3)) { isEditMode.toggle() }
                         } label: {
                             Image(systemName: isEditMode ? "checkmark" : "pencil")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(isEditMode ? Color.green : .primary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 7)
@@ -42,11 +42,11 @@ struct PropertyMapView: View {
                         .buttonStyle(.plain)
                         .glassRoundedRect(12)
                     }
-                )
+                }
             )
 
             layerFilterBar
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
                 .padding(.vertical, 10)
 
             ScrollView(showsIndicators: false) {
@@ -71,28 +71,28 @@ struct PropertyMapView: View {
                                 Task { await elementService.updatePosition(elementId: element.id, x: newX, y: newY) }
                             }
                         )
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppSpacing.lg)
                     }
 
                     statsStrip
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
 
                     if !elementService.criticalElements.isEmpty {
                         attentionSection
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     }
 
                     if elementService.elements.isEmpty {
                         emptyActionCard
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     } else {
                         elementListSection
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                     }
 
                     Spacer(minLength: 110)
                 }
-                .padding(.top, 8)
+                .padding(.top, AppSpacing.sm)
                 .background(
                     GeometryReader { geo in
                         Color.clear.preference(key: ScrollOffsetKey.self,
@@ -114,26 +114,26 @@ struct PropertyMapView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             fabButton
-                .padding(.trailing, 24)
+                .padding(.trailing, AppSpacing.xxl)
                 .padding(.bottom, 100)
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
         }
         .sheet(isPresented: $showAddElement) {
             AddPropertyElementView(defaultPosition: addPosition) { payload in
                 Task { await elementService.add(payload) }
             }
-            .environmentObject(propertyService)
+            .environment(propertyService)
         }
         .sheet(isPresented: $showHealthDashboard) {
             PropertyHealthDashboardView()
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
         }
         .task {
             guard let pid = propertyService.primary?.id else { return }

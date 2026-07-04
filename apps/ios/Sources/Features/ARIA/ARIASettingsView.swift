@@ -31,7 +31,7 @@ struct ARIASettingsView: View {
     @State private var exportURL: URL? = nil
     @State private var isDeletingHistory = false
 
-    @EnvironmentObject var taskService: TaskService
+    @Environment(TaskService.self) var taskService
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -44,8 +44,8 @@ struct ARIASettingsView: View {
                 conversationSection
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("AI Settings")
@@ -101,11 +101,11 @@ struct ARIASettingsView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(Color.primary.opacity(0.38))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -121,24 +121,24 @@ struct ARIASettingsView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.top, AppSpacing.md)
 
                 HStack(spacing: 10) {
                     ForEach(avatarOptions, id: \.icon) { option in
                         avatarChip(option: option)
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.bottom, AppSpacing.md)
             }
 
             rowDivider
 
             Text("Your AI assistant's identity is private to you")
                 .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.horizontal, 14)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
         }
     }
@@ -172,11 +172,11 @@ struct ARIASettingsView: View {
                         isSelected
                             ? AnyShapeStyle(Color.accentColor)
                             : AnyShapeStyle(.regularMaterial),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     )
                 Text(option.label)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(0.5))
+                    .foregroundStyle(isSelected ? .primary : Color.primary.opacity(AppOpacity.mediumText))
             }
         }
         .buttonStyle(.plain)
@@ -192,8 +192,8 @@ struct ARIASettingsView: View {
                     personalityChip(id: option.id, label: option.label, icon: option.icon)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.base)
         }
     }
 
@@ -220,18 +220,18 @@ struct ARIASettingsView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                 Text(label)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
             }
             .foregroundStyle(isActive ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppSpacing.md)
             .background(
                 isActive
                     ? AnyShapeStyle(Color.accentColor)
                     : AnyShapeStyle(.regularMaterial),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             )
         }
         .buttonStyle(.plain)
@@ -243,16 +243,16 @@ struct ARIASettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("WHAT \(assistantName) CAN SEE")
                 .textCase(.uppercase)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
 
             VStack(spacing: 0) {
                 contextToggleRow(icon: "checklist", color: .orange,
                                  label: "Tasks", value: $canSeeTasks)
                 rowDivider
                 contextToggleRow(icon: "banknote.fill",
-                                 color: Color(red: 0.3, green: 0.85, blue: 0.5),
+                                 color: Color.brandSuccess,
                                  label: "Finances", value: $canSeeFinances)
                 rowDivider
                 contextToggleRow(icon: "house.fill", color: .blue,
@@ -265,12 +265,12 @@ struct ARIASettingsView: View {
                                  color: Color(red: 0.3, green: 0.75, blue: 0.4),
                                  label: "Plants", value: $canSeePlants)
             }
-            .liquidGlass(cornerRadius: 20)
+            .liquidGlass(cornerRadius: AppRadius.xl)
 
             Text("Disable to prevent \(assistantName) from accessing this data type in conversations")
                 .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(0.35))
-                .padding(.leading, 8)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.sm)
                 .padding(.top, 2)
         }
     }
@@ -286,8 +286,8 @@ struct ARIASettingsView: View {
                 .labelsHidden()
                 .tint(.accentColor)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.base)
+        .padding(.vertical, AppSpacing.md)
     }
 
     // MARK: - Model Section
@@ -307,12 +307,12 @@ struct ARIASettingsView: View {
                     Spacer()
                     if !useCustomModel {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.accentColor)
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -337,14 +337,14 @@ struct ARIASettingsView: View {
                     Text(LocalizedStringKey(customApiKey.isEmpty ? "Not set" : "Configured"))
                         .font(.system(size: 13))
                         .foregroundStyle(customApiKey.isEmpty
-                            ? Color.primary.opacity(0.35)
-                            : Color(red: 0.3, green: 0.85, blue: 0.5))
+                            ? Color.primary.opacity(AppOpacity.disabled)
+                            : Color.brandSuccess)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -363,8 +363,8 @@ struct ARIASettingsView: View {
                     .tint(.accentColor)
                     .disabled(customApiKey.isEmpty)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
             .opacity(customApiKey.isEmpty ? 0.45 : 1.0)
         }
     }
@@ -383,11 +383,11 @@ struct ARIASettingsView: View {
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.caption)
                         .foregroundStyle(Color.primary.opacity(0.28))
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -408,8 +408,8 @@ struct ARIASettingsView: View {
                             .scaleEffect(0.8)
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -422,17 +422,17 @@ struct ARIASettingsView: View {
     private func settingsGroup<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.captionStrong)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 8)
+                .padding(.leading, AppSpacing.sm)
             VStack(spacing: 0) { content() }
-                .liquidGlass(cornerRadius: 20)
+                .liquidGlass(cornerRadius: AppRadius.xl)
         }
     }
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 52)
     }
@@ -504,7 +504,7 @@ private struct ApiKeyEditorSheet: View {
                                 .frame(width: 64, height: 64)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                                        .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5)
                                 )
                             Image(systemName: "key.fill")
                                 .font(.system(size: 26, weight: .semibold))
@@ -514,23 +514,23 @@ private struct ApiKeyEditorSheet: View {
                             .font(.system(size: 20, weight: .bold))
                         Text("Bring your own Anthropic API key")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
-                    .padding(.top, 16)
+                    .padding(.top, AppSpacing.lg)
 
                     // Input
                     VStack(alignment: .leading, spacing: 8) {
                         Text("API KEY")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(AppFont.label)
                             .foregroundStyle(.secondary)
-                            .padding(.leading, 4)
+                            .padding(.leading, AppSpacing.xxs)
 
                         SecureField("sk-ant-api03-...", text: $draft)
                             .font(.system(size: 14, design: .monospaced))
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 14)
+                            .padding(.horizontal, AppSpacing.base)
+                            .padding(.vertical, AppSpacing.base)
                             .liquidGlass(cornerRadius: 14)
                     }
 
@@ -544,8 +544,8 @@ private struct ApiKeyEditorSheet: View {
                             .foregroundStyle(Color.primary.opacity(0.65))
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 14)
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.vertical, AppSpacing.base)
                     .liquidGlass(cornerRadius: 14)
 
                     // Save / Clear buttons
@@ -556,10 +556,10 @@ private struct ApiKeyEditorSheet: View {
                             dismiss()
                         } label: {
                             Text("Save Key")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                                .padding(.vertical, AppSpacing.base)
                                 .background(
                                     draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                         ? Color.accentColor.opacity(0.4)
@@ -577,10 +577,10 @@ private struct ApiKeyEditorSheet: View {
                                 dismiss()
                             } label: {
                                 Text("Clear Key")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
+                                    .padding(.vertical, AppSpacing.base)
                                     .background(.regularMaterial,
                                                 in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
@@ -590,7 +590,7 @@ private struct ApiKeyEditorSheet: View {
 
                     Spacer(minLength: 40)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("")

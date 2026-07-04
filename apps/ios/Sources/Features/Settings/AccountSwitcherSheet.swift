@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct AccountSwitcherSheet: View {
-    @EnvironmentObject private var auth: AuthService
-    @ObservedObject private var store = AccountsStore.shared
+    @Environment(AuthService.self) private var auth
+    private let store = AccountsStore.shared
     @Binding var showAddAccount: Bool
     @Environment(\.dismiss) private var dismiss
     @State private var switchError: String?
@@ -81,7 +81,7 @@ private struct AccountRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if let name = account.displayName, !name.isEmpty {
                         Text(name)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(.primary)
                     }
                     Text(account.email)

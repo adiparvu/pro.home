@@ -7,7 +7,7 @@ extension PropertyMapView {
     var healthScoreBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "heart.fill")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
             Text("\(elementService.overallHealthScore)")
                 .font(.system(size: 13, weight: .bold))
         }
@@ -70,7 +70,7 @@ extension PropertyMapView {
                 label: "Value",
                 value: formattedTotal,
                 sub: "estimated",
-                color: Color(red: 0.3, green: 0.82, blue: 0.45)
+                color: Color.brandSuccess
             )
             statTile(
                 icon: "exclamationmark.triangle.fill",
@@ -87,10 +87,10 @@ extension PropertyMapView {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Image(systemName: icon)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.captionEmphasis)
                         .foregroundStyle(color)
                     Text(label)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(AppFont.caption2)
                         .foregroundStyle(.secondary)
                 }
                 Text(value)
@@ -142,14 +142,14 @@ extension PropertyMapView {
                         .fill(element.elementType.accentColor.opacity(0.18))
                         .frame(width: 36, height: 36)
                     Image(systemName: element.elementType.icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                         .foregroundStyle(element.elementType.accentColor)
                         .symbolRenderingMode(.hierarchical)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(element.name)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.primary)
                     Text(element.layer.displayName)
                         .font(.system(size: 11))
@@ -161,10 +161,10 @@ extension PropertyMapView {
                 healthPill(element.healthScore)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.28))
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 11)
             .contentShape(Rectangle())
         }
@@ -212,9 +212,9 @@ extension PropertyMapView {
                     showAddElement = true
                 } label: {
                     Text("Add first element")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, AppSpacing.xxl)
                         .padding(.vertical, 11)
                         .background(.blue, in: Capsule())
                 }
@@ -267,10 +267,10 @@ extension PropertyMapView {
 
     private func healthColor(_ score: Int) -> Color {
         switch score {
-        case 90...100: return Color(red: 0.2, green: 0.8, blue: 0.4)
+        case 90...100: return Color.brandSuccess
         case 70..<90:  return Color(red: 0.4, green: 0.75, blue: 0.3)
         case 50..<70:  return .orange
-        case 25..<50:  return Color(red: 1.0, green: 0.45, blue: 0.1)
+        case 25..<50:  return Color.brandWarning
         default:       return .red
         }
     }
@@ -299,7 +299,7 @@ struct LayerChip: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                 Text(label)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
                 if count > 0 {
@@ -312,10 +312,10 @@ struct LayerChip: View {
                 }
             }
             .foregroundStyle(isSelected ? Color.white : Color.secondary)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, 7)
             .background(
-                Capsule().fill(isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color.primary.opacity(0.07))
+                Capsule().fill(isSelected ? Color.brandPrimaryBlue : Color.primary.opacity(AppOpacity.subtleFill))
             )
             .overlay(
                 Capsule().strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.1), lineWidth: 0.5)

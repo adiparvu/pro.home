@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import SwiftUI
 
 @MainActor
-final class PropertyElementService: ObservableObject {
-    @Published var elements: [PropertyElement] = []
-    @Published var records: [UUID: [ElementRecord]] = [:]
-    @Published var isLoading = false
-    @Published var error: String?
+@Observable
+final class PropertyElementService {
+    var elements: [PropertyElement] = []
+    var records: [UUID: [ElementRecord]] = [:]
+    var isLoading = false
+    var error: String?
 
     // MARK: - Elements CRUD
 

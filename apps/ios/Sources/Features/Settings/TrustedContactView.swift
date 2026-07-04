@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TrustedContactView: View {
-    @EnvironmentObject private var auth: AuthService
+    @Environment(AuthService.self) private var auth
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var relationship: String = ""
@@ -27,8 +27,8 @@ struct TrustedContactView: View {
                 if hasContact { removeButton }
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Trusted Contact")
@@ -40,7 +40,7 @@ struct TrustedContactView: View {
                         ProgressView().scaleEffect(0.8)
                     } else {
                         Button("Save") { save() }
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(isValid ? .blue : Color.primary.opacity(0.3))
                             .disabled(!isValid)
                     }
@@ -69,7 +69,7 @@ struct TrustedContactView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(LinearGradient(colors: [Color(red: 0.25, green: 0.55, blue: 1.0), Color(red: 0.55, green: 0.25, blue: 1.0)],
+                    .fill(LinearGradient(colors: [Color.brandSkyBlue, Color(red: 0.55, green: 0.25, blue: 1.0)],
                                         startPoint: .topLeading, endPoint: .bottomTrailing))
                     .frame(width: 64, height: 64)
                 Image(systemName: "person.badge.shield.checkmark.fill")
@@ -78,19 +78,19 @@ struct TrustedContactView: View {
             }
 
             Text("Your emergency contact person")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
             Text("This person can be notified in emergency situations related to your home. Information is stored locally on the device.")
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.5))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 .multilineTextAlignment(.center)
         }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 16)
+        .padding(.vertical, AppSpacing.xl)
+        .padding(.horizontal, AppSpacing.lg)
         .frame(maxWidth: .infinity)
-        .liquidGlass(cornerRadius: 20)
+        .liquidGlass(cornerRadius: AppRadius.xl)
     }
 
     // MARK: - Form
@@ -100,7 +100,7 @@ struct TrustedContactView: View {
             VStack(spacing: 0) {
                 fieldRow(icon: "person.fill", color: .blue, placeholder: "Full name", text: $name, keyboard: .default)
                 rowDivider
-                fieldRow(icon: "phone.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), placeholder: "Phone number", text: $phone, keyboard: .phonePad)
+                fieldRow(icon: "phone.fill", color: Color.brandSuccess, placeholder: "Phone number", text: $phone, keyboard: .phonePad)
                 rowDivider
                 fieldRow(icon: "heart.fill", color: .pink, placeholder: "Relationship (e.g. spouse, mother, friend)", text: $relationship, keyboard: .default)
             }
@@ -117,13 +117,13 @@ struct TrustedContactView: View {
                 .keyboardType(keyboard)
                 .autocorrectionDisabled(keyboard != .default)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 13)
     }
 
     private var rowDivider: some View {
         Rectangle()
-            .fill(Color.primary.opacity(0.06))
+            .fill(Color.primary.opacity(AppOpacity.hairline))
             .frame(height: 0.4)
             .padding(.leading, 54)
     }
@@ -136,13 +136,13 @@ struct TrustedContactView: View {
                 Image(systemName: "trash.fill")
                     .font(.system(size: 13))
                 Text("Remove trusted contact")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.red.opacity(0.15), lineWidth: 0.5))
+            .padding(.vertical, AppSpacing.base)
+            .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.red.opacity(0.15), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
     }
@@ -156,9 +156,9 @@ struct TrustedContactView: View {
                 .font(.system(size: 13, weight: .medium))
         }
         .foregroundStyle(.primary)
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
         .background(Color(red: 0.12, green: 0.12, blue: 0.15).opacity(0.95), in: Capsule())
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Actions

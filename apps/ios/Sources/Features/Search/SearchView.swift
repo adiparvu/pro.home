@@ -2,16 +2,16 @@ import SwiftUI
 import CoreSpotlight
 
 struct SearchView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
+    @Environment(TaskService.self) private var taskService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(PlantService.self) private var plantService
+    @Environment(DeliveryService.self) private var deliveryService
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
     @FocusState private var focused: Bool
-    @StateObject private var speech = SpeechRecognizer()
+    @State private var speech = SpeechRecognizer()
 
     private var results: SearchResults {
         guard query.count >= 2 else { return .empty }
@@ -51,9 +51,9 @@ struct SearchView: View {
 
                 VStack(spacing: 0) {
                     searchBar
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, AppSpacing.sm)
+                        .padding(.bottom, AppSpacing.md)
 
                     if query.count < 2 {
                         recentHints
@@ -69,7 +69,7 @@ struct SearchView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
             }
             .onAppear { focused = true }
@@ -85,7 +85,7 @@ struct SearchView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(speech.isListening ? Color.red : Color.primary.opacity(0.4))
 
             TextField("Tasks, plants, documents…", text: $query)
@@ -102,11 +102,13 @@ struct SearchView: View {
                         .foregroundStyle(.red)
                         .symbolEffect(.pulse)
                 }
+                .accessibilityLabel("Stop listening")
             } else if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
+                .accessibilityLabel("Clear search")
             } else {
                 Button {
                     focused = false
@@ -114,16 +116,17 @@ struct SearchView: View {
                 } label: {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
+                .accessibilityLabel("Voice search")
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 11)
         .background(
             speech.isListening
                 ? .red.opacity(0.08)
-                : Color.primary.opacity(0.07),
+                : Color.primary.opacity(AppOpacity.subtleFill),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
         .overlay(
@@ -170,7 +173,7 @@ struct SearchView: View {
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("No results for \"\(query)\"")
                 .font(.subheadline)
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
             Spacer()
         }
     }
@@ -241,7 +244,7 @@ struct SearchView: View {
                         ForEach(results.finances) { record in
                             SearchRow(
                                 icon: record.isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                                color: record.isIncome ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red,
+                                color: record.isIncome ? Color.brandSuccess : Color.red,
                                 title: record.title,
                                 subtitle: "\(record.category.capitalized) · \(record.dateFormatted)",
                                 badge: record.amountDisplay,
@@ -251,8 +254,8 @@ struct SearchView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
             .padding(.bottom, 100)
         }
     }
@@ -286,17 +289,17 @@ private struct SearchSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Text(title)
                     .textCase(.uppercase)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 Text("(\(count))")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.primary.opacity(0.2))
             }
-            .padding(.leading, 4)
+            .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 6) { content }
         }
@@ -316,7 +319,7 @@ private struct SearchRow: View {
             ColoredIconBadge(icon: icon, color: color, size: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 if !subtitle.isEmpty {
@@ -335,10 +338,10 @@ private struct SearchRow: View {
                     .background(badgeColor.opacity(0.12), in: Capsule())
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            .strokeBorder(Color.primary.opacity(AppOpacity.hairline), lineWidth: 0.5))
     }
 }

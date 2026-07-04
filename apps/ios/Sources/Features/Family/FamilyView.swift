@@ -3,8 +3,8 @@ import SwiftUI
 // MARK: - Main view
 
 struct FamilyView: View {
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
     @State private var selectedMember: FamilyMember?
 
@@ -36,7 +36,7 @@ struct FamilyView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                         .padding(.bottom, 110)
                     }
                 }
@@ -52,6 +52,7 @@ struct FamilyView: View {
                         .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add member")
             }
         }
         .task { await familyService.load() }
@@ -76,8 +77,8 @@ struct FamilyView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "person.2.fill").font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
-            Text("No members").font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
-            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.35)).multilineTextAlignment(.center).padding(.horizontal, 40)
+            Text("No members").font(AppFont.title3).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Text("Add family members to collaborate on tasks and chat.").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center).padding(.horizontal, 40)
             Button("Add first member") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }
@@ -96,12 +97,12 @@ struct FamilyMemberRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(member.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     HStack(spacing: 6) {
                         Text(LocalizedStringKey(member.roleLabel))
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         if let bd = member.birthdayDate {
                             let calendar = Calendar.current
                             let comps = calendar.dateComponents([.month, .day], from: bd)
@@ -145,6 +146,7 @@ struct FamilyMemberRow: View {
                 .frame(width: 34, height: 34)
         }
         .glassCircle()
+        .accessibilityLabel(icon == "phone.fill" ? "Call member" : "Email member")
     }
 }
 
@@ -182,7 +184,7 @@ struct MemberAvatar: View {
 // MARK: - Member picker (shared for tasks/chat)
 
 struct MemberPickerView: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Binding var selectedIds: [String]
     @Binding var selectedNames: [String]
 
@@ -212,8 +214,8 @@ struct MemberPickerView: View {
                                 .frame(width: 22, height: 22)
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                    .background(Color.primary.opacity(selected ? 0.07 : 0.03), in: RoundedRectangle(cornerRadius: AppRadius.md))
                 }
                 .buttonStyle(.plain)
             }

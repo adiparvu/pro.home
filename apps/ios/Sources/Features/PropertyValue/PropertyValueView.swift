@@ -4,10 +4,10 @@ import Charts
 // MARK: - PropertyValueView
 
 struct PropertyValueView: View {
-    @EnvironmentObject private var propertyValueService: PropertyValueService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(PropertyValueService.self) private var propertyValueService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AppSettings.self) private var appSettings
 
     @State private var showAdd = false
 
@@ -48,13 +48,14 @@ struct PropertyValueView: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add entry")
             }
         }
         .sheet(isPresented: $showAdd) {
             AddPropertyValueSheet()
-                .environmentObject(propertyValueService)
-                .environmentObject(propertyService)
-                .environmentObject(currencyService)
+                .environment(propertyValueService)
+                .environment(propertyService)
+                .environment(currencyService)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -75,8 +76,8 @@ struct PropertyValueView: View {
                 entriesList
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.md)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -93,8 +94,8 @@ struct PropertyValueView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Current Value")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                             .tracking(0.3)
 
                         if let latest = latestValue {
@@ -116,10 +117,10 @@ struct PropertyValueView: View {
                     Divider().opacity(0.3)
                     HStack(spacing: 6) {
                         Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.captionEmphasis)
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4) : .red)
                         Text("\(change >= 0 ? "+" : "")\(formatValue(change, currency: propertyValueService.latestValue?.currency ?? "EUR"))")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .foregroundStyle(change >= 0 ? Color(red: 0.15, green: 0.78, blue: 0.4) : .red)
                         Text("(\(change >= 0 ? "+" : "")\(String(format: "%.1f", pct))%)")
                             .font(.system(size: 13))
@@ -140,7 +141,7 @@ struct PropertyValueView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Value Over Time")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(AppFont.footnoteEmphasis)
                     .foregroundStyle(Color.primary.opacity(0.6))
 
                 Chart {
@@ -181,7 +182,7 @@ struct PropertyValueView: View {
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 .chartYAxis {
@@ -190,7 +191,7 @@ struct PropertyValueView: View {
                             .foregroundStyle(Color.primary.opacity(0.1))
                         AxisValueLabel()
                             .font(.system(size: 10))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 .frame(height: 180)
@@ -204,9 +205,9 @@ struct PropertyValueView: View {
     private var entriesList: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("HISTORY")
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
-                .padding(.leading, 6)
+                .padding(.leading, AppSpacing.xs)
 
             LazyVStack(spacing: 10) {
                 ForEach(entries.reversed()) { entry in
@@ -242,13 +243,13 @@ struct PropertyValueView: View {
                         if let date = entry.enteredDate {
                             Text(Self.dateFormatter.string(from: date))
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                         }
                         if let source = entry.source, !source.isEmpty {
                             Text("·").foregroundStyle(Color.primary.opacity(0.2))
                             Text(source)
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.primary.opacity(0.45))
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                                 .lineLimit(1)
                         }
                     }
@@ -256,7 +257,7 @@ struct PropertyValueView: View {
                     if let notes = entry.notes, !notes.isEmpty {
                         Text(notes)
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.35))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             .lineLimit(2)
                     }
                 }
@@ -275,18 +276,18 @@ struct PropertyValueView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.15))
             Text("Track your property value")
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.6))
             Text("Log manual estimates and bank appraisals to see how your property value changes over time.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
                 showAdd = true
             } label: {
                 Label("Add First Entry", systemImage: "plus")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)

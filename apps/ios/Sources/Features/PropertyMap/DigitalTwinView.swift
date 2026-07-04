@@ -8,13 +8,13 @@ import SwiftUI
 // to open the element detail.
 
 struct DigitalTwinView: View {
-    @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var currencyService: CurrencyService
-    @EnvironmentObject var appSettings: AppSettings
-    @EnvironmentObject var documentService: DocumentService
-    @EnvironmentObject var taskService: TaskService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(CurrencyService.self) var currencyService
+    @Environment(AppSettings.self) var appSettings
+    @Environment(DocumentService.self) var documentService
+    @Environment(TaskService.self) var taskService
 
     @State private var selectedElement: PropertyElement?
     @State private var pinMode = false
@@ -76,7 +76,8 @@ struct DigitalTwinView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        @Bindable var elementService = elementService
+        return ZStack(alignment: .bottomTrailing) {
             if let prop = propertyService.primary {
                 AerialCanvasView(
                     property: prop,
@@ -155,7 +156,7 @@ struct DigitalTwinView: View {
                 EditPropertyElementView(element: $elementService.elements[idx]) {
                     Task { await elementService.update(elementService.elements[idx]) }
                 }
-                .environmentObject(propertyService)
+                .environment(propertyService)
             }
         }
         .confirmationDialog(
@@ -173,11 +174,11 @@ struct DigitalTwinView: View {
         }
         .sheet(item: $selectedElement) { element in
             PropertyElementDetailView(element: element)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
-                .environmentObject(documentService)
-                .environmentObject(taskService)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
+                .environment(documentService)
+                .environment(taskService)
         }
         .sheet(isPresented: Binding(
             get: { pendingPin != nil },
@@ -186,21 +187,21 @@ struct DigitalTwinView: View {
             AddPropertyElementView(defaultPosition: pendingPin ?? CGPoint(x: 0.5, y: 0.5)) { payload in
                 Task { await elementService.add(payload) }
             }
-            .environmentObject(propertyService)
+            .environment(propertyService)
         }
         .sheet(isPresented: $showInsights) {
             TwinInsightsSheet()
-                .environmentObject(propertyService)
-                .environmentObject(zoneService)
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
+                .environment(propertyService)
+                .environment(zoneService)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
         }
         .sheet(isPresented: $showHealth) {
             PropertyHealthDashboardView()
-                .environmentObject(elementService)
-                .environmentObject(currencyService)
-                .environmentObject(appSettings)
+                .environment(elementService)
+                .environment(currencyService)
+                .environment(appSettings)
         }
         .sheet(item: $editZone) { zone in
             ZoneEditSheet(
@@ -251,14 +252,14 @@ struct DigitalTwinView: View {
                     showHealth = true
                     HapticFeedback.impact(.light)
                 }
-                controlButton(icon: "sparkles", tint: Color(red: 0.6, green: 0.35, blue: 0.95)) {
+                controlButton(icon: "sparkles", tint: Color.brandPurple) {
                     showInsights = true
                     HapticFeedback.impact(.light)
                 }
             }
         }
-        .padding(.trailing, 16)
-        .padding(.top, 8)
+        .padding(.trailing, AppSpacing.lg)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var categoryMenu: some View {
@@ -279,7 +280,7 @@ struct DigitalTwinView: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: "line.3.horizontal.decrease.circle\(categoryFilter == nil ? "" : ".fill")")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
                 Text(categoryFilter?.displayName ?? "Filter")
                     .font(.system(size: 9, weight: .bold))
@@ -297,7 +298,7 @@ struct DigitalTwinView: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(AppFont.title3)
                     .foregroundStyle(tint)
                 if let label {
                     Text(LocalizedStringKey(label))
@@ -330,7 +331,7 @@ struct DigitalTwinView: View {
             }
             .opacity(draftZonePoints.count < 3 ? 0.4 : 1)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
@@ -341,10 +342,10 @@ struct DigitalTwinView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon).font(.system(size: 13, weight: .bold))
-                Text(LocalizedStringKey(title)).font(.system(size: 14, weight: .semibold))
+                Text(LocalizedStringKey(title)).font(AppFont.footnoteEmphasis)
             }
             .foregroundStyle(tint)
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -379,7 +380,7 @@ struct DigitalTwinView: View {
             }
             .opacity(reshapePoints.count < 3 ? 0.4 : 1)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.25), radius: 10, y: 3)
@@ -430,13 +431,13 @@ struct DigitalTwinView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: zoneView == .hidden ? "square.on.square.dashed" : "square.on.square")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.captionEmphasis)
                 Text(zoneViewLabel)
-                    .font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    .font(AppFont.captionEmphasis).lineLimit(1)
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 14).padding(.vertical, 9)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
             .background(.ultraThinMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
             .shadow(color: .black.opacity(0.2), radius: 6, y: 2)

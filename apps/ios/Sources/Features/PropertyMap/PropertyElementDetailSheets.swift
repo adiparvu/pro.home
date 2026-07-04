@@ -19,7 +19,7 @@ struct DetailTabBar: View {
                     }
                     .foregroundStyle(selected == tab ? Color.white : Color.secondary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppSpacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(selected == tab ? Color.primary.opacity(0.12) : Color.clear)
@@ -28,7 +28,7 @@ struct DetailTabBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
+        .padding(AppSpacing.xxs)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -46,7 +46,7 @@ struct LinkedDocumentRow: View {
                 ZStack {
                     Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 36, height: 36)
                     Image(systemName: doc.categoryIcon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(Color.accentColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
@@ -73,7 +73,7 @@ struct LinkedDocumentRow: View {
 
 struct DocumentLinkPicker: View {
     let elementId: UUID
-    @EnvironmentObject private var documentService: DocumentService
+    @Environment(DocumentService.self) private var documentService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -87,7 +87,7 @@ struct DocumentLinkPicker: View {
                             Text("All documents are already linked or no documents exist.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.top, 40).padding(.horizontal, 24)
+                                .padding(.top, 40).padding(.horizontal, AppSpacing.xxl)
                         } else {
                             ForEach(available) { doc in
                                 Button {
@@ -113,7 +113,7 @@ struct DocumentLinkPicker: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Link document")
@@ -140,7 +140,7 @@ struct LinkedTaskRow: View {
                 Button(action: onToggle) {
                     Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
-                        .foregroundStyle(task.isCompleted ? Color(red: 0.2, green: 0.8, blue: 0.45) : Color.secondary)
+                        .foregroundStyle(task.isCompleted ? Color.brandSuccess : Color.secondary)
                 }
                 .buttonStyle(.plain)
                 VStack(alignment: .leading, spacing: 2) {
@@ -169,7 +169,7 @@ struct LinkedTaskRow: View {
 
 struct TaskLinkPicker: View {
     let elementId: UUID
-    @EnvironmentObject private var taskService: TaskService
+    @Environment(TaskService.self) private var taskService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -183,7 +183,7 @@ struct TaskLinkPicker: View {
                             Text("No tasks available to link.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.top, 40).padding(.horizontal, 24)
+                                .padding(.top, 40).padding(.horizontal, AppSpacing.xxl)
                         } else {
                             ForEach(available) { task in
                                 Button {
@@ -208,7 +208,7 @@ struct TaskLinkPicker: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Link task")

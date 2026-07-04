@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SupplyListDetailView: View {
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(PropertyService.self) private var propertyService
     var list: SupplyList
 
     @State private var searchText = ""
@@ -29,10 +29,10 @@ struct SupplyListDetailView: View {
             PageHeader(title: list.name, subtitleKey: "SUPPLIES")
 
             searchBar
-                .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)
+                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, AppSpacing.xs)
 
             categoryChips
-                .padding(.bottom, 8)
+                .padding(.bottom, AppSpacing.sm)
 
             Divider().opacity(0.3)
 
@@ -51,20 +51,21 @@ struct SupplyListDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(AppFont.title3)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityLabel("Add item")
             }
         }
         .sheet(isPresented: $showAddItem) {
             AddSupplyItemSheet(list: list, editingItem: nil)
-                .environmentObject(supplyService)
-                .environmentObject(propertyService)
+                .environment(supplyService)
+                .environment(propertyService)
         }
         .sheet(item: $editingItem) { item in
             AddSupplyItemSheet(list: list, editingItem: item)
-                .environmentObject(supplyService)
-                .environmentObject(propertyService)
+                .environment(supplyService)
+                .environment(propertyService)
         }
         .floatingSpeedDial(.supplies)
     }
@@ -74,7 +75,7 @@ struct SupplyListDetailView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(.secondary)
             TextField("Search items…", text: $searchText)
                 .font(.system(size: 15))
@@ -84,13 +85,14 @@ struct SupplyListDetailView: View {
                 Button { searchText = "" } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: Category chips
@@ -127,8 +129,8 @@ struct SupplyListDetailView: View {
                         .background(Color.primary.opacity(0.12), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? .white : Color.primary.opacity(0.7))
-            .padding(.horizontal, 13).padding(.vertical, 6)
+            .foregroundStyle(isSelected ? .white : Color.primary.opacity(AppOpacity.emphasis))
+            .padding(.horizontal, 13).padding(.vertical, AppSpacing.xs)
             .background(isSelected ? list.swiftColor : Color.primary.opacity(0.08), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -155,7 +157,7 @@ struct SupplyListDetailView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AppSpacing.xl)
                     } header: {
                         sectionHeader("TO BUY · \(pending.count)")
                     }
@@ -177,7 +179,7 @@ struct SupplyListDetailView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, AppSpacing.xl)
                             .transition(.move(edge: .top).combined(with: .opacity))
                         }
                     } header: {
@@ -189,12 +191,12 @@ struct SupplyListDetailView: View {
                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
                                     .font(.system(size: 10, weight: .semibold))
                                 Text("COMPLETED · \(completed.count)")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(AppFont.label)
                                     .tracking(0.5)
                                 Spacer()
                             }
-                            .foregroundStyle(Color(red: 0.2, green: 0.78, blue: 0.45))
-                            .padding(.horizontal, 28).padding(.vertical, 8)
+                            .foregroundStyle(Color.brandSuccess)
+                            .padding(.horizontal, 28).padding(.vertical, AppSpacing.sm)
                             .background(appBackground)
                         }
                         .buttonStyle(.plain)
@@ -203,19 +205,19 @@ struct SupplyListDetailView: View {
 
                 Spacer(minLength: 120)
             }
-            .padding(.top, 12)
+            .padding(.top, AppSpacing.md)
         }
     }
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
+                .font(AppFont.label)
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
         }
-        .padding(.horizontal, 28).padding(.vertical, 6)
+        .padding(.horizontal, 28).padding(.vertical, AppSpacing.xs)
         .background(appBackground)
     }
 
@@ -227,7 +229,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "cart")
                 .font(.system(size: 48)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No items in this list")
-                .font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.5))
+                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Text("Tap + to add the first item.")
                 .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
@@ -242,7 +244,7 @@ struct SupplyListDetailView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 36)).foregroundStyle(Color.primary.opacity(0.12))
             Text("No results")
-                .font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.4))
+                .font(AppFont.subheadline).foregroundStyle(Color.primary.opacity(0.4))
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

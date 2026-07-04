@@ -1,34 +1,35 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @EnvironmentObject private var auth: AuthService
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var profileService: ProfileService
-    @EnvironmentObject private var financialService: FinancialService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var notificationScheduler: NotificationScheduler
-    @EnvironmentObject private var budgetService: BudgetService
-    @EnvironmentObject private var familyService: FamilyService
-    @EnvironmentObject private var messageService: MessageService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
-    @EnvironmentObject private var supplyService: SupplyService
-    @EnvironmentObject private var plantService: PlantService
-    @EnvironmentObject private var deliveryService: DeliveryService
-    @EnvironmentObject private var applianceService: ApplianceService
-    @EnvironmentObject private var photoJournalService: PhotoJournalService
-    @EnvironmentObject private var paintColorService: PaintColorService
-    @EnvironmentObject private var propertyValueService: PropertyValueService
-    @EnvironmentObject private var router: AppRouter
+    @Environment(AuthService.self) private var auth
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(ProfileService.self) private var profileService
+    @Environment(FinancialService.self) private var financialService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(NotificationScheduler.self) private var notificationScheduler
+    @Environment(BudgetService.self) private var budgetService
+    @Environment(FamilyService.self) private var familyService
+    @Environment(MessageService.self) private var messageService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(SupplyService.self) private var supplyService
+    @Environment(PlantService.self) private var plantService
+    @Environment(DeliveryService.self) private var deliveryService
+    @Environment(ApplianceService.self) private var applianceService
+    @Environment(PhotoJournalService.self) private var photoJournalService
+    @Environment(PaintColorService.self) private var paintColorService
+    @Environment(PropertyValueService.self) private var propertyValueService
+    @Environment(AppRouter.self) private var router
     @State private var showSignOut = false
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
     @State private var showAddAccount = false
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        @Bindable var router = router
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 profileCard
                 switchCard
@@ -39,8 +40,8 @@ struct SettingsView: View {
                 signOutButton
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Settings")
@@ -67,21 +68,21 @@ struct SettingsView: View {
     private var profileCard: some View {
         NavigationLink(destination:
             ProfileView()
-                .environmentObject(profileService)
-                .environmentObject(notificationScheduler)
-                .environmentObject(taskService)
-                .environmentObject(documentService)
+                .environment(profileService)
+                .environment(notificationScheduler)
+                .environment(taskService)
+                .environment(documentService)
         ) {
             GlassCard {
                 HStack(spacing: 14) {
                     profileAvatar
                     VStack(alignment: .leading, spacing: 3) {
                         Text(displayName)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.headline)
                             .foregroundStyle(.primary)
                         Text(auth.session?.user.email ?? "")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color.primary.opacity(0.5))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -112,14 +113,14 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "house.fill", color: .blue)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Property")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             if let name = propertyService.primary?.name {
                                 Text(name)
-                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .font(AppFont.footnote).foregroundStyle(.primary)
                                     .lineLimit(1)
                             } else {
                                 Text("No property")
-                                    .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                    .font(AppFont.footnote).foregroundStyle(.primary)
                                     .lineLimit(1)
                             }
                         }
@@ -127,7 +128,7 @@ struct SettingsView: View {
                         Image(systemName: "arrow.2.squarepath")
                             .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -139,16 +140,16 @@ struct SettingsView: View {
                         ColoredIconBadge(icon: "person.circle.fill", color: .purple)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Account")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                             Text(auth.session?.user.email ?? "—")
-                                .font(.system(size: 14, weight: .medium)).foregroundStyle(.primary)
+                                .font(AppFont.footnote).foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         Spacer()
                         Image(systemName: "arrow.left.arrow.right")
                             .font(.system(size: 13, weight: .medium)).foregroundStyle(.blue)
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -156,11 +157,11 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showAccountSwitch) {
             AccountSwitcherSheet(showAddAccount: $showAddAccount)
-                .environmentObject(auth)
+                .environment(auth)
         }
         .sheet(isPresented: $showAddAccount) {
             AddAccountSheet()
-                .environmentObject(auth)
+                .environment(auth)
         }
     }
 
@@ -199,124 +200,126 @@ struct SettingsView: View {
         SettingsGroup(title: "Property") {
             NavSettingsRow(icon: "house.fill", color: .blue, label: "My Property") {
                 PropertySettingsView()
-                    .environmentObject(propertyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
                 DocumentsView()
-                    .environmentObject(documentService)
-                    .environmentObject(propertyService)
+                    .environment(documentService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
                 BlueprintsView()
             }
-            NavSettingsRow(icon: "banknote.fill", color: Color(red: 0.3, green: 0.85, blue: 0.5), label: "Finances") {
+            NavSettingsRow(icon: "banknote.fill", color: Color.brandSuccess, label: "Finances") {
                 FinancesView()
-                    .environmentObject(financialService)
-                    .environmentObject(propertyService)
-                    .environmentObject(budgetService)
+                    .environment(financialService)
+                    .environment(propertyService)
+                    .environment(budgetService)
             }
             NavSettingsRow(icon: "shippingbox.fill", color: .indigo, label: "Inventory") {
                 InventoryView()
             }
-            NavSettingsRow(icon: "cart.fill", color: Color(red: 0.35, green: 0.65, blue: 1.0), label: "Supplies") {
+            NavSettingsRow(icon: "cart.fill", color: Color.brandSkyBlue, label: "Supplies") {
                 SuppliesView()
-                    .environmentObject(supplyService)
-                    .environmentObject(propertyService)
+                    .environment(supplyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "leaf.fill", color: Color(red: 0.15, green: 0.80, blue: 0.40), label: "Plants") {
                 PlantsView()
-                    .environmentObject(plantService)
-                    .environmentObject(propertyService)
+                    .environment(plantService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "shippingbox.fill", color: .orange, label: "Deliveries") {
                 DeliveriesView()
-                    .environmentObject(deliveryService)
+                    .environment(deliveryService)
             }
             NavSettingsRow(icon: "bolt.fill", color: .yellow, label: "Utilities") {
                 UtilityView()
             }
             NavSettingsRow(icon: "wrench.and.screwdriver.fill", color: .teal, label: "Contractors") {
                 ContractorsView()
-                    .environmentObject(auth)
+                    .environment(auth)
             }
             NavSettingsRow(icon: "chart.bar.xaxis", color: .purple, label: "Analytics") {
                 AnalyticsView()
             }
             NavSettingsRow(icon: "doc.richtext.fill", color: .pink, label: "Property Report") {
                 PropertyReportView()
-                    .environmentObject(taskService)
-                    .environmentObject(financialService)
-                    .environmentObject(documentService)
-                    .environmentObject(propertyService)
+                    .environment(taskService)
+                    .environment(financialService)
+                    .environment(documentService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Tenants") {
                 TenantManagementView()
-                    .environmentObject(familyService)
-                    .environmentObject(propertyService)
+                    .environment(familyService)
+                    .environment(propertyService)
             }
-            NavSettingsRow(icon: "washer.fill", color: Color(red: 0.2, green: 0.55, blue: 0.95), label: "Appliances") {
+            NavSettingsRow(icon: "washer.fill", color: Color.brandPrimaryBlue, label: "Appliances") {
                 AppliancesView()
-                    .environmentObject(applianceService)
-                    .environmentObject(propertyService)
+                    .environment(applianceService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "camera.fill", color: Color(red: 0.85, green: 0.35, blue: 0.6), label: "Photo Journal") {
                 PhotoJournalView()
-                    .environmentObject(photoJournalService)
-                    .environmentObject(propertyService)
+                    .environment(photoJournalService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "calendar.badge.checkmark", color: Color(red: 0.25, green: 0.75, blue: 0.45), label: "Seasonal Checklists") {
                 SeasonalChecklistView()
             }
-            NavSettingsRow(icon: "paintpalette.fill", color: Color(red: 0.95, green: 0.45, blue: 0.15), label: "Paint Colors") {
+            NavSettingsRow(icon: "paintpalette.fill", color: Color.brandWarning, label: "Paint Colors") {
                 PaintColorsView()
-                    .environmentObject(paintColorService)
-                    .environmentObject(propertyService)
+                    .environment(paintColorService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "chart.line.uptrend.xyaxis", color: Color(red: 0.35, green: 0.75, blue: 0.55), label: "Property Value") {
                 PropertyValueView()
-                    .environmentObject(propertyValueService)
-                    .environmentObject(propertyService)
-                    .environmentObject(currencyService)
-                    .environmentObject(appSettings)
+                    .environment(propertyValueService)
+                    .environment(propertyService)
+                    .environment(currencyService)
+                    .environment(appSettings)
             }
             NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
                 GuestModeView()
-                    .environmentObject(propertyService)
-                    .environmentObject(familyService)
+                    .environment(propertyService)
+                    .environment(familyService)
             }
-            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color(red: 0.35, green: 0.55, blue: 1.0), label: "Perspectives") {
+            NavSettingsRow(icon: "square.3.layers.3d.fill", color: Color.brandSkyBlue, label: "Perspectives") {
                 PropertyPerspectivesView()
-                    .environmentObject(propertyService)
-                    .environmentObject(taskService)
-                    .environmentObject(documentService)
-                    .environmentObject(financialService)
-                    .environmentObject(familyService)
-                    .environmentObject(applianceService)
-                    .environmentObject(router)
+                    .environment(propertyService)
+                    .environment(taskService)
+                    .environment(documentService)
+                    .environment(financialService)
+                    .environment(familyService)
+                    .environment(applianceService)
+                    .environment(router)
             }
         }
     }
 
     private var familySection: some View {
         SettingsGroup(title: "Family & Chat") {
-            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Family Members") {
-                FamilyView()
-                    .environmentObject(familyService)
-                    .environmentObject(propertyService)
-            }
-            NavSettingsRow(icon: "eyes", color: Color(red: 0.35, green: 0.2, blue: 0.85), label: "Supervision") {
-                SupervisionView()
-                    .environmentObject(familyService)
+            NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
+                MembersHubView()
+                    .environment(familyService)
+                    .environment(propertyService)
             }
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
                 Group {
                     if propertyService.primary?.id != nil {
-                        ConversationsView()
+                        ChatSettingsView()
+                            .environment(propertyService)
+                            .environment(familyService)
+                            .environment(profileService)
+                            .environment(messageService)
                     } else {
                         SettingsPlaceholder(icon: "bubble.left.and.bubble.right.fill", title: "Chat", description: "Adaugă o proprietate pentru a putea trimite mesaje.")
                     }
                 }
             }
+            // Cross-app messaging lives inside the Chat settings page — no need
+            // for a duplicate row here.
         }
     }
 
@@ -324,32 +327,35 @@ struct SettingsView: View {
         SettingsGroup(title: "App") {
             NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
                 AppearanceView()
-                    .environmentObject(appSettings)
-                    .environmentObject(auth)
-                    .environmentObject(currencyService)
+                    .environment(appSettings)
+                    .environment(auth)
+                    .environment(currencyService)
             }
             NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
                 LanguageSettingsView()
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
             }
             NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activity") {
                 ActivityFeedView()
-                    .environmentObject(financialService)
-                    .environmentObject(documentService)
-                    .environmentObject(familyService)
-                    .environmentObject(appSettings)
-                    .environmentObject(taskService)
-                    .environmentObject(applianceService)
-                    .environmentObject(plantService)
+                    .environment(financialService)
+                    .environment(documentService)
+                    .environment(familyService)
+                    .environment(appSettings)
+                    .environment(taskService)
+                    .environment(applianceService)
+                    .environment(plantService)
             }
             NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()
             }
+            NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
+                LiveActivitySettingsView()
+            }
             NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
                 QuickActionsSettingsView()
-                    .environmentObject(appSettings)
+                    .environment(appSettings)
             }
-            NavSettingsRow(icon: "mic.fill", color: Color(red: 0.55, green: 0.35, blue: 0.95), label: "Siri & Shortcuts") {
+            NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
                 SiriShortcutsView()
             }
             NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
@@ -357,9 +363,9 @@ struct SettingsView: View {
             }
             NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
                 IntegrationsView()
-                    .environmentObject(taskService)
-                    .environmentObject(propertyService)
-                    .environmentObject(familyService)
+                    .environment(taskService)
+                    .environment(propertyService)
+                    .environment(familyService)
             }
         }
     }
@@ -393,7 +399,7 @@ struct SettingsView: View {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                 Text("Sign Out")
             }
-            .font(.system(size: 15, weight: .medium))
+            .font(AppFont.body)
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)

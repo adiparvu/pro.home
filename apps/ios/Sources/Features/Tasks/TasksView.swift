@@ -1,13 +1,17 @@
 import SwiftUI
 
 struct TasksView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(TabBarVisibility.self) private var tabBarVis
+    @Environment(AppRouter.self) private var router
+    @Environment(FamilyService.self) private var familyService
     @State private var filter: TaskFilter = .all
     @State private var showAdd = false
     @State private var historyPeriod: HistoryPeriod = .month
+    /// Task opened by a deep link (notification tap, Spotlight, prvio://tasks/<id>).
+    @State private var deepLinkedTask: MaintenanceTask?
 
     enum TaskFilter: String, CaseIterable {
         case all = "All"
@@ -94,13 +98,14 @@ struct TasksView: View {
             ToolbarItem(placement: .topBarLeading) {
                 NavigationLink {
                     CalendarView()
-                        .environmentObject(taskService)
-                        .environmentObject(documentService)
+                        .environment(taskService)
+                        .environment(documentService)
                 } label: {
                     Image(systemName: "calendar")
                         .font(.system(size: 18))
                         .foregroundStyle(Color.primary.opacity(0.85))
                 }
+                .accessibilityLabel("Calendar")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 0) {
@@ -117,9 +122,10 @@ struct TasksView: View {
                         }
                     } label: {
                         Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
+                    .accessibilityLabel("Filter tasks")
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))
                         .frame(width: 0.5, height: 18)
@@ -128,18 +134,30 @@ struct TasksView: View {
                         HapticFeedback.impact(.medium)
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Add task")
                 }
             }
         }
         .sheet(isPresented: $showAdd) {
             AddTaskView()
-                .environmentObject(taskService)
-                .environmentObject(propertyService)
+                .environment(taskService)
+                .environment(propertyService)
         }
+        // Deep link: open the specific task the notification / Spotlight / URL
+        // pointed at. Resolve on both the id arriving and the task list loading,
+        // so it works whether the tab was already open or cold-launched.
+        .sheet(item: $deepLinkedTask) { task in
+            AddTaskView(editing: task)
+                .environment(taskService)
+                .environment(propertyService)
+                .environment(familyService)
+        }
+        .onChange(of: router.deepLinkTaskId) { resolveTaskDeepLink() }
+        .task(id: taskService.tasks.count) { resolveTaskDeepLink() }
         .alert("Error", isPresented: Binding(
             get: { taskService.error != nil },
             set: { if !$0 { taskService.error = nil } }
@@ -155,6 +173,13 @@ struct TasksView: View {
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
         }
+    }
+
+    private func resolveTaskDeepLink() {
+        guard let id = router.deepLinkTaskId,
+              let task = taskService.tasks.first(where: { $0.id == id }) else { return }
+        deepLinkedTask = task
+        router.deepLinkTaskId = nil
     }
 
     private func countFor(_ f: TaskFilter) -> Int {
@@ -173,7 +198,7 @@ struct TasksView: View {
             VStack(spacing: 0) {
                 if filter == .done {
                     historyPeriodBar
-                        .padding(.top, 4)
+                        .padding(.top, AppSpacing.xxs)
                 }
                 LazyVStack(spacing: 10) {
                     ForEach(filtered) { task in
@@ -194,12 +219,12 @@ struct TasksView: View {
                                     Label(LocalizedStringKey(task.isCompleted ? "Reopen" : "Done"),
                                           systemImage: task.isCompleted ? "arrow.uturn.backward" : "checkmark")
                                 }
-                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                                .tint(Color.brandSuccess)
                             }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.xxs)
                 .padding(.bottom, 110)
             }
             .background(
@@ -224,19 +249,19 @@ struct TasksView: View {
                     } label: {
                         Text(LocalizedStringKey(period.rawValue))
                             .font(.system(size: 12, weight: historyPeriod == period ? .semibold : .regular))
-                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(0.7))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .foregroundStyle(historyPeriod == period ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
+                            .padding(.horizontal, AppSpacing.md)
+                            .padding(.vertical, AppSpacing.xs)
                             .background(
-                                historyPeriod == period ? Color.white : Color.primary.opacity(0.07),
+                                historyPeriod == period ? Color.white : Color.primary.opacity(AppOpacity.subtleFill),
                                 in: Capsule()
                             )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.vertical, AppSpacing.xs)
         }
     }
 
@@ -253,7 +278,7 @@ struct TasksView: View {
                 .font(.system(size: 52))
                 .foregroundStyle(Color.primary.opacity(0.18))
             Text(emptyTitle)
-                .font(.system(size: 18, weight: .semibold))
+                .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(0.55))
             if filter == .all {
                 Button("Add your first task") { showAdd = true }
@@ -281,17 +306,17 @@ struct FilterChip: View {
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 if count > 0 {
                     Text("\(count)")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.label)
                         .foregroundStyle(isSelected ? .black.opacity(0.6) : Color.primary.opacity(0.4))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(isSelected ? .black.opacity(0.12) : Color.primary.opacity(0.1), in: Capsule())
                 }
             }
-            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(0.7))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(isSelected ? Color.white : Color.primary.opacity(0.07), in: Capsule())
+            .foregroundStyle(isSelected ? Color.black : Color.primary.opacity(AppOpacity.emphasis))
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.sm)
+            .background(isSelected ? Color.white : Color.primary.opacity(AppOpacity.subtleFill), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -300,9 +325,9 @@ struct FilterChip: View {
 // MARK: - Task Row
 
 struct TaskRowView: View {
-    @EnvironmentObject private var taskService: TaskService
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(TaskService.self) private var taskService
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(FamilyService.self) private var familyService
     let task: MaintenanceTask
 
     @State private var showEdit = false
@@ -322,10 +347,11 @@ struct TaskRowView: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(task.isCompleted ? "Mark incomplete" : "Mark complete")
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(task.isCompleted ? Color.primary.opacity(0.38) : Color.primary)
                     .strikethrough(task.isCompleted, color: Color.primary.opacity(0.3))
                     .lineLimit(1)
@@ -357,16 +383,23 @@ struct TaskRowView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.base)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .strokeBorder(
-                    task.isOverdue ? .red.opacity(0.22) : Color.primary.opacity(0.06),
+                    task.isOverdue ? .red.opacity(0.22) : Color.primary.opacity(AppOpacity.hairline),
                     lineWidth: 0.5
                 )
         )
+        // Tapping the row (anywhere but the checkbox) opens the task's details.
+        // The checkbox Button consumes its own taps, so completion still works.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            HapticFeedback.impact(.light)
+            showEdit = true
+        }
         .contextMenu {
             Button {
                 HapticFeedback.impact(.light)
@@ -391,9 +424,9 @@ struct TaskRowView: View {
         }
         .sheet(isPresented: $showEdit) {
             AddTaskView(editing: task)
-                .environmentObject(taskService)
-                .environmentObject(propertyService)
-                .environmentObject(familyService)
+                .environment(taskService)
+                .environment(propertyService)
+                .environment(familyService)
         }
     }
 }

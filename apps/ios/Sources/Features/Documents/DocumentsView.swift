@@ -3,8 +3,8 @@ import UniformTypeIdentifiers
 import QuickLook
 
 struct DocumentsView: View {
-    @EnvironmentObject private var documentService: DocumentService
-    @EnvironmentObject private var propertyService: PropertyService
+    @Environment(DocumentService.self) private var documentService
+    @Environment(PropertyService.self) private var propertyService
     @State private var search = ""
     @State private var selectedCategory: String? = nil
     @State private var showAdd = false
@@ -38,8 +38,8 @@ struct DocumentsView: View {
 
             VStack(spacing: 0) {
                 searchBar
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.bottom, AppSpacing.md)
 
                 if documentService.isLoading {
                     Spacer()
@@ -62,10 +62,10 @@ struct DocumentsView: View {
                                     docToDelete = doc
                                     showDeleteConfirm = true
                                 }
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AppSpacing.xl)
                             }
                         }
-                        .padding(.top, 4)
+                        .padding(.top, AppSpacing.xxs)
                         .padding(.bottom, 120)
                     }
                     .refreshable { await documentService.load() }
@@ -91,10 +91,11 @@ struct DocumentsView: View {
                         }
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(width: 38, height: 32)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Add document")
                 }
             }
         }
@@ -102,7 +103,7 @@ struct DocumentsView: View {
         .sheet(isPresented: $showAdd) {
             if let propertyId = propertyService.primary?.id {
                 AddDocumentSheet(propertyId: propertyId) { await documentService.load() }
-                    .environmentObject(documentService)
+                    .environment(documentService)
             }
         }
         .confirmationDialog("Delete \"\(docToDelete?.name ?? String(localized: "document"))\"?",
@@ -176,9 +177,9 @@ struct DocumentsView: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 16).padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(.red.opacity(0.85), in: Capsule())
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.xxl)
     }
 
     // MARK: - Search
@@ -194,10 +195,11 @@ struct DocumentsView: View {
                 Button { search = "" } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
                 }
+                .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: - Category filter menu
@@ -222,9 +224,10 @@ struct DocumentsView: View {
             Image(systemName: selectedCategory == nil
                   ? "line.3.horizontal.decrease"
                   : selectedCategory.map { categoryIcon(for: $0) } ?? "line.3.horizontal.decrease")
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(.primary)
         }
+        .accessibilityLabel("Filter documents")
     }
 
     private func categoryIcon(for cat: String) -> String {
@@ -266,14 +269,14 @@ struct DocumentsView: View {
                     .foregroundStyle(.orange).font(.system(size: 18))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(documentService.expiringDocs.count == 1 ? "1 document expiring soon" : "\(documentService.expiringDocs.count) documents expiring soon")
-                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
+                        .font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
                     Text("Review and renew before they expire")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.5))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                 }
                 Spacer()
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AppSpacing.xl)
     }
 
     // MARK: - Empty
@@ -285,10 +288,10 @@ struct DocumentsView: View {
                 .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
             VStack(spacing: 8) {
                 Text(LocalizedStringKey(search.isEmpty ? "No documents yet" : "No results found"))
-                    .font(.system(size: 18, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.6))
+                    .font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
                 if search.isEmpty {
                     Text("Tap + to add your first document")
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.35))
+                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
             Spacer()
@@ -310,7 +313,7 @@ struct DocumentRow: View {
             GlassCard {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(Color.primary.opacity(0.08)).frame(width: 48, height: 48)
                         Image(systemName: doc.categoryIcon)
                             .font(.system(size: 18, weight: .medium))
@@ -320,7 +323,7 @@ struct DocumentRow: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(doc.name)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(.primary).lineLimit(1)
                             if doc.isCritical {
                                 Image(systemName: "exclamationmark.circle.fill")
@@ -329,13 +332,13 @@ struct DocumentRow: View {
                         }
                         HStack(spacing: 8) {
                             Text(LocalizedStringKey(doc.category.capitalized))
-                                .font(.system(size: 11, weight: .medium))
+                                .font(AppFont.caption2)
                                 .foregroundStyle(categoryColor.opacity(0.8))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .padding(.horizontal, AppSpacing.xs).padding(.vertical, 2)
                                 .background(categoryColor.opacity(0.12), in: Capsule())
                             if !doc.fileSizeDisplay.isEmpty {
                                 Text(doc.fileSizeDisplay)
-                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.35))
+                                    .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                             }
                         }
                         if let expiry = doc.expiresDisplay {
@@ -381,7 +384,7 @@ struct DocumentRow: View {
         switch doc.category {
         case "warranty":    return .yellow
         case "contract":    return .blue
-        case "insurance":   return Color(red: 0.3, green: 0.85, blue: 0.5)
+        case "insurance":   return Color.brandSuccess
         case "certificate": return .purple
         case "manual":      return .cyan
         case "invoice":     return .orange

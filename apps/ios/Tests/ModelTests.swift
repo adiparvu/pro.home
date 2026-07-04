@@ -38,5 +38,19 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(dm.body, "salut")
         XCTAssertEqual(dm.pinned, true)
         XCTAssertFalse(dm.timeDisplay.isEmpty)
+        // delivery receipt fields are optional and absent here
+        XCTAssertNil(dm.deliveredAt)
+        XCTAssertNil(dm.readAt)
+    }
+
+    func testDirectMessageDecodesDeliveryReceipts() throws {
+        let json = """
+        {"id":"\(UUID().uuidString)","sender_name":"Me","recipient_name":"Ana",
+         "body":"hey","created_at":"2026-06-28T18:00:00Z",
+         "delivered_at":"2026-06-28T18:00:05Z","read_at":"2026-06-28T18:01:00Z"}
+        """.data(using: .utf8)!
+        let dm = try JSONDecoder().decode(DirectMessage.self, from: json)
+        XCTAssertNotNil(dm.deliveredAt)
+        XCTAssertNotNil(dm.readAt)
     }
 }

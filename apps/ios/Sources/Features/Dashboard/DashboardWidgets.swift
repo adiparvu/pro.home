@@ -76,20 +76,20 @@ extension DashboardView {
                                 .fill(sec.color.opacity(0.15))
                                 .frame(width: 36, height: 36)
                             Image(systemName: sec.icon)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(sec.color)
                         }
                         Text(sec.title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(0.07))
+                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
                 }
                 .onMove { from, to in sectionOrder.move(fromOffsets: from, toOffset: to) }
             } header: {
                 Text("Sections")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
             }
@@ -102,20 +102,20 @@ extension DashboardView {
                                 .fill(type.color.opacity(0.15))
                                 .frame(width: 36, height: 36)
                             Image(systemName: type.icon)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(type.color)
                         }
                         Text(type.title)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(AppFont.body)
                             .foregroundStyle(.primary)
                     }
                     .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(Color.primary.opacity(0.07))
+                    .listRowSeparatorTint(Color.primary.opacity(AppOpacity.subtleFill))
                 }
                 .onMove { from, to in editableWidgets.move(fromOffsets: from, toOffset: to) }
             } header: {
                 Text("Overview Widgets")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
             }
@@ -123,11 +123,11 @@ extension DashboardView {
         .listStyle(.plain)
         .environment(\.editMode, .constant(.active))
         .frame(height: max(200, CGFloat(totalRows) * 56 + 80))
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
 
@@ -137,7 +137,7 @@ extension DashboardView {
         case .tasks:
             HomeWidget(
                 icon: "checklist",
-                iconColor: taskService.overdueCount > 0 ? .red : Color(red: 0.35, green: 0.65, blue: 1.0),
+                iconColor: taskService.overdueCount > 0 ? .red : Color.brandSkyBlue,
                 title: "Tasks",
                 value: taskService.overdueCount > 0 ? "\(taskService.overdueCount)" : "\(taskService.openCount)",
                 subtitle: taskService.overdueCount > 0 ? String(localized: "urgent") : String(localized: "active"),
@@ -148,7 +148,7 @@ extension DashboardView {
             HomeWidget(
                 icon: "creditcard.fill",
                 iconColor: financialService.currentMonthNet >= 0
-                    ? Color(red: 0.3, green: 0.85, blue: 0.45) : .orange,
+                    ? Color.brandSuccess : .orange,
                 title: "Finances",
                 value: netFormatted,
                 subtitle: String(localized: "this month")

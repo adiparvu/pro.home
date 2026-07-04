@@ -2,9 +2,10 @@ import SwiftUI
 
 struct AddFinancialView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var propertyService: PropertyService
-    @EnvironmentObject private var currencyService: CurrencyService
-    @EnvironmentObject private var appSettings: AppSettings
+    @Environment(PropertyService.self) private var propertyService
+    @Environment(CurrencyService.self) private var currencyService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(FamilyService.self) private var familyService
 
     let onSaved: () async -> Void
 
@@ -14,6 +15,8 @@ struct AddFinancialView: View {
     @State private var category = "other"
     @State private var date = Date()
     @State private var notes = ""
+    @State private var sharedMemberIds: [String] = []
+    @State private var sharedMemberNames: [String] = []
     @State private var isSaving = false
     @State private var errorMessage = ""
     @State private var showError = false
@@ -32,18 +35,20 @@ struct AddFinancialView: View {
                         amountField
                         detailsSection
                         notesField
+                        shareSection
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
                 }
             }
+            .task { if familyService.members.isEmpty { await familyService.load() } }
             .navigationTitle("Add Record")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -53,7 +58,7 @@ struct AddFinancialView: View {
                             ProgressView().tint(.white)
                         } else {
                             Text("Save")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(AppFont.subheadline)
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
@@ -81,14 +86,14 @@ struct AddFinancialView: View {
                             Image(systemName: t == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                                 .font(.system(size: 14))
                             Text(LocalizedStringKey(t.capitalized))
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(AppFont.footnoteEmphasis)
                         }
-                        .foregroundStyle(type == t ? Color.black : Color.primary.opacity(0.5))
+                        .foregroundStyle(type == t ? Color.black : Color.primary.opacity(AppOpacity.mediumText))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
                             type == t
-                                ? (t == "income" ? Color(red: 0.3, green: 0.85, blue: 0.5) : Color.red)
+                                ? (t == "income" ? Color.brandSuccess : Color.red)
                                 : Color.clear,
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous)
                         )
@@ -105,13 +110,13 @@ struct AddFinancialView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("AMOUNT")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.primary.opacity(0.35))
+                    .font(AppFont.label)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
 
                 HStack(alignment: .center, spacing: 8) {
                     Text(currencyService.symbol(for: appSettings.preferredCurrency))
                         .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(Color.primary.opacity(0.5))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     TextField("0", text: $amount)
                         .font(.system(size: 40, weight: .light))
                         .foregroundStyle(.primary)
@@ -135,8 +140,8 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
 
             divider
 
@@ -152,10 +157,10 @@ struct AddFinancialView: View {
                         Text(LocalizedStringKey(cat.capitalized)).tag(cat)
                     }
                 }
-                .tint(Color.primary.opacity(0.5))
+                .tint(Color.primary.opacity(AppOpacity.mediumText))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs)
 
             divider
 
@@ -167,13 +172,13 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.xs)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
     }
 
@@ -188,14 +193,51 @@ struct AddFinancialView: View {
                     .foregroundStyle(.primary)
                     .tint(.accentColor)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.horizontal, AppSpacing.base)
+            .padding(.vertical, AppSpacing.md)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
         )
+    }
+
+    // MARK: - Share with
+
+    // Finances are visible to household adults by default. Sharing a specific
+    // record surfaces it to a scoped member (e.g. a tenant's own utility bill)
+    // without granting them the rest of the ledger. Writes family_members.id
+    // strings into shared_member_ids (RLS: is_shared_with_me, migration 094).
+    @ViewBuilder
+    private var shareSection: some View {
+        if !familyService.members.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("Share with")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if !sharedMemberIds.isEmpty {
+                        Text("\(sharedMemberIds.count)")
+                            .font(AppFont.caption)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                            .padding(.horizontal, 8).padding(.vertical, 2)
+                            .background(Color.primary.opacity(0.08), in: Capsule())
+                    }
+                }
+                Text("Only household adults see finances. Anyone you add here can see this one record.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                MemberPickerView(selectedIds: $sharedMemberIds, selectedNames: $sharedMemberNames)
+            }
+            .padding(AppSpacing.base)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
+            )
+        }
     }
 
     private var divider: some View {
@@ -233,10 +275,12 @@ struct AddFinancialView: View {
             let date: String
             let description: String?
             let createdAt: String
+            let sharedMemberIds: [String]
             enum CodingKeys: String, CodingKey {
                 case title, amount, currency, type, category, date, description
                 case propertyId = "property_id"
                 case createdAt = "created_at"
+                case sharedMemberIds = "shared_member_ids"
             }
         }
 
@@ -252,7 +296,8 @@ struct AddFinancialView: View {
                     category: category,
                     date: dateString,
                     description: notes.isEmpty ? nil : notes,
-                    createdAt: now
+                    createdAt: now,
+                    sharedMemberIds: sharedMemberIds
                 ))
                 .execute()
 

@@ -8,7 +8,7 @@ struct WeatherWidget: View {
     var coordinate: CLLocationCoordinate2D?
     var action: () -> Void
 
-    @StateObject private var weatherService = WeatherKitService.shared
+    @State private var weatherService = WeatherKitService.shared
     @State private var shimmer = false
 
     var body: some View {
@@ -38,7 +38,7 @@ struct WeatherWidget: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cityName.isEmpty ? "Proprietatea mea" : cityName)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(AppFont.subheadline)
                                     .foregroundStyle(.white)
                                     .lineLimit(1)
                                 if let w = weatherService.currentWeather {
@@ -52,7 +52,7 @@ struct WeatherWidget: View {
                                 }
                             }
                         }
-                        .padding(.leading, 20)
+                        .padding(.leading, AppSpacing.xl)
 
                         Spacer()
 
@@ -74,20 +74,20 @@ struct WeatherWidget: View {
                                     .foregroundStyle(.white)
                                     .shadow(color: .black.opacity(0.2), radius: 4)
                                 Text(dateString(ctx.date))
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(AppFont.caption)
                                     .foregroundStyle(.white.opacity(0.80))
                             }
                         }
-                        .padding(.trailing, 20)
+                        .padding(.trailing, AppSpacing.xl)
                     }
                 }
                 .frame(height: 120)
             }
         }
         .buttonStyle(.plain)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xl, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 1)
         )
         .shadow(color: gradientColors(for: Date())[0].opacity(0.55), radius: 20, y: 8)
@@ -105,7 +105,7 @@ struct WeatherWidget: View {
         let h = Calendar.current.component(.hour, from: date)
         switch h {
         case 5..<8:  return [Color(red: 0.90, green: 0.58, blue: 0.28), Color(red: 0.68, green: 0.38, blue: 0.76)]
-        case 8..<18: return [Color(red: 0.18, green: 0.48, blue: 0.92), Color(red: 0.30, green: 0.72, blue: 0.95)]
+        case 8..<18: return [Color(red: 0.18, green: 0.48, blue: 0.92), Color.brandSkyBlue]
         case 18..<21: return [Color(red: 0.78, green: 0.35, blue: 0.18), Color(red: 0.48, green: 0.22, blue: 0.62)]
         default:     return [Color(red: 0.04, green: 0.08, blue: 0.22), Color(red: 0.14, green: 0.18, blue: 0.42)]
         }
@@ -151,9 +151,9 @@ struct CalendarLargeWidget: View {
                             .animation(.spring(response: 0.5), value: dayNumber(ctx.date))
                         Text(monthYear(ctx.date))
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(0.45))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
-                    .padding(.leading, 20)
+                    .padding(.leading, AppSpacing.xl)
 
                     Rectangle()
                         .fill(Color.primary.opacity(0.08))
@@ -163,7 +163,7 @@ struct CalendarLargeWidget: View {
                     // Day name + mini week strip
                     VStack(alignment: .leading, spacing: 8) {
                         Text(dayName(ctx.date))
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppFont.title3)
                             .foregroundStyle(.primary)
 
                         HStack(spacing: 6) {
@@ -180,18 +180,18 @@ struct CalendarLargeWidget: View {
                                 }
                                 .frame(width: 26, height: 36)
                                 .background(isToday ? Color.accentColor : Color.clear,
-                                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                            in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                             }
                         }
                     }
 
                     Spacer()
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, AppSpacing.lg)
             }
         }
         .buttonStyle(.plain)
-        .liquidGlass(cornerRadius: 20)
+        .liquidGlass(cornerRadius: AppRadius.xl)
     }
 
     private func dayNumber(_ date: Date) -> String {

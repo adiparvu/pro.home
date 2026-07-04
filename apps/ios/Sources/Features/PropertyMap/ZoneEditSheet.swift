@@ -50,8 +50,8 @@ struct ZoneEditSheet: View {
                     field("NAME") {
                         TextField("Zone name", text: $name)
                             .font(.system(size: 16))
-                            .padding(14)
-                            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .padding(AppSpacing.base)
+                            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     }
                     field("PHOTO") { photoPickerSection }
                     field("COLOR") { paletteRow }
@@ -62,14 +62,14 @@ struct ZoneEditSheet: View {
                         showDeleteConfirm = true
                     } label: {
                         Label("Delete zone", systemImage: "trash")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                            .padding(.vertical, AppSpacing.base)
                             .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .padding(.top, 4)
+                    .padding(.top, AppSpacing.xxs)
                 }
-                .padding(20)
+                .padding(AppSpacing.xl)
             }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Edit zone")
@@ -118,16 +118,16 @@ struct ZoneEditSheet: View {
                         .scaledToFill()
                 } else if let urlStr = photoUrl, let url = URL(string: urlStr) {
                     AsyncImage(url: url) { img in img.resizable().scaledToFill() }
-                        placeholder: { Color.primary.opacity(0.06) }
+                        placeholder: { Color.primary.opacity(AppOpacity.hairline) }
                 } else {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         VStack(spacing: 8) {
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 26, weight: .light))
                             Text("Add cover photo")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(AppFont.caption)
                         }
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity)
                         .frame(height: 90)
                     }
@@ -136,17 +136,17 @@ struct ZoneEditSheet: View {
             .frame(maxWidth: .infinity)
             .frame(height: pendingPhotoData != nil || photoUrl != nil ? 110 : 90)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             if pendingPhotoData != nil || photoUrl != nil {
                 PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                     Image(systemName: "camera.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(.white)
                         .padding(7)
                         .background(.regularMaterial, in: Circle())
                 }
-                .padding(8)
+                .padding(AppSpacing.sm)
             }
         }
     }
@@ -176,14 +176,14 @@ struct ZoneEditSheet: View {
             }
             Spacer()
         }
-        .padding(16)
+        .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func field<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+            Text(title).font(AppFont.captionStrong).foregroundStyle(.secondary)
             content()
         }
     }
@@ -228,7 +228,7 @@ struct ZoneEditSheet: View {
                 .clipShape(Circle())
                 .scaleEffect(Self.palette.contains(colorHex) ? 1.0 : 1.12)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppSpacing.xxs)
         }
     }
 
@@ -236,11 +236,11 @@ struct ZoneEditSheet: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 6), spacing: 10) {
             ForEach(Self.icons, id: \.self) { sym in
                 Image(systemName: sym)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.headline)
                     .foregroundStyle(icon == sym ? .white : .primary)
                     .frame(width: 44, height: 44)
-                    .background(icon == sym ? tint : Color.primary.opacity(0.06),
-                                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(icon == sym ? tint : Color.primary.opacity(AppOpacity.hairline),
+                                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { icon = sym }
                         HapticFeedback.selection()
@@ -255,12 +255,12 @@ struct ZoneEditSheet: View {
                 ForEach(PropertyLayer.allCases, id: \.self) { l in
                     let active = layer == l
                     HStack(spacing: 5) {
-                        Image(systemName: l.icon).font(.system(size: 11, weight: .semibold))
-                        Text(LocalizedStringKey(l.displayName)).font(.system(size: 13, weight: .semibold))
+                        Image(systemName: l.icon).font(AppFont.label)
+                        Text(LocalizedStringKey(l.displayName)).font(AppFont.captionEmphasis)
                     }
                     .foregroundStyle(active ? .white : .primary)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(active ? l.color : Color.primary.opacity(0.06), in: Capsule())
+                    .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
+                    .background(active ? l.color : Color.primary.opacity(AppOpacity.hairline), in: Capsule())
                     .onTapGesture {
                         withAnimation(.spring(response: 0.25)) { layer = l }
                         HapticFeedback.selection()

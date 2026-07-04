@@ -17,10 +17,10 @@ struct SiriShortcutsView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
                         Text("All \(PRVIOShortcutsProvider.appShortcuts.count) shortcuts activated for Siri!")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(AppFont.footnote)
                             .foregroundStyle(.primary)
                     }
-                    .padding(14)
+                    .padding(AppSpacing.base)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color(red: 0.15, green: 0.80, blue: 0.40).opacity(0.1),
                                 in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -32,8 +32,8 @@ struct SiriShortcutsView: View {
 
                 Spacer(minLength: 110)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
         }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
@@ -46,9 +46,9 @@ struct SiriShortcutsView: View {
         GlassCard {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                         .fill(LinearGradient(
-                            colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
+                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
@@ -59,7 +59,7 @@ struct SiriShortcutsView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Siri Commands")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                         .foregroundStyle(.primary)
                     Text("Control PRVIO with your voice")
                         .font(.system(size: 12))
@@ -75,17 +75,17 @@ struct SiriShortcutsView: View {
     private let shortcuts: [(icon: String, color: Color, title: String, phrases: [String])] = [
         ("house.fill",    .blue,
          "Open PRVIO",    ["\"Open PRVIO\"", "\"Show PRVIO dashboard\""]),
-        ("checklist",     Color(red: 0.3, green: 0.85, blue: 0.45),
+        ("checklist",     Color.brandSuccess,
          "New Task",      ["\"Add task in PRVIO\"", "\"New task in PRVIO\""]),
         ("drop.fill",     Color(red: 0.15, green: 0.65, blue: 1.0),
          "Water Plant",   ["\"Water plant in PRVIO\"", "\"Mark plant watered in PRVIO\""]),
         ("leaf.fill",     Color(red: 0.15, green: 0.72, blue: 0.37),
          "Open Plants",   ["\"Open plants in PRVIO\"", "\"Show plants in PRVIO\""]),
-        ("cart.fill",     Color(red: 0.35, green: 0.65, blue: 1.0),
+        ("cart.fill",     Color.brandSkyBlue,
          "Shopping List", ["\"Open shopping in PRVIO\"", "\"Shopping list PRVIO\""]),
-        ("message.fill",  Color(red: 0.2, green: 0.55, blue: 0.95),
+        ("message.fill",  Color.brandPrimaryBlue,
          "Chat",          ["\"Open chat in PRVIO\"", "\"Chat PRVIO\""]),
-        ("sparkles",      Color(red: 0.55, green: 0.35, blue: 0.95),
+        ("sparkles",      Color.brandPurple,
          "Ask ARIA",      ["\"Ask ARIA in PRVIO\"", "\"Talk to PRVIO\""]),
     ]
 
@@ -107,15 +107,15 @@ struct SiriShortcutsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                         .fill(color.opacity(0.14))
                         .frame(width: 32, height: 32)
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.footnote)
                         .foregroundStyle(color)
                 }
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "mic.fill")
@@ -138,7 +138,7 @@ struct SiriShortcutsView: View {
             }
             .padding(.leading, 44)
         }
-        .padding(14)
+        .padding(AppSpacing.base)
     }
 
     // MARK: Donate + Shortcuts app link
@@ -148,7 +148,7 @@ struct SiriShortcutsView: View {
             Button {
                 guard !donated else { return }
                 Task {
-                    await PRVIOShortcutsProvider.updateAppShortcutParameters()
+                    PRVIOShortcutsProvider.updateAppShortcutParameters()
                     HapticFeedback.success()
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                         donated = true
@@ -160,9 +160,9 @@ struct SiriShortcutsView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: donated ? "checkmark.circle.fill" : "wand.and.stars")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                     Text(LocalizedStringKey(donated ? "Commands Activated!" : "Activate Siri Commands"))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.headline)
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -171,9 +171,9 @@ struct SiriShortcutsView: View {
                     donated
                         ? AnyShapeStyle(Color(red: 0.15, green: 0.80, blue: 0.40))
                         : AnyShapeStyle(LinearGradient(
-                            colors: [Color(red: 0.55, green: 0.35, blue: 0.95), Color(red: 0.4, green: 0.25, blue: 0.85)],
+                            colors: [Color.brandPurple, Color(red: 0.4, green: 0.25, blue: 0.85)],
                             startPoint: .leading, endPoint: .trailing)),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 )
             }
             .buttonStyle(.plain)
@@ -182,24 +182,24 @@ struct SiriShortcutsView: View {
             ShortcutsLink {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.up.right.square")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                     Text("View in Shortcuts App")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.subheadline)
                 }
-                .foregroundStyle(Color(red: 0.55, green: 0.35, blue: 0.95))
+                .foregroundStyle(Color.brandPurple)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
-                .background(Color(red: 0.55, green: 0.35, blue: 0.95).opacity(0.1),
+                .background(Color.brandPurple.opacity(0.1),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color(red: 0.55, green: 0.35, blue: 0.95).opacity(0.25), lineWidth: 1))
+                    .strokeBorder(Color.brandPurple.opacity(0.25), lineWidth: 1))
             }
 
             Text("Activate once — Siri learns all \(shortcuts.count) commands. To remove, go to iPhone Settings › Siri.")
                 .font(.system(size: 11))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, AppSpacing.sm)
         }
     }
 
@@ -207,16 +207,16 @@ struct SiriShortcutsView: View {
 
     private func sectionHeader(_ text: LocalizedStringKey) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, 8)
+            .padding(.bottom, AppSpacing.sm)
     }
 
     private var rowDivider: some View {
         Rectangle()
             .fill(Color.primary.opacity(0.05))
             .frame(height: 0.5)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppSpacing.base)
     }
 }

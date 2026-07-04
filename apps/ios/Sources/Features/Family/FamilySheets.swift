@@ -2,14 +2,24 @@ import SwiftUI
 
 // MARK: - Constants
 
-let kRoles = ["owner", "partner", "child", "member", "tenant", "guest"]
+let kRoles = ["owner", "partner", "child", "member", "tenant", "worker", "guest"]
 let kRoleLabels: [String: String] = [
     "owner": "Owner", "partner": "Partner", "child": "Child",
-    "member": "Member", "tenant": "Tenant", "guest": "Guest"
+    "member": "Member", "tenant": "Tenant", "worker": "Worker", "guest": "Guest"
 ]
 let kRoleIcons: [String: String] = [
     "owner": "house.fill", "partner": "heart.fill", "child": "figure.child",
-    "member": "person.fill", "tenant": "key.fill", "guest": "person.badge.clock"
+    "member": "person.fill", "tenant": "key.fill", "worker": "hammer.fill",
+    "guest": "person.badge.clock"
+]
+let kRoleDescriptions: [String: String] = [
+    "owner":   "Full access to everything",
+    "partner": "Full access, same as the owner",
+    "member":  "Family adult — home, tasks, finances",
+    "child":   "Limited access, with supervision",
+    "tenant":  "Sees own tasks and shared bills",
+    "worker":  "Sees only assigned tasks and chat",
+    "guest":   "Chat only — nothing from the home",
 ]
 let kColors = ["#5B8AF5", "#FF6B6B", "#51CF66", "#FF9F43", "#A29BFE", "#FD79A8", "#00CEC9", "#FDCB6E"]
 let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok", "twitter"]
@@ -17,7 +27,7 @@ let kSocialPlatforms = ["instagram", "facebook", "whatsapp", "linkedin", "tiktok
 // MARK: - Add sheet
 
 struct AddFamilyMemberSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Environment(\.dismiss) private var dismiss
     let propertyId: UUID?
     var propertyName: String? = nil
@@ -35,6 +45,9 @@ struct AddFamilyMemberSheet: View {
     @State private var sendInvite = true
     @State private var isSaving = false
     @State private var showAddSocial = false
+    @State private var inviteError: String?
+    // Member is added before the invite; guard against re-adding on retry.
+    @State private var memberAdded = false
 
     private var fullName: String {
         [firstName.trimmingCharacters(in: .whitespaces),
@@ -59,25 +72,32 @@ struct AddFamilyMemberSheet: View {
                         }
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
                 .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle("Add Member").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: {
                         if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Add").font(.system(size: 15, weight: .semibold)).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
+                        else { Text("Add").font(AppFont.subheadline).foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3)) }
                     }
                     .disabled(!canSave)
                 }
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
+            }
+            .alert("Invite not sent", isPresented: Binding(
+                get: { inviteError != nil }, set: { if !$0 { inviteError = nil } })
+            ) {
+                Button("OK", role: .cancel) { dismiss() }
+            } message: {
+                Text(inviteError ?? "")
             }
         }
         .onAppear {
@@ -94,7 +114,7 @@ struct AddFamilyMemberSheet: View {
                 .foregroundStyle(Color(hex: color) ?? .blue)
         }
         .frame(width: 80, height: 80)
-        .padding(.top, 8)
+        .padding(.top, AppSpacing.sm)
     }
 
     private var colorRow: some View {
@@ -120,12 +140,12 @@ struct AddFamilyMemberSheet: View {
             div
             fieldRow(icon: "envelope.fill", color: .orange, placeholder: "E-mail", text: $email, keyboard: .emailAddress, autocap: .never)
             div
-            fieldRow(icon: "phone.fill", color: Color(red: 0.2, green: 0.8, blue: 0.4), placeholder: "Phone", text: $phone, keyboard: .phonePad)
+            fieldRow(icon: "phone.fill", color: Color.brandSuccess, placeholder: "Phone", text: $phone, keyboard: .phonePad)
             div
             birthdayRow
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
@@ -135,34 +155,34 @@ struct AddFamilyMemberSheet: View {
                     Image(systemName: "gift.fill").font(.system(size: 14)).foregroundStyle(.pink).frame(width: 28)
                     Text(showBirthday ? formatted(birthday) : "Date of birth")
                         .font(.system(size: 15))
-                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(0.45))
+                        .foregroundStyle(showBirthday ? .primary : Color.primary.opacity(AppOpacity.secondaryText))
                     Spacer()
                     Image(systemName: showBirthday ? "chevron.up" : "chevron.down")
                         .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
+                .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
             }
             .buttonStyle(.plain)
             if showBirthday {
                 DatePicker("", selection: $birthday, displayedComponents: .date)
                     .datePickerStyle(.wheel)
                     .labelsHidden()
-                    .padding(.horizontal, 8).padding(.bottom, 8)
+                    .padding(.horizontal, AppSpacing.sm).padding(.bottom, AppSpacing.sm)
             }
         }
     }
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(LocalizedStringKey(kRoleLabels[role] ?? role.capitalized))
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary)
-                    if role == "tenant" {
-                        Text("Limited access — tasks and chat")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                        .font(AppFont.subheadline).foregroundStyle(.primary)
+                    if let desc = kRoleDescriptions[role] {
+                        Text(LocalizedStringKey(desc))
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                 }
                 Spacer()
@@ -174,21 +194,21 @@ struct AddFamilyMemberSheet: View {
                 .pickerStyle(.menu)
                 .tint(.accentColor)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var socialLinksSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) {
                 ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(.system(size: 13, weight: .semibold)).foregroundStyle(.primary)
+                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
                             TextField("@\(link.handle)", text: Binding(
                                 get: { socialLinks[idx].handle },
                                 set: { socialLinks[idx].handle = $0 }
@@ -200,7 +220,7 @@ struct AddFamilyMemberSheet: View {
                             Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
                         }
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     if idx < socialLinks.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                     }
@@ -214,33 +234,52 @@ struct AddFamilyMemberSheet: View {
                         Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
                         Spacer()
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var inviteSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("INVITATION").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.35)).padding(.leading, 4)
+            Text("INVITATION").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     ColoredIconBadge(icon: "envelope.badge.fill", color: .blue, size: 36)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Send invitation").font(.system(size: 14, weight: .semibold)).foregroundStyle(.primary)
-                        Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.45))
+                        Text("Send invitation").font(AppFont.footnoteEmphasis).foregroundStyle(.primary)
+                        Text("The person will receive an invitation email").font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     }
                     Spacer()
                     Toggle("", isOn: $sendInvite).labelsHidden().tint(.accentColor)
+                        .disabled(!isEmailValid)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 12)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
+            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+
+            if !isEmailValid {
+                Label("Enter a valid email to send the invitation", systemImage: "exclamationmark.circle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .padding(.leading, AppSpacing.xxs)
+            } else if sendInvite {
+                Label("The invitation is valid for 7 days; you can track and resend it from Members → Invitations.", systemImage: "clock")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    .padding(.leading, AppSpacing.xxs)
+            }
         }
+    }
+
+    private var isEmailValid: Bool {
+        let e = email.trimmingCharacters(in: .whitespaces)
+        guard e.contains("@"), e.contains("."), e.count >= 6 else { return false }
+        return !e.hasPrefix("@") && !e.hasSuffix(".")
     }
 
     private func fieldRow(icon: String, color: Color, placeholder: String, text: Binding<String>,
@@ -251,7 +290,7 @@ struct AddFamilyMemberSheet: View {
                 .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                 .keyboardType(keyboard).textInputAutocapitalization(autocap)
         }
-        .padding(.horizontal, 16).padding(.vertical, 13)
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
     }
 
     private var div: some View {
@@ -286,50 +325,37 @@ struct AddFamilyMemberSheet: View {
         let name = fullName
         let bdString = birthdayString()
         do {
-            try await familyService.add(
-                name: name, role: role,
-                email: email.isEmpty ? nil : email,
-                phone: phone.isEmpty ? nil : phone,
-                color: color, propertyId: propertyId,
-                birthday: bdString, socialLinks: socialLinks
-            )
-            if let bdStr = bdString, let bdDate = parseBirthday(bdStr) {
-                await familyService.addBirthdayToCalendar(name: name, birthday: bdDate)
-            }
-            if sendInvite, !email.isEmpty {
-                sendInviteEmail(to: email, name: name)
+            if !memberAdded {
+                try await familyService.add(
+                    name: name, role: role,
+                    email: email.isEmpty ? nil : email,
+                    phone: phone.isEmpty ? nil : phone,
+                    color: color, propertyId: propertyId,
+                    birthday: bdString, socialLinks: socialLinks
+                )
+                memberAdded = true
+                if let bdStr = bdString, let bdDate = parseBirthday(bdStr) {
+                    await familyService.addBirthdayToCalendar(name: name, birthday: bdDate)
+                }
             }
         } catch {
             #if DEBUG
             print("[FamilySheets] save error: \(error)")
             #endif
         }
+        // Await the invite so a delivery failure is surfaced (member is already
+        // added; the alert's OK dismisses). Previously fired-and-forgotten, which
+        // hid every failure and made invitations silently vanish.
+        if sendInvite, isEmailValid {
+            if let err = await familyService.sendInvite(
+                to: email, name: name, role: role,
+                propertyId: propertyId, propertyName: propertyName) {
+                inviteError = err
+                return
+            }
+        }
         HapticFeedback.success()
         dismiss()
-    }
-
-    private func sendInviteEmail(to email: String, name: String) {
-        Task {
-            struct InvitePayload: Encodable {
-                let to: String
-                let name: String
-                let propertyId: String?
-                let propertyName: String?
-                let role: String
-                let inviterEmail: String?
-            }
-            let inviterEmail = try? await supabase.auth.session.user.email
-            let payload = InvitePayload(
-                to: email,
-                name: name,
-                propertyId: propertyId?.uuidString,
-                propertyName: propertyName,
-                role: role,
-                inviterEmail: inviterEmail
-            )
-            _ = try? await supabase.functions
-                .invoke("send-invite-email", options: .init(body: payload))
-        }
     }
 }
 
@@ -367,7 +393,7 @@ struct AddSocialLinkSheet: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
 
                     HStack(spacing: 12) {
                         ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
@@ -375,10 +401,10 @@ struct AddSocialLinkSheet: View {
                             .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                             .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
-                    .padding(.horizontal, 16).padding(.vertical, 13)
-                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+                    .padding(.horizontal, AppSpacing.xl)
 
                     Spacer()
                 }
@@ -386,7 +412,7 @@ struct AddSocialLinkSheet: View {
             .navigationTitle("Add Network").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(0.7))
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
@@ -395,7 +421,7 @@ struct AddSocialLinkSheet: View {
                         onAdd(SocialLink(platform: platform, handle: h))
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(AppFont.subheadline)
                     .foregroundStyle(handle.isEmpty ? Color.primary.opacity(0.3) : .blue)
                     .disabled(handle.trimmingCharacters(in: .whitespaces).isEmpty)
                 }

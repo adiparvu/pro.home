@@ -96,7 +96,7 @@ struct SupplyItem: Identifiable, Codable, Hashable {
         switch category {
         case "food":        return Color(red: 1.0,  green: 0.62, blue: 0.04)
         case "cleaning":    return Color(red: 0.19, green: 0.82, blue: 0.75)
-        case "bathroom":    return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case "bathroom":    return Color.brandSkyBlue
         case "garden":      return Color(red: 0.19, green: 0.82, blue: 0.35)
         case "diy":         return Color(red: 0.9,  green: 0.45, blue: 0.18)
         case "electronics": return Color(red: 1.0,  green: 0.85, blue: 0.1)

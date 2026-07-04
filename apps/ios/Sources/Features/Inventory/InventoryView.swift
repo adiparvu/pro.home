@@ -6,9 +6,9 @@ import VisionKit
 struct InventoryView: View {
     var autoScan: Bool = false
     var autoAdd: Bool = false
-    @EnvironmentObject private var appSettings: AppSettings
-    @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var service: InventoryService
+    @Environment(AppSettings.self) private var appSettings
+    @Environment(AppRouter.self) private var router
+    @Environment(InventoryService.self) private var service
     @State private var filter: InvFilter = .all
     @State private var showAdd = false
     @State private var showScanner = false
@@ -51,7 +51,7 @@ struct InventoryView: View {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 if !service.items.isEmpty {
-                    summaryBar.padding(.horizontal, 20).padding(.vertical, 10)
+                    summaryBar.padding(.horizontal, AppSpacing.xl).padding(.vertical, 10)
                 }
                 if service.items.isEmpty {
                     emptyState
@@ -73,7 +73,7 @@ struct InventoryView: View {
                                     .swipeActions(edge: .leading) {
                                         if item.isLoaned {
                                             Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: { Label("Returned", systemImage: "checkmark.circle") }
-                                                .tint(Color(red: 0.2, green: 0.78, blue: 0.45))
+                                                .tint(Color.brandSuccess)
                                         } else {
                                             Button { HapticFeedback.impact(.medium); selectedItem = item } label: { Label("Loan Out", systemImage: "arrow.uturn.right.circle") }
                                                 .tint(.accentColor)
@@ -81,7 +81,7 @@ struct InventoryView: View {
                                     }
                             }
                         }
-                        .padding(.horizontal, 20).padding(.bottom, 110)
+                        .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
                 }
             }
@@ -112,12 +112,14 @@ struct InventoryView: View {
                         }
                     } label: {
                         Image(systemName: filter == .all ? "line.3.horizontal.decrease" : filter.icon)
-                            .font(.system(size: 15, weight: .semibold)).frame(width: 38, height: 32)
+                            .font(AppFont.subheadline).frame(width: 38, height: 32)
                     }
+                    .accessibilityLabel("Filter inventory")
                     Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Button { showAdd = true; HapticFeedback.impact(.medium) } label: {
-                        Image(systemName: "plus").font(.system(size: 15, weight: .semibold)).frame(width: 38, height: 32)
+                        Image(systemName: "plus").font(AppFont.subheadline).frame(width: 38, height: 32)
                     }.buttonStyle(.plain)
+                    .accessibilityLabel("Add item")
                 }
             }
         }
@@ -160,8 +162,13 @@ struct InventoryView: View {
     private func infoTile(_ value: String, _ label: LocalizedStringKey, highlight: Bool = false) -> some View {
         GlassCard(padding: 10) {
             VStack(spacing: 3) {
-                Text(value).font(.system(size: 14, weight: .bold)).foregroundStyle(highlight ? .orange : .white).lineLimit(1).minimumScaleFactor(0.7)
-                Text(label).font(.system(size: 9)).foregroundStyle(Color.primary.opacity(0.4))
+                // Was `.white`, which is invisible on the light-mode card. Use
+                // `.primary` so it's readable in both light and dark.
+                Text(value).font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(highlight ? .orange : .primary)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }.frame(maxWidth: .infinity)
         }
     }
@@ -170,7 +177,7 @@ struct InventoryView: View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "cube.box.fill").font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(0.5))
+            Text("No inventory yet").font(.system(size: 17)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
             Button("Add first item") { showAdd = true }.font(.system(size: 14)).foregroundStyle(Color.accentColor)
             Spacer()
         }

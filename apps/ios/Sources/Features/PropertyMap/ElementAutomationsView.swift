@@ -6,8 +6,8 @@ import SwiftUI
 struct ElementAutomationsSection: View {
     let element: PropertyElement
 
-    @StateObject private var service = AutomationService()
-    @EnvironmentObject private var taskService: TaskService
+    @State private var service = AutomationService()
+    @Environment(TaskService.self) private var taskService
     @State private var showAdd = false
 
     private var items: [ElementAutomation] { service.automations(for: element.id) }
@@ -23,6 +23,7 @@ struct ElementAutomationsSection: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20)).foregroundStyle(Color.accentColor)
                     }
+                    .accessibilityLabel("Add automation")
                 }
 
                 if items.isEmpty {
@@ -62,11 +63,11 @@ struct ElementAutomationsSection: View {
     private func row(_ a: ElementAutomation) -> some View {
         HStack(spacing: 10) {
             Image(systemName: a.trigger.icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.footnoteEmphasis)
                 .foregroundStyle(a.isActive ? Color.accentColor : .secondary)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 1) {
-                Text(a.name).font(.system(size: 14, weight: .medium))
+                Text(a.name).font(AppFont.footnote)
                     .foregroundStyle(a.isActive ? .primary : .secondary)
                 Text(a.summary + (a.createsTask ? " · " + String(localized: "creates task") : ""))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -86,7 +87,7 @@ struct ElementAutomationsSection: View {
                 Image(systemName: "ellipsis").foregroundStyle(.secondary).padding(.leading, 2)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppSpacing.xxs)
     }
 
     private func createTask(name: String, due: String) async {
@@ -138,8 +139,8 @@ struct AddElementAutomationSheet: View {
                                                 Label(t.displayName, systemImage: t.icon)
                                                     .font(.caption.weight(trigger == t ? .semibold : .regular))
                                                     .foregroundStyle(trigger == t ? .white : .secondary)
-                                                    .padding(.horizontal, 12).padding(.vertical, 7)
-                                                    .background(Capsule().fill(trigger == t ? Color.accentColor : Color.primary.opacity(0.07)))
+                                                    .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
+                                                    .background(Capsule().fill(trigger == t ? Color.accentColor : Color.primary.opacity(AppOpacity.subtleFill)))
                                             }
                                             .buttonStyle(.plain)
                                         }
@@ -154,7 +155,7 @@ struct AddElementAutomationSheet: View {
                                 TextField("e.g. Service the boiler", text: $name)
                                     .font(.subheadline)
                                     .padding(10)
-                                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                                    .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: 10))
                             }
                         }
 
@@ -185,7 +186,7 @@ struct AddElementAutomationSheet: View {
 
                         Spacer(minLength: 20)
                     }
-                    .padding(16)
+                    .padding(AppSpacing.lg)
                 }
             }
             .navigationTitle("New automation")

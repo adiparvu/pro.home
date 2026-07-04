@@ -3,13 +3,13 @@ import SwiftUI
 // MARK: - AI Insights — matches dark mockup (blue orb + proactive recommendations)
 
 struct AIInsightsView: View {
-    @EnvironmentObject var router: AppRouter
-    @EnvironmentObject var taskService: TaskService
-    @EnvironmentObject var elementService: PropertyElementService
-    @EnvironmentObject var zoneService: PropertyZoneService
-    @EnvironmentObject var plantService: PlantService
-    @EnvironmentObject var propertyService: PropertyService
-    @EnvironmentObject private var tabBarVis: TabBarVisibility
+    @Environment(AppRouter.self) var router
+    @Environment(TaskService.self) var taskService
+    @Environment(PropertyElementService.self) var elementService
+    @Environment(PropertyZoneService.self) var zoneService
+    @Environment(PlantService.self) var plantService
+    @Environment(PropertyService.self) var propertyService
+    @Environment(TabBarVisibility.self) private var tabBarVis
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
 
     @State private var orbPulse = false
@@ -23,7 +23,7 @@ struct AIInsightsView: View {
                 // Blue orb hero
                 orbHero
                     .padding(.top, 28)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, AppSpacing.xxl)
 
                 // Recommendations section
                 VStack(alignment: .leading, spacing: 8) {
@@ -40,7 +40,7 @@ struct AIInsightsView: View {
                                 .background(Color.accentColor, in: Capsule())
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
 
                     GlassCard(padding: 0) {
                         VStack(spacing: 0) {
@@ -50,7 +50,7 @@ struct AIInsightsView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppSpacing.lg)
                 }
 
                 Spacer().frame(height: 28)
@@ -62,9 +62,9 @@ struct AIInsightsView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                         Text(String(localized: "ai_insights_ask_aria"))
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(AppFont.subheadline)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -75,34 +75,34 @@ struct AIInsightsView: View {
                                      Color(red: 0.55, green: 0.30, blue: 0.90)],
                             startPoint: .leading, endPoint: .trailing
                         ),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     )
                     .shadow(color: Color(red: 0.35, green: 0.30, blue: 0.90).opacity(0.45), radius: 14, y: 4)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 14)
 
                 // View Full Timeline — outline button
                 NavigationLink {
                     PRVIOTimelineView()
-                        .environmentObject(taskService)
-                        .environmentObject(elementService)
-                        .environmentObject(tabBarVis)
+                        .environment(taskService)
+                        .environment(elementService)
+                        .environment(tabBarVis)
                 } label: {
                     Text(String(localized: "ai_insights_timeline"))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(Color.brandSkyBlue)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
                         .background {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
+                                .strokeBorder(Color.brandSkyBlue.opacity(0.4), lineWidth: 1.5)
                         }
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 10)
 
@@ -111,17 +111,17 @@ struct AIInsightsView: View {
                     AutomationBuilderView()
                 } label: {
                     Text(String(localized: "ai_insights_automation"))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.45, green: 0.60, blue: 1.0))
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(Color.brandSkyBlue)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
                         .background {
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(red: 0.45, green: 0.60, blue: 1.0).opacity(0.4), lineWidth: 1.5)
+                                .strokeBorder(Color.brandSkyBlue.opacity(0.4), lineWidth: 1.5)
                         }
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.lg)
 
                 Spacer(minLength: 32)
             }
@@ -142,7 +142,7 @@ struct AIInsightsView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [Color(red: 0.30, green: 0.55, blue: 1.0).opacity(orbPulse ? 0.35 : 0.20),
+                            colors: [Color.brandSkyBlue.opacity(orbPulse ? 0.35 : 0.20),
                                      Color.clear],
                             center: .center, startRadius: 0, endRadius: 70
                         )
@@ -164,7 +164,7 @@ struct AIInsightsView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color(red: 0.35, green: 0.55, blue: 1.0),
+                            colors: [Color.brandSkyBlue,
                                      Color(red: 0.55, green: 0.30, blue: 0.95)],
                             startPoint: .topLeading, endPoint: .bottomTrailing
                         )
@@ -190,7 +190,7 @@ struct AIInsightsView: View {
                     .foregroundStyle(.primary)
                 Text(String(localized: "ai_insights_property_intelligence"))
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color.primary.opacity(0.45))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
             }
         }
     }
@@ -201,18 +201,18 @@ struct AIInsightsView: View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 36, weight: .light))
-                .foregroundStyle(Color(red: 0.20, green: 0.82, blue: 0.48).opacity(0.6))
-                .padding(.top, 20)
+                .foregroundStyle(Color.brandSuccess.opacity(0.6))
+                .padding(.top, AppSpacing.xl)
             Text(String(localized: "ai_insights_all_good"))
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.headline)
                 .foregroundStyle(Color.primary.opacity(0.55))
             Text(String(localized: "ai_insights_healthy"))
                 .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.35))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, AppSpacing.xxl)
     }
 
     // MARK: - Compute insights from live data
@@ -246,7 +246,7 @@ struct AIInsightsView: View {
             let plantsToWater = needsWater
             result.append(.init(
                 icon: "drop.fill",
-                iconColor: Color(red: 0.25, green: 0.65, blue: 1.0),
+                iconColor: Color.brandSkyBlue,
                 title: needsWater.count == 1
                     ? "\(firstPlant.name) needs watering"
                     : "\(needsWater.count) plants need watering",
@@ -289,7 +289,7 @@ struct AIInsightsView: View {
             let score = propertyService.primary?.healthScore ?? 100
             result.append(.init(
                 icon: "checkmark.seal.fill",
-                iconColor: Color(red: 0.20, green: 0.82, blue: 0.48),
+                iconColor: Color.brandSuccess,
                 title: "Property health is excellent (\(score)%)",
                 elapsed: "Now"
             ))
@@ -326,12 +326,12 @@ struct AIInsightRow: View {
                         .fill(insight.iconColor.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: insight.icon)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.footnoteEmphasis)
                         .foregroundStyle(insight.iconColor)
                 }
 
                 Text(LocalizedStringKey(insight.title))
-                    .font(.system(size: 14, weight: .medium))
+                    .font(AppFont.footnote)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -352,7 +352,7 @@ struct AIInsightRow: View {
                                 .frame(width: 52, height: 24)
                         } else {
                             Text(actionLabel)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(AppFont.label)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 5)
@@ -363,11 +363,11 @@ struct AIInsightRow: View {
                     .disabled(isActing)
                 } else {
                     Text(LocalizedStringKey(insight.elapsed))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.35))
+                        .font(AppFont.caption2)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, 13)
 
             if !isLast {

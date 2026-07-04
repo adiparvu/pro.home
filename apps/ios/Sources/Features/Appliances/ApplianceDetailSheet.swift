@@ -4,7 +4,7 @@ import SwiftUI
 
 struct ApplianceDetailSheet: View {
     let appliance: Appliance
-    @EnvironmentObject private var applianceService: ApplianceService
+    @Environment(ApplianceService.self) private var applianceService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirm = false
@@ -47,8 +47,8 @@ struct ApplianceDetailSheet: View {
                         deleteButton
                         Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.lg)
                 }
             }
             .navigationTitle(appliance.name)
@@ -84,12 +84,12 @@ struct ApplianceDetailSheet: View {
                         .foregroundStyle(.primary)
                     Text(appliance.category.displayName)
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.primary.opacity(0.45))
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
                     Text(appliance.warrantyStatus)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(AppFont.captionStrong)
                         .foregroundStyle(appliance.warrantyColor)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, AppSpacing.xxs)
                         .background(appliance.warrantyColor.opacity(0.13), in: Capsule())
                 }
                 Spacer()
@@ -162,10 +162,10 @@ struct ApplianceDetailSheet: View {
             HapticFeedback.warning()
         } label: {
             Label("Delete Appliance", systemImage: "trash")
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppSpacing.base)
                 .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -173,9 +173,9 @@ struct ApplianceDetailSheet: View {
 
     private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
+            .font(AppFont.label)
             .foregroundStyle(.secondary)
-            .padding(.leading, 6)
+            .padding(.leading, AppSpacing.xs)
             .textCase(.uppercase)
     }
 
@@ -190,11 +190,11 @@ struct ApplianceDetailSheet: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.footnote)
                 .foregroundStyle(valueColor)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppSpacing.lg)
+        .padding(.vertical, AppSpacing.md)
     }
 
     private var rowDivider: some View {

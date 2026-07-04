@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Assignee picker sheet
 
 struct AssigneePickerSheet: View {
-    @EnvironmentObject private var familyService: FamilyService
+    @Environment(FamilyService.self) private var familyService
     @Binding var assigneeIds: [String]
     @Binding var assigneeNames: [String]
     @Environment(\.dismiss) private var dismiss
@@ -20,25 +20,25 @@ struct AssigneePickerSheet: View {
                         if !familyService.members.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("FAMILY MEMBERS")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(Color.primary.opacity(0.35))
-                                    .padding(.leading, 4)
+                                    .font(AppFont.label)
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                    .padding(.leading, AppSpacing.xxs)
                                 MemberPickerView(selectedIds: $assigneeIds, selectedNames: $assigneeNames)
                             }
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("SOMEONE ELSE")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Color.primary.opacity(0.35))
-                                .padding(.leading, 4)
+                                .font(AppFont.label)
+                                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                                .padding(.leading, AppSpacing.xxs)
 
                             if showCustom {
                                 HStack(spacing: 10) {
                                     TextField("Name", text: $customName)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                                        .padding(.horizontal, 14).padding(.vertical, 11)
-                                        .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                                        .padding(.horizontal, AppSpacing.base).padding(.vertical, 11)
+                                        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md))
                                     Button {
                                         let n = customName.trimmingCharacters(in: .whitespaces)
                                         guard !n.isEmpty else { return }
@@ -54,6 +54,7 @@ struct AssigneePickerSheet: View {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.system(size: 28)).foregroundStyle(Color.accentColor)
                                     }
+                                    .accessibilityLabel("Confirm assignee")
                                 }
                             } else {
                                 Button {
@@ -65,8 +66,8 @@ struct AssigneePickerSheet: View {
                                         Text("Add someone else…").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.6))
                                         Spacer()
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 12)
-                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+                                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.md))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -84,21 +85,22 @@ struct AssigneePickerSheet: View {
                                         } label: {
                                             Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                                         }
+                                        .accessibilityLabel("Remove \(name)")
                                     }
-                                    .padding(.horizontal, 14).padding(.vertical, 10)
+                                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                                     .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }
                         Spacer(minLength: 60)
                     }
-                    .padding(.horizontal, 20).padding(.top, 8)
+                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
             .navigationTitle("Assign Task").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.font(.system(size: 15, weight: .semibold)).foregroundStyle(Color.accentColor)
+                    Button("Done") { dismiss() }.font(AppFont.subheadline).foregroundStyle(Color.accentColor)
                 }
             }
         }

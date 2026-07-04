@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import LocalAuthentication
 
 /// App-level security lock. Enforces biometric/passcode authentication when
@@ -7,10 +8,11 @@ import LocalAuthentication
 /// mode (lock on every return to foreground), and shows a privacy cover in the
 /// app switcher so sensitive data isn't visible in snapshots.
 @MainActor
-final class AppLockManager: ObservableObject {
-    @Published var isLocked = false
-    @Published var privacyCover = false
-    @Published var authFailed = false
+@Observable
+final class AppLockManager {
+    var isLocked = false
+    var privacyCover = false
+    var authFailed = false
 
     private var backgroundedAt: Date?
     private var lastUnlockedAt: Date?

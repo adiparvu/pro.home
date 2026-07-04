@@ -1,13 +1,15 @@
 import Foundation
+import Observation
 import Supabase
 import UIKit
 
 @MainActor
-final class ProfileService: ObservableObject {
-    @Published var profile: ProfileData?
-    @Published var isLoading = false
-    @Published var isSaving = false
-    @Published var isUploadingAvatar = false
+@Observable
+final class ProfileService {
+    var profile: ProfileData?
+    var isLoading = false
+    var isSaving = false
+    var isUploadingAvatar = false
 
     func load(userId: UUID) async {
         isLoading = true
