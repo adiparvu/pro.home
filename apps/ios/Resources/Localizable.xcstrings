@@ -38361,6 +38361,38 @@
           }
         }
       }
+    },
+    "widget_brand_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open PRVIO from your Home Screen."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deschide PRVIO de pe ecranul principal."
+          }
+        }
+      }
+    },
+    "widget_brand_tagline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROPERTY OS"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SISTEM PENTRU LOCUINȚĂ"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

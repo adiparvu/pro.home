@@ -49,6 +49,7 @@ struct PRVIOTimelineProvider: TimelineProvider {
 @main
 struct PRVIOWidgetBundle: WidgetBundle {
     var body: some Widget {
+        BrandWidget()
         TasksWidget()
         PlantsWidget()
         DashboardWidget()
