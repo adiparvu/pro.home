@@ -1,107 +1,229 @@
 import SwiftUI
 import Observation
 
-// MARK: - Theme group (what the user picks — one entry per style)
+// MARK: - App Icon theme model
+//
+// Each theme is one entry in the gallery. A theme is either:
+//   • a light/dark PAIR — two alternate icons that IconManager swaps between as
+//     the system appearance changes (iOS auto-switches only the *primary* icon,
+//     never alternates, so we do it manually), or
+//   • a SINGLE icon that looks the same in both modes.
+//
+// The `default` theme uses the primary AppIcon (alternate name = nil), which the
+// asset catalog auto-switches light/dark on its own.
+//
+// Preview images are regular imagesets (`<key>`); the launchable icons are app
+// icon assets (`AppIcon<key>`). They're separate because UIKit can't load an
+// app-icon asset with `UIImage(named:)`.
 
-enum AppIconThemeGroup: String, CaseIterable, Identifiable {
-    case clasic
-    case padure
-    case smarald
-    case roseGold
-    case arctic
-    case carbon
-    case midnight
-    case lavender
-    case crimson
-    case sunset
+struct AppIconTheme: Identifiable, Equatable {
+    let id: String
+    let name: String
+    /// Localized one-line story, keyed by the two primary languages.
+    let storyRO: String
+    let storyEN: String
+    let category: Category
+    /// Preview imageset names.
+    let lightPreview: String
+    let darkPreview: String?
+    /// Alternate icon asset names (nil light+dark ⇒ the default primary icon).
+    let lightIcon: String?
+    let darkIcon: String?
 
-    var id: String { rawValue }
+    var hasPair: Bool { darkPreview != nil }
+    var isDefault: Bool { lightIcon == nil && darkIcon == nil }
 
-    var displayName: String {
-        switch self {
-        case .clasic:    return "Classic"
-        case .padure:    return "Pădure"
-        case .smarald:   return "Smarald"
-        case .roseGold:  return "Rose Gold"
-        case .arctic:    return "Arctic"
-        case .carbon:    return "Carbon"
-        case .midnight:  return "Midnight"
-        case .lavender:  return "LavandR"
-        case .crimson:   return "Crimson"
-        case .sunset:    return "Sunset"
-        }
+    var story: String { Locale.appIsRomanian ? storyRO : storyEN }
+
+    /// The alternate icon name to install for a given appearance (nil = primary).
+    func iconName(isDark: Bool) -> String? {
+        if isDefault { return nil }
+        if hasPair { return isDark ? darkIcon : lightIcon }
+        return lightIcon
     }
 
-    var lightColors: [Color] {
-        switch self {
-        case .clasic:    return [Color(red:0.18,green:0.51,blue:1.0),   Color(red:0.08,green:0.38,blue:0.9)]
-        case .padure:    return [Color(red:0.12,green:0.52,blue:0.28),  Color(red:0.06,green:0.32,blue:0.16)]
-        case .smarald:   return [Color(red:0.05,green:0.72,blue:0.62),  Color(red:0.02,green:0.52,blue:0.44)]
-        case .roseGold:  return [Color(red:0.95,green:0.58,blue:0.68),  Color(red:0.82,green:0.62,blue:0.28)]
-        case .arctic:    return [Color(red:0.62,green:0.88,blue:0.98),  Color(red:0.38,green:0.72,blue:0.92)]
-        case .carbon:    return [Color(red:0.75,green:0.75,blue:0.78),  Color(red:0.5,green:0.5,blue:0.52)]
-        case .midnight:  return [Color(red:0.12,green:0.14,blue:0.35),  Color(red:0.06,green:0.07,blue:0.22)]
-        case .lavender:  return [Color(red:0.6,green:0.38,blue:0.95),   Color(red:0.45,green:0.2,blue:0.85)]
-        case .crimson:   return [Color(red:0.82,green:0.08,blue:0.14),  Color(red:0.62,green:0.04,blue:0.08)]
-        case .sunset:    return [Color(red:1.0,green:0.65,blue:0.2),    Color(red:0.9,green:0.2,blue:0.2)]
+    enum Category: String, CaseIterable, Identifiable {
+        case signature, elegant, nature, vibrant, minimal
+        var id: String { rawValue }
+        var titleRO: String {
+            switch self {
+            case .signature: return "Semnătură"
+            case .elegant:   return "Elegante"
+            case .nature:    return "Natură"
+            case .vibrant:   return "Vibrante"
+            case .minimal:   return "Minimale"
+            }
         }
+        var titleEN: String {
+            switch self {
+            case .signature: return "Signature"
+            case .elegant:   return "Elegant"
+            case .nature:    return "Nature"
+            case .vibrant:   return "Vibrant"
+            case .minimal:   return "Minimal"
+            }
+        }
+        var title: String { Locale.appIsRomanian ? titleRO : titleEN }
+    }
+}
+
+extension Locale {
+    /// True when the app is running in Romanian.
+    static var appIsRomanian: Bool {
+        (Locale.preferredLanguages.first ?? "en").lowercased().hasPrefix("ro")
+    }
+}
+
+// MARK: - Catalog
+
+enum AppIconCatalog {
+    private static func pair(_ id: String, _ name: String, base: String,
+                             _ cat: AppIconTheme.Category, _ ro: String, _ en: String,
+                             isDefault: Bool = false) -> AppIconTheme {
+        AppIconTheme(
+            id: id, name: name, storyRO: ro, storyEN: en, category: cat,
+            lightPreview: base + "Light", darkPreview: base + "Dark",
+            lightIcon: isDefault ? nil : "AppIcon" + base + "Light",
+            darkIcon:  isDefault ? nil : "AppIcon" + base + "Dark"
+        )
     }
 
-    var darkColors: [Color] {
-        switch self {
-        case .clasic:    return [Color(red:0.08,green:0.12,blue:0.35),  Color(red:0.04,green:0.06,blue:0.22)]
-        case .padure:    return [Color(red:0.06,green:0.28,blue:0.14),  Color(red:0.03,green:0.16,blue:0.08)]
-        case .smarald:   return [Color(red:0.02,green:0.42,blue:0.36),  Color(red:0.01,green:0.28,blue:0.24)]
-        case .roseGold:  return [Color(red:0.55,green:0.28,blue:0.38),  Color(red:0.38,green:0.28,blue:0.1)]
-        case .arctic:    return [Color(red:0.15,green:0.38,blue:0.62),  Color(red:0.08,green:0.22,blue:0.48)]
-        case .carbon:    return [Color(red:0.14,green:0.14,blue:0.16),  Color(red:0.06,green:0.06,blue:0.08)]
-        case .midnight:  return [Color(red:0.06,green:0.08,blue:0.2),   Color(red:0.02,green:0.04,blue:0.14)]
-        case .lavender:  return [Color(red:0.35,green:0.18,blue:0.72),  Color(red:0.22,green:0.1,blue:0.55)]
-        case .crimson:   return [Color(red:0.52,green:0.04,blue:0.08),  Color(red:0.35,green:0.02,blue:0.04)]
-        case .sunset:    return [Color(red:0.65,green:0.22,blue:0.06),  Color(red:0.42,green:0.08,blue:0.08)]
-        }
+    private static func single(_ id: String, _ name: String, asset: String,
+                               _ cat: AppIconTheme.Category, _ ro: String, _ en: String) -> AppIconTheme {
+        AppIconTheme(
+            id: id, name: name, storyRO: ro, storyEN: en, category: cat,
+            lightPreview: asset, darkPreview: nil,
+            lightIcon: "AppIcon" + asset, darkIcon: nil
+        )
     }
 
-    var hasPair: Bool {
-        switch self {
-        case .midnight, .lavender, .crimson, .sunset: return false
-        default: return true
-        }
-    }
+    static let all: [AppIconTheme] = [
+        // Signature
+        AppIconTheme(id: "default", name: "PRVIO",
+            storyRO: "Semnătura casei. Se schimbă singură între zi și noapte, odată cu sistemul.",
+            storyEN: "The house signature. It shifts between day and night on its own, with the system.",
+            category: .signature,
+            lightPreview: "PrimaryLight", darkPreview: "PrimaryDark", lightIcon: nil, darkIcon: nil),
+        pair("glass", "Liquid Glass", base: "Glass", .signature,
+             "Sticlă lichidă, lumină care curge. Iconul iOS 26, translucid și viu.",
+             "Liquid glass, flowing light. The iOS 26 icon — translucent and alive."),
+        pair("classic", "Clasic", base: "Classic", .signature,
+             "Bleumarin și aur. Clasicul care nu iese niciodată din modă.",
+             "Navy and gold. The classic that never goes out of style."),
 
-    /// Returns the alternateIconName for UIApplication (nil = default icon)
-    func iconName(isDarkMode: Bool) -> String? {
-        switch self {
-        case .clasic:
-            return isDarkMode ? "AppIconClassicDark" : nil
-        case .padure:
-            return isDarkMode ? "AppIconForestDark" : "AppIconForest"
-        case .smarald:
-            return isDarkMode ? "AppIconEmeraldDark" : "AppIconEmerald"
-        case .roseGold:
-            return isDarkMode ? "AppIconRoseGoldDark" : "AppIconRoseGold"
-        case .arctic:
-            return isDarkMode ? "AppIconArcticDark" : "AppIconArctic"
-        case .carbon:
-            return isDarkMode ? "AppIconCarbonDark" : "AppIconCarbon"
-        case .midnight:
-            return "AppIconMidnight"
-        case .lavender:
-            return "AppIconLavender"
-        case .crimson:
-            return "AppIconCrimson"
-        case .sunset:
-            return "AppIconSunset"
-        }
-    }
+        // Elegant
+        pair("roseGold", "Rose Gold", base: "RoseGold", .elegant,
+             "Cupru cald, finisaj de bijuterie. Eleganță discretă pe ecranul tău.",
+             "Warm copper, a jeweller's finish. Quiet elegance on your screen."),
+        pair("baroque", "Baroc", base: "Baroque", .elegant,
+             "Opulență aurie pe catifea. Pentru cine vrea ca acasă să respire lux.",
+             "Golden opulence on velvet. For a home that breathes luxury."),
+        pair("metallic", "Metalic", base: "Metallic", .elegant,
+             "Metal șlefuit, reflexii reci. Precizie industrială, rafinată.",
+             "Brushed metal, cool reflections. Industrial precision, refined."),
+        single("gold-noir", "Aur Nocturn", asset: "GoldNoir", .elegant,
+               "Aur masiv pe negru profund. Sobru, scump, memorabil.",
+               "Solid gold on deep black. Sober, expensive, unforgettable."),
+        single("metallic-gold", "Aur Lichid", asset: "MetallicGold", .elegant,
+               "Aur topit sub sticlă. Lumina alunecă pe fiecare curbă.",
+               "Molten gold under glass. Light glides across every curve."),
+        single("rose-mocha", "Rose Mocha", asset: "RoseMocha", .elegant,
+               "Roz-cafeniu, cald ca o cafea de seară.",
+               "Rosy mocha, warm as an evening coffee."),
+        single("rose-noir", "Rose Noir", asset: "RoseNoir", .elegant,
+               "Cupru trandafiriu pe noapte adâncă. Contrast dramatic.",
+               "Rose copper on deep night. Dramatic contrast."),
+        single("silver-noir", "Argint Nocturn", asset: "SilverNoir", .elegant,
+               "Argint pur pe umbră. Sobrietate lucioasă.",
+               "Pure silver on shadow. Glossy restraint."),
+        single("baroque-cream", "Baroc Crem", asset: "BaroqueCream", .elegant,
+               "Marmură crem și ornamente fine. Baroc, dar luminos.",
+               "Cream marble and fine ornament. Baroque, but luminous."),
+        single("baroque-floral", "Baroc Floral", asset: "BaroqueFloral", .elegant,
+               "Flori sculptate în jurul monogramei. Grădină de palat.",
+               "Flowers carved around the monogram. A palace garden."),
 
-    static func from(iconName: String?) -> AppIconThemeGroup {
-        guard let name = iconName else { return .clasic }
-        for group in AppIconThemeGroup.allCases {
-            if group.iconName(isDarkMode: false) == name { return group }
-            if group.iconName(isDarkMode: true) == name { return group }
-        }
-        return .clasic
+        // Nature
+        pair("forest", "Pădure", base: "Forest", .nature,
+             "Verde adânc și aur cald. Liniștea unei păduri la răsărit.",
+             "Deep green and warm gold. The calm of a forest at dawn."),
+        pair("emerald", "Smarald", base: "Emerald", .nature,
+             "Verde care strălucește din interior. O piatră prețioasă vie.",
+             "Green that glows from within. A living gemstone."),
+        pair("sunset", "Apus", base: "Sunset", .nature,
+             "Portocaliu de amurg. Căldura ultimei raze a zilei.",
+             "Dusk orange. The warmth of the day's last light."),
+        single("forest-royal", "Pădure Regală", asset: "ForestRoyal", .nature,
+               "Verde smarald și aur regal. Natura, la rang de coroană.",
+               "Emerald green and royal gold. Nature, crowned."),
+        single("emerald-gloss", "Smarald Lucios", asset: "EmeraldGloss", .nature,
+               "Smarald sub un strat de sticlă. Verde profund, lustruit.",
+               "Emerald under a coat of glass. Deep green, polished."),
+        single("emerald-marble", "Smarald Marmură", asset: "EmeraldMarble", .nature,
+               "Marmură verde cu vinișoare de lumină. Solid și scump.",
+               "Green marble veined with light. Solid and rich."),
+        single("lavender-royal", "Lavandă Regală", asset: "LavenderRoyal", .nature,
+               "Mov profund și aur. Un câmp de lavandă la asfințit.",
+               "Deep purple and gold. A lavender field at sundown."),
+
+        // Vibrant
+        single("noir", "Noir / Viitor", asset: "Noir", .vibrant,
+               "Neon cyan și magenta pe negru. Viitorul, azi.",
+               "Cyan and magenta neon on black. The future, today."),
+        pair("arctic", "Arctic", base: "Arctic", .vibrant,
+             "Albastru de gheață, luminat din spate. Rece și clar.",
+             "Ice blue, backlit. Cold and crystal-clear."),
+        single("crimson", "Roșu Aprins", asset: "Crimson", .vibrant,
+               "Roșu incandescent. Energie pură, imposibil de ignorat.",
+               "Incandescent red. Pure energy, impossible to ignore."),
+        single("dazzle", "Dazzle", asset: "Dazzle", .vibrant,
+               "Neon topit, explozie de culoare. Pentru zilele îndrăznețe.",
+               "Melting neon, a burst of colour. For the bold days."),
+        single("dazzle-splatter", "Dazzle Splatter", asset: "DazzleSplatter", .vibrant,
+               "Stropi de vopsea și neon. Artă stradală în buzunar.",
+               "Paint splatter and neon. Street art in your pocket."),
+        single("dazzle-cosmic", "Dazzle Cosmic", asset: "DazzleCosmic", .vibrant,
+               "Un vârtej de galaxie în jurul casei. Cosmic.",
+               "A galaxy swirl around the house. Cosmic."),
+        single("dazzle-floral", "Dazzle Floral", asset: "DazzleFloral", .vibrant,
+               "Neon și petale. Delicat și electric în același timp.",
+               "Neon and petals. Delicate and electric at once."),
+        single("neon-magenta", "Neon Magenta", asset: "NeonMagenta", .vibrant,
+               "Magenta pur, contur incandescent pe negru.",
+               "Pure magenta, glowing outline on black."),
+        pair("lavender", "Lavandă", base: "Lavender", .vibrant,
+             "Mov catifelat și aur. Regal, dar jucăuș.",
+             "Velvet purple and gold. Regal, yet playful."),
+        single("retro-vapor", "Retro-Vapor", asset: "RetroVapor", .vibrant,
+               "Apus synthwave, palmieri și grilă neon. Anii '80 revin.",
+               "A synthwave sunset, palms and neon grid. The '80s are back."),
+        single("retro-pixel", "Retro Pixel", asset: "RetroPixel", .vibrant,
+               "Peisaj pixel-art, nostalgie de joc retro.",
+               "A pixel-art landscape, retro-game nostalgia."),
+        single("vapor-pixel", "Vapor Pixel", asset: "VaporPixel", .vibrant,
+               "Vaporwave în pixeli. Cyan, magenta, apus digital.",
+               "Vaporwave in pixels. Cyan, magenta, a digital sunset."),
+
+        // Minimal
+        single("midnight", "Midnight", asset: "Midnight", .minimal,
+               "Bleumarin de miezul nopții, argintiu fin. Sobru și elegant.",
+               "Midnight navy, fine silver. Sober and elegant."),
+        pair("carbon", "Carbon", base: "Carbon", .minimal,
+             "Fibră de carbon, textură tehnică. Sport și serios.",
+             "Carbon fibre, technical texture. Sporty and serious."),
+        pair("minimal", "Minimalist", base: "Minimal", .minimal,
+             "Linie curată, esențial. Mai puțin, dar mai bine.",
+             "A clean line, the essential. Less, but better."),
+        single("minimal-outline", "Contur", asset: "MinimalOutline", .minimal,
+               "Doar conturul, nimic în plus. Pură claritate.",
+               "Just the outline, nothing more. Pure clarity."),
+    ]
+
+    static func theme(id: String) -> AppIconTheme { all.first { $0.id == id } ?? all[0] }
+
+    static func theme(forIconName name: String?) -> AppIconTheme {
+        guard let name else { return all[0] }
+        return all.first { $0.lightIcon == name || $0.darkIcon == name } ?? all[0]
     }
 }
 
@@ -127,38 +249,39 @@ struct IconColorSchemeWatcher: View {
 @MainActor
 @Observable
 final class IconManager {
-    var selectedGroup: AppIconThemeGroup
+    var selected: AppIconTheme
 
-    @ObservationIgnored @AppStorage("prvio.selectedIconGroup") private var savedGroupId: String = "clasic"
+    @ObservationIgnored @AppStorage("prvio.selectedIconThemeId") private var savedId: String = "default"
     @ObservationIgnored @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true
 
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
 
     init() {
-        let saved = AppIconThemeGroup(rawValue: UserDefaults.standard.string(forKey: "prvio.selectedIconGroup") ?? "clasic") ?? .clasic
-        selectedGroup = saved
+        let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
+        selected = AppIconCatalog.theme(id: id)
     }
 
-    func apply(_ group: AppIconThemeGroup, isDark: Bool, force: Bool = false) {
-        let name = group.iconName(isDarkMode: isDark)
+    var supportsAlternateIcons: Bool { UIApplication.shared.supportsAlternateIcons }
+
+    func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
+        let name = theme.iconName(isDark: isDark)
         guard force || name != lastAppliedName else { return }
         UIApplication.shared.setAlternateIconName(name) { [weak self] error in
-            if error == nil {
-                Task { @MainActor [weak self] in
-                    self?.lastAppliedName = name
-                    self?.selectedGroup = group
-                    self?.savedGroupId = group.rawValue
-                }
+            guard error == nil else { return }
+            Task { @MainActor [weak self] in
+                self?.lastAppliedName = name
+                self?.selected = theme
+                self?.savedId = theme.id
             }
         }
     }
 
-    func select(_ group: AppIconThemeGroup, isDark: Bool) {
-        apply(group, isDark: isDark, force: true)
+    func select(_ theme: AppIconTheme, isDark: Bool) {
+        apply(theme, isDark: isDark, force: true)
     }
 
     func colorSchemeChanged(isDark: Bool) {
-        guard autoSwitch, selectedGroup.hasPair else { return }
-        apply(selectedGroup, isDark: isDark)
+        guard autoSwitch, selected.hasPair else { return }
+        apply(selected, isDark: isDark)
     }
 }
