@@ -40,6 +40,10 @@ export async function updateSession(request: NextRequest) {
     '/forgot-password',
     '/reset-password',
     '/invite',
+    // Public "found item" page reached by scanning an item's QR code — must be
+    // viewable by anyone, signed in or not. The trailing slash keeps it from
+    // matching '/invite', '/insights', etc.
+    '/i/',
     '/auth/callback',
   ]
 
@@ -53,8 +57,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isPublicRoute && pathname !== '/auth/callback' && !pathname.startsWith('/invite')) {
+  // Redirect authenticated users away from auth pages — but not the public item
+  // page, which both members and anonymous finders should be able to open.
+  if (user && isPublicRoute && pathname !== '/auth/callback'
+      && !pathname.startsWith('/invite') && !pathname.startsWith('/i/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
