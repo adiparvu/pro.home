@@ -36649,6 +36649,22 @@
           }
         }
       }
+    },
+    "PRVIO Quick Action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRVIO Quick Action"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acțiune rapidă PRVIO"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
