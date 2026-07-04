@@ -36,14 +36,14 @@ struct PaintColorsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 2) {
                     if !paintColorService.colors.isEmpty {
-                        SharePrintMenu(jobName: String(localized: "paint_print_job"),
+                        SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",
                                        render: renderSpecSheet) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(.primary)
                                 .frame(width: 34, height: 32)
                         }
-                        .accessibilityLabel(String(localized: "paint_share_print"))
+                        .accessibilityLabel(Locale.appIsRomanian ? "Partajează sau printează" : "Share or print")
                     }
                     Button {
                         showAdd = true
@@ -266,7 +266,7 @@ private struct PaintColorsSpecSheet: View {
                 Image(systemName: "paintpalette.fill")
                     .font(.system(size: 18))
                     .foregroundStyle(Color(red: 0.30, green: 0.20, blue: 0.62))
-                Text(String(localized: "paint_print_title"))
+                Text(Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors")
                     .font(.system(size: 22, weight: .heavy))
                     .foregroundStyle(ink)
             }

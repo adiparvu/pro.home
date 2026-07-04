@@ -13,19 +13,25 @@ struct SharePrintMenu<Trigger: View>: View {
     let render: () -> UIImage?
     @ViewBuilder var trigger: () -> Trigger
 
+    // Resolve labels through the app's proven RO/EN switch rather than the
+    // xcstrings bundle, so they never fall back to raw keys if the runtime
+    // language table hasn't picked up a freshly-added key.
+    private var shareTitle: String { Locale.appIsRomanian ? "Partajează" : "Share" }
+    private var printTitle: String { Locale.appIsRomanian ? "Printează" : "Print" }
+
     var body: some View {
         Menu {
             Button {
                 HapticFeedback.impact(.light)
                 if let image = render() { SystemActions.share([image]) }
             } label: {
-                Label(String(localized: "action_share"), systemImage: "square.and.arrow.up")
+                Label(shareTitle, systemImage: "square.and.arrow.up")
             }
             Button {
                 HapticFeedback.impact(.light)
                 if let image = render() { SystemActions.print(image: image, jobName: jobName) }
             } label: {
-                Label(String(localized: "action_print"), systemImage: "printer")
+                Label(printTitle, systemImage: "printer")
             }
         } label: {
             trigger()
