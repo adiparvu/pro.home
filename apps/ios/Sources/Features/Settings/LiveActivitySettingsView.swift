@@ -261,52 +261,138 @@ private struct LAToggleRow: View {
 // MARK: - Live Activity preview (mock Lock-Screen card)
 
 struct LiveActivityPreview: View {
-    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store) private var showProgress = true
-    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)      private var showETA      = true
-    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store) private var showProperty = true
+    @AppStorage(LiveActivityPrefs.lockScreenKey, store: LiveActivityPrefs.store)    private var lockScreen    = true
+    @AppStorage(LiveActivityPrefs.dynamicIslandKey, store: LiveActivityPrefs.store) private var dynamicIsland = true
+    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store)  private var showProgress  = true
+    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)       private var showETA       = true
+    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store)  private var showProperty  = true
+    @AppStorage(LiveActivityPrefs.islandStyleKey, store: LiveActivityPrefs.store)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
+
+    private var style: DynamicIslandStyle { DynamicIslandStyle(rawValue: islandStyle) ?? .detailed }
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text("PREVIEW")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .fill(Color.orange.opacity(0.2)).frame(width: 44, height: 44)
-                        Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 20)).foregroundStyle(.orange)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Garden bench")
-                            .font(AppFont.subheadline).foregroundStyle(.primary)
-                        if showProperty {
-                            Text("Lakeside House · DHL")
-                                .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        } else {
-                            Text("DHL").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        }
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("In transit")
-                            .font(.system(size: 13, weight: .medium)).foregroundStyle(.orange)
-                        if showETA {
-                            Text("ETA 14:30")
-                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                        }
-                    }
-                }
-                if showProgress {
-                    ProgressView(value: 0.65)
-                        .tint(.orange)
+        VStack(spacing: 14) {
+            // Lock Screen preview — full card, or the minimal banner when the
+            // Lock Screen option is off.
+            VStack(spacing: 6) {
+                caption("LOCK SCREEN")
+                if lockScreen {
+                    lockScreenFull
+                } else {
+                    lockScreenMinimal
                 }
             }
-            .padding(AppSpacing.lg)
-            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+
+            // Dynamic Island preview — mirrors the Detailed / Compact / Minimal
+            // choice, and disappears when the Dynamic Island option is off.
+            if dynamicIsland {
+                VStack(spacing: 8) {
+                    caption("DYNAMIC ISLAND")
+                    islandMock
+                        .frame(maxWidth: .infinity)
+                        .animation(.snappy(duration: 0.28), value: style)
+                }
+            }
+        }
+        .animation(.snappy(duration: 0.28), value: lockScreen)
+        .animation(.snappy(duration: 0.28), value: dynamicIsland)
+    }
+
+    private func caption(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(Color.primary.opacity(0.3))
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Lock Screen mocks
+
+    private var lockScreenFull: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                iconBadge
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Garden bench")
+                        .font(AppFont.subheadline).foregroundStyle(.primary)
+                    Text(showProperty ? "Lakeside House · DHL" : "DHL")
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("In transit")
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.orange)
+                    if showETA {
+                        Text("ETA 14:30")
+                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                    }
+                }
+            }
+            if showProgress {
+                ProgressView(value: 0.65).tint(.orange)
+            }
+        }
+        .padding(AppSpacing.lg)
+        .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+    }
+
+    private var lockScreenMinimal: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 15, weight: .semibold)).foregroundStyle(.orange)
+            Text("Garden bench")
+                .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+        .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+    }
+
+    private var iconBadge: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(Color.orange.opacity(0.2)).frame(width: 44, height: 44)
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 20)).foregroundStyle(.orange)
+        }
+    }
+
+    // MARK: - Dynamic Island mock (black pill, styled to the chosen density)
+
+    @ViewBuilder
+    private var islandMock: some View {
+        switch style {
+        case .detailed:
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+                    Text("Garden bench")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                    Spacer()
+                    Text("In transit")
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.orange)
+                }
+                if showProgress {
+                    ProgressView(value: 0.65).tint(.orange)
+                }
+            }
+            .padding(.horizontal, 18).padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(Color.black, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        case .compact:
+            HStack(spacing: 8) {
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+                Text("65%")
+                    .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
+            }
+            .padding(.horizontal, 18).padding(.vertical, 10)
+            .background(Capsule().fill(Color.black))
+        case .minimal:
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.orange)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(Color.black))
         }
     }
 }
@@ -393,6 +479,19 @@ struct LiveActivityAppearanceView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // Any appearance change re-pushes running activities so the new look
+        // applies immediately on the Lock Screen / Dynamic Island, not just at
+        // the next natural content update.
+        .onChange(of: appearanceToken) { _, _ in
+            HapticFeedback.selection()
+            LiveActivityService.shared.refreshAppearance()
+        }
+    }
+
+    /// Single value that changes whenever any appearance preference does, so one
+    /// onChange can drive the live refresh.
+    private var appearanceToken: String {
+        "\(lockScreen)\(dynamicIsland)\(showProgress)\(showETA)\(showProperty)\(islandStyle)"
     }
 
     @ViewBuilder

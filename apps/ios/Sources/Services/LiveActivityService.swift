@@ -196,4 +196,30 @@ final class LiveActivityService: ObservableObject {
             }
         }
     }
+
+    // MARK: - Appearance refresh
+
+    /// Re-pushes the current content state to every running activity. Live
+    /// Activity views read the appearance preferences at render time, but the
+    /// system only re-renders on a content update — so after the user changes an
+    /// appearance option we push the same state back to force an immediate
+    /// re-render that adopts the new settings, instead of waiting for the next
+    /// natural update. Iterating `Activity.activities` covers activities that
+    /// survived a relaunch and aren't tracked in memory yet.
+    func refreshAppearance() {
+        Task {
+            for a in Activity<ShoppingActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: nil))
+            }
+            for a in Activity<MaintenanceActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: nil))
+            }
+            for a in Activity<DeliveryActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: nil))
+            }
+            for a in Activity<PlantCareActivityAttributes>.activities {
+                await a.update(.init(state: a.content.state, staleDate: nil))
+            }
+        }
+    }
 }
