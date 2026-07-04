@@ -38137,6 +38137,230 @@
           }
         }
       }
+    },
+    "On PRVIO": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deja pe PRVIO"
+          }
+        }
+      }
+    },
+    "Invite to PRVIO": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite to PRVIO"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invită pe PRVIO"
+          }
+        }
+      }
+    },
+    "Add manually": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add manually"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adaugă manual"
+          }
+        }
+      }
+    },
+    "Invite": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invită"
+          }
+        }
+      }
+    },
+    "Invited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invited"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitat"
+          }
+        }
+      }
+    },
+    "Contacts access is off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contacts access is off"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesul la contacte e oprit"
+          }
+        }
+      }
+    },
+    "Allow access to invite people straight from your address book.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow access to invite people straight from your address book."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite accesul ca să inviți oameni direct din agenda telefonului."
+          }
+        }
+      }
+    },
+    "No contacts found": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No contacts found"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niciun contact găsit"
+          }
+        }
+      }
+    },
+    "Caută un nume sau un număr": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a name or number"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caută un nume sau un număr"
+          }
+        }
+      }
+    },
+    "Enter manually": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter manually"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introdu manual"
+          }
+        }
+      }
+    },
+    "Couldn't add contact: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't add contact: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu am putut adăuga contactul: %@"
+          }
+        }
+      }
+    },
+    "Invitation sent to %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation sent to %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitație trimisă către %@"
+          }
+        }
+      }
+    },
+    "Added, but the invite email failed: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added, but the invite email failed: %@"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adăugat, dar emailul de invitație a eșuat: %@"
+          }
+        }
+      }
+    },
+    "%@, te invit în PRVIO 🏠 — casa noastră digitală. Hai să vorbim în chat!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, I'm inviting you to PRVIO 🏠 — our digital home. Let's chat!"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, te invit în PRVIO 🏠 — casa noastră digitală. Hai să vorbim în chat!"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

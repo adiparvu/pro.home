@@ -16,6 +16,7 @@ struct ConversationsView: View {
     @State private var showAddMember = false
     @State private var showNewConversation = false
     @State private var showAddContact = false
+    @State private var showContactsPicker = false
     @State private var showStatus = false
     @State private var showCommunities = false
     @State private var showStoryCamera = false
@@ -256,6 +257,20 @@ struct ConversationsView: View {
                                  propertyName: propertyService.primary?.name)
                 .environment(familyService)
         }
+        .sheet(isPresented: $showContactsPicker) {
+            ContactsInviteView(
+                onOpenMember: { member in
+                    showContactsPicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { navTarget = member.id.uuidString }
+                },
+                onManualEntry: {
+                    showContactsPicker = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddContact = true }
+                }
+            )
+            .environment(familyService)
+            .environment(propertyService)
+        }
         .sheet(isPresented: $showAddContact) {
             AddContactView()
                 .environment(familyService)
@@ -279,7 +294,7 @@ struct ConversationsView: View {
                 navTarget = id
             } onAddMember: {
                 showNewConversation = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showAddContact = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showContactsPicker = true }
             }
         }
         .fullScreenCover(isPresented: $showStoryCamera) {
@@ -308,7 +323,7 @@ struct ConversationsView: View {
                 Menu {
                     Button { showStatus = true } label: { Label("Status", systemImage: "circle.dashed") }
                     Button { showCommunities = true } label: { Label("Communities", systemImage: "person.3") }
-                    Button { showAddContact = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
+                    Button { showContactsPicker = true } label: { Label("Add contact", systemImage: "person.crop.circle.badge.plus") }
                     Button { markAllRead() } label: { Label("Mark all as read", systemImage: "checkmark.message") }
                     if !archivedList.isEmpty {
                         Button { withAnimation { showArchived = true } } label: { Label("Archived", systemImage: "archivebox") }
