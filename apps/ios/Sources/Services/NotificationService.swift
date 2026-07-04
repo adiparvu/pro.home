@@ -68,6 +68,15 @@ struct NotificationCategory: Identifiable, Hashable {
 
     var id: String { module }
 
+    // LocalizedStringKey isn't Hashable, so synthesis can't be used — identity
+    // is the module slug alone.
+    static func == (lhs: NotificationCategory, rhs: NotificationCategory) -> Bool {
+        lhs.module == rhs.module
+    }
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(module)
+    }
+
     static func forModule(_ module: String?) -> NotificationCategory {
         let m = module ?? "system"
         if let known = known[m] { return known }
