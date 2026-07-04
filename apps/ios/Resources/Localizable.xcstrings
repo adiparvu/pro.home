@@ -26709,6 +26709,38 @@
         }
       }
     },
+    "action_print": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Print"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Printează"
+          }
+        }
+      }
+    },
+    "action_share": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partajează"
+          }
+        }
+      }
+    },
     "active": {
       "localizations": {
         "en": {
@@ -28834,6 +28866,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nivel pH"
+          }
+        }
+      }
+    },
+    "paint_print_job": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Colors"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Culori vopsea"
+          }
+        }
+      }
+    },
+    "paint_print_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Colors"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Culori vopsea"
+          }
+        }
+      }
+    },
+    "paint_share_print": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share or print"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partajează sau printează"
           }
         }
       }
