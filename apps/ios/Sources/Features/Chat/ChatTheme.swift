@@ -111,10 +111,27 @@ struct ChatTheme: Identifiable {
 // MARK: - Conversation theme picker (WhatsApp-style)
 
 struct ChatThemePicker: View {
-    @AppStorage("prvio.chatTheme") private var selected = "appDefault"
-    @AppStorage("prvio.chatBubbleHex") private var bubbleHex = ""
-    @AppStorage("prvio.chatBgID") private var bgID = ""
+    // scope == nil  -> global default (Chat Settings), writes prvio.chatTheme…
+    // scope == id   -> per-conversation override, writes prvio.chatTheme.<id>…
+    // Per-conversation keys default to the current global value so the picker
+    // opens showing the conversation's effective theme.
+    private let scope: String?
+    @AppStorage private var selected: String
+    @AppStorage private var bubbleHex: String
+    @AppStorage private var bgID: String
     @Environment(\.dismiss) private var dismiss
+
+    init(scope: String? = nil) {
+        self.scope = scope
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let d = UserDefaults.standard
+        let gTheme = scope == nil ? "appDefault" : (d.string(forKey: "prvio.chatTheme") ?? "appDefault")
+        let gBubble = scope == nil ? "" : (d.string(forKey: "prvio.chatBubbleHex") ?? "")
+        let gBg = scope == nil ? "" : (d.string(forKey: "prvio.chatBgID") ?? "")
+        _selected  = AppStorage(wrappedValue: gTheme,  "prvio.chatTheme\(suffix)")
+        _bubbleHex = AppStorage(wrappedValue: gBubble, "prvio.chatBubbleHex\(suffix)")
+        _bgID      = AppStorage(wrappedValue: gBg,     "prvio.chatBgID\(suffix)")
+    }
 
     private let columns = [GridItem(.flexible(), spacing: 10),
                            GridItem(.flexible(), spacing: 10),
@@ -164,7 +181,7 @@ struct ChatThemePicker: View {
 
                         VStack(spacing: 0) {
                             NavigationLink {
-                                BubbleColorPicker()
+                                BubbleColorPicker(scope: scope)
                             } label: {
                                 customRow(icon: "bubble.left.fill", label: "Chat bubble") {
                                     Circle().fill(bubbleColor).frame(width: 22, height: 22)
@@ -173,7 +190,7 @@ struct ChatThemePicker: View {
                             .buttonStyle(.plain)
                             Divider().padding(.leading, 52)
                             NavigationLink {
-                                BackgroundPicker()
+                                BackgroundPicker(scope: scope)
                             } label: {
                                 customRow(icon: "photo.fill", label: "Background") {
                                     backgroundSwatch
@@ -260,8 +277,14 @@ struct ChatThemePicker: View {
 // MARK: - Chat bubble colour picker
 
 struct BubbleColorPicker: View {
-    @AppStorage("prvio.chatBubbleHex") private var bubbleHex = ""
+    @AppStorage private var bubbleHex: String
     @Environment(\.dismiss) private var dismiss
+
+    init(scope: String? = nil) {
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let g = scope == nil ? "" : (UserDefaults.standard.string(forKey: "prvio.chatBubbleHex") ?? "")
+        _bubbleHex = AppStorage(wrappedValue: g, "prvio.chatBubbleHex\(suffix)")
+    }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 4)
 
@@ -300,8 +323,14 @@ struct BubbleColorPicker: View {
 // MARK: - Background (wallpaper) picker
 
 struct BackgroundPicker: View {
-    @AppStorage("prvio.chatBgID") private var bgID = ""
+    @AppStorage private var bgID: String
     @Environment(\.dismiss) private var dismiss
+
+    init(scope: String? = nil) {
+        let suffix = scope.map { ".\($0)" } ?? ""
+        let g = scope == nil ? "" : (UserDefaults.standard.string(forKey: "prvio.chatBgID") ?? "")
+        _bgID = AppStorage(wrappedValue: g, "prvio.chatBgID\(suffix)")
+    }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
 

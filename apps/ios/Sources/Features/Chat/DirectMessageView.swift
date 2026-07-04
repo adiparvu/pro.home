@@ -27,9 +27,11 @@ struct DirectMessageView: View {
     @State private var showStarred = false
     @State private var showThemePicker = false
     @State private var scrollTarget: UUID? = nil
+    // Global defaults from Chat Settings.
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
+    @State private var themeRefresh = 0
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
@@ -87,7 +89,16 @@ struct DirectMessageView: View {
         input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
+    // This DM's theme scope; a per-conversation override wins over the global default.
+    private var themeScope: String { member.id.uuidString }
+    private var chatTheme: ChatTheme {
+        _ = themeRefresh
+        let d = UserDefaults.standard
+        let t = d.string(forKey: "prvio.chatTheme.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatThemeID
+        let b = d.string(forKey: "prvio.chatBubbleHex.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBubbleHex
+        let g = d.string(forKey: "prvio.chatBgID.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBgID
+        return .resolved(themeID: t, bubbleHex: b, bgID: g)
+    }
     private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
     private var pendingOutbox: [PendingMessage] {
         outbox.pending
@@ -215,8 +226,8 @@ struct DirectMessageView: View {
                 scrollTarget = id
             }
         }
-        .sheet(isPresented: $showThemePicker) {
-            ChatThemePicker()
+        .sheet(isPresented: $showThemePicker, onDismiss: { themeRefresh += 1 }) {
+            ChatThemePicker(scope: themeScope)
         }
         .sheet(isPresented: $showAttachmentSheet) {
             ChatAttachmentSheet(

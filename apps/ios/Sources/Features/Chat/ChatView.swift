@@ -60,14 +60,27 @@ struct ChatView: View {
     @State var sendError: String? = nil
     @FocusState private var focused: Bool
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
+    // Global defaults from Chat Settings (kept for live reactivity to global changes).
     @AppStorage("prvio.chatTheme") private var chatThemeID: String = "appDefault"
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
+    @State private var themeRefresh = 0
     @State private var audioRecorder = ChatAudioRecorder()
     @State var outbox = OfflineOutbox()
 
-    private var chatTheme: ChatTheme { .resolved(themeID: chatThemeID, bubbleHex: chatBubbleHex, bgID: chatBgID) }
+    // The group conversation's theme scope; overrides live under prvio.chatTheme.<scope>.
+    private var themeScope: String { "group" }
+
+    // Per-conversation override wins; otherwise the global default is used.
+    private var chatTheme: ChatTheme {
+        _ = themeRefresh
+        let d = UserDefaults.standard
+        let t = d.string(forKey: "prvio.chatTheme.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatThemeID
+        let b = d.string(forKey: "prvio.chatBubbleHex.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBubbleHex
+        let g = d.string(forKey: "prvio.chatBgID.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBgID
+        return .resolved(themeID: t, bubbleHex: b, bgID: g)
+    }
     private var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
         return outbox.pending(for: pid)
@@ -379,8 +392,8 @@ struct ChatView: View {
                 scrollTarget = id
             }
         }
-        .sheet(isPresented: $showThemePicker) {
-            ChatThemePicker()
+        .sheet(isPresented: $showThemePicker, onDismiss: { themeRefresh += 1 }) {
+            ChatThemePicker(scope: themeScope)
         }
         .navigationDestination(isPresented: $showGroupInfo) {
             GroupDetailsView(
