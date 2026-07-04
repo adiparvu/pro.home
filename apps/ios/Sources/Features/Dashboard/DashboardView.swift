@@ -32,12 +32,17 @@ struct DashboardView: View {
     @State var geocodedCoordinate: CLLocationCoordinate2D?
     @State private var selectedSection: PropertySection? = nil
     @State var pulsing = false
-    @State private var showNotifications = false
     @State private var notificationService = NotificationService()
-    @State private var showEditProfile = false
-    @State private var showSearch = false
-    @State private var showWidgetPicker = false
-    @State private var showHealthDetail = false
+    // A single presentation slot. Multiple stacked `.sheet(isPresented:)` on one
+    // view conflict in SwiftUI (only the last reliably presents), which is why
+    // search / notifications / profile silently did nothing. One `.sheet(item:)`
+    // driven by this enum fixes all of them.
+    @State private var activeSheet: DashboardSheet?
+
+    private enum DashboardSheet: Int, Identifiable {
+        case notifications, editProfile, search, widgetPicker, healthDetail
+        var id: Int { rawValue }
+    }
     @State var isEditingWidgets = false
     @State var editableWidgets: [HomeWidgetType] = HomeWidgetType.load()
     @State var sectionOrder: [HomeSectionType] = HomeSectionType.load()
@@ -102,45 +107,44 @@ struct DashboardView: View {
             await notificationService.load(userId: uid)
             await notificationService.subscribeRealtime(userId: uid)
         }
-        .sheet(isPresented: $showNotifications) {
-            NavigationStack {
-                NotificationCenterView(service: notificationService)
-                    .environment(auth)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .notifications:
+                NavigationStack {
+                    NotificationCenterView(service: notificationService)
+                        .environment(auth)
+                        .environment(router)
+                }
+                .presentationDragIndicator(.visible)
+            case .editProfile:
+                NavigationStack {
+                    EditProfileView()
+                        .environment(profileService)
+                }
+            case .search:
+                GlobalSearchSheet()
+                    .environment(taskService)
+                    .environment(documentService)
+                    .environment(plantService)
+                    .environment(deliveryService)
+                    .environment(familyService)
+                    .environment(financialService)
+                    .environment(elementService)
                     .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showEditProfile) {
-            NavigationStack {
-                EditProfileView()
-                    .environment(profileService)
-            }
-        }
-        .sheet(isPresented: $showSearch) {
-            GlobalSearchSheet()
-                .environment(taskService)
-                .environment(documentService)
-                .environment(plantService)
-                .environment(deliveryService)
-                .environment(familyService)
-                .environment(financialService)
-                .environment(elementService)
-                .environment(router)
-        }
-        .sheet(isPresented: $showWidgetPicker) {
-            WidgetPickerSheet()
-        }
-        .sheet(isPresented: $showHealthDetail) {
-            let score = propertyService.primary?.healthScore ?? 87
-            NavigationStack {
-                PropertyHealthDetailView(
-                    score: score,
-                    maintenancePct: min(100, max(0, score - 10)),
-                    utilitiesPct: min(100, max(0, score + 5)),
-                    securityPct: min(100, max(0, score - 3)),
-                    tasksPct: taskService.tasks.isEmpty ? 0 :
-                        Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
-                )
+            case .widgetPicker:
+                WidgetPickerSheet()
+            case .healthDetail:
+                let score = propertyService.primary?.healthScore ?? 87
+                NavigationStack {
+                    PropertyHealthDetailView(
+                        score: score,
+                        maintenancePct: min(100, max(0, score - 10)),
+                        utilitiesPct: min(100, max(0, score + 5)),
+                        securityPct: min(100, max(0, score - 3)),
+                        tasksPct: taskService.tasks.isEmpty ? 0 :
+                            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
+                    )
+                }
             }
         }
     }
@@ -162,7 +166,7 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
-            Button { HapticFeedback.impact(.light); showSearch = true } label: {
+            Button { HapticFeedback.impact(.light); activeSheet = .search } label: {
                 Image(systemName: "magnifyingglass")
                     .font(AppFont.headline)
                     .foregroundStyle(Color.primary.opacity(0.75))
@@ -172,7 +176,7 @@ struct DashboardView: View {
             .glassCircle()
             .accessibilityLabel("Search")
 
-            Button { HapticFeedback.impact(.light); showNotifications.toggle() } label: {
+            Button { HapticFeedback.impact(.light); activeSheet = .notifications } label: {
                 Image(systemName: "bell.fill")
                     .font(.system(size: 15))
                     .foregroundStyle(Color.primary.opacity(0.75))
@@ -200,7 +204,7 @@ struct DashboardView: View {
             .accessibilityLabel(notificationService.unreadCount > 0 || hasNotifications
                                 ? "Notifications, new" : "Notifications")
 
-            Button { HapticFeedback.impact(.light); showEditProfile = true } label: {
+            Button { HapticFeedback.impact(.light); activeSheet = .editProfile } label: {
                 avatarCircle
             }
             .buttonStyle(.plain)
@@ -344,7 +348,7 @@ struct DashboardView: View {
             .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks",
                   action: { router.selectedTab = .tasks }),
             .init(value: "\(taskService.overdueCount)", label: "Alerts",
-                  action: { showNotifications = true })
+                  action: { activeSheet = .notifications })
         ])
     }
 
@@ -392,7 +396,7 @@ struct DashboardView: View {
 
                     Button {
                         HapticFeedback.impact(.light)
-                        showWidgetPicker = true
+                        activeSheet = .widgetPicker
                     } label: {
                         Image(systemName: "plus")
                             .font(AppFont.captionEmphasis)
@@ -417,7 +421,7 @@ struct DashboardView: View {
                 Spacer().frame(height: 14)
                 Button {
                     HapticFeedback.impact(.light)
-                    showHealthDetail = true
+                    activeSheet = .healthDetail
                 } label: {
                     propertyHealthCard
                 }
