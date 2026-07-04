@@ -66,18 +66,65 @@ struct ItemDetailView: View {
     // MARK: - Sections
 
     private var headerSection: some View {
-        VStack(spacing: 10) {
-            ColoredIconBadge(icon: live.categoryIcon, color: live.categoryColor, size: 72)
-            Text(live.name).font(.system(size: 22, weight: .bold)).foregroundStyle(.primary)
+        let tint = live.categoryColor
+        return VStack(spacing: 14) {
+            // Icon in a soft glass disc with a category-tinted glow.
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.18))
+                    .frame(width: 96, height: 96)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                    .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
+                Image(systemName: live.categoryIcon)
+                    .font(.system(size: 38, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+
+            Text(live.name)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2).minimumScaleFactor(0.7)
+
             HStack(spacing: 8) {
                 conditionBadge
-                Text(LocalizedStringKey(live.location.capitalized))
-                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
+                if live.purchasePrice > 0 {
+                    heroChip("€\(Int(live.purchasePrice))", icon: "eurosign.circle.fill")
+                }
+                if !live.location.isEmpty {
+                    heroChip(LocalizedStringKey(live.location.capitalized), icon: "mappin.circle.fill")
+                }
             }
         }
-        .padding(.top, AppSpacing.xxs)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .padding(.horizontal, AppSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(colors: [tint.opacity(0.32), tint.opacity(0.10)],
+                                   startPoint: .top, endPoint: .bottom)
+                )
+                .overlay(
+                    RadialGradient(colors: [.white.opacity(0.16), .clear],
+                                   center: .top, startRadius: 6, endRadius: 220)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
+                )
+        )
+        .shadow(color: tint.opacity(0.25), radius: 20, y: 10)
+    }
+
+    private func heroChip(_ text: LocalizedStringKey, icon: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 10, weight: .semibold))
+            Text(text).font(.system(size: 12, weight: .medium))
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 10).padding(.vertical, AppSpacing.xxs)
+        .background(.white.opacity(0.12), in: Capsule())
     }
 
     private var conditionBadge: some View {
