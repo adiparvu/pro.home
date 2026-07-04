@@ -171,12 +171,17 @@ final class DirectMessageService {
         guard !undelivered.isEmpty else { return }
         let nowISO = ISO8601DateFormatter().string(from: Date())
         for m in undelivered {
-            _ = try? await supabase
-                .from("direct_messages")
-                .update(["delivered_at": nowISO])
-                .eq("id", value: m.id.uuidString)
-                .execute()
-            if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].deliveredAt = nowISO }
+            do {
+                try await supabase
+                    .from("direct_messages")
+                    .update(["delivered_at": nowISO])
+                    .eq("id", value: m.id.uuidString)
+                    .execute()
+                // Only reflect the receipt locally once it actually persisted —
+                // otherwise the sender's ticks never advance while we falsely
+                // believe we sent the receipt. A failed row simply retries.
+                if let i = dms.firstIndex(where: { $0.id == m.id }) { dms[i].deliveredAt = nowISO }
+            } catch { continue }
         }
     }
 
@@ -347,15 +352,18 @@ final class DirectMessageService {
             // so the ticks/details never show "read" without a "delivered".
             var payload = ["read_at": nowISO]
             if m.deliveredAt == nil { payload["delivered_at"] = nowISO }
-            _ = try? await supabase
-                .from("direct_messages")
-                .update(payload)
-                .eq("id", value: m.id.uuidString)
-                .execute()
-            if let i = dms.firstIndex(where: { $0.id == m.id }) {
-                dms[i].readAt = nowISO
-                if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
-            }
+            do {
+                try await supabase
+                    .from("direct_messages")
+                    .update(payload)
+                    .eq("id", value: m.id.uuidString)
+                    .execute()
+                // Reflect locally only after the write lands (see markDelivered).
+                if let i = dms.firstIndex(where: { $0.id == m.id }) {
+                    dms[i].readAt = nowISO
+                    if dms[i].deliveredAt == nil { dms[i].deliveredAt = nowISO }
+                }
+            } catch { continue }
         }
     }
 

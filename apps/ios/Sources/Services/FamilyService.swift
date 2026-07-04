@@ -97,7 +97,11 @@ final class FamilyService {
         }
     }
 
-    func update(_ member: FamilyMember) async {
+    /// Returns true on success. On failure it sets `error` AND returns false so
+    /// the caller can keep its editor open instead of falsely reporting "saved"
+    /// (an RLS-rejected edit used to dismiss and silently revert on next load).
+    @discardableResult
+    func update(_ member: FamilyMember) async -> Bool {
         struct Payload: Encodable {
             let name: String
             let role: String
@@ -121,8 +125,10 @@ final class FamilyService {
             if let i = members.firstIndex(where: { $0.id == member.id }) {
                 members[i] = updated
             }
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 

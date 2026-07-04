@@ -79,12 +79,22 @@ final class StatusService {
         viewedIds = Set(rows.map { $0.status_id }).intersection(current)
     }
 
-    func post(propertyId: UUID, authorName: String, image: UIImage, caption: String?) async {
-        guard let uid, let data = image.jpegData(compressionQuality: 0.85) else { return }
+    /// Posts a story. Returns nil on success or a human-readable error — the
+    /// caller must surface it. We never celebrate (or insert an imageless row)
+    /// when the upload or insert failed: an offline post used to play the
+    /// success haptic while nothing actually reached anyone.
+    @discardableResult
+    func post(propertyId: UUID, authorName: String, image: UIImage, caption: String?) async -> String? {
+        guard let uid else { return String(localized: "You're not signed in.") }
+        guard let data = image.jpegData(compressionQuality: 0.85) else {
+            return String(localized: "Couldn't prepare the image.")
+        }
         // Private bucket + signed URL at display (resolved via ChatMedia). Path is
         // scoped by property so chat-media RLS admits property members.
-        let mediaPath = await ChatMedia.upload(data, propertyId: propertyId, subdir: "status",
-                                               ext: "jpg", contentType: "image/jpeg")
+        guard let mediaPath = await ChatMedia.upload(data, propertyId: propertyId, subdir: "status",
+                                                     ext: "jpg", contentType: "image/jpeg") else {
+            return String(localized: "Image upload failed. Check your connection and try again.")
+        }
         struct Payload: Encodable {
             let property_id: String
             let author_id: String
@@ -92,15 +102,20 @@ final class StatusService {
             let media_url: String?
             let caption: String?
         }
-        _ = try? await supabase.from("status_updates").insert(Payload(
-            property_id: propertyId.uuidString,
-            author_id: uid.uuidString,
-            author_name: authorName,
-            media_url: mediaPath,
-            caption: (caption?.isEmpty == false) ? caption : nil
-        )).execute()
+        do {
+            try await supabase.from("status_updates").insert(Payload(
+                property_id: propertyId.uuidString,
+                author_id: uid.uuidString,
+                author_name: authorName,
+                media_url: mediaPath,
+                caption: (caption?.isEmpty == false) ? caption : nil
+            )).execute()
+        } catch {
+            return error.localizedDescription
+        }
         await load(propertyId: propertyId)
         HapticFeedback.success()
+        return nil
     }
 
     func markViewed(_ status: StatusUpdate, viewerName: String) async {

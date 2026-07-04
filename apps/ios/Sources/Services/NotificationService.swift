@@ -180,43 +180,72 @@ final class NotificationService {
         }
     }
 
+    // Each mutation is optimistic but rolls back on a failed write, so an
+    // offline "read"/"dismiss" doesn't lie: without this, dismissed rows
+    // resurrected and the badge snapped back on the next load.
+
     func markRead(_ notification: AppNotification) async {
         guard notification.isUnread,
               let idx = notifications.firstIndex(where: { $0.id == notification.id }) else { return }
         notifications[idx].status = "read"
-        _ = try? await supabase
-            .from("notifications")
-            .update(["status": "read"])
-            .eq("id", value: notification.id.uuidString)
-            .execute()
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .eq("id", value: notification.id.uuidString)
+                .execute()
+        } catch {
+            if let i = notifications.firstIndex(where: { $0.id == notification.id }) {
+                notifications[i].status = "unread"
+            }
+            self.error = error.localizedDescription
+        }
     }
 
     func markAllRead(userId: UUID) async {
+        let snapshot = notifications
         for i in notifications.indices { notifications[i].status = "read" }
-        _ = try? await supabase
-            .from("notifications")
-            .update(["status": "read"])
-            .eq("user_id", value: userId.uuidString)
-            .eq("status", value: "unread")
-            .execute()
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "read"])
+                .eq("user_id", value: userId.uuidString)
+                .eq("status", value: "unread")
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.localizedDescription
+        }
     }
 
     func dismiss(_ notification: AppNotification) async {
+        let snapshot = notifications
         notifications.removeAll { $0.id == notification.id }
-        _ = try? await supabase
-            .from("notifications")
-            .update(["status": "dismissed"])
-            .eq("id", value: notification.id.uuidString)
-            .execute()
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "dismissed"])
+                .eq("id", value: notification.id.uuidString)
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.localizedDescription
+        }
     }
 
     func clearAll(userId: UUID) async {
+        let snapshot = notifications
         notifications.removeAll()
-        _ = try? await supabase
-            .from("notifications")
-            .update(["status": "dismissed"])
-            .eq("user_id", value: userId.uuidString)
-            .neq("status", value: "dismissed")
-            .execute()
+        do {
+            try await supabase
+                .from("notifications")
+                .update(["status": "dismissed"])
+                .eq("user_id", value: userId.uuidString)
+                .neq("status", value: "dismissed")
+                .execute()
+        } catch {
+            notifications = snapshot
+            self.error = error.localizedDescription
+        }
     }
 }

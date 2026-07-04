@@ -19,6 +19,7 @@ struct ConversationsView: View {
     @State private var showStatus = false
     @State private var showCommunities = false
     @State private var showStoryCamera = false
+    @State private var storyError: String?
     @State private var filter: ConvFilter = .all
     @State private var archivedIds: Set<String> = []
     @State private var favoriteIds: Set<String> = []
@@ -195,7 +196,10 @@ struct ConversationsView: View {
     @MainActor
     private func sendStory(_ image: UIImage) async {
         guard let pid = propertyService.primary?.id else { return }
-        await StatusService.shared.post(propertyId: pid, authorName: myName, image: image, caption: nil)
+        if let err = await StatusService.shared.post(propertyId: pid, authorName: myName, image: image, caption: nil) {
+            storyError = err
+            HapticFeedback.warning()
+        }
     }
 
     var body: some View {
@@ -240,6 +244,13 @@ struct ConversationsView: View {
         // silent until you popped back. The channel is property-scoped and
         // lightweight, so it stays live for the chat session (re-subscribing is
         // idempotent); it's cleaned up when the service is torn down.
+        .alert("Story not posted", isPresented: Binding(
+            get: { storyError != nil }, set: { if !$0 { storyError = nil } }
+        )) {
+            Button("OK", role: .cancel) { storyError = nil }
+        } message: {
+            Text(storyError ?? "")
+        }
         .sheet(isPresented: $showAddMember) {
             AddFamilyMemberSheet(propertyId: propertyService.primary?.id,
                                  propertyName: propertyService.primary?.name)

@@ -19,6 +19,7 @@ struct EditFamilyMemberSheet: View {
     @State private var isSaving = false
     @State private var showDeleteConfirm = false
     @State private var showAddSocial = false
+    @State private var saveError: String?
 
     init(member: FamilyMember) {
         self.member = member
@@ -80,6 +81,13 @@ struct EditFamilyMemberSheet: View {
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
+            }
+            .alert("Couldn't save", isPresented: Binding(
+                get: { saveError != nil }, set: { if !$0 { saveError = nil } }
+            )) {
+                Button("OK", role: .cancel) { saveError = nil }
+            } message: {
+                Text(saveError ?? "")
             }
         }
     }
@@ -267,8 +275,12 @@ struct EditFamilyMemberSheet: View {
         updated.color = color
         updated.birthday = birthdayString()
         updated.socialLinks = socialLinks
-        await familyService.update(updated)
-        HapticFeedback.success()
-        dismiss()
+        if await familyService.update(updated) {
+            HapticFeedback.success()
+            dismiss()
+        } else {
+            saveError = familyService.error ?? String(localized: "Couldn't save changes.")
+            HapticFeedback.warning()
+        }
     }
 }

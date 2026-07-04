@@ -497,9 +497,13 @@ struct EditMemberSheet: View {
         updated.phone = phone.isEmpty ? nil : phone
         updated.role = role
         updated.color = color
-        await familyService.update(updated)
-        HapticFeedback.success()
-        dismiss()
+        if await familyService.update(updated) {
+            HapticFeedback.success()
+            dismiss()
+        } else {
+            errorMessage = familyService.error ?? String(localized: "Couldn't save changes.")
+            HapticFeedback.warning()
+        }
     }
 
     private func remove() async {

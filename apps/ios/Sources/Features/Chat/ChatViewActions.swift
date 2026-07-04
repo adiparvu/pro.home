@@ -57,30 +57,35 @@ extension ChatView {
 
     func forward(_ message: Message, to dest: ForwardDestination) async {
         guard let pid = propertyId else { return }
-        switch dest {
-        case .group:
-            try? await messageService.send(
-                propertyId: pid, senderName: senderName,
-                body: message.body, attachmentUrl: message.attachmentUrl,
-                attachmentType: message.attachmentType,
-                latitude: message.latitude, longitude: message.longitude
-            )
-        case .member(let m):
-            struct DMForward: Encodable {
-                let sender_name: String; let recipient_name: String
-                let body: String; let property_id: String?
-                // Required by direct_messages RLS: sender_id must equal the
-                // caller and recipient_member_id lets the recipient read it.
-                let sender_id: String?; let recipient_member_id: String
+        do {
+            switch dest {
+            case .group:
+                try await messageService.send(
+                    propertyId: pid, senderName: senderName,
+                    body: message.body, attachmentUrl: message.attachmentUrl,
+                    attachmentType: message.attachmentType,
+                    latitude: message.latitude, longitude: message.longitude
+                )
+            case .member(let m):
+                struct DMForward: Encodable {
+                    let sender_name: String; let recipient_name: String
+                    let body: String; let property_id: String?
+                    // Required by direct_messages RLS: sender_id must equal the
+                    // caller and recipient_member_id lets the recipient read it.
+                    let sender_id: String?; let recipient_member_id: String
+                }
+                try await supabase.from("direct_messages").insert(
+                    DMForward(sender_name: senderName, recipient_name: m.name,
+                              body: message.body ?? "📎", property_id: pid.uuidString,
+                              sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                              recipient_member_id: m.id.uuidString)
+                ).execute()
             }
-            _ = try? await supabase.from("direct_messages").insert(
-                DMForward(sender_name: senderName, recipient_name: m.name,
-                          body: message.body ?? "📎", property_id: pid.uuidString,
-                          sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                          recipient_member_id: m.id.uuidString)
-            ).execute()
+            HapticFeedback.success()
+        } catch {
+            sendError = error.localizedDescription
+            HapticFeedback.warning()
         }
-        HapticFeedback.success()
     }
 
     func sendSticker(_ sticker: Sticker) async {

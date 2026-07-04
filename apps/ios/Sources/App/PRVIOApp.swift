@@ -81,7 +81,10 @@ struct PRVIOApp: App {
                         router.showFamilyChat = true
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.showShopping") {
-                        router.showAddSupply = true
+                        // OpenShoppingListIntent opens the LIST, not the add-item
+                        // form (matches the quick action in AppRouter).
+                        router.selectedTab = .settings
+                        router.showSuppliesView = true
                     }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break

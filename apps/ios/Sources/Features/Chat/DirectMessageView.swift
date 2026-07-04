@@ -1023,36 +1023,40 @@ struct DirectMessageView: View {
         let isImage = lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg")
         let isAudio = lower.contains("/dm-audio/") || lower.hasSuffix(".m4a")
 
-        switch dest {
-        case .group:
-            if isImage {
-                try? await messageService.send(propertyId: propId, senderName: myName, body: nil,
-                                               attachmentUrl: message.body, attachmentType: "image")
-            } else if isAudio {
-                try? await messageService.send(propertyId: propId, senderName: myName, body: nil,
-                                               attachmentUrl: message.body, attachmentType: "audio")
-            } else {
-                try? await messageService.send(propertyId: propId, senderName: myName, body: message.body)
-            }
-        case .member(let m):
-            struct Payload: Encodable {
-                let sender_name, recipient_name, body, property_id: String
-                let sender_id, recipient_member_id, expires_at: String?
-            }
-            let fwdTtl = ChatDisappearStore.ttl(m.name)
-            let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
-            if let sent: DirectMessage = try? await supabase
-                .from("direct_messages")
-                .insert(Payload(sender_name: myName, recipient_name: m.name,
-                                body: message.body, property_id: propId.uuidString,
-                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                                recipient_member_id: m.id.uuidString,
-                                expires_at: fwdExpires))
-                .select().single().execute().value {
+        do {
+            switch dest {
+            case .group:
+                if isImage {
+                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
+                                                  attachmentUrl: message.body, attachmentType: "image")
+                } else if isAudio {
+                    try await messageService.send(propertyId: propId, senderName: myName, body: nil,
+                                                  attachmentUrl: message.body, attachmentType: "audio")
+                } else {
+                    try await messageService.send(propertyId: propId, senderName: myName, body: message.body)
+                }
+            case .member(let m):
+                struct Payload: Encodable {
+                    let sender_name, recipient_name, body, property_id: String
+                    let sender_id, recipient_member_id, expires_at: String?
+                }
+                let fwdTtl = ChatDisappearStore.ttl(m.name)
+                let fwdExpires = fwdTtl > 0 ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(fwdTtl)) : nil
+                let sent: DirectMessage = try await supabase
+                    .from("direct_messages")
+                    .insert(Payload(sender_name: myName, recipient_name: m.name,
+                                    body: message.body, property_id: propId.uuidString,
+                                    sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                    recipient_member_id: m.id.uuidString,
+                                    expires_at: fwdExpires))
+                    .select().single().execute().value
                 directMessageService.dms.append(sent)
             }
+            HapticFeedback.success()
+        } catch {
+            sendError = error.localizedDescription
+            HapticFeedback.warning()
         }
-        HapticFeedback.success()
     }
 
     @MainActor
@@ -1062,16 +1066,20 @@ struct DirectMessageView: View {
             let sender_name, recipient_name, body, property_id: String
             let sender_id, recipient_member_id, expires_at: String?
         }
-        if let sent: DirectMessage = try? await supabase
-            .from("direct_messages")
-            .insert(Payload(sender_name: myName, recipient_name: member.name,
-                            body: "👤 \(formatted)", property_id: pid.uuidString,
-                            sender_id: supabase.auth.currentSession?.user.id.uuidString,
-                            recipient_member_id: member.id.uuidString,
-                            expires_at: dmExpiresAt))
-            .select().single().execute().value {
+        do {
+            let sent: DirectMessage = try await supabase
+                .from("direct_messages")
+                .insert(Payload(sender_name: myName, recipient_name: member.name,
+                                body: "👤 \(formatted)", property_id: pid.uuidString,
+                                sender_id: supabase.auth.currentSession?.user.id.uuidString,
+                                recipient_member_id: member.id.uuidString,
+                                expires_at: dmExpiresAt))
+                .select().single().execute().value
             directMessageService.dms.append(sent)
             HapticFeedback.success()
+        } catch {
+            sendError = error.localizedDescription
+            HapticFeedback.warning()
         }
     }
 
