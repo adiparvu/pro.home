@@ -131,7 +131,26 @@ extension PRVIOApp {
         let c: UIColor = appSettings.accentEnabled
             ? UIColor(avatarRingColor(for: appSettings.accentColor))
             : .systemBlue
+        // The appearance proxy only tints nav bars created AFTER this point, so
+        // changing the accent left every on-screen back button its old color.
+        // Update the live bars too so the accent applies instantly everywhere.
         UINavigationBar.appearance().tintColor = c
+        for scene in UIApplication.shared.connectedScenes {
+            guard let ws = scene as? UIWindowScene else { continue }
+            for window in ws.windows {
+                window.tintColor = c
+                applyTint(c, in: window.rootViewController)
+            }
+        }
+    }
+
+    private func applyTint(_ c: UIColor, in vc: UIViewController?) {
+        guard let vc else { return }
+        if let nav = vc as? UINavigationController {
+            nav.navigationBar.tintColor = c
+        }
+        vc.children.forEach { applyTint(c, in: $0) }
+        applyTint(c, in: vc.presentedViewController)
     }
 }
 

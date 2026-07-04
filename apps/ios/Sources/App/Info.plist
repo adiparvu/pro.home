@@ -56,7 +56,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Used to convert your voice into search queries across your property data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Used to share your location in Family Chat and tag item locations in Inventory.</string>
+	<string>Used to share your location in Chat and tag item locations in Inventory.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
@@ -155,7 +155,7 @@
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>bubble.left.and.bubble.right.fill</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Family Chat</string>
+			<string>Chat</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>com.prvio.action.chat</string>
 		</dict>
