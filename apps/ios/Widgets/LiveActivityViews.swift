@@ -49,21 +49,27 @@ private struct MinimalLockRow: View {
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
-            if LA.lockDetails {
-                ShoppingLockScreenView(context: context)
-            } else {
-                MinimalLockRow(icon: "cart.fill", tint: .blue, title: context.attributes.listName)
+            Group {
+                if LA.lockDetails {
+                    ShoppingLockScreenView(context: context)
+                } else {
+                    MinimalLockRow(icon: "cart.fill", tint: .blue, title: context.attributes.listName)
+                }
             }
+            .widgetURL(URL(string: "prvio://shopping"))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    if LA.expandedData {
-                        Label(context.attributes.listName, systemImage: "cart.fill")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.blue)
-                    } else {
-                        Image(systemName: "cart.fill").foregroundStyle(.blue)
+                    Group {
+                        if LA.expandedData {
+                            Label(context.attributes.listName, systemImage: "cart.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.blue)
+                        } else {
+                            Image(systemName: "cart.fill").foregroundStyle(.blue)
+                        }
                     }
+                    .widgetURL(URL(string: "prvio://shopping"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if LA.expandedData {
@@ -164,24 +170,30 @@ struct ShoppingLockScreenView: View {
 struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
-            if LA.lockDetails {
-                MaintenanceLockScreenView(context: context)
-            } else {
-                MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill",
-                               tint: context.state.isComplete ? .green : .orange,
-                               title: context.attributes.taskTitle)
+            Group {
+                if LA.lockDetails {
+                    MaintenanceLockScreenView(context: context)
+                } else {
+                    MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill",
+                                   tint: context.state.isComplete ? .green : .orange,
+                                   title: context.attributes.taskTitle)
+                }
             }
+            .widgetURL(URL(string: "prvio://tasks"))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    if LA.expandedData {
-                        Label(context.attributes.taskTitle, systemImage: "wrench.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.orange)
-                            .lineLimit(1)
-                    } else {
-                        Image(systemName: "wrench.fill").foregroundStyle(.orange)
+                    Group {
+                        if LA.expandedData {
+                            Label(context.attributes.taskTitle, systemImage: "wrench.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.orange)
+                                .lineLimit(1)
+                        } else {
+                            Image(systemName: "wrench.fill").foregroundStyle(.orange)
+                        }
                     }
+                    .widgetURL(URL(string: "prvio://tasks"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if LA.expandedData {
@@ -263,21 +275,27 @@ struct MaintenanceLockScreenView: View {
 struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
-            if LA.lockDetails {
-                DeliveryLockScreenView(context: context)
-            } else {
-                MinimalLockRow(icon: "shippingbox.fill", tint: .blue, title: context.attributes.description)
+            Group {
+                if LA.lockDetails {
+                    DeliveryLockScreenView(context: context)
+                } else {
+                    MinimalLockRow(icon: "shippingbox.fill", tint: .blue, title: context.attributes.description)
+                }
             }
+            .widgetURL(URL(string: "prvio://deliveries"))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    if LA.expandedData {
-                        Label(context.attributes.carrier, systemImage: "shippingbox.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.blue)
-                    } else {
-                        Image(systemName: "shippingbox.fill").foregroundStyle(.blue)
+                    Group {
+                        if LA.expandedData {
+                            Label(context.attributes.carrier, systemImage: "shippingbox.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.blue)
+                        } else {
+                            Image(systemName: "shippingbox.fill").foregroundStyle(.blue)
+                        }
                     }
+                    .widgetURL(URL(string: "prvio://deliveries"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if LA.expandedData {
@@ -374,21 +392,27 @@ struct DeliveryLockScreenView: View {
 struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
-            if LA.lockDetails {
-                PlantCareLockScreenView(context: context)
-            } else {
-                MinimalLockRow(icon: "drop.fill", tint: .blue, title: String(localized: "Plant watering"))
+            Group {
+                if LA.lockDetails {
+                    PlantCareLockScreenView(context: context)
+                } else {
+                    MinimalLockRow(icon: "drop.fill", tint: .blue, title: String(localized: "Plant watering"))
+                }
             }
+            .widgetURL(URL(string: "prvio://plants"))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    if LA.expandedData {
-                        Label("Plant watering", systemImage: "drop.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.blue)
-                    } else {
-                        Image(systemName: "drop.fill").foregroundStyle(.blue)
+                    Group {
+                        if LA.expandedData {
+                            Label("Plant watering", systemImage: "drop.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.blue)
+                        } else {
+                            Image(systemName: "drop.fill").foregroundStyle(.blue)
+                        }
                     }
+                    .widgetURL(URL(string: "prvio://plants"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if LA.expandedData {
