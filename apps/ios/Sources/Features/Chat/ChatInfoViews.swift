@@ -2,7 +2,6 @@ import SwiftUI
 import UIKit
 import PhotosUI
 import LocalAuthentication
-import CoreImage.CIFilterBuiltins
 import AudioToolbox
 import AVFoundation
 
@@ -275,15 +274,6 @@ struct InviteLinkView: View {
     let link: String
     @Environment(\.dismiss) private var dismiss
 
-    private func qrImage() -> UIImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(link.utf8)
-        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)) else { return nil }
-        let ctx = CIContext()
-        guard let cg = ctx.createCGImage(output, from: output.extent) else { return nil }
-        return UIImage(cgImage: cg)
-    }
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
@@ -293,14 +283,8 @@ struct InviteLinkView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.xxl).padding(.top, AppSpacing.sm)
 
-                if let qr = qrImage() {
-                    Image(uiImage: qr)
-                        .interpolation(.none)
-                        .resizable()
-                        .frame(width: 220, height: 220)
-                        .padding(AppSpacing.lg)
-                        .liquidGlass(cornerRadius: AppRadius.xl)
-                }
+                QRCodeImage(content: link, size: 220)
+                    .padding(.top, AppSpacing.xs)
 
                 Text(link)
                     .font(.system(size: 13, design: .monospaced))

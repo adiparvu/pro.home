@@ -1,5 +1,4 @@
 import SwiftUI
-import CoreImage.CIFilterBuiltins
 import Supabase
 
 /// End-to-end TOTP (authenticator app) enrollment via Supabase MFA:
@@ -67,14 +66,9 @@ struct TOTPEnrollView: View {
 
     private var qrCard: some View {
         VStack {
-            if let img = qrImage(from: otpauthURI) {
-                Image(uiImage: img)
-                    .interpolation(.none)
-                    .resizable()
-                    .frame(width: 200, height: 200)
-                    .padding(AppSpacing.lg)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            }
+            // High-contrast, unobstructed style so third-party authenticator
+            // apps scan it reliably.
+            QRCodeImage(content: otpauthURI, size: 200, style: .plain)
         }
         .frame(maxWidth: .infinity)
     }
@@ -186,16 +180,5 @@ struct TOTPEnrollView: View {
             Task { try? await supabase.auth.mfa.unenroll(params: MFAUnenrollParams(factorId: factorId)) }
         }
         dismiss()
-    }
-
-    private func qrImage(from string: String) -> UIImage? {
-        guard !string.isEmpty else { return nil }
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)),
-              let cg = context.createCGImage(output, from: output.extent) else { return nil }
-        return UIImage(cgImage: cg)
     }
 }
