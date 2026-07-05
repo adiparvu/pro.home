@@ -15,7 +15,7 @@ struct AutoImportView: View {
     @State private var loading = true
     @State private var copied = false
 
-    private let domain = "parcels.xparvu.com"
+    private let domain = "adiparvu.com"
     private var address: String? { token.map { "\($0)@\(domain)" } }
 
     var body: some View {
