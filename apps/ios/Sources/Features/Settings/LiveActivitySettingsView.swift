@@ -356,44 +356,58 @@ struct LiveActivityPreview: View {
         }
     }
 
-    // MARK: - Dynamic Island mock (black pill, styled to the chosen density)
-
-    @ViewBuilder
     private var islandMock: some View {
-        switch style {
-        case .detailed:
-            VStack(spacing: 8) {
+        DynamicIslandMock(style: style, showProgress: showProgress)
+    }
+}
+
+// MARK: - Dynamic Island mock (black pill, styled to the chosen density)
+
+/// Standalone so it can be shown both in the top preview and directly under the
+/// Detailed / Compact / Minimal picker, giving in-context feedback as the user
+/// taps each option.
+struct DynamicIslandMock: View {
+    let style: DynamicIslandStyle
+    var showProgress: Bool = true
+
+    var body: some View {
+        Group {
+            switch style {
+            case .detailed:
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "shippingbox.fill")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+                        Text("Garden bench")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                        Spacer()
+                        Text("In transit")
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.orange)
+                    }
+                    if showProgress {
+                        ProgressView(value: 0.65).tint(.orange)
+                    }
+                }
+                .padding(.horizontal, 18).padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
+                .background(Color.black, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            case .compact:
                 HStack(spacing: 8) {
                     Image(systemName: "shippingbox.fill")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
-                    Text("Garden bench")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
-                    Spacer()
-                    Text("In transit")
-                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.orange)
+                    Text("65%")
+                        .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
                 }
-                if showProgress {
-                    ProgressView(value: 0.65).tint(.orange)
-                }
-            }
-            .padding(.horizontal, 18).padding(.vertical, 14)
-            .frame(maxWidth: .infinity)
-            .background(Color.black, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        case .compact:
-            HStack(spacing: 8) {
+                .padding(.horizontal, 18).padding(.vertical, 10)
+                .background(Capsule().fill(Color.black))
+            case .minimal:
                 Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
-                Text("65%")
-                    .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.orange)
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(Color.black))
             }
-            .padding(.horizontal, 18).padding(.vertical, 10)
-            .background(Capsule().fill(Color.black))
-        case .minimal:
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: 14, weight: .semibold)).foregroundStyle(.orange)
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(Color.black))
         }
+        .transition(.opacity.combined(with: .scale(scale: 0.92)))
     }
 }
 
@@ -456,13 +470,21 @@ struct LiveActivityAppearanceView: View {
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         Picker("", selection: $islandStyle) {
                             ForEach(DynamicIslandStyle.allCases) { style in
                                 Text(style.label).tag(style.rawValue)
                             }
                         }
                         .pickerStyle(.segmented)
+
+                        // Live in-context preview: updates as the segment changes
+                        // so the effect is visible right here at the picker.
+                        DynamicIslandMock(style: islandStyleValue, showProgress: showProgress)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppSpacing.xs)
+                            .animation(.snappy(duration: 0.28), value: islandStyle)
+
                         Text("Choose how much detail appears in the Dynamic Island when expanded.")
                             .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -486,6 +508,10 @@ struct LiveActivityAppearanceView: View {
             HapticFeedback.selection()
             LiveActivityService.shared.refreshAppearance()
         }
+    }
+
+    private var islandStyleValue: DynamicIslandStyle {
+        DynamicIslandStyle(rawValue: islandStyle) ?? .detailed
     }
 
     /// Single value that changes whenever any appearance preference does, so one
