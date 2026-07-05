@@ -119,6 +119,20 @@ struct TrackingCheckpoint: Codable, Hashable, Identifiable {
     var date: Date? { time.flatMap { ISODate.date(from: $0) } }
 }
 
+/// Per-property forwarding address for auto-importing deliveries from shipping
+/// emails. The token is the local-part of the address (`<token>@<domain>`).
+struct ParcelInbox: Identifiable, Codable, Hashable {
+    var id: UUID
+    var propertyId: UUID
+    var token: String
+    var active: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, token, active
+        case propertyId = "property_id"
+    }
+}
+
 struct NewDelivery: Encodable {
     let propertyId: UUID
     let description: String

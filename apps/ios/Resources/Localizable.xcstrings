@@ -4387,6 +4387,78 @@
         "ro": { "stringUnit": { "state": "translated", "value": "Istoric urmărire" } }
       }
     },
+    "Auto-import": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Auto-import" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Import automat" } }
+      }
+    },
+    "Import deliveries from email": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Import deliveries from email" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Importă livrări din e-mail" } }
+      }
+    },
+    "Forward your shipping confirmation emails here and PRVIO adds the delivery and tracks it live — automatically.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Forward your shipping confirmation emails here and PRVIO adds the delivery and tracks it live — automatically." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Redirecționează aici mailurile de confirmare a expedierii, iar PRVIO adaugă coletul și îl urmărește live — automat." } }
+      }
+    },
+    "YOUR FORWARDING ADDRESS": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "YOUR FORWARDING ADDRESS" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "ADRESA TA DE REDIRECȚIONARE" } }
+      }
+    },
+    "Copy address": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy address" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Copiază adresa" } }
+      }
+    },
+    "Couldn't load your address. Pull to retry.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't load your address. Pull to retry." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nu am putut încărca adresa. Trage pentru reîncercare." } }
+      }
+    },
+    "HOW TO SET IT UP": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "HOW TO SET IT UP" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "CUM CONFIGUREZI" } }
+      }
+    },
+    "Copy the address above.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy the address above." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Copiază adresa de mai sus." } }
+      }
+    },
+    "In Gmail, open Settings → Filters → Create a filter.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "In Gmail, open Settings → Filters → Create a filter." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "În Gmail, deschide Setări → Filtre → Creează un filtru." } }
+      }
+    },
+    "Match emails from your couriers/shops (e.g. contains \"tracking\", or from dhl.com, sameday.ro…).": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Match emails from your couriers/shops (e.g. contains \"tracking\", or from dhl.com, sameday.ro…)." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Potrivește mailurile de la curieri/magazine (ex. conțin \"tracking\", ori de la dhl.com, sameday.ro…)." } }
+      }
+    },
+    "Choose \"Forward to\" and paste this address. Done.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Choose \"Forward to\" and paste this address. Done." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Alege \"Redirecționează către\" și lipește această adresă. Gata." } }
+      }
+    },
+    "We only ever see the emails you choose to forward — never your inbox.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "We only ever see the emails you choose to forward — never your inbox." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Vedem doar mailurile pe care alegi să le redirecționezi — niciodată căsuța ta." } }
+      }
+    },
     "Info received": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Info received" } },

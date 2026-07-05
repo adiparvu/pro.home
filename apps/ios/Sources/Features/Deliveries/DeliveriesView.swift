@@ -9,6 +9,7 @@ struct DeliveriesView: View {
     @State private var showAddDelivery = false
     @State private var editingDelivery: Delivery? = nil
     @State private var showCompleted = false
+    @State private var showAutoImport = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,6 +27,17 @@ struct DeliveriesView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    showAutoImport = true
+                    HapticFeedback.impact(.light)
+                } label: {
+                    Image(systemName: "envelope.badge")
+                        .font(AppFont.title3)
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel("Auto-import from email")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     showAddDelivery = true
                     HapticFeedback.impact(.light)
                 } label: {
@@ -38,6 +50,10 @@ struct DeliveriesView: View {
         }
         .sheet(isPresented: $showAddDelivery) {
             DeliveryFormSheet(editingDelivery: nil)
+                .environment(deliveryService)
+        }
+        .sheet(isPresented: $showAutoImport) {
+            AutoImportView()
                 .environment(deliveryService)
         }
         .sheet(item: $editingDelivery) { delivery in

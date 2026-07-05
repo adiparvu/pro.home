@@ -24,6 +24,36 @@ final class DeliveryService {
         await load(propertyId: pid)
     }
 
+    // MARK: - Auto-import forwarding address
+
+    var inbox: ParcelInbox?
+
+    /// Loads the property's forwarding address, creating one on first use so the
+    /// user always has an address to copy into their email filter.
+    func ensureInbox(propertyId: UUID) async -> ParcelInbox? {
+        if let inbox, inbox.propertyId == propertyId { return inbox }
+
+        let existing: [ParcelInbox]? = try? await supabase
+            .from("parcel_inbox")
+            .select("id, property_id, token, active")
+            .eq("property_id", value: propertyId.uuidString)
+            .limit(1)
+            .execute().value
+        if let found = existing?.first { inbox = found; return found }
+
+        // Create a fresh, hard-to-guess token.
+        let token = "prv" + UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased().prefix(9)
+        struct NewInbox: Encodable { let property_id: String; let token: String }
+        let created: ParcelInbox? = try? await supabase
+            .from("parcel_inbox")
+            .insert(NewInbox(property_id: propertyId.uuidString, token: String(token)))
+            .select("id, property_id, token, active")
+            .single()
+            .execute().value
+        inbox = created
+        return created
+    }
+
     func load(propertyId: UUID) async {
         currentPropertyId = propertyId
         do {
