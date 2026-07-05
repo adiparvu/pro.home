@@ -312,6 +312,10 @@ struct MainTabView: View {
             guard let newId, newId != oldId else { return }
             Task {
                 await propertyService.load()
+                // Refresh the signed-in user's role on the primary property so
+                // role-gated UI (tab bar + Settings) matches the account we just
+                // switched to. Must run after load() populates `primary`.
+                await propertyService.loadMyRole()
                 await taskService.load()
                 await financialService.load()
                 await documentService.load()
