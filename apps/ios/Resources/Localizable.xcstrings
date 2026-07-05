@@ -4345,6 +4345,72 @@
         "ro": { "stringUnit": { "state": "translated", "value": "ACTIVITĂȚILE MELE LIVE" } }
       }
     },
+    "Live tracking": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Live tracking" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Urmărire live" } }
+      }
+    },
+    "Estimated delivery": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Estimated delivery" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Livrare estimată" } }
+      }
+    },
+    "Last update": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Last update" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ultima actualizare" } }
+      }
+    },
+    "Waiting for the courier's first scan…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Waiting for the courier's first scan…" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Se așteaptă prima scanare a curierului…" } }
+      }
+    },
+    "Live tracking is starting — check back shortly.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Live tracking is starting — check back shortly." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Urmărirea live pornește — revino în scurt timp." } }
+      }
+    },
+    "Add a tracking number to follow this parcel live.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add a tracking number to follow this parcel live." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă un număr AWB ca să urmărești coletul live." } }
+      }
+    },
+    "Tracking history": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tracking history" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Istoric urmărire" } }
+      }
+    },
+    "Info received": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Info received" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Informații primite" } }
+      }
+    },
+    "Ready for pickup": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Ready for pickup" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Gata de ridicare" } }
+      }
+    },
+    "Failed attempt": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Failed attempt" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Încercare eșuată" } }
+      }
+    },
+    "Exception": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Exception" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Excepție" } }
+      }
+    },
     "Running now": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Running now" } },

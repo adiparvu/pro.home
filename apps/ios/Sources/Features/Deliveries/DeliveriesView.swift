@@ -140,10 +140,14 @@ struct DeliveriesView: View {
 
             VStack(spacing: 10) {
                 ForEach(deliveryService.activeDeliveries) { delivery in
-                    DeliveryRow(delivery: delivery) {
-                        editingDelivery = delivery
+                    NavigationLink {
+                        DeliveryDetailView(delivery: delivery) { editingDelivery = delivery }
+                            .environment(deliveryService)
+                    } label: {
+                        DeliveryRow(delivery: delivery) { editingDelivery = delivery }
+                            .environment(deliveryService)
                     }
-                    .environment(deliveryService)
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -176,10 +180,14 @@ struct DeliveriesView: View {
                 if showCompleted {
                     VStack(spacing: 10) {
                         ForEach(completed) { delivery in
-                            DeliveryRow(delivery: delivery) {
-                                editingDelivery = delivery
+                            NavigationLink {
+                                DeliveryDetailView(delivery: delivery) { editingDelivery = delivery }
+                                    .environment(deliveryService)
+                            } label: {
+                                DeliveryRow(delivery: delivery) { editingDelivery = delivery }
+                                    .environment(deliveryService)
                             }
-                            .environment(deliveryService)
+                            .buttonStyle(.plain)
                         }
                     }
                     .transition(.move(edge: .top).combined(with: .opacity))

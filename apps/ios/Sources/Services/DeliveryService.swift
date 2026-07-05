@@ -18,6 +18,12 @@ final class DeliveryService {
 
     // MARK: Supabase CRUD
 
+    /// Re-fetches the current property's deliveries (used by pull-to-refresh).
+    func reload() async {
+        guard let pid = currentPropertyId else { return }
+        await load(propertyId: pid)
+    }
+
     func load(propertyId: UUID) async {
         currentPropertyId = propertyId
         do {
