@@ -182,29 +182,30 @@ struct DashboardView: View {
                     .foregroundStyle(Color.primary.opacity(0.75))
                     .frame(width: 40, height: 40)
                     .overlay(alignment: .topTrailing) {
+                        // Numeric badge ONLY while there are unread
+                        // notifications — no static status dots.
                         if notificationService.unreadCount > 0 {
-                            Text("\(min(notificationService.unreadCount, 99))")
+                            Text(notificationService.unreadCount > 99
+                                 ? "99+" : "\(notificationService.unreadCount)")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 4.5).padding(.vertical, 1.5)
                                 .background(Color.red, in: Capsule())
                                 .overlay(Capsule().strokeBorder(.black.opacity(0.35), lineWidth: 1))
                                 .offset(x: -2, y: 4)
-                        } else if hasNotifications {
-                            Circle()
-                                .fill(Color.brandSuccess)
-                                .frame(width: 10, height: 10)
-                                .overlay(Circle().strokeBorder(.black.opacity(0.55), lineWidth: 1.5))
-                                .offset(x: -8, y: 8)
                         }
                     }
             }
             .buttonStyle(.plain)
             .glassCircle()
-            .accessibilityLabel(notificationService.unreadCount > 0 || hasNotifications
+            .accessibilityLabel(notificationService.unreadCount > 0
                                 ? "Notifications, new" : "Notifications")
 
-            Button { HapticFeedback.impact(.light); activeSheet = .editProfile } label: {
+            // The avatar goes straight to the profile tab, not an edit sheet.
+            Button {
+                HapticFeedback.impact(.light)
+                router.selectedTab = .settings
+            } label: {
                 avatarCircle
             }
             .buttonStyle(.plain)
@@ -216,10 +217,6 @@ struct DashboardView: View {
         f.dateFormat = "EEEE, MMM d"
         f.locale = .current
         return f.string(from: Date())
-    }
-
-    private var hasNotifications: Bool {
-        taskService.overdueCount > 0 || !proactiveEngine.activeInsights.isEmpty
     }
 
     private var avatarCircle: some View {
