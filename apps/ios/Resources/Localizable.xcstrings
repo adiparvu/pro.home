@@ -4339,6 +4339,42 @@
         }
       }
     },
+    "Lock with Face ID": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lock with Face ID" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blochează cu Face ID" } }
+      }
+    },
+    "Remove Face ID lock": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove Face ID lock" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Elimină blocarea Face ID" } }
+      }
+    },
+    "Locked — Face ID required": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Locked — Face ID required" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blocat — necesită Face ID" } }
+      }
+    },
+    "Unlock to view this item": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unlock to view this item" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deblochează pentru a vedea acest element" } }
+      }
+    },
+    "Unlock \"%@\"": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unlock \"%@\"" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deblochează „%@”" } }
+      }
+    },
+    "Remove lock from \"%@\"": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove lock from \"%@\"" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Elimină blocarea de la „%@”" } }
+      }
+    },
     "MY LIVE ACTIVITIES": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "MY LIVE ACTIVITIES" } },

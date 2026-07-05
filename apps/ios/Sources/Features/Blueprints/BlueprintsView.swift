@@ -14,8 +14,41 @@ struct BlueprintsView: View {
     @State private var renameText = ""
     @State private var showSaveAsZone = false
     @State private var pendingZoneName = ""
+    // Bumped when a per-plan lock toggles so the (UserDefaults-backed) badges refresh.
+    @State private var lockRefresh = 0
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+
+    /// Runs `action` immediately for unlocked plans; locked ones require
+    /// Face ID / passcode first.
+    private func withLockCheck(_ scan: HomeScan, _ action: @escaping () -> Void) {
+        guard ItemLockStore.isLocked(scan.id.uuidString, in: .plans) else { action(); return }
+        Task {
+            if await PrivacyAuth.authenticate(reason: String(localized: "Unlock \"\(scan.name)\"")) {
+                await MainActor.run { action() }
+            }
+        }
+    }
+
+    /// Locking is free; removing a lock itself requires authentication.
+    private func toggleLock(_ scan: HomeScan) {
+        let id = scan.id.uuidString
+        if ItemLockStore.isLocked(id, in: .plans) {
+            Task {
+                if await PrivacyAuth.authenticate(reason: String(localized: "Remove lock from \"\(scan.name)\"")) {
+                    await MainActor.run {
+                        ItemLockStore.setLocked(id, in: .plans, false)
+                        HapticFeedback.success()
+                        lockRefresh += 1
+                    }
+                }
+            }
+        } else {
+            ItemLockStore.setLocked(id, in: .plans, true)
+            HapticFeedback.success()
+            lockRefresh += 1
+        }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -148,6 +181,7 @@ struct BlueprintsView: View {
 
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
+            let _ = lockRefresh   // re-render badges when a lock toggles
             Text("SAVED PLANS & MODELS")
                 .font(AppFont.label)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
@@ -155,13 +189,30 @@ struct BlueprintsView: View {
 
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(service.scans) { scan in
+                    let locked = ItemLockStore.isLocked(scan.id.uuidString, in: .plans)
                     ScanCard(scan: scan, thumbnail: service.image(for: scan))
-                        .onTapGesture { previewItem = scan }
+                        .overlay(alignment: .topTrailing) {
+                            if locked {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.teal)
+                                    .padding(6)
+                                    .background(.ultraThinMaterial, in: Circle())
+                                    .padding(AppSpacing.xs)
+                            }
+                        }
+                        .onTapGesture { withLockCheck(scan) { previewItem = scan } }
                         .contextMenu {
                             Button {
-                                renameText = scan.name
-                                renameItem = scan
+                                withLockCheck(scan) {
+                                    renameText = scan.name
+                                    renameItem = scan
+                                }
                             } label: { Label("Rename", systemImage: "pencil") }
+                            Button { toggleLock(scan) } label: {
+                                Label(locked ? "Remove Face ID lock" : "Lock with Face ID",
+                                      systemImage: locked ? "lock.open" : "lock")
+                            }
                             Button(role: .destructive) {
                                 HapticFeedback.warning()
                                 service.deleteScan(scan)

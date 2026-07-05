@@ -63,19 +63,22 @@ struct DocumentsView: View {
                                 expiringBanner
                             }
                             ForEach(filteredDocuments) { doc in
+                                let locked = ItemLockStore.isLocked(doc.id.uuidString, in: .documents)
                                 DocumentRow(
                                     doc: doc,
                                     isFavorite: DocumentFavoritesStore.isFavorite(doc.id),
-                                    onOpen: { selectedDoc = doc },
-                                    onPreview: { openDocument(doc) },
-                                    onShare: { shareDocument(doc) },
+                                    isLocked: locked,
+                                    onOpen: { withLockCheck(doc) { selectedDoc = doc } },
+                                    onPreview: { withLockCheck(doc) { openDocument(doc) } },
+                                    onShare: { withLockCheck(doc) { shareDocument(doc) } },
                                     onDelete: { docToDelete = doc; showDeleteConfirm = true },
                                     onFavorite: {
                                         HapticFeedback.selection()
                                         DocumentFavoritesStore.toggle(doc.id)
                                         favRefresh += 1
                                     },
-                                    onEdit: { editDoc = doc }
+                                    onEdit: { withLockCheck(doc) { editDoc = doc } },
+                                    onLock: { toggleLock(doc) }
                                 )
                                 .padding(.horizontal, AppSpacing.xl)
                             }
@@ -154,6 +157,37 @@ struct DocumentsView: View {
                         Task { try? await Task.sleep(for: .milliseconds(3500)); withAnimation { errorToast = nil } }
                     }
             }
+        }
+    }
+
+    /// Runs `action` immediately for unlocked documents; locked ones require
+    /// Face ID / passcode first.
+    private func withLockCheck(_ doc: DocumentModel, _ action: @escaping () -> Void) {
+        guard ItemLockStore.isLocked(doc.id.uuidString, in: .documents) else { action(); return }
+        Task {
+            if await PrivacyAuth.authenticate(reason: String(localized: "Unlock \"\(doc.name)\"")) {
+                await MainActor.run { action() }
+            }
+        }
+    }
+
+    /// Locking is free; removing a lock itself requires authentication.
+    private func toggleLock(_ doc: DocumentModel) {
+        let id = doc.id.uuidString
+        if ItemLockStore.isLocked(id, in: .documents) {
+            Task {
+                if await PrivacyAuth.authenticate(reason: String(localized: "Remove lock from \"\(doc.name)\"")) {
+                    await MainActor.run {
+                        ItemLockStore.setLocked(id, in: .documents, false)
+                        HapticFeedback.success()
+                        favRefresh += 1   // lock state is UserDefaults-backed, like favorites
+                    }
+                }
+            }
+        } else {
+            ItemLockStore.setLocked(id, in: .documents, true)
+            HapticFeedback.success()
+            favRefresh += 1
         }
     }
 
@@ -342,12 +376,14 @@ struct DocumentsView: View {
 struct DocumentRow: View {
     let doc: DocumentModel
     var isFavorite: Bool = false
+    var isLocked: Bool = false
     let onOpen: () -> Void
     let onPreview: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
     var onFavorite: () -> Void = {}
     var onEdit: () -> Void = {}
+    var onLock: () -> Void = {}
 
     var body: some View {
         Button(action: onOpen) {
@@ -366,6 +402,10 @@ struct DocumentRow: View {
                             Text(doc.name)
                                 .font(AppFont.footnoteEmphasis)
                                 .foregroundStyle(.primary).lineLimit(1)
+                            if isLocked {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 11)).foregroundStyle(.teal)
+                            }
                             if isFavorite {
                                 Image(systemName: "star.fill")
                                     .font(.system(size: 11)).foregroundStyle(.yellow)
@@ -411,12 +451,20 @@ struct DocumentRow: View {
                       systemImage: isFavorite ? "star.slash" : "star")
             }
             Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
+            Button { onLock() } label: {
+                Label(isLocked ? "Remove Face ID lock" : "Lock with Face ID",
+                      systemImage: isLocked ? "lock.open" : "lock")
+            }
             Divider()
             Button(role: .destructive) { onDelete() } label: {
                 Label("Delete", systemImage: "trash")
             }
         } preview: {
-            DocumentRowPreview(doc: doc)
+            if isLocked {
+                LockedItemPreview(name: doc.name)
+            } else {
+                DocumentRowPreview(doc: doc)
+            }
         }
         .swipeActions(edge: .leading) {
             Button { onShare() } label: {
