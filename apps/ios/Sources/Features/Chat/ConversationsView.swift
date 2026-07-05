@@ -224,6 +224,7 @@ struct ConversationsView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .task { await MemberDirectory.shared.loadIfNeeded() }
         .task {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName

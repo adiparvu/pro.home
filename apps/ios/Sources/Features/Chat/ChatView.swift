@@ -327,6 +327,7 @@ struct ChatView: View {
             await messageService.subscribePollVotes(propertyId: pid)
         }
         .task { await flushOutbox() }
+        .task { await MemberDirectory.shared.loadIfNeeded() }
         .onChange(of: outbox.isOnline) { _, online in
             if online { Task { await flushOutbox() } }
         }

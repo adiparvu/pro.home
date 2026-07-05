@@ -721,13 +721,15 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var chatAvatar: some View {
-        // Resolve the best available identity for this sender. A matching family
-        // member gives us their photo + brand color; otherwise we fall back to
-        // initials on a deterministic color derived from the name — never a
-        // blank circle, and never dropping the photo when we do have one.
+        // Resolve the best available identity for this sender. The member
+        // directory (real account profiles, keyed by sender id) is the primary
+        // source for the photo; the name-matched family contact is a fallback.
+        // Otherwise: initials on a deterministic color derived from the name —
+        // never a blank circle.
         let color = sender?.swiftColor ?? Self.color(for: message.senderName)
         let initials = sender?.initials ?? Self.initials(from: message.senderName)
-        let avatarURL = sender?.avatarUrl.flatMap { URL(string: $0) }
+        let avatarURL = MemberDirectory.shared.avatarURL(for: message.senderId)
+            ?? sender?.avatarUrl.flatMap { URL(string: $0) }
 
         ZStack {
             Circle().fill(color.opacity(0.18))

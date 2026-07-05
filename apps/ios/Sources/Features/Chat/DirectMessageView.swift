@@ -250,6 +250,7 @@ struct DirectMessageView: View {
         // Ensure the DM realtime channel is live while the thread is open — the
         // conversation list's teardown must never leave an open thread silent.
         // subscribeRealtime is idempotent, so this is a no-op when already live.
+        .task { await MemberDirectory.shared.loadIfNeeded() }
         .task {
             guard let pid = propertyService.primary?.id else { return }
             directMessageService.myName = myName
