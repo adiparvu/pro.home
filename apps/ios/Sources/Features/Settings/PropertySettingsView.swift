@@ -47,7 +47,7 @@ struct PropertySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 0) {
+                HStack(spacing: 12) {
                     SearchIconButton(isActive: $showSearch)
                     Button { showAdd = true } label: {
                         Image(systemName: "plus")

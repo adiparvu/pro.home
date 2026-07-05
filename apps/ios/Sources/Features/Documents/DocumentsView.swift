@@ -99,7 +99,7 @@ struct DocumentsView: View {
         .floatingSpeedDial(.documents)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 0) {
+                HStack(spacing: 5) {
                     SearchIconButton(isActive: $showSearch)
                     Rectangle()
                         .fill(Color.primary.opacity(0.15))

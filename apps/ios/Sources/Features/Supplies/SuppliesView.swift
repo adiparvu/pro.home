@@ -87,7 +87,7 @@ struct SuppliesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 2) {
+                HStack(spacing: 12) {
                     if activeTab != .overview {
                         SearchIconButton(isActive: $showSearch)
                     }

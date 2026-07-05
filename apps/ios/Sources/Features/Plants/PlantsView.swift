@@ -46,7 +46,7 @@ struct PlantsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 2) {
+                HStack(spacing: 12) {
                     SearchIconButton(isActive: $showSearch)
                     Button {
                         showAddPlant = true

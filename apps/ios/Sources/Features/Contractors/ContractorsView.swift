@@ -263,7 +263,7 @@ struct ContractorsView: View {
         .floatingSpeedDial(.contractors)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 2) {
+                HStack(spacing: 12) {
                     SearchIconButton(isActive: $showSearch)
                     Button {
                         withAnimation(.snappy) { favoritesOnly.toggle() }

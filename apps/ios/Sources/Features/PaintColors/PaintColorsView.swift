@@ -50,7 +50,7 @@ struct PaintColorsView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 2) {
+                HStack(spacing: 12) {
                     if !paintColorService.colors.isEmpty {
                         SearchIconButton(isActive: $showSearch)
                         SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",

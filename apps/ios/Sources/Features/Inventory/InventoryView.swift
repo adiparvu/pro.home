@@ -150,7 +150,7 @@ struct InventoryView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 0) {
+                HStack(spacing: 5) {
                     SearchIconButton(isActive: $showSearch)
                     Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Menu {

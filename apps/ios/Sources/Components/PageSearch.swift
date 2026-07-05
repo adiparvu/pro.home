@@ -25,7 +25,9 @@ struct SearchIconButton: View {
     var body: some View {
         Button {
             HapticFeedback.impact(.light)
-            withAnimation(.snappy(duration: 0.25)) { isActive.toggle() }
+            // Short ease-out so the field feels instant — a springy toggle
+            // reads as lag between the tap and the bar appearing.
+            withAnimation(.easeOut(duration: 0.12)) { isActive.toggle() }
         } label: {
             switch style {
             case .toolbar:
@@ -76,7 +78,9 @@ struct PageSearchField: View {
         .padding(.vertical, 10)
         .liquidGlass(cornerRadius: 14)
         .onAppear { focused = true }
-        .transition(.move(edge: .top).combined(with: .opacity))
+        // Fade in place: the move-transition shifted the whole page content,
+        // which read as a laggy reveal.
+        .transition(.opacity)
     }
 }
 
