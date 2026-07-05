@@ -24,7 +24,10 @@ struct AddTaskView: View {
     @State private var assigneeNames: [String] = []
     @State private var showAssigneePicker = false
     @State private var addToCalendar = false
-    @State private var calendarAdded = false
+    @State private var addToReminders = false
+    @State private var availableCalendars: [EKCalendar] = []
+    @State private var selectedCalendarId: String? = nil
+    @State private var syncHint: String? = nil
 
     let priorities  = ["low", "medium", "high", "critical"]
     let categories  = ["maintenance", "repair", "inspection", "cleaning", "upgrade", "administrative", "other"]
@@ -244,17 +247,17 @@ struct AddTaskView: View {
         .frame(width: 30, height: 30)
     }
 
-    // MARK: - Calendar toggle
+    // MARK: - Calendar & Reminders sync
 
     private var calendarToggle: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: calendarAdded ? "calendar.badge.checkmark" : "calendar.badge.plus")
+                Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 14))
-                    .foregroundStyle(calendarAdded ? Color.brandSuccess : Color.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(LocalizedStringKey(calendarAdded ? "Added to Apple Calendar" : "Add to Apple Calendar"))
+                    Text("Add to Calendar")
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                     if !hasDueDate {
@@ -270,10 +273,136 @@ struct AddTaskView: View {
                     .disabled(!hasDueDate)
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+
+            if addToCalendar && hasDueDate && !availableCalendars.isEmpty {
+                syncDivider
+                calendarPickerRow
+            }
+
+            syncDivider
+
+            HStack(spacing: 12) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.brandWarning)
+                    .frame(width: 28)
+                Text("Add to Apple Reminders")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Toggle("", isOn: $addToReminders)
+                    .tint(.accentColor)
+                    .labelsHidden()
+                    .disabled(!hasDueDate)
+            }
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+
+            if let syncHint {
+                Text(syncHint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.brandWarning)
+                    .padding(.horizontal, AppSpacing.base)
+                    .padding(.bottom, AppSpacing.md)
+            }
         }
         .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         .opacity(hasDueDate ? 1 : 0.5)
+        .onChange(of: addToCalendar) { _, on in
+            guard on else { return }
+            Task { await prepareCalendarAccess() }
+        }
+        .onChange(of: addToReminders) { _, on in
+            guard on else { return }
+            Task {
+                if !(await TaskCalendarSync.requestReminderAccess()) {
+                    addToReminders = false
+                    syncHint = String(localized: "Allow Reminders access in Settings to use this.")
+                }
+            }
+        }
+    }
+
+    private var syncDivider: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.05))
+            .frame(height: 0.5)
+            .padding(.leading, 52)
+    }
+
+    private var selectedCalendar: EKCalendar? {
+        availableCalendars.first { $0.calendarIdentifier == selectedCalendarId }
+    }
+
+    private var calendarPickerRow: some View {
+        Menu {
+            ForEach(calendarSources, id: \.self) { source in
+                Section(source) {
+                    ForEach(availableCalendars.filter { ($0.source?.title ?? "") == source },
+                            id: \.calendarIdentifier) { cal in
+                        Button {
+                            selectedCalendarId = cal.calendarIdentifier
+                        } label: {
+                            if cal.calendarIdentifier == selectedCalendarId {
+                                Label(cal.title, systemImage: "checkmark")
+                            } else {
+                                Text(cal.title)
+                            }
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(selectedCalendar.map { Color(UIColor(cgColor: $0.cgColor)) } ?? Color.accentColor)
+                    .frame(width: 10, height: 10)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selectedCalendar?.title ?? String(localized: "Default calendar"))
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                    if let source = selectedCalendar?.source?.title, !source.isEmpty {
+                        Text(source)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.primary.opacity(0.4))
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(0.35))
+            }
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var calendarSources: [String] {
+        var seen = Set<String>()
+        return availableCalendars.compactMap { cal in
+            let title = cal.source?.title ?? ""
+            return seen.insert(title).inserted ? title : nil
+        }
+    }
+
+    private func prepareCalendarAccess() async {
+        switch await TaskCalendarSync.requestEventAccess() {
+        case .full:
+            availableCalendars = TaskCalendarSync.writableCalendars()
+            if selectedCalendarId == nil {
+                selectedCalendarId = TaskCalendarSync.defaultCalendarId
+            }
+            syncHint = nil
+        case .writeOnly:
+            // Can save to the default calendar but not list others.
+            availableCalendars = []
+            syncHint = nil
+        case .denied:
+            addToCalendar = false
+            syncHint = String(localized: "Allow Calendar access in Settings to use this.")
+        }
     }
 
     // MARK: - Save
@@ -307,20 +436,19 @@ struct AddTaskView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         let trimmedDesc = description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description
+        let combinedDueDate: Date = {
+            guard hasDueTime else { return dueDate }
+            let cal = Calendar.current
+            var comps = cal.dateComponents([.year, .month, .day], from: dueDate)
+            let timeComps = cal.dateComponents([.hour, .minute], from: dueTime)
+            comps.hour = timeComps.hour; comps.minute = timeComps.minute
+            return cal.date(from: comps) ?? dueDate
+        }()
         let dueDateStr: String? = {
             guard hasDueDate else { return nil }
-            if hasDueTime {
-                let cal = Calendar.current
-                var comps = cal.dateComponents([.year, .month, .day], from: dueDate)
-                let timeComps = cal.dateComponents([.hour, .minute], from: dueTime)
-                comps.hour = timeComps.hour; comps.minute = timeComps.minute
-                let combined = cal.date(from: comps) ?? dueDate
-                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd HH:mm"
-                return f.string(from: combined)
-            } else {
-                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                return f.string(from: dueDate)
-            }
+            let f = DateFormatter()
+            f.dateFormat = hasDueTime ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"
+            return f.string(from: combinedDueDate)
         }()
 
         Task {
@@ -353,10 +481,18 @@ struct AddTaskView: View {
                         assigneeNames: assigneeNames
                     )
                     try await taskService.addTask(payload)
-                    if addToCalendar && hasDueDate {
-                        await addToAppleCalendar(title: trimmedTitle, date: dueDate, notes: description)
-                    }
                     scheduleAssigneeNotifications()
+                }
+                if hasDueDate {
+                    if addToCalendar {
+                        TaskCalendarSync.addEvent(title: trimmedTitle, notes: trimmedDesc,
+                                                  date: combinedDueDate, hasTime: hasDueTime,
+                                                  calendarId: selectedCalendarId)
+                    }
+                    if addToReminders {
+                        TaskCalendarSync.addReminder(title: trimmedTitle, notes: trimmedDesc,
+                                                     date: combinedDueDate, hasTime: hasDueTime)
+                    }
                 }
                 dismiss()
             } catch {
@@ -364,30 +500,6 @@ struct AddTaskView: View {
             }
             isSaving = false
         }
-    }
-
-    // MARK: - Apple Calendar
-
-    private func addToAppleCalendar(title: String, date: Date, notes: String) async {
-        let store = EKEventStore()
-        let granted: Bool
-        if #available(iOS 17, *) {
-            granted = (try? await store.requestWriteOnlyAccessToEvents()) ?? false
-        } else {
-            granted = await withCheckedContinuation { cont in
-                store.requestAccess(to: .event) { ok, _ in cont.resume(returning: ok) }
-            }
-        }
-        guard granted else { return }
-
-        let event = EKEvent(eventStore: store)
-        event.title = title
-        event.startDate = date
-        event.endDate = Calendar.current.date(byAdding: .hour, value: 1, to: date) ?? date
-        event.notes = notes.isEmpty ? nil : notes
-        event.calendar = store.defaultCalendarForNewEvents
-        try? store.save(event, span: .thisEvent)
-        await MainActor.run { calendarAdded = true }
     }
 
     // MARK: - Assignee notifications

@@ -1,6 +1,30 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Add to Apple Reminders": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add to Apple Reminders" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă în Apple Reminders" } }
+      }
+    },
+    "Default calendar": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Default calendar" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Calendarul implicit" } }
+      }
+    },
+    "Allow Calendar access in Settings to use this.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow Calendar access in Settings to use this." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Permite accesul la Calendar din Setări pentru a folosi asta." } }
+      }
+    },
+    "Allow Reminders access in Settings to use this.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow Reminders access in Settings to use this." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Permite accesul la Reminders din Setări pentru a folosi asta." } }
+      }
+    },
     "Tap to add photos": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Tap to add photos" } },

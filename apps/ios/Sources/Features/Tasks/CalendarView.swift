@@ -185,7 +185,8 @@ struct CalendarView: View {
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let dateStr = iso.string(from: date)
 
-        if taskService.tasks.contains(where: { $0.dueDate == dateStr && !$0.isCompleted }) {
+        // Due dates may carry a time ("yyyy-MM-dd HH:mm") — match by day prefix.
+        if taskService.tasks.contains(where: { ($0.dueDate?.hasPrefix(dateStr) ?? false) && !$0.isCompleted }) {
             colors.append(.blue)
         }
         if documentService.documents.contains(where: { $0.expiresAt == dateStr }) {
@@ -197,7 +198,7 @@ struct CalendarView: View {
     private func tasksFor(_ date: Date) -> [MaintenanceTask] {
         let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let s = iso.string(from: date)
-        return taskService.tasks.filter { $0.dueDate == s }
+        return taskService.tasks.filter { $0.dueDate?.hasPrefix(s) ?? false }
     }
 
     private func documentsFor(_ date: Date) -> [DocumentModel] {
