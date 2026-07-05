@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import PostalMime from 'https://esm.sh/postal-mime@2.4.4'
 
 // ─── email-inbound ────────────────────────────────────────────────────────────
 // Receives a forwarded shipping email (via an inbound-email provider that POSTs
@@ -85,12 +86,24 @@ serve(async (req) => {
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
 
-  // Normalize across providers (Postmark / SendGrid / Cloudflare worker / etc.).
-  const to: string = String(body?.to ?? body?.recipient ?? body?.To ?? '')
-  const from: string = String(body?.from ?? body?.sender ?? body?.From ?? '')
-  const subject: string = String(body?.subject ?? body?.Subject ?? '')
-  const textPart: string = String(body?.text ?? body?.plain ?? body?.TextBody ?? '')
-  const htmlPart: string = String(body?.html ?? body?.HtmlBody ?? '')
+  // Normalize across providers. A Cloudflare Email Worker sends the raw RFC822
+  // message (dependency-free on its side); everything else sends parsed fields.
+  let to = String(body?.to ?? body?.recipient ?? body?.To ?? '')
+  let from = String(body?.from ?? body?.sender ?? body?.From ?? '')
+  let subject = String(body?.subject ?? body?.Subject ?? '')
+  let textPart = String(body?.text ?? body?.plain ?? body?.TextBody ?? '')
+  let htmlPart = String(body?.html ?? body?.HtmlBody ?? '')
+
+  if (body?.raw) {
+    try {
+      const parsed = await PostalMime.parse(String(body.raw))
+      subject = subject || parsed?.subject || ''
+      textPart = textPart || parsed?.text || ''
+      htmlPart = htmlPart || parsed?.html || ''
+      if (!from) from = parsed?.from?.address ?? ''
+      if (!to) to = (parsed?.to?.[0]?.address) ?? ''
+    } catch { /* fall back to whatever fields were provided */ }
+  }
 
   // Routing token = local-part of the forwarding address, minus any +suffix.
   const localPart = (to.match(/([^<@\s]+)@/)?.[1] ?? to.split('@')[0] ?? '').split('+')[0].trim()
