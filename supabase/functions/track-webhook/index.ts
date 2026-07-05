@@ -45,8 +45,11 @@ serve(async (req) => {
   }
 
   // Shared-secret gate (Ship24 webhook URL is configured with ?secret=…).
+  // Trim both sides: dashboards often append a trailing newline/space when a
+  // secret is saved, which would otherwise fail an exact comparison.
   const url = new URL(req.url)
-  if (url.searchParams.get('secret') !== secret) return json({ error: 'unauthorized' }, 401)
+  const provided = (url.searchParams.get('secret') ?? '').trim()
+  if (provided !== secret.trim()) return json({ error: 'unauthorized' }, 401)
 
   let payload: any
   try { payload = await req.json() } catch { return json({ error: 'bad request' }, 400) }
