@@ -4375,6 +4375,42 @@
         "ro": { "stringUnit": { "state": "translated", "value": "Elimină blocarea de la „%@”" } }
       }
     },
+    "No expenses recorded yet.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No expenses recorded yet." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nicio cheltuială înregistrată încă." } }
+      }
+    },
+    "Gallery": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Gallery" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Galerie" } }
+      }
+    },
+    "Photos you add to the journal appear here.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Photos you add to the journal appear here." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pozele adăugate în jurnal apar aici." } }
+      }
+    },
+    "Property value": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Property value" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Valoarea proprietății" } }
+      }
+    },
+    "Add value estimates to follow how your property appreciates.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add value estimates to follow how your property appreciates." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă evaluări ca să urmărești cum se apreciază proprietatea." } }
+      }
+    },
+    "Latest estimate: %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Latest estimate: %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ultima evaluare: %@" } }
+      }
+    },
     "Stickers": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Stickers" } },

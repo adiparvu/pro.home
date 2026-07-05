@@ -33,6 +33,8 @@ extension PropertyDetailView {
 
                     plansButton
 
+                    PropertyInsightsSections(propertyId: property.id)
+
                     Spacer(minLength: 110)
                 }
                 .padding(.horizontal, AppSpacing.xl)
