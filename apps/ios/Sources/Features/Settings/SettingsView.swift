@@ -362,6 +362,29 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Role-based App-section gating
+    //
+    // Some App-section rows configure the property "power" features (access
+    // keys, third-party integrations, action shortcuts) and shouldn't appear for
+    // low-privilege roles. The purely-personal rows (Appearance, Language,
+    // Activity, App Icon, Live Activities, Siri) stay visible to everyone.
+    private enum AppFeature { case floatingButtons, nfcKeys, integrations }
+
+    private func allowedApp(_ f: AppFeature) -> Bool {
+        switch propertyService.myRole {
+        case "guest", "family_child", "family_teen":
+            return false                       // no property power tools
+        case "tenant":
+            // A resident configures shortcuts and may hold an access key, but
+            // doesn't wire up account-level integrations.
+            return f == .floatingButtons || f == .nfcKeys
+        case "service_provider":
+            return f == .floatingButtons
+        default:
+            return true                        // owner, partner, adult, nil (fail-open)
+        }
+    }
+
     private var appSection: some View {
         SettingsGroup(title: "App") {
             NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
@@ -390,21 +413,27 @@ struct SettingsView: View {
             NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
                 LiveActivitySettingsView()
             }
-            NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
-                QuickActionsSettingsView()
-                    .environment(appSettings)
+            if allowedApp(.floatingButtons) {
+                NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
+                    QuickActionsSettingsView()
+                        .environment(appSettings)
+                }
             }
             NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
                 SiriShortcutsView()
             }
-            NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
-                NFCWalletView()
+            if allowedApp(.nfcKeys) {
+                NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
+                    NFCWalletView()
+                }
             }
-            NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
-                IntegrationsView()
-                    .environment(taskService)
-                    .environment(propertyService)
-                    .environment(familyService)
+            if allowedApp(.integrations) {
+                NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
+                    IntegrationsView()
+                        .environment(taskService)
+                        .environment(propertyService)
+                        .environment(familyService)
+                }
             }
         }
     }
