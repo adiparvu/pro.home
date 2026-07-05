@@ -27,16 +27,15 @@ final class PhotoJournalService {
         }
     }
 
-    func add(_ payload: NewPhotoJournalPayload) async {
-        do {
-            let inserted: PhotoJournalEntry = try await supabase
-                .from("photo_journal_entries")
-                .insert(payload)
-                .select().single().execute().value
-            entries.insert(inserted, at: 0)
-        } catch {
-            self.error = error.localizedDescription
-        }
+    @discardableResult
+    func add(_ payload: NewPhotoJournalPayload) async throws -> PhotoJournalEntry {
+        let inserted: PhotoJournalEntry = try await supabase
+            .from("photo_journal_entries")
+            .insert(payload)
+            .select().single().execute().value
+        entries.insert(inserted, at: 0)
+        entries.sort { ($0.takenDate ?? .distantPast) > ($1.takenDate ?? .distantPast) }
+        return inserted
     }
 
     func delete(_ entry: PhotoJournalEntry) async {

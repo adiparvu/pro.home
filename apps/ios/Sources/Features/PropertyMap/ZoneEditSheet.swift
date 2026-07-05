@@ -282,15 +282,17 @@ struct ZoneEditSheet: View {
         updated.photoUrl = photoUrl
 
         if let data = pendingPhotoData {
-            let path = "zones/\(zone.id.uuidString)/cover.jpg"
+            // The `photos` bucket never existed — zone covers live in the public
+            // `documents` bucket like other property imagery.
+            let path = "zones/\(zone.id.uuidString.lowercased())/cover.jpg"
             let compressed = UIImage(data: data).flatMap { $0.jpegData(compressionQuality: 0.82) } ?? data
             do {
                 try await supabase.storage
-                    .from("photos")
+                    .from("documents")
                     .upload(path, data: compressed,
                             options: FileOptions(contentType: "image/jpeg", upsert: true))
                 updated.photoUrl = try supabase.storage
-                    .from("photos")
+                    .from("documents")
                     .getPublicURL(path: path)
                     .absoluteString
             } catch {

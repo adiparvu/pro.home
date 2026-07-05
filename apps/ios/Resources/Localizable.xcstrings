@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Tap to add photos": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap to add photos" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Atinge pentru a adăuga fotografii" } }
+      }
+    },
+    "Camera, library or files": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Camera, library or files" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Cameră, galerie sau fișiere" } }
+      }
+    },
+    "Title (optional)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Title (optional)" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Titlu (opțional)" } }
+      }
+    },
+    "Taken on": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Taken on" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Realizată la" } }
+      }
+    },
+    "Uploading %1$d of %2$d…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Uploading %1$d of %2$d…" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Se încarcă %1$d din %2$d…" } }
+      }
+    },
+    "Add photos": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add photos" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă fotografii" } }
+      }
+    },
+    "Remove photo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove photo" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Elimină fotografia" } }
+      }
+    },
+    "Upload failed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload failed" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Încărcarea a eșuat" } }
+      }
+    },
+    "View": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Vezi" } }
+      }
+    },
+    "Add photo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add photo" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă fotografie" } }
+      }
+    },
     "\"%@\" loaned to %@ will be marked as returned.": {
       "localizations": {
         "en": {

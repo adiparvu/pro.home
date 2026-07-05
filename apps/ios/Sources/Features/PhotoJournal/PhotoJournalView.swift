@@ -3,6 +3,10 @@ import PhotosUI
 import Supabase
 
 // MARK: - PhotoJournalView
+//
+// Renovation photo diary: photos grouped by month in a tight three-column
+// grid (Photos-app style), with tag filtering, context-menu actions and a
+// full detail viewer.
 
 struct PhotoJournalView: View {
     @Environment(PhotoJournalService.self) private var photoJournalService
@@ -10,8 +14,17 @@ struct PhotoJournalView: View {
 
     @State private var showAdd = false
     @State private var selectedEntry: PhotoJournalEntry? = nil
+    @State private var activeTag: String? = nil
 
-    private let columns = [GridItem(.flexible(), spacing: 2), GridItem(.flexible(), spacing: 2)]
+    private let columns = [GridItem(.flexible(), spacing: 2),
+                           GridItem(.flexible(), spacing: 2),
+                           GridItem(.flexible(), spacing: 2)]
+
+    private static let monthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.setLocalizedDateFormatFromTemplate("LLLLyyyy")
+        return f
+    }()
 
     var body: some View {
         ZStack {
@@ -21,7 +34,7 @@ struct PhotoJournalView: View {
             } else if photoJournalService.entries.isEmpty {
                 emptyState
             } else {
-                photoGrid
+                journalContent
             }
         }
         .navigationTitle("Photo Journal")
@@ -32,7 +45,7 @@ struct PhotoJournalView: View {
                     showAdd = true
                     HapticFeedback.impact(.light)
                 } label: {
-                    Image(systemName: "camera.fill")
+                    Image(systemName: "plus")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
@@ -55,19 +68,101 @@ struct PhotoJournalView: View {
         }
     }
 
-    // MARK: - Photo Grid
+    // MARK: - Filtering & grouping
 
-    private var photoGrid: some View {
-        ScrollView(showsIndicators: false) {
-            LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(photoJournalService.entries) { entry in
-                    PhotoGridCell(entry: entry)
-                        .onTapGesture {
-                            selectedEntry = entry
-                            HapticFeedback.impact(.light)
-                        }
-                }
+    private var allTags: [String] {
+        var seen = Set<String>()
+        var ordered: [String] = []
+        for entry in photoJournalService.entries {
+            for tag in entry.tags ?? [] where seen.insert(tag.lowercased()).inserted {
+                ordered.append(tag)
             }
+        }
+        return ordered
+    }
+
+    private var filteredEntries: [PhotoJournalEntry] {
+        guard let tag = activeTag else { return photoJournalService.entries }
+        return photoJournalService.entries.filter { entry in
+            (entry.tags ?? []).contains { $0.caseInsensitiveCompare(tag) == .orderedSame }
+        }
+    }
+
+    private struct MonthGroup: Identifiable {
+        let id: String
+        let title: String
+        let entries: [PhotoJournalEntry]
+    }
+
+    private var monthGroups: [MonthGroup] {
+        let calendar = Calendar.current
+        var groups: [(key: Date, entries: [PhotoJournalEntry])] = []
+        for entry in filteredEntries {
+            let date = entry.takenDate ?? .distantPast
+            let month = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+            if let idx = groups.firstIndex(where: { $0.key == month }) {
+                groups[idx].entries.append(entry)
+            } else {
+                groups.append((month, [entry]))
+            }
+        }
+        return groups
+            .sorted { $0.key > $1.key }
+            .map { group in
+                MonthGroup(
+                    id: String(group.key.timeIntervalSinceReferenceDate),
+                    title: Self.monthFormatter.string(from: group.key).capitalized,
+                    entries: group.entries
+                )
+            }
+    }
+
+    // MARK: - Content
+
+    private var journalContent: some View {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.lg, pinnedViews: []) {
+                if allTags.count > 1 {
+                    tagFilterBar
+                }
+                ForEach(monthGroups) { group in
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
+                            Text(group.title)
+                                .font(AppFont.headline)
+                                .foregroundStyle(.primary)
+                            Text("\(group.entries.count)")
+                                .font(AppFont.captionEmphasis)
+                                .foregroundStyle(Color.secondaryTextColor)
+                        }
+                        .padding(.horizontal, AppSpacing.lg)
+
+                        LazyVGrid(columns: columns, spacing: 2) {
+                            ForEach(group.entries) { entry in
+                                PhotoGridCell(entry: entry)
+                                    .onTapGesture {
+                                        selectedEntry = entry
+                                        HapticFeedback.impact(.light)
+                                    }
+                                    .contextMenu {
+                                        Button {
+                                            selectedEntry = entry
+                                        } label: {
+                                            Label("View", systemImage: "eye")
+                                        }
+                                        Button(role: .destructive) {
+                                            Task { await photoJournalService.delete(entry) }
+                                        } label: {
+                                            Label("Delete Photo", systemImage: "trash")
+                                        }
+                                    }
+                            }
+                        }
+                    }
+                }
+                Spacer(minLength: 110)
+            }
+            .padding(.top, AppSpacing.xs)
         }
         .refreshable {
             if let id = propertyService.primary?.id {
@@ -76,20 +171,62 @@ struct PhotoJournalView: View {
         }
     }
 
+    private var tagFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.xs) {
+                tagChip(nil, label: String(localized: "All"))
+                ForEach(allTags, id: \.self) { tag in
+                    tagChip(tag, label: "#\(tag)")
+                }
+            }
+            .padding(.horizontal, AppSpacing.lg)
+        }
+    }
+
+    private func tagChip(_ tag: String?, label: String) -> some View {
+        let isActive = activeTag?.caseInsensitiveCompare(tag ?? "") == .orderedSame
+            || (tag == nil && activeTag == nil)
+        return Button {
+            withAnimation(.snappy(duration: 0.25)) { activeTag = tag }
+            HapticFeedback.impact(.light)
+        } label: {
+            Text(label)
+                .font(AppFont.captionEmphasis)
+                .foregroundStyle(isActive ? .white : .primary)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 7)
+                .background(
+                    isActive ? AnyShapeStyle(Color.accentColor)
+                             : AnyShapeStyle(Color.primary.opacity(AppOpacity.subtleFill)),
+                    in: Capsule()
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - States
 
     private var emptyState: some View {
         VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.primary.opacity(0.15))
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(colors: [Color.accentColor.opacity(0.22),
+                                                Color.accentColor.opacity(0.06)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .frame(width: 96, height: 96)
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.accentColor)
+            }
             Text("Start your renovation diary")
                 .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.6))
+                .foregroundStyle(.primary)
             Text("Capture before and after photos, track progress, and document every improvement to your home.")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .foregroundStyle(Color.secondaryTextColor)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button {
@@ -124,21 +261,16 @@ struct PhotoJournalView: View {
 private struct PhotoGridCell: View {
     let entry: PhotoJournalEntry
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .short
-        return f
-    }()
-
     var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .bottom) {
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(
                 AsyncImage(url: URL(string: entry.photoUrl)) { phase in
                     switch phase {
                     case .empty:
                         Rectangle()
                             .fill(Color.primary.opacity(0.08))
-                            .overlay(ProgressView().tint(.primary.opacity(0.4)))
+                            .overlay(ProgressView().controlSize(.small).tint(.primary.opacity(0.4)))
                     case .success(let image):
                         image
                             .resizable()
@@ -154,32 +286,9 @@ private struct PhotoGridCell: View {
                         Rectangle().fill(Color.primary.opacity(0.05))
                     }
                 }
-                .frame(width: geo.size.width, height: geo.size.width)
-                .clipped()
-
-                LinearGradient(
-                    colors: [Color.black.opacity(0.65), Color.clear],
-                    startPoint: .bottom,
-                    endPoint: .center
-                )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.title)
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    if let date = entry.takenDate {
-                        Text(Self.dateFormatter.string(from: date))
-                            .font(.system(size: 10))
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.sm)
-            }
-        }
-        .aspectRatio(1, contentMode: .fit)
+            )
+            .clipped()
+            .contentShape(Rectangle())
     }
 }
 
@@ -195,7 +304,7 @@ private struct PhotoEntryDetailSheet: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .long
-        f.timeStyle = .short
+        f.timeStyle = .none
         return f
     }()
 
@@ -214,12 +323,12 @@ private struct PhotoEntryDetailSheet: View {
                                     .frame(maxWidth: .infinity)
                             case .empty:
                                 Rectangle()
-                                    .fill(Color.primary.opacity(0.08))
+                                    .fill(Color.white.opacity(0.06))
                                     .frame(height: 300)
-                                    .overlay(ProgressView())
+                                    .overlay(ProgressView().tint(.white))
                             default:
                                 Rectangle()
-                                    .fill(Color.primary.opacity(0.08))
+                                    .fill(Color.white.opacity(0.06))
                                     .frame(height: 300)
                             }
                         }
@@ -265,7 +374,8 @@ private struct PhotoEntryDetailSheet: View {
                                     .foregroundStyle(.red)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, AppSpacing.base)
-                                    .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .background(Color.red.opacity(0.12),
+                                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
                             .padding(.top, AppSpacing.sm)
@@ -282,6 +392,14 @@ private struct PhotoEntryDetailSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                         .foregroundStyle(.white)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let url = URL(string: entry.photoUrl) {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
             }
             .confirmationDialog("Delete this photo?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
