@@ -9,14 +9,16 @@ import SwiftUI
 // not just the in-app preview. Live Activity views are re-evaluated on every
 // content update, so a settings change applies from the next update (and
 // immediately for newly started activities).
+// Each helper takes the activity kind so per-activity overrides apply; a nil /
+// unknown kind falls back to the global appearance.
 private enum LA {
-    static var lockDetails: Bool { LiveActivityPrefs.showOnLockScreen }
-    static var island: Bool { LiveActivityPrefs.showDynamicIsland }
-    static var progress: Bool { LiveActivityPrefs.showProgress }
-    static var eta: Bool { LiveActivityPrefs.showETA }
-    static var property: Bool { LiveActivityPrefs.showProperty }
-    static var expandedDetail: Bool { island && LiveActivityPrefs.islandStyle == .detailed }
-    static var expandedData: Bool { island && LiveActivityPrefs.islandStyle != .minimal }
+    static func lockDetails(_ k: String) -> Bool { LiveActivityPrefs.showOnLockScreen(for: k) }
+    static func island(_ k: String) -> Bool { LiveActivityPrefs.showDynamicIsland(for: k) }
+    static func progress(_ k: String) -> Bool { LiveActivityPrefs.showProgress(for: k) }
+    static func eta(_ k: String) -> Bool { LiveActivityPrefs.showETA(for: k) }
+    static func property(_ k: String) -> Bool { LiveActivityPrefs.showProperty(for: k) }
+    static func expandedDetail(_ k: String) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k) == .detailed }
+    static func expandedData(_ k: String) -> Bool { island(k) && LiveActivityPrefs.islandStyle(for: k) != .minimal }
 }
 
 // MARK: - Shared minimal lock-screen row (Lock Screen toggle off)
@@ -50,7 +52,7 @@ struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             Group {
-                if LA.lockDetails {
+                if LA.lockDetails("shopping") {
                     ShoppingLockScreenView(context: context)
                 } else {
                     MinimalLockRow(icon: "cart.fill", tint: .blue, title: context.attributes.listName)
@@ -61,7 +63,7 @@ struct ShoppingLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Group {
-                        if LA.expandedData {
+                        if LA.expandedData("shopping") {
                             Label(context.attributes.listName, systemImage: "cart.fill")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(.blue)
@@ -72,16 +74,16 @@ struct ShoppingLiveActivity: Widget {
                     .widgetURL(URL(string: "prvio://shopping"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData {
+                    if LA.expandedData("shopping") {
                         Text("\(context.state.itemsBought)/\(context.state.totalItems)")
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail {
+                    if LA.expandedDetail("shopping") {
                         VStack(spacing: 6) {
-                            if LA.progress {
+                            if LA.progress("shopping") {
                                 ProgressView(value: context.state.totalItems > 0
                                              ? Double(context.state.itemsBought) / Double(context.state.totalItems)
                                              : 0)
@@ -106,7 +108,7 @@ struct ShoppingLiveActivity: Widget {
                     .foregroundStyle(.blue)
                     .font(.system(size: 12, weight: .semibold))
             } compactTrailing: {
-                if LA.island {
+                if LA.island("shopping") {
                     Text("\(context.state.itemsBought)/\(context.state.totalItems)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
@@ -142,12 +144,12 @@ struct ShoppingLockScreenView: View {
                 Text(context.attributes.listName)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
-                if LA.progress {
+                if LA.progress("shopping") {
                     ProgressView(value: progress).tint(.blue)
                 }
                 HStack(spacing: 4) {
                     Text(String(format: String(localized: "%d of %d items"), context.state.itemsBought, context.state.totalItems))
-                    if LA.property, !context.attributes.propertyName.isEmpty {
+                    if LA.property("shopping"), !context.attributes.propertyName.isEmpty {
                         Text("· \(context.attributes.propertyName)")
                     }
                 }
@@ -171,7 +173,7 @@ struct MaintenanceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: MaintenanceActivityAttributes.self) { context in
             Group {
-                if LA.lockDetails {
+                if LA.lockDetails("maintenance") {
                     MaintenanceLockScreenView(context: context)
                 } else {
                     MinimalLockRow(icon: context.state.isComplete ? "checkmark.circle.fill" : "wrench.fill",
@@ -184,7 +186,7 @@ struct MaintenanceLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Group {
-                        if LA.expandedData {
+                        if LA.expandedData("maintenance") {
                             Label(context.attributes.taskTitle, systemImage: "wrench.fill")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.orange)
@@ -196,16 +198,16 @@ struct MaintenanceLiveActivity: Widget {
                     .widgetURL(URL(string: "prvio://tasks"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData {
+                    if LA.expandedData("maintenance") {
                         Text("\(Int(context.state.progress * 100))%")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(context.state.isComplete ? .green : .orange)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail {
+                    if LA.expandedDetail("maintenance") {
                         VStack(spacing: 4) {
-                            if LA.progress {
+                            if LA.progress("maintenance") {
                                 ProgressView(value: context.state.progress).tint(.orange)
                             }
                             Text(context.state.stepDescription)
@@ -219,7 +221,7 @@ struct MaintenanceLiveActivity: Widget {
                     .foregroundStyle(.orange)
                     .font(.system(size: 12))
             } compactTrailing: {
-                if LA.island {
+                if LA.island("maintenance") {
                     Text("\(Int(context.state.progress * 100))%")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
@@ -250,12 +252,12 @@ struct MaintenanceLockScreenView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                if LA.progress {
+                if LA.progress("maintenance") {
                     ProgressView(value: context.state.progress).tint(.orange)
                 }
                 HStack(spacing: 4) {
                     Text(context.state.stepDescription)
-                    if LA.property, let property = context.attributes.propertyName, !property.isEmpty {
+                    if LA.property("maintenance"), let property = context.attributes.propertyName, !property.isEmpty {
                         Text("· \(property)")
                     }
                 }
@@ -276,7 +278,7 @@ struct DeliveryLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DeliveryActivityAttributes.self) { context in
             Group {
-                if LA.lockDetails {
+                if LA.lockDetails("delivery") {
                     DeliveryLockScreenView(context: context)
                 } else {
                     MinimalLockRow(icon: "shippingbox.fill", tint: .blue, title: context.attributes.description)
@@ -287,7 +289,7 @@ struct DeliveryLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Group {
-                        if LA.expandedData {
+                        if LA.expandedData("delivery") {
                             Label(context.attributes.carrier, systemImage: "shippingbox.fill")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.blue)
@@ -298,21 +300,21 @@ struct DeliveryLiveActivity: Widget {
                     .widgetURL(URL(string: "prvio://deliveries"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData {
+                    if LA.expandedData("delivery") {
                         Text(context.state.statusLabel)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(deliveryColor(context.state.status))
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail {
+                    if LA.expandedDetail("delivery") {
                         HStack {
                             Text(context.attributes.description)
                                 .font(.system(size: 12))
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer()
-                            if LA.eta, let eta = context.state.eta {
+                            if LA.eta("delivery"), let eta = context.state.eta {
                                 Text("ETA: \(eta)")
                                     .font(.system(size: 11))
                                     .foregroundStyle(.secondary)
@@ -325,7 +327,7 @@ struct DeliveryLiveActivity: Widget {
                     .foregroundStyle(.blue)
                     .font(.system(size: 12))
             } compactTrailing: {
-                if LA.island {
+                if LA.island("delivery") {
                     Text(context.state.statusLabel)
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(deliveryColor(context.state.status))
@@ -364,7 +366,7 @@ struct DeliveryLockScreenView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                if LA.property, let property = context.attributes.propertyName, !property.isEmpty {
+                if LA.property("delivery"), let property = context.attributes.propertyName, !property.isEmpty {
                     Text("\(property) · \(context.attributes.carrier) · \(context.state.statusLabel)")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -373,7 +375,7 @@ struct DeliveryLockScreenView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
-                if LA.eta, let eta = context.state.eta {
+                if LA.eta("delivery"), let eta = context.state.eta {
                     Text(String(format: String(localized: "Estimated: %@"), eta))
                         .font(.system(size: 11))
                         .foregroundStyle(.orange)
@@ -393,7 +395,7 @@ struct PlantCareLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PlantCareActivityAttributes.self) { context in
             Group {
-                if LA.lockDetails {
+                if LA.lockDetails("plantCare") {
                     PlantCareLockScreenView(context: context)
                 } else {
                     MinimalLockRow(icon: "drop.fill", tint: .blue, title: String(localized: "Plant watering"))
@@ -404,7 +406,7 @@ struct PlantCareLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Group {
-                        if LA.expandedData {
+                        if LA.expandedData("plantCare") {
                             Label("Plant watering", systemImage: "drop.fill")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.blue)
@@ -415,16 +417,16 @@ struct PlantCareLiveActivity: Widget {
                     .widgetURL(URL(string: "prvio://plants"))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if LA.expandedData {
+                    if LA.expandedData("plantCare") {
                         Text("\(context.state.wateredCount)/\(context.state.totalCount)")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(.blue)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    if LA.expandedDetail {
+                    if LA.expandedDetail("plantCare") {
                         VStack(spacing: 4) {
-                            if LA.progress {
+                            if LA.progress("plantCare") {
                                 ProgressView(value: context.state.totalCount > 0
                                              ? Double(context.state.wateredCount) / Double(context.state.totalCount)
                                              : 0)
@@ -443,7 +445,7 @@ struct PlantCareLiveActivity: Widget {
                     .foregroundStyle(.blue)
                     .font(.system(size: 12))
             } compactTrailing: {
-                if LA.island {
+                if LA.island("plantCare") {
                     Text("\(context.state.wateredCount)/\(context.state.totalCount)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
@@ -479,12 +481,12 @@ struct PlantCareLockScreenView: View {
                 Text("Plant watering")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.primary)
-                if LA.progress {
+                if LA.progress("plantCare") {
                     ProgressView(value: progress).tint(.blue)
                 }
                 HStack(spacing: 4) {
                     Text(String(format: String(localized: "%d of %d plants watered"), context.state.wateredCount, context.state.totalCount))
-                    if LA.property, !context.attributes.propertyName.isEmpty {
+                    if LA.property("plantCare"), !context.attributes.propertyName.isEmpty {
                         Text("· \(context.attributes.propertyName)")
                     }
                 }

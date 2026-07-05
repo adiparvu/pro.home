@@ -122,8 +122,10 @@ struct LiveActivitySettingsView: View {
                                     isOn: $startOnOpen)
                     }
 
-                    // Per-activity auto-start
-                    Text("AUTOMATICALLY START")
+                    // All Live Activities the user has — each opens its own
+                    // settings (auto-start + its own appearance) and shows live
+                    // status.
+                    Text("MY LIVE ACTIVITIES")
                         .font(AppFont.label)
                         .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -131,7 +133,7 @@ struct LiveActivitySettingsView: View {
 
                     settingsGroup {
                         ForEach(Array(LiveActivityKind.allCases.enumerated()), id: \.element.id) { idx, kind in
-                            AutoStartRow(kind: kind)
+                            KindNavRow(kind: kind)
                             if idx < LiveActivityKind.allCases.count - 1 { rowDivider }
                         }
                     }
@@ -213,25 +215,233 @@ struct LiveActivitySettingsView: View {
     }
 }
 
-// MARK: - Auto-start row (reads/writes its own key)
+// MARK: - Per-activity navigation row (opens its own settings + shows status)
 
-private struct AutoStartRow: View {
+private struct KindNavRow: View {
     let kind: LiveActivityKind
-    @State private var on = false
+    @State private var isActive = false
 
     var body: some View {
-        LAToggleRow(icon: kind.icon, color: kind.color,
-                    title: kind.title, subtitle: kind.subtitle,
-                    isOn: Binding(
-                        get: { on },
-                        set: { newVal in
-                            on = newVal
-                            LiveActivityPrefs.store.set(newVal, forKey: kind.storageKey)
-                            HapticFeedback.selection()
-                        }))
-        .onAppear {
-            on = LiveActivityPrefs.bool(kind.storageKey, default: kind.defaultAuto)
+        NavigationLink {
+            LiveActivityKindDetailView(kind: kind)
+        } label: {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: kind.icon, color: kind.color)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(kind.title).font(.system(size: 15)).foregroundStyle(.primary)
+                    Text(kind.subtitle).font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
+                }
+                Spacer()
+                if isActive {
+                    Text("Active")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.brandSuccess)
+                        .padding(.horizontal, AppSpacing.sm).padding(.vertical, 3)
+                        .background(Color.brandSuccess.opacity(0.15), in: Capsule())
+                }
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .onAppear { isActive = LiveActivityService.shared.isActive(kind) }
+    }
+}
+
+// MARK: - Per-activity detail (its own auto-start + appearance)
+
+struct LiveActivityKindDetailView: View {
+    let kind: LiveActivityKind
+
+    @AppStorage private var autoStart: Bool
+    @AppStorage private var custom: Bool
+    @AppStorage private var lockScreen: Bool
+    @AppStorage private var dynamicIsland: Bool
+    @AppStorage private var showProgress: Bool
+    @AppStorage private var showETA: Bool
+    @AppStorage private var showProperty: Bool
+    @AppStorage private var islandStyle: String
+
+    @State private var isActive = false
+    @State private var showEndConfirm = false
+
+    init(kind: LiveActivityKind) {
+        self.kind = kind
+        let k = kind.rawValue
+        let store = LiveActivityPrefs.store
+        _autoStart     = AppStorage(wrappedValue: kind.defaultAuto, kind.storageKey, store: store)
+        _custom        = AppStorage(wrappedValue: false, LiveActivityPrefs.customKey(k), store: store)
+        _lockScreen    = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.lockScreenKey, k), store: store)
+        _dynamicIsland = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.dynamicIslandKey, k), store: store)
+        _showProgress  = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.showProgressKey, k), store: store)
+        _showETA       = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.showETAKey, k), store: store)
+        _showProperty  = AppStorage(wrappedValue: true, LiveActivityPrefs.scopedKey(LiveActivityPrefs.showPropertyKey, k), store: store)
+        _islandStyle   = AppStorage(wrappedValue: DynamicIslandStyle.detailed.rawValue, LiveActivityPrefs.scopedKey(LiveActivityPrefs.islandStyleKey, k), store: store)
+    }
+
+    private var islandStyleValue: DynamicIslandStyle {
+        DynamicIslandStyle(rawValue: islandStyle) ?? .detailed
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 24) {
+                PageHeader(titleKey: kind.title)
+
+                statusCard
+
+                group {
+                    LAToggleRow(icon: "play.circle.fill", color: kind.color,
+                                title: "Start automatically",
+                                subtitle: kind.subtitle,
+                                isOn: $autoStart)
+                }
+
+                group {
+                    LAToggleRow(icon: "slider.horizontal.3", color: .indigo,
+                                title: "Custom appearance",
+                                subtitle: "Give this activity its own look instead of the shared settings",
+                                isOn: $custom)
+                }
+
+                if custom {
+                    Text("SHOW IN")
+                        .font(AppFont.label)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
+                    group {
+                        LAToggleRow(icon: "lock.fill", color: .blue,
+                                    title: "Lock Screen",
+                                    subtitle: "Show full details on the Lock Screen — off keeps a minimal banner",
+                                    isOn: $lockScreen)
+                        divider
+                        LAToggleRow(icon: "capsule.fill", color: .purple,
+                                    title: "Dynamic Island",
+                                    subtitle: "Show live details around the camera — off keeps just the icon",
+                                    isOn: $dynamicIsland)
+                    }
+
+                    Text("DISPLAY OPTIONS")
+                        .font(AppFont.label)
+                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
+                    group {
+                        LAToggleRow(icon: "chart.bar.fill", color: .green,
+                                    title: "Progress Bar", subtitle: "Show a progress bar for ongoing tasks",
+                                    isOn: $showProgress)
+                        divider
+                        LAToggleRow(icon: "clock.fill", color: .orange,
+                                    title: "Estimated Time", subtitle: "Show ETA and remaining time",
+                                    isOn: $showETA)
+                        divider
+                        LAToggleRow(icon: "house.fill", color: .teal,
+                                    title: "Property Name", subtitle: "Include the property the activity belongs to",
+                                    isOn: $showProperty)
+                    }
+
+                    if dynamicIsland {
+                        Text("DYNAMIC ISLAND")
+                            .font(AppFont.label)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
+                        VStack(spacing: 14) {
+                            Picker("", selection: $islandStyle) {
+                                ForEach(DynamicIslandStyle.allCases) { style in
+                                    Text(style.label).tag(style.rawValue)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            DynamicIslandMock(style: islandStyleValue, showProgress: showProgress)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.xs)
+                                .animation(.snappy(duration: 0.28), value: islandStyle)
+                        }
+                        .padding(AppSpacing.lg)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
+                    }
+                }
+
+                Spacer(minLength: 80)
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { isActive = LiveActivityService.shared.isActive(kind) }
+        .onChange(of: custom) { _, on in
+            if on { seedFromGlobal() }
+            HapticFeedback.selection()
+            LiveActivityService.shared.refreshAppearance()
+        }
+        .onChange(of: appearanceToken) { _, _ in
+            LiveActivityService.shared.refreshAppearance()
+        }
+        .confirmationDialog("End this Live Activity?", isPresented: $showEndConfirm, titleVisibility: .visible) {
+            Button("End now", role: .destructive) {
+                LiveActivityService.shared.end(kind)
+                isActive = false
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private var statusCard: some View {
+        HStack(spacing: 14) {
+            ColoredIconBadge(icon: kind.icon, color: kind.color)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(isActive ? "Running now" : "Not running")
+                    .font(AppFont.subheadline).foregroundStyle(.primary)
+                Text(isActive ? "Live on your Lock Screen and Dynamic Island"
+                              : "Starts when there's activity to track")
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            Spacer()
+            if isActive {
+                Button(role: .destructive) { showEndConfirm = true } label: {
+                    Text("End").font(AppFont.captionEmphasis)
+                        .foregroundStyle(Color.brandDanger)
+                        .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
+                        .background(Color.brandDanger.opacity(0.14), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(AppSpacing.lg)
+        .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+    }
+
+    /// Copies the current global appearance into this kind's scoped keys the
+    /// first time custom is enabled, so it starts as a faithful copy the user
+    /// can then tweak (rather than snapping to hardcoded defaults).
+    private func seedFromGlobal() {
+        guard !LiveActivityPrefs.store.bool(forKey: seedFlagKey) else { return }
+        lockScreen    = LiveActivityPrefs.showOnLockScreen
+        dynamicIsland = LiveActivityPrefs.showDynamicIsland
+        showProgress  = LiveActivityPrefs.showProgress
+        showETA       = LiveActivityPrefs.showETA
+        showProperty  = LiveActivityPrefs.showProperty
+        islandStyle   = LiveActivityPrefs.islandStyle.rawValue
+        LiveActivityPrefs.store.set(true, forKey: seedFlagKey)
+    }
+
+    private var seedFlagKey: String { "prvio.la.seeded.\(kind.rawValue)" }
+
+    private var appearanceToken: String {
+        "\(custom)\(lockScreen)\(dynamicIsland)\(showProgress)\(showETA)\(showProperty)\(islandStyle)"
+    }
+
+    @ViewBuilder
+    private func group<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) { content() }.liquidGlass(cornerRadius: AppRadius.lg)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
     }
 }
 

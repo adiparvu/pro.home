@@ -4339,6 +4339,72 @@
         }
       }
     },
+    "MY LIVE ACTIVITIES": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "MY LIVE ACTIVITIES" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "ACTIVITĂȚILE MELE LIVE" } }
+      }
+    },
+    "Running now": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Running now" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Rulează acum" } }
+      }
+    },
+    "Not running": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Not running" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nu rulează" } }
+      }
+    },
+    "Live on your Lock Screen and Dynamic Island": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Live on your Lock Screen and Dynamic Island" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Activă pe ecranul blocat și Dynamic Island" } }
+      }
+    },
+    "Starts when there's activity to track": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Starts when there's activity to track" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pornește când există activitate de urmărit" } }
+      }
+    },
+    "Start automatically": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Start automatically" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pornește automat" } }
+      }
+    },
+    "Custom appearance": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Custom appearance" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Aspect personalizat" } }
+      }
+    },
+    "Give this activity its own look instead of the shared settings": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Give this activity its own look instead of the shared settings" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oferă acestei activități un aspect propriu, diferit de setările comune" } }
+      }
+    },
+    "End": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "End" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprește" } }
+      }
+    },
+    "End this Live Activity?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "End this Live Activity?" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprești această activitate live?" } }
+      }
+    },
+    "End now": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "End now" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprește acum" } }
+      }
+    },
     "Require Face ID, Touch ID, or your passcode before these sections open. They re-lock every time you leave the app.": {
       "localizations": {
         "en": {

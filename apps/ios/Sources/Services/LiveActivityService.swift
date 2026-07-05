@@ -197,6 +197,38 @@ final class LiveActivityService: ObservableObject {
         }
     }
 
+    // MARK: - Per-kind status & control
+
+    /// Whether an activity of this kind is currently running on the system.
+    func isActive(_ kind: LiveActivityKind) -> Bool {
+        switch kind {
+        case .shopping:    return !Activity<ShoppingActivityAttributes>.activities.isEmpty
+        case .delivery:    return !Activity<DeliveryActivityAttributes>.activities.isEmpty
+        case .maintenance: return !Activity<MaintenanceActivityAttributes>.activities.isEmpty
+        case .plantCare:   return !Activity<PlantCareActivityAttributes>.activities.isEmpty
+        }
+    }
+
+    /// Immediately ends every running activity of this kind.
+    func end(_ kind: LiveActivityKind) {
+        Task {
+            switch kind {
+            case .shopping:
+                for a in Activity<ShoppingActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                shoppingActivity = nil
+            case .delivery:
+                for a in Activity<DeliveryActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                deliveryActivities.removeAll()
+            case .maintenance:
+                for a in Activity<MaintenanceActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                maintenanceActivity = nil
+            case .plantCare:
+                for a in Activity<PlantCareActivityAttributes>.activities { await a.end(nil, dismissalPolicy: .immediate) }
+                plantCareActivity = nil
+            }
+        }
+    }
+
     // MARK: - Appearance refresh
 
     /// Re-pushes the current content state to every running activity. Live

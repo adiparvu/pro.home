@@ -51,6 +51,45 @@ enum LiveActivityPrefs {
                            ?? UserDefaults.standard.string(forKey: islandStyleKey)
                            ?? "") ?? .detailed
     }
+
+    // MARK: - Per-activity overrides
+    //
+    // Each activity kind ("shopping" / "delivery" / "maintenance" / "plantCare")
+    // can keep its OWN appearance that overrides the global one. Every getter
+    // falls back to the global value unless that kind's custom flag is on, so
+    // nothing changes until the user deliberately customizes one activity.
+
+    static func customKey(_ kind: String) -> String { "prvio.la.custom.\(kind)" }
+    static func scopedKey(_ base: String, _ kind: String) -> String { "\(base).\(kind)" }
+
+    static func hasCustom(_ kind: String) -> Bool { bool(customKey(kind), default: false) }
+
+    static func showOnLockScreen(for kind: String?) -> Bool {
+        guard let k = kind, hasCustom(k) else { return showOnLockScreen }
+        return bool(scopedKey(lockScreenKey, k), default: showOnLockScreen)
+    }
+    static func showDynamicIsland(for kind: String?) -> Bool {
+        guard let k = kind, hasCustom(k) else { return showDynamicIsland }
+        return bool(scopedKey(dynamicIslandKey, k), default: showDynamicIsland)
+    }
+    static func showProgress(for kind: String?) -> Bool {
+        guard let k = kind, hasCustom(k) else { return showProgress }
+        return bool(scopedKey(showProgressKey, k), default: showProgress)
+    }
+    static func showETA(for kind: String?) -> Bool {
+        guard let k = kind, hasCustom(k) else { return showETA }
+        return bool(scopedKey(showETAKey, k), default: showETA)
+    }
+    static func showProperty(for kind: String?) -> Bool {
+        guard let k = kind, hasCustom(k) else { return showProperty }
+        return bool(scopedKey(showPropertyKey, k), default: showProperty)
+    }
+    static func islandStyle(for kind: String?) -> DynamicIslandStyle {
+        guard let k = kind, hasCustom(k) else { return islandStyle }
+        let raw = store.string(forKey: scopedKey(islandStyleKey, k))
+            ?? UserDefaults.standard.string(forKey: scopedKey(islandStyleKey, k))
+        return DynamicIslandStyle(rawValue: raw ?? "") ?? islandStyle
+    }
 }
 
 enum DynamicIslandStyle: String, CaseIterable, Identifiable {
