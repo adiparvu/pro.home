@@ -187,6 +187,16 @@ struct MainTabView: View {
             }
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $router.showProfile) {
+            NavigationStack {
+                ProfileView()
+                    .environment(profileService)
+                    .environment(notificationScheduler)
+                    .environment(taskService)
+                    .environment(documentService)
+            }
+            .presentationDragIndicator(.visible)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
             router.showAddTask = true
         }

@@ -201,10 +201,10 @@ struct DashboardView: View {
             .accessibilityLabel(notificationService.unreadCount > 0
                                 ? "Notifications, new" : "Notifications")
 
-            // The avatar goes straight to the profile tab, not an edit sheet.
+            // The avatar goes straight to the Profile page itself.
             Button {
                 HapticFeedback.impact(.light)
-                router.selectedTab = .settings
+                router.showProfile = true
             } label: {
                 avatarCircle
             }

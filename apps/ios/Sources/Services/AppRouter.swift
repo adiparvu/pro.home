@@ -24,6 +24,7 @@ final class AppRouter {
     var showDeliveries = false
     var showPaintColors = false
     var showPhotoJournal = false
+    var showProfile = false
 
     // Deep link destinations
     var deepLinkTaskId: UUID?

@@ -1,6 +1,11 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Create your own property, or ask the owner of a home to invite you.": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Creeaz\u0103-\u021bi propria proprietate sau cere proprietarului unei locuin\u021be s\u0103 te invite." } }
+      }
+    },
     "Roles & permissions": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Roles & permissions" } },

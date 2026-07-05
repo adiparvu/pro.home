@@ -78,11 +78,23 @@ final class PropertyService {
             .execute()
     }
 
-    /// Load the current user's role on the primary property. Silent on error →
-    /// leaves myRole nil (fail-open).
+    /// Load the current user's role on the primary property.
+    ///
+    /// nil means "not resolved yet" and fails open so the owner's UI never
+    /// flashes hidden during startup. Once the answer is definitive, an
+    /// account with no active membership is clamped to "guest" — an invited
+    /// user who isn't (or is no longer) a member must not see the owner UI.
+    /// A transient network error keeps the last known role instead of
+    /// silently re-opening everything.
     func loadMyRole() async {
-        guard let pid = primary?.id, let uid = supabase.auth.currentSession?.user.id else {
+        guard let uid = supabase.auth.currentSession?.user.id else {
             myRole = nil; return
+        }
+        guard let pid = primary?.id else {
+            // Signed in with no visible property. Only clamp once the
+            // property list has definitively loaded empty.
+            if !isLoading && properties.isEmpty { myRole = "guest" }
+            return
         }
         struct Row: Decodable { let role: String }
         do {
@@ -95,9 +107,9 @@ final class PropertyService {
                 .limit(1)
                 .execute()
                 .value
-            myRole = rows.first?.role
+            myRole = rows.first?.role ?? "guest"
         } catch {
-            myRole = nil
+            // Keep the previous answer — stale gating beats fail-open.
         }
     }
 

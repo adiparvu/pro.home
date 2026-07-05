@@ -79,21 +79,39 @@ final class ProfileService {
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
 
-        // Storage RLS compares the first folder to auth.uid()::text, which is
-        // lowercase — Swift's uuidString is uppercase, so normalize.
-        let path = "\(userId.uuidString.lowercased())/avatar.jpg"
+        // Avatars live in the public "documents" bucket, on the same path the
+        // web app writes to — the dedicated "avatars" bucket rejects uploads
+        // for invited accounts. A fresh timestamped filename means no
+        // overwrite (so no storage update policy is needed) and doubles as a
+        // cache-buster; the previous file is removed best-effort afterwards.
+        let oldPath = Self.documentsStoragePath(fromPublicURL: profile?.avatarUrl)
+        let path = "avatars/\(userId.uuidString.lowercased())/\(Int(Date().timeIntervalSince1970)).jpg"
         try await supabase.storage
-            .from("avatars")
-            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
+            .from("documents")
+            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
 
-        let publicURL = try supabase.storage.from("avatars").getPublicURL(path: path)
-        let urlString = publicURL.absoluteString + "?v=\(Int(Date().timeIntervalSince1970))"
+        let urlString = try supabase.storage.from("documents").getPublicURL(path: path).absoluteString
 
         try await supabase.from("profiles")
             .update(["avatar_url": urlString])
             .eq("id", value: userId.uuidString)
             .execute()
         profile?.avatarUrl = urlString
+
+        if let oldPath, oldPath != path {
+            _ = try? await supabase.storage.from("documents").remove(paths: [oldPath])
+        }
+    }
+
+    /// Extracts the in-bucket path from a public "documents" bucket URL,
+    /// so an old avatar can be cleaned up after a new one is uploaded.
+    private static func documentsStoragePath(fromPublicURL urlString: String?) -> String? {
+        guard let urlString,
+              let range = urlString.range(of: "/object/public/documents/") else { return nil }
+        let tail = String(urlString[range.upperBound...])
+        guard let path = tail.split(separator: "?").first.map(String.init),
+              !path.isEmpty else { return nil }
+        return path.removingPercentEncoding ?? path
     }
 
     func updateEmail(_ newEmail: String) async throws {

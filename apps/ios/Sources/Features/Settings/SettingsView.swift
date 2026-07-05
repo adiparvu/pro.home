@@ -26,6 +26,7 @@ struct SettingsView: View {
     @State private var showRateAlert = false
     @State private var showAccountSwitch = false
     @State private var showAddAccount = false
+    @State private var showAddProperty = false
 
     var body: some View {
         @Bindable var router = router
@@ -33,6 +34,9 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 profileCard
                 switchCard
+                if propertyService.properties.isEmpty && !propertyService.isLoading {
+                    noPropertyCard
+                }
                 propertySectionGated
                 familySection
                 appSection
@@ -165,6 +169,41 @@ struct SettingsView: View {
         }
     }
 
+    /// Shown when the account has no household yet — either a brand-new owner
+    /// (who starts here) or an invited member whose invitation hasn't been
+    /// accepted yet. Everything property-scoped is hidden in that state, so
+    /// this card is the one path forward.
+    private var noPropertyCard: some View {
+        GlassCard {
+            VStack(spacing: 12) {
+                Image(systemName: "house.badge.exclamationmark")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundStyle(.blue)
+                Text("No property yet")
+                    .font(AppFont.headline)
+                    .foregroundStyle(.primary)
+                Text("Create your own property, or ask the owner of a home to invite you.")
+                    .font(AppFont.footnote)
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    .multilineTextAlignment(.center)
+                Button {
+                    showAddProperty = true
+                } label: {
+                    Text("Add Property")
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(Color.accentColor, in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm)
+        }
+        .sheet(isPresented: $showAddProperty) { AddPropertySheet() }
+    }
+
     @ViewBuilder
     private var profileAvatar: some View {
         if let urlStr = profileService.profile?.avatarUrl, let url = URL(string: urlStr) {
@@ -220,7 +259,7 @@ struct SettingsView: View {
         case "service_provider":
             return [.documents, .contractors, .deliveries, .appliances,
                     .seasonal, .photoJournal].contains(f)
-        case "adult":
+        case "family_adult", "family_elderly":
             // Family adult: everything except the landlord-only tools.
             return f != .tenants && f != .guestMode && f != .propertyValue
         default:
@@ -464,10 +503,10 @@ struct SettingsView: View {
         }
     }
 
-    // Only owners/partners (or the fail-open default) manage the household roster.
+    // Only owners/partners (or the not-yet-resolved default) manage the roster.
     private var canManageMembers: Bool {
         switch propertyService.myRole {
-        case nil, "owner", "partner", "adult": return true
+        case nil, "owner", "partner": return true
         default: return false
         }
     }
