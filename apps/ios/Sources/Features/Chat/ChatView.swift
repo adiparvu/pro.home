@@ -333,6 +333,15 @@ struct ChatView: View {
             await messageService.loadPollVotes(propertyId: pid)
             await messageService.subscribePollVotes(propertyId: pid)
         }
+        .task {
+            // Keep live-location bubbles following the sharer while the
+            // conversation is open.
+            guard let pid = propertyId else { return }
+            while !Task.isCancelled {
+                await LiveLocationService.shared.load(propertyId: pid)
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+            }
+        }
         .task { await flushOutbox() }
         .task { await MemberDirectory.shared.loadIfNeeded() }
         .onChange(of: outbox.isOnline) { _, online in

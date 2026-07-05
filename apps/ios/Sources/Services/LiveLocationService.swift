@@ -27,6 +27,13 @@ struct LiveLocation: Identifiable, Codable, Hashable {
     }
 
     var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lon) }
+    var expiresDate: Date? { ISODate.date(from: expiresAt) }
+
+    /// Whole minutes until the share ends (never negative).
+    var minutesLeft: Int {
+        guard let end = expiresDate else { return 0 }
+        return max(0, Int(end.timeIntervalSinceNow / 60))
+    }
 }
 
 // MARK: - Live location service (singleton)
@@ -100,6 +107,13 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
     }
 
     var othersSharing: [LiveLocation] { active.filter { $0.userId != uid } }
+
+    /// Re-fetches using the last known property — for views that follow a
+    /// share without knowing which property it belongs to.
+    func refresh() async {
+        guard let pid = propertyId else { return }
+        await load(propertyId: pid)
+    }
 
     // MARK: CLLocationManagerDelegate
 

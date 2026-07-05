@@ -13,10 +13,11 @@ enum NavigationAppLauncher {
     struct Option: Identifiable { let id: String; let label: String }
 
     static func availableOptions() -> [Option] {
-        var opts = [Option(id: "apple", label: String(localized: "Hărți"))]
-        if canOpen("comgooglemaps://") { opts.append(Option(id: "google", label: String(localized: "Hărți Google"))) }
-        if canOpen("waze://") { opts.append(Option(id: "waze", label: "Waze")) }
-        return opts
+        // Always offer all three — when the app isn't installed we fall back
+        // to its universal link (which routes to web or the App Store).
+        [Option(id: "apple",  label: String(localized: "Hărți")),
+         Option(id: "google", label: String(localized: "Hărți Google")),
+         Option(id: "waze",   label: "Waze")]
     }
 
     private static func canOpen(_ scheme: String) -> Bool {
@@ -31,9 +32,13 @@ enum NavigationAppLauncher {
         let url: URL?
         switch optionId {
         case "google":
-            url = URL(string: "comgooglemaps://?daddr=\(lat),\(lon)&directionsmode=driving")
+            url = canOpen("comgooglemaps://")
+                ? URL(string: "comgooglemaps://?daddr=\(lat),\(lon)&directionsmode=driving")
+                : URL(string: "https://www.google.com/maps/dir/?api=1&destination=\(lat),\(lon)")
         case "waze":
-            url = URL(string: "waze://?ll=\(lat),\(lon)&navigate=yes")
+            url = canOpen("waze://")
+                ? URL(string: "waze://?ll=\(lat),\(lon)&navigate=yes")
+                : URL(string: "https://waze.com/ul?ll=\(lat),\(lon)&navigate=yes")
         default:
             // daddr= (directions to) triggers Apple Maps' driving-ETA callout,
             // matching the native "car icon + N minutes" preview.
@@ -52,43 +57,254 @@ struct LocationBubble: View {
     let isOwn: Bool
     var label: String = ""
     var hasTail: Bool = true
+    var senderId: UUID? = nil
 
-    @State private var showAppChooser = false
+    @State private var showDetail = false
+
+    /// The sender's ACTIVE live share, if any — turns this bubble into the
+    /// WhatsApp-style live variant that follows their position.
+    private var liveRow: LiveLocation? {
+        LiveLocationService.shared.active.first {
+            ($0.userId == senderId || $0.userName == label)
+                && ($0.expiresDate ?? .distantPast) > Date()
+        }
+    }
+
+    private var coordinate: CLLocationCoordinate2D {
+        liveRow?.coordinate ?? CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
 
     var body: some View {
-        Map(initialPosition: .region(MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        ))) {
-            Marker("", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
-                .tint(.blue)
+        let live = liveRow
+        VStack(spacing: 0) {
+            Map(initialPosition: .region(MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            ))) {
+                Annotation("", coordinate: coordinate) {
+                    ChatMapAvatar(name: label, senderId: senderId, size: live != nil ? 38 : 30)
+                }
+            }
+            .frame(width: 220, height: live != nil ? 120 : 140)
+            .id(live?.updatedAt)
+            .allowsHitTesting(false)
+
+            if let live {
+                VStack(spacing: 0) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.brandSuccess)
+                        if let end = live.expiresDate {
+                            Text("Se distribuie până la \(end, style: .time)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.primary)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+
+                    if isOwn {
+                        Rectangle().fill(Color.primary.opacity(0.08)).frame(height: 0.5)
+                        Button {
+                            HapticFeedback.impact(.medium)
+                            LiveLocationService.shared.stop()
+                        } label: {
+                            Text("Oprește distribuirea")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.brandDanger)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(width: 220)
+                .background(.thinMaterial)
+            }
         }
-        .frame(width: 220, height: 140)
         .clipShape(ChatBubbleShape(isOwn: isOwn, hasTail: hasTail))
-        .overlay(alignment: .bottomLeading) {
-            // Car/ETA-style badge — tapping it (or the map) offers a choice of
-            // navigation app, then hands off with turn-by-turn directions.
-            Image(systemName: "car.fill")
-                .font(AppFont.captionEmphasis)
-                .foregroundStyle(.white)
-                .padding(AppSpacing.sm)
-                .background(Color.accentColor, in: Circle())
-                .padding(AppSpacing.sm)
+        .overlay(alignment: .topLeading) {
+            if live == nil {
+                Image(systemName: "car.fill")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(.white)
+                    .padding(AppSpacing.sm)
+                    .background(Color.accentColor, in: Circle())
+                    .padding(AppSpacing.sm)
+            }
         }
-        .onTapGesture { showAppChooser = true }
+        .contentShape(Rectangle())
+        .onTapGesture { showDetail = true }
         // Collapse the map + badge into one VoiceOver stop — otherwise it exposes
         // MapKit's own complex accessibility tree, which reads poorly here.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label.isEmpty ? Text("Shared location") : Text(label))
         .accessibilityHint("Choose a navigation app to get directions")
         .accessibilityAddTraits(.isButton)
-        .confirmationDialog("Alege aplicația", isPresented: $showAppChooser, titleVisibility: .visible) {
-            ForEach(NavigationAppLauncher.availableOptions()) { opt in
-                Button(opt.label) {
-                    NavigationAppLauncher.open(opt.id, lat: lat, lon: lon, label: label.isEmpty ? "Location" : label)
+        .sheet(isPresented: $showDetail) {
+            LocationDetailSheet(lat: lat, lon: lon, label: label, isOwn: isOwn, senderId: senderId)
+        }
+    }
+}
+
+// MARK: - Map avatar marker
+
+/// Sender avatar rendered as a map marker (photo when the member directory
+/// has one, initials otherwise) — the WhatsApp live-location look.
+struct ChatMapAvatar: View {
+    let name: String
+    let senderId: UUID?
+    var size: CGFloat = 34
+
+    var body: some View {
+        ZStack {
+            if let id = senderId, let url = MemberDirectory.shared.avatarURL(for: id) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        initials
+                    }
+                }
+            } else {
+                initials
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+    }
+
+    private var initials: some View {
+        ZStack {
+            Circle().fill(Color.accentColor.opacity(0.85))
+            Text(String(name.prefix(2)).uppercased())
+                .font(.system(size: size * 0.36, weight: .bold))
+                .foregroundStyle(.white)
+        }
+    }
+}
+
+// MARK: - Full-screen location detail (live map + navigation hand-off)
+
+struct LocationDetailSheet: View {
+    let lat: Double
+    let lon: Double
+    let label: String
+    let isOwn: Bool
+    var senderId: UUID? = nil
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var liveRow: LiveLocation? {
+        LiveLocationService.shared.active.first {
+            ($0.userId == senderId || $0.userName == label)
+                && ($0.expiresDate ?? .distantPast) > Date()
+        }
+    }
+
+    private var coordinate: CLLocationCoordinate2D {
+        liveRow?.coordinate ?? CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                Map(initialPosition: .region(MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)
+                ))) {
+                    Annotation(isOwn ? String(localized: "Tu") : label, coordinate: coordinate) {
+                        ChatMapAvatar(name: label, senderId: senderId, size: 46)
+                    }
+                }
+                .id(liveRow?.updatedAt)
+                .ignoresSafeArea(edges: .bottom)
+
+                bottomCard
+            }
+            .navigationTitle(liveRow != nil ? String(localized: "Locație în timp real")
+                                            : String(localized: "Locație"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark").font(.system(size: 15, weight: .semibold))
+                    }
+                    .accessibilityLabel("Close")
                 }
             }
         }
+        .task {
+            // Follow the sharer while the sheet is open.
+            while !Task.isCancelled {
+                await LiveLocationService.shared.refresh()
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+            }
+        }
+    }
+
+    private var bottomCard: some View {
+        VStack(spacing: 12) {
+            if let live = liveRow {
+                HStack(spacing: 12) {
+                    ChatMapAvatar(name: label, senderId: senderId, size: 44)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(isOwn ? String(localized: "Tu") : label)
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.primary)
+                        Text(String(format: String(localized: "Timp rămas: %d min"), live.minutesLeft))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.secondaryTextColor)
+                    }
+                    Spacer()
+                    if isOwn {
+                        Button {
+                            HapticFeedback.impact(.medium)
+                            LiveLocationService.shared.stop()
+                            dismiss()
+                        } label: {
+                            Text("Oprește distribuirea")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.brandDanger)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(NavigationAppLauncher.availableOptions()) { opt in
+                    Button {
+                        NavigationAppLauncher.open(opt.id, lat: coordinate.latitude,
+                                                   lon: coordinate.longitude,
+                                                   label: label.isEmpty ? "Location" : label)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
+                                .font(.system(size: 13))
+                            Text(opt.label)
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.accentColor.opacity(0.12),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(AppSpacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(AppSpacing.lg)
     }
 }
 

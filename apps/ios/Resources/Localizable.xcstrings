@@ -1,6 +1,36 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Se distribuie până la %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sharing until %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Se distribuie până la %@" } }
+      }
+    },
+    "Oprește distribuirea": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stop sharing" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprește distribuirea" } }
+      }
+    },
+    "Timp rămas: %d min": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Time left: %d min" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Timp rămas: %d min" } }
+      }
+    },
+    "Locație în timp real": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Live location" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Locație în timp real" } }
+      }
+    },
+    "Locație": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Location" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Locație" } }
+      }
+    },
     "People in this conversation will see your live location for the selected period. You can stop sharing at any time.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "People in this conversation will see your live location for the selected period. You can stop sharing at any time." } },
