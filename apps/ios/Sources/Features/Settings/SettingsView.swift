@@ -230,12 +230,149 @@ struct SettingsView: View {
 
     private var visibleFeatures: [PropertyFeature] { PropertyFeature.allCases.filter(allowed) }
 
-    @ViewBuilder private var propertySectionGated: some View {
-        if !visibleFeatures.isEmpty {
-            SettingsGroup(title: "Property") {
-                ForEach(visibleFeatures, id: \.self) { propertyRow($0) }
+    // MARK: Thematic hubs — the flat 20-row list, grouped by mental model.
+    // Role gating stays per-feature: a hub only shows the rows its role allows,
+    // and disappears entirely when none remain.
+    private enum PropertyHub: CaseIterable, Hashable {
+        case home, upkeep, moneyDocs, daily
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .home:      return "My Home"
+            case .upkeep:    return "Items & Maintenance"
+            case .moneyDocs: return "Money & Documents"
+            case .daily:     return "Everyday"
             }
         }
+        var icon: String {
+            switch self {
+            case .home:      return "house.fill"
+            case .upkeep:    return "wrench.and.screwdriver.fill"
+            case .moneyDocs: return "banknote.fill"
+            case .daily:     return "cart.fill"
+            }
+        }
+        var color: Color {
+            switch self {
+            case .home:      return .blue
+            case .upkeep:    return .teal
+            case .moneyDocs: return Color.brandSuccess
+            case .daily:     return Color.brandSkyBlue
+            }
+        }
+        var features: [PropertyFeature] {
+            switch self {
+            case .home:      return [.myProperty, .plans, .photoJournal, .perspectives,
+                                     .propertyValue, .analytics, .report]
+            case .upkeep:    return [.inventory, .appliances, .paint, .contractors,
+                                     .seasonal, .utilities]
+            case .moneyDocs: return [.finances, .documents, .tenants]
+            case .daily:     return [.supplies, .plants, .deliveries]
+            }
+        }
+    }
+
+    private func hubFeatures(_ hub: PropertyHub) -> [PropertyFeature] {
+        hub.features.filter(allowed)
+    }
+
+    @ViewBuilder private var propertySectionGated: some View {
+        if !visibleFeatures.isEmpty {
+            VStack(spacing: 14) {
+                frequentShortcuts
+                SettingsGroup(title: "Property") {
+                    ForEach(PropertyHub.allCases, id: \.self) { hub in
+                        if !hubFeatures(hub).isEmpty {
+                            NavSettingsRow(icon: hub.icon, color: hub.color, label: hub.label) {
+                                hubPage(hub)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// One-tap tiles for the pages used daily, so the hubs never add a hop
+    /// to the routine.
+    @ViewBuilder private var frequentShortcuts: some View {
+        let shortcuts: [PropertyFeature] = [.documents, .finances, .inventory].filter(allowed)
+        if !shortcuts.isEmpty {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(shortcuts, id: \.self) { f in
+                    NavigationLink { propertyDestination(f) } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: shortcutIcon(f))
+                                .font(AppFont.subheadline)
+                                .foregroundStyle(shortcutColor(f))
+                            Text(shortcutLabel(f))
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .liquidGlass(cornerRadius: AppRadius.lg)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func shortcutIcon(_ f: PropertyFeature) -> String {
+        switch f {
+        case .documents: return "doc.text.fill"
+        case .finances:  return "banknote.fill"
+        default:         return "shippingbox.fill"
+        }
+    }
+    private func shortcutColor(_ f: PropertyFeature) -> Color {
+        switch f {
+        case .documents: return .orange
+        case .finances:  return Color.brandSuccess
+        default:         return .indigo
+        }
+    }
+    private func shortcutLabel(_ f: PropertyFeature) -> LocalizedStringKey {
+        switch f {
+        case .documents: return "Documents"
+        case .finances:  return "Finances"
+        default:         return "Inventory"
+        }
+    }
+
+    /// Destinations for the frequent-shortcut tiles (same views the hub rows
+    /// push, including their section locks).
+    @ViewBuilder private func propertyDestination(_ f: PropertyFeature) -> some View {
+        switch f {
+        case .documents:
+            DocumentsView().environment(documentService).environment(propertyService)
+                .sectionLock(.documents)
+        case .finances:
+            FinancesView().environment(financialService).environment(propertyService).environment(budgetService)
+                .sectionLock(.finances)
+        default:
+            InventoryView()
+                .sectionLock(.inventory)
+        }
+    }
+
+    private func hubPage(_ hub: PropertyHub) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 16) {
+                SettingsGroup(title: hub.label) {
+                    ForEach(hubFeatures(hub), id: \.self) { propertyRow($0) }
+                }
+                Spacer(minLength: 90)
+            }
+            .padding(.horizontal, AppSpacing.xl)
+            .padding(.top, AppSpacing.sm)
+        }
+        .background(appBackground.ignoresSafeArea())
+        .navigationTitle(Text(hub.label))
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder private func propertyRow(_ f: PropertyFeature) -> some View {
@@ -336,12 +473,17 @@ struct SettingsView: View {
     }
 
     private var familySection: some View {
-        SettingsGroup(title: "Family & Chat") {
+        SettingsGroup(title: "People & Access") {
             if canManageMembers {
                 NavSettingsRow(icon: "person.2.fill", color: .purple, label: "Members") {
                     MembersHubView()
                         .environment(familyService)
                         .environment(propertyService)
+                }
+            }
+            if allowed(.guestMode) {
+                NavSettingsRow(icon: "square.and.arrow.up.fill", color: .teal, label: "Guest Mode") {
+                    GuestModeView().environment(propertyService).environment(familyService)
                 }
             }
             NavSettingsRow(icon: "bubble.left.and.bubble.right.fill", color: .blue, label: "Chat") {
@@ -386,17 +528,57 @@ struct SettingsView: View {
     }
 
     private var appSection: some View {
-        SettingsGroup(title: "App") {
-            NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
-                AppearanceView()
-                    .environment(appSettings)
-                    .environment(auth)
-                    .environment(currencyService)
+        VStack(spacing: 14) {
+            SettingsGroup(title: "Personalization") {
+                NavSettingsRow(icon: "paintbrush.fill", color: .pink, label: "Appearance") {
+                    AppearanceView()
+                        .environment(appSettings)
+                        .environment(auth)
+                        .environment(currencyService)
+                }
+                NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
+                    LanguageSettingsView()
+                        .environment(appSettings)
+                }
+                NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
+                    AppIconPickerView()
+                }
+                if allowedApp(.liveActivities) {
+                    NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
+                        LiveActivitySettingsView()
+                    }
+                }
+                if allowedApp(.floatingButtons) {
+                    NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
+                        QuickActionsSettingsView()
+                            .environment(appSettings)
+                    }
+                }
             }
-            NavSettingsRow(icon: "globe", color: .blue, label: "Language") {
-                LanguageSettingsView()
-                    .environment(appSettings)
+
+            SettingsGroup(title: "Automation & Connections") {
+                NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
+                    SiriShortcutsView()
+                }
+                if allowedApp(.nfcKeys) {
+                    NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
+                        NFCWalletView()
+                    }
+                }
+                if allowedApp(.integrations) {
+                    NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
+                        IntegrationsView()
+                            .environment(taskService)
+                            .environment(propertyService)
+                            .environment(familyService)
+                    }
+                }
             }
+        }
+    }
+
+    private var supportSection: some View {
+        SettingsGroup(title: "Support") {
             NavSettingsRow(icon: "clock.arrow.circlepath", color: .teal, label: "Activity") {
                 ActivityFeedView()
                     .environment(financialService)
@@ -407,41 +589,6 @@ struct SettingsView: View {
                     .environment(applianceService)
                     .environment(plantService)
             }
-            NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
-                AppIconPickerView()
-            }
-            if allowedApp(.liveActivities) {
-                NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
-                    LiveActivitySettingsView()
-                }
-            }
-            if allowedApp(.floatingButtons) {
-                NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
-                    QuickActionsSettingsView()
-                        .environment(appSettings)
-                }
-            }
-            NavSettingsRow(icon: "mic.fill", color: Color.brandPurple, label: "Siri & Shortcuts") {
-                SiriShortcutsView()
-            }
-            if allowedApp(.nfcKeys) {
-                NavSettingsRow(icon: "wave.3.right.circle.fill", color: Color(red: 0.15, green: 0.65, blue: 0.85), label: "NFC Keys") {
-                    NFCWalletView()
-                }
-            }
-            if allowedApp(.integrations) {
-                NavSettingsRow(icon: "puzzlepiece.fill", color: .yellow, label: "Integrations") {
-                    IntegrationsView()
-                        .environment(taskService)
-                        .environment(propertyService)
-                        .environment(familyService)
-                }
-            }
-        }
-    }
-
-    private var supportSection: some View {
-        SettingsGroup(title: "Support") {
             NavSettingsRow(icon: "phone.fill", color: .red, label: "Emergency Contacts") {
                 EmergencyContactsView()
             }

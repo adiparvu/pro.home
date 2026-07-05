@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Items & Maintenance": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Items & Maintenance" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Obiecte & întreținere" } }
+      }
+    },
+    "Money & Documents": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Money & Documents" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Bani & documente" } }
+      }
+    },
+    "Everyday": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Everyday" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Zi cu zi" } }
+      }
+    },
+    "People & Access": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "People & Access" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Persoane & acces" } }
+      }
+    },
+    "Personalization": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Personalization" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Personalizare" } }
+      }
+    },
+    "Automation & Connections": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Automation & Connections" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Automatizări & conectare" } }
+      }
+    },
     "People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time." } },
