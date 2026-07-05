@@ -37,6 +37,8 @@ enum AppFont {
     static let headline = Font.system(size: 16, weight: .semibold)
     /// 18–20pt semibold — section titles, sheet headers.
     static let title3 = Font.system(size: 18, weight: .semibold)
+    /// 20pt regular — large menu row labels (iMessage-style action menus).
+    static let menuRow = Font.system(size: 20, weight: .regular)
     /// 22–26pt bold rounded — screen-level emphasis (stat numbers, hero values).
     static let title2 = Font.system(size: 22, weight: .bold, design: .rounded)
     /// 28–34pt bold rounded — large navigation titles, page headers.
@@ -113,4 +115,6 @@ enum AppRadius {
     static let lg: CGFloat = 16
     static let xl: CGFloat = 20
     static let xxl: CGFloat = 24
+    /// Large sheet/panel corners (iMessage-style translucent menus).
+    static let sheet: CGFloat = 28
 }

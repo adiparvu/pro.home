@@ -56,6 +56,7 @@ struct DirectMessageView: View {
     @State private var showAttachmentTray = false
     @State private var showAttachmentSheet = false
     @State private var showContactPicker = false
+    @State private var showSendLater = false
     @State private var showCallSheet = false
     @State private var showVideoSheet = false
     @State private var showProfile = false
@@ -234,8 +235,19 @@ struct DirectMessageView: View {
             ChatAttachmentSheet(
                 onPhotos: { showPhotoPicker = true },
                 onCamera: { showCameraPicker = true },
-                onContact: { showContactPicker = true }
+                onContact: { showContactPicker = true },
+                onSendLater: { showSendLater = true }
             )
+        }
+        .sheet(isPresented: $showSendLater) {
+            if let uid = supabase.auth.currentSession?.user.id {
+                SendLaterSheet(context: .dm(
+                    propertyId: propertyService.primary?.id,
+                    authorId: uid,
+                    authorName: myName,
+                    recipientName: member.name
+                ))
+            }
         }
         .sheet(isPresented: $showContactPicker) {
             ChatContactPicker { formatted in Task { await sendDMContact(formatted) } }
@@ -269,6 +281,11 @@ struct DirectMessageView: View {
                 Task { await presenceService.load(propertyId: pid) }
             }
             if input.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { input = d }
+        }
+        .onDisappear {
+            // Persist the unsent composer draft once, on the way out.
+            if input.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+            else { UserDefaults.standard.set(input, forKey: draftKey) }
         }
         .onChange(of: conversationMessages.count) { _, _ in
             // The parent loads messages asynchronously, so they may arrive after
@@ -764,8 +781,8 @@ struct DirectMessageView: View {
                                     lastTypingSent = now
                                     directMessageService.sendTyping()
                                 }
-                                if val.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
-                                else { UserDefaults.standard.set(val, forKey: draftKey) }
+                                // Draft persistence happens on disappear — a
+                                // per-keystroke UserDefaults write is typing lag.
                             }
 
                         if audioRecorder.isRecording {

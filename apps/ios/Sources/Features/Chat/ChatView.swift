@@ -52,6 +52,7 @@ struct ChatView: View {
     @State private var showContactPicker = false
     @State private var showPollComposer = false
     @State private var showEventComposer = false
+    @State private var showSendLater = false
     @State var mentionedIds: [String] = []
     @State var mentionedNames: [String] = []
     @State var isSending = false
@@ -342,6 +343,9 @@ struct ChatView: View {
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
         }
         .onDisappear {
+            // Persist the unsent composer draft once, on the way out.
+            if text.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+            else { UserDefaults.standard.set(text, forKey: draftKey) }
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = false }
             // Remember we've now seen everything, so the next open computes the
             // unread divider from this point forward.
@@ -366,9 +370,8 @@ struct ChatView: View {
                 lastTypingSent = now
                 messageService.sendTyping()
             }
-            // Draft restoration: persist the unsent composer text per conversation.
-            if newValue.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
-            else { UserDefaults.standard.set(newValue, forKey: draftKey) }
+            // Draft persistence happens on disappear — a UserDefaults write on
+            // every keystroke is measurable typing lag.
         }
         .photosPicker(isPresented: $showPhotoPickerTrigger, selection: $photoPickerItems, maxSelectionCount: 10, matching: .any(of: [.images, .videos]))
         .onChange(of: photoPickerItems) { _, items in Task { await sendPhoto(items) } }
@@ -434,8 +437,14 @@ struct ChatView: View {
                 onContact: { showContactPicker = true },
                 onPoll: { showPollComposer = true },
                 onEvent: { showEventComposer = true },
+                onSendLater: { showSendLater = true },
                 onStickers: { showStickerPicker = true }
             )
+        }
+        .sheet(isPresented: $showSendLater) {
+            if let pid = propertyId, let uid = supabase.auth.currentSession?.user.id {
+                SendLaterSheet(context: .group(propertyId: pid, authorId: uid, authorName: senderName))
+            }
         }
         .sheet(isPresented: $showContactPicker) {
             ChatContactPicker { formatted in Task { await sendContact(formatted) } }

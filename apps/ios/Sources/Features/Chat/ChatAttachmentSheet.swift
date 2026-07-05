@@ -1,8 +1,11 @@
 import SwiftUI
 import ContactsUI
 
-// MARK: - WhatsApp-style attachment grid
+// MARK: - iMessage-style attachment menu
 
+/// Vertical translucent action panel modeled on iMessage's "+" menu: one
+/// action per row — a colored 44pt icon disc on the left, a large regular
+/// label on the right — floating on ultra-thin material.
 struct ChatAttachmentSheet: View {
     var onPhotos: () -> Void
     var onCamera: () -> Void
@@ -11,11 +14,9 @@ struct ChatAttachmentSheet: View {
     var onContact: () -> Void
     var onPoll: (() -> Void)? = nil
     var onEvent: (() -> Void)? = nil
+    var onSendLater: (() -> Void)? = nil
     var onStickers: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
-
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()),
-                           GridItem(.flexible()), GridItem(.flexible())]
 
     private func pick(_ action: @escaping () -> Void) {
         dismiss()
@@ -24,56 +25,56 @@ struct ChatAttachmentSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                LazyVGrid(columns: columns, spacing: 22) {
-                    option("Photos", "photo.on.rectangle.angled", .blue) { pick(onPhotos) }
-                    option("Camera", "camera.fill", Color(white: 0.25)) { pick(onCamera) }
-                    if let onLocation {
-                        option("Location", "location.fill", .green) { pick(onLocation) }
-                    }
-                    option("Contact", "person.crop.circle.fill", Color(white: 0.45)) { pick(onContact) }
-                    if let onDocument {
-                        option("Document", "doc.fill", .blue) { pick(onDocument) }
-                    }
-                    if let onPoll {
-                        option("Poll", "chart.bar.fill", .orange) { pick(onPoll) }
-                    }
-                    if let onEvent {
-                        option("Event", "calendar", .red) { pick(onEvent) }
-                    }
-                    if let onStickers {
-                        option("Stickers", "face.smiling", .yellow) { pick(onStickers) }
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.base) {
+                row("Photos", "photo.on.rectangle.angled", .blue) { pick(onPhotos) }
+                row("Camera", "camera.fill", Color(white: 0.25)) { pick(onCamera) }
+                if let onLocation {
+                    row("Location", "location.fill", .green) { pick(onLocation) }
                 }
-                .padding(AppSpacing.xxl)
-                .frame(maxHeight: .infinity, alignment: .top)
+                row("Contact", "person.crop.circle.fill", Color(white: 0.45)) { pick(onContact) }
+                if let onDocument {
+                    row("Document", "doc.fill", .blue) { pick(onDocument) }
+                }
+                if let onPoll {
+                    row("Poll", "chart.bar.fill", .orange) { pick(onPoll) }
+                }
+                if let onEvent {
+                    row("Event", "calendar", .red) { pick(onEvent) }
+                }
+                if let onSendLater {
+                    row("Send Later", "clock.badge", .brandSkyBlue) { pick(onSendLater) }
+                }
+                if let onStickers {
+                    row("Stickers", "face.smiling", .yellow) { pick(onStickers) }
+                }
             }
-            .navigationTitle("Share")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            }
+            .padding(.horizontal, AppSpacing.xxl)
+            .padding(.vertical, AppSpacing.xxl)
         }
-        .presentationDetents([.height(320), .medium])
-        .presentationDragIndicator(.visible)
+        .scrollBounceBehavior(.basedOnSize)
+        .presentationDetents([.height(520), .large])
+        .presentationBackground(.ultraThinMaterial)
+        .presentationCornerRadius(AppRadius.sheet)
+        .presentationDragIndicator(.hidden)
     }
 
-    private func option(_ label: String, _ icon: String, _ color: Color, _ action: @escaping () -> Void) -> some View {
+    private func row(_ label: String, _ icon: String, _ color: Color, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            HStack(spacing: AppSpacing.lg) {
                 ZStack {
                     Circle().fill(color.opacity(0.18))
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(color)
                 }
-                .frame(width: 60, height: 60)
+                .frame(width: 44, height: 44)
                 Text(LocalizedStringKey(label))
-                    .font(AppFont.caption2)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    .font(AppFont.menuRow)
+                    .foregroundStyle(Color.primary)
+                Spacer(minLength: 0)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

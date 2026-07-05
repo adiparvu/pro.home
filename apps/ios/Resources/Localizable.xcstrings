@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Set up your property first.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Set up your property first." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Configurează-ți întâi proprietatea." } }
+      }
+    },
     "Send Later": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Send Later" } },
