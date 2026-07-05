@@ -79,7 +79,9 @@ final class ProfileService {
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
 
-        let path = "\(userId.uuidString)/avatar.jpg"
+        // Storage RLS compares the first folder to auth.uid()::text, which is
+        // lowercase — Swift's uuidString is uppercase, so normalize.
+        let path = "\(userId.uuidString.lowercased())/avatar.jpg"
         try await supabase.storage
             .from("avatars")
             .upload(path, data: data, options: FileOptions(contentType: "image/jpeg", upsert: true))
