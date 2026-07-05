@@ -167,26 +167,6 @@ struct LiveActivitySettingsView: View {
                         }
                     }
 
-                    // Appearance
-                    settingsGroup {
-                        NavigationLink {
-                            LiveActivityAppearanceView()
-                        } label: {
-                            HStack(spacing: 12) {
-                                ColoredIconBadge(icon: "paintpalette.fill", color: .pink)
-                                Text("Customize Appearance")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(AppFont.captionEmphasis)
-                                    .foregroundStyle(Color.primary.opacity(0.25))
-                            }
-                            .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
 
                 Text("Live Activities appear on the Lock Screen and in the Dynamic Island while a task is running, and end automatically when it finishes.")
@@ -406,7 +386,7 @@ struct LiveActivityKindDetailView: View {
                 group {
                     LAToggleRow(icon: "slider.horizontal.3", color: .indigo,
                                 title: "Custom appearance",
-                                subtitle: "Give this activity its own look instead of the shared settings",
+                                subtitle: "Give this activity its own look instead of the standard one",
                                 isOn: $custom)
                 }
 
@@ -573,29 +553,6 @@ private struct LAToggleRow: View {
 
 // MARK: - Live Activity preview (kind-aware Lock Screen + Dynamic Island mocks)
 
-/// Global-appearance preview (used by the Customize Appearance page). Renders
-/// the delivery sample bound to the GLOBAL appearance keys.
-struct LiveActivityPreview: View {
-    @AppStorage(LiveActivityPrefs.lockScreenKey, store: LiveActivityPrefs.store)    private var lockScreen    = true
-    @AppStorage(LiveActivityPrefs.dynamicIslandKey, store: LiveActivityPrefs.store) private var dynamicIsland = true
-    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store)  private var showProgress  = true
-    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)       private var showETA       = true
-    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store)  private var showProperty  = true
-    @AppStorage(LiveActivityPrefs.islandStyleKey, store: LiveActivityPrefs.store)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
-
-    var body: some View {
-        KindPreviewPane(
-            kind: .delivery,
-            lockScreen: lockScreen,
-            dynamicIsland: dynamicIsland,
-            showProgress: showProgress,
-            showETA: showETA,
-            showProperty: showProperty,
-            style: DynamicIslandStyle(rawValue: islandStyle) ?? .detailed
-        )
-    }
-}
-
 /// One activity's full preview: Lock Screen card (or minimal banner) plus the
 /// Dynamic Island pill, all themed to the kind and driven by explicit values so
 /// callers can bind it to global, per-kind, or in-progress edits.
@@ -737,124 +694,5 @@ struct DynamicIslandMock: View {
             }
         }
         .transition(.opacity.combined(with: .scale(scale: 0.92)))
-    }
-}
-
-// MARK: - Customize Appearance sub-screen
-
-struct LiveActivityAppearanceView: View {
-    @AppStorage(LiveActivityPrefs.lockScreenKey, store: LiveActivityPrefs.store)    private var lockScreen    = true
-    @AppStorage(LiveActivityPrefs.dynamicIslandKey, store: LiveActivityPrefs.store) private var dynamicIsland = true
-    @AppStorage(LiveActivityPrefs.showProgressKey, store: LiveActivityPrefs.store)  private var showProgress  = true
-    @AppStorage(LiveActivityPrefs.showETAKey, store: LiveActivityPrefs.store)       private var showETA       = true
-    @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store)  private var showProperty  = true
-    @AppStorage(LiveActivityPrefs.islandStyleKey, store: LiveActivityPrefs.store)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
-
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 24) {
-                PageHeader(titleKey: "Appearance")
-
-                LiveActivityPreview()
-
-                Text("SHOW IN")
-                    .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
-                group {
-                    LAToggleRow(icon: "lock.fill", color: .blue,
-                                title: "Lock Screen",
-                                subtitle: "Show full details on the Lock Screen — off keeps a minimal banner",
-                                isOn: $lockScreen)
-                    divider
-                    LAToggleRow(icon: "capsule.fill", color: .purple,
-                                title: "Dynamic Island",
-                                subtitle: "Show live details around the camera — off keeps just the icon",
-                                isOn: $dynamicIsland)
-                }
-
-                Text("DISPLAY OPTIONS")
-                    .font(AppFont.label)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
-                group {
-                    LAToggleRow(icon: "chart.bar.fill", color: .green,
-                                title: "Progress Bar",
-                                subtitle: "Show a progress bar for ongoing tasks",
-                                isOn: $showProgress)
-                    divider
-                    LAToggleRow(icon: "clock.fill", color: .orange,
-                                title: "Estimated Time",
-                                subtitle: "Show ETA and remaining time",
-                                isOn: $showETA)
-                    divider
-                    LAToggleRow(icon: "house.fill", color: .teal,
-                                title: "Property Name",
-                                subtitle: "Include the property the activity belongs to",
-                                isOn: $showProperty)
-                }
-
-                if dynamicIsland {
-                    Text("DYNAMIC ISLAND")
-                        .font(AppFont.label)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                        .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, AppSpacing.xxs)
-                    VStack(spacing: 14) {
-                        Picker("", selection: $islandStyle) {
-                            ForEach(DynamicIslandStyle.allCases) { style in
-                                Text(style.label).tag(style.rawValue)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-
-                        // Live in-context preview: updates as the segment changes
-                        // so the effect is visible right here at the picker.
-                        DynamicIslandMock(style: islandStyleValue, showProgress: showProgress)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.xs)
-                            .animation(.snappy(duration: 0.28), value: islandStyle)
-
-                        Text("Choose how much detail appears in the Dynamic Island when expanded.")
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.4))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(AppSpacing.lg)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                }
-
-                Spacer(minLength: 80)
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.top, AppSpacing.sm)
-        }
-        .background(appBackground.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        // Any appearance change re-pushes running activities so the new look
-        // applies immediately on the Lock Screen / Dynamic Island, not just at
-        // the next natural content update.
-        .onChange(of: appearanceToken) { _, _ in
-            HapticFeedback.selection()
-            LiveActivityService.shared.refreshAppearance()
-        }
-    }
-
-    private var islandStyleValue: DynamicIslandStyle {
-        DynamicIslandStyle(rawValue: islandStyle) ?? .detailed
-    }
-
-    /// Single value that changes whenever any appearance preference does, so one
-    /// onChange can drive the live refresh.
-    private var appearanceToken: String {
-        "\(lockScreen)\(dynamicIsland)\(showProgress)\(showETA)\(showProperty)\(islandStyle)"
-    }
-
-    @ViewBuilder
-    private func group<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 0) { content() }.liquidGlass(cornerRadius: AppRadius.lg)
-    }
-
-    private var divider: some View {
-        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 52)
     }
 }

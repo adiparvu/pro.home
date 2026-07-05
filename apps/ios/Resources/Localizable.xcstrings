@@ -4591,10 +4591,10 @@
         "ro": { "stringUnit": { "state": "translated", "value": "Aspect personalizat" } }
       }
     },
-    "Give this activity its own look instead of the shared settings": {
+    "Give this activity its own look instead of the standard one": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Give this activity its own look instead of the shared settings" } },
-        "ro": { "stringUnit": { "state": "translated", "value": "Oferă acestei activități un aspect propriu, diferit de setările comune" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Give this activity its own look instead of the standard one" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oferă acestei activități un aspect propriu, diferit de cel standard" } }
       }
     },
     "End": {
