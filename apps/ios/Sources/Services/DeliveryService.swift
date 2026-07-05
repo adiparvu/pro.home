@@ -108,6 +108,12 @@ final class DeliveryService {
             let expected_date: String?
             let notes: String?
 
+            // Explicit keys: defining a custom encode(to:) suppresses the
+            // compiler-synthesized CodingKeys, so they must be declared.
+            enum CodingKeys: String, CodingKey {
+                case description, carrier, tracking_number, status, expected_date, notes
+            }
+
             func encode(to encoder: Encoder) throws {
                 var c = encoder.container(keyedBy: CodingKeys.self)
                 try c.encode(description, forKey: .description)
