@@ -12,17 +12,20 @@ struct MembersHubView: View {
     @Environment(PropertyService.self) private var propertyService
 
     @State private var invitationService = InvitationService()
+    @State private var accountService = AccountMemberService()
     @State private var segment: Segment = .family
     @State private var showAdd = false
     @State private var editingMember: FamilyMember?
+    @State private var reviewingAccount: AccountMember?
 
     enum Segment: String, CaseIterable, Identifiable {
-        case family, others, invitations
+        case family, others, accounts, invitations
         var id: String { rawValue }
         var title: LocalizedStringKey {
             switch self {
             case .family:      return "Family"
             case .others:      return "Others"
+            case .accounts:    return "Accounts"
             case .invitations: return "Invitations"
             }
         }
@@ -30,6 +33,7 @@ struct MembersHubView: View {
             switch self {
             case .family:      return "figure.2.and.child.holdinghands"
             case .others:      return "person.2.wave.2.fill"
+            case .accounts:    return "person.crop.circle.badge.checkmark"
             case .invitations: return "envelope.badge.clock.fill"
             }
         }
@@ -56,6 +60,7 @@ struct MembersHubView: View {
                 switch segment {
                 case .family:      familySection
                 case .others:      othersSection
+                case .accounts:    accountsSection
                 case .invitations: invitationsSection
                 }
 
@@ -91,6 +96,11 @@ struct MembersHubView: View {
                 .environment(familyService)
                 .environment(propertyService)
         }
+        .sheet(item: $reviewingAccount) { account in
+            AccountReviewSheet(member: account,
+                               profile: accountService.profiles[account.userId],
+                               service: accountService)
+        }
         .task { reload() }
     }
 
@@ -98,7 +108,9 @@ struct MembersHubView: View {
         Task {
             await familyService.load()
             if let pid = propertyService.primary?.id {
-                await invitationService.load(propertyId: pid)
+                async let a: Void = invitationService.load(propertyId: pid)
+                async let b: Void = accountService.load(propertyId: pid)
+                _ = await (a, b)
             }
         }
     }
@@ -197,6 +209,75 @@ struct MembersHubView: View {
                 }
             }
             .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+    }
+
+    // MARK: Accounts segment
+
+    @ViewBuilder
+    private var accountsSection: some View {
+        if accountService.isLoading && accountService.members.isEmpty {
+            ProgressView().padding(.top, 40)
+        } else if accountService.members.isEmpty {
+            emptyState(icon: "person.crop.circle.badge.checkmark",
+                       text: "No one has an account yet. Accepted invitations appear here.")
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(accountService.members.enumerated()), id: \.element.id) { idx, account in
+                    Button { reviewingAccount = account } label: {
+                        AccountMemberRow(member: account,
+                                         profile: accountService.profiles[account.userId])
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu { accountMenu(account) }
+                    if idx < accountService.members.count - 1 {
+                        Rectangle().fill(Color.primary.opacity(0.05))
+                            .frame(height: 0.5).padding(.leading, 66)
+                    }
+                }
+            }
+            .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+    }
+
+    @ViewBuilder
+    private func accountMenu(_ account: AccountMember) -> some View {
+        Button { reviewingAccount = account } label: {
+            Label("Review account", systemImage: "person.text.rectangle")
+        }
+        if accountService.canAdminister,
+           account.role != "owner",
+           account.userId != accountService.currentUserId {
+            if account.isBlocked {
+                Button {
+                    Task { try? await accountService.unblock(account); HapticFeedback.success() }
+                } label: {
+                    Label("Unblock access", systemImage: "lock.open.fill")
+                }
+            } else {
+                Menu {
+                    Button { blockAccount(account, days: 1) } label: { Text("For 1 day") }
+                    Button { blockAccount(account, days: 7) } label: { Text("For 7 days") }
+                    Button { blockAccount(account, days: 30) } label: { Text("For 30 days") }
+                    Button(role: .destructive) { blockAccount(account, days: nil) } label: {
+                        Text("Indefinitely")
+                    }
+                } label: {
+                    Label("Block access", systemImage: "hand.raised.fill")
+                }
+            }
+            Divider()
+            Button(role: .destructive) { reviewingAccount = account } label: {
+                Label("Delete account", systemImage: "trash")
+            }
+        }
+    }
+
+    private func blockAccount(_ account: AccountMember, days: Int?) {
+        Task {
+            let until = days.map { Calendar.current.date(byAdding: .day, value: $0, to: Date()) ?? Date() }
+            try? await accountService.block(account, until: until)
+            HapticFeedback.success()
         }
     }
 

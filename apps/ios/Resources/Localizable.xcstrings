@@ -1,6 +1,90 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Review account": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Review account" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Vezi contul" } }
+      }
+    },
+    "Block access": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Block access" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blochează accesul" } }
+      }
+    },
+    "Unblock access": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unblock access" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deblochează accesul" } }
+      }
+    },
+    "For 1 day": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "For 1 day" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pentru 1 zi" } }
+      }
+    },
+    "For 7 days": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "For 7 days" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pentru 7 zile" } }
+      }
+    },
+    "For 30 days": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "For 30 days" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pentru 30 de zile" } }
+      }
+    },
+    "Indefinitely": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Indefinitely" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pe termen nelimitat" } }
+      }
+    },
+    "Delete this account?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete this account?" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ștergi acest cont?" } }
+      }
+    },
+    "Their account and access are permanently removed. This cannot be undone.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Their account and access are permanently removed. This cannot be undone." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Contul și accesul lor sunt eliminate definitiv. Acțiunea nu poate fi anulată." } }
+      }
+    },
+    "No one has an account yet. Accepted invitations appear here.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No one has an account yet. Accepted invitations appear here." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nimeni nu are cont încă. Invitațiile acceptate apar aici." } }
+      }
+    },
+    "Blocked": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Blocked" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blocat" } }
+      }
+    },
+    "Blocked until %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Blocked until %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blocat până la %@" } }
+      }
+    },
+    "Joined": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Joined" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Membru din" } }
+      }
+    },
+    "Teen": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Teen" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adolescent" } }
+      }
+    },
     "Add photos of your property — separate from the cover photo.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Add photos of your property — separate from the cover photo." } },
