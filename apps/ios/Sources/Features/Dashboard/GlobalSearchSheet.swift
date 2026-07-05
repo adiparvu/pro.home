@@ -203,13 +203,26 @@ struct GlobalSearchSheet: View {
         }
         .onAppear { focused = true }
         .task {
-            // Sources that aren't loaded app-wide at launch — hydrate once so
-            // search covers them too. Cheap no-ops when already loaded.
+            // Search must cover EVERYTHING, not just the pages the user
+            // happened to visit this session — hydrate every empty source
+            // concurrently. Cheap no-ops when already loaded.
             guard let pid = propertyService.primary?.id else { return }
-            if contractorService.contractors.isEmpty { await contractorService.load() }
-            if zoneService.zones.isEmpty { await zoneService.load(propertyId: pid) }
-            if paintColorService.colors.isEmpty { await paintColorService.load(propertyId: pid) }
-            if photoJournalService.entries.isEmpty { await photoJournalService.load(propertyId: pid) }
+            await withTaskGroup(of: Void.self) { group in
+                if contractorService.contractors.isEmpty { group.addTask { @MainActor in await contractorService.load() } }
+                if zoneService.zones.isEmpty { group.addTask { @MainActor in await zoneService.load(propertyId: pid) } }
+                if paintColorService.colors.isEmpty { group.addTask { @MainActor in await paintColorService.load(propertyId: pid) } }
+                if photoJournalService.entries.isEmpty { group.addTask { @MainActor in await photoJournalService.load(propertyId: pid) } }
+                if taskService.tasks.isEmpty { group.addTask { @MainActor in await taskService.load() } }
+                if documentService.documents.isEmpty { group.addTask { @MainActor in await documentService.load() } }
+                if financialService.records.isEmpty { group.addTask { @MainActor in await financialService.load() } }
+                if familyService.members.isEmpty { group.addTask { @MainActor in await familyService.load() } }
+                if plantService.plants.isEmpty { group.addTask { @MainActor in await plantService.load(propertyId: pid) } }
+                if deliveryService.deliveries.isEmpty { group.addTask { @MainActor in await deliveryService.load(propertyId: pid) } }
+                if elementService.elements.isEmpty { group.addTask { @MainActor in await elementService.load(propertyId: pid) } }
+                if applianceService.appliances.isEmpty { group.addTask { @MainActor in await applianceService.load(propertyId: pid) } }
+                if supplyService.items.isEmpty { group.addTask { @MainActor in await supplyService.load(propertyId: pid) } }
+                if inventoryService.items.isEmpty { group.addTask { @MainActor in await inventoryService.load(propertyId: pid) } }
+            }
         }
         .task(id: query) {
             // Server-side chat search, debounced.
@@ -560,7 +573,7 @@ struct GlobalSearchSheet: View {
                     resultRow(d.name, subtitle: d.expiresDisplay ?? String(localized: "No expiry"),
                               icon: "doc.fill", color: .orange,
                               isLast: d.id == docResults.prefix(8).last?.id) {
-                        navigateAway(to: .digitalTwin)
+                        navigateAway(to: .home) { r in r.showDocuments = true }
                     }
                 }
             }
@@ -605,7 +618,7 @@ struct GlobalSearchSheet: View {
                     resultRow(f.title, subtitle: f.category,
                               icon: "creditcard.fill", color: green,
                               isLast: f.id == financialResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(to: .home) { r in r.showFinances = true }
                     }
                 }
             }
@@ -634,7 +647,7 @@ struct GlobalSearchSheet: View {
                     resultRow(s.name, subtitle: s.category,
                               icon: s.categoryIcon, color: s.categoryColor,
                               isLast: s.id == supplyResults.prefix(8).last?.id) {
-                        navigateAway(to: .home) { r in r.showAddSupply = true }
+                        navigateAway(to: .home) { r in r.showSuppliesView = true }
                     }
                 }
             }
@@ -721,7 +734,7 @@ struct GlobalSearchSheet: View {
                               icon: "paintpalette.fill",
                               color: Color(hex: p.hexColor ?? "") ?? .pink,
                               isLast: p.id == paintResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(to: .home) { r in r.showPaintColors = true }
                     }
                 }
             }
@@ -735,7 +748,7 @@ struct GlobalSearchSheet: View {
                     resultRow(e.title, subtitle: e.caption ?? "",
                               icon: "photo.fill", color: .pink,
                               isLast: e.id == journalResults.prefix(8).last?.id) {
-                        navigateAway(to: .home)
+                        navigateAway(to: .home) { r in r.showPhotoJournal = true }
                     }
                 }
             }

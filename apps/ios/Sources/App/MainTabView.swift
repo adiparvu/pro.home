@@ -163,6 +163,30 @@ struct MainTabView: View {
             }
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $router.showSuppliesView) {
+            NavigationStack {
+                SuppliesView()
+                    .environment(supplyService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showPaintColors) {
+            NavigationStack {
+                PaintColorsView()
+                    .environment(paintColorService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $router.showPhotoJournal) {
+            NavigationStack {
+                PhotoJournalView()
+                    .environment(photoJournalService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
             router.showAddTask = true
         }
