@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 
 struct InventoryRow: View {
     let item: InventoryItem
+    var isFavorite: Bool = false
 
     var body: some View {
         GlassCard {
@@ -16,11 +17,31 @@ struct InventoryRow: View {
                         .resizable().scaledToFill()
                         .frame(width: 44, height: 44)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(alignment: .bottomTrailing) {
+                            // Keep the category icon visible alongside the photo.
+                            ZStack {
+                                Circle()
+                                    .fill(item.categoryColor)
+                                    .frame(width: 17, height: 17)
+                                    .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 0.5))
+                                Image(systemName: item.categoryIcon)
+                                    .font(.system(size: 8, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            .offset(x: 4, y: 4)
+                        }
                 } else {
                     ColoredIconBadge(icon: item.categoryIcon, color: item.categoryColor, size: 44)
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
+                    HStack(spacing: 5) {
+                        Text(item.name).font(AppFont.footnoteEmphasis).foregroundStyle(.primary).lineLimit(1)
+                        if isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.yellow)
+                        }
+                    }
                     HStack(spacing: 5) {
                         if !item.brand.isEmpty {
                             Text(item.brand).font(.system(size: 11)).foregroundStyle(Color.primary.opacity(0.4))
@@ -57,8 +78,10 @@ struct InventoryRow: View {
 // MARK: - Add Item Sheet
 
 struct AddInventorySheet: View {
+    var editing: InventoryItem? = nil
     let onSave: (InventoryItem) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var didPopulate = false
 
     @State private var name = ""
     @State private var category = "tools"
@@ -138,7 +161,9 @@ struct AddInventorySheet: View {
                     .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
                 }
             }
-            .navigationTitle("Adaugă articol").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(editing != nil ? String(localized: "Edit Item") : String(localized: "Adaugă articol"))
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear { populateFromEditing() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Anulează") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis)).disabled(isSaving) }
                 ToolbarItem(placement: .confirmationAction) {
@@ -238,10 +263,24 @@ struct AddInventorySheet: View {
         .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
     }
 
+    private func populateFromEditing() {
+        guard let e = editing, !didPopulate else { return }
+        didPopulate = true
+        name = e.name; category = e.category; location = e.location
+        brand = e.brand; serial = e.serialNumber; condition = e.condition
+        if let d = e.purchaseDate { hasPurchaseDate = true; purchaseDate = d }
+        if e.purchasePrice > 0 { price = String(Int(e.purchasePrice)) }
+        if let w = e.warrantyExpiresAt { hasWarranty = true; warrantyDate = w }
+        notes = e.notes
+        selectedImageData = InventoryImageStore.load(for: e.id)?
+            .jpegData(compressionQuality: 0.85)
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        var item = InventoryItem(name: name)
+        var item = editing ?? InventoryItem(name: name)
+        item.name = name.trimmingCharacters(in: .whitespaces)
         item.category = category; item.location = location; item.brand = brand
         item.serialNumber = serial; item.condition = condition
         item.purchaseDate = hasPurchaseDate ? purchaseDate : nil
@@ -250,6 +289,8 @@ struct AddInventorySheet: View {
         item.notes = notes
         if let data = selectedImageData {
             InventoryImageStore.save(data, for: item.id)
+        } else if editing != nil {
+            InventoryImageStore.delete(for: item.id)
         }
         onSave(item)
         HapticFeedback.success()
@@ -389,5 +430,66 @@ enum InventoryImageStore {
 
     static func delete(for id: UUID) {
         try? FileManager.default.removeItem(at: url(for: id))
+    }
+
+    /// The DB assigns a fresh id on insert, so images saved under the local
+    /// draft id must be moved to the persisted id — otherwise the photo is
+    /// orphaned and the item never shows it.
+    static func migrate(from oldId: UUID, to newId: UUID) {
+        guard oldId != newId else { return }
+        try? FileManager.default.moveItem(at: url(for: oldId), to: url(for: newId))
+        let oldDir = galleryDir(for: oldId, create: false)
+        if FileManager.default.fileExists(atPath: oldDir.path) {
+            try? FileManager.default.moveItem(at: oldDir, to: galleryDir(for: newId, create: false))
+        }
+    }
+
+    static func deleteAll(for id: UUID) {
+        delete(for: id)
+        try? FileManager.default.removeItem(at: galleryDir(for: id, create: false))
+    }
+
+    // MARK: Gallery (additional photos, separate from the cover)
+
+    private static func galleryDir(for id: UUID, create: Bool = true) -> URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inventory_gallery", isDirectory: true)
+            .appendingPathComponent(id.uuidString, isDirectory: true)
+        if create {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+
+    static func galleryURLs(for id: UUID) -> [URL] {
+        let dir = galleryDir(for: id, create: false)
+        let files = (try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? []
+        // File names start with a sortable timestamp — lexicographic == chronological.
+        return files.filter { $0.pathExtension == "jpg" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    @discardableResult
+    static func addGalleryImage(_ data: Data, for id: UUID) -> URL? {
+        let compressed: Data
+        if let img = UIImage(data: data), let jpg = img.jpegData(compressionQuality: 0.78) {
+            compressed = jpg
+        } else {
+            compressed = data
+        }
+        let stamp = String(format: "%013.0f", Date().timeIntervalSince1970 * 1000)
+        let dest = galleryDir(for: id)
+            .appendingPathComponent("\(stamp)-\(UUID().uuidString.lowercased()).jpg")
+        do {
+            try compressed.write(to: dest)
+            return dest
+        } catch {
+            return nil
+        }
+    }
+
+    static func removeGalleryImage(at url: URL) {
+        try? FileManager.default.removeItem(at: url)
     }
 }

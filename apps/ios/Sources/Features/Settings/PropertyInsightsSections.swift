@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import PhotosUI
 
 // MARK: - Property insights (expenses · gallery · value)
 //
@@ -14,6 +15,9 @@ struct PropertyInsightsSections: View {
     @State private var photos = PhotoJournalService()
     @State private var values = PropertyValueService()
     @State private var fullscreenPhoto: PhotoJournalEntry?
+    @State private var galleryPicks: [PhotosPickerItem] = []
+    @State private var isUploadingGallery = false
+    @State private var galleryError: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -114,31 +118,96 @@ struct PropertyInsightsSections: View {
                     }
                 }
 
-                if photos.entries.isEmpty {
-                    emptyHint("Photos you add to the journal appear here.")
-                } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: AppSpacing.sm) {
-                            ForEach(photos.entries.prefix(12)) { entry in
-                                Button { fullscreenPhoto = entry } label: {
-                                    AsyncImage(url: URL(string: entry.photoUrl)) { phase in
-                                        if case .success(let img) = phase {
-                                            img.resizable().scaledToFill()
-                                        } else {
-                                            Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
-                                                .overlay(ProgressView().controlSize(.small))
-                                        }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.sm) {
+                        ForEach(photos.entries.prefix(12)) { entry in
+                            Button { fullscreenPhoto = entry } label: {
+                                AsyncImage(url: URL(string: entry.photoUrl)) { phase in
+                                    if case .success(let img) = phase {
+                                        img.resizable().scaledToFill()
+                                    } else {
+                                        Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill))
+                                            .overlay(ProgressView().controlSize(.small))
                                     }
-                                    .frame(width: 92, height: 92)
-                                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                                 }
-                                .buttonStyle(.plain)
+                                .frame(width: 92, height: 92)
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    Task { await photos.delete(entry) }
+                                } label: {
+                                    Label("Delete Photo", systemImage: "trash")
+                                }
                             }
                         }
+                        galleryAddTile
                     }
+                }
+                if photos.entries.isEmpty {
+                    emptyHint("Add photos of your property — separate from the cover photo.")
+                }
+                if let galleryError {
+                    Text(galleryError)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.brandDanger)
                 }
             }
         }
+        .onChange(of: galleryPicks) { _, newItems in
+            guard !newItems.isEmpty else { return }
+            Task { await uploadGalleryPicks(newItems) }
+        }
+    }
+
+    private var galleryAddTile: some View {
+        PhotosPicker(selection: $galleryPicks, maxSelectionCount: 10, matching: .images) {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(Color.primary.opacity(AppOpacity.subtleFill))
+                .frame(width: 92, height: 92)
+                .overlay {
+                    if isUploadingGallery {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        VStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .medium))
+                            Text("Add")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .strokeBorder(Color.accentColor.opacity(0.3),
+                                      style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                )
+        }
+        .disabled(isUploadingGallery)
+        .accessibilityLabel("Add photos")
+    }
+
+    private func uploadGalleryPicks(_ items: [PhotosPickerItem]) async {
+        isUploadingGallery = true
+        galleryError = nil
+        defer {
+            isUploadingGallery = false
+            galleryPicks = []
+        }
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            do {
+                try await photos.upload(imageData: data, propertyId: propertyId)
+            } catch {
+                galleryError = String(format: String(localized: "Upload failed: %@"),
+                                      error.localizedDescription)
+                HapticFeedback.warning()
+                return
+            }
+        }
+        HapticFeedback.success()
     }
 
     // MARK: - Value

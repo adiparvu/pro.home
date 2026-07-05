@@ -24,6 +24,7 @@ struct ItemDetailView: View {
                     VStack(spacing: 16) {
                         headerSection
                         detailsCard
+                        InventoryPhotosCard(itemId: live.id)
                         loanCard
                         qrCard
                         locationTrackerCard
@@ -68,16 +69,39 @@ struct ItemDetailView: View {
     private var headerSection: some View {
         let tint = live.categoryColor
         return VStack(spacing: 14) {
-            // Icon in a soft glass disc with a category-tinted glow.
-            ZStack {
-                Circle()
-                    .fill(tint.opacity(0.18))
-                    .frame(width: 96, height: 96)
-                    .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
-                    .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
-                Image(systemName: live.categoryIcon)
-                    .font(.system(size: 38, weight: .semibold))
-                    .foregroundStyle(tint)
+            // Photo avatar when one is set — the category icon stays as a
+            // corner badge — otherwise the icon in a soft glass disc.
+            ZStack(alignment: .bottomTrailing) {
+                if let photo = InventoryImageStore.load(for: live.id) {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 96, height: 96)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1))
+                        .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
+                    ZStack {
+                        Circle()
+                            .fill(tint)
+                            .frame(width: 30, height: 30)
+                            .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+                        Image(systemName: live.categoryIcon)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .offset(x: 4, y: 4)
+                } else {
+                    Circle()
+                        .fill(tint.opacity(0.18))
+                        .frame(width: 96, height: 96)
+                        .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
+                        .shadow(color: tint.opacity(0.45), radius: 18, y: 8)
+                        .overlay(
+                            Image(systemName: live.categoryIcon)
+                                .font(.system(size: 38, weight: .semibold))
+                                .foregroundStyle(tint)
+                        )
+                }
             }
 
             Text(live.name)

@@ -1,6 +1,36 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Add photos of your property — separate from the cover photo.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add photos of your property — separate from the cover photo." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă poze cu proprietatea ta — separat de poza de copertă." } }
+      }
+    },
+    "Add to Favorites": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add to Favorites" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă la favorite" } }
+      }
+    },
+    "Remove from Favorites": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove from Favorites" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Elimină de la favorite" } }
+      }
+    },
+    "Delete this item?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete this item?" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ștergi acest articol?" } }
+      }
+    },
+    "Loaned to %@ · %dd": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Loaned to %@ · %dd" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Împrumutat lui %@ · %dz" } }
+      }
+    },
     "Add to Apple Reminders": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Add to Apple Reminders" } },

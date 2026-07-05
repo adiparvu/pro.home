@@ -13,17 +13,21 @@ struct InventoryView: View {
     @State private var showAdd = false
     @State private var showScanner = false
     @State private var selectedItem: InventoryItem?
+    @State private var editItem: InventoryItem?
+    @State private var deleteCandidate: InventoryItem?
     @State private var scannedUnknown = false
     @State private var didAutoScan = false
     @State private var didAutoAdd = false
+    private let favorites = InventoryFavorites.shared
 
     enum InvFilter: String, CaseIterable {
-        case all = "Toate", loaned = "Împrumutate", tools = "Unelte"
+        case all = "Toate", favorites = "Favorite", loaned = "Împrumutate", tools = "Unelte"
         case garden = "Grădină", outdoor = "Exterior", electronics = "Electronice", other = "Altele"
 
         var icon: String {
             switch self {
             case .all:         return "square.grid.2x2.fill"
+            case .favorites:   return "star.fill"
             case .loaned:      return "arrow.uturn.right.circle.fill"
             case .tools:       return "wrench.and.screwdriver.fill"
             case .garden:      return "leaf.fill"
@@ -37,6 +41,7 @@ struct InventoryView: View {
     private var filtered: [InventoryItem] {
         switch filter {
         case .all:         return service.items
+        case .favorites:   return service.items.filter { favorites.isFavorite($0.id) }
         case .loaned:      return service.items.filter { $0.isLoaned }
         case .tools:       return service.items.filter { $0.category == "tools" }
         case .garden:      return service.items.filter { $0.category == "garden" }
@@ -65,8 +70,37 @@ struct InventoryView: View {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 10) {
                             ForEach(filtered) { item in
-                                InventoryRow(item: item)
+                                InventoryRow(item: item, isFavorite: favorites.isFavorite(item.id))
                                     .onTapGesture { selectedItem = item }
+                                    .contextMenu {
+                                        Button { selectedItem = item } label: {
+                                            Label("View", systemImage: "eye")
+                                        }
+                                        Button { editItem = item } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        Button {
+                                            HapticFeedback.impact(.light)
+                                            favorites.toggle(item.id)
+                                        } label: {
+                                            if favorites.isFavorite(item.id) {
+                                                Label("Remove from Favorites", systemImage: "star.slash")
+                                            } else {
+                                                Label("Add to Favorites", systemImage: "star")
+                                            }
+                                        }
+                                        if item.isLoaned {
+                                            Button { HapticFeedback.success(); Task { await service.markReturned(item) } } label: {
+                                                Label("Returned", systemImage: "checkmark.circle")
+                                            }
+                                        }
+                                        Divider()
+                                        Button(role: .destructive) { deleteCandidate = item } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    } preview: {
+                                        InventoryItemPreview(item: item)
+                                    }
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) { HapticFeedback.warning(); Task { await service.delete(item) } } label: { Label("Delete", systemImage: "trash") }
                                     }
@@ -137,6 +171,24 @@ struct InventoryView: View {
             }
         }
         .sheet(item: $selectedItem) { item in ItemDetailView(item: item, service: service) }
+        .sheet(item: $editItem) { item in
+            AddInventorySheet(editing: item) { updated in Task { await service.update(updated) } }
+        }
+        .confirmationDialog("Delete this item?", isPresented: .init(
+            get: { deleteCandidate != nil },
+            set: { if !$0 { deleteCandidate = nil } }
+        ), titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let item = deleteCandidate {
+                    HapticFeedback.warning()
+                    Task { await service.delete(item) }
+                }
+                deleteCandidate = nil
+            }
+            Button("Cancel", role: .cancel) { deleteCandidate = nil }
+        } message: {
+            Text("This action cannot be undone.")
+        }
         .alert("Item not found", isPresented: $scannedUnknown) {
             Button("OK", role: .cancel) {}
         } message: {

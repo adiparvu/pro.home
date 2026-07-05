@@ -45,7 +45,11 @@ final class InventoryService {
                 .single()
                 .execute()
                 .value
-            items.insert(record.toInventoryItem(), at: 0)
+            let saved = record.toInventoryItem()
+            items.insert(saved, at: 0)
+            // Photos are stored locally under the draft id; the DB assigns
+            // the real id on insert, so move them over.
+            InventoryImageStore.migrate(from: item.id, to: saved.id)
         } catch {
             self.error = error.localizedDescription
         }
@@ -79,6 +83,7 @@ final class InventoryService {
                 .eq("id", value: item.id.uuidString)
                 .execute()
             items.removeAll { $0.id == item.id }
+            InventoryImageStore.deleteAll(for: item.id)
         } catch {
             self.error = error.localizedDescription
         }
