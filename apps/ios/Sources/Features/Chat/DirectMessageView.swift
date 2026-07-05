@@ -728,65 +728,73 @@ struct DirectMessageView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
-            HStack(alignment: .bottom, spacing: 10) {
+            // iMessage-style compose row: round + on the left, one slim pill
+            // holding the field and the trailing control INSIDE it (mic when
+            // empty, filled send arrow while typing). Camera lives in the +
+            // tray, like iMessage.
+            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                 plusButton
 
-                // Text field and recording indicator share the same slot.
-                // The text field stays in the hierarchy (preserves keyboard/focus)
-                // and is hidden behind the recording bar when active.
-                ZStack(alignment: .leading) {
-                    TextField("Message…", text: $input, axis: .vertical)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.primary)
-                        .tint(.accentColor)
-                        .lineLimit(1...6)
-                        .focused($focused)
-                        .padding(.horizontal, AppSpacing.base)
-                        .padding(.vertical, 9)
-                        .liquidGlass(cornerRadius: AppRadius.xl)
-                        .opacity(audioRecorder.isRecording ? 0 : 1)
-                        .allowsHitTesting(!audioRecorder.isRecording)
-                        .onChange(of: input) { _, val in
-                            if !val.isEmpty, showAttachmentTray {
-                                withAnimation { showAttachmentTray = false }
+                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                    // Text field and recording indicator share the same slot.
+                    // The text field stays in the hierarchy (preserves keyboard/
+                    // focus) and is hidden behind the recording bar when active.
+                    ZStack(alignment: .leading) {
+                        TextField("Message…", text: $input, axis: .vertical)
+                            .font(.system(size: 16))
+                            .foregroundStyle(.primary)
+                            .tint(.accentColor)
+                            .lineLimit(1...6)
+                            .focused($focused)
+                            .padding(.vertical, 7)
+                            .opacity(audioRecorder.isRecording ? 0 : 1)
+                            .allowsHitTesting(!audioRecorder.isRecording)
+                            .onChange(of: input) { _, val in
+                                if !val.isEmpty, showAttachmentTray {
+                                    withAnimation { showAttachmentTray = false }
+                                }
+                                let now = Date()
+                                if !val.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
+                                    lastTypingSent = now
+                                    directMessageService.sendTyping()
+                                }
+                                if val.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
+                                else { UserDefaults.standard.set(val, forKey: draftKey) }
                             }
-                            let now = Date()
-                            if !val.isEmpty, now.timeIntervalSince(lastTypingSent) > 2 {
-                                lastTypingSent = now
-                                directMessageService.sendTyping()
-                            }
-                            if val.isEmpty { UserDefaults.standard.removeObject(forKey: draftKey) }
-                            else { UserDefaults.standard.set(val, forKey: draftKey) }
+
+                        if audioRecorder.isRecording {
+                            recordingIndicator
+                                .transition(.opacity.combined(with: .scale(scale: 0.97)))
                         }
-
-                    if audioRecorder.isRecording {
-                        recordingIndicator
-                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
-                }
 
-                // Right side — mic is ALWAYS present last to keep view identity
-                // stable so the drag gesture is never interrupted mid-recording.
-                HStack(spacing: 6) {
-                    if !audioRecorder.isRecording {
-                        if isTextEmpty {
-                            cameraButton
-                                .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.7).combined(with: .opacity),
-                                    removal: .scale(scale: 0.7).combined(with: .opacity)
-                                ))
-                        } else {
+                    // Trailing controls — mic is ALWAYS present last to keep view
+                    // identity stable so the drag gesture is never interrupted
+                    // mid-recording.
+                    HStack(spacing: 6) {
+                        if !audioRecorder.isRecording, !isTextEmpty {
                             sendButton
                                 .transition(.asymmetric(
                                     insertion: .scale(scale: 0.7).combined(with: .opacity),
                                     removal: .scale(scale: 0.7).combined(with: .opacity)
                                 ))
                         }
+                        micButton
                     }
-                    micButton
+                    .padding(.bottom, 3)
+                    .animation(.spring(duration: 0.2), value: isTextEmpty)
+                    .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
                 }
-                .animation(.spring(duration: 0.2), value: isTextEmpty)
-                .animation(.spring(duration: 0.2), value: audioRecorder.isRecording)
+                .padding(.leading, 14)
+                .padding(.trailing, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 19, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 19, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.7)
+                        )
+                )
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 10)
@@ -819,48 +827,27 @@ struct DirectMessageView: View {
             focused = false
             showAttachmentSheet = true
         } label: {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.subtleFill))
-                    .frame(width: 34, height: 34)
-                Image(systemName: "plus")
-                    .font(AppFont.headline)
-                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            }
+            Image(systemName: "plus")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.primary.opacity(AppOpacity.subtleFill)))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Add attachment")
     }
 
     private var recordingIndicator: some View {
         ChatRecordingIndicator(durationText: audioRecorder.durationText)
     }
 
-    private var cameraButton: some View {
-        Button {
-            withAnimation { showAttachmentTray = false }
-            showCameraPicker = true
-        } label: {
-            Image(systemName: "camera.fill")
-                .font(AppFont.subheadline)
-                .foregroundStyle(Color.primary.opacity(0.55))
-                .frame(width: 34, height: 34)
-                .background(Color.primary.opacity(AppOpacity.subtleFill), in: Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
     private var sendButton: some View {
         Button {
             Task { await sendMessage() }
         } label: {
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 34, height: 34)
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-            }
+            Image(systemName: "arrow.up.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(.white, Color.accentColor)
         }
         .buttonStyle(.plain)
         .disabled(isSending)
@@ -868,15 +855,14 @@ struct DirectMessageView: View {
 
     // Mic button is always the rightmost element — never removed from hierarchy
     // so the LongPress+Drag gesture chain is never interrupted by re-renders.
+    // iMessage-style: a plain dictation glyph inside the field, no chrome.
     private var micButton: some View {
         ZStack {
-            Circle()
-                .fill(audioRecorder.isRecording ? Color.red.opacity(0.12) : Color.primary.opacity(AppOpacity.subtleFill))
-                .frame(width: 34, height: 34)
             Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
-                .font(AppFont.subheadline)
-                .foregroundStyle(audioRecorder.isRecording ? .red : Color.primary.opacity(0.55))
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(audioRecorder.isRecording ? .red : Color.primary.opacity(AppOpacity.disabled))
                 .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
+                .frame(width: 28, height: 28)
         }
         .gesture(
             LongPressGesture(minimumDuration: 0.3)

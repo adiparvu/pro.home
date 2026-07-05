@@ -11,6 +11,7 @@ struct ChatAttachmentSheet: View {
     var onContact: () -> Void
     var onPoll: (() -> Void)? = nil
     var onEvent: (() -> Void)? = nil
+    var onStickers: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()),
@@ -41,6 +42,9 @@ struct ChatAttachmentSheet: View {
                     }
                     if let onEvent {
                         option("Event", "calendar", .red) { pick(onEvent) }
+                    }
+                    if let onStickers {
+                        option("Stickers", "face.smiling", .yellow) { pick(onStickers) }
                     }
                 }
                 .padding(AppSpacing.xxl)

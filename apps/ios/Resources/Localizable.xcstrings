@@ -4375,6 +4375,12 @@
         "ro": { "stringUnit": { "state": "translated", "value": "Elimină blocarea de la „%@”" } }
       }
     },
+    "Stickers": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stickers" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Stickere" } }
+      }
+    },
     "New Tenant": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "New Tenant" } },

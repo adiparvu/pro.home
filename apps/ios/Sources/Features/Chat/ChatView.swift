@@ -426,7 +426,8 @@ struct ChatView: View {
                 onDocument: { showFileImporter = true },
                 onContact: { showContactPicker = true },
                 onPoll: { showPollComposer = true },
-                onEvent: { showEventComposer = true }
+                onEvent: { showEventComposer = true },
+                onStickers: { showStickerPicker = true }
             )
         }
         .sheet(isPresented: $showContactPicker) {
@@ -875,44 +876,34 @@ struct ChatView: View {
                 .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.xs)
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.primary)
-                        .tint(.accentColor)
-                        .lineLimit(1...6)
-                        .focused($focused)
+                // iMessage-style compose row: a round + button on the left and a
+                // slim pill field with the trailing control INSIDE it — the
+                // dictation-style mic when empty, the filled send arrow while
+                // typing (stickers moved into the + sheet).
+                HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                    Button {
+                        focused = false
+                        showAttachmentSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(Color.primary.opacity(AppOpacity.subtleFill)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add attachment")
 
-                    HStack(spacing: 0) {
-                        Button {
-                            focused = false
-                            showAttachmentSheet = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(AppFont.headline)
-                                .foregroundStyle(Color.primary.opacity(0.55))
-                                .frame(width: 30, height: 30)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add attachment")
-
-                        Button {
-                            focused = false
-                            showStickerPicker = true
-                        } label: {
-                            Image(systemName: "face.smiling")
-                                .font(AppFont.headline)
-                                .foregroundStyle(Color.primary.opacity(0.55))
-                                .frame(width: 30, height: 30)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.leading, 2)
-                        .accessibilityLabel("Stickers")
-
-                        Spacer()
+                    HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                        TextField("Message…", text: editingMessage != nil ? $editText : $text, axis: .vertical)
+                            .font(.system(size: 16))
+                            .foregroundStyle(.primary)
+                            .tint(.accentColor)
+                            .lineLimit(1...6)
+                            .focused($focused)
+                            .padding(.vertical, 7)
 
                         if editingMessage != nil {
-                            // Confirm edit (WhatsApp-style inline edit)
                             Button {
                                 guard let m = editingMessage else { return }
                                 let newText = editText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -921,66 +912,66 @@ struct ChatView: View {
                                 }
                                 editingMessage = nil; editText = ""; focused = false
                             } label: {
-                                ZStack {
-                                    Circle().fill(Color.accentColor).frame(width: 30, height: 30)
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(.white)
-                                }
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(Color.accentColor)
                             }
                             .buttonStyle(.plain)
+                            .padding(.bottom, 4)
                             .disabled(editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             .accessibilityLabel("Confirm edit")
                         } else if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            // Mic button — hold to record
-                            ZStack {
-                                Circle()
-                                    .fill(audioRecorder.isRecording ? Color.red.opacity(0.15) : Color.primary.opacity(0.12))
-                                    .frame(width: 30, height: 30)
-                                Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.secondaryText))
-                                    .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
-                            }
-                            .onLongPressGesture(minimumDuration: 0.3) {
-                                guard !audioRecorder.isRecording else { return }
-                                audioRecorder.start()
-                                HapticFeedback.impact(.medium)
-                            }
-                            .accessibilityLabel("Record voice message")
-                            .accessibilityHint("Double-tap and hold to record")
-                            .accessibilityAddTraits(.isButton)
+                            // Dictation-style mic (iMessage) — hold to record
+                            Image(systemName: audioRecorder.isRecording ? "waveform" : "mic.fill")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(audioRecorder.isRecording ? Color.red : Color.primary.opacity(AppOpacity.disabled))
+                                .symbolEffect(.pulse, isActive: audioRecorder.isRecording)
+                                .frame(width: 28, height: 28)
+                                .padding(.bottom, 4)
+                                .onLongPressGesture(minimumDuration: 0.3) {
+                                    guard !audioRecorder.isRecording else { return }
+                                    audioRecorder.start()
+                                    HapticFeedback.impact(.medium)
+                                }
+                                .accessibilityLabel("Record voice message")
+                                .accessibilityHint("Double-tap and hold to record")
+                                .accessibilityAddTraits(.isButton)
                         } else {
-                            // Send button
                             Button {
                                 guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                                 Task { await sendText() }
                             } label: {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.accentColor)
-                                        .frame(width: 30, height: 30)
-                                    if isSending {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                            .tint(.white)
-                                    } else {
-                                        Image(systemName: "arrow.up")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(.white)
-                                    }
+                                if isSending {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .tint(.white)
+                                        .frame(width: 28, height: 28)
+                                        .background(Circle().fill(Color.accentColor))
+                                } else {
+                                    Image(systemName: "arrow.up.circle.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundStyle(.white, Color.accentColor)
                                 }
                             }
                             .buttonStyle(.plain)
+                            .padding(.bottom, 4)
                             .disabled(isSending)
+                            .transition(.scale.combined(with: .opacity))
                             .accessibilityLabel("Send")
                         }
                     }
+                    .padding(.leading, 14)
+                    .padding(.trailing, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 19, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 19, style: .continuous)
+                                    .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.7)
+                            )
+                    )
                 }
-                .padding(.horizontal, AppSpacing.base)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, 10)
-                .liquidGlass(cornerRadius: 22)
+                .animation(.snappy(duration: 0.2), value: text.isEmpty)
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.xs)
