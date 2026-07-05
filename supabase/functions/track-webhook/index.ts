@@ -97,8 +97,8 @@ serve(async (req) => {
     // Match by tracker id first (stable), fall back to tracking number.
     let q = admin.from('packages').update(patch)
     q = trackerId ? q.eq('tracker_id', trackerId) : q.eq('tracking_number', trackingNumber ?? '')
-    const { error, count } = await q.select('id', { count: 'exact' })
-    if (!error) updated += count ?? 0
+    const { data, error } = await q.select('id')
+    if (!error) updated += data?.length ?? 0
   }
 
   return json({ ok: true, updated }, 200)
