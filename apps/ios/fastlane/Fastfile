@@ -400,20 +400,41 @@ platform :ios do
       UI.success("Merged actool partial plist into bundle Info.plist")
     end
 
-    # Ensure localised string files are present in the archive — XcodeGen may add
-    # .lproj directories as plain folder references whose .strings contents are not
-    # compiled by ibtool. Copy them explicitly so every language is guaranteed.
+    # Ensure localised string files are present in the archive. The
+    # Localizable.xcstrings catalog is NOT compiled by the XcodeGen project, so
+    # translations only ship via the .strings files we place here. Build each
+    # language's table by merging the legacy .lproj file (older translations)
+    # with the xcstrings catalog (single source of truth for everything new —
+    # xcstrings wins on conflicts), and install it into BOTH the app bundle and
+    # the widget extension — the widgets previously shipped with no
+    # localisation at all and rendered raw keys in the gallery.
+    require "json"
+    catalog = JSON.parse(File.read(File.join(project_dir, "Resources", "Localizable.xcstrings")))
+    strings_targets = [archive_app, File.join(archive_app, "PlugIns", "PRVIOWidgets.appex")]
     %w[en ro fr nl de].each do |lang|
-      lproj_dir = File.join(archive_app, "#{lang}.lproj")
-      FileUtils.mkdir_p(lproj_dir)
-      src = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
-      dst = File.join(lproj_dir, "Localizable.strings")
-      if File.exist?(src)
-        FileUtils.cp(src, dst)
-        UI.success("Copied #{lang}.lproj/Localizable.strings into archive")
-      else
-        UI.error("Source not found: #{src}")
+      merged = {}
+
+      legacy = File.join(project_dir, "Resources", "#{lang}.lproj", "Localizable.strings")
+      if File.exist?(legacy)
+        File.read(legacy).scan(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";/m).each do |k, v|
+          un = ->(s) { s.gsub('\\n', "\n").gsub('\\"', '"').gsub('\\\\', '\\') }
+          merged[un.call(k)] = un.call(v)
+        end
       end
+
+      catalog["strings"].each do |key, info|
+        value = info.dig("localizations", lang, "stringUnit", "value")
+        value ||= info.dig("localizations", "en", "stringUnit", "value")
+        merged[key] = value if value
+      end
+
+      content = merged.map { |k, v| "#{k.to_json} = #{v.to_json};" }.join("\n") + "\n"
+      strings_targets.each do |bundle|
+        lproj_dir = File.join(bundle, "#{lang}.lproj")
+        FileUtils.mkdir_p(lproj_dir)
+        File.write(File.join(lproj_dir, "Localizable.strings"), content)
+      end
+      UI.success("Installed #{lang}.lproj/Localizable.strings (#{merged.size} keys) into app + widgets")
     end
 
     export_options_path = "/tmp/ExportOptions.plist"

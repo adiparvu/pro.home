@@ -9,6 +9,9 @@ struct PRVIOApp: App {
     @State private var router      = AppRouter()
     @State private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase
+    /// When the process started — used to detect cold launches so deep links
+    /// wait for the initial mount instead of being overridden by it.
+    private let launchedAt = Date()
 
     init() {
         applyGlobalAppearance()
@@ -105,6 +108,13 @@ struct PRVIOApp: App {
                 // else is an ordinary deep link handled by the router.
                 Task {
                     if await auth.handleOpenURL(url) { return }
+                    // On a cold launch (widget tap opening the app), wait for
+                    // MainTabView to mount — an immediate tab/sheet change is
+                    // overridden by the initial mount, so the link appeared to
+                    // do nothing (same fix as home-screen quick actions).
+                    if Date().timeIntervalSince(launchedAt) < 2.0 {
+                        try? await Task.sleep(for: .milliseconds(500))
+                    }
                     router.handle(deepLink: url)
                 }
             }
