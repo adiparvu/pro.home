@@ -62,6 +62,34 @@ enum LiveActivityKind: String, CaseIterable, Identifiable {
         case .plantCare:   return LiveActivityPrefs.autoPlantKey
         }
     }
+
+    // MARK: Preview sample data — each kind mocks up as itself, so the user
+    // sees exactly how THAT activity will look before customizing it.
+    var previewHeadline: LocalizedStringKey {
+        switch self {
+        case .shopping:    return "Weekly shopping"
+        case .delivery:    return "Garden bench"
+        case .maintenance: return "Fix kitchen tap"
+        case .plantCare:   return "Plant watering"
+        }
+    }
+    var previewStatus: LocalizedStringKey {
+        switch self {
+        case .shopping:    return "5 of 8 items"
+        case .delivery:    return "In transit"
+        case .maintenance: return "Step 3 of 5"
+        case .plantCare:   return "3 of 5 watered"
+        }
+    }
+    var previewProgress: Double {
+        switch self {
+        case .shopping:    return 0.62
+        case .delivery:    return 0.65
+        case .maintenance: return 0.6
+        case .plantCare:   return 0.6
+        }
+    }
+    var showsETA: Bool { self == .delivery }
     var defaultAuto: Bool {
         switch self {
         case .shopping, .delivery: return true
@@ -88,6 +116,7 @@ struct LiveActivitySettingsView: View {
     @AppStorage(LiveActivityPrefs.scheduleKey, store: LiveActivityPrefs.store)    private var startSchedule = false
 
     @State private var systemEnabled = true
+    @State private var previewKind: LiveActivityKind = .delivery
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -177,12 +206,72 @@ struct LiveActivitySettingsView: View {
         .onAppear { systemEnabled = ActivityAuthorizationInfo().areActivitiesEnabled }
     }
 
-    // MARK: - Preview card
+    // MARK: - Preview card (kind selector + that kind's own live mock)
 
     private var previewCard: some View {
-        LiveActivityPreview()
-            .opacity(enabled ? 1 : 0.4)
-            .animation(.easeInOut(duration: 0.2), value: enabled)
+        VStack(spacing: 14) {
+            // Kind chips — each activity previews as itself.
+            HStack(spacing: 8) {
+                ForEach(LiveActivityKind.allCases) { kind in
+                    kindChip(kind)
+                }
+            }
+
+            // Preview bound to the selected kind's EFFECTIVE appearance
+            // (its own customization when enabled, otherwise the shared one).
+            KindPreviewPane(
+                kind: previewKind,
+                lockScreen: LiveActivityPrefs.showOnLockScreen(for: previewKind.rawValue),
+                dynamicIsland: LiveActivityPrefs.showDynamicIsland(for: previewKind.rawValue),
+                showProgress: LiveActivityPrefs.showProgress(for: previewKind.rawValue),
+                showETA: LiveActivityPrefs.showETA(for: previewKind.rawValue),
+                showProperty: LiveActivityPrefs.showProperty(for: previewKind.rawValue),
+                style: LiveActivityPrefs.islandStyle(for: previewKind.rawValue)
+            )
+            .id(previewKind)
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+
+            NavigationLink {
+                LiveActivityKindDetailView(kind: previewKind)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "slider.horizontal.3")
+                    Text("Customize")
+                }
+                .font(AppFont.captionEmphasis)
+                .foregroundStyle(previewKind.color)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.xs)
+                .background(previewKind.color.opacity(0.14), in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .animation(.snappy(duration: 0.3), value: previewKind)
+        .opacity(enabled ? 1 : 0.4)
+        .animation(.easeInOut(duration: 0.2), value: enabled)
+    }
+
+    private func kindChip(_ kind: LiveActivityKind) -> some View {
+        let selected = previewKind == kind
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.3)) { previewKind = kind }
+        } label: {
+            VStack(spacing: 5) {
+                Image(systemName: kind.icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(selected ? .white : kind.color)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle().fill(selected ? kind.color : kind.color.opacity(0.14))
+                    )
+                Text(kind.title)
+                    .font(.system(size: 10, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? .primary : Color.secondaryTextColor)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
     private var systemDisabledCard: some View {
@@ -293,6 +382,20 @@ struct LiveActivityKindDetailView: View {
 
                 statusCard
 
+                // Live preview of THIS activity, reflecting its effective look
+                // (its own customization when on, the shared one otherwise) —
+                // updates instantly as the toggles below change.
+                KindPreviewPane(
+                    kind: kind,
+                    lockScreen: custom ? lockScreen : LiveActivityPrefs.showOnLockScreen,
+                    dynamicIsland: custom ? dynamicIsland : LiveActivityPrefs.showDynamicIsland,
+                    showProgress: custom ? showProgress : LiveActivityPrefs.showProgress,
+                    showETA: custom ? showETA : LiveActivityPrefs.showETA,
+                    showProperty: custom ? showProperty : LiveActivityPrefs.showProperty,
+                    style: custom ? islandStyleValue : LiveActivityPrefs.islandStyle
+                )
+                .animation(.snappy(duration: 0.28), value: appearanceToken)
+
                 group {
                     LAToggleRow(icon: "play.circle.fill", color: kind.color,
                                 title: "Start automatically",
@@ -354,7 +457,7 @@ struct LiveActivityKindDetailView: View {
                                 }
                             }
                             .pickerStyle(.segmented)
-                            DynamicIslandMock(style: islandStyleValue, showProgress: showProgress)
+                            DynamicIslandMock(kind: kind, style: islandStyleValue, showProgress: showProgress)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.xs)
                                 .animation(.snappy(duration: 0.28), value: islandStyle)
@@ -468,8 +571,10 @@ private struct LAToggleRow: View {
     }
 }
 
-// MARK: - Live Activity preview (mock Lock-Screen card)
+// MARK: - Live Activity preview (kind-aware Lock Screen + Dynamic Island mocks)
 
+/// Global-appearance preview (used by the Customize Appearance page). Renders
+/// the delivery sample bound to the GLOBAL appearance keys.
 struct LiveActivityPreview: View {
     @AppStorage(LiveActivityPrefs.lockScreenKey, store: LiveActivityPrefs.store)    private var lockScreen    = true
     @AppStorage(LiveActivityPrefs.dynamicIslandKey, store: LiveActivityPrefs.store) private var dynamicIsland = true
@@ -478,27 +583,43 @@ struct LiveActivityPreview: View {
     @AppStorage(LiveActivityPrefs.showPropertyKey, store: LiveActivityPrefs.store)  private var showProperty  = true
     @AppStorage(LiveActivityPrefs.islandStyleKey, store: LiveActivityPrefs.store)   private var islandStyle   = DynamicIslandStyle.detailed.rawValue
 
-    private var style: DynamicIslandStyle { DynamicIslandStyle(rawValue: islandStyle) ?? .detailed }
+    var body: some View {
+        KindPreviewPane(
+            kind: .delivery,
+            lockScreen: lockScreen,
+            dynamicIsland: dynamicIsland,
+            showProgress: showProgress,
+            showETA: showETA,
+            showProperty: showProperty,
+            style: DynamicIslandStyle(rawValue: islandStyle) ?? .detailed
+        )
+    }
+}
+
+/// One activity's full preview: Lock Screen card (or minimal banner) plus the
+/// Dynamic Island pill, all themed to the kind and driven by explicit values so
+/// callers can bind it to global, per-kind, or in-progress edits.
+struct KindPreviewPane: View {
+    let kind: LiveActivityKind
+    var lockScreen = true
+    var dynamicIsland = true
+    var showProgress = true
+    var showETA = true
+    var showProperty = true
+    var style: DynamicIslandStyle = .detailed
 
     var body: some View {
         VStack(spacing: 14) {
-            // Lock Screen preview — full card, or the minimal banner when the
-            // Lock Screen option is off.
             VStack(spacing: 6) {
                 caption("LOCK SCREEN")
-                if lockScreen {
-                    lockScreenFull
-                } else {
-                    lockScreenMinimal
-                }
+                KindLockScreenMock(kind: kind, full: lockScreen,
+                                   showProgress: showProgress, showETA: showETA,
+                                   showProperty: showProperty)
             }
-
-            // Dynamic Island preview — mirrors the Detailed / Compact / Minimal
-            // choice, and disappears when the Dynamic Island option is off.
             if dynamicIsland {
                 VStack(spacing: 8) {
                     caption("DYNAMIC ISLAND")
-                    islandMock
+                    DynamicIslandMock(kind: kind, style: style, showProgress: showProgress)
                         .frame(maxWidth: .infinity)
                         .animation(.snappy(duration: 0.28), value: style)
                 }
@@ -514,69 +635,67 @@ struct LiveActivityPreview: View {
             .foregroundStyle(Color.primary.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
 
-    // MARK: - Lock Screen mocks
+/// Lock Screen mock themed to an activity kind — the full notification card,
+/// or the minimal banner when the Lock Screen option is off.
+struct KindLockScreenMock: View {
+    let kind: LiveActivityKind
+    var full = true
+    var showProgress = true
+    var showETA = true
+    var showProperty = true
 
-    private var lockScreenFull: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                iconBadge
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Garden bench")
-                        .font(AppFont.subheadline).foregroundStyle(.primary)
-                    Text(showProperty ? "Lakeside House · DHL" : "DHL")
-                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("In transit")
-                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.orange)
-                    if showETA {
-                        Text("ETA 14:30")
-                            .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+    var body: some View {
+        if full {
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                            .fill(kind.color.opacity(0.2)).frame(width: 44, height: 44)
+                        Image(systemName: kind.icon)
+                            .font(.system(size: 20)).foregroundStyle(kind.color)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(kind.previewHeadline)
+                            .font(AppFont.subheadline).foregroundStyle(.primary)
+                        Text(showProperty ? "Lakeside House · PRVIO" : "PRVIO")
+                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(kind.previewStatus)
+                            .font(.system(size: 13, weight: .medium)).foregroundStyle(kind.color)
+                        if showETA && kind.showsETA {
+                            Text("ETA 14:30")
+                                .font(.system(size: 11)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                        }
                     }
                 }
+                if showProgress {
+                    ProgressView(value: kind.previewProgress).tint(kind.color)
+                }
             }
-            if showProgress {
-                ProgressView(value: 0.65).tint(.orange)
+            .padding(AppSpacing.lg)
+            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
+        } else {
+            HStack(spacing: 10) {
+                Image(systemName: kind.icon)
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(kind.color)
+                Text(kind.previewHeadline)
+                    .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
+                Spacer()
             }
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
+            .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
         }
-        .padding(AppSpacing.lg)
-        .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
-    }
-
-    private var lockScreenMinimal: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: 15, weight: .semibold)).foregroundStyle(.orange)
-            Text("Garden bench")
-                .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
-            Spacer()
-        }
-        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
-        .liquidGlass(cornerRadius: AppRadius.xl, thick: true)
-    }
-
-    private var iconBadge: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(Color.orange.opacity(0.2)).frame(width: 44, height: 44)
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: 20)).foregroundStyle(.orange)
-        }
-    }
-
-    private var islandMock: some View {
-        DynamicIslandMock(style: style, showProgress: showProgress)
     }
 }
 
-// MARK: - Dynamic Island mock (black pill, styled to the chosen density)
+// MARK: - Dynamic Island mock (black pill, themed to the kind + chosen density)
 
-/// Standalone so it can be shown both in the top preview and directly under the
-/// Detailed / Compact / Minimal picker, giving in-context feedback as the user
-/// taps each option.
 struct DynamicIslandMock: View {
+    var kind: LiveActivityKind = .delivery
     let style: DynamicIslandStyle
     var showProgress: Bool = true
 
@@ -586,16 +705,16 @@ struct DynamicIslandMock: View {
             case .detailed:
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
-                        Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
-                        Text("Garden bench")
+                        Image(systemName: kind.icon)
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(kind.color)
+                        Text(kind.previewHeadline)
                             .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
                         Spacer()
-                        Text("In transit")
-                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(.orange)
+                        Text(kind.previewStatus)
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(kind.color)
                     }
                     if showProgress {
-                        ProgressView(value: 0.65).tint(.orange)
+                        ProgressView(value: kind.previewProgress).tint(kind.color)
                     }
                 }
                 .padding(.horizontal, 18).padding(.vertical, 14)
@@ -603,16 +722,16 @@ struct DynamicIslandMock: View {
                 .background(Color.black, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             case .compact:
                 HStack(spacing: 8) {
-                    Image(systemName: "shippingbox.fill")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
-                    Text("65%")
+                    Image(systemName: kind.icon)
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(kind.color)
+                    Text("\(Int(kind.previewProgress * 100))%")
                         .font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(.white)
                 }
                 .padding(.horizontal, 18).padding(.vertical, 10)
                 .background(Capsule().fill(Color.black))
             case .minimal:
-                Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.orange)
+                Image(systemName: kind.icon)
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(kind.color)
                     .frame(width: 38, height: 38)
                     .background(Circle().fill(Color.black))
             }

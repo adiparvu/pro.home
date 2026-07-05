@@ -4381,6 +4381,42 @@
         "ro": { "stringUnit": { "state": "translated", "value": "ACTIVITĂȚILE MELE LIVE" } }
       }
     },
+    "Weekly shopping": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Weekly shopping" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Cumpărături săptămânale" } }
+      }
+    },
+    "Fix kitchen tap": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fix kitchen tap" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Repară robinetul din bucătărie" } }
+      }
+    },
+    "5 of 8 items": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "5 of 8 items" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "5 din 8 produse" } }
+      }
+    },
+    "Step 3 of 5": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Step 3 of 5" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pasul 3 din 5" } }
+      }
+    },
+    "3 of 5 watered": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "3 of 5 watered" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "3 din 5 udate" } }
+      }
+    },
+    "Lakeside House · PRVIO": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lakeside House · PRVIO" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Casa de la lac · PRVIO" } }
+      }
+    },
     "Live tracking": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Live tracking" } },
