@@ -239,6 +239,7 @@ struct InventoryView: View {
     private func countFor(_ f: InvFilter) -> Int {
         switch f {
         case .all:         return service.items.count
+        case .favorites:   return service.items.filter { favorites.isFavorite($0.id) }.count
         case .loaned:      return service.items.filter { $0.isLoaned }.count
         case .tools:       return service.items.filter { $0.category == "tools" }.count
         case .garden:      return service.items.filter { $0.category == "garden" }.count
