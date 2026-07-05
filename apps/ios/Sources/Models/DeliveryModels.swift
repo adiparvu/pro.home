@@ -10,13 +10,38 @@ struct Delivery: Identifiable, Codable, Hashable {
     var notes: String?
     var createdAt: String?
 
+    // Live courier tracking (aggregator-driven). All normalized + provider-
+    // agnostic: the app never sees Ship24/AfterShip payloads, only these fields
+    // written by the tracking webhook. Optional so decoding is safe whether or
+    // not the tracking migration has been applied yet.
+    var trackerId: String?
+    var courierCode: String?
+    var liveStatus: String?          // pending / info_received / in_transit / out_for_delivery / available_for_pickup / delivered / exception / failed_attempt / expired
+    var estimatedDelivery: String?
+    var checkpoints: [TrackingCheckpoint]?
+    var lastEventAt: String?
+    var trackingEnabled: Bool?
+
     enum CodingKeys: String, CodingKey {
         case id, description, notes, status
         case carrier
-        case trackingNumber = "tracking_number"
-        case expectedDate   = "expected_date"
-        case createdAt      = "created_at"
+        case trackingNumber    = "tracking_number"
+        case expectedDate      = "expected_date"
+        case createdAt         = "created_at"
+        case trackerId         = "tracker_id"
+        case courierCode       = "courier_code"
+        case liveStatus        = "live_status"
+        case estimatedDelivery = "estimated_delivery"
+        case checkpoints
+        case lastEventAt       = "last_event_at"
+        case trackingEnabled   = "tracking_enabled"
     }
+
+    /// Event timeline, newest first (empty until the webhook fills it).
+    var liveCheckpoints: [TrackingCheckpoint] { checkpoints ?? [] }
+
+    /// True once the aggregator is tracking this parcel.
+    var isLiveTracked: Bool { trackerId != nil }
 
     // MARK: Computed
 
@@ -77,6 +102,21 @@ struct Delivery: Identifiable, Codable, Hashable {
     ]}
 
     static let carrierOptions = ["DHL","FedEx","UPS","DPD","GLS","Cargus","Fan Courier","Sameday","Urgent Cargus","Altul"]
+}
+
+/// One normalized event in a parcel's tracking history. Shape matches the JSON
+/// the tracking webhook writes into `packages.checkpoints` — never a courier's
+/// own format, so the provider can change without touching this.
+struct TrackingCheckpoint: Codable, Hashable, Identifiable {
+    var time: String?
+    var status: String?
+    var message: String?
+    var location: String?
+    var milestone: String?
+
+    var id: String { "\(time ?? "")-\(status ?? "")-\(location ?? "")" }
+
+    var date: Date? { time.flatMap { ISODate.date(from: $0) } }
 }
 
 struct NewDelivery: Encodable {

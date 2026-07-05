@@ -47,6 +47,10 @@ final class DeliveryService {
             deliveries.insert(result, at: 0)
             // A new active package gets a Live Activity right away.
             LiveActivityService.shared.syncDelivery(result)
+            // If it has a tracking number, start live courier tracking.
+            if result.trackingNumber?.isEmpty == false {
+                await registerTracking(result)
+            }
         } catch {
             #if DEBUG
             print("DeliveryService.add error:", error)
@@ -105,6 +109,10 @@ final class DeliveryService {
             // Status changes flow into the Live Activity (ends it when the
             // package is delivered / returned / missed).
             LiveActivityService.shared.syncDelivery(result)
+            // A tracking number added to a not-yet-tracked parcel starts tracking.
+            if result.trackerId == nil, result.trackingNumber?.isEmpty == false {
+                await registerTracking(result)
+            }
         } catch {
             #if DEBUG
             print("DeliveryService.update error:", error)
@@ -132,5 +140,28 @@ final class DeliveryService {
         var updated = delivery
         updated.status = "delivered"
         await update(updated)
+    }
+
+    /// Registers a parcel for live courier tracking. The app only ever calls our
+    /// own `track-register` Edge Function — the aggregator (Ship24/AfterShip) is
+    /// entirely server-side, so switching providers later never touches the app.
+    /// The courier is auto-detected from the tracking number, so no client-side
+    /// courier mapping is needed.
+    func registerTracking(_ delivery: Delivery) async {
+        guard let tn = delivery.trackingNumber?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !tn.isEmpty else { return }
+        struct Payload: Encodable { let package_id: String; let trackingNumber: String }
+        do {
+            _ = try await supabase.functions.invoke(
+                "track-register",
+                options: .init(body: Payload(package_id: delivery.id.uuidString, trackingNumber: tn))
+            )
+        } catch {
+            // Tracking is best-effort — a failure here never blocks saving the
+            // delivery (e.g. aggregator not yet configured returns 503).
+            #if DEBUG
+            print("DeliveryService.registerTracking error:", error)
+            #endif
+        }
     }
 }
