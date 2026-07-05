@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Open in Safari": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open in Safari" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deschide \u00een Safari" } }
+      }
+    },
     "Open the emoji keyboard and tap a sticker — it sends as an image.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Open the emoji keyboard and tap a sticker — it sends as an image." } },
