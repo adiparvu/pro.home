@@ -1,6 +1,18 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Open the emoji keyboard and tap a sticker — it sends as an image.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open the emoji keyboard and tap a sticker — it sends as an image." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deschide tastatura emoji și atinge un sticker — se trimite ca imagine." } }
+      }
+    },
+    "Memoji, animals, hands — everything from your sticker drawer works.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Memoji, animals, hands — everything from your sticker drawer works." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Memoji, animale, mâini — tot ce ai în sertarul de stickere funcționează." } }
+      }
+    },
     "Set up your property first.": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Set up your property first." } },

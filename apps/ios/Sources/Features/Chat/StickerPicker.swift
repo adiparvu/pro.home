@@ -5,9 +5,17 @@ import SwiftUI
 struct StickerPicker: View {
     @Environment(StickerService.self) private var stickerService
     let onSelect: (Sticker) -> Void
+    /// When set, an "iOS" segment lets the user send Memoji/emoji-keyboard
+    /// stickers as images.
+    var onMemoji: ((UIImage) -> Void)? = nil
 
     @State private var selectedCategoryId: String = "recent"
+    @State private var source: Source = .prvio
     @Environment(\.dismiss) private var dismiss
+
+    private enum Source: String, CaseIterable {
+        case prvio, ios
+    }
 
     private struct SpecialTab {
         let id: String; let icon: String; let color: Color
@@ -34,18 +42,87 @@ struct StickerPicker: View {
 
             header
 
-            categoryTabs
+            if onMemoji != nil {
+                sourcePicker
+            }
 
-            Divider()
-                .background(Color.primary.opacity(AppOpacity.hairline))
-
-            if displayedStickers.isEmpty {
-                emptyState
+            if source == .ios {
+                memojiPane
             } else {
-                stickerGrid
+                categoryTabs
+
+                Divider()
+                    .background(Color.primary.opacity(AppOpacity.hairline))
+
+                if displayedStickers.isEmpty {
+                    emptyState
+                } else {
+                    stickerGrid
+                }
             }
         }
         .background(appBackground.ignoresSafeArea())
+    }
+
+    private var sourcePicker: some View {
+        HStack(spacing: 6) {
+            ForEach(Source.allCases, id: \.self) { s in
+                let selected = source == s
+                Button {
+                    HapticFeedback.selection()
+                    withAnimation(.snappy(duration: 0.2)) { source = s }
+                } label: {
+                    Text(s == .prvio ? "PRVIO" : "iOS")
+                        .font(AppFont.captionEmphasis)
+                        .foregroundStyle(selected ? .white : Color.primary.opacity(AppOpacity.mediumText))
+                        .padding(.vertical, 7)
+                        .frame(maxWidth: .infinity)
+                        .background(selected ? AnyShapeStyle(Color.accentColor)
+                                             : AnyShapeStyle(Color.primary.opacity(0.05)),
+                                    in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, AppSpacing.sm)
+    }
+
+    private var memojiPane: some View {
+        VStack(spacing: 14) {
+            Text("Open the emoji keyboard and tap a sticker — it sends as an image.")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.secondaryTextColor)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.sm)
+
+            MemojiStickerField { image in
+                HapticFeedback.impact(.light)
+                onMemoji?(image)
+                dismiss()
+            }
+            .frame(height: 120)
+            .padding(.horizontal, AppSpacing.md)
+            .background(Color.primary.opacity(0.04),
+                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
+            )
+            .padding(.horizontal, AppSpacing.lg)
+
+            HStack(spacing: 6) {
+                Image(systemName: "face.smiling")
+                    .font(.system(size: 13))
+                Text("Memoji, animals, hands — everything from your sticker drawer works.")
+                    .font(.system(size: 12))
+            }
+            .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+            .padding(.horizontal, AppSpacing.xl)
+
+            Spacer(minLength: 20)
+        }
     }
 
     // MARK: - Subviews

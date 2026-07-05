@@ -390,9 +390,11 @@ struct ChatView: View {
             CallPickerSheet(members: familyService.members, isVideo: true)
         }
         .sheet(isPresented: $showStickerPicker) {
-            StickerPicker { sticker in
+            StickerPicker(onSelect: { sticker in
                 Task { await sendSticker(sticker) }
-            }
+            }, onMemoji: { image in
+                Task { await sendCameraPhoto(image) }
+            })
             .environment(stickerService)
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)

@@ -375,6 +375,13 @@ struct LocationShareSheet: View {
     private func startLive(_ duration: TimeInterval) {
         guard let pid = propertyId else { return }
         live.start(propertyId: pid, userName: myName, duration: duration)
+        // The share must be visible in the conversation: drop the current
+        // coordinate into the chat immediately, then close the sheet — the
+        // live marker keeps updating via LiveLocationService.
+        if let loc = locMgr.location {
+            onShare(loc.coordinate.latitude, loc.coordinate.longitude)
+        }
+        dismiss()
     }
 }
 
