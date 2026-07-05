@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Persoanele din această conversație îți vor vedea locația în timp real în perioada selectată, chiar și atunci când nu folosești aplicația. Poți opri distribuirea oricând." } }
+      }
+    },
     "Se distribuie până la %@": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Sharing until %@" } },

@@ -57,6 +57,8 @@
 	<string>Used to convert your voice into search queries across your property data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to share your location in Chat and tag item locations in Inventory.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Keeps live location sharing running for the period you chose, even when PRVIO is in the background.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock PRVIO quickly and securely.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
@@ -124,6 +126,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>

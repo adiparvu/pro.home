@@ -63,6 +63,19 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
         mgr.delegate = self
         mgr.desiredAccuracy = kCLLocationAccuracyHundredMeters
         mgr.distanceFilter = 25
+        mgr.pausesLocationUpdatesAutomatically = false
+    }
+
+    /// Background delivery keeps the share alive with the app closed — legal
+    /// only with the `location` background mode (declared in Info.plist) AND
+    /// an authorization that permits it, otherwise CoreLocation traps.
+    private func configureBackgroundUpdates() {
+        let status = mgr.authorizationStatus
+        let canBackground = status == .authorizedAlways
+        mgr.allowsBackgroundLocationUpdates = canBackground
+        if canBackground {
+            mgr.showsBackgroundLocationIndicator = true
+        }
     }
 
     // MARK: Sharing
@@ -72,7 +85,16 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
         self.userName = userName
         sharingExpiresAt = Date().addingTimeInterval(duration)
         isSharing = true
-        if mgr.authorizationStatus == .notDetermined { mgr.requestWhenInUseAuthorization() }
+        switch mgr.authorizationStatus {
+        case .notDetermined:
+            mgr.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse:
+            // Upgrade prompt so sharing survives backgrounding, WhatsApp-style.
+            mgr.requestAlwaysAuthorization()
+        default:
+            break
+        }
+        configureBackgroundUpdates()
         mgr.startUpdatingLocation()
         HapticFeedback.success()
     }
@@ -80,6 +102,7 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
     func stop() {
         isSharing = false
         sharingExpiresAt = nil
+        mgr.allowsBackgroundLocationUpdates = false
         mgr.stopUpdatingLocation()
         guard let pid = propertyId, let uid else { return }
         Task {
@@ -125,6 +148,13 @@ final class LiveLocationService: NSObject, CLLocationManagerDelegate {
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        Task { @MainActor in
+            self.configureBackgroundUpdates()
+            if self.isSharing { self.mgr.startUpdatingLocation() }
+        }
+    }
 
     private func push(lat: Double, lon: Double) async {
         guard isSharing, let pid = propertyId, let uid, let exp = sharingExpiresAt else { return }

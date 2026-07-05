@@ -543,7 +543,7 @@ struct LocationShareSheet: View {
                 pendingLiveDuration = nil
             }
         } message: {
-            Text("People in this conversation will see your live location for the selected period. You can stop sharing at any time.")
+            Text("People in this conversation will see your live location for the selected period, even when you're not using the app. You can stop sharing at any time.")
         }
     }
 
