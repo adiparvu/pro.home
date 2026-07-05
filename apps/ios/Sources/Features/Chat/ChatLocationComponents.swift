@@ -156,6 +156,7 @@ struct LocationShareSheet: View {
     @State private var nearby = NearbyPlacesFinder()
 
     @State private var searchText = ""
+    @State private var pendingLiveDuration: TimeInterval? = nil
     /// A place picked from search or the nearby list; nil = share current location.
     @State private var pickedPlace: MKMapItem?
 
@@ -299,9 +300,9 @@ struct LocationShareSheet: View {
                 }
             } else {
                 Menu {
-                    Button("15 minutes") { startLive(900) }
-                    Button("1 hour")     { startLive(3600) }
-                    Button("8 hours")    { startLive(28800) }
+                    Button("15 minutes") { pendingLiveDuration = 900 }
+                    Button("1 hour")     { pendingLiveDuration = 3600 }
+                    Button("8 hours")    { pendingLiveDuration = 28800 }
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "location.circle.fill").font(.system(size: 18))
@@ -314,6 +315,19 @@ struct LocationShareSheet: View {
                 }
                 .disabled(propertyId == nil)
             }
+        }
+        // WhatsApp-style consent alert before the live share actually starts.
+        .alert("Distribuie locația în timp real", isPresented: Binding(
+            get: { pendingLiveDuration != nil },
+            set: { if !$0 { pendingLiveDuration = nil } }
+        )) {
+            Button("Anulează", role: .cancel) { pendingLiveDuration = nil }
+            Button("OK") {
+                if let d = pendingLiveDuration { startLive(d) }
+                pendingLiveDuration = nil
+            }
+        } message: {
+            Text("People in this conversation will see your live location for the selected period. You can stop sharing at any time.")
         }
     }
 

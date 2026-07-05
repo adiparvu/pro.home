@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "People in this conversation will see your live location for the selected period. You can stop sharing at any time.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "People in this conversation will see your live location for the selected period. You can stop sharing at any time." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Persoanele din această conversație îți vor vedea locația în timp real în perioada selectată. Poți opri distribuirea oricând." } }
+      }
+    },
     "Open in Safari": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Open in Safari" } },
