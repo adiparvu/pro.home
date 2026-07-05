@@ -73,10 +73,21 @@ struct MemberProfileSheet: View {
 
     private var quickActions: some View {
         HStack(spacing: 12) {
+            // Call is always offered: over the phone line when we have a
+            // number, over FaceTime Audio via e-mail otherwise.
             if let phone = resolvedMember.phone, !phone.isEmpty {
                 profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
                     if let url = URL(string: "tel://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
+            } else if let email = resolvedMember.email, !email.isEmpty {
+                profileActionBtn(icon: "phone.fill", label: "Call", color: Color.brandSuccess) {
+                    if let url = URL(string: "facetime-audio://\(email)") { UIApplication.shared.open(url) }
+                }
+                profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
+                    if let url = URL(string: "facetime://\(email)") { UIApplication.shared.open(url) }
+                }
+            }
+            if let phone = resolvedMember.phone, !phone.isEmpty {
                 profileActionBtn(icon: "facetime", label: "FaceTime", color: .blue) {
                     if let url = URL(string: "facetime://\(phone.filter { $0.isNumber })") { UIApplication.shared.open(url) }
                 }
@@ -104,16 +115,29 @@ struct MemberProfileSheet: View {
         }
     }
 
+    // Round liquid-glass action discs — the profile actions read like the
+    // system Contacts card, per the app's Liquid Glass language.
     private func profileActionBtn(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(AppFont.title3)
                     .foregroundStyle(color)
-                    .frame(width: 52, height: 52)
-                    .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(color.opacity(0.2), lineWidth: 0.5))
+                    .frame(width: 56, height: 56)
+                    .background {
+                        ZStack {
+                            Circle().fill(.ultraThinMaterial)
+                            Circle().fill(color.opacity(0.10))
+                        }
+                    }
+                    .overlay(
+                        Circle().strokeBorder(
+                            LinearGradient(colors: [.white.opacity(0.28), color.opacity(0.15)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 0.8
+                        )
+                    )
+                    .shadow(color: color.opacity(0.18), radius: 8, y: 4)
                 Text(label)
                     .font(AppFont.caption2)
                     .foregroundStyle(Color.primary.opacity(0.6))
