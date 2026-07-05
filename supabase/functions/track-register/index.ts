@@ -2,20 +2,20 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // ─── track-register ───────────────────────────────────────────────────────────
-// Registers a delivery's tracking number with the tracking aggregator
-// (AfterShip) so it starts pushing status events to `track-webhook`. Called by
-// the app when a package with a tracking number is created or edited.
+// Registers a delivery's tracking number with the tracking aggregator (Ship24)
+// so it starts pushing status events to `track-webhook`. Called by the app when
+// a package with a tracking number is created or edited.
 //
 // Flow:
 //   1. Verify the caller's JWT and that they can read the package (RLS).
-//   2. POST the tracking number to AfterShip -> get a tracking id + courier slug.
-//   3. Store them on the package (service role).
+//   2. POST the tracking number to Ship24 -> get a trackerId.
+//   3. Store it on the package (service role).
 //
 // This is one of only TWO files that know the aggregator's API — the app and DB
 // are provider-agnostic, so swapping aggregators means rewriting just these two.
 //
 // Required secrets (no-op 503 until set):
-//   AFTERSHIP_API_KEY                          – AfterShip API key
+//   SHIP24_API_KEY                             – Ship24 API key (Bearer)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   – provided by the platform
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -24,12 +24,12 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const AFTERSHIP_BASE = 'https://api.aftership.com/v4'
+const SHIP24_BASE = 'https://api.ship24.com/public/v1'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
-  const apiKey = Deno.env.get('AFTERSHIP_API_KEY')
+  const apiKey = Deno.env.get('SHIP24_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!apiKey || !supabaseUrl || !serviceKey) {
@@ -39,7 +39,13 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? ''
   if (!authHeader.startsWith('Bearer ')) return json({ error: 'unauthorized' }, 401)
 
-  let body: { package_id?: string; trackingNumber?: string; courierCode?: string }
+  let body: {
+    package_id?: string
+    trackingNumber?: string
+    courierCode?: string
+    destinationCountryCode?: string
+    originCountryCode?: string
+  }
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
 
   const { package_id, trackingNumber } = body
@@ -53,43 +59,35 @@ serve(async (req) => {
     .from('packages').select('id').eq('id', package_id).maybeSingle()
   if (readErr || !pkg) return json({ error: 'forbidden' }, 403)
 
-  // Create the tracking in AfterShip. Courier slug is optional — AfterShip
-  // auto-detects it from the number when omitted.
-  let trackingId: string | null = null
-  let slug: string | null = null
+  // Register the tracker with Ship24. Courier is auto-detected from the number
+  // when courierCode is omitted.
+  let trackerId: string | null = null
   try {
-    const res = await fetch(`${AFTERSHIP_BASE}/trackings`, {
+    const res = await fetch(`${SHIP24_BASE}/trackers`, {
       method: 'POST',
-      headers: { 'aftership-api-key': apiKey, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        tracking: {
-          tracking_number: trackingNumber,
-          slug: body.courierCode || undefined,
-        },
+        trackingNumber,
+        courierCode: body.courierCode ? [body.courierCode] : undefined,
+        destinationCountryCode: body.destinationCountryCode,
+        originCountryCode: body.originCountryCode,
       }),
     })
     const payload = await res.json().catch(() => ({}))
-    if (res.ok) {
-      trackingId = payload?.data?.tracking?.id ?? null
-      slug = payload?.data?.tracking?.slug ?? null
-    } else if (res.status === 409) {
-      // Already tracked in AfterShip — fine. The webhook still matches this
-      // parcel by tracking number, so we just mark it pending.
-      slug = payload?.data?.tracking?.slug ?? body.courierCode ?? null
-    } else {
-      return json({ error: 'aggregator error', detail: payload }, 502)
-    }
+    if (!res.ok) return json({ error: 'aggregator error', detail: payload }, 502)
+    trackerId = payload?.data?.tracker?.trackerId ?? null
   } catch (e) {
     return json({ error: 'aggregator unreachable', detail: String(e) }, 502)
   }
+  if (!trackerId) return json({ error: 'no trackerId returned' }, 502)
 
   // Persist (service role bypasses RLS; access already checked above).
   const admin = createClient(supabaseUrl, serviceKey)
   const { error: updErr } = await admin
     .from('packages')
     .update({
-      tracker_id: trackingId,
-      courier_code: slug,
+      tracker_id: trackerId,
+      courier_code: body.courierCode ?? null,
       live_status: 'pending',
       tracking_enabled: true,
       last_synced_at: new Date().toISOString(),
@@ -97,7 +95,7 @@ serve(async (req) => {
     .eq('id', package_id)
   if (updErr) return json({ error: 'db update failed', detail: updErr.message }, 500)
 
-  return json({ trackerId: trackingId, courier: slug }, 200)
+  return json({ trackerId }, 200)
 })
 
 function json(obj: unknown, status = 200): Response {
