@@ -20,8 +20,21 @@ enum ISODate {
         return f
     }()
 
+    /// Timestamps repeat across renders (every bubble, separator and list row
+    /// re-parses its ISO string on each body pass), and ISO8601 parsing is
+    /// expensive — memoize. NSCache is thread-safe and drops entries under
+    /// memory pressure; ISO strings are immutable so entries never go stale.
+    private static let parseCache: NSCache<NSString, NSDate> = {
+        let c = NSCache<NSString, NSDate>()
+        c.countLimit = 4096
+        return c
+    }()
+
     static func date(from s: String) -> Date? {
-        fractional.date(from: s) ?? plain.date(from: s)
+        if let hit = parseCache.object(forKey: s as NSString) { return hit as Date }
+        guard let d = fractional.date(from: s) ?? plain.date(from: s) else { return nil }
+        parseCache.setObject(d as NSDate, forKey: s as NSString)
+        return d
     }
 
     /// "HH:mm" — the bubble/row timestamp shown throughout chat (WhatsApp-style).

@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Send Later": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send Later" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Trimitere ulterioară" } }
+      }
+    },
+    "Send at": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send at" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Trimite la" } }
+      }
+    },
+    "Repeat": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Repeat" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Repetă" } }
+      }
+    },
+    "Once": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Once" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "O dată" } }
+      }
+    },
+    "Daily": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Daily" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Zilnic" } }
+      }
+    },
+    "Weekly": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Weekly" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Săptămânal" } }
+      }
+    },
+    "Monthly": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Monthly" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Lunar" } }
+      }
+    },
+    "Schedule": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Schedule" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Programează" } }
+      }
+    },
+    "Scheduled": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Scheduled" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Programate" } }
+      }
+    },
+    "Nothing scheduled yet.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing scheduled yet." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nimic programat încă." } }
+      }
+    },
+    "Couldn't schedule the message": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't schedule the message" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Mesajul nu a putut fi programat" } }
+      }
+    },
     "Review account": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Review account" } },
