@@ -55,17 +55,45 @@ final class DeliveryService {
     }
 
     func update(_ delivery: Delivery) async {
+        // Optional columns must be sent as JSON null, not "". An empty string
+        // written to the `expected_date` (date) column is invalid syntax and
+        // fails the whole update — which silently broke "Mark as delivered" and
+        // editing for any package without a date. Encoding via optionals sends
+        // an explicit null (also letting the user clear a previously-set date).
+        struct UpdatePayload: Encodable {
+            let description: String
+            let carrier: String?
+            let tracking_number: String?
+            let status: String
+            let expected_date: String?
+            let notes: String?
+
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(description, forKey: .description)
+                try c.encode(carrier, forKey: .carrier)
+                try c.encode(tracking_number, forKey: .tracking_number)
+                try c.encode(status, forKey: .status)
+                try c.encode(expected_date, forKey: .expected_date)   // nil → null
+                try c.encode(notes, forKey: .notes)
+            }
+        }
+        func nilIfEmpty(_ s: String?) -> String? {
+            let t = s?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (t?.isEmpty ?? true) ? nil : t
+        }
+        let payload = UpdatePayload(
+            description: delivery.description,
+            carrier: nilIfEmpty(delivery.carrier),
+            tracking_number: nilIfEmpty(delivery.trackingNumber),
+            status: delivery.status,
+            expected_date: nilIfEmpty(delivery.expectedDate),
+            notes: nilIfEmpty(delivery.notes)
+        )
         do {
             let result: Delivery = try await supabase
                 .from("packages")
-                .update([
-                    "description":      delivery.description,
-                    "carrier":          delivery.carrier ?? "",
-                    "tracking_number":  delivery.trackingNumber ?? "",
-                    "status":           delivery.status,
-                    "expected_date":    delivery.expectedDate ?? "",
-                    "notes":            delivery.notes ?? "",
-                ])
+                .update(payload)
                 .eq("id", value: delivery.id.uuidString)
                 .select()
                 .single()
