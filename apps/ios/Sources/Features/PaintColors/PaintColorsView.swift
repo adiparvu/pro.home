@@ -9,12 +9,28 @@ struct PaintColorsView: View {
     @State private var showAdd = false
     @State private var selectedRoom: String? = nil
     @State private var colorToDelete: PaintColor? = nil
+    @State private var showSearch = false
+    @State private var searchText = ""
 
     private var filteredByRoom: [String: [PaintColor]] {
+        let base: [String: [PaintColor]]
         if let room = selectedRoom {
-            return [room: paintColorService.byRoom[room] ?? []]
+            base = [room: paintColorService.byRoom[room] ?? []]
+        } else {
+            base = paintColorService.byRoom
         }
-        return paintColorService.byRoom
+        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return base }
+        return base.compactMapValues { colors in
+            let matched = colors.filter(matchesSearch)
+            return matched.isEmpty ? nil : matched
+        }
+    }
+
+    private func matchesSearch(_ color: PaintColor) -> Bool {
+        color.colorName.matchesSearch(searchText)
+            || (color.brand ?? "").matchesSearch(searchText)
+            || (color.code ?? "").matchesSearch(searchText)
+            || color.roomName.matchesSearch(searchText)
     }
 
     private var sortedRooms: [String] {
@@ -36,6 +52,7 @@ struct PaintColorsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 2) {
                     if !paintColorService.colors.isEmpty {
+                        SearchIconButton(isActive: $showSearch)
                         SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",
                                        render: renderSpecSheet) {
                             Image(systemName: "square.and.arrow.up")
@@ -57,6 +74,9 @@ struct PaintColorsView: View {
                     .accessibilityLabel("Add paint color")
                 }
             }
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAdd) {
             AddPaintColorSheet()
@@ -90,6 +110,9 @@ struct PaintColorsView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
                 roomFilterChips
                 roomsContent
                 Spacer(minLength: 110)

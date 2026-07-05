@@ -10,6 +10,22 @@ struct PlantsView: View {
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
+    @State private var showSearch = false
+    @State private var searchText = ""
+
+    private var filteredNeedingWater: [Plant] {
+        plantService.plantsNeedingWater.filter(matchesSearch)
+    }
+
+    private var filteredHealthy: [Plant] {
+        plantService.healthyPlants.filter(matchesSearch)
+    }
+
+    private func matchesSearch(_ plant: Plant) -> Bool {
+        plant.name.matchesSearch(searchText)
+            || (plant.species ?? "").matchesSearch(searchText)
+            || (plant.notes ?? "").matchesSearch(searchText)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,15 +46,18 @@ struct PlantsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showAddPlant = true
-                    HapticFeedback.impact(.light)
-                } label: {
-                    Image(systemName: "plus")
-                        .font(AppFont.title3)
-                        .foregroundStyle(.primary)
+                HStack(spacing: 2) {
+                    SearchIconButton(isActive: $showSearch)
+                    Button {
+                        showAddPlant = true
+                        HapticFeedback.impact(.light)
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.title3)
+                            .foregroundStyle(.primary)
+                    }
+                    .accessibilityLabel("Add plant")
                 }
-                .accessibilityLabel("Add plant")
             }
         }
         .sheet(isPresented: $showAddPlant) {
@@ -65,6 +84,9 @@ struct PlantsView: View {
         }
         // Deep link: a garden notification / Spotlight / prvio://plants/<id> opens
         // this sheet and asks for a specific plant — resolve once loaded.
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
+        }
         .onChange(of: router.deepLinkPlantId) { resolvePlantDeepLink() }
         .task(id: plantService.plants.count) { resolvePlantDeepLink() }
         .refreshable {
@@ -92,6 +114,9 @@ struct PlantsView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
                 summaryRow
                 plantsGrid
                 Spacer(minLength: 110)
@@ -161,21 +186,21 @@ struct PlantsView: View {
 
     private var plantsGrid: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if !plantService.plantsNeedingWater.isEmpty {
+            if !filteredNeedingWater.isEmpty {
                 sectionBlock(
                     title: "NEEDS WATER",
                     icon: "drop.fill",
                     iconColor: Color(red: 1.0, green: 0.62, blue: 0.1),
-                    plants: plantService.plantsNeedingWater
+                    plants: filteredNeedingWater
                 )
             }
 
-            if !plantService.healthyPlants.isEmpty {
+            if !filteredHealthy.isEmpty {
                 sectionBlock(
                     title: "HEALTHY",
                     icon: "leaf.fill",
                     iconColor: Color(red: 0.15, green: 0.80, blue: 0.4),
-                    plants: plantService.healthyPlants
+                    plants: filteredHealthy
                 )
             }
         }

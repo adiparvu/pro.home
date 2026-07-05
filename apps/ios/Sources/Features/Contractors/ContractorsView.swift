@@ -143,6 +143,7 @@ struct ContractorsView: View {
     @State private var selectedContractor: ContractorModel? = nil
     @State private var editContractor: ContractorModel? = nil
     @State private var search = ""
+    @State private var showSearch = false
     @State private var favoritesOnly = false
     @State private var favRefresh = 0
 
@@ -164,7 +165,7 @@ struct ContractorsView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                if !service.contractors.isEmpty {
+                if showSearch && !service.contractors.isEmpty {
                     HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
                         TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
@@ -172,6 +173,7 @@ struct ContractorsView: View {
                     .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     .padding(.horizontal, AppSpacing.xl).padding(.bottom, AppSpacing.md)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 if service.isLoading {
@@ -235,6 +237,9 @@ struct ContractorsView: View {
                 }
             }
         }
+        .onChange(of: showSearch) { _, on in
+            if !on { search = "" }
+        }
         .task { await service.load() }
         .sheet(isPresented: $showAdd) {
             AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)
@@ -259,6 +264,7 @@ struct ContractorsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 2) {
+                    SearchIconButton(isActive: $showSearch)
                     Button {
                         withAnimation(.snappy) { favoritesOnly.toggle() }
                         HapticFeedback.selection()

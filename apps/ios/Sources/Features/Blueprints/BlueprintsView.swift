@@ -16,6 +16,8 @@ struct BlueprintsView: View {
     @State private var pendingZoneName = ""
     // Bumped when a per-plan lock toggles so the (UserDefaults-backed) badges refresh.
     @State private var lockRefresh = 0
+    @State private var showSearch = false
+    @State private var searchText = ""
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -53,6 +55,9 @@ struct BlueprintsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
                 quickActions
                 buriedNav
 
@@ -70,6 +75,14 @@ struct BlueprintsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SearchIconButton(isActive: $showSearch)
+            }
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
+        }
         .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in
@@ -179,6 +192,10 @@ struct BlueprintsView: View {
 
     // MARK: - Grid
 
+    private var filteredScans: [HomeScan] {
+        service.scans.filter { $0.name.matchesSearch(searchText) }
+    }
+
     private var scansGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             let _ = lockRefresh   // re-render badges when a lock toggles
@@ -188,7 +205,7 @@ struct BlueprintsView: View {
                 .padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(service.scans) { scan in
+                ForEach(filteredScans) { scan in
                     let locked = ItemLockStore.isLocked(scan.id.uuidString, in: .plans)
                     ScanCard(scan: scan, thumbnail: service.image(for: scan))
                         .overlay(alignment: .topTrailing) {

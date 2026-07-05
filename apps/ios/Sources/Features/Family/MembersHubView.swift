@@ -14,6 +14,8 @@ struct MembersHubView: View {
     @State private var invitationService = InvitationService()
     @State private var accountService = AccountMemberService()
     @State private var segment: Segment = .family
+    @State private var showSearch = false
+    @State private var searchText = ""
     @State private var showAdd = false
     @State private var editingMember: FamilyMember?
     @State private var reviewingAccount: AccountMember?
@@ -42,13 +44,31 @@ struct MembersHubView: View {
     private static let familyRoles: Set<String> = ["owner", "partner", "member", "child"]
 
     private var familyMembers: [FamilyMember] {
-        familyService.members.filter { Self.familyRoles.contains($0.role) }
+        familyService.members.filter { Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }
     }
     private var otherMembers: [FamilyMember] {
-        familyService.members.filter { !Self.familyRoles.contains($0.role) }
+        familyService.members.filter { !Self.familyRoles.contains($0.role) && matchesMemberSearch($0) }
     }
     private var children: [FamilyMember] {
-        familyMembers.filter { $0.role == "child" }
+        familyService.members.filter { $0.role == "child" }
+    }
+
+    private func matchesMemberSearch(_ member: FamilyMember) -> Bool {
+        member.name.matchesSearch(searchText) || (member.email ?? "").matchesSearch(searchText)
+    }
+
+    private var filteredAccounts: [AccountMember] {
+        accountService.members.filter { account in
+            let profile = accountService.profiles[account.userId]
+            return (profile?.bestName ?? "").matchesSearch(searchText)
+                || (profile?.email ?? "").matchesSearch(searchText)
+        }
+    }
+
+    private var filteredInvitations: [MemberInvitation] {
+        invitationService.invitations.filter {
+            $0.email.matchesSearch(searchText) || ($0.name ?? "").matchesSearch(searchText)
+        }
     }
 
     var body: some View {
@@ -56,6 +76,10 @@ struct MembersHubView: View {
             VStack(spacing: 20) {
                 PageHeader(titleKey: "Members", subtitleKey: "HOUSEHOLD")
                 segmentPicker
+
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
 
                 switch segment {
                 case .family:      familySection
@@ -73,6 +97,9 @@ struct MembersHubView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SearchIconButton(isActive: $showSearch)
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     HapticFeedback.impact(.light)
@@ -100,6 +127,9 @@ struct MembersHubView: View {
             AccountReviewSheet(member: account,
                                profile: accountService.profiles[account.userId],
                                service: accountService)
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .task { reload() }
     }
@@ -223,14 +253,14 @@ struct MembersHubView: View {
                        text: "No one has an account yet. Accepted invitations appear here.")
         } else {
             VStack(spacing: 0) {
-                ForEach(Array(accountService.members.enumerated()), id: \.element.id) { idx, account in
+                ForEach(Array(filteredAccounts.enumerated()), id: \.element.id) { idx, account in
                     Button { reviewingAccount = account } label: {
                         AccountMemberRow(member: account,
                                          profile: accountService.profiles[account.userId])
                     }
                     .buttonStyle(.plain)
                     .contextMenu { accountMenu(account) }
-                    if idx < accountService.members.count - 1 {
+                    if idx < filteredAccounts.count - 1 {
                         Rectangle().fill(Color.primary.opacity(0.05))
                             .frame(height: 0.5).padding(.leading, 66)
                     }
@@ -292,7 +322,7 @@ struct MembersHubView: View {
                        text: "No invitations sent yet. Add a member with an email to invite them.")
         } else {
             VStack(spacing: 12) {
-                ForEach(invitationService.invitations) { inv in
+                ForEach(filteredInvitations) { inv in
                     InvitationRow(invitation: inv,
                                   onResend: { resend(inv) },
                                   onRevoke: { revoke(inv) })

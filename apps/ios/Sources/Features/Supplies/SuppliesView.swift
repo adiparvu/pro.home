@@ -35,6 +35,12 @@ struct SuppliesView: View {
     @State private var showAddReceipt = false
     @State private var showBudgets = false
     @State private var showReports = false
+    @State private var showSearch = false
+    @State private var searchText = ""
+
+    private var filteredLists: [SupplyList] {
+        supplyService.lists.filter { $0.name.matchesSearch(searchText) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,31 +87,23 @@ struct SuppliesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                if activeTab == .lists {
-                    Button { showAddList = true; HapticFeedback.impact(.light) } label: {
-                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
+                HStack(spacing: 2) {
+                    if activeTab != .overview {
+                        SearchIconButton(isActive: $showSearch)
                     }
-                    .accessibilityLabel("Add list")
-                } else {
-                    Menu {
-                        Button { showScanner = true; HapticFeedback.impact(.light) } label: {
-                            Label(String(localized: "expense_scan_receipt"), systemImage: "camera.viewfinder")
+                    if activeTab == .lists {
+                        Button { showAddList = true; HapticFeedback.impact(.light) } label: {
+                            Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
                         }
-                        Button { showAddReceipt = true; HapticFeedback.impact(.light) } label: {
-                            Label(String(localized: "expense_add_manual"), systemImage: "plus.circle")
-                        }
-                        Divider()
-                        Button { showBudgets = true } label: {
-                            Label(String(localized: "expense_manage_budgets"), systemImage: "target")
-                        }
-                        Button { showReports = true } label: {
-                            Label(String(localized: "expense_reports"), systemImage: "chart.bar.doc.horizontal")
-                        }
-                    } label: {
-                        Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
+                        .accessibilityLabel("Add list")
+                    } else {
+                        addMenu
                     }
                 }
             }
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAddList) {
             AddSupplyListSheet().environment(supplyService).environment(propertyService)
@@ -133,6 +131,26 @@ struct SuppliesView: View {
             activity.userInfo = ["tab": "shopping"]
             activity.isEligibleForHandoff = true
             activity.isEligibleForSearch = true
+        }
+    }
+
+    private var addMenu: some View {
+        Menu {
+            Button { showScanner = true; HapticFeedback.impact(.light) } label: {
+                Label(String(localized: "expense_scan_receipt"), systemImage: "camera.viewfinder")
+            }
+            Button { showAddReceipt = true; HapticFeedback.impact(.light) } label: {
+                Label(String(localized: "expense_add_manual"), systemImage: "plus.circle")
+            }
+            Divider()
+            Button { showBudgets = true } label: {
+                Label(String(localized: "expense_manage_budgets"), systemImage: "target")
+            }
+            Button { showReports = true } label: {
+                Label(String(localized: "expense_reports"), systemImage: "chart.bar.doc.horizontal")
+            }
+        } label: {
+            Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
         }
     }
 
@@ -193,7 +211,12 @@ struct SuppliesView: View {
     private var listsScrollContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                listsGrid
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
+                if !filteredLists.isEmpty {
+                    listsGrid
+                }
                 if supplyService.totalPending > 0 { urgentSection }
                 Spacer(minLength: 110)
             }
@@ -212,7 +235,7 @@ struct SuppliesView: View {
                 .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                ForEach(supplyService.lists) { list in
+                ForEach(filteredLists) { list in
                     NavigationLink(destination:
                         SupplyListDetailView(list: list)
                             .environment(supplyService)
@@ -231,17 +254,20 @@ struct SuppliesView: View {
         }
     }
 
+    @ViewBuilder
     private var urgentSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("URGENT")
-                .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
-            GlassCard(padding: 0) {
-                VStack(spacing: 0) {
-                    let urgent = supplyService.items
-                        .filter { !$0.isCompleted && ($0.priority == "critical" || $0.priority == "high") }
-                        .prefix(5)
-                    ForEach(Array(urgent.enumerated()), id: \.element.id) { idx, item in
-                        compactRow(item, isLast: idx == urgent.count - 1)
+        let urgent = supplyService.items
+            .filter { !$0.isCompleted && ($0.priority == "critical" || $0.priority == "high") && $0.name.matchesSearch(searchText) }
+            .prefix(5)
+        if !urgent.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("URGENT")
+                    .font(AppFont.label).foregroundStyle(.secondary).padding(.leading, AppSpacing.xxs)
+                GlassCard(padding: 0) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(urgent.enumerated()), id: \.element.id) { idx, item in
+                            compactRow(item, isLast: idx == urgent.count - 1)
+                        }
                     }
                 }
             }
@@ -272,9 +298,9 @@ struct SuppliesView: View {
     // MARK: - To Buy / Completed tabs
 
     private var toBuyContent: some View {
-        let pending = supplyService.items.filter { !$0.isCompleted }
+        let pending = supplyService.items.filter { !$0.isCompleted && $0.name.matchesSearch(searchText) }
         return Group {
-            if pending.isEmpty {
+            if pending.isEmpty && !showSearch {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "cart.badge.checkmark")
@@ -287,20 +313,27 @@ struct SuppliesView: View {
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        GlassCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(pending.enumerated()), id: \.element.id) { idx, item in
-                                    SupplyItemRow(
-                                        item: item,
-                                        isLast: idx == pending.count - 1,
-                                        onToggle: { Task { await supplyService.toggleComplete(item) } },
-                                        onEdit: {},
-                                        onDelete: { Task { await supplyService.deleteItem(item) } }
-                                    )
+                        if showSearch {
+                            PageSearchField(text: $searchText)
+                                .padding(.horizontal, AppSpacing.xl)
+                                .padding(.bottom, AppSpacing.lg)
+                        }
+                        if !pending.isEmpty {
+                            GlassCard(padding: 0) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(pending.enumerated()), id: \.element.id) { idx, item in
+                                        SupplyItemRow(
+                                            item: item,
+                                            isLast: idx == pending.count - 1,
+                                            onToggle: { Task { await supplyService.toggleComplete(item) } },
+                                            onEdit: {},
+                                            onDelete: { Task { await supplyService.deleteItem(item) } }
+                                        )
+                                    }
                                 }
                             }
+                            .padding(.horizontal, AppSpacing.xl)
                         }
-                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
                     .padding(.top, AppSpacing.lg)
@@ -310,9 +343,9 @@ struct SuppliesView: View {
     }
 
     private var completedContent: some View {
-        let done = supplyService.items.filter { $0.isCompleted }
+        let done = supplyService.items.filter { $0.isCompleted && $0.name.matchesSearch(searchText) }
         return Group {
-            if done.isEmpty {
+            if done.isEmpty && !showSearch {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "tray")
@@ -325,20 +358,27 @@ struct SuppliesView: View {
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        GlassCard(padding: 0) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(done.enumerated()), id: \.element.id) { idx, item in
-                                    SupplyItemRow(
-                                        item: item,
-                                        isLast: idx == done.count - 1,
-                                        onToggle: { Task { await supplyService.toggleComplete(item) } },
-                                        onEdit: {},
-                                        onDelete: { Task { await supplyService.deleteItem(item) } }
-                                    )
+                        if showSearch {
+                            PageSearchField(text: $searchText)
+                                .padding(.horizontal, AppSpacing.xl)
+                                .padding(.bottom, AppSpacing.lg)
+                        }
+                        if !done.isEmpty {
+                            GlassCard(padding: 0) {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(done.enumerated()), id: \.element.id) { idx, item in
+                                        SupplyItemRow(
+                                            item: item,
+                                            isLast: idx == done.count - 1,
+                                            onToggle: { Task { await supplyService.toggleComplete(item) } },
+                                            onEdit: {},
+                                            onDelete: { Task { await supplyService.deleteItem(item) } }
+                                        )
+                                    }
                                 }
                             }
+                            .padding(.horizontal, AppSpacing.xl)
                         }
-                        .padding(.horizontal, AppSpacing.xl)
                         Spacer(minLength: 110)
                     }
                     .padding(.top, AppSpacing.lg)

@@ -25,6 +25,9 @@ struct ChatActionOverlay: View {
     /// When the pressed message is a photo, its stored attachment value so the
     /// overlay elevates the real image instead of a "📷 Photo" text preview.
     var imageStored: String? = nil
+    /// Deleted-for-all messages take no reactions — only the actions passed in
+    /// (typically just Delete), matching WhatsApp.
+    var reactionsDisabled: Bool = false
 
     private static let emojis = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
     @State private var appear = false
@@ -40,7 +43,9 @@ struct ChatActionOverlay: View {
                 .onTapGesture { onDismiss() }
 
             VStack(alignment: isOwn ? .trailing : .leading, spacing: 12) {
-                reactionPill
+                if !reactionsDisabled {
+                    reactionPill
+                }
                 bubble
                 menu
             }

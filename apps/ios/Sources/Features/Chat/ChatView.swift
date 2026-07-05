@@ -160,7 +160,7 @@ struct ChatView: View {
     private func actionOverlay(_ m: Message) -> some View {
         let own = m.senderId == supabase.auth.currentSession?.user.id
         ChatActionOverlay(
-            previewText: pinnedSnippet(m),
+            previewText: m.deletedForAll == true ? String(localized: "This message was deleted") : pinnedSnippet(m),
             isOwn: own,
             bubbleColor: chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
             myReaction: messageService.reactions[m.id]?.first(where: { $0.userId == supabase.auth.currentSession?.user.id })?.emoji,
@@ -171,12 +171,18 @@ struct ChatView: View {
             },
             actions: messageActions(m),
             onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
-            imageStored: m.isImageMessage ? m.attachmentUrl : nil
+            imageStored: m.isImageMessage ? m.attachmentUrl : nil,
+            reactionsDisabled: m.deletedForAll == true
         )
         .transition(.opacity)
     }
 
     private func messageActions(_ m: Message) -> [ChatActionItem] {
+        // A deleted message is just a tombstone: the only thing left to do
+        // with it is remove it from your own view.
+        if m.deletedForAll == true {
+            return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
+        }
         let own = m.senderId == supabase.auth.currentSession?.user.id
         var items: [ChatActionItem] = [
             ChatActionItem("Reply", "arrowshape.turn.up.left") { withAnimation(.spring(response: 0.3)) { replyingTo = m } },

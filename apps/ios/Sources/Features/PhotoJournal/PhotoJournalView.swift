@@ -15,6 +15,8 @@ struct PhotoJournalView: View {
     @State private var showAdd = false
     @State private var selectedEntry: PhotoJournalEntry? = nil
     @State private var activeTag: String? = nil
+    @State private var showSearch = false
+    @State private var searchText = ""
 
     private let columns = [GridItem(.flexible(), spacing: 2),
                            GridItem(.flexible(), spacing: 2),
@@ -41,6 +43,9 @@ struct PhotoJournalView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                SearchIconButton(isActive: $showSearch)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAdd = true
                     HapticFeedback.impact(.light)
@@ -51,6 +56,9 @@ struct PhotoJournalView: View {
                 }
                 .accessibilityLabel("Add photo")
             }
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAdd) {
             AddPhotoJournalSheet()
@@ -82,9 +90,14 @@ struct PhotoJournalView: View {
     }
 
     private var filteredEntries: [PhotoJournalEntry] {
-        guard let tag = activeTag else { return photoJournalService.entries }
-        return photoJournalService.entries.filter { entry in
-            (entry.tags ?? []).contains { $0.caseInsensitiveCompare(tag) == .orderedSame }
+        photoJournalService.entries.filter { entry in
+            if let tag = activeTag,
+               !(entry.tags ?? []).contains(where: { $0.caseInsensitiveCompare(tag) == .orderedSame }) {
+                return false
+            }
+            return entry.title.matchesSearch(searchText)
+                || (entry.caption ?? "").matchesSearch(searchText)
+                || (entry.tags ?? []).contains { $0.matchesSearch(searchText) }
         }
     }
 
@@ -122,6 +135,10 @@ struct PhotoJournalView: View {
     private var journalContent: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: AppSpacing.lg, pinnedViews: []) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                        .padding(.horizontal, AppSpacing.lg)
+                }
                 if allTags.count > 1 {
                     tagFilterBar
                 }

@@ -10,6 +10,8 @@ struct InventoryView: View {
     @Environment(AppRouter.self) private var router
     @Environment(InventoryService.self) private var service
     @State private var filter: InvFilter = .all
+    @State private var showSearch = false
+    @State private var searchText = ""
     @State private var showAdd = false
     @State private var showScanner = false
     @State private var selectedItem: InventoryItem?
@@ -39,15 +41,23 @@ struct InventoryView: View {
     }
 
     private var filtered: [InventoryItem] {
+        let base: [InventoryItem]
         switch filter {
-        case .all:         return service.items
-        case .favorites:   return service.items.filter { favorites.isFavorite($0.id) }
-        case .loaned:      return service.items.filter { $0.isLoaned }
-        case .tools:       return service.items.filter { $0.category == "tools" }
-        case .garden:      return service.items.filter { $0.category == "garden" }
-        case .outdoor:     return service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }
-        case .electronics: return service.items.filter { $0.category == "electronics" }
-        case .other:       return service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }
+        case .all:         base = service.items
+        case .favorites:   base = service.items.filter { favorites.isFavorite($0.id) }
+        case .loaned:      base = service.items.filter { $0.isLoaned }
+        case .tools:       base = service.items.filter { $0.category == "tools" }
+        case .garden:      base = service.items.filter { $0.category == "garden" }
+        case .outdoor:     base = service.items.filter { ["outdoor","sports","vehicles"].contains($0.category) }
+        case .electronics: base = service.items.filter { $0.category == "electronics" }
+        case .other:       base = service.items.filter { !["tools","garden","outdoor","sports","vehicles","electronics"].contains($0.category) }
+        }
+        return base.filter {
+            $0.name.matchesSearch(searchText)
+                || $0.brand.matchesSearch(searchText)
+                || $0.serialNumber.matchesSearch(searchText)
+                || $0.category.matchesSearch(searchText)
+                || $0.location.matchesSearch(searchText)
         }
     }
 
@@ -55,6 +65,11 @@ struct InventoryView: View {
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, 10)
+                }
                 if !service.items.isEmpty {
                     summaryBar.padding(.horizontal, AppSpacing.xl).padding(.vertical, 10)
                 }
@@ -136,6 +151,8 @@ struct InventoryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 0) {
+                    SearchIconButton(isActive: $showSearch)
+                    Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Menu {
                         ForEach(InvFilter.allCases, id: \.self) { f in
                             Button {
@@ -193,6 +210,9 @@ struct InventoryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("This QR code doesn't match any item in your inventory.")
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .onAppear {
             if autoScan && !didAutoScan { didAutoScan = true; showScanner = true }

@@ -10,6 +10,22 @@ struct DeliveriesView: View {
     @State private var editingDelivery: Delivery? = nil
     @State private var showCompleted = false
     @State private var showAutoImport = false
+    @State private var showSearch = false
+    @State private var searchText = ""
+
+    private var filteredActiveDeliveries: [Delivery] {
+        deliveryService.activeDeliveries.filter(matchesSearch)
+    }
+
+    private var filteredCompletedDeliveries: [Delivery] {
+        deliveryService.deliveries.filter { !$0.isActive && matchesSearch($0) }
+    }
+
+    private func matchesSearch(_ delivery: Delivery) -> Bool {
+        delivery.description.matchesSearch(searchText)
+            || (delivery.carrier ?? "").matchesSearch(searchText)
+            || (delivery.trackingNumber ?? "").matchesSearch(searchText)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,6 +41,9 @@ struct DeliveriesView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                SearchIconButton(isActive: $showSearch)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAutoImport = true
@@ -48,6 +67,9 @@ struct DeliveriesView: View {
                 .accessibilityLabel("Add delivery")
             }
         }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
+        }
         .sheet(isPresented: $showAddDelivery) {
             DeliveryFormSheet(editingDelivery: nil)
                 .environment(deliveryService)
@@ -67,9 +89,13 @@ struct DeliveriesView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
+
                 summaryPill
 
-                if !deliveryService.activeDeliveries.isEmpty {
+                if !filteredActiveDeliveries.isEmpty {
                     activeSection
                 }
 
@@ -147,7 +173,7 @@ struct DeliveriesView: View {
                 Image(systemName: "shippingbox.fill")
                     .font(AppFont.label)
                     .foregroundStyle(Color.accentColor)
-                Text("IN PROGRESS · \(deliveryService.activeDeliveries.count)")
+                Text("IN PROGRESS · \(filteredActiveDeliveries.count)")
                     .font(AppFont.label)
                     .foregroundStyle(.secondary)
                     .tracking(0.5)
@@ -155,7 +181,7 @@ struct DeliveriesView: View {
             .padding(.leading, AppSpacing.xxs)
 
             VStack(spacing: 10) {
-                ForEach(deliveryService.activeDeliveries) { delivery in
+                ForEach(filteredActiveDeliveries) { delivery in
                     NavigationLink {
                         DeliveryDetailView(delivery: delivery) { editingDelivery = delivery }
                             .environment(deliveryService)
@@ -173,7 +199,7 @@ struct DeliveriesView: View {
 
     @ViewBuilder
     private var completedSection: some View {
-        let completed = deliveryService.deliveries.filter { !$0.isActive }
+        let completed = filteredCompletedDeliveries
         if !completed.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Button {

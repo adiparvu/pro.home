@@ -239,9 +239,23 @@ struct TenantFormSheet: View {
         return cleaned.isEmpty ? nil : Double(cleaned)
     }
 
+    private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
+
+    private var emailIsValid: Bool {
+        // Light-weight sanity check; the server still validates properly.
+        let pattern = #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#
+        return trimmedEmail.range(of: pattern, options: .regularExpression) != nil
+    }
+
     private func save() async {
         guard let pid = propertyId else {
             errorMessage = String(localized: "Please set up your property first in Settings.")
+            return
+        }
+        // Validate BEFORE creating anything: an invite with a bad address would
+        // fail after the tenant row exists, leaving a half-added tenant.
+        if sendInvite, !trimmedEmail.isEmpty, !emailIsValid {
+            errorMessage = String(localized: "The e-mail address doesn't look valid. Fix it or turn off the invitation.")
             return
         }
         isSaving = true
@@ -270,11 +284,14 @@ struct TenantFormSheet: View {
                 notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes
             )
 
-            if sendInvite, !email.trimmingCharacters(in: .whitespaces).isEmpty {
+            if sendInvite, !trimmedEmail.isEmpty {
                 if let err = await familyService.sendInvite(
-                    to: email, name: fullName, role: "tenant",
+                    to: trimmedEmail, name: fullName, role: "tenant",
                     propertyId: pid, propertyName: propertyName) {
-                    errorMessage = String(localized: "Tenant saved, but the invite failed:") + " " + err
+                    // Atomic add: a failed invite rolls the tenant back so
+                    // nothing half-added lingers in members or chat.
+                    await familyService.delete(member)
+                    errorMessage = String(localized: "The tenant was not added because the invitation failed:") + " " + err
                     return
                 }
             }

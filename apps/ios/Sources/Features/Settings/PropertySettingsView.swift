@@ -6,14 +6,28 @@ import PhotosUI
 struct PropertySettingsView: View {
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
+    @State private var showSearch = false
+    @State private var searchText = ""
+
+    private var filteredProperties: [PropertyModel] {
+        propertyService.properties.filter {
+            $0.name.matchesSearch(searchText) ||
+            $0.addressLine1.matchesSearch(searchText) ||
+            $0.city.matchesSearch(searchText) ||
+            $0.propertyType.matchesSearch(searchText)
+        }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
+                if showSearch {
+                    PageSearchField(text: $searchText)
+                }
                 if propertyService.properties.isEmpty {
                     emptyState
                 } else {
-                    ForEach(propertyService.properties) { p in
+                    ForEach(filteredProperties) { p in
                         NavigationLink {
                             PropertyDetailView(propertyId: p.id)
                                 .environment(propertyService)
@@ -33,13 +47,19 @@ struct PropertySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showAdd = true } label: {
-                    Image(systemName: "plus")
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(Color.accentColor)
+                HStack(spacing: 0) {
+                    SearchIconButton(isActive: $showSearch)
+                    Button { showAdd = true } label: {
+                        Image(systemName: "plus")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .accessibilityLabel("Add property")
                 }
-                .accessibilityLabel("Add property")
             }
+        }
+        .onChange(of: showSearch) { _, on in
+            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }
         .alert("Error", isPresented: Binding(

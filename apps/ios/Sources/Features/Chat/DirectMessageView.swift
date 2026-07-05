@@ -393,12 +393,17 @@ struct DirectMessageView: View {
             onReact: { e in Task { await directMessageService.toggleReaction(m, emoji: e, myName: myName) } },
             actions: dmMessageActions(m, own: own),
             onDismiss: { withAnimation(.easeOut(duration: 0.2)) { menuMessage = nil } },
-            imageStored: isImage ? m.body : nil
+            imageStored: isImage ? m.body : nil,
+            reactionsDisabled: m.deletedForAll == true
         )
         .transition(.opacity)
     }
 
     private func dmMessageActions(_ m: DirectMessage, own: Bool) -> [ChatActionItem] {
+        // Deleted messages keep only "Delete" (remove the tombstone for me).
+        if m.deletedForAll == true {
+            return [ChatActionItem("Delete", "trash", destructive: true) { deleteCandidate = m }]
+        }
         let lower = m.body.lowercased()
         let isMedia = lower.contains("/dm-images/") || lower.contains("/dm-audio/")
             || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") || lower.hasSuffix(".m4a")
@@ -798,8 +803,10 @@ struct DirectMessageView: View {
                 )
             }
             .padding(.horizontal, AppSpacing.base)
-            .padding(.vertical, 10)
-            .background(.regularMaterial)
+            .padding(.vertical, 8)
+            // iMessage has no separate band behind the compose row — the bar
+            // sits directly on the conversation background.
+            .background(chatTheme.background)
         }
         .animation(.spring(duration: 0.3), value: showAttachmentTray)
         .animation(.spring(duration: 0.3), value: replyingTo?.id)

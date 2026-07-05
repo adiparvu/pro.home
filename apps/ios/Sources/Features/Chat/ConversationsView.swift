@@ -749,11 +749,14 @@ struct ConversationsView: View {
             member: nil
         ))
 
-        // DM entries
+        // DM entries — WhatsApp-style: a person appears in the list only once
+        // the conversation has at least one message (either direction). Newly
+        // added members stay reachable via the "+" new-conversation flow.
         for member in familyService.members {
-            let last = directMessageService.lastMessage(with: member.name, myName: myName)
+            guard let last = directMessageService.lastMessage(with: member.name, myName: myName) else {
+                continue
+            }
             let preview: String = {
-                guard let last else { return "Niciun mesaj" }
                 if last.deletedForAll == true { return "🚫 Mesaj șters" }
                 let prefix = last.senderName == myName ? "Tu: " : ""
                 return prefix + last.body
@@ -762,7 +765,7 @@ struct ConversationsView: View {
                 id: member.id.uuidString,
                 name: member.name,
                 preview: preview,
-                date: last.flatMap { parseISODate($0.createdAt) },
+                date: parseISODate(last.createdAt),
                 unread: directMessageService.unreadCount(from: member.name, myName: myName),
                 isGroup: false,
                 member: member
