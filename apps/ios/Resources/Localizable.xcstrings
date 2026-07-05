@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Roles & permissions": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Roles & permissions" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Roluri și permisiuni" } }
+      }
+    },
+    "Can see and use": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Can see and use" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Vede și folosește" } }
+      }
+    },
+    "Not visible": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Not visible" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nu vede" } }
+      }
+    },
+    "Selected": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Selected" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Selectat" } }
+      }
+    },
+    "Couldn't add the member": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't add the member" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Membrul nu a putut fi adăugat" } }
+      }
+    },
+    "Every role sees only its own slice of the home. Owners and partners can change a member's role at any time.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Every role sees only its own slice of the home. Owners and partners can change a member's role at any time." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Fiecare rol vede doar partea lui din casă. Proprietarul și partenerul pot schimba oricând rolul unui membru." } }
+      }
+    },
     "Items & Maintenance": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Items & Maintenance" } },

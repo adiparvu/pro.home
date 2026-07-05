@@ -46,6 +46,8 @@ struct AddFamilyMemberSheet: View {
     @State private var isSaving = false
     @State private var showAddSocial = false
     @State private var inviteError: String?
+    @State private var saveError: String?
+    @State private var showRoleInfo = false
     // Member is added before the invite; guard against re-adding on retry.
     @State private var memberAdded = false
 
@@ -91,6 +93,16 @@ struct AddFamilyMemberSheet: View {
             }
             .sheet(isPresented: $showAddSocial) {
                 AddSocialLinkSheet { link in socialLinks.append(link) }
+            }
+            .sheet(isPresented: $showRoleInfo) {
+                RolePermissionsSheet(highlighted: role)
+            }
+            .alert("Couldn't add the member", isPresented: Binding(
+                get: { saveError != nil }, set: { if !$0 { saveError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(saveError ?? "")
             }
             .alert("Invite not sent", isPresented: Binding(
                 get: { inviteError != nil }, set: { if !$0 { inviteError = nil } })
@@ -174,7 +186,20 @@ struct AddFamilyMemberSheet: View {
 
     private var roleSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+            HStack(spacing: 6) {
+                Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                Button {
+                    HapticFeedback.impact(.light)
+                    showRoleInfo = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Roles & permissions")
+            }
+            .padding(.leading, AppSpacing.xxs)
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -339,9 +364,11 @@ struct AddFamilyMemberSheet: View {
                 }
             }
         } catch {
-            #if DEBUG
-            print("[FamilySheets] save error: \(error)")
-            #endif
+            // Surface the failure — a silently-dismissed form is how "adding
+            // doesn't work" bugs are born.
+            saveError = error.localizedDescription
+            HapticFeedback.warning()
+            return
         }
         // Await the invite so a delivery failure is surfaced (member is already
         // added; the alert's OK dismisses). Previously fired-and-forgotten, which
@@ -424,6 +451,198 @@ struct AddSocialLinkSheet: View {
                     .font(AppFont.subheadline)
                     .foregroundStyle(handle.isEmpty ? Color.primary.opacity(0.3) : .blue)
                     .disabled(handle.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Roles & permissions reference
+//
+// The detailed "who sees what" sheet behind the ⓘ next to ROLE. The lists
+// mirror the real gating matrices (SettingsView.allowed / allowedApp and the
+// members-management rule) — if the matrix changes, update this too.
+
+struct RolePermissionsSheet: View {
+    var highlighted: String? = nil
+    @Environment(\.dismiss) private var dismiss
+
+    private struct RoleSpec: Identifiable {
+        let id: String
+        let sees: [LocalizedStringKey]
+        let hidden: [LocalizedStringKey]
+    }
+
+    private static let allFeatures: [LocalizedStringKey] = [
+        "My Property", "Documents", "Plans & 3D", "Finances", "Inventory",
+        "Supplies", "Plants", "Deliveries", "Utilities", "Contractors",
+        "Analytics", "Property Report", "Tenants", "Appliances",
+        "Photo Journal", "Seasonal Checklists", "Paint Colors",
+        "Property Value", "Guest Mode", "Perspectives", "Members", "Chat",
+        "Live Activities", "Floating Buttons", "NFC Keys", "Integrations"
+    ]
+
+    private static let specs: [RoleSpec] = [
+        RoleSpec(id: "owner", sees: allFeatures, hidden: []),
+        RoleSpec(id: "partner", sees: allFeatures, hidden: []),
+        RoleSpec(id: "member",
+                 sees: ["My Property", "Documents", "Plans & 3D", "Finances",
+                        "Inventory", "Supplies", "Plants", "Deliveries",
+                        "Utilities", "Contractors", "Analytics",
+                        "Property Report", "Appliances", "Photo Journal",
+                        "Seasonal Checklists", "Paint Colors", "Perspectives",
+                        "Members", "Chat", "Live Activities",
+                        "Floating Buttons", "NFC Keys", "Integrations"],
+                 hidden: ["Tenants", "Guest Mode", "Property Value"]),
+        RoleSpec(id: "tenant",
+                 sees: ["Documents", "Supplies", "Plants", "Deliveries",
+                        "Utilities", "Contractors", "Appliances",
+                        "Photo Journal", "Seasonal Checklists", "Paint Colors",
+                        "Chat", "Live Activities", "Floating Buttons", "NFC Keys"],
+                 hidden: ["My Property", "Plans & 3D", "Finances", "Inventory",
+                          "Analytics", "Property Report", "Tenants",
+                          "Property Value", "Guest Mode", "Perspectives",
+                          "Members", "Integrations"]),
+        RoleSpec(id: "child",
+                 sees: ["Supplies", "Plants", "Deliveries", "Photo Journal",
+                        "Seasonal Checklists", "Chat"],
+                 hidden: ["My Property", "Documents", "Plans & 3D", "Finances",
+                          "Inventory", "Utilities", "Contractors", "Analytics",
+                          "Property Report", "Tenants", "Appliances",
+                          "Paint Colors", "Property Value", "Guest Mode",
+                          "Perspectives", "Members", "Live Activities",
+                          "Floating Buttons", "NFC Keys", "Integrations"]),
+        RoleSpec(id: "worker",
+                 sees: ["Documents", "Contractors", "Deliveries", "Appliances",
+                        "Seasonal Checklists", "Photo Journal", "Chat",
+                        "Live Activities", "Floating Buttons"],
+                 hidden: ["My Property", "Plans & 3D", "Finances", "Inventory",
+                          "Supplies", "Plants", "Utilities", "Analytics",
+                          "Property Report", "Tenants", "Paint Colors",
+                          "Property Value", "Guest Mode", "Perspectives",
+                          "Members", "NFC Keys", "Integrations"]),
+        RoleSpec(id: "guest",
+                 sees: ["Chat"],
+                 hidden: ["My Property", "Documents", "Plans & 3D", "Finances",
+                          "Inventory", "Supplies", "Plants", "Deliveries",
+                          "Utilities", "Contractors", "Analytics",
+                          "Property Report", "Tenants", "Appliances",
+                          "Photo Journal", "Seasonal Checklists", "Paint Colors",
+                          "Property Value", "Guest Mode", "Perspectives",
+                          "Members", "Live Activities", "Floating Buttons",
+                          "NFC Keys", "Integrations"]),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                appBackground.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        Text("Every role sees only its own slice of the home. Owners and partners can change a member's role at any time.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.secondaryTextColor)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        ForEach(Self.specs) { spec in
+                            roleCard(spec)
+                        }
+                        Spacer(minLength: 30)
+                    }
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.top, AppSpacing.sm)
+                }
+            }
+            .navigationTitle("Roles & permissions")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.foregroundStyle(.primary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func roleCard(_ spec: RoleSpec) -> some View {
+        let isCurrent = spec.id == highlighted
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                ColoredIconBadge(icon: kRoleIcons[spec.id] ?? "person.fill",
+                                 color: isCurrent ? Color.accentColor : .gray, size: 38)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(LocalizedStringKey(kRoleLabels[spec.id] ?? spec.id.capitalized))
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                        if isCurrent {
+                            Text("Selected")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color.accentColor)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.14), in: Capsule())
+                        }
+                    }
+                    if let desc = kRoleDescriptions[spec.id] {
+                        Text(LocalizedStringKey(desc))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.secondaryTextColor)
+                    }
+                }
+                Spacer()
+            }
+
+            permissionList("Can see and use", items: spec.sees,
+                           icon: "checkmark.circle.fill", tint: Color.brandSuccess)
+            if !spec.hidden.isEmpty {
+                permissionList("Not visible", items: spec.hidden,
+                               icon: "eye.slash.fill", tint: Color.secondaryTextColor)
+            }
+        }
+        .padding(AppSpacing.base)
+        .background(Color.primary.opacity(0.04),
+                    in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(isCurrent ? Color.accentColor.opacity(0.5)
+                                        : Color.primary.opacity(AppOpacity.subtleFill),
+                              lineWidth: isCurrent ? 1.2 : 0.5)
+        )
+    }
+
+    private func permissionList(_ title: LocalizedStringKey,
+                                items: [LocalizedStringKey],
+                                icon: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(AppFont.captionEmphasis)
+                .foregroundStyle(tint)
+            FlowLayoutChips(items: items, icon: icon, tint: tint)
+        }
+    }
+}
+
+/// Compact wrapping chip rows for permission items.
+private struct FlowLayoutChips: View {
+    let items: [LocalizedStringKey]
+    let icon: String
+    let tint: Color
+
+    var body: some View {
+        // Simple 2-column grid keeps rows compact without a custom Layout.
+        LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading),
+                            GridItem(.flexible(), alignment: .leading)],
+                  alignment: .leading, spacing: 5) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                HStack(spacing: 5) {
+                    Image(systemName: icon)
+                        .font(.system(size: 10))
+                        .foregroundStyle(tint)
+                    Text(item)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
             }
         }
