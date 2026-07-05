@@ -24,10 +24,11 @@ final class FamilyService {
         }
     }
 
+    @discardableResult
     func add(name: String, role: String, email: String?, phone: String?,
              color: String, propertyId: UUID?, birthday: String?,
-             socialLinks: [SocialLink]) async throws {
-        guard let ownerId = supabase.auth.currentSession?.user.id else { return }
+             socialLinks: [SocialLink]) async throws -> FamilyMember? {
+        guard let ownerId = supabase.auth.currentSession?.user.id else { return nil }
 
         struct Payload: Encodable {
             let owner_id: UUID
@@ -52,6 +53,55 @@ final class FamilyService {
             .value
         members.append(inserted)
         members.sort { $0.name < $1.name }
+        return inserted
+    }
+
+    // MARK: - Tenant leases
+
+    /// Lease details per tenant, keyed by the family-member id.
+    var leases: [UUID: TenantLease] = [:]
+
+    func loadLeases(propertyId: UUID) async {
+        let rows: [TenantLease]? = try? await supabase
+            .from("tenant_leases")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        leases = Dictionary((rows ?? []).map { ($0.memberId, $0) },
+                            uniquingKeysWith: { _, new in new })
+    }
+
+    func saveLease(memberId: UUID, propertyId: UUID,
+                   leaseStart: Date?, leaseEnd: Date?,
+                   monthlyRent: Double?, currency: String, deposit: Double?,
+                   paymentDay: Int?, occupants: Int?, notes: String?) async throws {
+        struct Payload: Encodable {
+            let property_id: UUID
+            let member_id: UUID
+            let lease_start: String?
+            let lease_end: String?
+            let monthly_rent: Double?
+            let currency: String
+            let deposit: Double?
+            let payment_day: Int?
+            let occupants: Int?
+            let notes: String?
+        }
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+        let inserted: TenantLease = try await supabase
+            .from("tenant_leases")
+            .insert(Payload(
+                property_id: propertyId, member_id: memberId,
+                lease_start: leaseStart.map { f.string(from: $0) },
+                lease_end: leaseEnd.map { f.string(from: $0) },
+                monthly_rent: monthlyRent, currency: currency, deposit: deposit,
+                payment_day: paymentDay, occupants: occupants, notes: notes))
+            .select()
+            .single()
+            .execute()
+            .value
+        leases[memberId] = inserted
     }
 
     /// WhatsApp-style invite: a contact with an email is sent an invitation that

@@ -4375,6 +4375,120 @@
         "ro": { "stringUnit": { "state": "translated", "value": "Elimină blocarea de la „%@”" } }
       }
     },
+    "New Tenant": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New Tenant" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Chiriaș nou" } }
+      }
+    },
+    "LEASE": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LEASE" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "CONTRACT" } }
+      }
+    },
+    "RENT": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "RENT" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "CHIRIE" } }
+      }
+    },
+    "ACCESS": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "ACCESS" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "ACCES" } }
+      }
+    },
+    "Lease start": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lease start" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Început contract" } }
+      }
+    },
+    "Lease end": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lease end" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Sfârșit contract" } }
+      }
+    },
+    "Fixed term": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fixed term" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Durată determinată" } }
+      }
+    },
+    "Monthly rent": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Monthly rent" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Chirie lunară" } }
+      }
+    },
+    "Deposit": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Deposit" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Garanție" } }
+      }
+    },
+    "Payment day": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Payment day" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ziua plății" } }
+      }
+    },
+    "Occupants": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Occupants" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Locatari" } }
+      }
+    },
+    "Parking spot, house rules, meter readings…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Parking spot, house rules, meter readings…" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Loc de parcare, reguli, indexuri contoare…" } }
+      }
+    },
+    "Send invitation email": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Send invitation email" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Trimite invitație pe e-mail" } }
+      }
+    },
+    "The tenant gets app access with the tenant role": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The tenant gets app access with the tenant role" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Chiriașul primește acces în aplicație cu rol de chiriaș" } }
+      }
+    },
+    "Couldn't save tenant": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't save tenant" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Chiriașul nu a putut fi salvat" } }
+      }
+    },
+    "You need to be signed in to add a tenant.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You need to be signed in to add a tenant." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Trebuie să fii autentificat ca să adaugi un chiriaș." } }
+      }
+    },
+    "Tenant saved, but the invite failed:": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tenant saved, but the invite failed:" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Chiriașul a fost salvat, dar invitația a eșuat:" } }
+      }
+    },
+    "month": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "month" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "lună" } }
+      }
+    },
+    "until %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "until %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "până la %@" } }
+      }
+    },
     "MY LIVE ACTIVITIES": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "MY LIVE ACTIVITIES" } },

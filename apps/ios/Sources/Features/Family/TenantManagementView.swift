@@ -61,12 +61,16 @@ struct TenantManagementView: View {
                 .accessibilityLabel("Add tenant")
             }
         }
-        .task { await familyService.load() }
+        .task {
+            await familyService.load()
+            if let pid = propertyService.primary?.id {
+                await familyService.loadLeases(propertyId: pid)
+            }
+        }
         .sheet(isPresented: $showAdd) {
-            AddFamilyMemberSheet(
+            TenantFormSheet(
                 propertyId: propertyService.primary?.id,
-                propertyName: propertyService.primary?.name,
-                preselectedRole: "tenant"
+                propertyName: propertyService.primary?.name
             )
             .environment(familyService)
         }
@@ -144,6 +148,21 @@ struct TenantManagementView: View {
                         Label(memberSinceLabel(tenant), systemImage: "calendar")
                             .font(.system(size: 11))
                             .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+
+                        if let lease = familyService.leases[tenant.id] {
+                            HStack(spacing: 6) {
+                                if let rent = lease.rentDisplay {
+                                    Label("\(rent)/\(String(localized: "month"))", systemImage: "banknote.fill")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(Color.brandSuccess)
+                                }
+                                if let end = lease.endDisplay {
+                                    Label(String(format: String(localized: "until %@"), end), systemImage: "calendar.badge.exclamationmark")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                                }
+                            }
+                        }
                     }
 
                     Spacer()
