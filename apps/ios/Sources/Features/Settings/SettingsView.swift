@@ -368,18 +368,18 @@ struct SettingsView: View {
     // keys, third-party integrations, action shortcuts) and shouldn't appear for
     // low-privilege roles. The purely-personal rows (Appearance, Language,
     // Activity, App Icon, Live Activities, Siri) stay visible to everyone.
-    private enum AppFeature { case floatingButtons, nfcKeys, integrations }
+    private enum AppFeature { case liveActivities, floatingButtons, nfcKeys, integrations }
 
     private func allowedApp(_ f: AppFeature) -> Bool {
         switch propertyService.myRole {
         case "guest", "family_child", "family_teen":
             return false                       // no property power tools
         case "tenant":
-            // A resident configures shortcuts and may hold an access key, but
-            // doesn't wire up account-level integrations.
-            return f == .floatingButtons || f == .nfcKeys
+            // A resident tracks their own activities, configures shortcuts and
+            // may hold an access key, but doesn't wire up account integrations.
+            return f == .liveActivities || f == .floatingButtons || f == .nfcKeys
         case "service_provider":
-            return f == .floatingButtons
+            return f == .liveActivities || f == .floatingButtons
         default:
             return true                        // owner, partner, adult, nil (fail-open)
         }
@@ -410,8 +410,10 @@ struct SettingsView: View {
             NavSettingsRow(icon: "app.fill", color: .purple, label: "App Icon") {
                 AppIconPickerView()
             }
-            NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
-                LiveActivitySettingsView()
+            if allowedApp(.liveActivities) {
+                NavSettingsRow(icon: "bolt.badge.clock.fill", color: .blue, label: "Live Activities") {
+                    LiveActivitySettingsView()
+                }
             }
             if allowedApp(.floatingButtons) {
                 NavSettingsRow(icon: "plus.circle.fill", color: .orange, label: "Floating Buttons") {
