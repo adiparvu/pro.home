@@ -118,6 +118,11 @@ struct DeliveriesView: View {
         .onPreferenceChange(ScrollOffsetKey.self) { y in
             tabBarVis.scrollOffset = y
         }
+        .refreshable {
+            if let pid = PropertyService.activePropertyId {
+                await deliveryService.load(propertyId: pid)
+            }
+        }
     }
 
     // MARK: - Summary pill

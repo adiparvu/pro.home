@@ -122,6 +122,11 @@ struct NotificationCenterView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .refreshable {
+                if let uid = userId {
+                    await service.load(userId: uid)
+                }
+            }
         }
     }
 

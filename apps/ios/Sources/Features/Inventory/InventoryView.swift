@@ -132,6 +132,11 @@ struct InventoryView: View {
                         }
                         .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
+                    .refreshable {
+                        if let pid = PropertyService.activePropertyId {
+                            await service.load(propertyId: pid)
+                        }
+                    }
                 }
             }
             FloatingSpeedDial(

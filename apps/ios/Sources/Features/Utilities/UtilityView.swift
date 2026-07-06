@@ -202,6 +202,11 @@ struct UtilityView: View {
                     }
                     .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                 }
+                .refreshable {
+                    if let pid = propertyService.primary?.id {
+                        await service.load(propertyId: pid)
+                    }
+                }
             }
         }
         .navigationTitle("Utilities")

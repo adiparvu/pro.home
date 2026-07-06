@@ -236,6 +236,7 @@ struct ContractorsView: View {
                         }
                         .padding(.horizontal, AppSpacing.xl).padding(.bottom, 110)
                     }
+                    .refreshable { await service.load() }
                 }
             }
         }

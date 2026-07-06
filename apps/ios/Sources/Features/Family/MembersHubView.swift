@@ -93,6 +93,14 @@ struct MembersHubView: View {
             .padding(.horizontal, AppSpacing.xl)
             .padding(.top, AppSpacing.sm)
         }
+        .refreshable {
+            await familyService.load()
+            if let pid = propertyService.primary?.id {
+                async let a: Void = invitationService.load(propertyId: pid)
+                async let b: Void = accountService.load(propertyId: pid)
+                _ = await (a, b)
+            }
+        }
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)

@@ -39,6 +39,7 @@ struct FamilyView: View {
                         .padding(.horizontal, AppSpacing.xl)
                         .padding(.bottom, 110)
                     }
+                    .refreshable { await familyService.load() }
                 }
             }
         }
