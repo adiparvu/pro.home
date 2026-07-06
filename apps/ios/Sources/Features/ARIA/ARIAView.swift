@@ -214,7 +214,7 @@ struct ARIAView: View {
                 }
                 .padding(.horizontal, AppSpacing.base)
                 .padding(.vertical, 10)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 // Icon buttons + orb row
                 HStack(spacing: 0) {

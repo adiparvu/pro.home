@@ -54,6 +54,25 @@ extension View {
             self.modifier(LegacyGlass(shape: shape, stroked: true))
         }
     }
+
+    /// CLEAR Liquid Glass (iOS 26+) for controls floating over media-rich
+    /// content — the chat compose bar over a wallpaper is exactly the case
+    /// the HIG's Clear variant exists for. Interactive glass reacts to touch;
+    /// use it for buttons, not for containers holding a text field. Pre-26
+    /// falls back to regular material + hairline + shadow (the treatment
+    /// that made the bar legible on any wallpaper brightness).
+    @ViewBuilder
+    func mediaGlass<S: InsettableShape>(in shape: S, interactive: Bool = false) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(interactive ? Glass.clear.interactive() : .clear, in: shape)
+                .contentShape(shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
+                .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
+                .contentShape(shape)
+        }
+    }
 }
 
 /// The pre-iOS-26 glass fallback. On iOS 26+ the native `glassEffect`

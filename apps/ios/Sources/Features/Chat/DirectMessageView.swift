@@ -154,6 +154,11 @@ struct DirectMessageView: View {
         }
         .navigationTitle(member.name)
         .navigationBarTitleDisplayMode(.inline)
+        // The system search field replaces the old hand-built bar — instant,
+        // with the native cancel flow.
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search in conversation"))
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -200,7 +205,7 @@ struct DirectMessageView: View {
                 member: member,
                 onAudio: { showCallSheet = true },
                 onVideo: { showVideoSheet = true },
-                onSearch: { withAnimation { showSearch = true } },
+                onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
                 onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
@@ -439,34 +444,10 @@ struct DirectMessageView: View {
         return items
     }
 
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-            TextField("Search in conversation", text: $searchText)
-                .font(.system(size: 15))
-                .autocorrectionDisabled()
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(0.3))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, 9)
-        .liquidGlass(cornerRadius: 18)
-        .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.sm)
-    }
-
     // MARK: - Message List
 
     private var messageList: some View {
         VStack(spacing: 0) {
-        if showSearch { searchBar }
         if let pinned = pinnedMessages.last {
             Button {
                 scrollTarget = pinned.id
@@ -832,17 +813,7 @@ struct DirectMessageView: View {
                 }
                 .padding(.leading, 14)
                 .padding(.trailing, 5)
-                .background(
-                    // Regular material (not ultra-thin): the compose pill must
-                    // stay legible over any wallpaper brightness.
-                    RoundedRectangle(cornerRadius: 19, style: .continuous)
-                        .fill(.regularMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 19, style: .continuous)
-                                .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7)
-                        )
-                        .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
-                )
+                .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
             }
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 8)
@@ -883,12 +854,10 @@ struct DirectMessageView: View {
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
-                // Real glass, not a primary-tinted wash — a flat fill vanished
-                // against same-brightness wallpapers (invisible "+" on light
-                // themes). Material + hairline + shadow reads on any photo.
-                .background(.regularMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
-                .shadow(color: .black.opacity(0.14), radius: 5, y: 2)
+                // Clear Liquid Glass on iOS 26; legible material fallback
+                // earlier (a flat fill vanished against same-brightness
+                // wallpapers).
+                .mediaGlass(in: Circle(), interactive: true)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add attachment")

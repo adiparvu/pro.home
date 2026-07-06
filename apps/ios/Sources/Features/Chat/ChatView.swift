@@ -244,6 +244,11 @@ struct ChatView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // The system search field (pull-down / magnifier-presented) replaces
+        // the old hand-built bar — instant, with the native cancel flow.
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search messages…"))
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -418,7 +423,7 @@ struct ChatView: View {
                 onAudio: { showCallSheet = true },
                 onVideo: { showVideoSheet = true },
                 onAddMember: { showAddMember = true },
-                onSearch: { withAnimation(.spring(response: 0.3)) { showSearch = true } },
+                onSearch: { showSearch = true },
                 onStarred: { showStarred = true },
                 onTheme: { showThemePicker = true },
                 mediaURLs: sharedMediaURLs,
@@ -522,33 +527,6 @@ struct ChatView: View {
     private var messageList: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
-                if showSearch {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.primary.opacity(0.4))
-                        TextField("Search messages…", text: $searchText)
-                            .font(.system(size: 15))
-                            .foregroundStyle(.primary)
-                            .tint(.accentColor)
-                        if !searchText.isEmpty {
-                            Button { searchText = "" } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color.primary.opacity(0.4))
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Clear search")
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.base)
-                    .padding(.vertical, 10)
-                    .liquidGlass(cornerRadius: AppRadius.lg)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.sm)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
                 if let pinned = pinnedMessages.last {
                     Button {
                         withAnimation { proxy.scrollTo(pinned.id, anchor: .center) }
@@ -910,11 +888,10 @@ struct ChatView: View {
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.primary)
                             .frame(width: 36, height: 36)
-                            // Real glass, not a primary-tinted wash — a flat
-                            // fill vanished against same-brightness wallpapers.
-                            .background(.regularMaterial, in: Circle())
-                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
-                            .shadow(color: .black.opacity(0.14), radius: 5, y: 2)
+                            // Clear Liquid Glass on iOS 26; legible material
+                            // fallback earlier (a flat fill vanished against
+                            // same-brightness wallpapers).
+                            .mediaGlass(in: Circle(), interactive: true)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Add attachment")
@@ -987,17 +964,7 @@ struct ChatView: View {
                     }
                     .padding(.leading, 14)
                     .padding(.trailing, 5)
-                    .background(
-                        // Regular material (not ultra-thin): the compose pill
-                        // must stay legible over any wallpaper brightness.
-                        RoundedRectangle(cornerRadius: 19, style: .continuous)
-                            .fill(.regularMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 19, style: .continuous)
-                                    .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7)
-                            )
-                            .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
-                    )
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: 19, style: .continuous))
                 }
                 .animation(.snappy(duration: 0.2), value: text.isEmpty)
                 .padding(.horizontal, AppSpacing.lg)
