@@ -130,19 +130,11 @@ struct ZonesListView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "square.stack.3d.up.slash")
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text("No zones")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            Text("Open the Digital Twin to draw your first zone")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "square.stack.3d.up.slash",
+            title: "No zones",
+            message: "Open the Digital Twin to draw your first zone"
+        )
     }
 }
 

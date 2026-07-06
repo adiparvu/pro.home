@@ -172,19 +172,11 @@ struct ObjectsListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "cube.box")
-                .font(.system(size: 42, weight: .light))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text("No objects")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            Text("Add objects to your property zones from the Digital Twin")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "cube.box",
+            title: "No objects",
+            message: "Add objects to your property zones from the Digital Twin"
+        )
     }
 
     private func zoneName(for element: PropertyElement) -> String? {

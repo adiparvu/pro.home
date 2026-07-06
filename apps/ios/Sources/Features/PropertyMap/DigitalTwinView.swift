@@ -791,18 +791,11 @@ struct DigitalTwinView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: 44))
-                .foregroundStyle(.secondary)
-            Text("No property yet")
-                .font(.headline)
-            Text("Add a property to see its Digital Twin.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(40)
+        EmptyStateView(
+            icon: "photo.on.rectangle.angled",
+            title: "No property yet",
+            message: "Add a property to see its Digital Twin."
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

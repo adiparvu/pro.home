@@ -130,16 +130,10 @@ struct BuriedUtilitiesView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer(minLength: 40)
-            Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
-                .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.16))
-            Text("No buried lines mapped")
-                .font(AppFont.headline).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center).padding(.horizontal, 28)
-            Spacer(minLength: 40)
-        }
+        EmptyStateView(
+            icon: "point.topleft.down.to.point.bottomright.curvepath.fill",
+            title: "No buried lines mapped",
+            message: "Record where you ran cables, water, gas or drainage underground — with depth and location — so you never dig blind again."
+        )
     }
 }

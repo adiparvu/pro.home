@@ -241,21 +241,11 @@ struct BlueprintsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer(minLength: 30)
-            Image(systemName: "ruler.fill")
-                .font(.system(size: 46))
-                .foregroundStyle(Color.primary.opacity(0.16))
-            Text("No plans yet")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-            Spacer(minLength: 30)
-        }
+        EmptyStateView(
+            icon: "ruler.fill",
+            title: "No plans yet",
+            message: "Scan a room in 3D, or add floor plans and blueprints (photo or PDF) so you always know how your home is built."
+        )
     }
 
     private func defaultScanName() -> String {

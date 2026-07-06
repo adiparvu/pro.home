@@ -364,19 +364,19 @@ struct DocumentsView: View {
     // MARK: - Empty
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 52)).foregroundStyle(Color.primary.opacity(0.15))
-            VStack(spacing: 8) {
-                Text(LocalizedStringKey(search.isEmpty ? "No documents yet" : "No results found"))
-                    .font(AppFont.title3).foregroundStyle(Color.primary.opacity(0.6))
-                if search.isEmpty {
-                    Text("Tap + to add your first document")
-                        .font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                }
+        Group {
+            if search.isEmpty {
+                EmptyStateView(
+                    icon: "doc.text.magnifyingglass",
+                    title: "No documents yet",
+                    message: "Tap + to add your first document"
+                )
+            } else {
+                EmptyStateView(
+                    icon: "doc.text.magnifyingglass",
+                    title: "No results found"
+                )
             }
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
