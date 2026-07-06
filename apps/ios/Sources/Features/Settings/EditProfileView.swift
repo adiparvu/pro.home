@@ -18,40 +18,20 @@ struct EditProfileView: View {
     private let platforms = ["instagram", "facebook", "whatsapp", "telegram", "linkedin", "tiktok", "twitter", "other"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)
-                        field("Last Name", placeholder: "Last name", text: $lastName)
-                        field("First Name", placeholder: "First name", text: $firstName)
-                        birthDateField
-                        field("Phone", placeholder: "+1 xxx xxx xxxx", text: $phone)
-                            .keyboardType(.phonePad)
-                        field("Email", placeholder: "name@example.com", text: $email)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                        socialSection
-                        notesField
-
-                        if let error {
-                            Text(LocalizedStringKey(error))
-                                .font(.system(size: 13))
-                                .foregroundStyle(.red)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        saveButton
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.lg)
-                    .padding(.bottom, 40)
-                }
-            }
-            .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
+        FormScaffold(title: "Edit Profile", saveLabel: "Save Changes",
+                     isSaving: profileService.isSaving,
+                     error: $error, onSave: { save() }) {
+            field("Display Name", placeholder: "What should ARIA call you?", text: $displayName)
+            field("Last Name", placeholder: "Last name", text: $lastName)
+            field("First Name", placeholder: "First name", text: $firstName)
+            birthDateField
+            field("Phone", placeholder: "+1 xxx xxx xxxx", text: $phone)
+                .keyboardType(.phonePad)
+            field("Email", placeholder: "name@example.com", text: $email)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+            socialSection
+            notesField
         }
         .onAppear { loadCurrentValues() }
     }
@@ -170,24 +150,6 @@ struct EditProfileView: View {
                 }
             }
         }
-    }
-
-    private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if profileService.isSaving {
-                    ProgressView().tint(.black)
-                } else {
-                    Text("Save Changes").font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.lg)
-            .background(.white)
-            .foregroundStyle(.black)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .disabled(profileService.isSaving)
     }
 
     // MARK: - Load / Save

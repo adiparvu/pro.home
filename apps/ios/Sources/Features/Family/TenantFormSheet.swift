@@ -46,11 +46,9 @@ struct TenantFormSheet: View {
     private var canSave: Bool { !firstName.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: AppSpacing.xl) {
+        FormScaffold(title: "New Tenant", saveLabel: "Add",
+                     canSave: canSave, isSaving: isSaving,
+                     error: $errorMessage, onSave: { Task { await save() } }) {
                         header
                         section("IDENTITY") {
                             fieldRow(icon: "person.fill", tint: .purple, placeholder: "First name *", text: $firstName)
@@ -151,37 +149,8 @@ struct TenantFormSheet: View {
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                             }
                         }
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
-                }
-                .scrollDismissesKeyboard(.immediately)
-            }
-            .navigationTitle("New Tenant").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await save() } } label: {
-                        if isSaving { ProgressView().tint(.accentColor) }
-                        else {
-                            Text("Add").font(AppFont.subheadline)
-                                .foregroundStyle(canSave ? .blue : Color.primary.opacity(0.3))
-                        }
-                    }
-                    .disabled(!canSave)
-                }
-            }
-            .alert("Couldn't save tenant", isPresented: Binding(
-                get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
-            }
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
     // MARK: - Pieces

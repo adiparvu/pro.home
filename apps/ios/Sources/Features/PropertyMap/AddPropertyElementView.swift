@@ -58,11 +58,9 @@ struct AddPropertyElementView: View {
     private var canSave: Bool { name.trimmingCharacters(in: .whitespaces).count >= 2 }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
+        FormScaffold(title: "New element", saveLabel: "Add",
+                     canSave: canSave, error: .constant(nil),
+                     onSave: { save() }) {
                         // Type picker
                         GlassCard(padding: 14) {
                             VStack(alignment: .leading, spacing: 10) {
@@ -268,26 +266,8 @@ struct AddPropertyElementView: View {
                             }
                         }
 
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
-                }
-            }
-            .navigationTitle("New element")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(.secondary)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add") { save() }
-                        .fontWeight(.semibold)
-                        .foregroundStyle(canSave ? Color.brandPrimaryBlue : Color.secondary)
-                        .disabled(!canSave)
-                }
-            }
-            .sheet(isPresented: $showTypePicker) {
+        }
+        .sheet(isPresented: $showTypePicker) {
                 ElementTypePickerSheet(selected: elementType) { selectType($0) }
             }
             .confirmationDialog("Add photo", isPresented: $showSourceDialog, titleVisibility: .visible) {
@@ -320,7 +300,6 @@ struct AddPropertyElementView: View {
                     }
                 }
             }
-        }
     }
 
     // MARK: - Photos card

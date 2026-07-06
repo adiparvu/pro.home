@@ -33,49 +33,22 @@ struct AddTaskView: View {
     let categories  = ["maintenance", "repair", "inspection", "cleaning", "upgrade", "administrative", "other"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 22) {
-                        titleField
-                        descriptionField
-                        priorityPicker
-                        categoryPicker
-                        dueDatePicker
-                        assigneesSection
-                        calendarToggle
-
-                        if let errorMsg {
-                            Text(errorMsg)
-                                .font(.system(size: 13))
-                                .foregroundStyle(.red)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        saveButton
-                        Spacer(minLength: 24)
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.lg)
-                }
-            }
-            .navigationTitle(editing != nil ? String(localized: "Edit Task") : String(localized: "New Task"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        HapticFeedback.selection()
-                        dismiss()
-                    }
-                }
-            }
-            .sheet(isPresented: $showAssigneePicker) {
-                AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
-            }
-            .onAppear { populateFromEditing() }
+        FormScaffold(title: editing != nil ? "Edit Task" : "New Task",
+                     saveLabel: editing != nil ? "Save Changes" : "Add Task",
+                     canSave: canSave, isSaving: isSaving,
+                     error: $errorMsg, onSave: { save() }) {
+            titleField
+            descriptionField
+            priorityPicker
+            categoryPicker
+            dueDatePicker
+            assigneesSection
+            calendarToggle
         }
+        .sheet(isPresented: $showAssigneePicker) {
+            AssigneePickerSheet(assigneeIds: $assigneeIds, assigneeNames: $assigneeNames)
+        }
+        .onAppear { populateFromEditing() }
         .task { await familyService.load() }
     }
 
@@ -406,25 +379,6 @@ struct AddTaskView: View {
     }
 
     // MARK: - Save
-
-    private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if isSaving {
-                    ProgressView().tint(.black)
-                } else {
-                    Text(LocalizedStringKey(editing != nil ? "Save Changes" : "Add Task"))
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.lg)
-            .background(canSave ? Color.white : Color.primary.opacity(AppOpacity.disabled))
-            .foregroundStyle(.black)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .disabled(!canSave || isSaving)
-    }
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && (editing != nil || propertyService.primary != nil)
