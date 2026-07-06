@@ -420,7 +420,7 @@ struct ConversationsView: View {
                 let entries = showArchived ? archivedList : searchedConversations
                 LazyVStack(spacing: 8) {
                     if !showArchived && searchText.isEmpty && filter == .all {
-                        Button { HapticFeedback.impact(.light); router.showARIA = true } label: { ariaRow }
+                        Button { HapticFeedback.impact(.light); router.navigate(to: .aria) } label: { ariaRow }
                             .buttonStyle(.plain)
                             .background(Color(.secondarySystemGroupedBackground),
                                         in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))

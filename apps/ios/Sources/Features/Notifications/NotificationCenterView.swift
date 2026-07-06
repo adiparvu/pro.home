@@ -185,20 +185,17 @@ struct NotificationCenterView: View {
 
     // MARK: - Navigation
 
-    /// Marks the notification read, closes the sheet and routes to the thing
-    /// it's about. Router is captured before dismiss (same pattern as global
-    /// search) because the environment dies with the view.
+    /// Marks the notification read, parks the destination route on the router
+    /// and closes the sheet — the presenting sheet's `onDismiss` drains
+    /// `pendingRoute` once the dismissal actually finished, so the handoff is
+    /// event-driven instead of racing a fixed sleep.
     private func open(_ notif: AppNotification) {
         HapticFeedback.impact(.light)
         Task { await service.markRead(notif) }
-        let r = router
+        router.pendingRoute = router.route(forNotificationModule: notif.module,
+                                           actionUrl: notif.actionUrl,
+                                           resourceId: notif.resourceId)
         dismissSheet()
-        Task {
-            try? await Task.sleep(for: .milliseconds(350))
-            r.handle(notificationModule: notif.module,
-                     actionUrl: notif.actionUrl,
-                     resourceId: notif.resourceId)
-        }
     }
 }
 

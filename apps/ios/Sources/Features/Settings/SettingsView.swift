@@ -62,9 +62,6 @@ struct SettingsView: View {
         } message: {
             Text("Rating will be available once the app launches on the App Store.")
         }
-        .navigationDestination(isPresented: $router.showSuppliesView) {
-            SuppliesView()
-        }
     }
 
     // MARK: - Profile card

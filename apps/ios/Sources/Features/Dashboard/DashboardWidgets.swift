@@ -152,7 +152,7 @@ extension DashboardView {
                 title: "Finances",
                 value: netFormatted,
                 subtitle: String(localized: "this month")
-            ) { router.showFinances = true }
+            ) { router.navigate(to: .finances) }
 
         case .documents:
             HomeWidget(
@@ -165,7 +165,7 @@ extension DashboardView {
                     : "\(documentService.expiringDocs.count)",
                 subtitle: documentService.expiringDocs.isEmpty ? String(localized: "total") : String(localized: "expiring soon"),
                 badge: documentService.expiringDocs.count
-            ) { router.showDocuments = true }
+            ) { router.navigate(to: .documents) }
 
         case .family:
             HomeWidget(
@@ -174,7 +174,7 @@ extension DashboardView {
                 title: "Family",
                 value: "\(familyService.members.count)",
                 subtitle: familyService.members.count == 1 ? String(localized: "member") : String(localized: "members")
-            ) { router.showFamily = true }
+            ) { router.navigate(to: .family) }
 
         case .healthScore:
             HomeWidget(
@@ -192,7 +192,7 @@ extension DashboardView {
                 title: "Inventory",
                 value: "\(inventoryService.items.count)",
                 subtitle: inventoryService.items.count == 1 ? String(localized: "item") : String(localized: "items")
-            ) { router.showInventoryView = true }
+            ) { router.navigate(to: .inventory) }
 
         case .contractors:
             HomeWidget(
@@ -201,7 +201,7 @@ extension DashboardView {
                 title: "Contractors",
                 value: "\(contractorService.contractors.count)",
                 subtitle: contractorService.contractors.count == 1 ? String(localized: "contact") : String(localized: "contacts")
-            ) { router.showContractors = true }
+            ) { router.navigate(to: .contractors) }
 
         case .weather:
             WeatherWidget(
@@ -228,7 +228,7 @@ extension DashboardView {
                     ? String(localized: "all good")
                     : "\(plantService.plantsNeedingWater.count) need water",
                 badge: plantService.plantsNeedingWater.count
-            ) { router.showWaterPlant = true }
+            ) { router.navigate(to: .plants(id: nil)) }
 
         case .calendar:
             CalendarLargeWidget {

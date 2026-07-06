@@ -32,6 +32,7 @@ struct MainTabView: View {
     @State private var directMessageService = DirectMessageService()
     @State private var presenceService = PresenceService()
     @State private var proactiveEngine = ProactiveEngine()
+    @State private var notificationService = NotificationService()
     @State private var tabBarVis = TabBarVisibility()
     @Environment(AppRouter.self) private var router
     @Environment(\.scenePhase) private var scenePhase
@@ -79,132 +80,22 @@ struct MainTabView: View {
                 .tag(AppTab.settings)
         }
         .toolbar(tabBarVis.isHidden ? .hidden : .automatic, for: .tabBar)
-        .fullScreenCover(isPresented: $router.showARIA) {
-            NavigationStack {
-                ARIAView(onDismiss: { router.showARIA = false })
-                    .environment(propertyService)
-                    .environment(familyService)
-                    .environment(profileService)
-                    .environment(taskService)
-            }
+        .fullScreenCover(item: $router.activeCover,
+                         onDismiss: { router.drainPending() }) { destination in
+            routedCover(destination)
         }
-        .sheet(isPresented: $router.showAddTask) { AddTaskView() }
-        .sheet(isPresented: $router.showAddExpense) { AddFinancialView { await financialService.load() } }
-        .sheet(isPresented: $router.showInventoryScan) { NavigationStack { InventoryView(autoScan: true) } }
-        .sheet(isPresented: $router.showInventoryAdd) { NavigationStack { InventoryView(autoAdd: true) } }
-        .sheet(isPresented: $router.showInventoryView) { NavigationStack { InventoryView() } }
-        .sheet(isPresented: $router.showAddSupply) {
-            AddSupplyItemSheet(list: nil, editingItem: nil)
-                .environment(supplyService)
-                .environment(propertyService)
-        }
-        .sheet(isPresented: $router.showWaterPlant) {
-            NavigationStack {
-                PlantsView()
-                    .environment(plantService)
-                    .environment(propertyService)
-            }
-        }
-        .sheet(isPresented: $router.showFamilyChat) {
-            NavigationStack {
-                ConversationsView()
-                    .environment(messageService)
-                    .environment(directMessageService)
-                    .environment(presenceService)
-                    .environment(familyService)
-                    .environment(propertyService)
-                    .environment(profileService)
-                    .environment(stickerService)
-                    .environment(tabBarVis)
-                    .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showDocuments) {
-            NavigationStack {
-                DocumentsView()
-                    .environment(documentService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showFamily) {
-            NavigationStack {
-                FamilyView()
-                    .environment(familyService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showContractors) {
-            NavigationStack {
-                ContractorsView()
-                    .environment(contractorService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showDeliveries) {
-            NavigationStack {
-                DeliveriesView()
-                    .environment(deliveryService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showFinances) {
-            NavigationStack {
-                FinancesView()
-                    .environment(financialService)
-                    .environment(propertyService)
-                    .environment(budgetService)
-                    .environment(currencyService)
-                    .environment(appSettings)
-                    .environment(tabBarVis)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showSuppliesView) {
-            NavigationStack {
-                SuppliesView()
-                    .environment(supplyService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showPaintColors) {
-            NavigationStack {
-                PaintColorsView()
-                    .environment(paintColorService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showPhotoJournal) {
-            NavigationStack {
-                PhotoJournalView()
-                    .environment(photoJournalService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $router.showProfile) {
-            NavigationStack {
-                ProfileView()
-                    .environment(profileService)
-                    .environment(notificationScheduler)
-                    .environment(taskService)
-                    .environment(documentService)
-            }
-            .presentationDragIndicator(.visible)
+        .sheet(item: $router.activeDestination,
+               onDismiss: { router.drainPending() }) { destination in
+            routedSheet(destination)
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonAddTask)) { _ in
-            router.showAddTask = true
+            router.activeDestination = .newTask
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonWaterPlants)) { _ in
-            router.showWaterPlant = true
+            router.activeDestination = .plants
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenARIA)) { _ in
-            router.showARIA = true
+            router.navigate(to: .aria)
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenDigitalTwin)) { _ in
             router.selectedTab = .digitalTwin
@@ -291,6 +182,148 @@ struct MainTabView: View {
         }
     }
 
+    // MARK: - Routed presentations
+    //
+    // One `.sheet(item:)` + one `.fullScreenCover(item:)` for every globally
+    // routed destination. A single slot per presentation style means a new
+    // destination swaps the content instead of being silently dropped the way
+    // a second `.sheet(isPresented:)` in a chain of 17 was.
+
+    @ViewBuilder
+    private func routedCover(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .aria:
+            NavigationStack {
+                ARIAView(onDismiss: { router.activeCover = nil })
+                    .environment(propertyService)
+                    .environment(familyService)
+                    .environment(profileService)
+                    .environment(taskService)
+            }
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func routedSheet(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .newTask:
+            AddTaskView()
+        case .addExpense:
+            AddFinancialView { await financialService.load() }
+        case .inventoryScan:
+            NavigationStack { InventoryView(autoScan: true) }
+        case .inventoryAdd:
+            NavigationStack { InventoryView(autoAdd: true) }
+        case .inventory:
+            NavigationStack { InventoryView() }
+        case .addSupply:
+            AddSupplyItemSheet(list: nil, editingItem: nil)
+                .environment(supplyService)
+                .environment(propertyService)
+        case .plants:
+            NavigationStack {
+                PlantsView()
+                    .environment(plantService)
+                    .environment(propertyService)
+            }
+        case .familyChat:
+            NavigationStack {
+                ConversationsView()
+                    .environment(messageService)
+                    .environment(directMessageService)
+                    .environment(presenceService)
+                    .environment(familyService)
+                    .environment(propertyService)
+                    .environment(profileService)
+                    .environment(stickerService)
+                    .environment(tabBarVis)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
+        case .documents:
+            NavigationStack {
+                DocumentsView()
+                    .environment(documentService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        case .family:
+            NavigationStack {
+                FamilyView()
+                    .environment(familyService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        case .contractors:
+            NavigationStack {
+                ContractorsView()
+                    .environment(contractorService)
+                    .environment(propertyService)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
+        case .deliveries:
+            NavigationStack {
+                DeliveriesView()
+                    .environment(deliveryService)
+            }
+            .presentationDragIndicator(.visible)
+        case .finances:
+            NavigationStack {
+                FinancesView()
+                    .environment(financialService)
+                    .environment(propertyService)
+                    .environment(budgetService)
+                    .environment(currencyService)
+                    .environment(appSettings)
+                    .environment(tabBarVis)
+            }
+            .presentationDragIndicator(.visible)
+        case .supplies:
+            NavigationStack {
+                SuppliesView()
+                    .environment(supplyService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        case .paintColors:
+            NavigationStack {
+                PaintColorsView()
+                    .environment(paintColorService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        case .photoJournal:
+            NavigationStack {
+                PhotoJournalView()
+                    .environment(photoJournalService)
+                    .environment(propertyService)
+            }
+            .presentationDragIndicator(.visible)
+        case .profile:
+            NavigationStack {
+                ProfileView()
+                    .environment(profileService)
+                    .environment(notificationScheduler)
+                    .environment(taskService)
+                    .environment(documentService)
+            }
+            .presentationDragIndicator(.visible)
+        case .notifications:
+            NavigationStack {
+                NotificationCenterView(service: notificationService)
+                    .environment(auth)
+                    .environment(router)
+            }
+            .presentationDragIndicator(.visible)
+        case .aria:
+            // ARIA is always full-screen-cover presented (routedCover).
+            EmptyView()
+        }
+    }
+
     // MARK: Widget + Dynamic Shortcuts
 
     /// If the selected tab isn't available to the current role (e.g. a guest on
@@ -320,6 +353,10 @@ struct MainTabView: View {
             await propertyService.load()
             await propertyService.loadMyRole()
             redirectIfTabHidden()
+            // The tab layout is settled: buffered cold-launch routes (widget
+            // taps, quick actions, deep links) can present without being
+            // overridden by the initial mount.
+            router.markReady()
             _ = await (currency, profile)
         case .accountSwitch(let userId):
             await propertyService.load()

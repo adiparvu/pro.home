@@ -477,7 +477,7 @@ struct ZoneDetailView: View {
             router.selectedTab = .settings
         default:
             // Zone-specific actions (Water, Refill, Irrigate, etc.) → open Add Task prefilled
-            router.showAddTask = true
+            router.activeDestination = .newTask
         }
     }
 

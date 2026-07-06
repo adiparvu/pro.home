@@ -112,22 +112,17 @@ struct DashboardView: View {
             await notificationService.load(userId: uid)
             await notificationService.subscribeRealtime(userId: uid)
         }
-        // Router integration: widgets and deep links open the notification
-        // center through the router, and a route change closes whatever
-        // local sheet (search / notifications / health) is still up so the
-        // new destination can actually present.
-        .onChange(of: router.showNotifications) { _, wants in
-            guard wants else { return }
-            router.showNotifications = false
-            activeSheet = .notifications
-        }
+        // Router integration: a route change closes whatever local sheet
+        // (search / notifications / health) is still up so the new
+        // destination can actually present. The router presents its own
+        // notification center from MainTabView; the bell keeps this local one.
         .onChange(of: router.dismissGeneration) { _, _ in
             activeSheet = nil
         }
         .onChange(of: activeSheet) { _, sheet in
             router.hasLocalPresentation = (sheet != nil)
         }
-        .sheet(item: $activeSheet) { sheet in
+        .sheet(item: $activeSheet, onDismiss: { router.drainPending() }) { sheet in
             switch sheet {
             case .notifications:
                 NavigationStack {
@@ -227,7 +222,7 @@ struct DashboardView: View {
             // The avatar goes straight to the Profile page itself.
             Button {
                 HapticFeedback.impact(.light)
-                router.showProfile = true
+                router.activeDestination = .profile
             } label: {
                 avatarCircle
             }
@@ -532,11 +527,11 @@ struct DashboardView: View {
             router.selectedTab = .tasks
             router.deepLinkTaskId = t.id
         case .plant:
-            router.showWaterPlant = true
+            router.activeDestination = .plants
         case .delivery:
-            router.showDeliveries = true
+            router.activeDestination = .deliveries
         case .birthday:
-            router.showFamily = true
+            router.activeDestination = .family
         }
     }
 }

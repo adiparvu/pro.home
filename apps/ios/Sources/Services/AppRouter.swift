@@ -6,26 +6,44 @@ import Observation
 final class AppRouter {
     var selectedTab: AppTab = .home
 
-    // Global quick-action presentations (handled at the MainTabView level).
-    var showARIA = false
-    var showAddTask = false
-    var showFamilyChat = false
-    var showAddExpense = false
-    var showInventoryScan = false
-    var showInventoryAdd = false
-    var showInventoryView = false
-    var showAddSupply = false
-    var showWaterPlant = false
-    var showSuppliesView = false
-    var showDocuments = false
-    var showFamily = false
-    var showContractors = false
-    var showFinances = false
-    var showDeliveries = false
-    var showPaintColors = false
-    var showPhotoJournal = false
-    var showProfile = false
-    var showNotifications = false
+    // MARK: - Routed presentations
+    //
+    // One sheet slot + one full-screen-cover slot for the whole window,
+    // presented by MainTabView. A single `.sheet(item:)` can never race
+    // itself the way ~17 chained `.sheet(isPresented:)` modifiers did —
+    // assigning a new destination swaps the content instead of silently
+    // dropping the presentation and stranding a boolean.
+
+    /// Every globally routed presentation. Sheet-presented except `.aria`,
+    /// which keeps its full-screen cover (same split as the old flag stack).
+    enum RoutedDestination: String, Identifiable {
+        case aria           // fullScreenCover
+        case newTask
+        case familyChat
+        case addExpense
+        case inventoryScan
+        case inventoryAdd
+        case inventory
+        case addSupply
+        case plants
+        case supplies
+        case documents
+        case family
+        case contractors
+        case finances
+        case deliveries
+        case paintColors
+        case photoJournal
+        case profile
+        case notifications
+
+        var id: String { rawValue }
+    }
+
+    /// The single routed sheet slot (MainTabView presents it).
+    var activeDestination: RoutedDestination?
+    /// The single routed full-screen-cover slot (ARIA today).
+    var activeCover: RoutedDestination?
 
     // Deep link destinations
     var deepLinkTaskId: UUID?
@@ -34,16 +52,17 @@ final class AppRouter {
     // MARK: - Single navigation authority
     //
     // Widgets, quick actions, notifications and deep links all funnel
-    // through `navigate(to:)`. It closes whatever a previous entry point
-    // left open, lets the dismissal settle, then presents the destination —
-    // otherwise SwiftUI silently drops the second presentation and the tap
-    // "does nothing".
+    // through `navigate(to:)`. Before the app is ready the route is
+    // buffered; while something is on screen the route is parked in
+    // `pendingRoute` and drained by the closing sheet's `onDismiss` —
+    // event-driven instead of a fixed sleep that raced the dismissal.
 
     /// Every full-screen destination an external entry point can request.
     enum AppRoute: Equatable {
         case home, tasks(id: UUID?), newTask, plants(id: UUID?), supplies,
-             deliveries, chat, scan, receipts, notifications, aria, twin,
-             settings, documents, finances, inventory, family, profile
+             deliveries, chat, familyChat, scan, receipts, notifications,
+             aria, twin, settings, documents, finances, inventory, family,
+             profile, contractors, paintColors, photoJournal, addSupply
     }
 
     /// Bumped on every close-all — screens that own local sheets (Dashboard's
@@ -51,40 +70,61 @@ final class AppRouter {
     private(set) var dismissGeneration = 0
 
     /// Set by screens while one of their local sheets is up, so `navigate`
-    /// knows a settle delay is needed even though no routed flag is active.
+    /// knows a handoff is needed even though no routed slot is active.
     var hasLocalPresentation = false
 
+    /// False until MainTabView finishes its cold-start role resolution.
+    /// Routes arriving earlier (widget cold launches, quick actions) are
+    /// buffered in `pendingRoute` — the onChange relays they used to rely on
+    /// can't fire for values set before the view exists.
+    private(set) var isReady = false
+
+    /// A route waiting for the stage to clear (app not ready yet, or a
+    /// presentation is still animating out). Drained by `drainPending()`.
+    var pendingRoute: AppRoute?
+
     private var anyPresentationActive: Bool {
-        showARIA || showAddTask || showFamilyChat || showAddExpense ||
-        showInventoryScan || showInventoryAdd || showInventoryView ||
-        showAddSupply || showWaterPlant || showSuppliesView || showDocuments ||
-        showFamily || showContractors || showFinances || showDeliveries ||
-        showPaintColors || showPhotoJournal || showProfile || showNotifications ||
-        hasLocalPresentation
+        activeDestination != nil || activeCover != nil || hasLocalPresentation
     }
 
     /// Dismisses every routed presentation, so the next one has the stage.
     func closeAllPresentations() {
-        showARIA = false; showAddTask = false; showFamilyChat = false
-        showAddExpense = false; showInventoryScan = false; showInventoryAdd = false
-        showInventoryView = false; showAddSupply = false; showWaterPlant = false
-        showSuppliesView = false; showDocuments = false; showFamily = false
-        showContractors = false; showFinances = false; showDeliveries = false
-        showPaintColors = false; showPhotoJournal = false; showProfile = false
-        showNotifications = false
+        activeDestination = nil
+        activeCover = nil
         dismissGeneration &+= 1
     }
 
+    /// Called once MainTabView's cold-start role resolution completed —
+    /// presentations applied before that point would be dropped by the
+    /// initial mount.
+    func markReady() {
+        guard !isReady else { return }
+        isReady = true
+        drainPending()
+    }
+
+    /// Applies whatever route was parked while a presentation was in flight.
+    /// Wired to the `onDismiss` of every routed/local sheet so handoffs are
+    /// driven by the actual end of the dismissal, not a timer.
+    func drainPending() {
+        guard isReady, let route = pendingRoute else { return }
+        pendingRoute = nil
+        navigate(to: route)
+    }
+
     func navigate(to route: AppRoute) {
-        let mustSettle = anyPresentationActive
-        closeAllPresentations()
-        guard mustSettle else { apply(route); return }
-        // A new sheet presented while the old one is still animating out is
-        // dropped by SwiftUI — give the dismissal a beat to finish.
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(450))
-            self.apply(route)
+        guard isReady else {
+            pendingRoute = route
+            return
         }
+        guard anyPresentationActive else {
+            apply(route)
+            return
+        }
+        // Something is on screen: park the route, start the dismissal, and
+        // let the closing sheet's onDismiss drain it once UIKit is done.
+        pendingRoute = route
+        closeAllPresentations()
     }
 
     private func apply(_ route: AppRoute) {
@@ -96,58 +136,68 @@ final class AppRouter {
             deepLinkTaskId = id
         case .newTask:
             selectedTab = .tasks
-            showAddTask = true
+            activeDestination = .newTask
         case .plants(let id):
             selectedTab = .home
             deepLinkPlantId = id
-            showWaterPlant = true
+            activeDestination = .plants
         case .supplies:
             selectedTab = .settings
-            showSuppliesView = true
+            activeDestination = .supplies
         case .deliveries:
-            showDeliveries = true
+            activeDestination = .deliveries
         case .chat:
             selectedTab = .chat
+        case .familyChat:
+            activeDestination = .familyChat
         case .scan:
-            showInventoryScan = true
+            activeDestination = .inventoryScan
         case .receipts:
-            showAddExpense = true
+            activeDestination = .addExpense
         case .notifications:
             selectedTab = .home
-            showNotifications = true
+            activeDestination = .notifications
         case .aria:
-            showARIA = true
+            activeCover = .aria
         case .twin:
             selectedTab = .digitalTwin
         case .settings:
             selectedTab = .settings
         case .documents:
-            showDocuments = true
+            activeDestination = .documents
         case .finances:
-            showFinances = true
+            activeDestination = .finances
         case .inventory:
-            showInventoryView = true
+            activeDestination = .inventory
         case .family:
-            showFamily = true
+            activeDestination = .family
         case .profile:
             selectedTab = .settings
-            showProfile = true
+            activeDestination = .profile
+        case .contractors:
+            activeDestination = .contractors
+        case .paintColors:
+            activeDestination = .paintColors
+        case .photoJournal:
+            activeDestination = .photoJournal
+        case .addSupply:
+            activeDestination = .addSupply
         }
     }
 
     func perform(_ action: DashboardQuickAction) {
         switch action {
-        case .aria:       showARIA = true
-        case .finances:   Task { try? await Task.sleep(for: .milliseconds(250)); self.selectedTab = .settings }
-        case .newTask:    showAddTask = true
-        case .chat:       showFamilyChat = true
-        case .addExpense: showAddExpense = true
-        case .scan:       showInventoryScan = true
-        case .addItem:    showInventoryAdd = true
-        case .addSupply:  showAddSupply = true
-        case .waterPlant: showWaterPlant = true
-        case .documents:  showDocuments = true
-        case .deliveries: showDeliveries = true
+        case .aria:       navigate(to: .aria)
+        case .finances:   navigate(to: .finances)
+        case .newTask:    activeDestination = .newTask
+        case .chat:       activeDestination = .familyChat
+        case .addExpense: activeDestination = .addExpense
+        case .scan:       activeDestination = .inventoryScan
+        case .addItem:    activeDestination = .inventoryAdd
+        case .addSupply:  activeDestination = .addSupply
+        case .waterPlant: activeDestination = .plants
+        case .documents:  activeDestination = .documents
+        case .deliveries: activeDestination = .deliveries
         case .digitalTwin: selectedTab = .digitalTwin
         }
     }
@@ -197,24 +247,33 @@ final class AppRouter {
         }
     }
 
-    /// Routes a tapped in-app notification to the thing it's about.
-    /// Prefers the typed module + resource id; falls back to parsing the
-    /// action_url path the DB triggers write ("/maintenance/<id>", …).
-    func handle(notificationModule module: String?, actionUrl: String?, resourceId: UUID?) {
+    /// Translates a tapped in-app notification into the route for the thing
+    /// it's about. Prefers the typed module + resource id; falls back to
+    /// parsing the action_url path the DB triggers write ("/maintenance/<id>").
+    /// Exposed so NotificationCenterView can park the route in `pendingRoute`
+    /// before dismissing itself.
+    func route(forNotificationModule module: String?, actionUrl: String?, resourceId: UUID?) -> AppRoute {
         let id = resourceId ?? Self.firstUUID(in: actionUrl ?? "")
         switch module ?? "" {
-        case "chat":                    navigate(to: .chat)
-        case "maintenance", "tasks":    navigate(to: .tasks(id: id))
-        case "garden", "plants":        navigate(to: .plants(id: id))
-        case "documents", "document":   navigate(to: .documents)
-        case "inventory":               navigate(to: .inventory)
-        case "finance", "finances":     navigate(to: .finances)
-        case "delivery", "deliveries":  navigate(to: .deliveries)
-        case "family", "members":       navigate(to: .family)
-        case "aria":                    navigate(to: .aria)
-        case "security":                navigate(to: .settings)
-        default:                        navigate(to: .home)
+        case "chat":                    return .chat
+        case "maintenance", "tasks":    return .tasks(id: id)
+        case "garden", "plants":        return .plants(id: id)
+        case "documents", "document":   return .documents
+        case "inventory":               return .inventory
+        case "finance", "finances":     return .finances
+        case "delivery", "deliveries":  return .deliveries
+        case "family", "members":       return .family
+        case "aria":                    return .aria
+        case "security":                return .settings
+        default:                        return .home
         }
+    }
+
+    /// Routes a tapped in-app notification to the thing it's about.
+    func handle(notificationModule module: String?, actionUrl: String?, resourceId: UUID?) {
+        navigate(to: route(forNotificationModule: module,
+                           actionUrl: actionUrl,
+                           resourceId: resourceId))
     }
 
     private static func firstUUID(in path: String) -> UUID? {

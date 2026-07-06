@@ -58,7 +58,7 @@ struct AIInsightsView: View {
                 // Open ARIA Chat button
                 Button {
                     HapticFeedback.impact(.medium)
-                    router.showARIA = true
+                    router.navigate(to: .aria)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "sparkles")

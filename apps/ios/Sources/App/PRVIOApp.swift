@@ -9,9 +9,6 @@ struct PRVIOApp: App {
     @State private var router      = AppRouter()
     @State private var iconManager = IconManager()
     @Environment(\.scenePhase) private var scenePhase
-    /// When the process started — used to detect cold launches so deep links
-    /// wait for the initial mount instead of being overridden by it.
-    private let launchedAt = Date()
 
     init() {
         applyGlobalAppearance()
@@ -59,42 +56,37 @@ struct PRVIOApp: App {
                 case .active:
                     lock.didBecomeActive()
                     NotificationCenter.default.post(name: .prvioProcessPending, object: nil)
-                    // Process quick action from cold launch (stored by AppDelegate before SwiftUI was ready).
-                    // Defer so MainTabView has mounted — an immediate tab/sheet change on
-                    // cold launch is overridden by the initial mount (same reason the
-                    // Finances quick action delays its tab switch), so the shortcut
-                    // appeared to "do nothing".
+                    // Process quick action from cold launch (stored by AppDelegate
+                    // before SwiftUI was ready). The router buffers routes until
+                    // MainTabView has mounted, so no launch-time delay is needed.
                     if let quickAction = UserDefaults.standard.string(forKey: "prvio.pendingQuickAction") {
                         UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(500))
-                            router.handle(quickActionType: quickAction)
-                        }
+                        router.handle(quickActionType: quickAction)
                     }
                     // Process App Intent-triggered actions. Flags live in the
                     // app-group suite so intents running in the widget-extension
                     // process reach us too (consumeIntentFlag also drains the
-                    // legacy .standard location).
+                    // legacy .standard location). Everything funnels through
+                    // navigate(to:) so cold-launch intents are buffered too.
                     if SharedDataStore.consumeIntentFlag("prvio.intent.openNewTask") {
-                        router.showAddTask = true
+                        router.navigate(to: .newTask)
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.openARIA") {
-                        router.showARIA = true
+                        router.navigate(to: .aria)
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.openDashboard") {
-                        router.selectedTab = .home
+                        router.navigate(to: .home)
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.showPlants") {
-                        router.showWaterPlant = true
+                        router.navigate(to: .plants(id: nil))
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.showChat") {
-                        router.showFamilyChat = true
+                        router.navigate(to: .familyChat)
                     }
                     if SharedDataStore.consumeIntentFlag("prvio.intent.showShopping") {
                         // OpenShoppingListIntent opens the LIST, not the add-item
                         // form (matches the quick action in AppRouter).
-                        router.selectedTab = .settings
-                        router.showSuppliesView = true
+                        router.navigate(to: .supplies)
                     }
                 case .inactive, .background: lock.willResignActive()
                 @unknown default: break
@@ -108,13 +100,9 @@ struct PRVIOApp: App {
                 // else is an ordinary deep link handled by the router.
                 Task {
                     if await auth.handleOpenURL(url) { return }
-                    // On a cold launch (widget tap opening the app), wait for
-                    // MainTabView to mount — an immediate tab/sheet change is
-                    // overridden by the initial mount, so the link appeared to
-                    // do nothing (same fix as home-screen quick actions).
-                    if Date().timeIntervalSince(launchedAt) < 2.0 {
-                        try? await Task.sleep(for: .milliseconds(500))
-                    }
+                    // The router buffers routes until MainTabView has mounted
+                    // (cold launch from a widget tap), so the link is handled
+                    // immediately — no fixed launch-time delay.
                     router.handle(deepLink: url)
                 }
             }

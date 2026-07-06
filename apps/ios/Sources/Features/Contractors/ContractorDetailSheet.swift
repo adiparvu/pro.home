@@ -214,7 +214,7 @@ struct ContractorDetailSheet: View {
                 label: "Add Maintenance Task",
                 color: .orange
             ) {
-                router.showAddTask = true
+                router.navigate(to: .newTask)
                 dismiss()
             }
 
