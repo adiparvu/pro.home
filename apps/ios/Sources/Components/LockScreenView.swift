@@ -37,10 +37,10 @@ struct LockScreenView: View {
                         Text("Unlock")
                     }
                     .font(AppFont.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.lg)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous), interactive: true)
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 32)

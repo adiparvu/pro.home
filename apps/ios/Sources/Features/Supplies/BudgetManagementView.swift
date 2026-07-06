@@ -210,19 +210,9 @@ struct BudgetManagementView: View {
 
                     // Actions
                     VStack(spacing: 12) {
-                        Button {
+                        GlassWideButton(label: "budget_save", isBusy: isSaving) {
                             Task { await saveBudget(category: category) }
-                        } label: {
-                            Group {
-                                if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                                else { Text(String(localized: "budget_save")).font(AppFont.headline) }
-                            }
-                            .foregroundStyle(Color(UIColor.systemBackground))
-                            .frame(maxWidth: .infinity).frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                         }
-                        .buttonStyle(.plain)
-                        .disabled(isSaving)
 
                         if let budget = existing, budget.monthlyLimit > 0 {
                             Button(role: .destructive) {

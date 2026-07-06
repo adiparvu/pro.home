@@ -188,10 +188,10 @@ struct SettingsView: View {
                 } label: {
                     Text("Add Property")
                         .font(AppFont.subheadline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.xl)
                         .padding(.vertical, AppSpacing.sm)
-                        .background(Color.accentColor, in: Capsule())
+                        .mediaGlass(in: Capsule(), interactive: true)
                 }
                 .buttonStyle(.plain)
             }

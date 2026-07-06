@@ -121,17 +121,9 @@ struct ReceiptScannerView: View {
                 }
             } else {
                 VStack(spacing: 12) {
-                    Button {
+                    GlassWideButton(icon: "camera.fill", label: "Fotografiază bon") {
                         showCamera = true
-                    } label: {
-                        Label(String(localized: "Fotografiază bon"), systemImage: "camera.fill")
-                            .font(AppFont.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                     }
-                    .buttonStyle(.plain)
 
                     HStack(spacing: 12) {
                         PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
@@ -337,23 +329,10 @@ private struct ReceiptReviewView: View {
                     .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
 
-                Button {
+                GlassWideButton(icon: "checkmark", label: "scanner_save", isBusy: isSaving) {
                     isSaving = true
                     onSave(parsed)
-                } label: {
-                    Group {
-                        if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                        else {
-                            Label(String(localized: "scanner_save"), systemImage: "checkmark")
-                                .font(AppFont.headline)
-                        }
-                    }
-                    .foregroundStyle(Color(UIColor.systemBackground))
-                    .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                 }
-                .buttonStyle(.plain)
-                .disabled(isSaving)
 
                 Spacer(minLength: 40)
             }

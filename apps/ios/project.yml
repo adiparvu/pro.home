@@ -59,16 +59,24 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
+    postBuildScripts:
+      # The .xcstrings catalog is copied raw by this project, not compiled —
+      # this phase generates the per-language .lproj tables into the product
+      # so every build (unit-test host, simulator, archive) is localized.
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app
         SWIFT_VERSION: 5.10
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
         IPHONEOS_DEPLOYMENT_TARGET: "17.1"
         INFOPLIST_FILE: Sources/App/Info.plist
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "769"
+        CURRENT_PROJECT_VERSION: "770"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Explicit alternate-icon list: actool compiles each named .appiconset
         # into Assets.car AND generates a matching CFBundleIcons/CFBundleAlternateIcons
@@ -129,17 +137,22 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.prvio.app
+    postBuildScripts:
+      - name: Generate localization tables
+        script: ruby "${PROJECT_DIR}/scripts/compile_xcstrings.rb"
+        basedOnDependencyAnalysis: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.prvio.app.widgets
         SWIFT_VERSION: "5.10"
+        ENABLE_USER_SCRIPT_SANDBOXING: "NO"
         IPHONEOS_DEPLOYMENT_TARGET: "17.1"
         INFOPLIST_FILE: Widgets/Info.plist
         DEVELOPMENT_TEAM: SU92TVZT8W
         CODE_SIGN_STYLE: Manual
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "769"
+        CURRENT_PROJECT_VERSION: "770"
         STRINGS_FILE_INPUT_ENCODING: UTF-8
       configs:
         Debug:

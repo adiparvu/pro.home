@@ -306,9 +306,9 @@ struct InviteLinkView: View {
                     ShareLink(item: link) {
                         Label("Share", systemImage: "square.and.arrow.up")
                             .font(AppFont.subheadline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity).padding(.vertical, AppSpacing.md)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous), interactive: true)
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)

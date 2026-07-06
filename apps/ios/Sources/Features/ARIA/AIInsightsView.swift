@@ -56,30 +56,9 @@ struct AIInsightsView: View {
                 Spacer().frame(height: 28)
 
                 // Open ARIA Chat button
-                Button {
-                    HapticFeedback.impact(.medium)
+                GlassWideButton(icon: "sparkles", label: "ai_insights_ask_aria") {
                     router.navigate(to: .aria)
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "sparkles")
-                            .font(AppFont.subheadline)
-                        Text(String(localized: "ai_insights_ask_aria"))
-                            .font(AppFont.subheadline)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(red: 0.25, green: 0.45, blue: 0.95),
-                                     Color(red: 0.55, green: 0.30, blue: 0.90)],
-                            startPoint: .leading, endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                    )
-                    .shadow(color: Color(red: 0.35, green: 0.30, blue: 0.90).opacity(0.45), radius: 14, y: 4)
                 }
-                .buttonStyle(.plain)
                 .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 14)

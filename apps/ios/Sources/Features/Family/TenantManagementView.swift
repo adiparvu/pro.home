@@ -268,9 +268,9 @@ struct TenantManagementView: View {
             } label: {
                 Label("Add Tenant", systemImage: "person.badge.plus")
                     .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous), interactive: true)
             }
             .buttonStyle(.plain)
             Spacer()

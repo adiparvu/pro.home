@@ -669,10 +669,10 @@ private struct ARIAActionBanner: View {
                 Button(action: onConfirm) {
                     Text("Confirm")
                         .font(AppFont.captionEmphasis)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppSpacing.sm)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .mediaGlass(in: RoundedRectangle(cornerRadius: 10, style: .continuous), interactive: true)
                 }
                 .buttonStyle(.plain)
 

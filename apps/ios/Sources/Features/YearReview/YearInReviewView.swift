@@ -230,10 +230,10 @@ struct YearInReviewView: View {
                     Text("Share your year")
                         .font(AppFont.subheadline)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.accentColor, in: Capsule())
+                .mediaGlass(in: Capsule(), interactive: true)
             }
             .buttonStyle(.plain)
         }

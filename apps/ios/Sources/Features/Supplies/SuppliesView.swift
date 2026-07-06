@@ -386,9 +386,9 @@ struct SuppliesView: View {
             Text(String(localized: "supply_empty_body")).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).multilineTextAlignment(.center)
             Button { showAddList = true } label: {
                 Label(String(localized: "supply_add_first"), systemImage: "plus")
-                    .font(AppFont.subheadline).foregroundStyle(.white)
+                    .font(AppFont.subheadline).foregroundStyle(.primary)
                     .padding(.horizontal, 22).padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous), interactive: true)
             }
             .buttonStyle(.plain)
             Spacer()

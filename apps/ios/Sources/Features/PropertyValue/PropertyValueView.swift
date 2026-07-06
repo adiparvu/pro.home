@@ -288,10 +288,10 @@ struct PropertyValueView: View {
             } label: {
                 Label("Add First Entry", systemImage: "plus")
                     .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .mediaGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous), interactive: true)
             }
             .buttonStyle(.plain)
             Spacer()

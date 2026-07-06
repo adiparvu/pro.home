@@ -420,8 +420,10 @@ platform :ios do
     UI.success("Merged actool partial plist — #{alternate_icons.size} alternate icons declared")
 
     # Ensure localised string files are present in the archive. The
-    # Localizable.xcstrings catalog is NOT compiled by the XcodeGen project, so
-    # translations only ship via the .strings files we place here. Build each
+    # Localizable.xcstrings catalog is NOT compiled by the XcodeGen project;
+    # the "Generate localization tables" build phase (scripts/
+    # compile_xcstrings.rb) now installs the tables into every build, and
+    # this step re-installs them into the archive as belt-and-suspenders. Build each
     # language's table by merging the legacy .lproj file (older translations)
     # with the xcstrings catalog (single source of truth for everything new —
     # xcstrings wins on conflicts), and install it into BOTH the app bundle and
