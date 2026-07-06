@@ -93,7 +93,6 @@ struct ObjectsListView: View {
             .padding(.top, AppSpacing.sm)
             .trackTabScroll()
         }
-        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Objects")
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search name, brand, serial…")
@@ -114,6 +113,7 @@ struct ObjectsListView: View {
                 .environment(documentService)
                 .environment(taskService)
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var filterChipsRow: some View {

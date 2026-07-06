@@ -23,7 +23,7 @@ struct ContractorDetailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         heroHeader
@@ -70,6 +70,7 @@ struct ContractorDetailSheet: View {
                 EditContractorSheet(contractor: currentContractor, service: service)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Hero Header
@@ -282,7 +283,7 @@ struct EditContractorSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         Group {
@@ -314,6 +315,7 @@ struct EditContractorSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func fieldRow(_ icon: String, _ placeholder: LocalizedStringKey, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {

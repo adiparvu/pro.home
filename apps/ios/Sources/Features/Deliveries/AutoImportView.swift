@@ -31,7 +31,6 @@ struct AutoImportView: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.sm)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Auto-import")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -46,6 +45,7 @@ struct AutoImportView: View {
                 loading = false
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var hero: some View {

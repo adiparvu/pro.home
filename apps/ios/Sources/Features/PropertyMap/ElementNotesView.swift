@@ -174,7 +174,7 @@ struct ElementNoteEditorSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         GlassCard(padding: 12) {
@@ -238,6 +238,7 @@ struct ElementNoteEditorSheet: View {
                 photoURLs = existing.photoUrls
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var checklistCard: some View {
@@ -351,7 +352,7 @@ struct NotePINSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 18) {
                     Image(systemName: "lock.shield.fill")
                         .font(.system(size: 44)).foregroundStyle(.orange)
@@ -380,6 +381,7 @@ struct NotePINSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func submit() {

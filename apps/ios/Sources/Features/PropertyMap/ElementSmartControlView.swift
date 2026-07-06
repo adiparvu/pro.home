@@ -76,7 +76,7 @@ struct ElementSmartControlSection: View {
     private var picker: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 let accs = homeKit.allAccessories()
                 if accs.isEmpty {
                     VStack(spacing: 12) {
@@ -112,5 +112,6 @@ struct ElementSmartControlSection: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showPicker = false } } }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

@@ -12,7 +12,7 @@ struct BackupCodesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         warningCard
@@ -33,6 +33,7 @@ struct BackupCodesView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear { generateCodesIfNeeded() }
         .confirmationDialog("Generează coduri noi?", isPresented: $showRegenerateConfirm, titleVisibility: .visible) {
             Button("Generează coduri noi", role: .destructive) { generateNewCodes() }

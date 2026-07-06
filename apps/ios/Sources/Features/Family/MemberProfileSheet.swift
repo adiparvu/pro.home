@@ -16,7 +16,7 @@ struct MemberProfileSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         profileHeader
@@ -54,6 +54,7 @@ struct MemberProfileSheet: View {
                 DirectMessageView(member: resolvedMember)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var profileHeader: some View {

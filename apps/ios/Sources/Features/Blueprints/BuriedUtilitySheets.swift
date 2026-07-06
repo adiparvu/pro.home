@@ -63,7 +63,7 @@ struct BuriedUtilityDetailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if let photo {
@@ -133,6 +133,7 @@ struct BuriedUtilityDetailSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func detailRow(_ label: LocalizedStringKey, _ value: String, color: Color = .white) -> some View {
@@ -174,7 +175,7 @@ struct AddBuriedUtilitySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         typePicker
@@ -209,6 +210,7 @@ struct AddBuriedUtilitySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var typePicker: some View {

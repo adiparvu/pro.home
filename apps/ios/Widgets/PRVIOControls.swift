@@ -63,3 +63,93 @@ struct ScanControl: ControlWidget {
         .description("Quickly scan a receipt in PRVIO.")
     }
 }
+
+// MARK: - My Plants Control
+
+@available(iOS 18.0, *)
+struct PlantsControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.plants") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://plants")!)) {
+                Label("My Plants", systemImage: "leaf.fill")
+            }
+        }
+        .displayName("My Plants")
+        .description("Open your plants in PRVIO.")
+    }
+}
+
+// MARK: - Deliveries Control
+
+@available(iOS 18.0, *)
+struct DeliveriesControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.deliveries") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://deliveries")!)) {
+                Label("Deliveries", systemImage: "shippingbox.fill")
+            }
+        }
+        .displayName("Deliveries")
+        .description("Open your deliveries in PRVIO.")
+    }
+}
+
+// MARK: - Finances Control
+
+@available(iOS 18.0, *)
+struct FinancesControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.finances") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://finances")!)) {
+                Label("Finances", systemImage: "chart.pie.fill")
+            }
+        }
+        .displayName("Finances")
+        .description("Open your finances in PRVIO.")
+    }
+}
+
+// MARK: - Documents Control
+
+@available(iOS 18.0, *)
+struct DocumentsControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.documents") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://documents")!)) {
+                Label("Documents", systemImage: "folder.fill")
+            }
+        }
+        .displayName("Documents")
+        .description("Open your documents in PRVIO.")
+    }
+}
+
+// MARK: - Digital Twin Control
+
+@available(iOS 18.0, *)
+struct DigitalTwinControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.twin") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://twin")!)) {
+                Label("Digital Twin", systemImage: "square.stack.3d.up.fill")
+            }
+        }
+        .displayName("Digital Twin")
+        .description("Open the property map in PRVIO.")
+    }
+}
+
+// MARK: - Assistant Control
+
+@available(iOS 18.0, *)
+struct AssistantControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.aria") {
+            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://ai")!)) {
+                Label("AI Assistant", systemImage: "sparkles")
+            }
+        }
+        .displayName("AI Assistant")
+        .description("Ask your assistant in PRVIO.")
+    }
+}

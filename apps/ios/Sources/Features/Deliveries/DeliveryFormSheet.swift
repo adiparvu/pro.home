@@ -55,7 +55,7 @@ struct DeliveryFormSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         descriptionField
@@ -79,6 +79,7 @@ struct DeliveryFormSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: Fields

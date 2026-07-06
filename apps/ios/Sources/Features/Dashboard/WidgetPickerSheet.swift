@@ -179,7 +179,6 @@ struct WidgetPickerSheet: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(appBackground.ignoresSafeArea())
             .environment(\.editMode, .constant(.active))
             .navigationTitle("Widgets")
             .navigationBarTitleDisplayMode(.large)
@@ -195,6 +194,7 @@ struct WidgetPickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func widgetRow(_ type: HomeWidgetType, isActive: Bool) -> some View {

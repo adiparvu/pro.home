@@ -11,7 +11,7 @@ struct StarredMessagesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 if messages.isEmpty {
                     emptyState
                 } else {
@@ -39,6 +39,7 @@ struct StarredMessagesView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var emptyState: some View {

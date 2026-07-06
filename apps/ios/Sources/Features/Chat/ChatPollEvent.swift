@@ -189,7 +189,7 @@ struct PollVotesSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 List {
                     ForEach(Array(poll.opts.enumerated()), id: \.offset) { i, opt in
                         let voters = votes.filter { $0.optionIndex == i }
@@ -213,6 +213,7 @@ struct PollVotesSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -316,7 +317,7 @@ struct PollComposerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 Form {
                     Section("Question") {
                         TextField("Write the question", text: $question, axis: .vertical)
@@ -350,6 +351,7 @@ struct PollComposerView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -367,7 +369,7 @@ struct EventComposerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 Form {
                     Section {
                         TextField("Add the event name", text: $title)
@@ -395,5 +397,6 @@ struct EventComposerView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

@@ -29,7 +29,7 @@ struct AddApplianceSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         formSection("Basic Info") {
@@ -187,6 +187,7 @@ struct AddApplianceSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {

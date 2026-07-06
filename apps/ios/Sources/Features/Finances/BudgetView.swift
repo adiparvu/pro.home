@@ -202,7 +202,7 @@ private struct EditBudgetSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 24) {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
@@ -244,6 +244,7 @@ private struct EditBudgetSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear {
             amount = current > 0 ? String(Int(current)) : ""
             focused = true

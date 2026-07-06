@@ -83,7 +83,7 @@ struct SendLaterSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: AppSpacing.xl) {
                         messageCard
@@ -122,6 +122,7 @@ struct SendLaterSheet: View {
                 await service.load(propertyId: pid, target: target, dmRecipient: dmRecipient)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Compose

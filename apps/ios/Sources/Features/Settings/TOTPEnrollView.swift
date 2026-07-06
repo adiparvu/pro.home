@@ -19,7 +19,7 @@ struct TOTPEnrollView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         if isLoading {
@@ -51,6 +51,7 @@ struct TOTPEnrollView: View {
             }
             .task { await startEnroll() }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Sections

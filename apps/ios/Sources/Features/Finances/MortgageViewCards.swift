@@ -250,7 +250,7 @@ struct MortgageSetupSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         fieldCard("Loan Amount", symbol: "€", text: $loanStr, keyboard: .decimalPad)
@@ -283,6 +283,7 @@ struct MortgageSetupSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear {
             loanStr  = loanAmount > 0 ? String(Int(loanAmount)) : ""
             rateStr  = interestRate > 0 ? String(interestRate) : ""

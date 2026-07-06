@@ -63,6 +63,19 @@ struct PRVIOApp: App {
                         UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
                         router.handle(quickActionType: quickAction)
                     }
+                    // Cold-launch deep link (widget/control tap) captured by the
+                    // scene delegate before SwiftUI existed.
+                    if let pending = UserDefaults.standard.string(forKey: "prvio.pendingDeepLink"),
+                       let url = URL(string: pending) {
+                        UserDefaults.standard.removeObject(forKey: "prvio.pendingDeepLink")
+                        handleExternalURL(url)
+                    }
+                    // Cold-launch Spotlight/Handoff activity, reduced to what
+                    // routing needs (NSUserActivity itself can't be stashed).
+                    if let payload = UserDefaults.standard.dictionary(forKey: "prvio.pendingActivity") as? [String: String] {
+                        UserDefaults.standard.removeObject(forKey: "prvio.pendingActivity")
+                        handlePendingActivity(payload)
+                    }
                     // Process App Intent-triggered actions. Flags live in the
                     // app-group suite so intents running in the widget-extension
                     // process reach us too (consumeIntentFlag also drains the
@@ -95,19 +108,24 @@ struct PRVIOApp: App {
             .onAppear { applyNavBarTint() }
             .onChange(of: appSettings.accentColor) { _, _ in applyNavBarTint() }
             .onChange(of: appSettings.accentEnabled) { _, _ in applyNavBarTint() }
-            .onOpenURL { url in
-                // Magic-link / invite callbacks establish a session; anything
-                // else is an ordinary deep link handled by the router.
-                Task {
-                    if await auth.handleOpenURL(url) { return }
-                    // The router buffers routes until MainTabView has mounted
-                    // (cold launch from a widget tap), so the link is handled
-                    // immediately — no fixed launch-time delay.
-                    router.handle(deepLink: url)
+            // The custom scene delegate owns URL/activity delivery (it must,
+            // to receive Home Screen quick actions) and forwards through these
+            // notifications; .onOpenURL stays as a safety net for any path
+            // UIKit still routes the SwiftUI way.
+            .onOpenURL { url in handleExternalURL(url) }
+            .onReceive(NotificationCenter.default.publisher(for: .prvioOpenURL)) { notif in
+                if let url = notif.object as? URL { handleExternalURL(url) }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .prvioUserActivity)) { notif in
+                if let activity = notif.object as? NSUserActivity {
+                    router.handle(userActivity: activity)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .prvioQuickAction)) { notif in
                 if let type = notif.object as? String {
+                    // Consume the cold-launch stash too, so the same action
+                    // can't replay on the next foreground.
+                    UserDefaults.standard.removeObject(forKey: "prvio.pendingQuickAction")
                     router.handle(quickActionType: type)
                 }
             }
@@ -125,6 +143,38 @@ struct PRVIOApp: App {
             .onContinueUserActivity("com.prvio.chat")     { router.handle(userActivity: $0) }
             .onContinueUserActivity("com.prvio.shopping") { router.handle(userActivity: $0) }
             .onContinueUserActivity("CSSearchableItemActionType") { router.handle(userActivity: $0) }
+        }
+    }
+}
+
+// MARK: - External entries
+
+extension PRVIOApp {
+    /// Magic-link / invite callbacks establish a session; anything else is an
+    /// ordinary deep link handled by the router (which buffers routes until
+    /// MainTabView has mounted, so cold launches need no delay).
+    private func handleExternalURL(_ url: URL) {
+        Task {
+            if await auth.handleOpenURL(url) { return }
+            router.handle(deepLink: url)
+        }
+    }
+
+    /// Routes the reduced cold-launch activity payload stashed by the scene
+    /// delegate (Spotlight result taps, Handoff).
+    private func handlePendingActivity(_ payload: [String: String]) {
+        if payload["type"] == "CSSearchableItemActionType", let id = payload["spotlightId"] {
+            if id.hasPrefix("task-"), let uuid = UUID(uuidString: String(id.dropFirst(5))) {
+                router.navigate(to: .tasks(id: uuid))
+            } else if id.hasPrefix("plant-"), let uuid = UUID(uuidString: String(id.dropFirst(6))) {
+                router.navigate(to: .plants(id: uuid))
+            }
+            return
+        }
+        switch payload["tab"] {
+        case "tasks": router.navigate(to: .tasks(id: nil))
+        case "chat":  router.navigate(to: .chat)
+        default: break
         }
     }
 }

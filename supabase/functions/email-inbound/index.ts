@@ -40,20 +40,44 @@ function stripHtml(html: string): string {
              .replace(/\s+/g, ' ')
 }
 
-// Extract candidate tracking numbers. Strong carrier-specific patterns are
-// always accepted; generic long codes only when a tracking keyword is present,
-// to avoid capturing order numbers.
+// Bulk-mail fingerprints. A real courier notification from a known domain (or
+// one carrying a carrier-format tracking number) still passes; anything else
+// that smells like a campaign is dropped before extraction.
+const MARKETING_RE = new RegExp(
+  [
+    'unsubscribe', 'dezabon', 'd[ée]sabonn', 'uitschrijven', 'afmelden', 'abmelden',
+    'newsletter', 'view (this email )?in (your )?browser',
+    'probl[èe]mes? de visualisation', 'problemen met het bekijken',
+    'special offer', 'ofert[ăa] special', 'voucher', 'gift ?card', 'sweepstake',
+    'win\\b.{0,40}\\bprij', 'c[âa][șs]tig[ăa]',
+  ].join('|'), 'i')
+
+// Words that mean "a parcel is moving" — used as PROXIMITY context, never as a
+// whole-email pass. Deliberately excludes loose matches like "sent" (which
+// hides inside "consent"/"present" and passed a Coca-Cola campaign through).
+const SHIPPING_CONTEXT_RE =
+  /awb|tracking|track(?:ing)?\s*(?:no|number|num[ăa]r)|num[ăa]r\s+de\s+urm[ăa]rire|urm[ăa]re[șs]te|colet|expedi(?:at|ere|tion)|shipment|shipping|liver[ăa]|livrar|livrat|delivery|deliver(?:ed|y)|parcel|pachetul|trimis[ăa]?\s+(?:coletul|comanda)|comanda\s+(?:a fost )?expediat/i
+
+// Extract candidate tracking numbers, fail-closed:
+//  - carrier-format patterns (UPS 1Z…, UPU S10) are always accepted;
+//  - generic 10–22 digit runs count ONLY when shipping context sits within
+//    ±120 characters of the number (a keyword anywhere in a marketing email
+//    used to qualify every campaign id in it);
+//  - URLs are stripped first — their long numeric ids were the main source of
+//    fake parcels.
 function extractTrackingNumbers(text: string): string[] {
+  const clean = text.replace(/https?:\/\/\S+/gi, ' ')
   const found = new Set<string>()
 
-  for (const m of text.matchAll(/\b1Z[0-9A-Z]{16}\b/g)) found.add(m[0])          // UPS
-  for (const m of text.matchAll(/\b[A-Z]{2}\d{9}[A-Z]{2}\b/g)) found.add(m[0])   // UPU S10 (DHL, posts)
+  for (const m of clean.matchAll(/\b1Z[0-9A-Z]{16}\b/g)) found.add(m[0])          // UPS
+  for (const m of clean.matchAll(/\b[A-Z]{2}\d{9}[A-Z]{2}\b/g)) found.add(m[0])   // UPU S10 (DHL, posts)
 
-  if (/track|awb|colet|expedi|shipment|sent|livrar|delivery|parcel|trimit/i.test(text)) {
-    for (const m of text.matchAll(/\b\d{10,22}\b/g)) {
-      const n = m[0]
-      if (!/^(\d)\1+$/.test(n)) found.add(n) // skip all-same-digit
-    }
+  for (const m of clean.matchAll(/\b\d{10,22}\b/g)) {
+    const n = m[0]
+    if (/^(\d)\1+$/.test(n)) continue // all-same-digit
+    const at = m.index ?? 0
+    const context = clean.slice(Math.max(0, at - 120), at + n.length + 120)
+    if (SHIPPING_CONTEXT_RE.test(context)) found.add(n)
   }
 
   return Array.from(found).slice(0, 5)
@@ -116,10 +140,18 @@ serve(async (req) => {
 
   const propertyId = inbox.property_id
   const haystack = `${subject}\n${textPart}\n${stripHtml(htmlPart)}`
+  const carrier = courierFromSender(from)
+
   const numbers = extractTrackingNumbers(haystack)
   if (numbers.length === 0) return json({ ok: true, created: 0, note: 'no tracking number found' }, 200)
 
-  const carrier = courierFromSender(from)
+  // Campaign mail is rejected outright unless it came from a known courier
+  // domain or carries a carrier-format number (couriers put unsubscribe
+  // footers in genuine notifications too, so those two signals win).
+  const hasCarrierFormat = numbers.some((n) => /^1Z[0-9A-Z]{16}$|^[A-Z]{2}\d{9}[A-Z]{2}$/.test(n))
+  if (!carrier && !hasCarrierFormat && MARKETING_RE.test(haystack)) {
+    return json({ ok: true, created: 0, note: 'rejected: bulk/marketing email' }, 200)
+  }
   const description = (subject || 'Delivery').slice(0, 120)
   let created = 0
 

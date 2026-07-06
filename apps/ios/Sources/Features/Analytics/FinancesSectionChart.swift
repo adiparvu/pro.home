@@ -189,6 +189,7 @@ extension FinancesSection {
                                    in: customStart..., displayedComponents: .date)
                     }
                 }
+                .scrollContentBackground(.hidden)
                 .navigationTitle("Custom range")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -205,6 +206,7 @@ extension FinancesSection {
                 }
             }
             .presentationDetents([.medium])
+            .presentationBackground(.ultraThinMaterial)
         }
     }
 

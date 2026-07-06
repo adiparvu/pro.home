@@ -14,7 +14,7 @@ struct AssigneePickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if !familyService.members.isEmpty {
@@ -104,6 +104,7 @@ struct AssigneePickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 

@@ -74,6 +74,12 @@ struct PRVIOWidgetBundle: WidgetBundle {
             OpenChatControl()
             ShoppingControl()
             ScanControl()
+            PlantsControl()
+            DeliveriesControl()
+            FinancesControl()
+            DocumentsControl()
+            DigitalTwinControl()
+            AssistantControl()
         }
     }
 }

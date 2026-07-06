@@ -54,7 +54,6 @@ struct StatusView: View {
                 }
                 .padding(.top, AppSpacing.sm)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Status")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -63,6 +62,7 @@ struct StatusView: View {
                 StoryViewer(group: g, myName: myName, propertyId: propertyId)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var myStatusRow: some View {
@@ -369,7 +369,6 @@ struct CommunitiesView: View {
                 }
                 .padding(.top, AppSpacing.sm)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Communities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -383,6 +382,7 @@ struct CommunitiesView: View {
             }
             .task { if let pid = propertyId { await service.load(propertyId: pid) } }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var newGroupButton: some View {

@@ -83,13 +83,13 @@ private struct DetailsCard<Header: View>: View {
 
                 Spacer()
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Message details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 

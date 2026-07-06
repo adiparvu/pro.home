@@ -61,7 +61,7 @@ struct AddFamilyMemberSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         avatarPreview
@@ -112,6 +112,7 @@ struct AddFamilyMemberSheet: View {
                 Text(inviteError ?? "")
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear {
             if let preset = preselectedRole { role = preset }
         }
@@ -400,7 +401,7 @@ struct AddSocialLinkSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 20) {
                     HStack(spacing: 16) {
                         ForEach(kSocialPlatforms, id: \.self) { p in
@@ -454,6 +455,7 @@ struct AddSocialLinkSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -536,7 +538,7 @@ struct RolePermissionsSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 14) {
                         Text("Every role sees only its own slice of the home. Owners and partners can change a member's role at any time.")
@@ -561,6 +563,7 @@ struct RolePermissionsSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder

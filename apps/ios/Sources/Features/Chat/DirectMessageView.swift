@@ -1708,7 +1708,7 @@ private struct DMStarredView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 if messages.isEmpty {
                     VStack(spacing: 14) {
                         Spacer()
@@ -1771,5 +1771,6 @@ private struct DMStarredView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

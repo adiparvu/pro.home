@@ -16,7 +16,7 @@ struct BudgetManagementView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         headerCard
@@ -37,6 +37,7 @@ struct BudgetManagementView: View {
                 setBudgetSheet(category: item.value)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Header
@@ -164,7 +165,7 @@ struct BudgetManagementView: View {
 
         return NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 28) {
                     // Icon + label
                     VStack(spacing: 12) {
@@ -252,6 +253,7 @@ struct BudgetManagementView: View {
             }
         }
         .presentationDetents([.medium])
+        .presentationBackground(.ultraThinMaterial)
     }
 
     private func saveBudget(category: String) async {

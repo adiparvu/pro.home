@@ -35,7 +35,7 @@ struct ApplianceDetailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         headerCard
@@ -72,6 +72,7 @@ struct ApplianceDetailSheet: View {
                 Text("This action cannot be undone.")
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var headerCard: some View {

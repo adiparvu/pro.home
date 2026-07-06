@@ -68,7 +68,7 @@ struct EditTextSheet: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topLeading) {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(alignment: .leading, spacing: 12) {
                     TextEditor(text: $text)
                         .focused($focused)
@@ -100,6 +100,7 @@ struct EditTextSheet: View {
             .onAppear { focused = true }
         }
         .presentationDetents([.medium])
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -119,7 +120,6 @@ struct GroupDescriptionSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(AppSpacing.xl)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Descrierea grupului")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -134,6 +134,7 @@ struct GroupDescriptionSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -1046,7 +1047,6 @@ struct EditGroupDetailsSheet: View {
                     Spacer(minLength: 40)
                 }
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Editează detaliile grupului")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1070,6 +1070,7 @@ struct EditGroupDetailsSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func save() async {
@@ -1293,7 +1294,6 @@ struct AddContactView: View {
                 }
                 .padding(.top, AppSpacing.sm)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Add contact")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1303,6 +1303,7 @@ struct AddContactView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func field(_ label: String, text: Binding<String>, icon: String,

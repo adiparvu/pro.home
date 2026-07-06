@@ -79,7 +79,7 @@ struct DocumentLinkPicker: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     let available = documentService.documents.filter { $0.elementId == nil }
                     VStack(spacing: 10) {
@@ -124,6 +124,7 @@ struct DocumentLinkPicker: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -175,7 +176,7 @@ struct TaskLinkPicker: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     let available = taskService.tasks.filter { $0.elementId == nil && !$0.isCompleted }
                     VStack(spacing: 10) {
@@ -219,5 +220,6 @@ struct TaskLinkPicker: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

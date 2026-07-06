@@ -348,7 +348,7 @@ struct NFCTagNameSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
                         // UID preview
@@ -467,5 +467,6 @@ struct NFCTagNameSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

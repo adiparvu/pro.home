@@ -361,6 +361,7 @@ struct EditDocumentSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Edit document")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -371,6 +372,7 @@ struct EditDocumentSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func save() {

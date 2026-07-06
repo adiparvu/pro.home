@@ -68,5 +68,6 @@ struct ElementTypePickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.ultraThinMaterial)
     }
 }

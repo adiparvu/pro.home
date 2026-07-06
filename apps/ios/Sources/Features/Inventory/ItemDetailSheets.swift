@@ -27,7 +27,7 @@ struct PublicContactSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         GlassCard {
@@ -77,6 +77,7 @@ struct PublicContactSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func pField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
@@ -100,7 +101,7 @@ struct LoanItemSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         HStack(spacing: 12) {
@@ -145,6 +146,7 @@ struct LoanItemSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -174,7 +176,7 @@ struct ItemLocationSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         if let lat = Double(latText), let lon = Double(lonText) {
@@ -264,6 +266,7 @@ struct ItemLocationSheet: View {
                 lonText = String(format: "%.6f", loc.coordinate.longitude)
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func coordRow(_ label: String, _ binding: Binding<String>) -> some View {

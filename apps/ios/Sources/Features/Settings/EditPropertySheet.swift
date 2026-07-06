@@ -74,7 +74,7 @@ struct EditPropertySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         formFieldGroup { formFieldRow("house.fill", "Property name", $name) }
@@ -150,5 +150,6 @@ struct EditPropertySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

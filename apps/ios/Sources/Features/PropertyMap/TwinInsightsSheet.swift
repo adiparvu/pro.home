@@ -41,7 +41,6 @@ struct TwinInsightsSheet: View {
                 }
                 .padding(AppSpacing.xl)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("\(assistantName) Insights")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -50,6 +49,7 @@ struct TwinInsightsSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var header: some View {

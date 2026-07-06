@@ -19,7 +19,7 @@ struct ItemDetailView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         headerSection
@@ -62,6 +62,7 @@ struct ItemDetailView: View {
                 Text("\"\(live.name)\" loaned to \(loan.borrowerName) will be marked as returned.")
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: - Sections

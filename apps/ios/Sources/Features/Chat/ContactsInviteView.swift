@@ -138,7 +138,7 @@ struct ContactsInviteView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 content
             }
             .navigationTitle("New contact")
@@ -165,6 +165,7 @@ struct ContactsInviteView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder private var content: some View {

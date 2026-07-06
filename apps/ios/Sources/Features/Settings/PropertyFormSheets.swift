@@ -273,7 +273,7 @@ struct AddPropertySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         formFieldGroup { formFieldRow("house.fill", "Property name", $name) }
@@ -349,6 +349,7 @@ struct AddPropertySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var mapPickerSection: some View {

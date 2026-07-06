@@ -31,7 +31,7 @@ struct AddPlantSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         emojiPickerSection
@@ -87,6 +87,7 @@ struct AddPlantSheet: View {
             }
             .photosPicker(isPresented: $showLibrary, selection: $selectedPhotoItem, matching: .images)
         }
+        .presentationBackground(.thinMaterial)
     }
 
     // MARK: Emoji picker
