@@ -259,7 +259,7 @@ struct ForwardPicker: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 List {
                     Section {
                         Button {
@@ -286,5 +286,6 @@ struct ForwardPicker: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
+        .presentationBackground(.thinMaterial)
     }
 }

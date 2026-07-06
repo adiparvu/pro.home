@@ -1,10 +1,5 @@
 import SwiftUI
 
-private struct ARIABottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 // MARK: - Proposed action model
 
 struct ARIAProposedAction {
@@ -124,7 +119,6 @@ struct ARIAView: View {
 
     private var messageList: some View {
         ScrollViewReader { proxy in
-            GeometryReader { outer in
             ScrollView {
                 if isLoadingHistory {
                     VStack { Spacer(minLength: 40); ProgressView().tint(.white); Spacer() }
@@ -137,21 +131,21 @@ struct ARIAView: View {
                         if isThinking {
                             ThinkingBubble().id("thinking")
                         }
+                        // Jump-button sentinel — visibility follows the marker
+                        // entering/leaving the lazy render window (a Geometry-
+                        // Reader preference reset to 0 once the marker was
+                        // culled, hiding the button on deep scroll-back).
                         Color.clear.frame(height: 1).id("ARIA_BOTTOM")
-                            .background(GeometryReader { g in
-                                Color.clear.preference(key: ARIABottomKey.self,
-                                                       value: g.frame(in: .named("ariaScroll")).minY)
-                            })
+                            .onAppear {
+                                withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                            }
+                            .onDisappear {
+                                withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                            }
                     }
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.vertical, AppSpacing.sm)
                     .padding(.bottom, AppSpacing.xl)
-                }
-            }
-            .coordinateSpace(name: "ariaScroll")
-            .onPreferenceChange(ARIABottomKey.self) { minY in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showJumpToLatest = minY > outer.size.height + 60
                 }
             }
             .scrollDismissesKeyboard(.interactively)
@@ -182,7 +176,6 @@ struct ARIAView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-            } // end GeometryReader
         }
     }
 

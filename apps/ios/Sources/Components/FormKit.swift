@@ -23,16 +23,13 @@ struct FormScaffold<Content: View>: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        content()
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.top, AppSpacing.md)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    content()
+                    Spacer(minLength: 40)
                 }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.top, AppSpacing.md)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -64,6 +61,11 @@ struct FormScaffold<Content: View>: View {
                 Text(error ?? "")
             }
         }
+        // Every form is sheet-presented: a translucent backdrop instead of the
+        // opaque app background makes the whole family read as Liquid Glass.
+        // The field groups themselves are already GlassCards.
+        .presentationBackground(.thinMaterial)
+        .presentationDragIndicator(.visible)
     }
 }
 

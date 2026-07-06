@@ -95,6 +95,9 @@ struct PollBubble: View {
     var bubbleColor: Color = Color.blue.opacity(0.75)
     let onVote: (Int) -> Void
 
+    /// Readable foreground over the themed bubble fill.
+    private var onBubble: Color { bubbleColor.readableText }
+
     @State private var showVotes = false
 
     private var totalVoters: Int { PollTally.totalVoters(votes) }
@@ -108,11 +111,11 @@ struct PollBubble: View {
                 Text(poll.multi ? "Selectează una sau mai multe" : "Selectează una")
                     .font(AppFont.label)
             }
-            .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.accentColor)
+            .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.accentColor)
 
             Text(poll.q)
                 .font(AppFont.subheadline)
-                .foregroundStyle(isOwn ? .white : .primary)
+                .foregroundStyle(isOwn ? onBubble : .primary)
 
             VStack(spacing: 8) {
                 ForEach(Array(poll.opts.enumerated()), id: \.offset) { i, opt in
@@ -123,14 +126,14 @@ struct PollBubble: View {
 
             Text(totalVoters == 1 ? "1 vot" : "\(totalVoters) voturi")
                 .font(.system(size: 11))
-                .foregroundStyle(isOwn ? .white.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
+                .foregroundStyle(isOwn ? onBubble.opacity(0.7) : Color.primary.opacity(AppOpacity.secondaryText))
 
-            Divider().overlay(isOwn ? Color.white.opacity(0.25) : Color.primary.opacity(0.12))
+            Divider().overlay(isOwn ? onBubble.opacity(0.25) : Color.primary.opacity(0.12))
 
             Button { showVotes = true } label: {
                 Text("Afișează voturile")
                     .font(AppFont.footnote)
-                    .foregroundStyle(isOwn ? .white : Color.accentColor)
+                    .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 2)
             }
@@ -155,19 +158,19 @@ struct PollBubble: View {
             HStack(spacing: 8) {
                 Image(systemName: mine ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 15))
-                    .foregroundStyle(mine ? (isOwn ? .white : Color.accentColor) : (isOwn ? .white.opacity(0.6) : Color.primary.opacity(0.4)))
+                    .foregroundStyle(mine ? (isOwn ? onBubble : Color.accentColor) : (isOwn ? onBubble.opacity(0.6) : Color.primary.opacity(0.4)))
                 Text(opt)
                     .font(.system(size: 14))
-                    .foregroundStyle(isOwn ? .white : .primary)
+                    .foregroundStyle(isOwn ? onBubble : .primary)
                 Spacer()
                 Text("\(c)")
                     .font(AppFont.captionStrong)
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.primary.opacity(AppOpacity.mediumText))
+                    .foregroundStyle(isOwn ? onBubble.opacity(0.8) : Color.primary.opacity(AppOpacity.mediumText))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(isOwn ? Color.white.opacity(0.2) : Color.primary.opacity(0.1))
-                    Capsule().fill(isOwn ? Color.white.opacity(0.55) : Color.accentColor.opacity(0.5))
+                    Capsule().fill(isOwn ? onBubble.opacity(0.2) : Color.primary.opacity(0.1))
+                    Capsule().fill(isOwn ? onBubble.opacity(0.55) : Color.accentColor.opacity(0.5))
                         .frame(width: max(4, geo.size.width * frac))
                 }
             }
@@ -220,41 +223,44 @@ struct EventBubble: View {
     let isOwn: Bool
     var bubbleColor: Color = Color.blue.opacity(0.75)
 
+    /// Readable foreground over the themed bubble fill.
+    private var onBubble: Color { bubbleColor.readableText }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar").font(.system(size: 12))
                 Text("Event").font(AppFont.label)
             }
-            .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.red)
+            .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.red)
 
             Text(event.t)
                 .font(AppFont.subheadline)
-                .foregroundStyle(isOwn ? .white : .primary)
+                .foregroundStyle(isOwn ? onBubble : .primary)
 
             if let d = event.d, !d.isEmpty {
                 Text(d).font(.system(size: 13))
-                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis))
+                    .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(AppOpacity.emphasis))
                     .lineLimit(3)
             }
 
             Label(event.dateDisplay, systemImage: "clock")
                 .font(.system(size: 12))
-                .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.6))
+                .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
 
             if let loc = event.loc, !loc.isEmpty {
                 Label(loc, systemImage: "mappin.and.ellipse")
                     .font(.system(size: 12))
-                    .foregroundStyle(isOwn ? .white.opacity(0.85) : Color.primary.opacity(0.6))
+                    .foregroundStyle(isOwn ? onBubble.opacity(0.85) : Color.primary.opacity(0.6))
                     .lineLimit(1)
             }
 
             Button { addToCalendar() } label: {
                 Text("Add to Calendar")
                     .font(AppFont.captionEmphasis)
-                    .foregroundStyle(isOwn ? .white : Color.accentColor)
+                    .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, AppSpacing.xs)
-                    .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
+                    .background((isOwn ? onBubble.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
             }
             .buttonStyle(.plain)
             .padding(.top, 2)

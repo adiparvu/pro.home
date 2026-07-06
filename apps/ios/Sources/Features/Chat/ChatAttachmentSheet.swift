@@ -28,13 +28,15 @@ struct ChatAttachmentSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.base) {
                 row("Photos", "photo.on.rectangle.angled", .blue) { pick(onPhotos) }
-                row("Camera", "camera.fill", Color(white: 0.25)) { pick(onCamera) }
+                // Semantic grays (not fixed white values) so the discs stay
+                // visible in dark mode too.
+                row("Camera", "camera.fill", Color(.systemGray)) { pick(onCamera) }
                 if let onLocation {
                     row("Location", "location.fill", .green) { pick(onLocation) }
                 }
-                row("Contact", "person.crop.circle.fill", Color(white: 0.45)) { pick(onContact) }
+                row("Contact", "person.crop.circle.fill", Color(.systemGray2)) { pick(onContact) }
                 if let onDocument {
-                    row("Document", "doc.fill", .blue) { pick(onDocument) }
+                    row("Document", "doc.fill", .indigo) { pick(onDocument) }
                 }
                 if let onPoll {
                     row("Poll", "chart.bar.fill", .orange) { pick(onPoll) }
@@ -49,7 +51,7 @@ struct ChatAttachmentSheet: View {
                     row("Stickers", "face.smiling", .yellow) { pick(onStickers) }
                 }
             }
-            .padding(.horizontal, AppSpacing.xxl)
+            .padding(.horizontal, AppSpacing.xl)
             .padding(.vertical, AppSpacing.xxl)
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -62,18 +64,27 @@ struct ChatAttachmentSheet: View {
     private func row(_ label: String, _ icon: String, _ color: Color, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: AppSpacing.lg) {
+                // iMessage-style filled disc: a gradient of the action colour
+                // with a white glyph — reads on the glass in any appearance,
+                // where the old pale wash + tinted glyph faded into light
+                // wallpapers.
                 ZStack {
-                    Circle().fill(color.opacity(0.18))
+                    Circle()
+                        .fill(LinearGradient(colors: [color, color.opacity(0.72)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(color)
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(color.isLight ? Color.black.opacity(0.75) : .white)
                 }
                 .frame(width: 44, height: 44)
+                .shadow(color: color.opacity(0.30), radius: 6, y: 2)
                 Text(LocalizedStringKey(label))
                     .font(AppFont.menuRow)
                     .foregroundStyle(Color.primary)
                 Spacer(minLength: 0)
             }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.xs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

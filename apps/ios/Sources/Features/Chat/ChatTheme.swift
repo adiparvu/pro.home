@@ -191,7 +191,7 @@ struct ChatThemePicker: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Themes")
@@ -258,6 +258,9 @@ struct ChatThemePicker: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        // Sheet-presented: a glass backdrop instead of the opaque app
+        // background (the sub-pickers inherit the same NavigationStack).
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder private var backgroundSwatch: some View {
@@ -360,7 +363,6 @@ struct BubbleColorPicker: View {
             }
             .padding(AppSpacing.xl)
         }
-        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Chat bubble")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -450,7 +452,6 @@ struct BackgroundPicker: View {
                 .padding(.bottom, AppSpacing.lg)
             }
         }
-        .background(appBackground.ignoresSafeArea())
         .navigationTitle("Background")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: photoItem) { _, item in

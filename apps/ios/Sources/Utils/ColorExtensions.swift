@@ -27,4 +27,9 @@ extension Color {
         // Perceived luminance (Rec. 601).
         return (0.299 * r + 0.587 * g + 0.114 * b) > 0.6
     }
+
+    /// The readable foreground for content rendered ON this colour — chat
+    /// bubbles, filled chips, selection discs. Near-black over light fills,
+    /// white over dark ones, so user-picked colours never swallow their text.
+    var readableText: Color { isLight ? .black : .white }
 }

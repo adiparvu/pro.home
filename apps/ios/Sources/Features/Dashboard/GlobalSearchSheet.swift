@@ -191,7 +191,6 @@ struct GlobalSearchSheet: View {
                     }
                 }
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Global Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -201,6 +200,7 @@ struct GlobalSearchSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .onAppear { focused = true }
         .task {
             // Search must cover EVERYTHING, not just the pages the user

@@ -42,6 +42,7 @@ struct AccountSwitcherSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Accounts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,6 +53,7 @@ struct AccountSwitcherSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.thinMaterial)
     }
 
     private func switchTo(_ account: SavedAccount) async {

@@ -413,11 +413,6 @@ struct CommunitiesView: View {
     }
 }
 
-private struct GroupChatBottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 // Lean, self-contained group chat thread. Owns its own MessageService instance
 // scoped to the group's group_id (so it never collides with the main chat) and
 // takes everything as plain params — no @EnvironmentObject, so it can't crash on
@@ -446,7 +441,6 @@ private struct GroupChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            GeometryReader { outer in
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 8) {
@@ -456,19 +450,20 @@ private struct GroupChatView: View {
                                               members: members)
                                     .id(m.id)
                             }
+                            // Jump-button sentinel — visibility follows the marker
+                            // entering/leaving the lazy render window (a Geometry-
+                            // Reader preference reset to 0 once the marker was
+                            // culled, hiding the button on deep scroll-back).
                             Color.clear.frame(height: 1).id("GROUP_CHAT_BOTTOM")
-                                .background(GeometryReader { g in
-                                    Color.clear.preference(key: GroupChatBottomKey.self,
-                                                           value: g.frame(in: .named("GROUPCHATOUTER")).maxY)
-                                })
+                                .onAppear {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                                }
+                                .onDisappear {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                                }
                         }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, 10)
-                    }
-                    .onPreferenceChange(GroupChatBottomKey.self) { maxY in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showJumpToLatest = maxY > outer.size.height + 40
-                        }
                     }
                     .onChange(of: svc.messages.count) { _, _ in
                         withAnimation { proxy.scrollTo("GROUP_CHAT_BOTTOM", anchor: .bottom) }
@@ -495,8 +490,6 @@ private struct GroupChatView: View {
                         }
                     }
                 }
-            }
-            .coordinateSpace(name: "GROUPCHATOUTER")
             composer
         }
         .background(appBackground.ignoresSafeArea())

@@ -3,11 +3,6 @@ import PhotosUI
 import UIKit
 import Supabase
 
-private struct DMBottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
-
 // MARK: - Direct Message View (1-on-1 private chat)
 
 struct DirectMessageView: View {
@@ -509,7 +504,6 @@ struct DirectMessageView: View {
             }
             .buttonStyle(.plain)
         }
-        GeometryReader { outer in
         ScrollViewReader { proxy in
             Group {
                 if conversationMessages.isEmpty {
@@ -610,19 +604,20 @@ struct DirectMessageView: View {
                                 .id(msg.id)
                             }
                             ForEach(pendingOutbox) { pm in
+                                let pendingFill = chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble
                                 VStack(alignment: .trailing, spacing: 2) {
                                     HStack {
                                         Spacer(minLength: 72)
                                         HStack(spacing: 6) {
                                             Text(pm.body ?? "")
                                                 .font(.system(size: 15))
-                                                .foregroundStyle(.white)
+                                                .foregroundStyle(pendingFill.readableText)
                                             Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
                                                 .font(.system(size: 10))
-                                                .foregroundStyle(.white.opacity(0.75))
+                                                .foregroundStyle(pendingFill.readableText.opacity(0.75))
                                         }
                                         .padding(.horizontal, 13).padding(.vertical, 9)
-                                        .background(chatTheme.id == "appDefault" ? Color.accentColor : chatTheme.outgoingBubble,
+                                        .background(pendingFill,
                                                     in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                         .opacity(0.85)
                                         .onTapGesture { Task { await flushOutbox() } }
@@ -643,22 +638,24 @@ struct DirectMessageView: View {
                                     }
                                 }
                             }
+                            // Jump-button sentinel. Visibility is driven by the
+                            // marker entering/leaving the lazy render window —
+                            // the old GeometryReader preference reset to 0 once
+                            // the LazyVStack culled the off-screen marker, which
+                            // hid the button exactly when it was needed.
                             Color.clear.frame(height: 1).id("DM_BOTTOM")
-                                .background(GeometryReader { g in
-                                    Color.clear.preference(key: DMBottomKey.self,
-                                                           value: g.frame(in: .named("DMOUTER")).maxY)
-                                })
+                                .onAppear {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                                }
+                                .onDisappear {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                                }
                         }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.bottom, AppSpacing.md)
                         .animation(.spring(response: 0.35, dampingFraction: 0.86), value: conversationMessages.count)
                     }
                     .scrollDismissesKeyboard(.immediately)
-                    .onPreferenceChange(DMBottomKey.self) { maxY in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showJumpToLatest = maxY > outer.size.height + 60
-                        }
-                    }
                     .onChange(of: conversationMessages.count) { _, _ in
                         let isOwnLatest = conversationMessages.last?.senderName == myName
                         // Only auto-scroll & mark read when the user is already at the
@@ -704,8 +701,6 @@ struct DirectMessageView: View {
                 }
             }
         }
-        }
-        .coordinateSpace(name: "DMOUTER")
         }
     }
 
@@ -837,12 +832,15 @@ struct DirectMessageView: View {
                 .padding(.leading, 14)
                 .padding(.trailing, 5)
                 .background(
+                    // Regular material (not ultra-thin): the compose pill must
+                    // stay legible over any wallpaper brightness.
                     RoundedRectangle(cornerRadius: 19, style: .continuous)
-                        .fill(.ultraThinMaterial)
+                        .fill(.regularMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 19, style: .continuous)
-                                .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.7)
+                                .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7)
                         )
+                        .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
                 )
             }
             .padding(.horizontal, AppSpacing.base)
@@ -882,9 +880,14 @@ struct DirectMessageView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
-                .background(Circle().fill(Color.primary.opacity(AppOpacity.subtleFill)))
+                // Real glass, not a primary-tinted wash — a flat fill vanished
+                // against same-brightness wallpapers (invisible "+" on light
+                // themes). Material + hairline + shadow reads on any photo.
+                .background(.regularMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
+                .shadow(color: .black.opacity(0.14), radius: 5, y: 2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add attachment")
@@ -1628,13 +1631,17 @@ private struct DMBubble: View {
     }
 
     private var textBubble: some View {
-        Text(message.body)
+        let fill = outgoingColor ?? Color.accentColor
+        // Foreground tracks the bubble colour's luminance so a light custom
+        // theme colour gets dark text instead of unreadable white.
+        return Text(message.body)
             .font(.system(size: 15))
-            .foregroundStyle(isOwn ? .white : .primary)
+            .foregroundStyle(isOwn ? fill.readableText : .primary)
+            .tint(isOwn ? fill.readableText : Color.accentColor)
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
             .background(
-                isOwn ? (outgoingColor ?? Color.accentColor) : Color.primary.opacity(0.09),
+                isOwn ? fill : Color.primary.opacity(0.09),
                 in: bubbleShape
             )
             .clipShape(bubbleShape)

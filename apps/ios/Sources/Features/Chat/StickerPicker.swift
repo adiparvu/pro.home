@@ -61,7 +61,7 @@ struct StickerPicker: View {
                 }
             }
         }
-        .background(appBackground.ignoresSafeArea())
+        .presentationBackground(.thinMaterial)
     }
 
     private var sourcePicker: some View {

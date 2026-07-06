@@ -8,10 +8,6 @@ import Supabase
 
 private let kAvatarRingColorKey = "prvio.avatarRingColorName"
 
-private struct ChatBottomKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
-}
 
 struct ChatView: View {
     @Environment(MessageService.self) var messageService
@@ -523,7 +519,6 @@ struct ChatView: View {
     private let chatBottomInset: CGFloat = 78
 
     private var messageList: some View {
-        GeometryReader { outer in
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
                 if showSearch {
@@ -688,19 +683,20 @@ struct ChatView: View {
                     }
                     // Pending (offline) messages — shown optimistically with a clock.
                     ForEach(pendingOutbox) { pm in
+                        let pendingFill = chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble
                         VStack(alignment: .trailing, spacing: 2) {
                             HStack {
                                 Spacer(minLength: 60)
                                 HStack(spacing: 6) {
                                     Text(pm.body ?? "")
                                         .font(.system(size: 15))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(pendingFill.readableText)
                                     Image(systemName: outbox.isOnline ? "clock" : "exclamationmark.circle")
                                         .font(.system(size: 10))
-                                        .foregroundStyle(.white.opacity(0.75))
+                                        .foregroundStyle(pendingFill.readableText.opacity(0.75))
                                 }
                                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
-                                .background(chatTheme.id == "appDefault" ? Color.blue.opacity(0.75) : chatTheme.outgoingBubble,
+                                .background(pendingFill,
                                             in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 .opacity(0.85)
                                 .onTapGesture { Task { await flushOutbox() } }
@@ -724,22 +720,24 @@ struct ChatView: View {
                     // Clearance so the newest message rests above the overlaid
                     // input bar (which blurs the messages behind it = real glass).
                     Color.clear.frame(height: chatBottomInset)
+                    // Jump-button sentinel: visibility follows the marker
+                    // entering/leaving the lazy render window. The previous
+                    // GeometryReader preference reset to 0 whenever the
+                    // LazyVStack culled the off-screen marker, hiding the
+                    // button on any deep scroll-back.
                     Color.clear.frame(height: 1).id("CHAT_BOTTOM")
-                        .background(GeometryReader { g in
-                            Color.clear.preference(key: ChatBottomKey.self,
-                                                   value: g.frame(in: .named("CHATOUTER")).maxY)
-                        })
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = false }
+                        }
+                        .onDisappear {
+                            withAnimation(.easeInOut(duration: 0.2)) { showJumpToLatest = true }
+                        }
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
                 .animation(.spring(response: 0.35, dampingFraction: 0.86), value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
-            .onPreferenceChange(ChatBottomKey.self) { maxY in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showJumpToLatest = maxY > outer.size.height + 40
-                }
-            }
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { old, new in
                 guard !messageService.messages.isEmpty else { return }
@@ -793,9 +791,7 @@ struct ChatView: View {
                     .accessibilityLabel("Jump to latest message")
                 }
             }
-            } // end ScrollViewReader
-        }
-        .coordinateSpace(name: "CHATOUTER")
+        } // end ScrollViewReader
     }
 
     // MARK: - Input bar
@@ -911,9 +907,13 @@ struct ChatView: View {
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                            .foregroundStyle(.primary)
                             .frame(width: 36, height: 36)
-                            .background(Circle().fill(Color.primary.opacity(AppOpacity.subtleFill)))
+                            // Real glass, not a primary-tinted wash — a flat
+                            // fill vanished against same-brightness wallpapers.
+                            .background(.regularMaterial, in: Circle())
+                            .overlay(Circle().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7))
+                            .shadow(color: .black.opacity(0.14), radius: 5, y: 2)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Add attachment")
@@ -987,12 +987,15 @@ struct ChatView: View {
                     .padding(.leading, 14)
                     .padding(.trailing, 5)
                     .background(
+                        // Regular material (not ultra-thin): the compose pill
+                        // must stay legible over any wallpaper brightness.
                         RoundedRectangle(cornerRadius: 19, style: .continuous)
-                            .fill(.ultraThinMaterial)
+                            .fill(.regularMaterial)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 19, style: .continuous)
-                                    .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.7)
+                                    .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.7)
                             )
+                            .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
                     )
                 }
                 .animation(.snappy(duration: 0.2), value: text.isEmpty)

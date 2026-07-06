@@ -188,7 +188,9 @@ struct AudioBubble: View {
     /// Signed URL resolved from `audioValue` (nil while resolving).
     @State private var url: URL?
 
-    private var subFg: Color { isOwn ? Color.white.opacity(0.7) : Color.primary.opacity(AppOpacity.mediumText) }
+    /// Readable foreground over the themed bubble fill.
+    private var onBubble: Color { bubbleColor.readableText }
+    private var subFg: Color { isOwn ? onBubble.opacity(0.7) : Color.primary.opacity(AppOpacity.mediumText) }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -246,7 +248,7 @@ struct AudioBubble: View {
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(isOwn ? bubbleColor.opacity(1) : Color.accentColor)
                 .padding(AppSpacing.xxs)
-                .background(Circle().fill(.white))
+                .background(Circle().fill(isOwn ? bubbleColor.readableText : .white))
                 .offset(x: 3, y: 3)
         }
     }
@@ -267,7 +269,7 @@ struct AudioBubble: View {
         } label: {
             Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
                 .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(isOwn ? .white : Color.accentColor)
+                .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                 .frame(width: 26)
         }
         .buttonStyle(.plain)
@@ -279,9 +281,9 @@ struct AudioBubble: View {
     private var waveform: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                VoiceWaveform(progress: player.progress, isOwn: isOwn, seed: Self.seed(for: url))
+                VoiceWaveform(progress: player.progress, isOwn: isOwn, onBubble: onBubble, seed: Self.seed(for: url))
                 Circle()
-                    .fill(isOwn ? Color.white : Color.accentColor)
+                    .fill(isOwn ? onBubble : Color.accentColor)
                     .frame(width: 11, height: 11)
                     .offset(x: max(0, min(geo.size.width - 11, geo.size.width * player.progress - 5.5)))
             }
@@ -307,9 +309,9 @@ struct AudioBubble: View {
                 Button { player.cycleRate() } label: {
                     Text(player.rate == 1.0 ? "1×" : (player.rate == 1.5 ? "1.5×" : "2×"))
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(isOwn ? .white : Color.accentColor)
+                        .foregroundStyle(isOwn ? onBubble : Color.accentColor)
                         .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background((isOwn ? Color.white.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
+                        .background((isOwn ? onBubble.opacity(0.2) : Color.accentColor.opacity(0.12)), in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -326,9 +328,9 @@ struct AudioBubble: View {
     @ViewBuilder private var tickView: some View {
         switch tick {
         case .none:    EmptyView()
-        case .sent:      MessageTick(status: .sent, color: subFg, readColor: .white, size: 10)
-        case .delivered: MessageTick(status: .delivered, color: subFg, readColor: .white, size: 10)
-        case .read:      MessageTick(status: .read, color: subFg, readColor: .white, size: 10)
+        case .sent:      MessageTick(status: .sent, color: subFg, readColor: isOwn ? onBubble : .blue, size: 10)
+        case .delivered: MessageTick(status: .delivered, color: subFg, readColor: isOwn ? onBubble : .blue, size: 10)
+        case .read:      MessageTick(status: .read, color: subFg, readColor: isOwn ? onBubble : .blue, size: 10)
         }
     }
 
@@ -355,6 +357,8 @@ struct AudioBubble: View {
 private struct VoiceWaveform: View {
     let progress: Double
     let isOwn: Bool
+    /// Readable colour over the themed bubble fill (white on dark, black on light).
+    var onBubble: Color = .white
     let seed: UInt64
     private let barCount = 34
 
@@ -386,9 +390,9 @@ private struct VoiceWaveform: View {
 
     private func color(for index: Int, played: Int) -> Color {
         if index < played {
-            return isOwn ? Color.white : Color.accentColor
+            return isOwn ? onBubble : Color.accentColor
         }
-        return isOwn ? Color.white.opacity(0.35) : Color.primary.opacity(0.2)
+        return isOwn ? onBubble.opacity(0.35) : Color.primary.opacity(0.2)
     }
 }
 

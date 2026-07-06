@@ -46,7 +46,7 @@ struct CallPickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 if members.isEmpty {
                     VStack(spacing: 12) {
                         Spacer()
@@ -75,6 +75,7 @@ struct CallPickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -326,6 +327,9 @@ struct MessageBubble: View {
 
     private var isDeleted: Bool { message.deletedForAll == true }
     private var ownBubbleColor: Color { outgoingColor ?? Color.blue.opacity(0.75) }
+    /// Foreground for content inside the own bubble — tracks the theme colour's
+    /// luminance so a light custom bubble gets dark text, not invisible white.
+    private var ownTextColor: Color { ownBubbleColor.readableText }
     /// Speech-bubble background; the tail is drawn only on the last bubble of a
     /// same-sender group so a run reads as one block ending in a single tail.
     private var bubbleShape: ChatBubbleShape {
@@ -825,7 +829,8 @@ struct MessageBubble: View {
         } else {
             Text(message.body ?? "")
                 .font(.system(size: 15))
-                .foregroundStyle(.primary)
+                .foregroundStyle(isOwn ? ownTextColor : .primary)
+                .tint(isOwn ? ownTextColor : Color.accentColor)
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
                 .background(isOwn ? ownBubbleColor : Color.primary.opacity(0.08),
                             in: bubbleShape)
@@ -917,7 +922,7 @@ private struct SeenBySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView {
                     VStack(spacing: 10) {
                         ForEach(readers.sorted { $0.readAt > $1.readAt }) { read in
@@ -973,6 +978,7 @@ private struct SeenBySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     @ViewBuilder
@@ -1018,7 +1024,7 @@ struct ReactionPickerView: View {
         }
         .padding(.horizontal, AppSpacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(appBackground.ignoresSafeArea())
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 
@@ -1033,20 +1039,22 @@ struct ChatFileBubble: View {
     let onPreview: (URL, String) -> Void
     @State private var url: URL?
 
+    private var onBubble: Color { ownBubbleColor.readableText }
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "doc.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(isOwn ? .white : Color.accentColor)
+                .foregroundStyle(isOwn ? onBubble : Color.accentColor)
             Text(name ?? "File")
                 .font(AppFont.footnote)
-                .foregroundStyle(isOwn ? .white : .primary)
+                .foregroundStyle(isOwn ? onBubble : .primary)
                 .lineLimit(2)
             if url != nil {
                 Spacer()
                 Image(systemName: "eye.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
+                    .foregroundStyle(isOwn ? onBubble.opacity(0.8) : Color.accentColor)
                     .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
                     .accessibilityLabel(Text("Preview"))
             }
@@ -1117,7 +1125,7 @@ struct ChatImageBubble: View {
             if let caption, !caption.isEmpty {
                 Text(caption)
                     .font(.system(size: 15))
-                    .foregroundStyle(isOwn ? .white : .primary)
+                    .foregroundStyle(isOwn ? ownBubbleColor.readableText : .primary)
                     .padding(.horizontal, 10).padding(.top, AppSpacing.xs)
                     .frame(maxWidth: 220, alignment: .leading)
             }
