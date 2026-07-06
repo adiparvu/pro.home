@@ -62,6 +62,11 @@ struct DashboardView: View {
                 aerialHero
                     .padding(.horizontal, AppSpacing.lg)
 
+                // ── Today: what needs you, actionable in place ───────────
+                Spacer().frame(height: 14)
+                todaySection
+                    .padding(.horizontal, AppSpacing.lg)
+
                 // ── Proactive Insights (fixed after hero) ────────────────
                 if !proactiveEngine.activeInsights.isEmpty {
                     Spacer().frame(height: 14)
@@ -157,7 +162,9 @@ struct DashboardView: View {
                 Text(dateString)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-                Text(displayName.isEmpty ? greetingText : "\(greetingText), \(displayName)")
+                // Composed from Texts so both parts resolve through the
+                // in-app locale — never the device language.
+                greetingTitle
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -215,7 +222,8 @@ struct DashboardView: View {
     private var dateString: String {
         let f = DateFormatter()
         f.dateFormat = "EEEE, MMM d"
-        f.locale = .current
+        // Follow the language chosen in the app, not the device.
+        f.locale = appSettings.appLocale
         return f.string(from: Date())
     }
 
@@ -256,6 +264,7 @@ struct DashboardView: View {
             AerialCanvasView(
                 property: primary,
                 elements: elementService.elements,
+                elementBadges: heroBadges,
                 showNames: false
             )
             .aspectRatio(16 / 9, contentMode: .fit)
@@ -277,6 +286,14 @@ struct DashboardView: View {
     private var aerialHero: some View {
         ZStack(alignment: .bottomLeading) {
             aerialBackground
+
+            // The health story in one sentence, living on the photo itself.
+            HeroStatusPill(
+                todayCount: todayItems.count,
+                healthScore: propertyService.primary?.healthScore ?? 87,
+                onTap: { activeSheet = .healthDetail }
+            )
+            .padding(AppSpacing.md)
 
             Button {
                 HapticFeedback.impact(.light)
@@ -317,36 +334,6 @@ struct DashboardView: View {
                 .strokeBorder(Color.white.opacity(0.07), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 20, y: 6)
-    }
-
-    // MARK: - Property Health Card
-
-    private var propertyHealthCard: some View {
-        let score = propertyService.primary?.healthScore ?? 87
-        let tasksPct = taskService.tasks.isEmpty ? 0 :
-            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
-        return PropertyHealthDashCard(
-            score: score,
-            maintenancePct: min(100, max(0, score - 10)),
-            utilitiesPct: min(100, max(0, score + 5)),
-            securityPct: min(100, max(0, score - 3)),
-            tasksPct: tasksPct
-        )
-    }
-
-    // MARK: - Stats Strip
-
-    private var dashStatsStrip: some View {
-        DashStatsStrip(items: [
-            .init(value: "\(zoneService.zones.count)", label: "Zones",
-                  action: { router.selectedTab = .digitalTwin }),
-            .init(value: "\(elementService.elements.count)", label: "Objects",
-                  action: { router.selectedTab = .digitalTwin }),
-            .init(value: "\(taskService.tasks.filter { !$0.isCompleted }.count)", label: "Tasks",
-                  action: { router.selectedTab = .tasks }),
-            .init(value: "\(taskService.overdueCount)", label: "Alerts",
-                  action: { activeSheet = .notifications })
-        ])
     }
 
     // MARK: - Widget section header
@@ -413,25 +400,11 @@ struct DashboardView: View {
     @ViewBuilder
     private func sectionView(_ section: HomeSectionType) -> some View {
         switch section {
-        case .healthCard:
-            Group {
-                Spacer().frame(height: 14)
-                Button {
-                    HapticFeedback.impact(.light)
-                    activeSheet = .healthDetail
-                } label: {
-                    propertyHealthCard
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, AppSpacing.lg)
-            }
-
-        case .statsStrip:
-            Group {
-                Spacer().frame(height: 14)
-                dashStatsStrip
-                    .padding(.horizontal, AppSpacing.lg)
-            }
+        case .healthCard, .statsStrip:
+            // Retired from the home screen: health lives in the hero status
+            // pill (tap → full detail) and the counters became the "Today"
+            // card — numbers without actions don't earn dashboard space.
+            EmptyView()
 
         case .widgets:
             Group {
@@ -447,13 +420,82 @@ struct DashboardView: View {
 
     // MARK: - Greeting text
 
-    private var greetingText: String {
+    private var greetingTitle: Text {
+        let base = Text(greetingKey)
+        return displayName.isEmpty ? base : base + Text(verbatim: ", \(displayName)")
+    }
+
+    private var greetingKey: LocalizedStringKey {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
-        case 5..<12:  return String(localized: "Good morning")
-        case 12..<18: return String(localized: "Good afternoon")
-        case 18..<22: return String(localized: "Good evening")
-        default:      return String(localized: "Good night")
+        case 5..<12:  return "Good morning"
+        case 12..<18: return "Good afternoon"
+        case 18..<22: return "Good evening"
+        default:      return "Good night"
+        }
+    }
+
+    // MARK: - Today
+
+    private var todayItems: [TodayItem] {
+        TodayFeed.items(tasks: taskService.tasks,
+                        plants: plantService.plants,
+                        deliveries: deliveryService.deliveries,
+                        members: familyService.members)
+    }
+
+    /// Pulsing badges for today's located tasks — the day happens ON the map.
+    private var heroBadges: [UUID: Color] {
+        var badges: [UUID: Color] = [:]
+        for item in todayItems {
+            guard let elId = item.elementId else { continue }
+            if item.urgent { badges[elId] = Color.brandDanger }
+            else if badges[elId] == nil { badges[elId] = Color.brandWarning }
+        }
+        return badges
+    }
+
+    private var todaySection: some View {
+        let items = todayItems
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("TODAY")
+                .font(AppFont.label)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+                .padding(.leading, AppSpacing.xxs)
+            TodayCard(
+                items: Array(items.prefix(3)),
+                overflowCount: max(0, items.count - 3),
+                onComplete: { complete($0) },
+                onOpen: { open($0) },
+                onOverflow: { activeSheet = .notifications }
+            )
+        }
+    }
+
+    private func complete(_ item: TodayItem) {
+        Task {
+            // Let the checkmark animate before the row leaves the list.
+            try? await Task.sleep(for: .milliseconds(450))
+            switch item.kind {
+            case .task(let t):  await taskService.toggleComplete(t)
+            case .plant(let p): await plantService.markWatered(p)
+            default: break
+            }
+        }
+    }
+
+    private func open(_ item: TodayItem) {
+        HapticFeedback.impact(.light)
+        switch item.kind {
+        case .task(let t):
+            router.selectedTab = .tasks
+            router.deepLinkTaskId = t.id
+        case .plant:
+            router.showWaterPlant = true
+        case .delivery:
+            router.showDeliveries = true
+        case .birthday:
+            router.showFamily = true
         }
     }
 }

@@ -1,108 +1,357 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Due today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Due today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Scadent azi" } }
+      }
+    },
+    "Arriving today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Arriving today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Sosește azi" } }
+      }
+    },
+    "Birthday today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Birthday today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Zi de naștere azi" } }
+      }
+    },
+    "Mark done": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mark done" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Marchează ca făcut" } }
+      }
+    },
+    "+%lld more": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "+%lld more" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "+ încă %lld" } }
+      }
+    },
+    "All clear today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "All clear today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Totul e în regulă azi" } }
+      }
+    },
+    "Nothing needs you right now — enjoy your home.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Nothing needs you right now — enjoy your home." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nimic nu are nevoie de tine acum — bucură-te de casa ta." } }
+      }
+    },
+    "%lld for today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%lld for today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%lld pentru azi" } }
+      }
+    },
+    "Things to do today": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Things to do today" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Lucruri de făcut azi" } }
+      }
+    },
+    "TODAY": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "TODAY" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "ASTĂZI" } }
+      }
+    },
+    "Available": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Available" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Disponibile" } }
+      }
+    },
+    "Active — drag to reorder": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Active — drag to reorder" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Active — trage pentru reordonare" } }
+      }
+    },
+    "Full width": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Full width" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Lățime completă" } }
+      }
+    },
+    "Tap for forecast": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap for forecast" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Apasă pentru prognoză" } }
+      }
+    },
+    "Your property is well maintained. Keep resolving tasks on time.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your property is well maintained. Keep resolving tasks on time." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Proprietatea ta este bine întreținută. Continuă să rezolvi sarcinile la timp." } }
+      }
+    },
+    "Some areas need attention. Follow the suggestions below to raise the score.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Some areas need attention. Follow the suggestions below to raise the score." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Există zone care necesită atenție. Urmărește sugestiile de mai jos pentru a ridica scorul." } }
+      }
+    },
+    "Good — equipment running fine": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Good — equipment running fine" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Bun — echipamente funcționale" } }
+      }
+    },
+    "A few appliances need a check": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "A few appliances need a check" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Câteva echipamente necesită verificare" } }
+      }
+    },
+    "Several appliances need inspection": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Several appliances need inspection" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Mai multe echipamente necesită inspecție" } }
+      }
+    },
+    "Bills up to date, normal usage": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bills up to date, normal usage" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Facturi la zi, consum normal" } }
+      }
+    },
+    "Check outstanding bills": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check outstanding bills" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Verifică facturile restante" } }
+      }
+    },
+    "Unpaid bills or unusual usage": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unpaid bills or unusual usage" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Facturi neachitate sau consum anormal" } }
+      }
+    },
+    "Security systems active": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Security systems active" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Sisteme de securitate active" } }
+      }
+    },
+    "Some checks recommended": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Some checks recommended" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Unele verificări recomandate" } }
+      }
+    },
+    "Security needs urgent attention": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Security needs urgent attention" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Securitatea necesită atenție urgentă" } }
+      }
+    },
+    "All tasks completed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "All tasks completed" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Toate sarcinile finalizate" } }
+      }
+    },
+    "Active tasks in progress": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Active tasks in progress" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Sarcini active în progres" } }
+      }
+    },
+    "Overdue tasks — prioritize them": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Overdue tasks — prioritize them" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Sarcini restante — prioritizează-le" } }
+      }
+    },
+    "Check your equipment": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Check your equipment" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Verifică echipamentele" } }
+      }
+    },
+    "Add a yearly inspection for the boiler, electrical system and plumbing.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add a yearly inspection for the boiler, electrical system and plumbing." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă o inspecție anuală la boiler, sistem electric și instalații sanitare." } }
+      }
+    },
+    "Update your bills": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Update your bills" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Actualizează facturile" } }
+      }
+    },
+    "Log utility receipts to keep the history complete.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Log utility receipts to keep the history complete." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Introdu chitanțele de utilități pentru a menține istoricul complet." } }
+      }
+    },
+    "Improve security": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Improve security" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Îmbunătățește securitatea" } }
+      }
+    },
+    "Add cameras or sensors to uncovered areas of the property.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add cameras or sensors to uncovered areas of the property." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă camere sau senzori în zonele neacoperite ale proprietății." } }
+      }
+    },
+    "Resolve overdue tasks": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Resolve overdue tasks" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Rezolvă sarcinile restante" } }
+      }
+    },
+    "Complete due tasks — every finished task raises the score.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Complete due tasks — every finished task raises the score." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Completează sarcinile scadente — fiecare task finalizat ridică scorul." } }
+      }
+    },
+    "Property in excellent shape!": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Property in excellent shape!" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Proprietate în stare excelentă!" } }
+      }
+    },
+    "Keep the rhythm: monthly checks + updated documents + tasks on time.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep the rhythm: monthly checks + updated documents + tasks on time." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Menține ritmul: verificări lunare + documente actualizate + sarcini la zi." } }
+      }
+    },
     "Time": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Time" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Timp" } }
       }
     },
     "Autumn": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Autumn" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Toamn\u0103" } }
       }
     },
     "Add dated photos to the Photo Journal to travel through time.": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add dated photos to the Photo Journal to travel through time." } },
         "ro": { "stringUnit": { "state": "translated", "value": "Adaug\u0103 fotografii datate \u00een Jurnalul foto pentru a c\u0103l\u0103tori \u00een timp." } }
       }
     },
     "3D MODEL": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "3D MODEL" } },
         "ro": { "stringUnit": { "state": "translated", "value": "MODEL 3D" } }
       }
     },
     "Link a 3D scan": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link a 3D scan" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Leag\u0103 o scanare 3D" } }
       }
     },
     "Layers": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Layers" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Straturi" } }
       }
     },
     "Buried utilities": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Buried utilities" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Utilit\u0103\u021bi \u00eengropate" } }
       }
     },
     "Underground zones outlined on the same photo": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Underground zones outlined on the same photo" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Zonele subterane conturate pe aceea\u0219i fotografie" } }
       }
     },
     "Open tasks": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open tasks" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Taskuri deschise" } }
       }
     },
     "Pulsing badge on elements with work to do": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pulsing badge on elements with work to do" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Insign\u0103 pulsant\u0103 pe elementele cu treab\u0103 de f\u0103cut" } }
       }
     },
     "Health tint": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Health tint" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Tent\u0103 de s\u0103n\u0103tate" } }
       }
     },
     "Zones colored by the health of what's inside": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zones colored by the health of what's inside" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Zonele colorate dup\u0103 s\u0103n\u0103tatea a ce con\u021bin" } }
       }
     },
     "Journal photos": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Journal photos" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Fotografii din jurnal" } }
       }
     },
     "Photo counts anchored to their zones": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Photo counts anchored to their zones" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Num\u0103rul de fotografii ancorat pe zonele lor" } }
       }
     },
     "Journal": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Journal" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Jurnal" } }
       }
     },
     "Search the map\u2026": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search the map…" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Caut\u0103 pe hart\u0103\u2026" } }
       }
     },
     "Zones list": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zones list" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Lista zonelor" } }
       }
     },
     "Objects list": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Objects list" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Lista obiectelor" } }
       }
     },
     "Lists": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Lists" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Liste" } }
       }
     },
     "Favorite": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Favorite" } },
         "ro": { "stringUnit": { "state": "translated", "value": "Favorit" } }
       }
     },
     "Create your own property, or ask the owner of a home to invite you.": {
       "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Create your own property, or ask the owner of a home to invite you." } },
         "ro": { "stringUnit": { "state": "translated", "value": "Creeaz\u0103-\u021bi propria proprietate sau cere proprietarului unei locuin\u021be s\u0103 te invite." } }
       }
     },

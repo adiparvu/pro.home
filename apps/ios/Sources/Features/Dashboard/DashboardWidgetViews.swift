@@ -46,7 +46,7 @@ struct WeatherWidget: View {
                                         .font(.system(size: 11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 } else {
-                                    Text("Apasă pentru prognoză")
+                                    Text("Tap for forecast")
                                         .font(.system(size: 11))
                                         .foregroundStyle(.white.opacity(0.65))
                                 }

@@ -36,10 +36,14 @@ enum HomeSectionType: String, CaseIterable, Identifiable {
     static let key = "prvio.homeSections"
 
     static func load() -> [HomeSectionType] {
-        guard let raw = UserDefaults.standard.string(forKey: key) else { return allCases }
+        // Dashboard redesign: health lives in the hero status pill and the
+        // counters became the "Today" card, so only the widgets section
+        // remains on the page (saved orders from older builds still decode,
+        // the retired sections just render nothing).
+        guard let raw = UserDefaults.standard.string(forKey: key) else { return [.widgets] }
         let saved = raw.split(separator: ",").compactMap { HomeSectionType(rawValue: String($0)) }
         let missing = allCases.filter { !saved.contains($0) }
-        return saved + missing
+        return (saved + missing).filter { $0 == .widgets }
     }
 
     static func save(_ order: [HomeSectionType]) {
@@ -146,7 +150,7 @@ struct WidgetPickerSheet: View {
                             active.remove(atOffsets: offsets)
                         }
                     } header: {
-                        Text("Active — trage pentru reordonare")
+                        Text("Active — drag to reorder")
                             .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
@@ -167,7 +171,7 @@ struct WidgetPickerSheet: View {
                             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
                     } header: {
-                        Text("Disponibile")
+                        Text("Available")
                             .font(AppFont.label)
                             .foregroundStyle(Color.primary.opacity(0.4))
                     }
@@ -177,11 +181,11 @@ struct WidgetPickerSheet: View {
             .scrollContentBackground(.hidden)
             .background(appBackground.ignoresSafeArea())
             .environment(\.editMode, .constant(.active))
-            .navigationTitle("Widgeturi")
+            .navigationTitle("Widgets")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Gata") {
+                    Button("Done") {
                         HomeWidgetType.save(active)
                         HapticFeedback.success()
                         dismiss()
@@ -209,7 +213,7 @@ struct WidgetPickerSheet: View {
                     .font(AppFont.body)
                     .foregroundStyle(.primary)
                 if type.isFullWidth {
-                    Text("Lățime completă")
+                    Text("Full width")
                         .font(.system(size: 11))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
