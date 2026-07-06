@@ -30,7 +30,8 @@ struct ARIAView: View {
             themeID: d.string(forKey: "prvio.chatTheme.aria") ?? "",
             bubbleHex: d.string(forKey: "prvio.chatBubbleHex.aria") ?? "",
             bgID: d.string(forKey: "prvio.chatBgID.aria") ?? "",
-            bgImage: d.string(forKey: "prvio.chatBgImage.aria") ?? ""
+            bgImage: d.string(forKey: "prvio.chatBgImage.aria") ?? "",
+            bgAnim: d.string(forKey: "prvio.chatBgAnim.aria") ?? ""
         )
     }
     @State private var messages: [ARIAMessage] = []
