@@ -110,6 +110,41 @@ private struct LegacyGlass<S: InsettableShape>: ViewModifier {
     }
 }
 
+// MARK: - Glass action button (the Contacts-card circles)
+//
+// The ONLY sanctioned shape for icon action buttons: a Liquid Glass circle
+// (native glassEffect on iOS 26, material fallback earlier) with a white/
+// primary glyph and an 11pt label beneath — Apple's own contact-card row.
+// Never ship tinted rounded-rect action chips again.
+struct GlassActionButton: View {
+    let icon: String
+    let label: LocalizedStringKey
+    var action: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
+            VStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 52, height: 52)
+                    .glassCircle()
+                Text(label)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+    }
+}
+
 // MARK: - GlassCard
 
 struct GlassCard<Content: View>: View {

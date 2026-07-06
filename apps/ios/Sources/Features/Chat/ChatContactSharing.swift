@@ -368,45 +368,29 @@ struct SharedContactDetailSheet: View {
     }
 
     private func actionRow(_ p: SharedContactPayload) -> some View {
-        HStack(spacing: 10) {
-            if let phone = p.phones.first {
-                let digits = phone.filter { $0.isNumber || $0 == "+" }
-                actionButton("phone.fill", String(localized: "Sună")) {
-                    open("tel://\(digits)")
+        // Native pattern (Apple's contact card): Liquid Glass circles with
+        // primary glyphs — never tinted rectangles.
+        HStack(spacing: 0) {
+            Group {
+                if let phone = p.phones.first {
+                    let digits = phone.filter { $0.isNumber || $0 == "+" }
+                    GlassActionButton(icon: "phone.fill", label: "Sună") {
+                        open("tel://\(digits)")
+                    }
+                    GlassActionButton(icon: "message.fill", label: "Mesaj") {
+                        open("sms://\(digits)")
+                    }
+                    GlassActionButton(icon: "video.fill", label: "FaceTime") {
+                        open("facetime://\(digits)")
+                    }
                 }
-                actionButton("message.fill", String(localized: "Mesaj")) {
-                    open("sms://\(digits)")
+                GlassActionButton(icon: "person.crop.circle.badge.plus", label: "Salvează") {
+                    saving = p
                 }
-                actionButton("video.fill", "FaceTime") {
-                    open("facetime://\(digits)")
-                }
-            }
-            actionButton("person.crop.circle.badge.plus", String(localized: "Salvează")) {
-                saving = p
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    private func actionButton(_ icon: String, _ label: String, action: @escaping () -> Void) -> some View {
-        Button {
-            HapticFeedback.impact(.light)
-            action()
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                Text(label)
-                    .font(.system(size: 10, weight: .medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .foregroundStyle(Color.accentColor)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 4)
     }
 
     private func open(_ url: String) {
