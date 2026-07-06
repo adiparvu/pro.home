@@ -19,7 +19,9 @@ struct ARIASettingsView: View {
     @AppStorage("prvio.aria.showPlants") var canSeePlants = true
 
     // Model / API key
-    @AppStorage("prvio.aria.customApiKey") var customApiKey = ""
+    // Keychain-backed (SecretStore): a billable API key must not sit in
+    // UserDefaults plaintext. One-time migration from the old default below.
+    @State var customApiKey = SecretStore.string(for: "aria.customApiKey")
     @AppStorage("prvio.aria.useCustomModel") var useCustomModel = false
 
     // UI state
@@ -63,6 +65,17 @@ struct ARIASettingsView: View {
         }
         .sheet(isPresented: $showApiKeySheet) {
             ApiKeyEditorSheet(apiKey: $customApiKey)
+        }
+        .onChange(of: customApiKey) { SecretStore.set(customApiKey, for: "aria.customApiKey") }
+        .onAppear {
+            // Migrate the key out of UserDefaults, where it lived in plaintext.
+            if let legacy = UserDefaults.standard.string(forKey: "prvio.aria.customApiKey"), !legacy.isEmpty {
+                if customApiKey.isEmpty {
+                    customApiKey = legacy
+                    SecretStore.set(legacy, for: "aria.customApiKey")
+                }
+                UserDefaults.standard.removeObject(forKey: "prvio.aria.customApiKey")
+            }
         }
         .confirmationDialog(
             "Clear Conversation History",

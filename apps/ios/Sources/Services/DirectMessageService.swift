@@ -259,7 +259,7 @@ final class DirectMessageService {
             dms.removeAll { $0.id == id }
         } catch {
 #if DEBUG
-            print("[DM] delete error: \(error)")
+            debugLog("[DM] delete error: \(error)")
 #endif
         }
     }
@@ -275,7 +275,7 @@ final class DirectMessageService {
             if let i = dms.firstIndex(where: { $0.id == id }) { dms[i].deletedForAll = true }
         } catch {
 #if DEBUG
-            print("[DM] deleteForEveryone error: \(error)")
+            debugLog("[DM] deleteForEveryone error: \(error)")
 #endif
         }
     }
@@ -299,7 +299,7 @@ final class DirectMessageService {
             if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].pinned = newVal }
         } catch {
 #if DEBUG
-            print("[DM] togglePin error: \(error)")
+            debugLog("[DM] togglePin error: \(error)")
 #endif
         }
     }
@@ -315,7 +315,7 @@ final class DirectMessageService {
             if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].isMarked = newVal }
         } catch {
 #if DEBUG
-            print("[DM] toggleMark error: \(error)")
+            debugLog("[DM] toggleMark error: \(error)")
 #endif
         }
     }
@@ -332,7 +332,7 @@ final class DirectMessageService {
             if let i = dms.firstIndex(where: { $0.id == msg.id }) { dms[i].reactions = map }
         } catch {
 #if DEBUG
-            print("[DM] toggleReaction error: \(error)")
+            debugLog("[DM] toggleReaction error: \(error)")
 #endif
         }
     }
@@ -351,7 +351,7 @@ final class DirectMessageService {
             }
         } catch {
 #if DEBUG
-            print("[DM] editMessage error: \(error)")
+            debugLog("[DM] editMessage error: \(error)")
 #endif
         }
     }

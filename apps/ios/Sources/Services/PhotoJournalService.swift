@@ -22,13 +22,8 @@ final class PhotoJournalService {
         isLoading = true
         defer { isLoading = false }
         do {
-            entries = try await supabase
-                .from("photo_journal_entries")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("taken_at", ascending: false)
-                .limit(600)   // explicit cap — PostgREST truncates silently without one
-                .execute().value
+            entries = try await PropertyRepo.fetch(table: "photo_journal_entries", propertyId: propertyId,
+                                                   scope: .strict, order: "taken_at", limit: 600)
             ServiceCache.save(entries, entity: "journal", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
@@ -52,7 +47,7 @@ final class PhotoJournalService {
     func upload(imageData: Data, propertyId: UUID, title: String? = nil) async throws -> PhotoJournalEntry? {
         guard let ownerId = supabase.auth.currentSession?.user.id else { return nil }
         let compressed = UIImage(data: imageData)
-            .flatMap { $0.jpegData(compressionQuality: 0.8) } ?? imageData
+            .flatMap { $0.uploadJPEG(quality: 0.8) } ?? imageData
         let path = "\(ownerId.uuidString.lowercased())/journal/\(propertyId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
         try await supabase.storage
             .from("documents")

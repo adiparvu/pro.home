@@ -309,7 +309,7 @@ struct ElementNoteEditorSheet: View {
     }
 
     private func uploadNotePhoto(_ image: UIImage) async -> String? {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        guard let data = image.uploadJPEG(quality: 0.8) else { return nil }
         let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
         let path = "\(uid)/notes/\(element.id.uuidString)/\(UUID().uuidString).jpg"
         do {

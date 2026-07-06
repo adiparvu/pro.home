@@ -20,12 +20,9 @@ final class PaintColorService {
         isLoading = true
         defer { isLoading = false }
         do {
-            colors = try await supabase
-                .from("paint_colors")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("room_name", ascending: true)
-                .execute().value
+            colors = try await PropertyRepo.fetch(table: "paint_colors", propertyId: propertyId,
+                                                  scope: .strict, order: "room_name", ascending: true,
+                                                  limit: 500)
         } catch {
             self.error = error.localizedDescription
         }

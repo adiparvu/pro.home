@@ -249,24 +249,27 @@ struct SettingsView: View {
     }
 
     private func allowed(_ f: PropertyFeature) -> Bool {
-        switch propertyService.myRole {
-        case "guest":
+        // nil = role still loading -> fail open so the owner's screen never
+        // flashes empty; unknown strings already collapsed to .guest.
+        guard let role = propertyService.role else { return true }
+        switch role {
+        case .guest:
             return false
-        case "tenant":
+        case .tenant:
             return [.documents, .supplies, .plants, .deliveries, .utilities,
                     .contractors, .appliances, .photoJournal, .seasonal, .paint,
                     .yearReview].contains(f)
-        case "family_child", "family_teen":
+        case .familyChild, .familyTeen:
             return [.supplies, .plants, .deliveries, .photoJournal, .seasonal,
                     .yearReview].contains(f)
-        case "service_provider":
+        case .serviceProvider:
             return [.documents, .contractors, .deliveries, .appliances,
                     .seasonal, .photoJournal].contains(f)
-        case "family_adult", "family_elderly":
+        case .familyAdult, .familyElderly:
             // Family adult: everything except the landlord-only tools.
             return f != .tenants && f != .guestMode && f != .propertyValue
-        default:
-            return true   // owner, partner, nil (fail-open)
+        case .owner, .partner:
+            return true
         }
     }
 
@@ -518,10 +521,8 @@ struct SettingsView: View {
 
     // Only owners/partners (or the not-yet-resolved default) manage the roster.
     private var canManageMembers: Bool {
-        switch propertyService.myRole {
-        case nil, "owner", "partner": return true
-        default: return false
-        }
+        guard let role = propertyService.role else { return true }   // still loading
+        return role.canManageMembers
     }
 
     private var familySection: some View {
@@ -565,17 +566,18 @@ struct SettingsView: View {
     private enum AppFeature { case liveActivities, floatingButtons, nfcKeys, integrations }
 
     private func allowedApp(_ f: AppFeature) -> Bool {
-        switch propertyService.myRole {
-        case "guest", "family_child", "family_teen":
+        guard let role = propertyService.role else { return true }   // still loading
+        switch role {
+        case .guest, .familyChild, .familyTeen:
             return false                       // no property power tools
-        case "tenant":
+        case .tenant:
             // A resident tracks their own activities, configures shortcuts and
             // may hold an access key, but doesn't wire up account integrations.
             return f == .liveActivities || f == .floatingButtons || f == .nfcKeys
-        case "service_provider":
+        case .serviceProvider:
             return f == .liveActivities || f == .floatingButtons
-        default:
-            return true                        // owner, partner, adult, nil (fail-open)
+        case .owner, .partner, .familyAdult, .familyElderly:
+            return true
         }
     }
 

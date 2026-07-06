@@ -20,13 +20,9 @@ final class PropertyElementService {
         isLoading = true
         defer { isLoading = false }
         do {
-            elements = try await supabase
-                .from("property_elements")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("sort_order", ascending: true)
-                .execute()
-                .value
+            elements = try await PropertyRepo.fetch(table: "property_elements", propertyId: propertyId,
+                                                    scope: .strict, order: "sort_order", ascending: true,
+                                                    limit: 500)
             ServiceCache.save(elements, entity: "elements", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription

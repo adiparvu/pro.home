@@ -53,15 +53,8 @@ final class ContractorService {
             // RLS scopes this to the caller's household; the property filter
             // narrows it to the selected home and the cap just prevents an
             // unbounded select as the table grows over the years.
-            var query = supabase.from("contractors").select()
-            if let pid {
-                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
-            }
-            contractors = try await query
-                .order("name")
-                .limit(500)
-                .execute()
-                .value
+            contractors = try await PropertyRepo.fetch(table: "contractors", propertyId: pid,
+                                                       order: "name", ascending: true, limit: 500)
             ServiceCache.save(contractors, entity: "contractors", propertyId: pid)
         } catch {
             self.error = error.localizedDescription

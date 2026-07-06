@@ -75,7 +75,9 @@ final class CurrencyService {
 
     /// `whole` rounds to whole units — the style for aggregate tiles and
     /// dashboards. Otherwise cents appear only when the amount has them.
-    static func money(_ amount: Double, code: String, whole: Bool = false) -> String {
+    /// Pure function — nonisolated so models and background contexts can
+    /// format without hopping to the main actor.
+    nonisolated static func money(_ amount: Double, code: String, whole: Bool = false) -> String {
         Decimal(amount).formatted(
             .currency(code: code)
                 .presentation(.narrow)
@@ -83,7 +85,7 @@ final class CurrencyService {
         )
     }
 
-    static func symbol(for code: String) -> String {
+    nonisolated static func symbol(for code: String) -> String {
         supported.first { $0.code == code }?.symbol ?? code
     }
 

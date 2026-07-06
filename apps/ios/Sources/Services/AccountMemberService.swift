@@ -74,7 +74,7 @@ final class AccountMemberService {
     /// True when the signed-in user can administer accounts.
     var canAdminister: Bool {
         guard let uid = currentUserId else { return false }
-        return members.contains { $0.userId == uid && ["owner", "partner"].contains($0.role) }
+        return members.contains { $0.userId == uid && (PropertyRole(rawValue: $0.role)?.canManageMembers ?? false) }
     }
 
     func load(propertyId: UUID) async {

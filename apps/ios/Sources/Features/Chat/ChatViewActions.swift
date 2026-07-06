@@ -159,7 +159,7 @@ extension ChatView {
 
     func sendCameraPhoto(_ image: UIImage) async {
         guard let pid = propertyId,
-              let data = image.jpegData(compressionQuality: 0.8) else { return }
+              let data = image.uploadJPEG(quality: 0.8, maxDimension: 2048) else { return }
         isSending = true
         defer { isSending = false }
         // Private bucket + signed URL (resolved at display via ChatMedia).

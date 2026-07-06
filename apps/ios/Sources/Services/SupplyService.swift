@@ -39,18 +39,12 @@ final class SupplyService {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let fetchedLists: [SupplyList] = supabase
-                .from("supply_lists")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
-            async let fetchedItems: [SupplyItem] = supabase
-                .from("supply_items")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
+            async let fetchedLists: [SupplyList] = PropertyRepo.fetch(
+                table: "supply_lists", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 500)
+            async let fetchedItems: [SupplyItem] = PropertyRepo.fetch(
+                table: "supply_items", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 1000)
             lists = try await fetchedLists
             items = try await fetchedItems
             ServiceCache.save(lists, entity: "supplies.lists", propertyId: propertyId)

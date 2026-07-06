@@ -60,17 +60,12 @@ final class DeliveryService {
         }
         currentPropertyId = propertyId
         do {
-            deliveries = try await supabase
-                .from("packages")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            deliveries = try await PropertyRepo.fetch(table: "packages", propertyId: propertyId,
+                                                      scope: .strict, limit: 500)
             ServiceCache.save(deliveries, entity: "deliveries", propertyId: propertyId)
         } catch {
             #if DEBUG
-            print("DeliveryService.load error:", error)
+            debugLog("DeliveryService.load error:", error)
             #endif
         }
     }
@@ -93,7 +88,7 @@ final class DeliveryService {
             }
         } catch {
             #if DEBUG
-            print("DeliveryService.add error:", error)
+            debugLog("DeliveryService.add error:", error)
             #endif
         }
     }
@@ -161,7 +156,7 @@ final class DeliveryService {
             }
         } catch {
             #if DEBUG
-            print("DeliveryService.update error:", error)
+            debugLog("DeliveryService.update error:", error)
             #endif
         }
     }
@@ -177,7 +172,7 @@ final class DeliveryService {
             LiveActivityService.shared.endDelivery(id: delivery.id)
         } catch {
             #if DEBUG
-            print("DeliveryService.delete error:", error)
+            debugLog("DeliveryService.delete error:", error)
             #endif
         }
     }
@@ -206,7 +201,7 @@ final class DeliveryService {
             // Tracking is best-effort — a failure here never blocks saving the
             // delivery (e.g. aggregator not yet configured returns 503).
             #if DEBUG
-            print("DeliveryService.registerTracking error:", error)
+            debugLog("DeliveryService.registerTracking error:", error)
             #endif
         }
     }

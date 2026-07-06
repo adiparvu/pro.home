@@ -73,17 +73,8 @@ final class FinancialService {
         isLoading = true
         defer { isLoading = false }
         do {
-            var query = supabase.from("financial_records").select()
-            if let pid {
-                // Scope to the selected home; legacy rows without a property
-                // stay visible rather than silently disappearing.
-                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
-            }
-            records = try await query
-                .order("date", ascending: false)
-                .limit(1000)   // explicit cap — PostgREST truncates silently without one
-                .execute()
-                .value
+            records = try await PropertyRepo.fetch(table: "financial_records", propertyId: pid,
+                                                   order: "date", limit: 1000)
             ServiceCache.save(records, entity: "financial", propertyId: pid)
         } catch {
             if error is CancellationError { return }

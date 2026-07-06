@@ -95,11 +95,18 @@ final class AccountsStore {
             kSecAttrService: keychainService,
             kSecAttrAccount: keychainKey
         ]
-        let attributes: [CFString: Any] = [kSecValueData: data]
+        // ThisDeviceOnly: session tokens must never leave this device via a
+        // backup or device migration; AfterFirstUnlock keeps account switching
+        // and push-driven refresh working after a reboot.
+        let attributes: [CFString: Any] = [
+            kSecValueData: data,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ]
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {
             var addQuery = query
             addQuery[kSecValueData] = data
+            addQuery[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             SecItemAdd(addQuery as CFDictionary, nil)
         }
     }

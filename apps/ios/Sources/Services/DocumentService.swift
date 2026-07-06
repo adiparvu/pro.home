@@ -22,17 +22,7 @@ final class DocumentService {
         isLoading = true
         defer { isLoading = false }
         do {
-            var query = supabase.from("documents").select()
-            if let pid {
-                // Scope to the selected home; legacy rows without a property
-                // stay visible rather than silently disappearing.
-                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
-            }
-            documents = try await query
-                .order("created_at", ascending: false)
-                .limit(500)   // explicit cap — PostgREST truncates silently without one
-                .execute()
-                .value
+            documents = try await PropertyRepo.fetch(table: "documents", propertyId: pid, limit: 500)
             ServiceCache.save(documents, entity: "documents", propertyId: pid)
         } catch {
             if error is CancellationError { return }

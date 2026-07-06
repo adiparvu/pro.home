@@ -249,7 +249,7 @@ final class PropertyService {
 
     /// Uploads a property photo to Storage and persists its public URL.
     func uploadPhoto(propertyId: UUID, image: UIImage) async {
-        guard let data = image.jpegData(compressionQuality: 0.82) else { return }
+        guard let data = image.uploadJPEG(quality: 0.82) else { return }
         let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"
         let path = "\(uid)/properties/\(propertyId.uuidString)/\(UUID().uuidString).jpg"
         do {

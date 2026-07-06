@@ -18,16 +18,8 @@ final class FamilyService {
         isLoading = true
         defer { isLoading = false }
         do {
-            var query = supabase.from("family_members").select()
-            if let pid {
-                // Scope to the selected home; legacy rows without a property
-                // stay visible rather than silently disappearing.
-                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
-            }
-            members = try await query
-                .order("created_at", ascending: true)
-                .execute()
-                .value
+            members = try await PropertyRepo.fetch(table: "family_members", propertyId: pid,
+                                                   ascending: true, limit: 500)
             ServiceCache.save(members, entity: "family", propertyId: pid)
         } catch {
             self.error = error.localizedDescription
@@ -150,7 +142,7 @@ final class FamilyService {
             let message = error.localizedDescription
             self.error = message
             #if DEBUG
-            print("[FamilyService] sendInvite failed: \(error)")
+            debugLog("[FamilyService] sendInvite failed: \(error)")
             #endif
             return message
         }
@@ -215,7 +207,7 @@ final class FamilyService {
             createBirthdayEvent(store: store, name: name, birthday: birthday)
         } catch {
             #if DEBUG
-            print("[FamilyService] calendar access error: \(error)")
+            debugLog("[FamilyService] calendar access error: \(error)")
             #endif
         }
     }

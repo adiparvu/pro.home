@@ -362,7 +362,7 @@ struct AddPhotoJournalSheet: View {
 
     private func appendImage(_ image: UIImage) {
         guard photos.count < maxPhotos,
-              let data = image.jpegData(compressionQuality: 0.9) else { return }
+              let data = image.uploadJPEG(quality: 0.9) else { return }
         photos.append(PickedPhoto(data: data, image: image))
     }
 
@@ -390,7 +390,7 @@ struct AddPhotoJournalSheet: View {
             uploadProgress = index
             do {
                 let compressed = UIImage(data: photo.data)
-                    .flatMap { $0.jpegData(compressionQuality: 0.8) } ?? photo.data
+                    .flatMap { $0.uploadJPEG(quality: 0.8) } ?? photo.data
                 // The public `documents` bucket allows any authenticated insert;
                 // lowercase ids keep paths consistent with auth.uid()::text.
                 let path = "\(ownerId.uuidString.lowercased())/journal/\(propertyId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"

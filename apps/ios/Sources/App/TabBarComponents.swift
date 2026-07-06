@@ -56,19 +56,23 @@ enum AppTab: String, CaseIterable {
         }
     }
 
-    /// Tabs a property role may see. Fail-open: nil / owner / partner / adult /
-    /// elderly see everything; only explicitly-scoped roles are trimmed. This is
-    /// navigation convenience — real per-module data security is server-side RLS
-    /// (Phase 3). Chat + settings (your own profile) stay available to everyone.
+    /// Tabs a property role may see. Exhaustive over `PropertyRole` so a new
+    /// role can't slip through an open `default:`; unknown role strings have
+    /// already collapsed to `.guest` in `PropertyRole.resolve`. nil = role
+    /// still loading → everything, so the owner's UI never flashes trimmed
+    /// at startup. This is navigation convenience — real per-module data
+    /// security is server-side RLS. Chat + settings (your own profile) stay
+    /// available to everyone.
     static func visible(for role: String?) -> Set<AppTab> {
+        guard let role = PropertyRole.resolve(role) else { return Set(AppTab.allCases) }
         switch role {
-        case "guest":
+        case .guest:
             return [.chat, .settings]
-        case "service_provider":
+        case .serviceProvider:
             return [.tasks, .chat, .settings]
-        case "tenant", "family_child", "family_teen":
+        case .tenant, .familyChild, .familyTeen:
             return [.home, .tasks, .chat, .settings]
-        default:
+        case .owner, .partner, .familyAdult, .familyElderly:
             return Set(AppTab.allCases)
         }
     }

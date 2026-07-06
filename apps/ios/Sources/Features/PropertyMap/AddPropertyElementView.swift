@@ -429,7 +429,7 @@ struct AddPropertyElementView: View {
 
     private func handlePicked(_ image: UIImage) async {
         guard let pid = propertyService.primary?.id,
-              let data = image.jpegData(compressionQuality: 0.82) else { return }
+              let data = image.uploadJPEG(quality: 0.82) else { return }
         isUploadingMedia = true
         defer { isUploadingMedia = false }
         let uid = supabase.auth.currentSession?.user.id.uuidString ?? "anon"

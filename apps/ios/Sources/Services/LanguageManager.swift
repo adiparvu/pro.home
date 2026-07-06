@@ -92,7 +92,7 @@ extension Bundle {
         let fallback = prvio_localizedString(forKey: key, value: value, table: tableName)
 #if DEBUG
         if fallback == key || (!fallback.isEmpty && fallback == (value ?? "")) {
-            print("[LanguageManager] ⚠️ Missing key '\(key)' in override dict and fallback bundle (table: \(tableName ?? "Localizable"))")
+            debugLog("[LanguageManager] ⚠️ Missing key '\(key)' in override dict and fallback bundle (table: \(tableName ?? "Localizable"))")
         }
 #endif
         return fallback

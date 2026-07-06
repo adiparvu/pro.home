@@ -146,18 +146,15 @@ final class ReceiptService {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let fr: [Receipt] = supabase
-                .from("receipts").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("date", ascending: false).execute().value
-            async let fi: [ReceiptItem] = supabase
-                .from("receipt_items").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true).execute().value
-            async let fb: [HouseholdBudget] = supabase
-                .from("household_budgets").select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("month", ascending: false).execute().value
+            async let fr: [Receipt] = PropertyRepo.fetch(
+                table: "receipts", propertyId: propertyId,
+                scope: .strict, order: "date", limit: 1000)
+            async let fi: [ReceiptItem] = PropertyRepo.fetch(
+                table: "receipt_items", propertyId: propertyId,
+                scope: .strict, ascending: true, limit: 1000)
+            async let fb: [HouseholdBudget] = PropertyRepo.fetch(
+                table: "household_budgets", propertyId: propertyId,
+                scope: .strict, order: "month", limit: 500)
             receipts = try await fr
             receiptItems = try await fi
             budgets = try await fb

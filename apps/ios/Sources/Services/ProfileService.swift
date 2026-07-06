@@ -24,7 +24,7 @@ final class ProfileService {
                 .value
         } catch {
             #if DEBUG
-            print("[ProfileService] load error: \(error)")
+            debugLog("[ProfileService] load error: \(error)")
             #endif
         }
     }
@@ -75,7 +75,7 @@ final class ProfileService {
 
     func uploadAvatar(_ image: UIImage) async throws {
         guard let userId = profile?.id,
-              let data = image.jpegData(compressionQuality: 0.85) else { return }
+              let data = image.uploadJPEG(quality: 0.85, maxDimension: 1024) else { return }
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
 

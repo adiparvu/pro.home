@@ -24,12 +24,8 @@ final class ApplianceService {
         isLoading = true
         defer { isLoading = false }
         do {
-            appliances = try await supabase
-                .from("appliances")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: true)
-                .execute().value
+            appliances = try await PropertyRepo.fetch(table: "appliances", propertyId: propertyId,
+                                                      scope: .strict, ascending: true, limit: 500)
             ServiceCache.save(appliances, entity: "appliances", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }

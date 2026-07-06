@@ -18,13 +18,9 @@ final class PropertyZoneService {
         isLoading = true
         defer { isLoading = false }
         do {
-            zones = try await supabase
-                .from("property_zones")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("sort_order", ascending: true)
-                .execute()
-                .value
+            zones = try await PropertyRepo.fetch(table: "property_zones", propertyId: propertyId,
+                                                 scope: .strict, order: "sort_order", ascending: true,
+                                                 limit: 500)
             ServiceCache.save(zones, entity: "zones", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription

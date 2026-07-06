@@ -1115,7 +1115,7 @@ struct DirectMessageView: View {
 
     @MainActor
     private func sendCameraImage(_ image: UIImage) async {
-        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+        guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 2048) else { return }
         await uploadAndSendImage(data: data)
     }
 

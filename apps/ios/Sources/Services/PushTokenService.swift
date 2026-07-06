@@ -71,7 +71,7 @@ enum PushTokenService {
             UserDefaults.standard.removeObject(forKey: pendingKey)
         } catch {
 #if DEBUG
-            print("[Push] token upload failed: \(error)")
+            debugLog("[Push] token upload failed: \(error)")
 #endif
         }
     }

@@ -22,12 +22,8 @@ final class PropertyValueService {
         isLoading = true
         defer { isLoading = false }
         do {
-            entries = try await supabase
-                .from("property_value_entries")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("entered_at", ascending: false)
-                .execute().value
+            entries = try await PropertyRepo.fetch(table: "property_value_entries", propertyId: propertyId,
+                                                   scope: .strict, order: "entered_at", limit: 500)
         } catch {
             self.error = error.localizedDescription
         }

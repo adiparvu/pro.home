@@ -24,14 +24,8 @@ final class InventoryService {
         isLoading = true
         defer { isLoading = false }
         do {
-            let records: [DBInventoryRecord] = try await supabase
-                .from("inventory_items")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .order("created_at", ascending: false)
-                .limit(1000)   // explicit cap — PostgREST truncates silently without one
-                .execute()
-                .value
+            let records: [DBInventoryRecord] = try await PropertyRepo.fetch(
+                table: "inventory_items", propertyId: propertyId, scope: .strict, limit: 1000)
             items = records.map { $0.toInventoryItem() }
             ServiceCache.save(items, entity: "inventory", propertyId: propertyId)
         } catch {

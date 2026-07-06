@@ -86,7 +86,7 @@ final class StatusService {
     @discardableResult
     func post(propertyId: UUID, authorName: String, image: UIImage, caption: String?) async -> String? {
         guard let uid else { return String(localized: "You're not signed in.") }
-        guard let data = image.jpegData(compressionQuality: 0.85) else {
+        guard let data = image.uploadJPEG(quality: 0.85, maxDimension: 1600) else {
             return String(localized: "Couldn't prepare the image.")
         }
         // Private bucket + signed URL at display (resolved via ChatMedia). Path is

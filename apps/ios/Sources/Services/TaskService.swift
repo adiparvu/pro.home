@@ -41,17 +41,7 @@ final class TaskService {
         isLoading = true
         defer { isLoading = false }
         do {
-            var query = supabase.from("maintenance_tasks").select()
-            if let pid {
-                // Scope to the selected home; legacy rows without a property
-                // stay visible rather than silently disappearing.
-                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
-            }
-            tasks = try await query
-                .order("created_at", ascending: false)
-                .limit(500)   // explicit cap — PostgREST truncates silently without one
-                .execute()
-                .value
+            tasks = try await PropertyRepo.fetch(table: "maintenance_tasks", propertyId: pid, limit: 500)
             ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
             if error is CancellationError { return }

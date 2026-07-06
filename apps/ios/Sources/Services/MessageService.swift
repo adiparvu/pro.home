@@ -214,7 +214,7 @@ final class MessageService {
             messages.removeAll { $0.id == id }
         } catch {
 #if DEBUG
-            print("[Chat] delete error: \(error)")
+            debugLog("[Chat] delete error: \(error)")
 #endif
         }
     }
@@ -228,7 +228,7 @@ final class MessageService {
             if let i = messages.firstIndex(where: { $0.id == id }) { messages[i].deletedForAll = true }
         } catch {
 #if DEBUG
-            print("[Chat] deleteForEveryone error: \(error)")
+            debugLog("[Chat] deleteForEveryone error: \(error)")
 #endif
         }
     }
@@ -253,7 +253,7 @@ final class MessageService {
             }
         } catch {
 #if DEBUG
-            print("[Chat] editMessage error: \(error)")
+            debugLog("[Chat] editMessage error: \(error)")
 #endif
         }
     }
