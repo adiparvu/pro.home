@@ -11,8 +11,7 @@ final class DeliveryService {
 
     var activeDeliveries: [Delivery] { deliveries.filter { $0.isActive } }
     var todayDeliveries: [Delivery] {
-        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-        let todayStr = fmt.string(from: Date())
+        let todayStr = AppDate.dayString(from: Date())
         return deliveries.filter { $0.expectedDate == todayStr && $0.isActive }
     }
 

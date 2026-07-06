@@ -29,6 +29,7 @@ final class InventoryService {
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
                 .order("created_at", ascending: false)
+                .limit(1000)   // explicit cap — PostgREST truncates silently without one
                 .execute()
                 .value
             items = records.map { $0.toInventoryItem() }

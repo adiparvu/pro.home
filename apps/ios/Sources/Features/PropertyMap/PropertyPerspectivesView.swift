@@ -51,7 +51,7 @@ struct PropertyPerspectivesView: View {
                 description: "Full access — property health, finances, tasks, and all zones.",
                 highlights: [
                     .init(icon: "heart.fill",           label: "Health Score",  value: propertyService.primary?.healthScore.map { "\($0)%" } ?? "—", color: .green,   tab: .digitalTwin),
-                    .init(icon: "banknote.fill",         label: "Net Balance",   value: "\(financialService.currencySymbol)\(Int(income - expenses))", color: income >= expenses ? .green : .red, tab: .settings),
+                    .init(icon: "banknote.fill",         label: "Net Balance",   value: financialService.moneyDisplay(income - expenses), color: income >= expenses ? .green : .red, tab: .settings),
                     .init(icon: "checkmark.circle.fill", label: "Open Tasks",    value: "\(tasks.filter { !$0.isCompleted }.count)", color: .orange, tab: .tasks),
                     .init(icon: "doc.text.fill",         label: "Documents",     value: "\(documentService.documents.count)", color: .purple,  tab: .settings),
                     .init(icon: "washer.fill",           label: "Appliances",    value: "\(applianceService.appliances.count)", color: Color.brandPrimaryBlue, tab: .settings),

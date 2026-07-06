@@ -19,12 +19,11 @@ struct FinancesView: View {
 
     // Records for the displayed month
     var monthRecords: [FinancialRecord] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let cal = Calendar.current
         let start = displayedMonth
         guard let end = cal.date(byAdding: .month, value: 1, to: start) else { return [] }
         return financialService.records.filter { r in
-            guard let d = iso.date(from: r.date) else { return false }
+            guard let d = AppDate.day(from: r.date) else { return false }
             return d >= start && d < end
         }
     }

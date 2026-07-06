@@ -182,8 +182,7 @@ struct CalendarView: View {
 
     private func dotsFor(_ date: Date) -> [Color] {
         var colors: [Color] = []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let dateStr = iso.string(from: date)
+        let dateStr = AppDate.dayString(from: date)
 
         // Due dates may carry a time ("yyyy-MM-dd HH:mm") — match by day prefix.
         if taskService.tasks.contains(where: { ($0.dueDate?.hasPrefix(dateStr) ?? false) && !$0.isCompleted }) {
@@ -196,14 +195,12 @@ struct CalendarView: View {
     }
 
     private func tasksFor(_ date: Date) -> [MaintenanceTask] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let s = iso.string(from: date)
+        let s = AppDate.dayString(from: date)
         return taskService.tasks.filter { $0.dueDate?.hasPrefix(s) ?? false }
     }
 
     private func documentsFor(_ date: Date) -> [DocumentModel] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        let s = iso.string(from: date)
+        let s = AppDate.dayString(from: date)
         return documentService.documents.filter { $0.expiresAt == s }
     }
 }

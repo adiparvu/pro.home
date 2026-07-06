@@ -83,8 +83,7 @@ struct TwinInsightsSheet: View {
     }
 
     private var valueString: String {
-        let sym = currencyService.symbol(for: appSettings.preferredCurrency)
-        return "\(sym)\(Int(totalValue))"
+        CurrencyService.money(totalValue, code: appSettings.preferredCurrency, whole: true)
     }
 
     private func tile(_ value: String, _ label: LocalizedStringKey, _ icon: String, _ color: Color) -> some View {

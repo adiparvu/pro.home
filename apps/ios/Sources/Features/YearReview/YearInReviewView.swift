@@ -211,8 +211,7 @@ struct YearInReviewView: View {
     }
 
     private func monthName(_ yyyyMM: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM"
-        guard let d = f.date(from: yyyyMM) else { return yyyyMM }
+        guard let d = AppDate.monthKey.date(from: yyyyMM) else { return yyyyMM }
         let out = DateFormatter(); out.dateFormat = "LLLL"
         out.locale = appSettings.appLocale
         return out.string(from: d).capitalized

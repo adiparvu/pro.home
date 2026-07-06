@@ -56,10 +56,10 @@ struct BudgetView: View {
                 let progress = total > 0 ? min(spent / total, 1.0) : 0
 
                 HStack(alignment: .bottom, spacing: 4) {
-                    Text(financialService.currencySymbol + String(format: "%.0f", spent))
+                    Text(financialService.moneyDisplay(spent))
                         .font(.system(size: 32, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text("/ " + financialService.currencySymbol + String(format: "%.0f", total))
+                    Text("/ " + financialService.moneyDisplay(total))
                         .font(.system(size: 15))
                         .foregroundStyle(Color.primary.opacity(0.4))
                         .padding(.bottom, AppSpacing.xxs)
@@ -78,8 +78,8 @@ struct BudgetView: View {
 
                 HStack {
                     Label(remaining >= 0
-                          ? String(format: String(localized: "%@%lld remaining"), financialService.currencySymbol, Int(abs(remaining)))
-                          : String(format: String(localized: "%@%lld over budget"), financialService.currencySymbol, Int(abs(remaining))),
+                          ? String(format: String(localized: "%@ remaining"), financialService.moneyDisplay(abs(remaining)))
+                          : String(format: String(localized: "%@ over budget"), financialService.moneyDisplay(abs(remaining))),
                           systemImage: remaining >= 0 ? "checkmark.circle" : "exclamationmark.circle")
                         .font(AppFont.caption)
                         .foregroundStyle(remaining >= 0 ? Color.brandSuccess : Color.red)
@@ -106,7 +106,6 @@ struct BudgetView: View {
                     let budget = budgetService.budget(for: cat)
                     let spent  = spentFor(cat)
                     let progress = budgetService.spendingProgress(for: cat, spent: spent)
-                    let sym = financialService.currencySymbol
 
                     Button { editingCategory = cat; HapticFeedback.selection() } label: {
                         GlassCard(padding: 14) {
@@ -119,7 +118,7 @@ struct BudgetView: View {
                                     Spacer()
                                     VStack(alignment: .trailing, spacing: 1) {
                                         if budget > 0 {
-                                            Text("\(sym)\(Int(spent)) / \(sym)\(Int(budget))")
+                                            Text("\(financialService.moneyDisplay(spent)) / \(financialService.moneyDisplay(budget))")
                                                 .font(AppFont.captionEmphasis)
                                                 .foregroundStyle(progress > 0.9 ? .red : .white)
                                         } else {

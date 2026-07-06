@@ -83,18 +83,17 @@ struct ActivityFeedView: View {
 
     private var allEvents: [ActivityEvent] {
         var events: [ActivityEvent] = []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let isoFull = ISO8601DateFormatter()
 
         // Finances
         for r in financialService.records {
-            guard let date = iso.date(from: r.date) else { continue }
+            guard let date = AppDate.day(from: r.date) else { continue }
             let isIncome = r.type == "income"
             events.append(ActivityEvent(
                 icon:     isIncome ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
                 color:    isIncome ? Color.brandSuccess : .red,
                 title:    isIncome ? "Income added" : "Expense recorded",
-                subtitle: "\(r.title) · \(financialService.currencySymbol)\(Int(r.amount))",
+                subtitle: "\(r.title) · \(financialService.moneyDisplay(r.amount))",
                 date:     date,
                 member:   currentUser,
                 category: .finances

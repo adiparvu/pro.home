@@ -400,9 +400,7 @@ struct AddTaskView: View {
         }()
         let dueDateStr: String? = {
             guard hasDueDate else { return nil }
-            let f = DateFormatter()
-            f.dateFormat = hasDueTime ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"
-            return f.string(from: combinedDueDate)
+            return (hasDueTime ? AppDate.dayTime : AppDate.day).string(from: combinedDueDate)
         }()
 
         Task {
@@ -462,7 +460,6 @@ struct AddTaskView: View {
         guard !assigneeNames.isEmpty else { return }
         let center = UNUserNotificationCenter.current()
         let taskTitle = title.trimmingCharacters(in: .whitespaces)
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let display = DateFormatter(); display.locale = .current; display.dateStyle = .medium
         let dateStr = hasDueDate ? display.string(from: dueDate) : ""
         for name in assigneeNames {

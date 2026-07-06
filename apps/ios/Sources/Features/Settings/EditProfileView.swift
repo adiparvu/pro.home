@@ -163,8 +163,7 @@ struct EditProfileView: View {
         email = p.email
         notes = p.notes ?? ""
         socialLinks = p.socialLinks ?? []
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        if let bd = p.birthDate, let d = iso.date(from: bd) {
+        if let bd = p.birthDate, let d = AppDate.day(from: bd) {
             birthDate = d
             hasBirthDate = true
         }
@@ -172,7 +171,6 @@ struct EditProfileView: View {
 
     private func save() {
         error = nil
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         // Combine first/last into full name (keeps existing displays working).
         let composedFull = [firstName, lastName]
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -187,7 +185,7 @@ struct EditProfileView: View {
                     fullName: composedFull,
                     firstName: firstName,
                     lastName: lastName,
-                    birthDate: hasBirthDate ? iso.string(from: birthDate) : nil,
+                    birthDate: hasBirthDate ? AppDate.dayString(from: birthDate) : nil,
                     phone: phone,
                     email: email,
                     socialLinks: cleanedLinks,

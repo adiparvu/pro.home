@@ -57,16 +57,12 @@ struct DocumentModel: Identifiable, Codable, Hashable {
 
     var expiresDisplay: String? {
         guard let ds = expiresAt else { return nil }
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: ds) else { return ds }
-        let out = DateFormatter(); out.dateFormat = "d MMM yyyy"
-        return out.string(from: d)
+        guard let d = AppDate.day(from: ds) else { return ds }
+        return AppDate.monthDayYear.string(from: d)
     }
 
     var isExpiringSoon: Bool {
-        guard let ds = expiresAt else { return false }
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: ds) else { return false }
+        guard let ds = expiresAt, let d = AppDate.day(from: ds) else { return false }
         return d < (Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date())
     }
 }

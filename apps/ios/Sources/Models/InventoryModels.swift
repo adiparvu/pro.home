@@ -247,10 +247,7 @@ extension InventoryItem {
 }
 
 extension DateFormatter {
-    static let isoDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
+    /// The wire-format day formatter — one shared instance via `AppDate`,
+    /// so the POSIX locale + Gregorian calendar pinning lives in one place.
+    static let isoDate: DateFormatter = AppDate.day
 }

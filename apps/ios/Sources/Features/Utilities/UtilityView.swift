@@ -57,8 +57,7 @@ final class UtilityService {
     }
     func lastSixMonths(_ type: String) -> [UtilityEntry] { Array(entriesFor(type).suffix(6)) }
     func currentMonthEntry(_ type: String) -> UtilityEntry? {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM"
-        let current = f.string(from: Date())
+        let current = AppDate.monthKey.string(from: Date())
         return entriesFor(type).first { $0.month == current }
     }
 
@@ -294,7 +293,7 @@ struct UtilityView: View {
     }
 
     private var currentYear: String {
-        let f = DateFormatter(); f.dateFormat = "yyyy"; return f.string(from: Date())
+        AppDate.yearKey.string(from: Date())
     }
 
     private func emptyState(type: (id: String, icon: String, color: Color, label: String, unit: String)?) -> some View {
@@ -358,8 +357,7 @@ private struct UtilityEntryRow: View {
     let entry: UtilityEntry
     let color: Color
     var displayMonth: String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM"
-        guard let d = f.date(from: entry.month) else { return entry.month }
+        guard let d = AppDate.monthKey.date(from: entry.month) else { return entry.month }
         let out = DateFormatter(); out.dateFormat = "MMMM yyyy"; return out.string(from: d)
     }
     var body: some View {

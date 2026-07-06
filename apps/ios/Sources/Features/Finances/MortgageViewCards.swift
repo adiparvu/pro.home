@@ -42,16 +42,16 @@ extension MortgageView {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.primary.opacity(0.4))
                 }
-                Text("€\(String(format: "%.0f", monthlyPayment))")
+                Text(CurrencyService.money(monthlyPayment, code: "EUR", whole: true))
                     .font(.system(size: 44, weight: .bold))
                     .foregroundStyle(.primary)
 
                 HStack(spacing: 0) {
-                    MortgageStat(label: "Principal", value: "€\(Int(loanAmount))")
+                    MortgageStat(label: "Principal", value: CurrencyService.money(loanAmount, code: "EUR", whole: true))
                     Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
-                    MortgageStat(label: "Total Interest", value: "€\(Int(totalInterest))")
+                    MortgageStat(label: "Total Interest", value: CurrencyService.money(totalInterest, code: "EUR", whole: true))
                     Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
-                    MortgageStat(label: "Total Cost", value: "€\(Int(loanAmount + totalInterest))")
+                    MortgageStat(label: "Total Cost", value: CurrencyService.money(loanAmount + totalInterest, code: "EUR", whole: true))
                 }
             }
         }
@@ -106,7 +106,7 @@ extension MortgageView {
                         Text("Balance Remaining")
                             .font(.system(size: 11))
                             .foregroundStyle(Color.primary.opacity(0.4))
-                        Text("€\(Int(remainingLoanBalance))")
+                        Text(CurrencyService.money(remainingLoanBalance, code: "EUR", whole: true))
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.orange)
                     }
@@ -154,11 +154,11 @@ extension MortgageView {
                 .frame(height: 10)
 
                 HStack {
-                    MortgageStat(label: "Property Value", value: "€\(Int(propertyValue))")
+                    MortgageStat(label: "Property Value", value: CurrencyService.money(propertyValue, code: "EUR", whole: true))
                     Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
-                    MortgageStat(label: "Your Equity", value: "€\(Int(max(0, propertyValue - remainingLoanBalance)))")
+                    MortgageStat(label: "Your Equity", value: CurrencyService.money(max(0, propertyValue - remainingLoanBalance), code: "EUR", whole: true))
                     Rectangle().fill(Color.primary.opacity(AppOpacity.subtleFill)).frame(width: 0.5, height: 34)
-                    MortgageStat(label: "Owed", value: "€\(Int(remainingLoanBalance))")
+                    MortgageStat(label: "Owed", value: CurrencyService.money(remainingLoanBalance, code: "EUR", whole: true))
                 }
             }
         }

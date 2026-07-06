@@ -1,6 +1,36 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Quick actions": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Quick actions" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Acțiuni rapide" } }
+      }
+    },
+    "Opens the quick actions menu": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Opens the quick actions menu" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deschide meniul de acțiuni rapide" } }
+      }
+    },
+    "Expanded": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Expanded" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Extins" } }
+      }
+    },
+    "%@ remaining": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ remaining" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%@ rămași" } }
+      }
+    },
+    "%@ over budget": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ over budget" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%@ peste buget" } }
+      }
+    },
     "Year of Your Home": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Year of Your Home" } },

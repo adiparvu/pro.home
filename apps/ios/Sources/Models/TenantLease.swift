@@ -37,9 +37,7 @@ struct TenantLease: Codable, Identifiable, Hashable {
 
     var endDisplay: String? {
         guard let end = leaseEnd else { return nil }
-        let inFmt = DateFormatter(); inFmt.dateFormat = "yyyy-MM-dd"
-        guard let d = inFmt.date(from: end) else { return end }
-        let out = DateFormatter(); out.dateStyle = .medium; out.timeStyle = .none
-        return out.string(from: d)
+        guard let d = AppDate.day(from: end) else { return end }
+        return AppDate.medium.string(from: d)
     }
 }

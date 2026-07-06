@@ -321,21 +321,19 @@ struct SpendingReportView: View {
 
     private func last30Days() -> [DailySpend] {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else { return [] }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
         var grouped: [String: (Date, Double)] = [:]
         for r in receiptService.receipts {
-            guard let date = f.date(from: r.date), date >= cutoff else { continue }
+            guard let date = AppDate.day(from: r.date), date >= cutoff else { continue }
             grouped[r.date] = (date, (grouped[r.date]?.1 ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.0, total: $0.value.1) }.sorted { $0.date < $1.date }
     }
 
     private func last12Months() -> [DailySpend] {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM"; f.locale = Locale(identifier: "en_US_POSIX")
         var grouped: [String: (Date, Double)] = [:]
         for r in receiptService.receipts {
             let key = String(r.date.prefix(7))
-            guard let date = f.date(from: key) else { continue }
+            guard let date = AppDate.monthKey.date(from: key) else { continue }
             grouped[key] = (date, (grouped[key]?.1 ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.0, total: $0.value.1) }.sorted { $0.date < $1.date }.suffix(12).map { $0 }
@@ -350,10 +348,9 @@ struct SpendingReportView: View {
     }
 
     private func availableYears() -> [Int] {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
         var years = Set<Int>()
         for r in receiptService.receipts {
-            if let date = f.date(from: r.date) { years.insert(Calendar.current.component(.year, from: date)) }
+            if let date = AppDate.day(from: r.date) { years.insert(Calendar.current.component(.year, from: date)) }
         }
         let current = Calendar.current.component(.year, from: Date())
         years.insert(current)

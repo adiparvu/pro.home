@@ -108,6 +108,7 @@ final class AuthService {
         session = nil
         // The next account must never see this household's cached data.
         ServiceCache.clear()
+        SignedStorage.clearCache()
     }
 
     func switchTo(account: SavedAccount) async throws {
@@ -118,5 +119,6 @@ final class AuthService {
         self.session = restored
         // Account switch = different household visibility; drop the old cache.
         ServiceCache.clear()
+        SignedStorage.clearCache()
     }
 }

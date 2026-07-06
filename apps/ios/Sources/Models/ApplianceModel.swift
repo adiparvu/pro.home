@@ -67,27 +67,9 @@ struct Appliance: Identifiable, Codable, Equatable {
         case updatedAt     = "updated_at"
     }
 
-    private static let isoFull: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-    private static let isoShort: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-    private static let dateOnly: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     private func parseDate(_ str: String?) -> Date? {
         guard let str else { return nil }
-        return Appliance.isoFull.date(from: str)
-            ?? Appliance.isoShort.date(from: str)
-            ?? Appliance.dateOnly.date(from: str)
+        return ISODate.date(from: str) ?? AppDate.day(from: str)
     }
 
     var isWarrantyExpired: Bool {

@@ -304,16 +304,12 @@ struct DeliveryFormSheet: View {
     }
 
     private static func parseExpectedDate(_ string: String) -> Date? {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.date(from: string)
+        AppDate.day(from: string)
     }
 
     private func expectedDateString() -> String? {
         guard hasExpectedDate else { return nil }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt.string(from: expectedDate)
+        return AppDate.dayString(from: expectedDate)
     }
 
     private func save() async {

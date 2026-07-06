@@ -171,7 +171,9 @@ extension FinancesView {
         if filteredRecords.isEmpty {
             emptyState
         } else {
-            VStack(spacing: 16) {
+            // Lazy on purpose: this is the app's longest list — eager VStack
+            // built every row (with a currency conversion each) on open.
+            LazyVStack(spacing: 16) {
                 ForEach(groupedRecords, id: \.date) { group in
                     VStack(spacing: 0) {
                         HStack {
@@ -231,8 +233,7 @@ extension FinancesView {
     }
 
     private func groupDateLabel(_ dateStr: String) -> String {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: dateStr) else { return dateStr }
+        guard let d = AppDate.day(from: dateStr) else { return dateStr }
         if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
         if Calendar.current.isDateInYesterday(d) { return String(localized: "Yesterday") }
         let out = DateFormatter(); out.dateFormat = "d MMMM"; out.locale = .current

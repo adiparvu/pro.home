@@ -169,7 +169,6 @@ struct AddElementRecordView: View {
 
     private func save() {
         guard canSave, let pid = propertyService.primary?.id else { return }
-        let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
         let payload = NewElementRecord(
             elementId: element.id,
             propertyId: pid,
@@ -178,7 +177,7 @@ struct AddElementRecordView: View {
             content: content.isEmpty ? nil : content,
             cost: Double(cost.replacingOccurrences(of: ",", with: ".")),
             currency: currency,
-            recordDate: df.string(from: recordDate),
+            recordDate: AppDate.dayString(from: recordDate),
             performedBy: performedBy.isEmpty ? nil : performedBy,
             nextActionDate: nil
         )

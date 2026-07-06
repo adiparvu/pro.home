@@ -11,19 +11,8 @@ final class ReceiptService {
     var isLoading = false
     var error: String?
 
-    private let isoDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
-
-    private let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }()
+    private let isoDate: DateFormatter = AppDate.day
+    private let monthFormatter: DateFormatter = AppDate.monthKey
 
     // MARK: - Computed
 
@@ -93,12 +82,9 @@ final class ReceiptService {
     func spendForYear(_ year: Int) -> [DailySpend] {
         var grouped: [String: (date: Date, total: Double)] = [:]
         let filtered = receipts.filter { $0.date.hasPrefix("\(year)") }
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        f.locale = Locale(identifier: "en_US_POSIX")
         for r in filtered {
             let key = String(r.date.prefix(7))
-            guard let date = f.date(from: key) else { continue }
+            guard let date = AppDate.monthKey.date(from: key) else { continue }
             grouped[key] = (date: grouped[key]?.date ?? date, total: (grouped[key]?.total ?? 0) + r.total)
         }
         return grouped.map { DailySpend(id: $0.key, date: $0.value.date, total: $0.value.total) }

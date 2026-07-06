@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Design System
 //
@@ -14,35 +15,51 @@ import SwiftUI
 
 // MARK: - Typography
 
+/// Every token scales with the user's Dynamic Type setting — a plain
+/// `Font.system(size:)` is frozen and silently opts the whole design system
+/// out of accessibility text sizes. `Font.system` has no `relativeTo:`, so
+/// each token routes its design size through `UIFontMetrics` anchored to the
+/// nearest system text style; the sizes below are exact at the default
+/// (Large) content size and grow/shrink with the user. The tokens are
+/// computed properties on purpose: SwiftUI re-evaluates view bodies when
+/// the content size category changes, so each access resolves against the
+/// current setting.
 enum AppFont {
+    private static func scaled(_ size: CGFloat, weight: Font.Weight,
+                               design: Font.Design = .default,
+                               relativeTo style: UIFont.TextStyle) -> Font {
+        Font.system(size: UIFontMetrics(forTextStyle: style).scaledValue(for: size),
+                    weight: weight, design: design)
+    }
+
     /// 11pt semibold — section headers, uppercase labels, tags.
-    static let label = Font.system(size: 11, weight: .semibold)
+    static var label: Font { scaled(11, weight: .semibold, relativeTo: .caption2) }
     /// 11pt medium — small metadata (timestamps, counts).
-    static let caption2 = Font.system(size: 11, weight: .medium)
+    static var caption2: Font { scaled(11, weight: .medium, relativeTo: .caption2) }
     /// 12–13pt medium — secondary body text, list subtitles.
-    static let caption = Font.system(size: 12, weight: .medium)
+    static var caption: Font { scaled(12, weight: .medium, relativeTo: .caption1) }
     /// 12pt semibold — chip/tag labels, compact emphasized captions.
-    static let captionStrong = Font.system(size: 12, weight: .semibold)
+    static var captionStrong: Font { scaled(12, weight: .semibold, relativeTo: .caption1) }
     /// 13pt semibold — emphasized captions, chip labels.
-    static let captionEmphasis = Font.system(size: 13, weight: .semibold)
+    static var captionEmphasis: Font { scaled(13, weight: .semibold, relativeTo: .footnote) }
     /// 14pt medium — standard secondary text.
-    static let footnote = Font.system(size: 14, weight: .medium)
+    static var footnote: Font { scaled(14, weight: .medium, relativeTo: .footnote) }
     /// 14pt semibold — emphasized secondary text, compact buttons.
-    static let footnoteEmphasis = Font.system(size: 14, weight: .semibold)
+    static var footnoteEmphasis: Font { scaled(14, weight: .semibold, relativeTo: .footnote) }
     /// 14–15pt semibold — list row titles, form field values.
-    static let subheadline = Font.system(size: 15, weight: .semibold)
+    static var subheadline: Font { scaled(15, weight: .semibold, relativeTo: .subheadline) }
     /// 15pt medium — default body text.
-    static let body = Font.system(size: 15, weight: .medium)
+    static var body: Font { scaled(15, weight: .medium, relativeTo: .body) }
     /// 16–17pt semibold — card titles, prominent row titles.
-    static let headline = Font.system(size: 16, weight: .semibold)
+    static var headline: Font { scaled(16, weight: .semibold, relativeTo: .headline) }
     /// 18–20pt semibold — section titles, sheet headers.
-    static let title3 = Font.system(size: 18, weight: .semibold)
+    static var title3: Font { scaled(18, weight: .semibold, relativeTo: .title3) }
     /// 20pt regular — large menu row labels (iMessage-style action menus).
-    static let menuRow = Font.system(size: 20, weight: .regular)
+    static var menuRow: Font { scaled(20, weight: .regular, relativeTo: .title3) }
     /// 22–26pt bold rounded — screen-level emphasis (stat numbers, hero values).
-    static let title2 = Font.system(size: 22, weight: .bold, design: .rounded)
+    static var title2: Font { scaled(22, weight: .bold, design: .rounded, relativeTo: .title2) }
     /// 28–34pt bold rounded — large navigation titles, page headers.
-    static let title = Font.system(size: 30, weight: .bold, design: .rounded)
+    static var title: Font { scaled(30, weight: .bold, design: .rounded, relativeTo: .largeTitle) }
 }
 
 // MARK: - Color opacity tiers

@@ -377,10 +377,7 @@ struct ParsedReceipt {
     var notes: String? = nil
 
     var dateValue: Date {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f.date(from: dateString) ?? Date()
+        AppDate.day(from: dateString) ?? Date()
     }
 }
 
@@ -395,10 +392,7 @@ struct ParsedItem {
 
 enum ReceiptParser {
     static func isoDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f.string(from: date)
+        AppDate.dayString(from: date)
     }
 
     static func parse(lines: [String]) -> ParsedReceipt {

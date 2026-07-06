@@ -21,15 +21,12 @@ struct FinancialRecord: Identifiable, Codable {
     }
 
     var dateFormatted: String {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-        guard let d = iso.date(from: date) else { return date }
-        let out = DateFormatter(); out.dateFormat = "MMM d"
-        return out.string(from: d)
+        guard let d = AppDate.day(from: date) else { return date }
+        return AppDate.monthDay.string(from: d)
     }
 
     var isIncome: Bool { type == "income" }
     var amountDisplay: String {
-        let sym = currency == "EUR" ? "€" : currency == "USD" ? "$" : currency
-        return String(format: "\(sym)%.0f", amount)
+        CurrencyService.money(amount, code: currency)
     }
 }

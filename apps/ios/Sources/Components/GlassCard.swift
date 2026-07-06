@@ -18,12 +18,7 @@ extension View {
         if #available(iOS 26, *) {
             self.glassEffect(in: shape).contentShape(shape)
         } else {
-            self
-                .background(thick ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.ultraThinMaterial),
-                            in: shape)
-                .shadow(color: Color.primary.opacity(AppOpacity.subtleFill), radius: 20, y: 5)
-                .shadow(color: Color.primary.opacity(0.03), radius: 3, y: 1)
-                .contentShape(shape)
+            self.modifier(LegacyGlass(shape: shape, thick: thick, shadowed: true))
         }
     }
 
@@ -35,10 +30,7 @@ extension View {
         if #available(iOS 26, *) {
             self.glassEffect(in: Circle()).contentShape(Circle())
         } else {
-            self
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                .contentShape(Circle())
+            self.modifier(LegacyGlass(shape: Circle(), stroked: true))
         }
     }
 
@@ -48,10 +40,7 @@ extension View {
         if #available(iOS 26, *) {
             self.glassEffect(in: Capsule()).contentShape(Capsule())
         } else {
-            self
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
-                .contentShape(Capsule())
+            self.modifier(LegacyGlass(shape: Capsule(), stroked: true))
         }
     }
 
@@ -62,9 +51,41 @@ extension View {
         if #available(iOS 26, *) {
             self.glassEffect(in: shape).contentShape(shape)
         } else {
-            self
+            self.modifier(LegacyGlass(shape: shape, stroked: true))
+        }
+    }
+}
+
+/// The pre-iOS-26 glass fallback. On iOS 26+ the native `glassEffect`
+/// handles Reduce Transparency itself; here we honor it explicitly — when
+/// the user asks for less transparency, glass becomes an opaque elevated
+/// surface with identical geometry, instead of a blur they struggle to
+/// read through.
+private struct LegacyGlass<S: InsettableShape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    let shape: S
+    var thick = false
+    var stroked = false
+    var shadowed = false
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(Color(.secondarySystemBackground), in: shape)
+                .overlay(shape.strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                .contentShape(shape)
+        } else if stroked {
+            content
                 .background(.ultraThinMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.5))
+                .contentShape(shape)
+        } else {
+            content
+                .background(thick ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.ultraThinMaterial),
+                            in: shape)
+                .shadow(color: Color.primary.opacity(AppOpacity.subtleFill), radius: shadowed ? 20 : 0, y: shadowed ? 5 : 0)
+                .shadow(color: Color.primary.opacity(0.03), radius: shadowed ? 3 : 0, y: shadowed ? 1 : 0)
                 .contentShape(shape)
         }
     }

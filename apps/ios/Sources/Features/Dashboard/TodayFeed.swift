@@ -111,10 +111,7 @@ enum TodayFeed {
     }
 
     private static func todayPrefix() -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = .current
-        return f.string(from: Date())
+        AppDate.dayString(from: Date())
     }
 }
 

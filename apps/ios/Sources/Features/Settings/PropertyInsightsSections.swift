@@ -48,7 +48,7 @@ struct PropertyInsightsSections: View {
                         .tracking(0.8)
                     Spacer()
                     if financial.currentMonthExpenses > 0 {
-                        Text("\(amount(financial.currentMonthExpenses)) \(financial.currencySymbol)")
+                        Text(financial.moneyDisplay(financial.currentMonthExpenses))
                             .font(AppFont.footnoteEmphasis)
                             .foregroundStyle(Color.brandDanger)
                         Text("this month")
@@ -229,7 +229,7 @@ struct PropertyInsightsSections: View {
                 } else {
                     let latest = sortedValues[sortedValues.count - 1]
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                        Text("\(amount(latest.valueAmount)) \(latest.currency)")
+                        Text(CurrencyService.money(latest.valueAmount, code: latest.currency, whole: true))
                             .font(.system(size: 26, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
                         if sortedValues.count >= 2 {
@@ -299,12 +299,6 @@ struct PropertyInsightsSections: View {
             .padding(.vertical, AppSpacing.xs)
     }
 
-    private func amount(_ v: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 0
-        return f.string(from: NSNumber(value: v)) ?? "\(Int(v))"
-    }
 }
 
 // MARK: - Fullscreen photo viewer

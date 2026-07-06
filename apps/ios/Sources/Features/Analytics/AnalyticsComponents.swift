@@ -17,8 +17,7 @@ struct FinancesSection: View {
 
     private var monthRecords: [FinancialRecord] {
         service.records.filter { r in
-            let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-            guard let d = iso.date(from: r.date) else { return false }
+            guard let d = AppDate.day(from: r.date) else { return false }
             return cal.isDate(d, equalTo: displayedMonth, toGranularity: .month)
         }
     }
@@ -26,8 +25,7 @@ struct FinancesSection: View {
     private var prevMonthRecords: [FinancialRecord] {
         guard let prev = cal.date(byAdding: .month, value: -1, to: displayedMonth) else { return [] }
         return service.records.filter { r in
-            let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
-            guard let d = iso.date(from: r.date) else { return false }
+            guard let d = AppDate.day(from: r.date) else { return false }
             return cal.isDate(d, equalTo: prev, toGranularity: .month)
         }
     }
@@ -39,8 +37,6 @@ struct FinancesSection: View {
 
     private var prevIncome: Double { prevMonthRecords.filter(\.isIncome).map(\.amount).reduce(0, +) }
     private var prevExpenses: Double { prevMonthRecords.filter { $0.type == "expense" }.map(\.amount).reduce(0, +) }
-
-    private var sym: String { service.currencySymbol }
 
     private func trend(_ current: Double, _ prev: Double) -> Double? {
         guard prev > 0 else { return nil }
@@ -131,21 +127,21 @@ struct FinancesSection: View {
         HStack(spacing: 10) {
             TrendKPICard(
                 label: "Income",
-                value: "\(sym)\(Int(income))",
+                value: service.moneyDisplay(income),
                 icon: "arrow.down.circle.fill",
                 trendPct: trend(income, prevIncome),
                 trendPositive: income >= prevIncome
             )
             TrendKPICard(
                 label: "Expenses",
-                value: "\(sym)\(Int(expenses))",
+                value: service.moneyDisplay(expenses),
                 icon: "arrow.up.circle.fill",
                 trendPct: trend(expenses, prevExpenses),
                 trendPositive: expenses <= prevExpenses
             )
             TrendKPICard(
                 label: "Net",
-                value: "\(net >= 0 ? "+" : "")\(sym)\(Int(net))",
+                value: "\(net >= 0 ? "+" : "")" + service.moneyDisplay(net),
                 icon: "chart.line.uptrend.xyaxis",
                 trendPct: nil,
                 trendPositive: net >= 0,
@@ -227,7 +223,7 @@ struct FinancesSection: View {
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                 Spacer()
-                                Text("\(sym)\(Int(cat.amount))")
+                                Text(service.moneyDisplay(cat.amount))
                                     .font(AppFont.captionStrong)
                                     .foregroundStyle(.primary)
                             }

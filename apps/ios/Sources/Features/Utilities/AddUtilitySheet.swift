@@ -37,8 +37,7 @@ struct AddUtilitySheet: View {
                      error: .constant(nil),
                      onSave: {
             guard let pid = propertyId else { dismiss(); return }
-            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-            let readingDate = f.string(from: month)
+            let readingDate = AppDate.dayString(from: month)
             let appUnit = units[type] ?? "other"
             let entry = NewUtilityEntry(
                 propertyId: pid,

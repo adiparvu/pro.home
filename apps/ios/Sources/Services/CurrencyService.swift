@@ -65,16 +65,34 @@ final class CurrencyService {
         return amount * fromRate / toRate
     }
 
+    // MARK: - The app's one money display authority
+    //
+    // Every amount shown to the user goes through here: `Decimal` +
+    // `FormatStyle.currency` gives the locale's separators ("1.234,56" in
+    // Romanian), the narrow symbol on the locale's side ("1.234 lei",
+    // "€1,234"), and *rounds* instead of the `Int(...)` truncation that
+    // used to shave cents off displayed totals.
+
+    /// `whole` rounds to whole units — the style for aggregate tiles and
+    /// dashboards. Otherwise cents appear only when the amount has them.
+    static func money(_ amount: Double, code: String, whole: Bool = false) -> String {
+        Decimal(amount).formatted(
+            .currency(code: code)
+                .presentation(.narrow)
+                .precision(.fractionLength(whole ? 0...0 : 0...2))
+        )
+    }
+
+    static func symbol(for code: String) -> String {
+        supported.first { $0.code == code }?.symbol ?? code
+    }
+
     func symbol(for code: String) -> String {
-        Self.supported.first { $0.code == code }?.symbol ?? code
+        Self.symbol(for: code)
     }
 
     func formatted(_ amount: Double, from recordCurrency: String, preferred: String) -> String {
-        let v = convert(amount, from: recordCurrency, to: preferred)
-        let sym = symbol(for: preferred)
-        return preferred == "RON"
-            ? String(format: "%.0f %@", v, sym)
-            : String(format: "%@%.0f", sym, v)
+        Self.money(convert(amount, from: recordCurrency, to: preferred), code: preferred, whole: true)
     }
 
     func rateDisplay(for code: String) -> String {

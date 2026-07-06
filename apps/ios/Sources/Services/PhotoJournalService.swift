@@ -27,6 +27,7 @@ final class PhotoJournalService {
                 .select()
                 .eq("property_id", value: propertyId.uuidString)
                 .order("taken_at", ascending: false)
+                .limit(600)   // explicit cap — PostgREST truncates silently without one
                 .execute().value
             ServiceCache.save(entries, entity: "journal", propertyId: propertyId)
         } catch {

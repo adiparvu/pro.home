@@ -6,11 +6,10 @@ extension FinancesSection {
     // MARK: - Range Chart Data
 
     var rangeChartData: [(label: String, income: Double, expenses: Double)] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         let cal = Calendar.current
         let now = Date()
 
-        func parseDate(_ r: FinancialRecord) -> Date? { iso.date(from: r.date) }
+        func parseDate(_ r: FinancialRecord) -> Date? { AppDate.day(from: r.date) }
 
         func dayBuckets(days: Int) -> [(String, Double, Double)] {
             let lbl = DateFormatter(); lbl.dateFormat = days <= 7 ? "EEE" : "d"

@@ -144,11 +144,10 @@ final class NotificationScheduler {
     // MARK: - Task notifications
 
     private func taskNotifications(_ tasks: [MaintenanceTask]) -> [UNNotificationRequest] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         var requests: [UNNotificationRequest] = []
 
         for task in tasks where !task.isCompleted {
-            guard let ds = task.dueDate, let dueDate = iso.date(from: ds) else { continue }
+            guard let ds = task.dueDate, let dueDate = AppDate.day(from: ds) else { continue }
 
             let now = Date()
             let cal = Calendar.current
@@ -221,13 +220,12 @@ final class NotificationScheduler {
     // MARK: - Document expiry notifications
 
     private func documentNotifications(_ documents: [DocumentModel]) -> [UNNotificationRequest] {
-        let iso = DateFormatter(); iso.dateFormat = "yyyy-MM-dd"
         var requests: [UNNotificationRequest] = []
         let now = Date()
         let cal = Calendar.current
 
         for doc in documents {
-            guard let ds = doc.expiresAt, let expiry = iso.date(from: ds) else { continue }
+            guard let ds = doc.expiresAt, let expiry = AppDate.day(from: ds) else { continue }
 
             // 30-day alert
             if let fireDate30 = cal.date(byAdding: .day, value: -30, to: expiry),

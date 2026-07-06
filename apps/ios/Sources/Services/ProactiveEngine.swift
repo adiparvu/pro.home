@@ -214,9 +214,8 @@ final class ProactiveEngine {
         let cal = Calendar.current
         let now = Date()
         guard let lastMonth = cal.date(byAdding: .month, value: -1, to: now) else { return nil }
-        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM"
-        let thisKey = fmt.string(from: now)
-        let lastKey = fmt.string(from: lastMonth)
+        let thisKey = AppDate.monthKey.string(from: now)
+        let lastKey = AppDate.monthKey.string(from: lastMonth)
 
         var thisMonth: [String: Double] = [:]
         var prevMonth: [String: Double] = [:]
@@ -258,9 +257,7 @@ final class ProactiveEngine {
         let overdue = tasks.filter { $0.isOverdue && !$0.isCompleted }
         guard overdue.count >= 3 else { return nil }
         let oldest = overdue.min { ($0.dueDate ?? "") < ($1.dueDate ?? "") }
-        let weekKey: String = {
-            let f = DateFormatter(); f.dateFormat = "yyyy-ww"; return f.string(from: Date())
-        }()
+        let weekKey = AppDate.weekKey.string(from: Date())
         return ProactiveInsight(
             id: deterministicID("momentum-\(weekKey)"),
             title: String(format: String(localized: "%d tasks are overdue"), overdue.count),
@@ -306,12 +303,7 @@ final class ProactiveEngine {
 
     private func parseDateStr(_ str: String?) -> Date? {
         guard let str else { return nil }
-        let fmts = ["yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"]
-        for fmt in fmts {
-            let f = DateFormatter(); f.dateFormat = fmt
-            if let d = f.date(from: str) { return d }
-        }
-        return nil
+        return AppDate.day(from: str)
     }
 
     private struct SeasonalHint { let title: String; let body: String }

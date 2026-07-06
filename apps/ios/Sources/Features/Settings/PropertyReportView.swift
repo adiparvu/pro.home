@@ -86,7 +86,7 @@ struct PropertyReportView: View {
                          color: taskService.overdueCount > 0 ? .red : .blue)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
                 statCell(icon: "banknote",
-                         value: "\(financialService.currencySymbol)\(Int(financialService.currentMonthIncome))",
+                         value: financialService.moneyDisplay(financialService.currentMonthIncome),
                          label: String(localized: "this month"),
                          color: Color.brandSuccess)
                 Divider().frame(height: 36).background(Color.primary.opacity(0.1))
@@ -320,8 +320,7 @@ struct PropertyReportView: View {
             if includesFinances {
                 "FINANCIAL SUMMARY".draw(at: CGPoint(x: 40, y: y), withAttributes: sectionAttr)
                 y += 22
-                let sym = financialService.currencySymbol
-                "This month: \(sym)\(Int(financialService.currentMonthIncome)) income · \(sym)\(Int(financialService.currentMonthExpenses)) expenses · Net: \(sym)\(Int(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
+                "This month: \(financialService.moneyDisplay(financialService.currentMonthIncome)) income · \(financialService.moneyDisplay(financialService.currentMonthExpenses)) expenses · Net: \(financialService.moneyDisplay(financialService.currentMonthNet))".draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttr)
                 y += 30
             }
 

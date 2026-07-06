@@ -98,13 +98,12 @@ final class FamilyService {
             let occupants: Int?
             let notes: String?
         }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
         let inserted: TenantLease = try await supabase
             .from("tenant_leases")
             .insert(Payload(
                 property_id: propertyId, member_id: memberId,
-                lease_start: leaseStart.map { f.string(from: $0) },
-                lease_end: leaseEnd.map { f.string(from: $0) },
+                lease_start: leaseStart.map { AppDate.dayString(from: $0) },
+                lease_end: leaseEnd.map { AppDate.dayString(from: $0) },
                 monthly_rent: monthlyRent, currency: currency, deposit: deposit,
                 payment_day: paymentDay, occupants: occupants, notes: notes))
             .select()

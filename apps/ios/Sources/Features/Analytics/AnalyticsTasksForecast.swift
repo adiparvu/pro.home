@@ -114,7 +114,6 @@ struct ForecastSection: View {
         guard !months.isEmpty else { return 0 }
         return months.map(\.expenses).reduce(0, +) / Double(months.count) * 12
     }
-    var sym: String { financialService.currencySymbol }
     var netProfit: Double { projectedIncome - projectedExpenses }
 
     var body: some View {
@@ -139,15 +138,15 @@ struct ForecastSection: View {
 
                     VStack(spacing: 12) {
                         ForecastRow(label: "Projected income",
-                                    value: "\(sym)\(Int(projectedIncome))",
+                                    value: financialService.moneyDisplay(projectedIncome),
                                     sub: "annual", positive: true)
                         Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Projected expenses",
-                                    value: "\(sym)\(Int(projectedExpenses))",
+                                    value: financialService.moneyDisplay(projectedExpenses),
                                     sub: "annual", positive: false)
                         Divider().background(Color.primary.opacity(AppOpacity.subtleFill))
                         ForecastRow(label: "Estimated net profit",
-                                    value: "\(netProfit >= 0 ? "+" : "")\(sym)\(Int(netProfit))",
+                                    value: "\(netProfit >= 0 ? "+" : "")" + financialService.moneyDisplay(netProfit),
                                     sub: "estimated", positive: netProfit >= 0)
                     }
                 }

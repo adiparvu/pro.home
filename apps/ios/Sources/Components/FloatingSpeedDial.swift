@@ -11,8 +11,15 @@ struct FloatingSpeedDial: View {
     var trailingPadding: CGFloat = 20
 
     @State private var expanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isMenu: Bool { actions.count > 1 }
+
+    /// The dial's spring, flattened to a plain fade when the user asks for
+    /// reduced motion.
+    private var dialAnimation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.72)
+    }
 
     var body: some View {
         if actions.isEmpty {
@@ -24,6 +31,7 @@ struct FloatingSpeedDial: View {
                         .ignoresSafeArea()
                         .onTapGesture { collapse() }
                         .transition(.opacity)
+                        .accessibilityHidden(true)
                 }
 
                 VStack(alignment: .trailing, spacing: 12) {
@@ -51,7 +59,7 @@ struct FloatingSpeedDial: View {
         Button {
             HapticFeedback.impact(.medium)
             if isMenu {
-                withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded.toggle() }
+                withAnimation(dialAnimation) { expanded.toggle() }
             } else if let only = actions.first {
                 onSelect(only)
             }
@@ -59,14 +67,17 @@ struct FloatingSpeedDial: View {
             Image(systemName: isMenu ? "plus" : (actions.first?.icon ?? "plus"))
                 .font(.system(size: isMenu ? 22 : 20, weight: .bold))
                 .foregroundStyle(.primary)
-                .rotationEffect(.degrees(expanded && isMenu ? 45 : 0))
-                .animation(.spring(response: 0.38, dampingFraction: 0.72), value: expanded)
+                .rotationEffect(.degrees(expanded && isMenu && !reduceMotion ? 45 : 0))
+                .animation(dialAnimation, value: expanded)
                 .frame(width: 58, height: 58)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .glassCircle()
         .shadow(color: Color.primary.opacity(0.22), radius: 20, y: 6)
+        .accessibilityLabel(isMenu ? String(localized: "Quick actions") : (actions.first?.title ?? ""))
+        .accessibilityHint(isMenu ? String(localized: "Opens the quick actions menu") : "")
+        .accessibilityValue(isMenu && expanded ? String(localized: "Expanded") : "")
     }
 
     private func actionRow(_ action: DashboardQuickAction) -> some View {
@@ -99,7 +110,7 @@ struct FloatingSpeedDial: View {
     }
 
     private func collapse() {
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { expanded = false }
+        withAnimation(dialAnimation) { expanded = false }
     }
 }
 

@@ -84,13 +84,10 @@ struct Delivery: Identifiable, Codable, Hashable {
 
     var expectedDisplay: String? {
         guard let ds = expectedDate else { return nil }
-        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-        guard let d = fmt.date(from: ds) else { return ds }
-        let out = DateFormatter()
+        guard let d = AppDate.day(from: ds) else { return ds }
         if Calendar.current.isDateInToday(d) { return String(localized: "Today") }
         if Calendar.current.isDateInTomorrow(d) { return String(localized: "Tomorrow") }
-        out.dateFormat = "d MMM"
-        return out.string(from: d)
+        return AppDate.monthDay.string(from: d)
     }
 
     static var statusOptions: [(id: String, label: String)] {[

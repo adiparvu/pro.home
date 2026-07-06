@@ -349,9 +349,7 @@ extension PropertyElementDetailView {
     // MARK: - Helpers
 
     func formatted(date: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: date) else { return date }
-        let out = DateFormatter(); out.dateStyle = .medium; out.locale = .current
-        return out.string(from: d)
+        guard let d = AppDate.day(from: date) else { return date }
+        return AppDate.medium.string(from: d)
     }
 }

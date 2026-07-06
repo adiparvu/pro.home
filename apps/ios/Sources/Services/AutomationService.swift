@@ -9,9 +9,7 @@ final class AutomationService {
     var byElement: [UUID: [ElementAutomation]] = [:]
     var error: String?
 
-    private let df: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
-    }()
+    private let df: DateFormatter = AppDate.day
 
     func automations(for elementId: UUID) -> [ElementAutomation] {
         byElement[elementId] ?? []

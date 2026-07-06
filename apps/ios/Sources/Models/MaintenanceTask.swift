@@ -65,17 +65,11 @@ struct MaintenanceTask: Identifiable, Codable, Equatable {
     var dueDateDisplay: String {
         guard let ds = dueDate else { return String(localized: "No date") }
         guard let d = MaintenanceTask.parseDate(ds) else { return ds }
-        let out = DateFormatter()
-        out.dateFormat = ds.count > 10 ? "MMM d, HH:mm" : "MMM d"
-        return out.string(from: d)
+        return (ds.count > 10 ? AppDate.monthDayTime : AppDate.monthDay).string(from: d)
     }
 
     static func parseDate(_ ds: String) -> Date? {
-        for fmt in ["yyyy-MM-dd HH:mm", "yyyy-MM-dd"] {
-            let f = DateFormatter(); f.dateFormat = fmt
-            if let d = f.date(from: ds) { return d }
-        }
-        return nil
+        AppDate.day(from: ds)
     }
 
     var priorityColor: Color {

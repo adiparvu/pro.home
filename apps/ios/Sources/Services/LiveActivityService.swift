@@ -188,8 +188,7 @@ final class LiveActivityService: ObservableObject {
 
         // Start activities for tasks scheduled today.
         if LiveActivityPrefs.startOnSchedule {
-            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"
-            let today = fmt.string(from: Date())
+            let today = AppDate.dayString(from: Date())
             if let due = tasks.first(where: { !$0.isCompleted && ($0.dueDate?.hasPrefix(today) ?? false) }) {
                 startMaintenance(taskTitle: due.title, category: due.category,
                                  step: String(localized: "Scheduled for today"))

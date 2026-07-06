@@ -221,9 +221,7 @@ struct AddFinancialView: View {
         isSaving = true
         defer { isSaving = false }
 
-        let iso = DateFormatter()
-        iso.dateFormat = "yyyy-MM-dd"
-        let dateString = iso.string(from: date)
+        let dateString = AppDate.dayString(from: date)
         let now = ISO8601DateFormatter().string(from: Date())
 
         struct NewRecord: Encodable {

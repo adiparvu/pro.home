@@ -30,6 +30,7 @@ final class DocumentService {
             }
             documents = try await query
                 .order("created_at", ascending: false)
+                .limit(500)   // explicit cap — PostgREST truncates silently without one
                 .execute()
                 .value
             ServiceCache.save(documents, entity: "documents", propertyId: pid)

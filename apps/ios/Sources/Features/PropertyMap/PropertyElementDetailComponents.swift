@@ -57,8 +57,7 @@ struct ElementRecordRow: View {
     }
 
     private var formattedDate: String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: record.recordDate) else { return record.recordDate }
+        guard let d = AppDate.day(from: record.recordDate) else { return record.recordDate }
         let out = DateFormatter(); out.dateStyle = .short; out.locale = .current
         return out.string(from: d)
     }

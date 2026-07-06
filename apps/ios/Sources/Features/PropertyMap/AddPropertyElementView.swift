@@ -559,8 +559,7 @@ private struct DateToggleRow: View {
                     .labelsHidden()
                     .onChange(of: isShown) { _, shown in
                         if shown {
-                            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                            stringValue = f.string(from: date)
+                            stringValue = AppDate.dayString(from: date)
                         } else {
                             stringValue = ""
                         }
@@ -571,8 +570,7 @@ private struct DateToggleRow: View {
                     .datePickerStyle(.compact)
                     .labelsHidden()
                     .onChange(of: date) { _, d in
-                        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-                        stringValue = f.string(from: d)
+                        stringValue = AppDate.dayString(from: d)
                     }
             }
         }

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Supabase
 
 @MainActor
 @Observable
@@ -7,6 +8,11 @@ final class TaskService {
     var tasks: [MaintenanceTask] = []
     var isLoading = false
     var error: String?
+
+    private var realtimeChannel: RealtimeChannelV2?
+    private var subscribedPropertyId: UUID?
+    private var postgresSubs: [RealtimeSubscription] = []
+    private var realtimeReload: Task<Void, Never>?
 
     var openCount: Int {
         tasks.filter { $0.status == "pending" || $0.status == "in_progress" }.count
@@ -16,10 +22,12 @@ final class TaskService {
     }
     var completedThisWeek: Int {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return tasks.filter { t in
             guard t.isCompleted else { return false }
-            if let d = f.date(from: t.updatedAt) { return d >= weekAgo }
+            // Tolerant of every server shape (Z / +00:00 / microseconds) —
+            // trigger-touched rows previously failed to parse and vanished
+            // from this count.
+            if let d = AppDate.timestamp(from: t.updatedAt) { return d >= weekAgo }
             return false
         }.count
     }
@@ -41,12 +49,51 @@ final class TaskService {
             }
             tasks = try await query
                 .order("created_at", ascending: false)
+                .limit(500)   // explicit cap — PostgREST truncates silently without one
                 .execute()
                 .value
             ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription
+        }
+        if let pid { await subscribeRealtime(propertyId: pid) }
+    }
+
+    // MARK: - Live family sync
+    //
+    // Any insert/update/delete on this home's tasks re-pulls the list, so a
+    // task completed on one phone appears on every other family member's
+    // phone in seconds — no pull-to-refresh. Events are coalesced so a burst
+    // of changes costs one reload.
+
+    private func subscribeRealtime(propertyId: UUID) async {
+        guard subscribedPropertyId != propertyId else { return }
+        if let ch = realtimeChannel {
+            await supabase.realtimeV2.removeChannel(ch)
+            realtimeChannel = nil
+            postgresSubs.removeAll()
+        }
+        let channel = supabase.realtimeV2.channel("maintenance_tasks:\(propertyId.uuidString)")
+        postgresSubs.append(channel.onPostgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: "maintenance_tasks",
+            filter: "property_id=eq.\(propertyId.uuidString)"
+        ) { [weak self] _ in
+            Task { @MainActor in self?.scheduleRealtimeReload() }
+        })
+        try? await channel.subscribeWithError()
+        realtimeChannel = channel
+        subscribedPropertyId = propertyId
+    }
+
+    private func scheduleRealtimeReload() {
+        realtimeReload?.cancel()
+        realtimeReload = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await self?.load()
         }
     }
 
