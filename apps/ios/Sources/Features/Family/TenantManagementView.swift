@@ -248,14 +248,12 @@ struct TenantManagementView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.purple.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                Image(systemName: "key.fill")
-                    .font(.system(size: 34, weight: .light))
-                    .foregroundStyle(Color.purple.opacity(0.45))
-            }
+            Image(systemName: "key.fill")
+                .font(.system(size: 30, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 80, height: 80)
+                .glassCircle()
             Text("No tenants yet")
                 .font(AppFont.title3)
                 .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))

@@ -98,14 +98,17 @@ enum LanguageManager {
 //
 // Every unqualified `String(localized: "…")` in this module resolves through
 // this initializer (same-module declarations win overload resolution against
-// imported ones), which forwards to Foundation's full initializer with the
-// app's chosen locale. This is what makes the in-app language switch actually
-// bind: on iOS 17+ Foundation resolves `String(localized:)` in native Swift,
-// so neither the bundle swizzle nor `AppleLanguages` help until relaunch —
-// the `locale:` parameter is the supported, deterministic override.
+// imported ones). The critical detail: Foundation's `locale:` parameter only
+// formats interpolated values — it does NOT choose the localization table.
+// Table selection follows the BUNDLE, so the shim resolves against the chosen
+// language's .lproj loaded as its own bundle. That is what makes the in-app
+// switch deterministic: on iOS 17+ Foundation resolves `String(localized:)`
+// in native Swift, bypassing the ObjC swizzle, and `AppleLanguages` only
+// helps after a relaunch — the language bundle is the supported override.
 extension String {
     init(localized keyAndValue: String.LocalizationValue, comment: StaticString? = nil) {
-        self.init(localized: keyAndValue, table: nil, bundle: .main,
+        self.init(localized: keyAndValue, table: nil,
+                  bundle: LanguageManager.bundleOverride ?? .main,
                   locale: LanguageManager.activeLocale, comment: comment)
     }
 }

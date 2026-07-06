@@ -239,7 +239,8 @@ struct TodayCard: View {
         HStack(spacing: 12) {
             Image(systemName: "sparkles")
                 .font(AppFont.headline)
-                .foregroundStyle(Color.brandSuccess)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
             VStack(alignment: .leading, spacing: 2) {
                 Text("All clear today")
                     .font(AppFont.subheadline)

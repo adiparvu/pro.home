@@ -138,6 +138,9 @@ struct PhotoJournalView: View {
                 if allTags.count > 1 {
                     tagFilterBar
                 }
+                if !searchText.isEmpty && filteredEntries.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
+                }
                 ForEach(monthGroups) { group in
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {

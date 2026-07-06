@@ -59,6 +59,8 @@ struct BlueprintsView: View {
 
                 if service.scans.isEmpty {
                     emptyState
+                } else if !searchText.isEmpty && filteredScans.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else {
                     scansGrid
                 }

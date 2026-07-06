@@ -85,19 +85,27 @@ private struct LinkObjectsSheet: View {
                             .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     }.padding(40)
                 } else {
-                    List(filtered) { item in
-                        Button { Task { await toggle(item) } } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: item.categoryIcon).foregroundStyle(item.categoryColor)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(item.name)
-                                    if item.elementId != nil && item.elementId != elementId {
-                                        Text("Linked elsewhere").font(.caption2).foregroundStyle(.orange)
+                    List {
+                        if !query.isEmpty && filtered.isEmpty {
+                            EmptyStateView(icon: "magnifyingglass", title: "No results")
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        } else {
+                            ForEach(filtered) { item in
+                                Button { Task { await toggle(item) } } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: item.categoryIcon).foregroundStyle(item.categoryColor)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(item.name)
+                                            if item.elementId != nil && item.elementId != elementId {
+                                                Text("Linked elsewhere").font(.caption2).foregroundStyle(.orange)
+                                            }
+                                        }
+                                        Spacer()
+                                        if item.elementId == elementId {
+                                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                                        }
                                     }
-                                }
-                                Spacer()
-                                if item.elementId == elementId {
-                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                                 }
                             }
                         }

@@ -87,6 +87,10 @@ struct DeliveriesView: View {
             VStack(spacing: 20) {
                 summaryPill
 
+                if !searchText.isEmpty && filteredActiveDeliveries.isEmpty && filteredCompletedDeliveries.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
+                }
+
                 if !filteredActiveDeliveries.isEmpty {
                     activeSection
                 }
