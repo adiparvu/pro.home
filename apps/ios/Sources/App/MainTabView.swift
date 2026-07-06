@@ -311,7 +311,13 @@ struct MainTabView: View {
             // Beat immediately on foreground so we don't read as offline after a
             // background gap; drop the live channel while backgrounded.
             if phase == .active { Task { await pulsePresence() } }
-            else if phase == .background { Task { await presenceService.unsubscribe() } }
+            else if phase == .background {
+                Task { await presenceService.unsubscribe() }
+                // Widgets must always show the state you left the app in —
+                // refresh the shared snapshot on every trip to the background.
+                writeWidgetSnapshot()
+                updateDynamicShortcuts()
+            }
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }

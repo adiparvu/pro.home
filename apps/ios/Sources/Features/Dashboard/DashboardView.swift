@@ -112,6 +112,21 @@ struct DashboardView: View {
             await notificationService.load(userId: uid)
             await notificationService.subscribeRealtime(userId: uid)
         }
+        // Router integration: widgets and deep links open the notification
+        // center through the router, and a route change closes whatever
+        // local sheet (search / notifications / health) is still up so the
+        // new destination can actually present.
+        .onChange(of: router.showNotifications) { _, wants in
+            guard wants else { return }
+            router.showNotifications = false
+            activeSheet = .notifications
+        }
+        .onChange(of: router.dismissGeneration) { _, _ in
+            activeSheet = nil
+        }
+        .onChange(of: activeSheet) { _, sheet in
+            router.hasLocalPresentation = (sheet != nil)
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .notifications:
