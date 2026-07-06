@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Year of Your Home": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Year of Your Home" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Anul casei tale" } }
+      }
+    },
+    "Photos captured": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Photos captured" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Fotografii surprinse" } }
+      }
+    },
+    "Tasks completed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tasks completed" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Taskuri finalizate" } }
+      }
+    },
+    "Documents filed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Documents filed" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Documente arhivate" } }
+      }
+    },
+    "Spent on the home": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Spent on the home" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Investit în casă" } }
+      }
+    },
+    "THE STORY": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "THE STORY" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "POVESTEA" } }
+      }
+    },
+    "First memory of the year": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "First memory of the year" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Prima amintire a anului" } }
+      }
+    },
+    "Busiest month": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Busiest month" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Luna cea mai activă" } }
+      }
+    },
+    "%@ — %d tasks done": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ — %d tasks done" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%@ — %d taskuri făcute" } }
+      }
+    },
+    "Biggest investment": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Biggest investment" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Cea mai mare investiție" } }
+      }
+    },
+    "Share your year": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Share your year" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Împarte-ți anul" } }
+      }
+    },
     "%@ spending up %d%%": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "%@ spending up %d%%" } },

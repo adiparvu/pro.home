@@ -244,7 +244,8 @@ struct SettingsView: View {
     private enum PropertyFeature: CaseIterable {
         case myProperty, documents, plans, finances, inventory, supplies, plants,
              deliveries, utilities, contractors, analytics, report, tenants,
-             appliances, photoJournal, seasonal, paint, propertyValue, guestMode, perspectives
+             appliances, photoJournal, seasonal, paint, propertyValue, guestMode, perspectives,
+             yearReview
     }
 
     private func allowed(_ f: PropertyFeature) -> Bool {
@@ -253,9 +254,11 @@ struct SettingsView: View {
             return false
         case "tenant":
             return [.documents, .supplies, .plants, .deliveries, .utilities,
-                    .contractors, .appliances, .photoJournal, .seasonal, .paint].contains(f)
+                    .contractors, .appliances, .photoJournal, .seasonal, .paint,
+                    .yearReview].contains(f)
         case "family_child", "family_teen":
-            return [.supplies, .plants, .deliveries, .photoJournal, .seasonal].contains(f)
+            return [.supplies, .plants, .deliveries, .photoJournal, .seasonal,
+                    .yearReview].contains(f)
         case "service_provider":
             return [.documents, .contractors, .deliveries, .appliances,
                     .seasonal, .photoJournal].contains(f)
@@ -301,8 +304,8 @@ struct SettingsView: View {
         }
         var features: [PropertyFeature] {
             switch self {
-            case .home:      return [.myProperty, .plans, .photoJournal, .perspectives,
-                                     .propertyValue, .analytics, .report]
+            case .home:      return [.myProperty, .plans, .photoJournal, .yearReview,
+                                     .perspectives, .propertyValue, .analytics, .report]
             case .upkeep:    return [.inventory, .appliances, .paint, .contractors,
                                      .seasonal, .utilities]
             case .moneyDocs: return [.finances, .documents, .tenants]
@@ -424,6 +427,16 @@ struct SettingsView: View {
             NavSettingsRow(icon: "doc.text.fill", color: .orange, label: "Documents") {
                 DocumentsView().environment(documentService).environment(propertyService)
                     .sectionLock(.documents)
+            }
+        case .yearReview:
+            NavSettingsRow(icon: "sparkles.rectangle.stack.fill", color: Color.brandPurple, label: "Year of Your Home") {
+                YearInReviewView()
+                    .environment(propertyService)
+                    .environment(taskService)
+                    .environment(financialService)
+                    .environment(photoJournalService)
+                    .environment(documentService)
+                    .environment(appSettings)
             }
         case .plans:
             NavSettingsRow(icon: "cube.transparent.fill", color: .purple, label: "Plans & 3D") {
