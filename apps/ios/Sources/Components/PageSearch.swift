@@ -1,18 +1,21 @@
 import SwiftUI
 
-// MARK: - Page search (magnifier toggle + inline field)
+// MARK: - Page search (magnifier + system search field)
 //
 // The uniform search pattern for list pages: a magnifier button in the
-// page's header/toolbar toggles an inline search field that filters the
-// page content live. Keep one @State pair per page:
+// page's toolbar presents the system `.searchable` field, which filters
+// the page content live. Keep one @State pair per page:
 //
 //   @State private var showSearch = false
 //   @State private var searchText = ""
 //
 //   SearchIconButton(isActive: $showSearch)          // header/toolbar
-//   if showSearch { PageSearchField(text: $searchText) }
+//   .searchable(text: $searchText, isPresented: $showSearch,
+//               placement: .navigationBarDrawer(displayMode: .automatic))
 //
-// and filter the displayed collection with `matchesSearch`.
+// and filter the displayed collection with `matchesSearch`. The inline
+// `PageSearchField` remains only for surfaces outside a navigation bar
+// (the Digital Twin's floating map-search overlay).
 
 struct SearchIconButton: View {
     @Binding var isActive: Bool
@@ -25,9 +28,17 @@ struct SearchIconButton: View {
     var body: some View {
         Button {
             HapticFeedback.impact(.light)
-            // Short ease-out so the field feels instant — a springy toggle
-            // reads as lag between the tap and the bar appearing.
-            withAnimation(.easeOut(duration: 0.12)) { isActive.toggle() }
+            switch style {
+            case .toolbar:
+                // Presents the system search field — the drawer runs its own
+                // transition, so no explicit animation is needed here.
+                isActive = true
+            case .glass:
+                // The map overlay still toggles its inline field. Short
+                // ease-out so it feels instant — a springy toggle reads as
+                // lag between the tap and the bar appearing.
+                withAnimation(.easeOut(duration: 0.12)) { isActive.toggle() }
+            }
         } label: {
             switch style {
             case .toolbar:

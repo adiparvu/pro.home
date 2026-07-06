@@ -55,9 +55,6 @@ struct BlueprintsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                }
                 quickActions
                 buriedNav
 
@@ -75,6 +72,9 @@ struct BlueprintsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SearchIconButton(isActive: $showSearch)

@@ -44,6 +44,9 @@ struct PlantsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
@@ -114,9 +117,6 @@ struct PlantsView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                }
                 summaryRow
                 plantsGrid
                 Spacer(minLength: 110)

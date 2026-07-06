@@ -42,6 +42,9 @@ struct PhotoJournalView: View {
         }
         .navigationTitle("Photo Journal")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SearchIconButton(isActive: $showSearch)
@@ -139,10 +142,6 @@ struct PhotoJournalView: View {
     private var journalContent: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: AppSpacing.lg, pinnedViews: []) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                        .padding(.horizontal, AppSpacing.lg)
-                }
                 if allTags.count > 1 {
                     tagFilterBar
                 }

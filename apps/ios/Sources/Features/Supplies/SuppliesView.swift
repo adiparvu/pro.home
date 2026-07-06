@@ -85,6 +85,9 @@ struct SuppliesView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
@@ -211,9 +214,6 @@ struct SuppliesView: View {
     private var listsScrollContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                }
                 if !filteredLists.isEmpty {
                     listsGrid
                 }
@@ -313,11 +313,6 @@ struct SuppliesView: View {
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        if showSearch {
-                            PageSearchField(text: $searchText)
-                                .padding(.horizontal, AppSpacing.xl)
-                                .padding(.bottom, AppSpacing.lg)
-                        }
                         if !pending.isEmpty {
                             GlassCard(padding: 0) {
                                 VStack(spacing: 0) {
@@ -358,11 +353,6 @@ struct SuppliesView: View {
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        if showSearch {
-                            PageSearchField(text: $searchText)
-                                .padding(.horizontal, AppSpacing.xl)
-                                .padding(.bottom, AppSpacing.lg)
-                        }
                         if !done.isEmpty {
                             GlassCard(padding: 0) {
                                 VStack(spacing: 0) {

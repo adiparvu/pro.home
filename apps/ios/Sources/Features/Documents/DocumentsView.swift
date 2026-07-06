@@ -47,13 +47,6 @@ struct DocumentsView: View {
             appBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if showSearch {
-                    searchBar
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.bottom, AppSpacing.md)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
                 if documentService.isLoading {
                     Spacer()
                     ProgressView().tint(.white)
@@ -96,6 +89,9 @@ struct DocumentsView: View {
         }
         .navigationTitle("Documents")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $search, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search documents..."))
         .floatingSpeedDial(.documents)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -246,26 +242,6 @@ struct DocumentsView: View {
             .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.md)
             .background(.red.opacity(0.85), in: Capsule())
             .padding(.horizontal, AppSpacing.xxl)
-    }
-
-    // MARK: - Search
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-            TextField("Search documents...", text: $search)
-                .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-            if !search.isEmpty {
-                Button { search = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.4))
-                }
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: - Category filter menu

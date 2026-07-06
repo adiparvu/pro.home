@@ -167,17 +167,6 @@ struct ContractorsView: View {
         ZStack {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                if showSearch && !service.contractors.isEmpty {
-                    HStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
-                        TextField("Search…", text: $search).font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
-                    }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                    .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-                    .padding(.horizontal, AppSpacing.xl).padding(.bottom, AppSpacing.md)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
                 if service.isLoading {
                     Spacer(); ProgressView().tint(.white); Spacer()
                 } else if filtered.isEmpty {
@@ -263,6 +252,9 @@ struct ContractorsView: View {
         }
         .navigationTitle("Contractors")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $search, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .floatingSpeedDial(.contractors)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

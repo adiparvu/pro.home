@@ -21,9 +21,6 @@ struct PropertySettingsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                }
                 if propertyService.properties.isEmpty {
                     emptyState
                 } else {
@@ -45,6 +42,9 @@ struct PropertySettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 12) {

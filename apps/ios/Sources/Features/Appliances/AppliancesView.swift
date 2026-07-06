@@ -40,6 +40,9 @@ struct AppliancesView: View {
         }
         .navigationTitle("Appliances")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $search,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search appliances…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -74,7 +77,6 @@ struct AppliancesView: View {
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
-                searchBar
                 if !applianceService.appliancesExpiringWarranty.isEmpty {
                     warrantyBanner
                 }
@@ -90,21 +92,6 @@ struct AppliancesView: View {
                 await applianceService.load(propertyId: id)
             }
         }
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-            TextField("Search appliances…", text: $search)
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-                .tint(.accentColor)
-        }
-        .padding(.horizontal, AppSpacing.base)
-        .padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.hairline), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     private var warrantyBanner: some View {

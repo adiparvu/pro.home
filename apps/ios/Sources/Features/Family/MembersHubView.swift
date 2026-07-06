@@ -77,10 +77,6 @@ struct MembersHubView: View {
                 PageHeader(titleKey: "Members", subtitleKey: "HOUSEHOLD")
                 segmentPicker
 
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                }
-
                 switch segment {
                 case .family:      familySection
                 case .others:      othersSection
@@ -104,6 +100,9 @@ struct MembersHubView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SearchIconButton(isActive: $showSearch)

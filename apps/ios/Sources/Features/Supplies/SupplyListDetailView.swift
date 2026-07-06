@@ -28,9 +28,6 @@ struct SupplyListDetailView: View {
         VStack(spacing: 0) {
             PageHeader(title: list.name, subtitleKey: "SUPPLIES")
 
-            searchBar
-                .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm).padding(.bottom, AppSpacing.xs)
-
             categoryChips
                 .padding(.bottom, AppSpacing.sm)
 
@@ -47,6 +44,9 @@ struct SupplyListDetailView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search items…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showAddItem = true; HapticFeedback.impact(.light) } label: {
@@ -68,31 +68,6 @@ struct SupplyListDetailView: View {
                 .environment(propertyService)
         }
         .floatingSpeedDial(.supplies)
-    }
-
-    // MARK: Search bar
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(AppFont.footnoteEmphasis)
-                .foregroundStyle(.secondary)
-            TextField("Search items…", text: $searchText)
-                .font(.system(size: 15))
-                .foregroundStyle(.primary)
-                .tint(.accentColor)
-            if !searchText.isEmpty {
-                Button { searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-        .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
     // MARK: Category chips

@@ -65,11 +65,6 @@ struct InventoryView: View {
         ZStack(alignment: .bottomTrailing) {
             appBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                if showSearch {
-                    PageSearchField(text: $searchText)
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.top, 10)
-                }
                 if !service.items.isEmpty {
                     summaryBar.padding(.horizontal, AppSpacing.xl).padding(.vertical, 10)
                 }
@@ -153,6 +148,9 @@ struct InventoryView: View {
         }
         .navigationTitle("Inventory")
         .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, isPresented: $showSearch,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
