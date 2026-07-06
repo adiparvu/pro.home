@@ -95,15 +95,15 @@ struct FloatingSpeedDial: View {
                     .allowsHitTesting(false)
                     .shadow(color: Color.primary.opacity(0.08), radius: 6, y: 2)
 
-                ZStack {
-                    Circle()
-                        .fill(action.color.opacity(0.18))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: action.icon)
-                        .font(AppFont.subheadline)
-                        .foregroundStyle(action.color)
-                }
-                .shadow(color: action.color.opacity(0.25), radius: 8, y: 3)
+                // Native pattern: Liquid Glass circle with a primary glyph —
+                // no tinted discs (the colour survives only in the page that
+                // configures the action, not on the button).
+                Image(systemName: action.icon)
+                    .font(AppFont.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .glassCircle()
+                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
             }
         }
         .buttonStyle(.plain)
