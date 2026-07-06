@@ -553,6 +553,7 @@ private struct GroupChatView: View {
                 let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !body.isEmpty, let pid = propertyId else { return }
                 text = ""
+                MessageSounds.sent()
                 Task { try? await svc.send(propertyId: pid, senderName: myName, body: body) }
             } label: {
                 Image(systemName: "arrow.up.circle.fill")

@@ -13,6 +13,7 @@ extension ChatView {
         let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
         text = ""
         HapticFeedback.impact(.light)
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false }
         let replyId = replyingTo?.id
@@ -91,6 +92,7 @@ extension ChatView {
     func sendSticker(_ sticker: Sticker) async {
         guard let pid = propertyId else { return }
         HapticFeedback.success()
+        MessageSounds.sent()
         try? await messageService.send(
             propertyId: pid, senderName: senderName,
             body: sticker.id, attachmentType: "sticker"
@@ -99,6 +101,7 @@ extension ChatView {
 
     func sendContact(_ formatted: String) async {
         guard let pid = propertyId else { return }
+        MessageSounds.sent()
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: "👤 \(formatted)"
         )
@@ -109,6 +112,7 @@ extension ChatView {
         guard let pid = propertyId else { return }
         let poll = ChatPoll(q: question, opts: options, multi: multipleChoice)
         guard let body = poll.encoded() else { return }
+        MessageSounds.sent()
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: body, attachmentType: "poll"
         )
@@ -121,6 +125,7 @@ extension ChatView {
         let ev = ChatEvent(t: title, d: details.isEmpty ? nil : details,
                            date: f.string(from: date), loc: location.isEmpty ? nil : location)
         guard let body = ev.encoded() else { return }
+        MessageSounds.sent()
         try? await messageService.send(
             propertyId: pid, senderName: senderName, body: body, attachmentType: "event"
         )
@@ -129,6 +134,7 @@ extension ChatView {
 
     func sendPhoto(_ items: [PhotosPickerItem]) async {
         guard let pid = propertyId, !items.isEmpty else { return }
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false }
         // A caption typed in the composer is attached to the first image, then cleared.
@@ -160,6 +166,7 @@ extension ChatView {
     func sendCameraPhoto(_ image: UIImage) async {
         guard let pid = propertyId,
               let data = image.uploadJPEG(quality: 0.8, maxDimension: 2048) else { return }
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false }
         // Private bucket + signed URL (resolved at display via ChatMedia).
@@ -176,6 +183,7 @@ extension ChatView {
 
     func sendLocation(lat: Double, lon: Double) async {
         guard let pid = propertyId else { return }
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false }
         try? await messageService.send(
@@ -191,6 +199,7 @@ extension ChatView {
     func sendAudio(url: URL) async {
         guard let pid = propertyId else { return }
         guard let data = try? Data(contentsOf: url) else { return }
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false; try? FileManager.default.removeItem(at: url) }
         // Private bucket + signed URL (resolved at playback via ChatMedia).
@@ -209,6 +218,7 @@ extension ChatView {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         guard let data = try? Data(contentsOf: url) else { return }
+        MessageSounds.sent()
         isSending = true
         defer { isSending = false }
         let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension

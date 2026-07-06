@@ -1010,6 +1010,7 @@ struct DirectMessageView: View {
         directMessageService.dms.append(optimistic)
         withAnimation { replyingTo = nil }
         HapticFeedback.impact(.light)
+        MessageSounds.sent()
         do {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
@@ -1118,6 +1119,7 @@ struct DirectMessageView: View {
     @MainActor
     private func sendDMContact(_ formatted: String) async {
         guard let pid = propertyService.primary?.id else { return }
+        MessageSounds.sent()
         struct Payload: Encodable {
             let sender_name, recipient_name, body, property_id: String
             let sender_id, recipient_member_id, expires_at: String?
@@ -1159,6 +1161,7 @@ struct DirectMessageView: View {
     @MainActor
     private func uploadAndSendImage(data: Data) async {
         guard let propId = propertyService.primary?.id else { return }
+        MessageSounds.sent()
 
         do {
             // Private bucket + signed URL at display (via ChatMedia / DMImageBubble).
@@ -1194,6 +1197,7 @@ struct DirectMessageView: View {
     private func sendAudio(_ fileURL: URL) async {
         guard let data = try? Data(contentsOf: fileURL),
               let propId = propertyService.primary?.id else { return }
+        MessageSounds.sent()
 
         do {
             // Private bucket + signed URL at playback (via ChatMedia / AudioBubble).
