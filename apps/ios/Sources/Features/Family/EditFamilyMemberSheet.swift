@@ -43,52 +43,27 @@ struct EditFamilyMemberSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        avatarPreview
-                        colorRow
-                        fieldsSection
-                        roleSection
-                        socialLinksSection
-                        deleteButton
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.sm)
-                }
-                .scrollDismissesKeyboard(.immediately)
+        FormScaffold(title: "Edit Member",
+                     canSave: !firstName.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: isSaving,
+                     error: $saveError,
+                     onSave: { Task { await save() } }) {
+            avatarPreview
+            colorRow
+            fieldsSection
+            roleSection
+            socialLinksSection
+            deleteButton
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .confirmationDialog("Remove \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                Task { await familyService.delete(member); dismiss() }
             }
-            .navigationTitle("Edit Member").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await save() } } label: {
-                        if isSaving { ProgressView().tint(.accentColor) }
-                        else { Text("Save").font(AppFont.subheadline).foregroundStyle(Color.accentColor) }
-                    }
-                    .disabled(firstName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
-                }
-            }
-            .confirmationDialog("Remove \(member.name)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-                Button("Remove", role: .destructive) {
-                    Task { await familyService.delete(member); dismiss() }
-                }
-                Button("Cancel", role: .cancel) {}
-            }
-            .sheet(isPresented: $showAddSocial) {
-                AddSocialLinkSheet { link in socialLinks.append(link) }
-            }
-            .alert("Couldn't save", isPresented: Binding(
-                get: { saveError != nil }, set: { if !$0 { saveError = nil } }
-            )) {
-                Button("OK", role: .cancel) { saveError = nil }
-            } message: {
-                Text(saveError ?? "")
-            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showAddSocial) {
+            AddSocialLinkSheet { link in socialLinks.append(link) }
         }
     }
 
@@ -115,7 +90,7 @@ struct EditFamilyMemberSheet: View {
     }
 
     private var fieldsSection: some View {
-        VStack(spacing: 0) {
+        FormGroup {
             fieldRow(icon: "person.fill", color: .blue, placeholder: "First name *", text: $firstName)
             div
             fieldRow(icon: "person.fill", color: Color.primary.opacity(0.4), placeholder: "Last name", text: $lastName)
@@ -126,8 +101,6 @@ struct EditFamilyMemberSheet: View {
             div
             birthdayRow
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
     }
 
     private var birthdayRow: some View {
@@ -154,8 +127,7 @@ struct EditFamilyMemberSheet: View {
     }
 
     private var roleSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("ROLE").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
+        FormGroup(title: "ROLE") {
             HStack(spacing: 12) {
                 ColoredIconBadge(icon: kRoleIcons[role] ?? "person.fill", color: .blue, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
@@ -175,52 +147,45 @@ struct EditFamilyMemberSheet: View {
                 .pickerStyle(.menu).tint(.accentColor)
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 
     private var socialLinksSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("SOCIAL NETWORKS").font(AppFont.label).foregroundStyle(Color.primary.opacity(AppOpacity.disabled)).padding(.leading, AppSpacing.xxs)
-            VStack(spacing: 0) {
-                ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
-                    HStack(spacing: 12) {
-                        ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
-                            TextField("@username", text: Binding(
-                                get: { socialLinks[idx].handle },
-                                set: { socialLinks[idx].handle = $0 }
-                            ))
-                            .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
-                            .autocorrectionDisabled().textInputAutocapitalization(.never)
-                        }
-                        Spacer()
-                        Button { socialLinks.remove(at: idx) } label: {
-                            Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
-                        }
+        FormGroup(title: "SOCIAL NETWORKS") {
+            ForEach(Array(socialLinks.enumerated()), id: \.element.id) { idx, link in
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: link.platformIcon, color: link.platformColor, size: 36)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(LocalizedStringKey(link.platformLabel)).font(AppFont.captionEmphasis).foregroundStyle(.primary)
+                        TextField("@username", text: Binding(
+                            get: { socialLinks[idx].handle },
+                            set: { socialLinks[idx].handle = $0 }
+                        ))
+                        .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
                     }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
-                    if idx < socialLinks.count - 1 {
-                        Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
+                    Spacer()
+                    Button { socialLinks.remove(at: idx) } label: {
+                        Image(systemName: "minus.circle.fill").font(.system(size: 18)).foregroundStyle(.red.opacity(0.8))
                     }
                 }
-                Button {
-                    HapticFeedback.impact(.light)
-                    showAddSocial = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
-                        Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                        Spacer()
-                    }
-                    .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
+                if idx < socialLinks.count - 1 {
+                    Rectangle().fill(Color.primary.opacity(0.05)).frame(height: 0.5).padding(.leading, 62)
                 }
-                .buttonStyle(.plain)
             }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
+            Button {
+                HapticFeedback.impact(.light)
+                showAddSocial = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.circle.fill").font(.system(size: 20)).foregroundStyle(Color.accentColor)
+                    Text("Add social network").font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                    Spacer()
+                }
+                .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.md)
+            }
+            .buttonStyle(.plain)
         }
     }
 

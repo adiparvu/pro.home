@@ -17,90 +17,65 @@ struct AddPropertyValueSheet: View {
     private let commonSources = ["Manual estimate", "Bank appraisal", "Real estate agent", "Online estimate", "Official valuation"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        formSection("Value") {
-                            HStack(spacing: 10) {
-                                Image(systemName: "banknote.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 28)
-                                TextField("0", text: $valueText)
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundStyle(.primary)
-                                    .tint(.accentColor)
-                                    .keyboardType(.decimalPad)
-                                Spacer()
-                                Picker("Currency", selection: $currency) {
-                                    ForEach(currencies, id: \.self) { c in
-                                        Text(c).tag(c)
-                                    }
-                                }
-                                .tint(.accentColor)
-                                .pickerStyle(.menu)
-                            }
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.base)
+        FormScaffold(title: "Add Value Entry",
+                     canSave: (Double(valueText) ?? 0) > 0,
+                     isSaving: isSaving,
+                     error: .constant(nil),
+                     onSave: { Task { await save() } }) {
+            FormGroup(title: "Value") {
+                HStack(spacing: 10) {
+                    Image(systemName: "banknote.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                    TextField("0", text: $valueText)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .keyboardType(.decimalPad)
+                    Spacer()
+                    Picker("Currency", selection: $currency) {
+                        ForEach(currencies, id: \.self) { c in
+                            Text(c).tag(c)
                         }
-
-                        formSection("Details") {
-                            sourcePicker
-                            divider
-                            DatePicker(
-                                "Date",
-                                selection: $date,
-                                displayedComponents: .date
-                            )
-                            .tint(.accentColor)
-                            .font(.system(size: 15))
-                            .foregroundStyle(.primary)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.md)
-                        }
-
-                        formSection("Notes") {
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: "note.text")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 28)
-                                    .padding(.top, 2)
-                                TextField("Optional notes…", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.primary)
-                                    .tint(.accentColor)
-                                    .lineLimit(3...6)
-                            }
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, 13)
-                        }
-
-                        Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
+                    .tint(.accentColor)
+                    .pickerStyle(.menu)
                 }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.base)
             }
-            .navigationTitle("Add Value Entry")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+
+            FormGroup(title: "Details") {
+                sourcePicker
+                divider
+                DatePicker(
+                    "Date",
+                    selection: $date,
+                    displayedComponents: .date
+                )
+                .tint(.accentColor)
+                .font(.system(size: 15))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.md)
+            }
+
+            FormGroup(title: "Notes") {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                        .padding(.top, 2)
+                    TextField("Optional notes…", text: $notes, axis: .vertical)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(3...6)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        ProgressView().tint(.accentColor)
-                    } else {
-                        Button("Save") { Task { await save() } }
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                            .disabled((Double(valueText) ?? 0) <= 0 || isSaving)
-                    }
-                }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, 13)
             }
         }
     }
@@ -143,21 +118,6 @@ struct AddPropertyValueSheet: View {
                     .padding(.vertical, AppSpacing.sm)
                 }
             }
-        }
-    }
-
-    private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(AppFont.label)
-                .foregroundStyle(.secondary)
-                .padding(.leading, AppSpacing.sm)
-                .textCase(.uppercase)
-            VStack(spacing: 0) {
-                content()
-            }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
         }
     }
 

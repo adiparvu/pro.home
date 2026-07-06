@@ -18,73 +18,48 @@ struct AddPaintColorSheet: View {
     private let surfaces = ["walls", "ceiling", "trim", "door", "floor", "other"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        formSection("Room") {
-                            if paintColorService.roomNames.isEmpty {
-                                fieldRow("house.fill", "Room Name (e.g. Living Room)", $roomName)
-                            } else {
-                                roomPickerOrCustom
-                            }
-                            divider
-                            surfacePicker
-                        }
-
-                        formSection("Color Details") {
-                            fieldRow("paintbrush.fill", "Color Name (required)", $colorName)
-                            divider
-                            fieldRow("building.2.fill", "Brand (e.g. Farrow & Ball)", $brand)
-                            divider
-                            fieldRow("number.circle.fill", "Color Code", $code)
-                            divider
-                            finishPickerRow
-                            divider
-                            hexColorRow
-                        }
-
-                        formSection("Notes") {
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: "note.text")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 28)
-                                    .padding(.top, 2)
-                                TextField("Additional notes…", text: $notes, axis: .vertical)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.primary)
-                                    .tint(.accentColor)
-                                    .lineLimit(3...6)
-                            }
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, 13)
-                        }
-
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
+        FormScaffold(title: "Add Paint Color",
+                     canSave: !colorName.trimmingCharacters(in: .whitespaces).isEmpty && !roomName.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: isSaving,
+                     error: .constant(nil),
+                     onSave: { Task { await save() } }) {
+            FormGroup(title: "Room") {
+                if paintColorService.roomNames.isEmpty {
+                    fieldRow("house.fill", "Room Name (e.g. Living Room)", $roomName)
+                } else {
+                    roomPickerOrCustom
                 }
+                divider
+                surfacePicker
             }
-            .navigationTitle("Add Paint Color")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+
+            FormGroup(title: "Color Details") {
+                fieldRow("paintbrush.fill", "Color Name (required)", $colorName)
+                divider
+                fieldRow("building.2.fill", "Brand (e.g. Farrow & Ball)", $brand)
+                divider
+                fieldRow("number.circle.fill", "Color Code", $code)
+                divider
+                finishPickerRow
+                divider
+                hexColorRow
+            }
+
+            FormGroup(title: "Notes") {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                        .padding(.top, 2)
+                    TextField("Additional notes…", text: $notes, axis: .vertical)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                        .tint(.accentColor)
+                        .lineLimit(3...6)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        ProgressView().tint(.accentColor)
-                    } else {
-                        Button("Save") { Task { await save() } }
-                            .font(AppFont.subheadline)
-                            .foregroundStyle(Color.accentColor)
-                            .disabled(colorName.trimmingCharacters(in: .whitespaces).isEmpty || roomName.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
-                }
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, 13)
             }
         }
     }
@@ -226,21 +201,6 @@ struct AddPaintColorSheet: View {
         }
         .padding(.horizontal, AppSpacing.lg)
         .padding(.vertical, 13)
-    }
-
-    private func formSection<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(AppFont.label)
-                .foregroundStyle(.secondary)
-                .padding(.leading, AppSpacing.sm)
-                .textCase(.uppercase)
-            VStack(spacing: 0) {
-                content()
-            }
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-        }
     }
 
     private var divider: some View {

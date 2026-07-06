@@ -38,32 +38,19 @@ struct AddSupplyItemSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 22) {
-                        nameField
-                        quantityField
-                        if list == nil && supplyService.lists.count > 1 { listPicker }
-                        categoryPicker
-                        priorityPicker
-                        locationField
-                        notesField
-                        if let error { Text(error).font(.caption).foregroundStyle(.red) }
-                        saveButton
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
-                }
-            }
-            .navigationTitle(editingItem == nil ? String(localized: "New Item") : String(localized: "Edit Item"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
+        FormScaffold(title: editingItem == nil ? "New Item" : "Edit Item",
+                     saveLabel: editingItem == nil ? "Add item" : "Save changes",
+                     canSave: !name.trimmingCharacters(in: .whitespaces).isEmpty,
+                     isSaving: isSaving,
+                     error: $error,
+                     onSave: { save() }) {
+            nameField
+            quantityField
+            if list == nil && supplyService.lists.count > 1 { listPicker }
+            categoryPicker
+            priorityPicker
+            locationField
+            notesField
         }
         .onAppear {
             if list == nil { selectedListId = supplyService.lists.first?.id }
@@ -179,26 +166,6 @@ struct AddSupplyItemSheet: View {
                 }
             }
         }
-    }
-
-    private var saveButton: some View {
-        Button { save() } label: {
-            Group {
-                if isSaving { ProgressView().tint(.primary) }
-                else {
-                    Text(LocalizedStringKey(editingItem == nil ? "Add item" : "Save changes"))
-                        .font(AppFont.headline)
-                }
-            }
-            .frame(maxWidth: .infinity).frame(height: 52)
-            .background(name.trimmingCharacters(in: .whitespaces).isEmpty
-                ? Color.primary.opacity(0.2) : Color.primary,
-                in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .foregroundStyle(name.trimmingCharacters(in: .whitespaces).isEmpty
-                ? Color.primary.opacity(0.4) : Color(UIColor.systemBackground))
-        }
-        .buttonStyle(.plain)
-        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
     }
 
     private func save() {

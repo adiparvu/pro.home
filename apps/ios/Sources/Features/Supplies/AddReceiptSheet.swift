@@ -17,33 +17,18 @@ struct AddReceiptSheet: View {
     @State private var error: String?
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 22) {
-                        storeField
-                        dateField
-                        categoryField
-                        itemsSection
-                        totalField
-                        notesField
-                        if let error {
-                            Text(LocalizedStringKey(error)).font(.caption).foregroundStyle(.red).padding(.horizontal)
-                        }
-                        saveButton
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.lg)
-                }
-            }
-            .navigationTitle(String(localized: "add_receipt_title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel")) { dismiss() }
-                }
-            }
+        FormScaffold(title: "add_receipt_title",
+                     saveLabel: "add_receipt_save",
+                     canSave: canSave,
+                     isSaving: isSaving,
+                     error: $error,
+                     onSave: { Task { await save() } }) {
+            storeField
+            dateField
+            categoryField
+            itemsSection
+            totalField
+            notesField
         }
     }
 
@@ -169,24 +154,6 @@ struct AddReceiptSheet: View {
                 .padding(AppSpacing.base)
                 .background(Color.primary.opacity(AppOpacity.subtleFill), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
-    }
-
-    private var saveButton: some View {
-        Button { Task { await save() } } label: {
-            Group {
-                if isSaving { ProgressView().tint(Color(UIColor.systemBackground)) }
-                else {
-                    Text(String(localized: "add_receipt_save"))
-                        .font(AppFont.headline)
-                }
-            }
-            .foregroundStyle(Color(UIColor.systemBackground))
-            .frame(maxWidth: .infinity).frame(height: 52)
-            .background(canSave ? Color.accentColor : Color.primary.opacity(0.25),
-                        in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!canSave || isSaving)
     }
 
     private var canSave: Bool {

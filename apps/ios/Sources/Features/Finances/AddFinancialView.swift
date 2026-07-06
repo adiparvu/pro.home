@@ -25,52 +25,21 @@ struct AddFinancialView: View {
     private let categories = ["rent", "utilities", "maintenance", "insurance", "taxes", "mortgage", "supplies", "other"]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        typeSelector
-                        amountField
-                        detailsSection
-                        notesField
-                        shareSection
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.top, AppSpacing.sm)
-                }
-            }
-            .task { if familyService.members.isEmpty { await familyService.load() } }
-            .navigationTitle("Add Record")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        Task { await save() }
-                    } label: {
-                        if isSaving {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("Save")
-                                .font(AppFont.subheadline)
-                                .foregroundStyle(Color.accentColor)
-                        }
-                    }
-                    .disabled(isSaving || title.isEmpty || amount.isEmpty)
-                }
-            }
-            .alert("Error", isPresented: $showError) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(LocalizedStringKey(errorMessage))
-            }
+        FormScaffold(title: "Add Record",
+                     canSave: !title.isEmpty && !amount.isEmpty,
+                     isSaving: isSaving,
+                     error: Binding(
+                         get: { showError ? errorMessage : nil },
+                         set: { if $0 == nil { showError = false } }
+                     ),
+                     onSave: { Task { await save() } }) {
+            typeSelector
+            amountField
+            detailsSection
+            notesField
+            shareSection
         }
+        .task { if familyService.members.isEmpty { await familyService.load() } }
     }
 
     // MARK: - Type selector
@@ -131,7 +100,7 @@ struct AddFinancialView: View {
     // MARK: - Details
 
     private var detailsSection: some View {
-        VStack(spacing: 0) {
+        FormGroup {
             // Title
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "tag.fill", color: .blue)
@@ -175,17 +144,12 @@ struct AddFinancialView: View {
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.xs)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
-        )
     }
 
     // MARK: - Notes
 
     private var notesField: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        FormGroup {
             HStack(spacing: 14) {
                 ColoredIconBadge(icon: "note.text", color: .cyan)
                 TextField("Notes (optional)", text: $notes)
@@ -196,11 +160,6 @@ struct AddFinancialView: View {
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, AppSpacing.md)
         }
-        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5)
-        )
     }
 
     // MARK: - Share with
@@ -252,7 +211,9 @@ struct AddFinancialView: View {
     private func save() async {
         guard let amountDouble = Double(amount.replacingOccurrences(of: ",", with: ".")),
               let propertyId = propertyService.primary?.id else {
-            errorMessage = propertyService.primary == nil ? "No property found." : "Invalid amount."
+            errorMessage = propertyService.primary == nil
+                ? String(localized: "No property found.")
+                : String(localized: "Invalid amount.")
             showError = true
             return
         }
