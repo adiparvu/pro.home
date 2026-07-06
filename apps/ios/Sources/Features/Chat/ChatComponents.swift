@@ -797,7 +797,8 @@ struct MessageBubble: View {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {
             LocationBubble(lat: lat, lon: lon, isOwn: isOwn, label: message.senderName,
-                           hasTail: isGroupEnd, senderId: message.senderId)
+                           hasTail: isGroupEnd, senderId: message.senderId,
+                           sentAt: message.createdAt)
         } else if message.isAudioMessage, let urlStr = message.attachmentUrl {
             AudioBubble(
                 audioValue: urlStr, isOwn: isOwn,

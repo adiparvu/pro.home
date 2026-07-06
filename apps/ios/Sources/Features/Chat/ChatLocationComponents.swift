@@ -58,16 +58,27 @@ struct LocationBubble: View {
     var label: String = ""
     var hasTail: Bool = true
     var senderId: UUID? = nil
+    /// The carrying message's created_at — a bubble may only render live if
+    /// IT belongs to the current share window.
+    var sentAt: String? = nil
 
     @State private var showDetail = false
 
     /// The sender's ACTIVE live share, if any — turns this bubble into the
-    /// WhatsApp-style live variant that follows their position.
+    /// WhatsApp-style live variant that follows their position. Bound to the
+    /// message: an older static location from the same sender must not light
+    /// up just because a new share is running.
     private var liveRow: LiveLocation? {
-        LiveLocationService.shared.active.first {
+        guard let row = LiveLocationService.shared.active.first(where: {
             ($0.userId == senderId || $0.userName == label)
                 && ($0.expiresDate ?? .distantPast) > Date()
-        }
+        }) else { return nil }
+        guard let sentAt,
+              let sent = AppDate.timestamp(from: sentAt),
+              let started = AppDate.timestamp(from: row.startedAt) else { return nil }
+        // Small tolerance: the message row can commit moments before the
+        // live-location row does.
+        return sent >= started.addingTimeInterval(-120) ? row : nil
     }
 
     private var coordinate: CLLocationCoordinate2D {

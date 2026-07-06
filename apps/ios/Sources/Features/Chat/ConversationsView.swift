@@ -674,8 +674,9 @@ struct ConversationsView: View {
             }
             .frame(width: 52, height: 52)
             VStack(alignment: .leading, spacing: 3) {
-                Text("ARIA").font(AppFont.headline)
-                Text("Asistent AI").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
+                Text(UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA")
+                    .font(AppFont.headline)
+                Text("AI Assistant").font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
             }
             Spacer()
             Image(systemName: "chevron.right").font(AppFont.captionEmphasis).foregroundStyle(Color.primary.opacity(0.25))

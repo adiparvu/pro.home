@@ -70,6 +70,7 @@ final class AppSettings {
     /// resolves through `LanguageManager`'s freshly-rebuilt string table — re-reads
     /// in the new language on the next frame.
     func setLanguage(_ language: Language) {
+        UserDefaults.standard.set(true, forKey: "prvio.locale.explicit")
         LanguageManager.apply(language.rawValue)
         followSystemLanguage = false
         locale = language.rawValue
@@ -78,6 +79,7 @@ final class AppSettings {
 
     /// Follows the device language (best match among the supported languages).
     func useSystemLanguage() {
+        UserDefaults.standard.set(true, forKey: "prvio.locale.explicit")
         LanguageManager.applySystemLanguage()
         followSystemLanguage = true
         UserDefaults.standard.removeObject(forKey: "AppleLanguages")
@@ -164,8 +166,18 @@ final class AppSettings {
 
     // Load preferences from profile on first sign-in
     func loadFromProfile(_ profile: ProfileData) {
-        locale = profile.locale ?? locale
-        theme  = profile.theme  ?? theme
+        // The language picked on THIS device is authoritative: the server
+        // profile used to clobber it on every cold start (profile said "ro"
+        // forever), silently flipping the app back — and without even
+        // re-applying the string bundle. Only adopt the profile's locale
+        // when the user never made an explicit choice here, and apply it
+        // for real when we do.
+        let explicitChoice = UserDefaults.standard.bool(forKey: "prvio.locale.explicit")
+        if !explicitChoice, let remote = profile.locale, remote != locale {
+            locale = remote
+            LanguageManager.apply(remote)
+        }
+        theme = profile.theme ?? theme
     }
 
     static let themes: [(code: String, label: String, icon: String)] = [

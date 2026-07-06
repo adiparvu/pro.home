@@ -500,13 +500,42 @@ private struct GroupChatView: View {
             composer
         }
         .background(appBackground.ignoresSafeArea())
+        // iMessage-style header: no bar, the conversation slides under a
+        // progressive blur and only glass controls float on top.
+        .overlay(alignment: .top) { ChatTopBlur() }
         .navigationTitle(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                ChatHeaderPill {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.15))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: currentGroup.kindIcon)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        Text(currentGroup.name.isEmpty ? currentGroup.kindLabel : currentGroup.name)
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showSettings = true } label: { Image(systemName: "gearshape.fill") }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Group settings")
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(AppFont.subheadline)
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 40, height: 34)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(Color.hairline, lineWidth: 0.5))
+                .accessibilityLabel("Group settings")
             }
         }
         .sheet(isPresented: $showSettings) {

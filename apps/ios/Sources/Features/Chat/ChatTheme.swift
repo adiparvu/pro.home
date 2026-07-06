@@ -109,7 +109,19 @@ struct ChatTheme: Identifiable {
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .overlay(Color.black.opacity(0.05).ignoresSafeArea())
+                // Photos arrive raw; the stock themes are designed gradients.
+                // A vertical scrim makes wallpapers read like part of the set:
+                // stronger where the header and compose bar live, lighter in
+                // the middle where the bubbles carry their own contrast.
+                .overlay(
+                    LinearGradient(stops: [
+                        .init(color: .black.opacity(0.28), location: 0),
+                        .init(color: .black.opacity(0.10), location: 0.25),
+                        .init(color: .black.opacity(0.10), location: 0.72),
+                        .init(color: .black.opacity(0.30), location: 1),
+                    ], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                )
         } else if let cols = backgroundColors {
             LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom).ignoresSafeArea()
         } else {

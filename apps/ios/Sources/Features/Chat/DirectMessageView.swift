@@ -131,13 +131,18 @@ struct DirectMessageView: View {
     var body: some View {
         ZStack {
             chatTheme.background
-            VStack(spacing: 0) {
-                messageList
-                if ChatBlockStore.isBlocked(member.id.uuidString) {
-                    blockedBanner
-                } else {
-                    inputBar
-                }
+            messageList
+        }
+        // The compose bar lives in the safe-area inset — the canonical
+        // iMessage structure. It can never be pushed off-screen by the
+        // list's internal geometry (the empty-state GeometryReader used to
+        // swallow it), and the scroll view gains the matching bottom inset
+        // automatically.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if ChatBlockStore.isBlocked(member.id.uuidString) {
+                blockedBanner
+            } else {
+                inputBar
             }
         }
         // iMessage-style header: no bar, the conversation slides under a
@@ -509,6 +514,7 @@ struct DirectMessageView: View {
             Group {
                 if conversationMessages.isEmpty {
                     emptyState
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     let shown = displayedMessages
                     ScrollView(showsIndicators: false) {
