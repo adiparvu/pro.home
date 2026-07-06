@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Start the private conversation": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Start the private conversation" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Începe conversația privată" } }
+      }
+    },
     "Due today": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Due today" } },

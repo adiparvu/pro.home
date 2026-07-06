@@ -137,6 +137,9 @@ struct DirectMessageView: View {
                 }
             }
         }
+        // iMessage-style header: no bar, the conversation slides under a
+        // progressive blur and only glass controls float on top.
+        .overlay(alignment: .top) { ChatTopBlur() }
         .overlay {
             if directMessageService.isLoading && conversationMessages.isEmpty {
                 MessageSkeleton()
@@ -147,31 +150,34 @@ struct DirectMessageView: View {
         }
         .navigationTitle(member.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Button { showProfile = true } label: {
-                    HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(member.swiftColor.opacity(0.15))
-                                .frame(width: 34, height: 34)
-                            Text(member.initials)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(member.swiftColor)
-                        }
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(member.name)
-                                .font(AppFont.headline)
-                                .foregroundStyle(.primary)
-                            // Transient typing status wins; otherwise show presence
-                            // (online / last seen) when the partner shares it.
-                            if directMessageService.typingNames.contains(member.name) {
-                                Text("typing…")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color.accentColor)
-                            } else {
-                                presenceSubtitle
+                    ChatHeaderPill {
+                        HStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(member.swiftColor.opacity(0.15))
+                                    .frame(width: 30, height: 30)
+                                Text(member.initials)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(member.swiftColor)
+                            }
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(member.name)
+                                    .font(AppFont.subheadline)
+                                    .foregroundStyle(.primary)
+                                // Transient typing status wins; otherwise show presence
+                                // (online / last seen) when the partner shares it.
+                                if directMessageService.typingNames.contains(member.name) {
+                                    Text("typing…")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.accentColor)
+                                } else {
+                                    presenceSubtitle
+                                }
                             }
                         }
                     }
@@ -179,22 +185,10 @@ struct DirectMessageView: View {
                 .buttonStyle(.plain)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showVideoSheet = true } label: {
-                    Image(systemName: "video.fill")
-                        .font(AppFont.headline)
-                        .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Video call")
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showCallSheet = true } label: {
-                    Image(systemName: "phone.fill")
-                        .font(AppFont.headline)
-                        .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Call")
+                ChatHeaderActions(
+                    onVideo: { showVideoSheet = true },
+                    onCall: { showCallSheet = true }
+                )
             }
         }
         .navigationDestination(isPresented: $showProfile) {
@@ -698,7 +692,7 @@ struct DirectMessageView: View {
             }
             Text(member.name)
                 .font(.system(size: 18, weight: .bold))
-            Text("Începe conversația privată")
+            Text("Start the private conversation")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.primary.opacity(0.4))
             Spacer()
@@ -822,8 +816,10 @@ struct DirectMessageView: View {
             .padding(.horizontal, AppSpacing.base)
             .padding(.vertical, 8)
             // iMessage has no separate band behind the compose row — the bar
-            // sits directly on the conversation background.
-            .background(chatTheme.background)
+            // sits directly on the conversation background, which the root
+            // ZStack already draws full-screen. Re-rendering the theme here
+            // painted photo wallpapers a second time (scaledToFill on a bar-
+            // sized area spills the whole image across the screen).
         }
         .animation(.spring(duration: 0.3), value: showAttachmentTray)
         .animation(.spring(duration: 0.3), value: replyingTo?.id)

@@ -229,6 +229,9 @@ struct ChatView: View {
         messageList
             .overlay(alignment: .bottom) { inputBar }
             .background(chatTheme.background)
+            // iMessage-style header: no bar, the conversation slides under a
+            // progressive blur and only glass controls float on top.
+            .overlay(alignment: .top) { ChatTopBlur() }
             .overlay {
                 if messageService.isLoading && messageService.messages.isEmpty {
                     MessageSkeleton()
@@ -244,54 +247,47 @@ struct ChatView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 10) {
-                    GroupHeaderAvatar(
-                        members: familyService.members,
-                        photoUrl: propertyService.primary?.photoUrl,
-                        ownerAvatarUrl: profileService.profile?.avatarUrl,
-                        ownerInitial: ownerInitial,
-                        ringColor: avatarRingColor(for: avatarRingColorName)
-                    ) {
-                        showGroupInfo = true
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        // The group chat has its own name (chat_group_settings),
-                        // independent of the property name.
-                        Text(propertyService.groupChatDisplayName)
-                            .font(AppFont.headline)
-                        // Transient typing status wins; otherwise show who's online.
-                        if let t = typingText {
-                            Text(t)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.accentColor)
-                        } else if let o = onlineText {
-                            Text(o)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.brandSuccess)
+                ChatHeaderPill {
+                    HStack(spacing: 8) {
+                        GroupHeaderAvatar(
+                            members: familyService.members,
+                            photoUrl: propertyService.primary?.photoUrl,
+                            ownerAvatarUrl: profileService.profile?.avatarUrl,
+                            ownerInitial: ownerInitial,
+                            ringColor: avatarRingColor(for: avatarRingColorName)
+                        ) {
+                            showGroupInfo = true
                         }
+                        VStack(alignment: .leading, spacing: 0) {
+                            // The group chat has its own name (chat_group_settings),
+                            // independent of the property name.
+                            Text(propertyService.groupChatDisplayName)
+                                .font(AppFont.subheadline)
+                            // Transient typing status wins; otherwise show who's online.
+                            if let t = typingText {
+                                Text(t)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.accentColor)
+                            } else if let o = onlineText {
+                                Text(o)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.brandSuccess)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { showGroupInfo = true }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { showGroupInfo = true }
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showVideoSheet = true } label: {
-                    Image(systemName: "video.fill")
-                        .font(AppFont.headline)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Video call")
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { showCallSheet = true } label: {
-                    Image(systemName: "phone.fill")
-                        .font(AppFont.headline)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Call")
+                ChatHeaderActions(
+                    onVideo: { showVideoSheet = true },
+                    onCall: { showCallSheet = true }
+                )
             }
         }
         .task {
