@@ -8,7 +8,7 @@ struct ElementSmartControlSection: View {
     let elementId: UUID
 
     @Environment(PropertyElementService.self) private var elementService
-    private var homeKit = HomeKitService.shared
+    var homeKit = HomeKitService.shared
     @State private var showPicker = false
 
     private var element: PropertyElement? { elementService.elements.first { $0.id == elementId } }
