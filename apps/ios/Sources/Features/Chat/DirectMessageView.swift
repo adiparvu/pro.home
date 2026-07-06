@@ -493,6 +493,7 @@ struct DirectMessageView: View {
                             .frame(width: 26, height: 26)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Unpin message"))
                 }
                 .padding(.horizontal, AppSpacing.base).padding(.vertical, AppSpacing.sm)
                 .liquidGlass(cornerRadius: 14)
@@ -686,6 +687,7 @@ struct DirectMessageView: View {
                             .frame(width: 40, height: 40)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Jump to latest message"))
                     .glassCircle()
                     .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
                     .padding(.trailing, AppSpacing.lg).padding(.bottom, 10)
@@ -893,6 +895,7 @@ struct DirectMessageView: View {
         }
         .buttonStyle(.plain)
         .disabled(isSending)
+        .accessibilityLabel(Text("Send"))
     }
 
     // Mic button is always the rightmost element — never removed from hierarchy
@@ -936,6 +939,7 @@ struct DirectMessageView: View {
                     }
                 }
         )
+        .accessibilityLabel(Text("Record voice message"))
     }
 
     private var dmAttachmentTray: some View {

@@ -118,6 +118,7 @@ struct ProfileView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text("Change photo"))
                 .disabled(profileService.isUploadingAvatar)
                 .offset(x: 4, y: 4)
             }

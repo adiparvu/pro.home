@@ -179,6 +179,7 @@ struct NFCWalletView: View {
                                     in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text("Delete"))
             }
         }
     }

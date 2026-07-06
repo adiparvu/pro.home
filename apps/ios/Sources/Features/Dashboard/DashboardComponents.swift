@@ -126,6 +126,7 @@ struct PropertyCoreMarker: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text("Property"))
     }
 }
 
@@ -160,6 +161,7 @@ struct PropertyPointMarker: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(section.name))
     }
 }
 

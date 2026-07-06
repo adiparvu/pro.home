@@ -629,6 +629,7 @@ struct ConversationsView: View {
                     .font(AppFont.headline)
                     .foregroundStyle(Color.accentColor)
             }
+            .accessibilityLabel(Text("Back"))
             Text("Conversații arhivate")
                 .font(.system(size: 17, weight: .bold))
             Spacer()

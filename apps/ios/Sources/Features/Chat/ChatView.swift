@@ -894,6 +894,7 @@ struct ChatView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Send"))
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)

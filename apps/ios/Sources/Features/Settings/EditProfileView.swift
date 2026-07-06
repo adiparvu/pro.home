@@ -68,6 +68,7 @@ struct EditProfileView: View {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Color.primary.opacity(0.3))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear date"))
                 } else {
                     Button { withAnimation { hasBirthDate = true } } label: {
                         HStack {
@@ -117,6 +118,7 @@ struct EditProfileView: View {
                         .font(.system(size: 20))
                         .foregroundStyle(.tint)
                 }
+                .accessibilityLabel(Text("Add account"))
             }
 
             if socialLinks.isEmpty {
@@ -144,6 +146,7 @@ struct EditProfileView: View {
                                 .foregroundStyle(.red.opacity(0.8))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Delete"))
                     }
                     .padding(.horizontal, AppSpacing.md).padding(.vertical, 10)
                     .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))

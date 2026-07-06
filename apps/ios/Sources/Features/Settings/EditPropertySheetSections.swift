@@ -50,7 +50,7 @@ extension EditPropertySheet {
                         if isLocating { ProgressView().tint(.accentColor).scaleEffect(0.7) }
                         else { Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor) }
                     }
-                }.buttonStyle(.plain).padding(.trailing, 10).padding(.bottom, 10)
+                }.buttonStyle(.plain).accessibilityLabel(Text("Use current location")).padding(.trailing, 10).padding(.bottom, 10)
             }}
         }
         .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))
@@ -96,6 +96,7 @@ extension EditPropertySheet {
                     Image(systemName: showRenovationForm ? "minus.circle.fill" : "plus.circle.fill")
                         .foregroundStyle(Color.accentColor).font(.system(size: 18))
                 }.buttonStyle(.plain)
+                .accessibilityLabel(showRenovationForm ? Text("Hide form") : Text("Add renovation"))
             }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
 
             if !renovations.isEmpty {
@@ -111,6 +112,7 @@ extension EditPropertySheet {
                             Button { renovations.removeAll { $0.id == r.id } } label: {
                                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
+                            .accessibilityLabel(Text("Delete"))
                         }
                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                         if r.id != renovations.last?.id {
@@ -157,6 +159,7 @@ extension EditPropertySheet {
                     Image(systemName: showOwnerForm ? "minus.circle.fill" : "plus.circle.fill")
                         .foregroundStyle(Color.accentColor).font(.system(size: 18))
                 }.buttonStyle(.plain)
+                .accessibilityLabel(showOwnerForm ? Text("Hide form") : Text("Add owner"))
             }.padding(.leading, AppSpacing.xxs).padding(.top, AppSpacing.xl)
 
             if !owners.isEmpty {
@@ -172,6 +175,7 @@ extension EditPropertySheet {
                             Button { owners.removeAll { $0.id == o.id } } label: {
                                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.primary.opacity(0.3))
                             }.buttonStyle(.plain)
+                            .accessibilityLabel(Text("Delete"))
                         }
                         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
                         if o.id != owners.last?.id {

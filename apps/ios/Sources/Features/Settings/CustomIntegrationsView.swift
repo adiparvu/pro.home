@@ -523,6 +523,7 @@ private struct IntegrationDetailSheet: View {
                     .foregroundStyle(copied == key ? Color.brandSuccess : Color.accentColor)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(copied == key ? Text("Copied") : Text("Copy"))
         }
         .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
         .liquidGlass(cornerRadius: AppRadius.lg)

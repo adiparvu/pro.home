@@ -378,7 +378,7 @@ struct AddPropertySheet: View {
                             if isLocating { ProgressView().tint(.accentColor).scaleEffect(0.7) }
                             else { Image(systemName: "location.fill").font(.system(size: 14)).foregroundStyle(Color.accentColor) }
                         }
-                    }.buttonStyle(.plain).padding(.trailing, 10).padding(.bottom, 10)
+                    }.buttonStyle(.plain).accessibilityLabel(Text("Use current location")).padding(.trailing, 10).padding(.bottom, 10)
                 }}
             }
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous).strokeBorder(Color.primary.opacity(0.1), lineWidth: 0.8))

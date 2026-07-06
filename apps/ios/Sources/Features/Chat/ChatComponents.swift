@@ -1047,6 +1047,7 @@ struct ChatFileBubble: View {
                     .font(.system(size: 18))
                     .foregroundStyle(isOwn ? .white.opacity(0.8) : Color.accentColor)
                     .onTapGesture { if let url { onPreview(url, name ?? url.lastPathComponent) } }
+                    .accessibilityLabel(Text("Preview"))
             }
         }
         .contentShape(Rectangle())
@@ -1081,6 +1082,7 @@ struct ChatVideoBubble: View {
         .clipShape(shape)
         .contentShape(shape)
         .onTapGesture { if let url { onTap(url) } }
+        .accessibilityLabel(Text("Play"))
         .task(id: stored) { url = await ChatMedia.resolve(stored) }
     }
 }
