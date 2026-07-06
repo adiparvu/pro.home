@@ -10,11 +10,16 @@ final class FamilyService {
     var error: String?
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if members.isEmpty, let cached = ServiceCache.load([FamilyMember].self, entity: "family", propertyId: pid) {
+            members = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
             var query = supabase.from("family_members").select()
-            if let pid = PropertyService.activePropertyId {
+            if let pid {
                 // Scope to the selected home; legacy rows without a property
                 // stay visible rather than silently disappearing.
                 query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
@@ -23,6 +28,7 @@ final class FamilyService {
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            ServiceCache.save(members, entity: "family", propertyId: pid)
         } catch {
             self.error = error.localizedDescription
         }

@@ -29,6 +29,13 @@ final class SupplyService {
     // MARK: Load
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if lists.isEmpty, let cached = ServiceCache.load([SupplyList].self, entity: "supplies.lists", propertyId: propertyId) {
+            lists = cached
+        }
+        if items.isEmpty, let cached = ServiceCache.load([SupplyItem].self, entity: "supplies.items", propertyId: propertyId) {
+            items = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -46,6 +53,8 @@ final class SupplyService {
                 .execute().value
             lists = try await fetchedLists
             items = try await fetchedItems
+            ServiceCache.save(lists, entity: "supplies.lists", propertyId: propertyId)
+            ServiceCache.save(items, entity: "supplies.items", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
         }

@@ -122,6 +122,11 @@ final class PropertyService {
     }
 
     func load() async {
+        // Paint the last known state instantly; the network refresh follows.
+        if properties.isEmpty, let cached = ServiceCache.load([PropertyModel].self, entity: "properties") {
+            properties = cached
+            Self.activePropertyId = primary?.id
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -131,6 +136,7 @@ final class PropertyService {
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            ServiceCache.save(properties, entity: "properties")
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription

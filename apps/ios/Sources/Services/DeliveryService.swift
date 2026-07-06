@@ -55,6 +55,10 @@ final class DeliveryService {
     }
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if deliveries.isEmpty, let cached = ServiceCache.load([Delivery].self, entity: "deliveries", propertyId: propertyId) {
+            deliveries = cached
+        }
         currentPropertyId = propertyId
         do {
             deliveries = try await supabase
@@ -64,6 +68,7 @@ final class DeliveryService {
                 .order("created_at", ascending: false)
                 .execute()
                 .value
+            ServiceCache.save(deliveries, entity: "deliveries", propertyId: propertyId)
         } catch {
             #if DEBUG
             print("DeliveryService.load error:", error)

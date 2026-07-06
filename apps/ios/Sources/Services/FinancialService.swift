@@ -56,11 +56,16 @@ final class FinancialService {
     var currencySymbol: String { currency == "EUR" ? "€" : currency == "USD" ? "$" : currency }
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if records.isEmpty, let cached = ServiceCache.load([FinancialRecord].self, entity: "financial", propertyId: pid) {
+            records = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
             var query = supabase.from("financial_records").select()
-            if let pid = PropertyService.activePropertyId {
+            if let pid {
                 // Scope to the selected home; legacy rows without a property
                 // stay visible rather than silently disappearing.
                 query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
@@ -69,6 +74,7 @@ final class FinancialService {
                 .order("date", ascending: false)
                 .execute()
                 .value
+            ServiceCache.save(records, entity: "financial", propertyId: pid)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription

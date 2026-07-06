@@ -106,6 +106,8 @@ final class AuthService {
         AuditLogService.AuditEvent.record("logout", String(localized: "Signed out"))
         try await supabase.auth.signOut()
         session = nil
+        // The next account must never see this household's cached data.
+        ServiceCache.clear()
     }
 
     func switchTo(account: SavedAccount) async throws {
@@ -114,5 +116,7 @@ final class AuthService {
             refreshToken: account.refreshToken
         )
         self.session = restored
+        // Account switch = different household visibility; drop the old cache.
+        ServiceCache.clear()
     }
 }

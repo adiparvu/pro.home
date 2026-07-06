@@ -14,11 +14,16 @@ final class DocumentService {
     var expiringDocs: [DocumentModel] { documents.filter { $0.isExpiringSoon } }
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if documents.isEmpty, let cached = ServiceCache.load([DocumentModel].self, entity: "documents", propertyId: pid) {
+            documents = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
             var query = supabase.from("documents").select()
-            if let pid = PropertyService.activePropertyId {
+            if let pid {
                 // Scope to the selected home; legacy rows without a property
                 // stay visible rather than silently disappearing.
                 query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
@@ -27,6 +32,7 @@ final class DocumentService {
                 .order("created_at", ascending: false)
                 .execute()
                 .value
+            ServiceCache.save(documents, entity: "documents", propertyId: pid)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription

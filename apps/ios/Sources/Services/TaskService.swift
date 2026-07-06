@@ -25,11 +25,16 @@ final class TaskService {
     }
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if tasks.isEmpty, let cached = ServiceCache.load([MaintenanceTask].self, entity: "tasks", propertyId: pid) {
+            tasks = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
             var query = supabase.from("maintenance_tasks").select()
-            if let pid = PropertyService.activePropertyId {
+            if let pid {
                 // Scope to the selected home; legacy rows without a property
                 // stay visible rather than silently disappearing.
                 query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
@@ -38,6 +43,7 @@ final class TaskService {
                 .order("created_at", ascending: false)
                 .execute()
                 .value
+            ServiceCache.save(tasks, entity: "tasks", propertyId: pid)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription
