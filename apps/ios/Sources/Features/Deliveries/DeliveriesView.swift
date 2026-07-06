@@ -10,7 +10,6 @@ struct DeliveriesView: View {
     @State private var editingDelivery: Delivery? = nil
     @State private var showCompleted = false
     @State private var showAutoImport = false
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private var filteredActiveDeliveries: [Delivery] {
@@ -40,13 +39,10 @@ struct DeliveriesView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                SearchIconButton(isActive: $showSearch)
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showAutoImport = true
@@ -69,9 +65,6 @@ struct DeliveriesView: View {
                 }
                 .accessibilityLabel("Add delivery")
             }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAddDelivery) {
             DeliveryFormSheet(editingDelivery: nil)

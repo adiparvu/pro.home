@@ -14,7 +14,6 @@ struct MembersHubView: View {
     @State private var invitationService = InvitationService()
     @State private var accountService = AccountMemberService()
     @State private var segment: Segment = .family
-    @State private var showSearch = false
     @State private var searchText = ""
     @State private var showAdd = false
     @State private var editingMember: FamilyMember?
@@ -100,13 +99,10 @@ struct MembersHubView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                SearchIconButton(isActive: $showSearch)
-            }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     HapticFeedback.impact(.light)
@@ -134,9 +130,6 @@ struct MembersHubView: View {
             AccountReviewSheet(member: account,
                                profile: accountService.profiles[account.userId],
                                service: accountService)
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .task { reload() }
     }
@@ -258,6 +251,8 @@ struct MembersHubView: View {
         } else if accountService.members.isEmpty {
             emptyState(icon: "person.crop.circle.badge.checkmark",
                        text: "No one has an account yet. Accepted invitations appear here.")
+        } else if !searchText.isEmpty && filteredAccounts.isEmpty {
+            EmptyStateView(icon: "magnifyingglass", title: "No results")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(filteredAccounts.enumerated()), id: \.element.id) { idx, account in
@@ -327,6 +322,8 @@ struct MembersHubView: View {
         } else if invitationService.invitations.isEmpty {
             emptyState(icon: "envelope.open",
                        text: "No invitations sent yet. Add a member with an email to invite them.")
+        } else if !searchText.isEmpty && filteredInvitations.isEmpty {
+            EmptyStateView(icon: "magnifyingglass", title: "No results")
         } else {
             VStack(spacing: 12) {
                 ForEach(filteredInvitations) { inv in

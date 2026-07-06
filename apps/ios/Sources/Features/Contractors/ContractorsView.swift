@@ -145,7 +145,6 @@ struct ContractorsView: View {
     @State private var selectedContractor: ContractorModel? = nil
     @State private var editContractor: ContractorModel? = nil
     @State private var search = ""
-    @State private var showSearch = false
     @State private var favoritesOnly = false
     @State private var favRefresh = 0
 
@@ -229,9 +228,6 @@ struct ContractorsView: View {
                 }
             }
         }
-        .onChange(of: showSearch) { _, on in
-            if !on { search = "" }
-        }
         .task { await service.load() }
         .sheet(isPresented: $showAdd) {
             AddContractorSheet(service: service, propertyId: propertyService.primary?.id, userId: auth.session?.user.id)
@@ -252,14 +248,13 @@ struct ContractorsView: View {
         }
         .navigationTitle("Contractors")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $search, isPresented: $showSearch,
+        .searchable(text: $search,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .floatingSpeedDial(.contractors)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    SearchIconButton(isActive: $showSearch)
                     Button {
                         withAnimation(.snappy) { favoritesOnly.toggle() }
                         HapticFeedback.selection()

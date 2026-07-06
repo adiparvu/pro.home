@@ -9,7 +9,6 @@ struct PaintColorsView: View {
     @State private var showAdd = false
     @State private var selectedRoom: String? = nil
     @State private var colorToDelete: PaintColor? = nil
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private var filteredByRoom: [String: [PaintColor]] {
@@ -48,14 +47,13 @@ struct PaintColorsView: View {
         }
         .navigationTitle("Paint Colors")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
                     if !paintColorService.colors.isEmpty {
-                        SearchIconButton(isActive: $showSearch)
                         SharePrintMenu(jobName: Locale.appIsRomanian ? "Culori vopsea" : "Paint Colors",
                                        render: renderSpecSheet) {
                             Image(systemName: "square.and.arrow.up")
@@ -77,9 +75,6 @@ struct PaintColorsView: View {
                     .accessibilityLabel("Add paint color")
                 }
             }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAdd) {
             AddPaintColorSheet()
@@ -114,7 +109,11 @@ struct PaintColorsView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 roomFilterChips
-                roomsContent
+                if !searchText.trimmingCharacters(in: .whitespaces).isEmpty && sortedRooms.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
+                } else {
+                    roomsContent
+                }
                 Spacer(minLength: 110)
             }
             .padding(.horizontal, AppSpacing.xl)

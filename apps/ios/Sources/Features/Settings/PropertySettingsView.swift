@@ -6,7 +6,6 @@ import PhotosUI
 struct PropertySettingsView: View {
     @Environment(PropertyService.self) private var propertyService
     @State private var showAdd = false
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private var filteredProperties: [PropertyModel] {
@@ -23,6 +22,8 @@ struct PropertySettingsView: View {
             VStack(spacing: 14) {
                 if propertyService.properties.isEmpty {
                     emptyState
+                } else if !searchText.isEmpty && filteredProperties.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
                 } else {
                     ForEach(filteredProperties) { p in
                         NavigationLink {
@@ -42,13 +43,12 @@ struct PropertySettingsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("My Property")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 12) {
-                    SearchIconButton(isActive: $showSearch)
                     Button { showAdd = true } label: {
                         Image(systemName: "plus")
                             .font(AppFont.subheadline)
@@ -57,9 +57,6 @@ struct PropertySettingsView: View {
                     .accessibilityLabel("Add property")
                 }
             }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAdd) { AddPropertySheet() }
         .alert("Error", isPresented: Binding(

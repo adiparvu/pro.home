@@ -10,7 +10,6 @@ struct InventoryView: View {
     @Environment(AppRouter.self) private var router
     @Environment(InventoryService.self) private var service
     @State private var filter: InvFilter = .all
-    @State private var showSearch = false
     @State private var searchText = ""
     @State private var showAdd = false
     @State private var showScanner = false
@@ -148,14 +147,12 @@ struct InventoryView: View {
         }
         .navigationTitle("Inventory")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    SearchIconButton(isActive: $showSearch)
-                    Rectangle().fill(Color.primary.opacity(0.15)).frame(width: 0.5, height: 18)
                     Menu {
                         ForEach(InvFilter.allCases, id: \.self) { f in
                             Button {
@@ -213,9 +210,6 @@ struct InventoryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("This QR code doesn't match any item in your inventory.")
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .onAppear {
             if autoScan && !didAutoScan { didAutoScan = true; showScanner = true }

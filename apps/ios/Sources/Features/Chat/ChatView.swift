@@ -601,6 +601,10 @@ struct ChatView: View {
                         .padding(.vertical, AppSpacing.sm)
                         .disabled(messageService.isLoadingOlder)
                     }
+                    if showSearch && !searchText.isEmpty && msgs.isEmpty {
+                        EmptyStateView(icon: "magnifyingglass", title: "No results")
+                            .padding(.top, AppSpacing.xxl)
+                    }
                     ForEach(Array(msgs.enumerated()), id: \.element.id) { idx, msg in
                         let showDate = idx == 0 || !sameDay(msgs[idx - 1], msg)
                         // Consecutive messages from the same sender on the same day form a

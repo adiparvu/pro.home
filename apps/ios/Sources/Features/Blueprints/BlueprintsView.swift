@@ -16,7 +16,6 @@ struct BlueprintsView: View {
     @State private var pendingZoneName = ""
     // Bumped when a per-plan lock toggles so the (UserDefaults-backed) badges refresh.
     @State private var lockRefresh = 0
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -72,17 +71,9 @@ struct BlueprintsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("Plans & 3D")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                SearchIconButton(isActive: $showSearch)
-            }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
-        }
         .floatingSpeedDial(.blueprints)
         .fullScreenCover(isPresented: $showRoomScan) {
             RoomScanView { url in

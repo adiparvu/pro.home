@@ -590,7 +590,7 @@ struct DigitalTwinView: View {
                 categoryLensChip
                 Spacer()
                 listsMenu
-                SearchIconButton(isActive: $showMapSearch, style: .glass)
+                SearchIconButton(isActive: $showMapSearch)
             }
             .padding(.horizontal, AppSpacing.lg)
 

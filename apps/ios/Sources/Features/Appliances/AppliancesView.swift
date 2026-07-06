@@ -81,7 +81,11 @@ struct AppliancesView: View {
                     warrantyBanner
                 }
                 categoryChips
-                appliances
+                if filtered.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
+                } else {
+                    appliances
+                }
                 Spacer(minLength: 110)
             }
             .padding(.horizontal, AppSpacing.xl)

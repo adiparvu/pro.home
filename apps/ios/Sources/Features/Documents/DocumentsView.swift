@@ -6,7 +6,6 @@ struct DocumentsView: View {
     @Environment(DocumentService.self) private var documentService
     @Environment(PropertyService.self) private var propertyService
     @State private var search = ""
-    @State private var showSearch = false
     @State private var selectedCategory: String? = nil
     @State private var showAdd = false
     @State private var docToDelete: DocumentModel?
@@ -89,17 +88,13 @@ struct DocumentsView: View {
         }
         .navigationTitle("Documents")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $search, isPresented: $showSearch,
+        .searchable(text: $search,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search documents..."))
         .floatingSpeedDial(.documents)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 5) {
-                    SearchIconButton(isActive: $showSearch)
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.15))
-                        .frame(width: 0.5, height: 18)
                     filterMenu
                         .frame(width: 38, height: 32)
                     Rectangle()
@@ -120,9 +115,6 @@ struct DocumentsView: View {
                     .accessibilityLabel("Add document")
                 }
             }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { search = "" }
         }
         .task { await documentService.load() }
         .sheet(isPresented: $showAdd) {

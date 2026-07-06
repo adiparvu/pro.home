@@ -35,7 +35,6 @@ struct SuppliesView: View {
     @State private var showAddReceipt = false
     @State private var showBudgets = false
     @State private var showReports = false
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private var filteredLists: [SupplyList] {
@@ -85,15 +84,12 @@ struct SuppliesView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    if activeTab != .overview {
-                        SearchIconButton(isActive: $showSearch)
-                    }
                     if activeTab == .lists {
                         Button { showAddList = true; HapticFeedback.impact(.light) } label: {
                             Image(systemName: "plus").font(AppFont.title3).foregroundStyle(.primary)
@@ -104,9 +100,6 @@ struct SuppliesView: View {
                     }
                 }
             }
-        }
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
         }
         .sheet(isPresented: $showAddList) {
             AddSupplyListSheet().environment(supplyService).environment(propertyService)
@@ -216,6 +209,8 @@ struct SuppliesView: View {
             VStack(spacing: 20) {
                 if !filteredLists.isEmpty {
                     listsGrid
+                } else if !searchText.isEmpty {
+                    EmptyStateView(icon: "magnifyingglass", title: "No results")
                 }
                 if supplyService.totalPending > 0 { urgentSection }
                 Spacer(minLength: 110)
@@ -300,7 +295,7 @@ struct SuppliesView: View {
     private var toBuyContent: some View {
         let pending = supplyService.items.filter { !$0.isCompleted && $0.name.matchesSearch(searchText) }
         return Group {
-            if pending.isEmpty && !showSearch {
+            if pending.isEmpty && searchText.isEmpty {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "cart.badge.checkmark")
@@ -328,6 +323,8 @@ struct SuppliesView: View {
                                 }
                             }
                             .padding(.horizontal, AppSpacing.xl)
+                        } else if !searchText.isEmpty {
+                            EmptyStateView(icon: "magnifyingglass", title: "No results")
                         }
                         Spacer(minLength: 110)
                     }
@@ -340,7 +337,7 @@ struct SuppliesView: View {
     private var completedContent: some View {
         let done = supplyService.items.filter { $0.isCompleted && $0.name.matchesSearch(searchText) }
         return Group {
-            if done.isEmpty && !showSearch {
+            if done.isEmpty && searchText.isEmpty {
                 VStack(spacing: 16) {
                     Spacer()
                     Image(systemName: "tray")
@@ -368,6 +365,8 @@ struct SuppliesView: View {
                                 }
                             }
                             .padding(.horizontal, AppSpacing.xl)
+                        } else if !searchText.isEmpty {
+                            EmptyStateView(icon: "magnifyingglass", title: "No results")
                         }
                         Spacer(minLength: 110)
                     }

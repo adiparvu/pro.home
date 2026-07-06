@@ -10,7 +10,6 @@ struct PlantsView: View {
 
     @State private var showAddPlant = false
     @State private var selectedPlant: Plant? = nil
-    @State private var showSearch = false
     @State private var searchText = ""
 
     private var filteredNeedingWater: [Plant] {
@@ -44,13 +43,12 @@ struct PlantsView: View {
         .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, isPresented: $showSearch,
+        .searchable(text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    SearchIconButton(isActive: $showSearch)
                     Button {
                         showAddPlant = true
                         HapticFeedback.impact(.light)
@@ -87,9 +85,6 @@ struct PlantsView: View {
         }
         // Deep link: a garden notification / Spotlight / prvio://plants/<id> opens
         // this sheet and asks for a specific plant — resolve once loaded.
-        .onChange(of: showSearch) { _, on in
-            if !on { searchText = "" }
-        }
         .onChange(of: router.deepLinkPlantId) { resolvePlantDeepLink() }
         .task(id: plantService.plants.count) { resolvePlantDeepLink() }
         .refreshable {
@@ -202,6 +197,10 @@ struct PlantsView: View {
                     iconColor: Color(red: 0.15, green: 0.80, blue: 0.4),
                     plants: filteredHealthy
                 )
+            }
+
+            if !searchText.isEmpty && filteredNeedingWater.isEmpty && filteredHealthy.isEmpty {
+                EmptyStateView(icon: "magnifyingglass", title: "No results")
             }
         }
     }

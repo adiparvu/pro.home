@@ -541,6 +541,11 @@ struct DirectMessageView: View {
                                 .padding(.vertical, AppSpacing.sm)
                                 .disabled(directMessageService.isLoadingOlder)
                             }
+                            if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                               shown.isEmpty {
+                                EmptyStateView(icon: "magnifyingglass", title: "No results")
+                                    .padding(.top, AppSpacing.xxl)
+                            }
                             ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
                                 let isOwn = msg.senderName == myName
                                 // While searching, `shown` is a sparse subset, so adjacency-based

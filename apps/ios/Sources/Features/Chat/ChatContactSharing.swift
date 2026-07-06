@@ -89,14 +89,23 @@ struct ContactMultiPicker: View {
             VStack(spacing: 0) {
                 if !selected.isEmpty { chips }
                 List {
-                    if !householdPayloads.isEmpty {
-                        Section(String(localized: "Casa ta")) {
-                            ForEach(householdPayloads.filter(matches)) { p in row(p) }
+                    let filteredHousehold = householdPayloads.filter(matches)
+                    let filteredDevice = deviceContacts.filter(matches)
+                    if !search.isEmpty && filteredHousehold.isEmpty && filteredDevice.isEmpty {
+                        Section {
+                            EmptyStateView(icon: "magnifyingglass", title: "No results")
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                         }
                     }
-                    if !deviceContacts.isEmpty {
+                    if !filteredHousehold.isEmpty {
+                        Section(String(localized: "Casa ta")) {
+                            ForEach(filteredHousehold) { p in row(p) }
+                        }
+                    }
+                    if !filteredDevice.isEmpty {
                         Section(String(localized: "Din Contacte")) {
-                            ForEach(deviceContacts.filter(matches)) { p in row(p) }
+                            ForEach(filteredDevice) { p in row(p) }
                         }
                     } else if accessDenied {
                         Section {

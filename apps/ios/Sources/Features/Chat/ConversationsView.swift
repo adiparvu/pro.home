@@ -457,6 +457,10 @@ struct ConversationsView: View {
                         .liquidGlass(cornerRadius: AppRadius.lg)
                     }
 
+                    if !showArchived && !searchText.isEmpty && entries.isEmpty {
+                        EmptyStateView(icon: "magnifyingglass", title: "No results")
+                    }
+
                     ForEach(entries) { entry in
                         SwipeableRow(
                             leading: leadingActions(entry),
@@ -1014,7 +1018,13 @@ private struct NewConversationSheet: View {
                             Label("New contact", systemImage: "person.crop.circle.badge.plus")
                         }
                     }
-                    if !filtered.isEmpty {
+                    if !search.isEmpty && filtered.isEmpty {
+                        Section {
+                            EmptyStateView(icon: "magnifyingglass", title: "No results")
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                    } else if !filtered.isEmpty {
                         Section("Contacts") {
                             ForEach(filtered) { m in
                                 Button { onPick(m.id.uuidString); dismiss() } label: {
