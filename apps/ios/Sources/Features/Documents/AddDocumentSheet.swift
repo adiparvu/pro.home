@@ -35,14 +35,11 @@ struct AddDocumentSheet: View {
     var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && pickedFileData != nil }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                appBackground.ignoresSafeArea()
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        fieldGroup {
+        FormScaffold(title: "Add Document", canSave: canSave, isSaving: isSaving,
+                     error: $error, onSave: { Task { await save() } }) {
+                        FormGroup {
                             HStack(spacing: 0) {
-                                rowField("doc.text.fill", "Document name") {
+                                FormRow(icon: "doc.text.fill") {
                                     TextField("e.g. Home Insurance 2025", text: $name)
                                         .font(.system(size: 15)).foregroundStyle(.primary).tint(.accentColor)
                                         .autocorrectionDisabled()
@@ -78,7 +75,7 @@ struct AddDocumentSheet: View {
                             }
                         }
 
-                        fieldGroup {
+                        FormGroup {
                             HStack(spacing: 12) {
                                 iconLabel("tag.fill", color: .purple, text: "Category")
                                 Spacer()
@@ -92,7 +89,7 @@ struct AddDocumentSheet: View {
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
-                        fieldGroup {
+                        FormGroup {
                             VStack(spacing: 0) {
                                 HStack(spacing: 12) {
                                     iconLabel("calendar", color: .orange, text: "Has expiry date")
@@ -110,7 +107,7 @@ struct AddDocumentSheet: View {
                             }
                         }
 
-                        fieldGroup {
+                        FormGroup {
                             HStack(spacing: 12) {
                                 iconLabel("exclamationmark.circle.fill", color: .red, text: "Critical document")
                                 Spacer()
@@ -119,7 +116,7 @@ struct AddDocumentSheet: View {
                             .padding(.horizontal, AppSpacing.lg).padding(.vertical, 13)
                         }
 
-                        fieldGroup {
+                        FormGroup {
                             Button { showFilePicker = true } label: {
                                 HStack(spacing: 12) {
                                     iconLabel("paperclip", color: .blue, text: pickedFileName.isEmpty ? LocalizedStringKey("Attach file") : LocalizedStringKey(pickedFileName))
@@ -134,35 +131,9 @@ struct AddDocumentSheet: View {
                         }
 
                         shareSection
-
-                        if let err = error {
-                            Text(err).font(.system(size: 13)).foregroundStyle(.red)
-                                .multilineTextAlignment(.center).padding(.horizontal, AppSpacing.sm)
-                        }
-
-                        Spacer(minLength: 40)
-                    }
-                    .padding(.horizontal, AppSpacing.xl).padding(.top, AppSpacing.xl)
-                }
-            }
-            .task { if familyService.members.isEmpty { await familyService.load() } }
-            .navigationTitle("Add Document")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSaving {
-                        ProgressView().tint(.accentColor)
-                    } else {
-                        Button("Save") { Task { await save() } }
-                            .font(AppFont.subheadline).foregroundStyle(Color.accentColor)
-                            .disabled(!canSave)
-                    }
-                }
-            }
-            .fileImporter(
+        }
+        .task { if familyService.members.isEmpty { await familyService.load() } }
+        .fileImporter(
                 isPresented: $showFilePicker,
                 allowedContentTypes: [.pdf, .jpeg, .png, .webP, .heic, .plainText, .data],
                 allowsMultipleSelection: false
@@ -178,7 +149,6 @@ struct AddDocumentSheet: View {
                     }
                 }
                 .ignoresSafeArea()
-            }
         }
     }
 
@@ -271,20 +241,6 @@ struct AddDocumentSheet: View {
         isSaving = false
     }
 
-    private func fieldGroup<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppOpacity.subtleFill), lineWidth: 0.5))
-    }
-
-    private func rowField<Content: View>(_ icon: String, _ placeholder: String, @ViewBuilder content: () -> Content) -> some View {
-        HStack(spacing: 12) {
-            iconLabel(icon, color: .blue)
-            content()
-        }
-        .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
-    }
 
     private func iconLabel(_ icon: String, color: Color, text: LocalizedStringKey? = nil) -> some View {
         HStack(spacing: 8) {
