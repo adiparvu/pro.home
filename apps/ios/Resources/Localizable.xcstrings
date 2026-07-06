@@ -1,6 +1,31 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Time": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Timp" } }
+      }
+    },
+    "Autumn": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Toamn\u0103" } }
+      }
+    },
+    "Add dated photos to the Photo Journal to travel through time.": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaug\u0103 fotografii datate \u00een Jurnalul foto pentru a c\u0103l\u0103tori \u00een timp." } }
+      }
+    },
+    "3D MODEL": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "MODEL 3D" } }
+      }
+    },
+    "Link a 3D scan": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Leag\u0103 o scanare 3D" } }
+      }
+    },
     "Layers": {
       "localizations": {
         "ro": { "stringUnit": { "state": "translated", "value": "Straturi" } }

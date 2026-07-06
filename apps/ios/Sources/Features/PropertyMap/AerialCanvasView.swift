@@ -41,6 +41,8 @@ struct AerialCanvasView: View {
     /// Photo-count bubbles anchored at zone centroids (journal layer).
     var journalBadges: [TwinJournalBadge] = []
     var onJournalBadgeTap: (UUID) -> Void = { _ in }
+    /// Elements with a linked 3D scan get a "3D" badge on their pin.
+    var threeDElementIds: Set<UUID> = []
     var pinMode: Bool = false
     var zoneDrawMode: Bool = false
     var draftZonePoints: [CGPoint] = []   // normalized 0–1
@@ -242,7 +244,8 @@ struct AerialCanvasView: View {
     @ViewBuilder
     private func pinView(_ el: PropertyElement, size: CGSize) -> some View {
         let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames,
-                                   badge: elementBadges[el.id])
+                                   badge: elementBadges[el.id],
+                                   has3D: threeDElementIds.contains(el.id))
             .position(pinPoint(el, size))
         if interactive {
             let base = pin
@@ -494,6 +497,8 @@ private struct AerialElementPin: View {
     var showName: Bool = true
     /// Live-layer badge (open tasks) — pulses unless Reduce Motion is on.
     var badge: Color? = nil
+    /// Shows the "3D" chip when a scan is linked to this element.
+    var has3D: Bool = false
 
     private let size: CGFloat = 28
 
@@ -535,6 +540,17 @@ private struct AerialElementPin: View {
                 if let badge {
                     PulsingBadge(color: badge)
                         .offset(x: -5, y: -5)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if has3D {
+                    Text(verbatim: "3D")
+                        .font(.system(size: 7, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 4).padding(.vertical, 1.5)
+                        .background(Capsule().fill(Color.brandPurple))
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.8), lineWidth: 0.8))
+                        .offset(x: 6, y: 3)
                 }
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)

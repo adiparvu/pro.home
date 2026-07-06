@@ -19,10 +19,17 @@ struct ElementInspectorSheet: View {
     @Environment(AppSettings.self) private var appSettings
     @Environment(DocumentService.self) private var documentService
     @Environment(TaskService.self) private var taskService
+    @Environment(BlueprintService.self) private var blueprintService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDetail = false
     @State private var showNewTask = false
+    @State private var show3DViewer = false
+
+    private var linkedScan: HomeScan? { blueprintService.scan(forElement: element.id) }
+    private var linkable3DScans: [HomeScan] {
+        blueprintService.scans.filter { $0.is3D && $0.elementId == nil }
+    }
 
     /// Live copy — favorite toggles and edits should reflect immediately.
     private var current: PropertyElement {
@@ -35,6 +42,9 @@ struct ElementInspectorSheet: View {
                 header
                 quickActions
                 statsRow
+                if linkedScan != nil || !linkable3DScans.isEmpty {
+                    scanSection
+                }
                 if let notes = current.notes, !notes.isEmpty {
                     notesCard(notes)
                 }
@@ -54,6 +64,83 @@ struct ElementInspectorSheet: View {
                 .environment(taskService)
         }
         .sheet(isPresented: $showNewTask) { AddTaskView() }
+        .sheet(isPresented: $show3DViewer) {
+            if let scan = linkedScan {
+                QuickLookSheet(url: blueprintService.fileURL(scan.fileName), title: scan.name)
+            }
+        }
+    }
+
+    // MARK: - 3D model (Faza 4 — LiDAR scans linked to buildings)
+
+    private var scanSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("3D MODEL")
+                .font(AppFont.captionStrong)
+                .foregroundStyle(.secondary)
+            if let scan = linkedScan {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "cube.transparent.fill", color: Color.brandPurple, size: 38)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(scan.name).font(AppFont.subheadline).foregroundStyle(.primary).lineLimit(1)
+                        Text(scan.kindLabel).font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button {
+                        HapticFeedback.impact(.light)
+                        show3DViewer = true
+                    } label: {
+                        Text("View")
+                            .font(AppFont.footnoteEmphasis)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, AppSpacing.base).padding(.vertical, 7)
+                            .background(Color.brandPurple, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    Menu {
+                        Button(role: .destructive) {
+                            blueprintService.linkScan(scan, toElement: nil)
+                        } label: {
+                            Label("Unlink", systemImage: "link.badge.plus")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(AppFont.captionStrong)
+                            .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                            .frame(width: 30, height: 30)
+                            .background(Color.primary.opacity(0.06), in: Circle())
+                    }
+                }
+                .padding(AppSpacing.base)
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            } else {
+                Menu {
+                    ForEach(linkable3DScans) { scan in
+                        Button {
+                            blueprintService.linkScan(scan, toElement: element.id)
+                            HapticFeedback.success()
+                        } label: {
+                            Label(scan.name, systemImage: "cube.transparent")
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "cube.transparent")
+                            .font(AppFont.subheadline)
+                            .foregroundStyle(Color.brandPurple)
+                        Text("Link a 3D scan")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(AppFont.label)
+                            .foregroundStyle(Color.primary.opacity(0.35))
+                    }
+                    .padding(AppSpacing.base)
+                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+            }
+        }
     }
 
     // MARK: - Header

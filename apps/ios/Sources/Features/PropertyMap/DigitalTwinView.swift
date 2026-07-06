@@ -41,6 +41,9 @@ struct DigitalTwinView: View {
     @State private var showObjectsList = false
     @State private var showLayers = false
     @State private var showJournal = false
+    @State private var showTimeMachine = false
+    /// Local scans store (LiDAR/USDZ) — the source of pin "3D" badges.
+    @State private var blueprintService = BlueprintService()
 
     // Live layers (Faza 3) — persisted so the twin reopens as it was left.
     @AppStorage("prvio.twin.layer.utilities") private var layerUtilities = false
@@ -116,6 +119,12 @@ struct DigitalTwinView: View {
         return badges
     }
 
+    /// Elements with a linked 3D scan (LiDAR/USDZ) — badge on the pin,
+    /// viewer in the inspector.
+    private var threeDElementIds: Set<UUID> {
+        Set(blueprintService.scans.compactMap { $0.is3D ? $0.elementId : nil })
+    }
+
     /// Journal photo counts anchored at their zone's centroid.
     private var journalBadges: [TwinJournalBadge] {
         guard layerJournal else { return [] }
@@ -176,6 +185,7 @@ struct DigitalTwinView: View {
                     elementBadges: elementBadges,
                     journalBadges: journalBadges,
                     onJournalBadgeTap: { _ in showJournal = true },
+                    threeDElementIds: threeDElementIds,
                     pinMode: pinMode,
                     zoneDrawMode: zoneDrawMode,
                     draftZonePoints: draftZonePoints,
@@ -242,6 +252,17 @@ struct DigitalTwinView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                         .transition(.opacity)
                 }
+
+                // Time machine covers the whole twin while active — it's the
+                // same view of the property, seen through time.
+                if showTimeMachine {
+                    TwinTimeMachineOverlay(
+                        snapshots: TwinTimeline.snapshots(from: photoJournalService.entries),
+                        onClose: { withAnimation(.smooth) { showTimeMachine = false } }
+                    )
+                    .transition(.opacity)
+                    .zIndex(10)
+                }
             } else {
                 emptyState
             }
@@ -294,6 +315,7 @@ struct DigitalTwinView: View {
             .environment(appSettings)
             .environment(documentService)
             .environment(taskService)
+            .environment(blueprintService)
             .presentationDetents([.height(320), .medium, .large])
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             .presentationDragIndicator(.visible)
@@ -408,6 +430,12 @@ struct DigitalTwinView: View {
             ) {
                 showLayers = true
                 HapticFeedback.impact(.light)
+            }
+
+            // Time machine: the yard through its seasons, from journal photos.
+            controlButton(icon: "clock.arrow.circlepath", tint: .white, label: "Time") {
+                withAnimation(.smooth) { showTimeMachine = true }
+                HapticFeedback.impact(.medium)
             }
 
             if controlsExpanded {
