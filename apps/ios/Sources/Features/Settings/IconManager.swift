@@ -263,26 +263,49 @@ final class IconManager {
     var selected: AppIconTheme
 
     @ObservationIgnored @AppStorage("prvio.selectedIconThemeId") private var savedId: String = "default"
-    @ObservationIgnored @AppStorage("prvio.autoSwitchIcon") var autoSwitch: Bool = true
+
+    /// Observable (unlike `@AppStorage`, which Observation ignores) so the
+    /// picker can react when the toggle flips — e.g. to make pair faces
+    /// individually selectable. Persists to the same key as before.
+    var autoSwitch: Bool {
+        didSet { UserDefaults.standard.set(autoSwitch, forKey: "prvio.autoSwitchIcon") }
+    }
 
     private var lastAppliedName: String? = UIApplication.shared.alternateIconName
 
     init() {
         let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         selected = AppIconCatalog.theme(id: id)
+        autoSwitch = (UserDefaults.standard.object(forKey: "prvio.autoSwitchIcon") as? Bool) ?? true
     }
 
     var supportsAlternateIcons: Bool { UIApplication.shared.supportsAlternateIcons }
 
+    /// The exact alternate-icon name currently installed (nil = primary).
+    /// Lets the picker mark the precise pair face that is applied.
+    var appliedIconName: String? { lastAppliedName }
+
     func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
         let name = theme.iconName(isDark: isDark)
         guard force || name != lastAppliedName else { return }
+        // Commit state synchronously, *before* the async system call. It used
+        // to be committed inside the completion, so anything reading
+        // `selected`/`lastAppliedName` right after Apply — the colour-scheme
+        // watcher, the Apply bar, an immediate second tap — still saw the
+        // previous theme and could re-install the old icon.
+        lastAppliedName = name
+        selected = theme
+        savedId = theme.id
         UIApplication.shared.setAlternateIconName(name) { [weak self] error in
-            guard error == nil else { return }
+            guard error != nil else { return }
+            // The system rejected the change — roll back to what is actually
+            // installed, unless a newer apply already superseded this one.
             Task { @MainActor [weak self] in
-                self?.lastAppliedName = name
-                self?.selected = theme
-                self?.savedId = theme.id
+                guard let self, self.lastAppliedName == name else { return }
+                let actual = UIApplication.shared.alternateIconName
+                self.lastAppliedName = actual
+                self.selected = AppIconCatalog.theme(forIconName: actual)
+                self.savedId = self.selected.id
             }
         }
     }

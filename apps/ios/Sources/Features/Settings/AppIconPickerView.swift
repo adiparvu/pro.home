@@ -13,9 +13,28 @@ struct AppIconPickerView: View {
     private let themes = AppIconCatalog.all
     @State private var index = 0
     @State private var showError = false
+    /// Which face of the current pair the user tapped while the auto day/night
+    /// switch is off (true = dark). nil until a face is tapped; reset per slide.
+    @State private var pickedDarkFace: Bool?
 
     private var ro: Bool { Locale.appIsRomanian }
     private var current: AppIconTheme { themes[min(index, themes.count - 1)] }
+
+    /// True when the two faces of the current pair are individual choices
+    /// (auto day/night switch off). The default primary icon is excluded —
+    /// the asset catalog switches it on its own and a face can't be pinned.
+    private var picksFaces: Bool { !iconManager.autoSwitch && current.hasPair && !current.isDefault }
+
+    /// The face of `current` that Apply installs. It follows the system
+    /// appearance by default; with the auto-switch off, the face the user
+    /// tapped wins, falling back to the face already installed.
+    private var appliesDarkFace: Bool {
+        guard picksFaces else { return colorScheme == .dark }
+        if let pickedDarkFace { return pickedDarkFace }
+        if iconManager.appliedIconName == current.darkIcon { return true }
+        if iconManager.appliedIconName == current.lightIcon { return false }
+        return colorScheme == .dark
+    }
 
     var body: some View {
         ZStack {
@@ -32,6 +51,8 @@ struct AppIconPickerView: View {
         .onAppear {
             index = themes.firstIndex(of: iconManager.selected) ?? 0
         }
+        .onChange(of: index) { _, _ in pickedDarkFace = nil }
+        .onChange(of: iconManager.autoSwitch) { _, _ in pickedDarkFace = nil }
         .alert(ro ? "Iconițele nu sunt disponibile" : "Icons not available",
                isPresented: $showError) {
             Button("OK", role: .cancel) {}
@@ -83,7 +104,11 @@ struct AppIconPickerView: View {
     private var carousel: some View {
         TabView(selection: $index) {
             ForEach(themes.indices, id: \.self) { i in
-                IconSlide(theme: themes[i], isCurrent: i == index)
+                IconSlide(theme: themes[i],
+                          isCurrent: i == index,
+                          facesSelectable: !iconManager.autoSwitch && themes[i].hasPair && !themes[i].isDefault,
+                          pickedDark: i == index ? appliesDarkFace : nil,
+                          pickFace: { pickedDarkFace = $0 })
                     .tag(i)
                     .padding(.horizontal, AppSpacing.xl)
             }
@@ -121,13 +146,16 @@ struct AppIconPickerView: View {
     // MARK: Apply bar
 
     private var applyBar: some View {
+        // Applied only when the exact installed icon matches the face Apply
+        // targets, so an individually picked pair face re-enables the button.
         let isApplied = iconManager.selected.id == current.id
+            && iconManager.appliedIconName == current.iconName(isDark: appliesDarkFace)
         return VStack(spacing: 10) {
             autoSwitchToggle
             Button {
                 guard iconManager.supportsAlternateIcons else { showError = true; return }
                 HapticFeedback.success()
-                iconManager.select(current, isDark: colorScheme == .dark)
+                iconManager.select(current, isDark: appliesDarkFace)
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: isApplied ? "checkmark.circle.fill" : "square.and.arrow.down")
@@ -178,6 +206,11 @@ struct AppIconPickerView: View {
 private struct IconSlide: View {
     let theme: AppIconTheme
     let isCurrent: Bool
+    /// True when the pair faces are individual choices (auto-switch off).
+    var facesSelectable: Bool = false
+    /// The face Apply currently targets (true = dark); nil off the current slide.
+    var pickedDark: Bool? = nil
+    var pickFace: (Bool) -> Void = { _ in }
 
     private var ro: Bool { Locale.appIsRomanian }
 
@@ -187,11 +220,12 @@ private struct IconSlide: View {
 
             // Artwork — a paired theme shows its light + dark faces side by side
             // (no per-icon labels; the auto-switch toggle below explains it),
-            // a single theme shows one large icon.
+            // a single theme shows one large icon. With the auto-switch off,
+            // each face of a pair is tappable and carries a selection mark.
             HStack(spacing: 18) {
-                IconArtwork(name: theme.lightPreview, size: theme.hasPair ? 122 : 176)
+                face(theme.lightPreview, size: theme.hasPair ? 122 : 176, isDark: false)
                 if let dark = theme.darkPreview {
-                    IconArtwork(name: dark, size: 122)
+                    face(dark, size: 122, isDark: true)
                 }
             }
             .scaleEffect(isCurrent ? 1 : 0.9)
@@ -205,8 +239,10 @@ private struct IconSlide: View {
                     .minimumScaleFactor(0.7)
 
                 // Fills the space under the name and tells the user what the pair
-                // means without cluttering the icons with badges.
-                if theme.hasPair {
+                // means without cluttering the icons with badges. When the faces
+                // are individual choices the "adapts" claim would be false, so
+                // fall back to the category title (as single themes do).
+                if theme.hasPair && !facesSelectable {
                     Label(ro ? "Se adaptează la tema telefonului" : "Adapts to your theme",
                           systemImage: "circle.lefthalf.filled")
                         .font(.system(size: 12, weight: .medium))
@@ -220,6 +256,39 @@ private struct IconSlide: View {
 
             Spacer(minLength: 0)
         }
+    }
+
+    /// One artwork face. When the faces are selectable, tapping one marks it
+    /// and Apply installs exactly that icon.
+    private func face(_ name: String, size: CGFloat, isDark: Bool) -> some View {
+        let selectable = facesSelectable && theme.hasPair && pickedDark != nil
+        let isPicked = selectable && pickedDark == isDark
+        return IconArtwork(name: name, size: size)
+            .overlay {
+                if isPicked {
+                    RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
+                        .strokeBorder(Color.accentColor, lineWidth: 2.5)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if isPicked {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.accentColor)
+                        .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+                        .offset(x: 7, y: -7)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous))
+            .onTapGesture {
+                guard selectable else { return }
+                pickFace(isDark)
+            }
+            .accessibilityLabel(Text(isDark ? "Night" : "Day"))
+            .accessibilityAddTraits(isPicked ? [.isButton, .isSelected] : .isButton)
+            .animation(.snappy, value: isPicked)
     }
 }
 
