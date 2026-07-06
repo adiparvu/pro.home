@@ -162,7 +162,8 @@ struct DashboardView: View {
                         utilitiesPct: min(100, max(0, score + 5)),
                         securityPct: min(100, max(0, score - 3)),
                         tasksPct: taskService.tasks.isEmpty ? 0 :
-                            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100)
+                            Int(Double(taskService.tasks.filter { $0.isCompleted }.count) / Double(taskService.tasks.count) * 100),
+                        narrative: healthNarrative
                     )
                 }
             }
@@ -448,6 +449,31 @@ struct DashboardView: View {
         case 18..<22: return "Good evening"
         default:      return "Good night"
         }
+    }
+
+    // MARK: - Health narrative
+
+    /// The score's story in one sentence, from real data — numbers without a
+    /// story are noise; the story makes you act.
+    private var healthNarrative: String? {
+        var factors: [String] = []
+        let overdue = taskService.overdueCount
+        if overdue > 0 {
+            factors.append(String(format: String(localized: "%d overdue tasks"), overdue))
+        }
+        let expiring = documentService.expiringDocs.count
+        if expiring > 0 {
+            factors.append(String(format: String(localized: "%d documents expiring"), expiring))
+        }
+        let poorShape = elementService.elements.filter {
+            $0.technicalCondition == .poor || $0.technicalCondition == .critical
+        }.count
+        if poorShape > 0 {
+            factors.append(String(format: String(localized: "%d elements in poor shape"), poorShape))
+        }
+        guard !factors.isEmpty else { return nil }
+        return String(format: String(localized: "Pulling the score down: %@."),
+                      factors.prefix(2).joined(separator: " · "))
     }
 
     // MARK: - Today

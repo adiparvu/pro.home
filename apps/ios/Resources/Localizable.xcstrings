@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "%@ spending up %d%%": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ spending up %d%%" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Cheltuieli pe %@ +%d%%" } }
+      }
+    },
+    "%@ spending down %d%%": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ spending down %d%%" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Cheltuieli pe %@ −%d%%" } }
+      }
+    },
+    "You've spent %d more on %@ than last month. Worth a look at the entries.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You've spent %d more on %@ than last month. Worth a look at the entries." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ai cheltuit cu %d mai mult pe %@ decât luna trecută. Merită o privire peste intrări." } }
+      }
+    },
+    "You've spent %d less on %@ than last month. Whatever changed — it's working.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You've spent %d less on %@ than last month. Whatever changed — it's working." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ai cheltuit cu %d mai puțin pe %@ decât luna trecută. Orice s-a schimbat — funcționează." } }
+      }
+    },
+    "%d tasks are overdue": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%d tasks are overdue" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%d taskuri sunt restante" } }
+      }
+    },
+    "Start with the oldest: \"%@\". Clearing one gets the streak going.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Start with the oldest: \"%@\". Clearing one gets the streak going." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Începe cu cel mai vechi: „%@”. Primul rezolvat pornește seria." } }
+      }
+    },
+    "%d overdue tasks": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%d overdue tasks" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%d taskuri restante" } }
+      }
+    },
+    "%d documents expiring": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%d documents expiring" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%d documente care expiră" } }
+      }
+    },
+    "%d elements in poor shape": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%d elements in poor shape" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "%d elemente în stare slabă" } }
+      }
+    },
+    "Pulling the score down: %@.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pulling the score down: %@." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ce trage scorul în jos: %@." } }
+      }
+    },
     "Activează": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Enable" } },

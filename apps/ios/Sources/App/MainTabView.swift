@@ -296,7 +296,8 @@ struct MainTabView: View {
             LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
             LiveActivityService.shared.evaluateAutoStart(
                 deliveries: deliveryService.deliveries, tasks: taskService.tasks)
-            proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements)
+            proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
+                                    records: financialService.records, tasks: taskService.tasks)
             ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
         }
         .task {

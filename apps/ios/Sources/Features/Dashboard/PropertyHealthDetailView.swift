@@ -9,6 +9,9 @@ struct PropertyHealthDetailView: View {
     var utilitiesPct: Int
     var securityPct: Int
     var tasksPct: Int
+    /// The score's story in one sentence, computed from real data by the
+    /// caller ("Pulling the score down: 3 overdue tasks, 2 documents…").
+    var narrative: String? = nil
 
     @Environment(\.dismiss) private var dismiss
 
@@ -85,6 +88,14 @@ struct PropertyHealthDetailView: View {
                     .foregroundStyle(Color.primary.opacity(0.55))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.xl)
+                if let narrative {
+                    Text(narrative)
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(scoreColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.xl)
+                        .padding(.top, 2)
+                }
             }
         }
         .frame(maxWidth: .infinity)
