@@ -70,6 +70,7 @@ struct PRVIOWidgetBundle: WidgetBundle {
         NotificationCenterWidget()
         // Control Center (iOS 18+)
         if #available(iOS 18.0, *) {
+            OpenAppControl()
             AddTaskControl()
             OpenChatControl()
             ShoppingControl()

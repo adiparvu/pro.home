@@ -2,13 +2,56 @@ import SwiftUI
 import WidgetKit
 import AppIntents
 
+// MARK: - The one control launch intent
+//
+// Control Center buttons run in the widget extension. A bare `OpenURLIntent`
+// as the button action has proven unreliable at actually launching the app
+// on newer iOS — the documented pattern is an intent that declares
+// `openAppWhenRun` and RETURNS an OpenURLIntent, which the system executes
+// in the app's context. One intent, parameterized by destination, backs
+// every control.
+
+@available(iOS 18.0, *)
+struct OpenPRVIODestination: AppIntent {
+    static let title: LocalizedStringResource = "Open PRVIO"
+    static let openAppWhenRun: Bool = true
+    static var isDiscoverable: Bool { false }
+
+    @Parameter(title: "Destination")
+    var path: String?
+
+    init() {}
+    init(path: String?) { self.path = path }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & OpensIntent {
+        let url = URL(string: "prvio://\(path ?? "")") ?? URL(string: "prvio://")!
+        return .result(opensIntent: OpenURLIntent(url))
+    }
+}
+
+// MARK: - Open App Control
+
+@available(iOS 18.0, *)
+struct OpenAppControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.prvio.control.open") {
+            ControlWidgetButton(action: OpenPRVIODestination(path: nil)) {
+                Label("PRVIO", systemImage: "house.fill")
+            }
+        }
+        .displayName("PRVIO")
+        .description("Open PRVIO.")
+    }
+}
+
 // MARK: - Add Task Control
 
 @available(iOS 18.0, *)
 struct AddTaskControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.addtask") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://tasks/new")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "tasks/new")) {
                 Label("New Task", systemImage: "checklist.checked")
             }
         }
@@ -23,7 +66,7 @@ struct AddTaskControl: ControlWidget {
 struct OpenChatControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.chat") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://chat")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "chat")) {
                 Label("Chat", systemImage: "message.fill")
             }
         }
@@ -38,7 +81,7 @@ struct OpenChatControl: ControlWidget {
 struct ShoppingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.shopping") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://shopping")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "shopping")) {
                 Label("Shopping", systemImage: "cart.fill")
             }
         }
@@ -55,7 +98,7 @@ struct ScanControl: ControlWidget {
         StaticControlConfiguration(kind: "com.prvio.control.scan") {
             // prvio://receipts opens the expense/receipt capture flow —
             // prvio://scan would open the inventory object scanner instead.
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://receipts")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "receipts")) {
                 Label("Scan Receipt", systemImage: "barcode.viewfinder")
             }
         }
@@ -70,7 +113,7 @@ struct ScanControl: ControlWidget {
 struct PlantsControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.plants") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://plants")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "plants")) {
                 Label("My Plants", systemImage: "leaf.fill")
             }
         }
@@ -85,7 +128,7 @@ struct PlantsControl: ControlWidget {
 struct DeliveriesControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.deliveries") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://deliveries")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "deliveries")) {
                 Label("Deliveries", systemImage: "shippingbox.fill")
             }
         }
@@ -100,7 +143,7 @@ struct DeliveriesControl: ControlWidget {
 struct FinancesControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.finances") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://finances")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "finances")) {
                 Label("Finances", systemImage: "chart.pie.fill")
             }
         }
@@ -115,7 +158,7 @@ struct FinancesControl: ControlWidget {
 struct DocumentsControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.documents") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://documents")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "documents")) {
                 Label("Documents", systemImage: "folder.fill")
             }
         }
@@ -130,7 +173,7 @@ struct DocumentsControl: ControlWidget {
 struct DigitalTwinControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.twin") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://twin")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "twin")) {
                 Label("Digital Twin", systemImage: "square.stack.3d.up.fill")
             }
         }
@@ -145,7 +188,7 @@ struct DigitalTwinControl: ControlWidget {
 struct AssistantControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.prvio.control.aria") {
-            ControlWidgetButton(action: OpenURLIntent(URL(string: "prvio://ai")!)) {
+            ControlWidgetButton(action: OpenPRVIODestination(path: "ai")) {
                 Label("AI Assistant", systemImage: "sparkles")
             }
         }
