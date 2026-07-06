@@ -83,7 +83,10 @@ struct DirectMessageView: View {
     private var conversationMessages: [DirectMessage] {
         let all = directMessageService.messages(with: member.name, myName: myName)
         let kept = ConversationClearStore.filter(all, convId: member.id.uuidString) { $0.date }
-        return ChatDisappearStore.filter(kept, convId: member.id.uuidString) { $0.date }
+        // Keyed by peer NAME — the same key the send path stamps with and the
+        // server sync writes to (it used to be member.id, so the setting and
+        // the stamp never met).
+        return ChatDisappearStore.filter(kept, convId: member.name) { $0.date }
     }
 
     private var isTextEmpty: Bool {

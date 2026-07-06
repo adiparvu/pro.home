@@ -36,7 +36,7 @@ struct ChatSettingsView: View {
                     TapSettingsRow(icon: "star.fill", color: .yellow, label: "Mesaje marcate") { showStarred = true }
                     TapSettingsRow(icon: "paintpalette.fill", color: .pink, label: "Teme și fundal") { showTheme = true }
                     NavSettingsRow(icon: "timer", color: .teal, label: "Mesaje care dispar") {
-                        DisappearingMessagesView(convId: "group")
+                        DisappearingMessagesView(convId: "group", serverKey: "group")
                     }
                 }
 

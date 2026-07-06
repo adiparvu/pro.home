@@ -483,6 +483,7 @@ struct ContactDetailsView: View {
     var exportText: String = ""
     var propertyId: UUID? = nil
     @Environment(FamilyService.self) private var familyService
+    @Environment(ProfileService.self) private var profileService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
@@ -494,6 +495,9 @@ struct ContactDetailsView: View {
     @State private var memberLabel = ""
 
     private var convId: String { member.id.uuidString }
+    private var myDisplayName: String {
+        profileService.profile?.preferredName ?? profileService.profile?.fullName ?? "Me"
+    }
 
     var body: some View {
             ScrollView(showsIndicators: false) {
@@ -555,10 +559,14 @@ struct ContactDetailsView: View {
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            DisappearingMessagesView(convId: convId)
+                            // Keyed by peer NAME (matching the send-path stamp),
+                            // and synced so the peer's client applies it too.
+                            DisappearingMessagesView(
+                                convId: member.name,
+                                serverKey: ChatDisappearStore.dmServerKey(myDisplayName, member.name))
                         } label: {
                             InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: ChatDisappearStore.label(convId))
+                                         value: ChatDisappearStore.label(member.name))
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -818,7 +826,7 @@ struct GroupDetailsView: View {
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
                         NavigationLink {
-                            DisappearingMessagesView(convId: "group")
+                            DisappearingMessagesView(convId: "group", serverKey: "group")
                         } label: {
                             InfoRowLabel(icon: "timer", label: "Disappearing messages",
                                          value: ChatDisappearStore.label("group"), adminBadge: true)
@@ -1478,16 +1486,85 @@ enum ChatDisappearStore {
         let cutoff = Date().addingTimeInterval(-t)
         return items.filter { (date($0) ?? .distantFuture) >= cutoff }
     }
+
+    // MARK: Shared state (chat_disappear_settings)
+    //
+    // The TTL used to live only in this device's UserDefaults, which made
+    // the feature a private view filter: the other participant's client
+    // never learned it, so their outgoing messages carried no expires_at
+    // and their screen hid nothing. The server table makes the setting
+    // conversation state — anyone sets it, everyone applies it, and the
+    // pg_cron sweep (migration 084) deletes expired rows for real.
+
+    /// The server key every participant computes identically for a DM.
+    static func dmServerKey(_ a: String, _ b: String) -> String {
+        "dm:" + [a, b].sorted().joined(separator: "|")
+    }
+
+    private struct SettingRow: Decodable {
+        let convKey: String
+        let ttlSeconds: Double
+        enum CodingKeys: String, CodingKey {
+            case convKey = "conv_key"
+            case ttlSeconds = "ttl_seconds"
+        }
+    }
+
+    /// Pulls every conversation TTL for the property and mirrors it into
+    /// the local store. DM keys ("dm:a|b") map back to the peer's name.
+    static func syncFromServer(propertyId: UUID, myName: String) async {
+        let rows: [SettingRow]? = try? await supabase
+            .from("chat_disappear_settings")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .execute()
+            .value
+        guard let rows else { return }
+        for row in rows {
+            let localId: String
+            if row.convKey.hasPrefix("dm:") {
+                let names = row.convKey.dropFirst(3).split(separator: "|").map(String.init)
+                guard let peer = names.first(where: { $0 != myName }) ?? names.first else { continue }
+                localId = peer
+            } else {
+                localId = row.convKey
+            }
+            setTTL(localId, row.ttlSeconds)
+        }
+    }
+
+    /// Persists a TTL change so every participant's client picks it up.
+    static func pushToServer(serverKey: String, seconds: TimeInterval) {
+        guard let pid = PropertyService.activePropertyId,
+              let uid = supabase.auth.currentSession?.user.id else { return }
+        struct Payload: Encodable {
+            let property_id: String
+            let conv_key: String
+            let ttl_seconds: Int
+            let updated_by: String
+        }
+        let payload = Payload(property_id: pid.uuidString, conv_key: serverKey,
+                              ttl_seconds: Int(seconds), updated_by: uid.uuidString)
+        Task {
+            _ = try? await supabase
+                .from("chat_disappear_settings")
+                .upsert(payload, onConflict: "property_id,conv_key")
+                .execute()
+        }
+    }
 }
 
 struct DisappearingMessagesView: View {
     let convId: String
+    /// Server-side conversation key; when set, TTL changes sync to every
+    /// participant instead of staying a this-device preference.
+    var serverKey: String? = nil
     @State private var ttl: TimeInterval = 0
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("New messages in this chat will disappear after the selected duration. This only affects messages from now on.")
+                Text("New messages in this chat will disappear for everyone after the selected duration. This only affects messages from now on.")
                     .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     .padding(.horizontal, AppSpacing.xl)
@@ -1496,6 +1573,9 @@ struct DisappearingMessagesView: View {
                     ForEach(Array(ChatDisappearStore.options.enumerated()), id: \.offset) { idx, opt in
                         Button {
                             ttl = opt.seconds
+                            if let serverKey {
+                                ChatDisappearStore.pushToServer(serverKey: serverKey, seconds: opt.seconds)
+                            }
                             ChatDisappearStore.setTTL(convId, opt.seconds)
                             HapticFeedback.impact(.light)
                         } label: {

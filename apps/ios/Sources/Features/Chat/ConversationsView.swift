@@ -148,6 +148,8 @@ struct ConversationsView: View {
         }
         // Bring the "clear conversation" cutoff across from other devices.
         for r in prefs { ConversationClearStore.applyRemote(r.convId, iso: r.clearedAt) }
+        // Disappearing-message TTLs are conversation state, not device state.
+        if let pid { await ChatDisappearStore.syncFromServer(propertyId: pid, myName: myName) }
 
         // Reflect server-side blocks locally (chat_blocks is keyed by name).
         let blockedNames = await ChatBlockSync.load()
