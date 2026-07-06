@@ -394,7 +394,7 @@ struct LocationShareSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 0) {
                     searchField
                     if let center = mapCenter {
@@ -450,6 +450,7 @@ struct LocationShareSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
         .task {
             locMgr.onLocation = { [weak nearby] loc in nearby?.search(around: loc.coordinate) }
             locMgr.requestLocation()
@@ -637,7 +638,7 @@ struct MentionPickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView {
                     VStack(spacing: 0) {
                         MemberPickerView(selectedIds: $selectedIds, selectedNames: $selectedNames)
@@ -652,6 +653,7 @@ struct MentionPickerSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 

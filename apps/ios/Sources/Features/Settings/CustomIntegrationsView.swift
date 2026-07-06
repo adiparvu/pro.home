@@ -295,7 +295,6 @@ private struct IntegrationEditorSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle(Text("Add integration"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -320,6 +319,7 @@ private struct IntegrationEditorSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -373,7 +373,6 @@ private struct IntegrationDetailSheet: View {
                 .padding(.horizontal, AppSpacing.xl)
                 .padding(.top, AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle(Text(integration.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -410,6 +409,7 @@ private struct IntegrationDetailSheet: View {
                 Text("This immediately cuts off the service using this key.")
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private var connectionSection: some View {

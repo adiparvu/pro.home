@@ -141,7 +141,7 @@ private struct AddEmergencySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 0) {
                     fieldRow("person.fill", "Name (e.g. Electrician)", $name)
                     divider
@@ -165,6 +165,7 @@ private struct AddEmergencySheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func fieldRow(_ icon: String, _ placeholder: String, _ binding: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {

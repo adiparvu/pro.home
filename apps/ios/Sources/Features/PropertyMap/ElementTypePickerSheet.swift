@@ -21,7 +21,7 @@ struct ElementTypePickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     LazyVGrid(columns: cols, spacing: 12) {
                         ForEach(filtered, id: \.self) { type in

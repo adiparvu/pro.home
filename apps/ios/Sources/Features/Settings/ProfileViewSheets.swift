@@ -13,7 +13,7 @@ struct ChangeEmailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         emailField("envelope.fill", "New email address", $email, keyboard: .emailAddress)
@@ -44,6 +44,7 @@ struct ChangeEmailSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func emailField(_ icon: String, _ ph: String, _ b: Binding<String>, keyboard: UIKeyboardType) -> some View {
@@ -70,7 +71,7 @@ struct ChangePasswordSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         passField("lock.fill", "New password", $password)
@@ -106,6 +107,7 @@ struct ChangePasswordSheet: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func passField(_ icon: String, _ ph: String, _ b: Binding<String>) -> some View {

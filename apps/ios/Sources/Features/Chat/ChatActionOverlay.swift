@@ -197,11 +197,11 @@ struct EmojiGridPicker: View {
                 }
                 .padding(AppSpacing.lg)
             }
-            .background(appBackground.ignoresSafeArea())
             .navigationTitle("Reactions")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .presentationDetents([.medium, .large])
+        .presentationBackground(.thinMaterial)
     }
 }

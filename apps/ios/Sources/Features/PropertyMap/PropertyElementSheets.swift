@@ -10,7 +10,7 @@ struct EditPropertyElementView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         GlassCard(padding: 14) {
@@ -66,6 +66,7 @@ struct EditPropertyElementView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 }
 
@@ -92,7 +93,7 @@ struct AddElementRecordView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                appBackground.ignoresSafeArea()
+                Color.clear
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 14) {
                         GlassCard(padding: 14) {
@@ -165,6 +166,7 @@ struct AddElementRecordView: View {
                 }
             }
         }
+        .presentationBackground(.thinMaterial)
     }
 
     private func save() {
