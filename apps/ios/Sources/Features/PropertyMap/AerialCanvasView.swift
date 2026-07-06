@@ -69,6 +69,12 @@ struct AerialCanvasView: View {
     @State private var dragId: UUID? = nil
     @State private var dragPos: CGPoint = .zero
 
+    // Aerial photo pyramid: the smallest level that stays crisp at the
+    // current zoom. Upgraded when a pinch ends, never downgraded.
+    @Environment(\.displayScale) private var displayScale
+    @State private var aerialUIImage: UIImage?
+    @State private var canvasSize: CGSize = .zero
+
     // Pinch-to-zoom / pan (view-only; reset while editing)
     @State private var zoomScale: CGFloat = 1
     @State private var lastZoom: CGFloat = 1
@@ -83,6 +89,9 @@ struct AerialCanvasView: View {
             .onEnded { _ in
                 lastZoom = zoomScale
                 if zoomScale <= 1.01 { withAnimation(.spring(response: 0.3)) { zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero } }
+                // Sharpen after the fingers lift: fetch the pyramid level
+                // that matches the new zoom (GPU keeps scaling meanwhile).
+                Task { await upgradeAerialImage() }
             }
     }
 
@@ -113,6 +122,18 @@ struct AerialCanvasView: View {
         }
         lastZoom = scale
         lastPan = target
+        Task { await upgradeAerialImage() }
+    }
+
+    /// Swap in the pyramid level matching the current viewport × zoom.
+    private func upgradeAerialImage() async {
+        let side = max(canvasSize.width, canvasSize.height)
+        guard side > 0 else { return }
+        let needed = side * displayScale * zoomScale
+        let currentPixels = aerialUIImage.map { $0.size.width * $0.scale }
+        if let img = await AerialImagePyramid.shared.image(atLeast: needed, currentWidth: currentPixels) {
+            aerialUIImage = img
+        }
     }
 
     private var visibleElements: [PropertyElement] {
@@ -226,17 +247,22 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func aerialImage(size: CGSize) -> some View {
-        Group {
-            if let ui = UIImage(named: "aerial_property") {
+        ZStack {
+            Color(red: 0.06, green: 0.12, blue: 0.07)
+            if let ui = aerialUIImage {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFill()
-            } else {
-                Color(red: 0.06, green: 0.12, blue: 0.07)
+                    .transition(.opacity)
             }
         }
         .frame(width: size.width, height: size.height)
         .clipped()
+        .animation(.easeInOut(duration: 0.18), value: aerialUIImage)
+        .task(id: Int(size.width)) {
+            canvasSize = size
+            await upgradeAerialImage()
+        }
     }
 
     // MARK: - Pins
