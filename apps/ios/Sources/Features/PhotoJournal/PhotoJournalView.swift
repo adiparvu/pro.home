@@ -14,6 +14,7 @@ struct PhotoJournalView: View {
 
     @State private var showAdd = false
     @State private var selectedEntry: PhotoJournalEntry? = nil
+    @Namespace private var zoomNamespace
     @State private var activeTag: String? = nil
     @State private var showSearch = false
     @State private var searchText = ""
@@ -68,6 +69,9 @@ struct PhotoJournalView: View {
         .sheet(item: $selectedEntry) { entry in
             PhotoEntryDetailSheet(entry: entry)
                 .environment(photoJournalService)
+                // Photos-style hero: the image grows out of its grid cell
+                // (iOS 18); older systems keep the plain sheet.
+                .zoomTransition(sourceID: entry.id, in: zoomNamespace)
         }
         .task {
             if let id = propertyService.primary?.id {
@@ -157,6 +161,7 @@ struct PhotoJournalView: View {
                         LazyVGrid(columns: columns, spacing: 2) {
                             ForEach(group.entries) { entry in
                                 PhotoGridCell(entry: entry)
+                                    .zoomTransitionSource(id: entry.id, in: zoomNamespace)
                                     .onTapGesture {
                                         selectedEntry = entry
                                         HapticFeedback.impact(.light)
