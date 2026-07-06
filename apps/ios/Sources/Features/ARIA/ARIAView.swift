@@ -17,11 +17,10 @@ struct ARIAView: View {
     @Environment(ApplianceService.self) private var applianceService
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
-    @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
     @AppStorage("prvio.aria.personality") private var aiTone: String = "balanced"
-    @State private var showAriaTheme = false
+    @State private var showSettings = false
     @State private var ariaThemeRefresh = 0
 
     private var ariaTheme: ChatTheme {
@@ -57,10 +56,15 @@ struct ARIAView: View {
                 inputBar
             }
         }
-        .navigationTitle(assistantName)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showAriaTheme, onDismiss: { ariaThemeRefresh += 1 }) {
-            ChatThemePicker(scope: "aria")
+        .navigationDestination(isPresented: $showSettings) { ARIASettingsView() }
+        .onChange(of: showSettings) { _, open in
+            // Coming back from settings re-reads the (possibly changed) theme.
+            if !open { ariaThemeRefresh += 1 }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .ariaHistoryCleared)) { _ in
+            withAnimation { messages = ARIAMessage.welcome }
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -74,41 +78,32 @@ struct ARIAView: View {
                 }
                 .accessibilityLabel("Close")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                MemberAvatarStack(
-                    members: familyService.members,
-                    ownerAvatarUrl: profileService.profile?.avatarUrl,
-                    ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
-                    ringColor: avatarRingColor(for: avatarRingColorName)
-                )
-            }
-            ToolbarItem(placement: .topBarTrailing) {
+            // One entry point, like a DM: tapping the assistant's identity
+            // opens its settings (name, avatar, background, personality,
+            // history). No avatar stack, no scattered toolbar buttons.
+            ToolbarItem(placement: .principal) {
                 Button {
-                    HapticFeedback.impact(.light)
-                    showAriaTheme = true
+                    HapticFeedback.selection()
+                    showSettings = true
                 } label: {
-                    Image(systemName: "paintbrush.fill")
-                        .font(AppFont.footnoteEmphasis)
-                        .foregroundStyle(.primary)
+                    ChatHeaderPill {
+                        HStack(spacing: 8) {
+                            ARIAAvatar(size: 28)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(assistantName)
+                                    .font(AppFont.subheadline)
+                                    .foregroundStyle(.primary)
+                                Text("AI Assistant")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
+                            }
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(0.35))
+                        }
+                    }
                 }
-                .accessibilityLabel(Text("Background"))
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    withAnimation { messages = ARIAMessage.welcome }
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.primary)
-                }
-                .accessibilityLabel("Reset messages")
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { ARIASettingsView() } label: {
-                    Image(systemName: "gearshape")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.primary)
-                }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Settings")
             }
         }

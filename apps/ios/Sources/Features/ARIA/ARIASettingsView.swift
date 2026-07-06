@@ -34,6 +34,7 @@ struct ARIASettingsView: View {
     @State private var pendingName = ""
     @State private var showApiKeySheet = false
     @State private var showClearConfirm = false
+    @State private var showThemePicker = false
     @State private var showShareSheet = false
     @State private var exportURL: URL? = nil
     @State private var isDeletingHistory = false
@@ -45,6 +46,7 @@ struct ARIASettingsView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 identitySection
+                appearanceSection
                 personalitySection
                 contextSection
                 modelSection
@@ -70,6 +72,9 @@ struct ARIASettingsView: View {
         }
         .sheet(isPresented: $showApiKeySheet) {
             ApiKeyEditorSheet(apiKey: $customApiKey)
+        }
+        .sheet(isPresented: $showThemePicker) {
+            ChatThemePicker(scope: "aria")
         }
         .onChange(of: customApiKey) { SecretStore.set(customApiKey, for: "aria.customApiKey") }
         .onAppear {
@@ -260,6 +265,35 @@ struct ARIASettingsView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Appearance Section
+
+    // The conversation's wallpaper/bubble theme moved here from the chat
+    // toolbar — the assistant's header keeps one entry point (the name pill),
+    // like a DM.
+    private var appearanceSection: some View {
+        settingsGroup("APPEARANCE") {
+            Button {
+                HapticFeedback.selection()
+                showThemePicker = true
+            } label: {
+                HStack(spacing: 12) {
+                    ColoredIconBadge(icon: "paintbrush.fill", color: .indigo)
+                    Text("Chat background")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(AppFont.caption)
+                        .foregroundStyle(Color.primary.opacity(0.28))
+                }
+                .padding(.horizontal, AppSpacing.base)
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Personality Section
@@ -561,7 +595,13 @@ struct ARIASettingsView: View {
         } catch {
             // ignore — table may already be empty
         }
+        // The open conversation resets to the welcome message right away.
+        NotificationCenter.default.post(name: .ariaHistoryCleared, object: nil)
     }
+}
+
+extension Notification.Name {
+    static let ariaHistoryCleared = Notification.Name("prvio.aria.historyCleared")
 }
 
 // MARK: - API Key Editor Sheet
