@@ -122,6 +122,11 @@ struct DashboardView: View {
         .onChange(of: activeSheet) { _, sheet in
             router.hasLocalPresentation = (sheet != nil)
         }
+        .onDisappear {
+            // A tab switch mid-sheet must not leave the router thinking a
+            // local presentation is still up (routes would park forever).
+            if activeSheet == nil { router.hasLocalPresentation = false }
+        }
         .sheet(item: $activeSheet, onDismiss: { router.drainPending() }) { sheet in
             switch sheet {
             case .notifications:
@@ -298,6 +303,9 @@ struct DashboardView: View {
     private var aerialHero: some View {
         ZStack(alignment: .bottomLeading) {
             aerialBackground
+                // Decorative on the dashboard — never a tap target (and never
+                // again a screen-wide invisible one).
+                .allowsHitTesting(false)
 
             // The health story in one sentence, living on the photo itself.
             HeroStatusPill(

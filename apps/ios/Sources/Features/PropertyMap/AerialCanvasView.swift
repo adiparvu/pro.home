@@ -253,6 +253,11 @@ struct AerialCanvasView: View {
                 Image(uiImage: ui)
                     .resizable()
                     .scaledToFill()
+                    // scaledToFill overflows the frame and .clipped() clips
+                    // only DRAWING, not hit testing — the invisible overflow
+                    // was eating taps hundreds of points above the card (the
+                    // dead dashboard header). The photo is never a tap target.
+                    .allowsHitTesting(false)
                     .transition(.opacity)
             }
         }

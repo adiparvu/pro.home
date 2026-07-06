@@ -372,22 +372,171 @@ private struct InfoActionCard: View {
     let icon: String
     let action: () -> Void
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticFeedback.impact(.light)
+            action()
+        } label: {
             VStack(spacing: 7) {
-                // Native iOS Contacts-style circular action button.
+                // Liquid Glass circular action button (iOS Contacts idiom).
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(Color.accentColor)
                     .frame(width: 52, height: 52)
-                    .background(Color.accentColor.opacity(0.15), in: Circle())
+                    .glassCircle()
                 Text(LocalizedStringKey(label))
-                    .font(AppFont.caption)
-                    .foregroundStyle(Color.primary.opacity(0.75))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
             }
             .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(LocalizedStringKey(label)))
+    }
+}
+
+/// Uppercase-captioned glass card section — the ChatSettingsView grouping
+/// idiom, adapted for the chat info pages (which manage their own gutters).
+private struct InfoSection<Content: View>: View {
+    var title: LocalizedStringKey? = nil
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .textCase(.uppercase)
+                    .font(AppFont.captionStrong)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, AppSpacing.sm)
+            }
+            VStack(spacing: 0) { content }
+                .liquidGlass(cornerRadius: AppRadius.lg)
+        }
+        .padding(.horizontal, AppSpacing.lg)
+    }
+}
+
+/// Circular member avatar with the chat-thread resolution order: directory
+/// photo (or contact photo URL) via StorageImage, initials fallback — never
+/// a blank circle.
+private struct MemberPhotoAvatar: View {
+    let color: Color
+    let initials: String
+    let avatarURL: URL?
+    var size: CGFloat = 44
+
+    var body: some View {
+        ZStack {
+            Circle().fill(color.opacity(0.18))
+            if let avatarURL {
+                StorageImage(url: avatarURL) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        initialsText
+                    }
+                }
+            } else {
+                initialsText
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+
+    private var initialsText: some View {
+        Text(initials)
+            .font(.system(size: size * 0.36, weight: .bold))
+            .foregroundStyle(color)
+    }
+}
+
+/// The best available photo URL for a family contact: the member directory
+/// (real account profiles) first, the contact's own avatar URL second —
+/// the same resolution order the chat thread uses for sender avatars.
+@MainActor
+private func memberAvatarURL(_ member: FamilyMember) -> URL? {
+    MemberDirectory.shared.avatarURL(for: member.id)
+        ?? member.avatarUrl.flatMap { URL(string: $0) }
+}
+
+/// Effective theme for a conversation scope — the per-conversation override
+/// wins, otherwise the global default (mirrors ChatView/DirectMessageView).
+private func conversationTheme(scope: String) -> ChatTheme {
+    let d = UserDefaults.standard
+    func value(_ base: String) -> String {
+        d.string(forKey: "\(base).\(scope)").flatMap { $0.isEmpty ? nil : $0 }
+            ?? (d.string(forKey: base) ?? "")
+    }
+    let themeID = value("prvio.chatTheme")
+    return .resolved(themeID: themeID.isEmpty ? "appDefault" : themeID,
+                     bubbleHex: value("prvio.chatBubbleHex"),
+                     bgID: value("prvio.chatBgID"),
+                     bgImage: value("prvio.chatBgImage"),
+                     bgAnim: value("prvio.chatBgAnim"))
+}
+
+/// 22×22 preview of a conversation theme: the wallpaper gradient when the
+/// theme has one, otherwise the outgoing-bubble colour.
+private struct ThemeSwatch: View {
+    let theme: ChatTheme
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 7, style: .continuous) }
+
+    var body: some View {
+        shape
+            .fill(fillStyle)
+            .frame(width: 22, height: 22)
+            .overlay(shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+            .accessibilityHidden(true)
+    }
+
+    private var fillStyle: AnyShapeStyle {
+        if let cols = theme.backgroundColors {
+            AnyShapeStyle(LinearGradient(colors: cols, startPoint: .top, endPoint: .bottom))
+        } else {
+            AnyShapeStyle(theme.outgoingBubble)
+        }
+    }
+}
+
+/// "Conversation theme" value row — label left, live theme swatch right.
+private struct ThemeInfoRow: View {
+    let scope: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: "paintpalette")
+                    .font(.system(size: 17))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                    .frame(width: 26)
+                Text("Conversation theme")
+                    .foregroundStyle(.primary)
+                Spacer()
+                ThemeSwatch(theme: conversationTheme(scope: scope))
+                Image(systemName: "chevron.right")
+                    .font(AppFont.captionEmphasis)
+                    .foregroundStyle(Color.primary.opacity(0.25))
+            }
+            .font(.system(size: 16))
+            .padding(.horizontal, AppSpacing.lg).padding(.vertical, AppSpacing.base)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
+}
+
+/// Current disappearing-messages duration for a conversation key, formatted
+/// the iOS-Settings way ("24 hr", "7 days") — "Off" when the timer is 0.
+private func disappearingDurationLabel(_ convKey: String) -> String {
+    let ttl = ChatDisappearStore.ttl(convKey)
+    guard ttl > 0 else { return String(localized: "Off") }
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = ttl >= 86_400 ? [.day] : (ttl >= 3_600 ? [.hour] : [.minute])
+    formatter.unitsStyle = .short
+    return formatter.string(from: ttl) ?? String(localized: "Off")
 }
 
 /// Small pill shown on settings rows that only group admins can change.
@@ -420,7 +569,7 @@ private struct InfoRow: View {
                     .foregroundStyle(tint)
                 Spacer()
                 if let value {
-                    Text(value).foregroundStyle(Color.primary.opacity(0.4))
+                    Text(value).foregroundStyle(Color.primary.opacity(0.38))
                 }
                 if adminBadge { AdminBadge() }
                 if showChevron {
@@ -453,7 +602,7 @@ struct InfoRowLabel: View {
                 .foregroundStyle(.primary)
             Spacer()
             if let value {
-                Text(value).foregroundStyle(Color.primary.opacity(0.4))
+                Text(value).foregroundStyle(Color.primary.opacity(0.38))
             }
             if adminBadge { AdminBadge() }
             Image(systemName: "chevron.right")
@@ -485,6 +634,7 @@ struct ContactDetailsView: View {
     var propertyId: UUID? = nil
     @Environment(FamilyService.self) private var familyService
     @Environment(ProfileService.self) private var profileService
+    @Environment(PresenceService.self) private var presenceService
     @Environment(\.dismiss) private var dismiss
     @State private var muted = false
     @State private var blocked = false
@@ -502,31 +652,8 @@ struct ContactDetailsView: View {
 
     var body: some View {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    VStack(spacing: 10) {
-                        MemberCircleAvatarLarge(member: member)
-                            .frame(width: 110, height: 110)
-                        Text(member.name)
-                            .font(.system(size: 24, weight: .bold))
-                        Text(member.roleLabel)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                        if let phone = member.phone, !phone.isEmpty {
-                            Text(phone).font(.system(size: 14)).foregroundStyle(Color.primary.opacity(0.4))
-                        }
-                        Button { showEditLabel = true } label: {
-                            if memberLabel.isEmpty {
-                                Label("Add a member label", systemImage: "tag")
-                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                            } else {
-                                Label(memberLabel, systemImage: "tag.fill")
-                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 2)
-                    }
-                    .padding(.top, AppSpacing.sm)
+                VStack(spacing: 20) {
+                    hero
 
                     HStack(spacing: 12) {
                         InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
@@ -535,7 +662,7 @@ struct ContactDetailsView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(spacing: 0) {
+                    InfoSection(title: "General") {
                         NavigationLink {
                             MediaGalleryView(urls: mediaURLs)
                         } label: {
@@ -546,16 +673,14 @@ struct ContactDetailsView: View {
                         Divider().padding(.leading, 52)
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(spacing: 0) {
+                    InfoSection(title: "Settings") {
                         NavigationLink {
                             ConversationNotificationsView(convId: convId, subtitle: member.name)
                         } label: {
                             InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
                                          label: "Notifications",
-                                         value: muted ? "Off" : nil)
+                                         value: muted ? String(localized: "Off") : nil)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -567,7 +692,7 @@ struct ContactDetailsView: View {
                                 serverKey: ChatDisappearStore.dmServerKey(myDisplayName, member.name))
                         } label: {
                             InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: ChatDisappearStore.label(member.name))
+                                         value: disappearingDurationLabel(member.name))
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -579,24 +704,21 @@ struct ContactDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
-                        InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
+                        // Theme scope matches DirectMessageView.themeScope (member id).
+                        ThemeInfoRow(scope: member.id.uuidString) { dismiss(); onTheme() }
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(spacing: 0) {
+                    InfoSection(title: "Securitate") {
                         SecureChatToggle(convId: convId)
                         Divider().padding(.leading, 52)
                         NavigationLink { EncryptionInfoView() } label: {
                             InfoRowLabel(icon: "lock.fill", label: "Encryption",
-                                         value: "Encrypted")
+                                         value: String(localized: "Encrypted"))
                         }
                         .buttonStyle(.plain)
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(spacing: 0) {
+                    InfoSection {
                         Button {
                             blocked.toggle()
                             ChatBlockStore.setBlocked(convId, blocked)
@@ -614,12 +736,14 @@ struct ContactDetailsView: View {
                         .buttonStyle(.plain)
                         .disabled(reported)
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
                     Spacer(minLength: 30)
                 }
+                // Enough headroom that the hero avatar clears the floating
+                // header controls and never sits under the top progressive blur.
+                .padding(.top, AppSpacing.xxl + AppSpacing.md)
             }
+            .task { await MemberDirectory.shared.loadIfNeeded() }
             .background(appBackground.ignoresSafeArea())
             .confirmationDialog("Report \(member.name)?", isPresented: $showReport, titleVisibility: .visible) {
                 Button("Report", role: .destructive) {
@@ -659,6 +783,63 @@ struct ContactDetailsView: View {
                     MemberLabelStore.set(convId, newText, propertyId: propertyId)
                 }
             }
+    }
+
+    // MARK: - Hero (photo, name, role + presence, label affordance)
+
+    private var hero: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 10) {
+                MemberPhotoAvatar(color: member.swiftColor,
+                                  initials: member.initials,
+                                  avatarURL: memberAvatarURL(member),
+                                  size: 96)
+                Text(member.name)
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                heroSubtitle
+                if let phone = member.phone, !phone.isEmpty {
+                    Text(phone)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.primary.opacity(0.38))
+                }
+            }
+            .accessibilityElement(children: .combine)
+
+            Button { showEditLabel = true } label: {
+                if memberLabel.isEmpty {
+                    Label("Add a member label", systemImage: "tag")
+                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                } else {
+                    Label(memberLabel, systemImage: "tag.fill")
+                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.xl)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Role label, joined with live presence (online / last seen) when the
+    /// partner shares it — the same source the thread header uses.
+    private var heroSubtitle: some View {
+        HStack(spacing: 6) {
+            Text(member.roleLabel)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            switch presenceService.status(for: member.name) {
+            case .online:
+                Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                Text("online").foregroundStyle(Color.brandSuccess)
+            case .lastSeen(let date):
+                Text("·").foregroundStyle(Color.primary.opacity(0.25))
+                Text("last seen \(date, format: .relative(presentation: .named))")
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            case .hidden:
+                EmptyView()
+            }
+        }
+        .font(.system(size: 15))
     }
 
     @ToolbarContentBuilder
@@ -725,34 +906,8 @@ struct GroupDetailsView: View {
 
     var body: some View {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    VStack(spacing: 10) {
-                        GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
-                            .frame(width: 110, height: 110)
-                        Text(groupName)
-                            .font(.system(size: 24, weight: .bold))
-                            .multilineTextAlignment(.center)
-
-                        Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
-                            if description.isEmpty {
-                                Label("Add group description", systemImage: "pencil")
-                                    .font(.system(size: 14)).foregroundStyle(Color.accentColor)
-                            } else {
-                                (Text(description).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                                 + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
-                                    .font(.system(size: 14))
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, AppSpacing.xxl)
-
-                        Text("Group · \(members.count + 1) members")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                    }
-                    .padding(.top, AppSpacing.sm)
+                VStack(spacing: 20) {
+                    hero
 
                     HStack(spacing: 12) {
                         InfoActionCard(label: "Audio", icon: "phone.fill") { dismiss(); onAudio() }
@@ -762,33 +917,20 @@ struct GroupDetailsView: View {
                     }
                     .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("\(members.count + 1) members")
-                            .font(AppFont.footnoteEmphasis)
-                            .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                            .padding(.horizontal, AppSpacing.xl)
-
-                        VStack(spacing: 0) {
-                            memberRow(name: "You", member: nil, admin: true)
-                            ForEach(members) { m in
-                                Divider().padding(.leading, 64)
-                                memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
-                            }
+                    InfoSection(title: "\(members.count + 1) members") {
+                        memberRow(name: String(localized: "You"), member: nil, admin: true)
+                        ForEach(members) { m in
+                            Divider().padding(.leading, 64)
+                            memberRow(name: m.name, member: m, admin: m.role == "owner" || m.role == "partner")
                         }
-                        .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, AppSpacing.lg)
-
-                        VStack(spacing: 0) {
-                            NavigationLink { MemberChangesView() } label: {
-                                InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes", adminBadge: true)
-                            }
-                            .buttonStyle(.plain)
+                        Divider().padding(.leading, 52)
+                        NavigationLink { MemberChangesView() } label: {
+                            InfoRowLabel(icon: "person.2.badge.gearshape", label: "See member list changes", adminBadge: true)
                         }
-                        .liquidGlass(cornerRadius: 14)
-                        .padding(.horizontal, AppSpacing.lg)
+                        .buttonStyle(.plain)
                     }
 
-                    VStack(spacing: 0) {
+                    InfoSection(title: "General") {
                         NavigationLink {
                             MediaGalleryView(urls: mediaURLs)
                         } label: {
@@ -807,7 +949,9 @@ struct GroupDetailsView: View {
                             Divider().padding(.leading, 52)
                         }
                         InfoRow(icon: "star", label: "Starred") { dismiss(); onStarred() }
-                        Divider().padding(.leading, 52)
+                    }
+
+                    InfoSection(title: "Settings") {
                         NavigationLink {
                             GroupPermissionsView(
                                 adminNames: ["You"] + members.filter { $0.role == "owner" || $0.role == "partner" }.map { $0.name }
@@ -822,7 +966,7 @@ struct GroupDetailsView: View {
                         } label: {
                             InfoRowLabel(icon: muted ? "bell.slash.fill" : "bell.fill",
                                          label: "Notifications",
-                                         value: muted ? "Off" : nil)
+                                         value: muted ? String(localized: "Off") : nil)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -830,7 +974,7 @@ struct GroupDetailsView: View {
                             DisappearingMessagesView(convId: "group", serverKey: "group")
                         } label: {
                             InfoRowLabel(icon: "timer", label: "Disappearing messages",
-                                         value: ChatDisappearStore.label("group"), adminBadge: true)
+                                         value: disappearingDurationLabel("group"), adminBadge: true)
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
@@ -842,26 +986,27 @@ struct GroupDetailsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().padding(.leading, 52)
-                        InfoRow(icon: "paintpalette", label: "Conversation theme") { dismiss(); onTheme() }
+                        // Theme scope matches ChatView.themeScope ("group").
+                        ThemeInfoRow(scope: "group") { dismiss(); onTheme() }
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
-                    VStack(spacing: 0) {
+                    InfoSection(title: "Securitate") {
                         SecureChatToggle(convId: "group")
                         Divider().padding(.leading, 52)
                         NavigationLink { EncryptionInfoView() } label: {
                             InfoRowLabel(icon: "lock.fill", label: "Encryption",
-                                         value: "Encrypted")
+                                         value: String(localized: "Encrypted"))
                         }
                         .buttonStyle(.plain)
                     }
-                    .liquidGlass(cornerRadius: 14)
-                    .padding(.horizontal, AppSpacing.lg)
 
                     Spacer(minLength: 30)
                 }
+                // Enough headroom that the hero avatar clears the floating
+                // header controls and never sits under the top progressive blur.
+                .padding(.top, AppSpacing.xxl + AppSpacing.md)
             }
+            .task { await MemberDirectory.shared.loadIfNeeded() }
             .background(appBackground.ignoresSafeArea())
             .navigationTitle("Group info")
             .navigationBarTitleDisplayMode(.inline)
@@ -935,6 +1080,41 @@ struct GroupDetailsView: View {
             }
     }
 
+    // MARK: - Hero (group photo, name, member count, description)
+
+    private var hero: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 10) {
+                GroupChatAvatarLarge(members: members, photoUrl: photoUrl)
+                    .frame(width: 96, height: 96)
+                Text(groupName)
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text("Group · \(members.count + 1) members")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            }
+            .accessibilityElement(children: .combine)
+
+            Button { if description.isEmpty { showEditDescription = true } else { showDescriptionView = true } } label: {
+                if description.isEmpty {
+                    Label("Add group description", systemImage: "pencil")
+                        .font(.system(size: 14)).foregroundStyle(Color.accentColor)
+                } else {
+                    (Text(description).foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
+                     + Text("  Afișează mai mult").foregroundStyle(Color.accentColor))
+                        .font(.system(size: 14))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, AppSpacing.xxl)
+        }
+        .padding(.horizontal, AppSpacing.xl)
+        .frame(maxWidth: .infinity)
+    }
+
     @ViewBuilder
     private func memberRow(name: String, member: FamilyMember?, admin: Bool) -> some View {
         let labelId = member?.id.uuidString ?? "you"
@@ -942,7 +1122,12 @@ struct GroupDetailsView: View {
         Button { editingLabelId = labelId } label: {
             HStack(spacing: 12) {
                 if let m = member {
-                    MemberCircleAvatarLarge(member: m).frame(width: 44, height: 44)
+                    MemberPhotoAvatar(color: m.swiftColor,
+                                      initials: m.initials,
+                                      avatarURL: memberAvatarURL(m),
+                                      size: 44)
+                } else if let myURL = MemberDirectory.shared.avatarURL(for: supabase.auth.currentSession?.user.id) {
+                    MemberPhotoAvatar(color: .accentColor, initials: "", avatarURL: myURL, size: 44)
                 } else {
                     ZStack {
                         Circle().fill(Color.accentColor.opacity(0.18))
@@ -960,9 +1145,7 @@ struct GroupDetailsView: View {
                     }
                 }
                 Spacer()
-                if admin {
-                    Text("Admin").font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.4))
-                }
+                if admin { AdminBadge() }
             }
             .padding(.horizontal, AppSpacing.base).padding(.vertical, 10)
             .contentShape(Rectangle())
