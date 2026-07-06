@@ -709,6 +709,7 @@ struct ConversationsView: View {
             let isOwn = m.senderId == supabase.auth.currentSession?.user.id
             let prefix = isOwn ? "Tu: " : (m.senderName.components(separatedBy: " ").first.map { "\($0): " } ?? "")
             if m.deletedForAll == true { return prefix + "🚫 Mesaj șters" }
+            if m.isContactShare { return prefix + "👤 Contact" }
             if let body = m.body, !body.isEmpty { return prefix + body }
             switch m.attachmentType {
             case "image":    return prefix + "📷 Imagine"
@@ -745,6 +746,12 @@ struct ConversationsView: View {
             let preview: String = {
                 if last.deletedForAll == true { return "🚫 Mesaj șters" }
                 let prefix = last.senderName == myName ? "Tu: " : ""
+                if last.isContactShare { return prefix + "👤 Contact" }
+                let lower = last.body.lowercased()
+                if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return prefix + "🎤 Mesaj vocal" }
+                if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") {
+                    return prefix + "📷 Imagine"
+                }
                 return prefix + last.body
             }()
             items.append(ConversationEntry(
