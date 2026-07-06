@@ -41,6 +41,7 @@ struct AppIconPickerView: View {
             backdrop
             VStack(spacing: 0) {
                 header
+                homePreview
                 carousel
                 pager
                 applyBar
@@ -97,6 +98,76 @@ struct AppIconPickerView: View {
         }
         .padding(.top, AppSpacing.sm)
         .padding(.bottom, AppSpacing.md)
+    }
+
+    // MARK: Home-screen context preview
+    //
+    // A miniature Home Screen with the CANDIDATE icon sitting among dimmed
+    // generic apps, on a wallpaper made from the artwork itself. The change
+    // is confirmed here, in context — SpringBoard repaints off-screen pages
+    // lazily, so this is where the user actually sees the result.
+
+    private var homePreview: some View {
+        let faceAsset = appliesDarkFace ? (current.darkPreview ?? current.lightPreview)
+                                        : current.lightPreview
+        return ZStack {
+            Image(faceAsset)
+                .resizable()
+                .scaledToFill()
+                .blur(radius: 42)
+                .overlay(Color.black.opacity(0.25))
+            HStack(alignment: .top, spacing: 20) {
+                dummyIcon("phone.fill", [Color(red: 0.20, green: 0.78, blue: 0.35),
+                                         Color(red: 0.10, green: 0.60, blue: 0.25)])
+                dummyIcon("envelope.fill", [Color(red: 0.35, green: 0.65, blue: 0.98),
+                                            Color(red: 0.15, green: 0.45, blue: 0.90)])
+                VStack(spacing: 5) {
+                    Image(faceAsset)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 54, height: 54)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(color: .black.opacity(0.30), radius: 5, y: 3)
+                        .id(faceAsset)
+                    Text(verbatim: "PRVIO")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 1, y: 1)
+                }
+                dummyIcon("music.note", [Color(red: 0.98, green: 0.35, blue: 0.45),
+                                         Color(red: 0.85, green: 0.20, blue: 0.55)])
+                dummyIcon("camera.fill", [Color(white: 0.45), Color(white: 0.25)])
+            }
+            .padding(.top, 6)
+        }
+        .frame(height: 132)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .strokeBorder(.white.opacity(0.12), lineWidth: 0.7)
+        )
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.bottom, AppSpacing.xs)
+        .animation(.smooth(duration: 0.35), value: faceAsset)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Preview"))
+    }
+
+    /// A dimmed stand-in app so the candidate reads "on a real Home Screen".
+    private func dummyIcon(_ symbol: String, _ colors: [Color]) -> some View {
+        VStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 54, height: 54)
+                .overlay(
+                    Image(systemName: symbol)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(.white)
+                )
+            // No label: the eye should land on the candidate, which has one.
+            Color.clear.frame(height: 12)
+        }
+        .opacity(0.55)
     }
 
     // MARK: Carousel — one slide per theme
