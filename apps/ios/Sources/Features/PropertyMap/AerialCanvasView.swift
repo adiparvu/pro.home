@@ -11,11 +11,26 @@ import UIKit
 //   • The image is STATIC (no Ken Burns) so pins stay locked to image features.
 //   • Pins are positioned purely by normalised positionX/positionY (0–1).
 
+/// A programmatic "fly-to" request: normalized target + a token so the same
+/// point can be requested twice in a row and still animate.
+struct MapFocus: Equatable {
+    let point: CGPoint
+    let token: UUID
+
+    init(point: CGPoint) {
+        self.point = point
+        self.token = UUID()
+    }
+}
+
 struct AerialCanvasView: View {
     let property: PropertyModel
     let elements: [PropertyElement]
     var zones: [PropertyZone] = []
     var interactive: Bool = false
+    /// When set, the canvas zooms in and centers on this normalized point
+    /// (search results, "show on map" actions).
+    var focus: MapFocus? = nil
     var pinMode: Bool = false
     var zoneDrawMode: Bool = false
     var draftZonePoints: [CGPoint] = []   // normalized 0–1
@@ -68,6 +83,24 @@ struct AerialCanvasView: View {
 
     private func resetZoom() {
         zoomScale = 1; lastZoom = 1; panOffset = .zero; lastPan = .zero
+    }
+
+    /// Zoom in and center the given normalized point, clamped so the photo
+    /// keeps covering the viewport (no empty edges).
+    private func flyTo(_ p: CGPoint, size: CGSize) {
+        let scale: CGFloat = max(zoomScale, 2.4)
+        let maxX = (scale - 1) * size.width / 2
+        let maxY = (scale - 1) * size.height / 2
+        let target = CGSize(
+            width: min(max((0.5 - p.x) * size.width * scale, -maxX), maxX),
+            height: min(max((0.5 - p.y) * size.height * scale, -maxY), maxY)
+        )
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.85)) {
+            zoomScale = scale
+            panOffset = target
+        }
+        lastZoom = scale
+        lastPan = target
     }
 
     private var visibleElements: [PropertyElement] {
@@ -162,6 +195,10 @@ struct AerialCanvasView: View {
             .onChange(of: pinMode) { _, on in if on { resetZoom() } }
             .onChange(of: zoneDrawMode) { _, on in if on { resetZoom() } }
             .onChange(of: reshapeMode) { _, on in if on { resetZoom() } }
+            .onChange(of: focus) { _, f in
+                guard let f, canZoom else { return }
+                flyTo(f.point, size: geo.size)
+            }
         }
         .clipped()
     }

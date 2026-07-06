@@ -1,6 +1,31 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Search the map\u2026": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Caut\u0103 pe hart\u0103\u2026" } }
+      }
+    },
+    "Zones list": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Lista zonelor" } }
+      }
+    },
+    "Objects list": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Lista obiectelor" } }
+      }
+    },
+    "Lists": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Liste" } }
+      }
+    },
+    "Favorite": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Favorit" } }
+      }
+    },
     "Create your own property, or ask the owner of a home to invite you.": {
       "localizations": {
         "ro": { "stringUnit": { "state": "translated", "value": "Creeaz\u0103-\u021bi propria proprietate sau cere proprietarului unei locuin\u021be s\u0103 te invite." } }

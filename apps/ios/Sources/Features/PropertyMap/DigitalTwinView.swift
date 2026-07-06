@@ -32,6 +32,12 @@ struct DigitalTwinView: View {
     @State private var reshapeZoneId: UUID?
     @State private var reshapePoints: [CGPoint] = []
     @State private var zoneView: ZoneViewKind = .hidden
+    @State private var inspectZone: PropertyZone?
+    @State private var mapFocus: MapFocus?
+    @State private var showMapSearch = false
+    @State private var mapSearchText = ""
+    @State private var showZonesList = false
+    @State private var showObjectsList = false
 
     enum ZoneViewKind: Equatable { case hidden, all, zone(UUID) }
 
@@ -84,6 +90,7 @@ struct DigitalTwinView: View {
                     elements: displayedElements,
                     zones: displayedZones,
                     interactive: true,
+                    focus: mapFocus,
                     pinMode: pinMode,
                     zoneDrawMode: zoneDrawMode,
                     draftZonePoints: draftZonePoints,
@@ -105,7 +112,7 @@ struct DigitalTwinView: View {
                         Task { await elementService.toggleFavorite(elementId: el.id) }
                         HapticFeedback.selection()
                     },
-                    onZoneTap: { editZone = $0 },
+                    onZoneTap: { inspectZone = $0 },
                     onAddZonePoint: { draftZonePoints.append($0) },
                     onZoneReshape: { zone in
                         editZone = nil
@@ -126,7 +133,7 @@ struct DigitalTwinView: View {
                 )
                 .ignoresSafeArea(edges: .bottom)
 
-                zoneSelectorBar
+                lensBar
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 controls
@@ -173,12 +180,75 @@ struct DigitalTwinView: View {
             Button("Cancel", role: .cancel) { deleteElement = nil }
         }
         .sheet(item: $selectedElement) { element in
-            PropertyElementDetailView(element: element)
-                .environment(elementService)
-                .environment(currencyService)
-                .environment(appSettings)
-                .environment(documentService)
-                .environment(taskService)
+            // Apple Maps-style inspector: compact card first, map stays
+            // interactive behind it; deep dives launch from the card.
+            ElementInspectorSheet(
+                element: element,
+                zoneName: zoneName(for: element),
+                onEdit: {
+                    // Let the inspector finish dismissing before presenting
+                    // the edit sheet, or SwiftUI drops the presentation.
+                    let id = element.id
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(380))
+                        editElementId = id
+                    }
+                }
+            )
+            .environment(elementService)
+            .environment(currencyService)
+            .environment(appSettings)
+            .environment(documentService)
+            .environment(taskService)
+            .presentationDetents([.height(320), .medium, .large])
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $inspectZone) { zone in
+            ZoneBottomSheet(
+                zone: zone,
+                onEdit: {
+                    inspectZone = nil
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(380))
+                        editZone = zone
+                    }
+                },
+                onReshape: {
+                    inspectZone = nil
+                    reshapePoints = zone.imagePoints.map { CGPoint(x: $0.x, y: $0.y) }
+                    reshapeZoneId = zone.id
+                    HapticFeedback.impact(.medium)
+                },
+                onAddObject: {
+                    inspectZone = nil
+                    withAnimation(.spring(response: 0.3)) { pinMode = true }
+                },
+                onDelete: {
+                    inspectZone = nil
+                    Task { await zoneService.delete(zone) }
+                },
+                onFocus: {
+                    inspectZone = nil
+                    flyTo(zone: zone)
+                }
+            )
+            .environment(elementService)
+            .environment(currencyService)
+            .environment(appSettings)
+            .environment(documentService)
+            .environment(taskService)
+            .presentationDetents([.height(360), .medium, .large])
+            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showZonesList) {
+            NavigationStack { ZonesListView() }
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showObjectsList) {
+            NavigationStack { ObjectsListView() }
+                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: Binding(
             get: { pendingPin != nil },
@@ -210,7 +280,7 @@ struct DigitalTwinView: View {
                 onDelete: { Task { await zoneService.delete(zone) } }
             )
         }
-        .task { await loadData() }
+        .task(id: propertyService.primary?.id) { await loadData() }
     }
 
     // MARK: - Controls
@@ -239,7 +309,6 @@ struct DigitalTwinView: View {
                     withAnimation(.spring(response: 0.3)) { showNames.toggle() }
                     HapticFeedback.selection()
                 }
-                categoryMenu
                 controlButton(icon: "pentagon", tint: zoneDrawMode ? Color.accentColor : .white, label: "Zone") {
                     withAnimation(.spring(response: 0.3)) {
                         zoneDrawMode = true
@@ -259,39 +328,8 @@ struct DigitalTwinView: View {
             }
         }
         .padding(.trailing, AppSpacing.lg)
-        .padding(.top, AppSpacing.sm)
-    }
-
-    private var categoryMenu: some View {
-        Menu {
-            Button {
-                withAnimation { categoryFilter = nil }
-            } label: {
-                Label("All categories", systemImage: categoryFilter == nil ? "checkmark" : "square.grid.2x2")
-            }
-            Divider()
-            ForEach(ElementCategory.allCases) { cat in
-                Button {
-                    withAnimation { categoryFilter = cat }
-                } label: {
-                    Label(cat.displayName, systemImage: categoryFilter == cat ? "checkmark" : cat.icon)
-                }
-            }
-        } label: {
-            VStack(spacing: 2) {
-                Image(systemName: "line.3.horizontal.decrease.circle\(categoryFilter == nil ? "" : ".fill")")
-                    .font(AppFont.title3)
-                    .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
-                Text(categoryFilter?.displayName ?? "Filter")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
-                    .lineLimit(1)
-            }
-            .frame(width: 52, height: 52)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
-        }
+        // Sits below the lens bar so the two glass layers never collide.
+        .padding(.top, 64)
     }
 
     private func controlButton(icon: String, tint: Color, label: String? = nil, action: @escaping () -> Void) -> some View {
@@ -396,7 +434,167 @@ struct DigitalTwinView: View {
         HapticFeedback.success()
     }
 
-    // MARK: - Zone selector bar (middle) — zones & their elements are hidden
+    // MARK: - Lens bar — "one map, many lenses": zones, categories, lists
+    // and search are filters over the same photo, never separate pages.
+
+    private var lensBar: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                zoneSelectorBar
+                categoryLensChip
+                Spacer()
+                listsMenu
+                SearchIconButton(isActive: $showMapSearch, style: .glass)
+            }
+            .padding(.horizontal, AppSpacing.lg)
+
+            if showMapSearch {
+                mapSearchOverlay
+                    .padding(.horizontal, AppSpacing.lg)
+                    .transition(.opacity)
+            }
+        }
+        .padding(.top, 10)
+    }
+
+    private var categoryLensChip: some View {
+        Menu {
+            Button {
+                withAnimation { categoryFilter = nil }
+            } label: {
+                Label("All categories", systemImage: categoryFilter == nil ? "checkmark" : "square.grid.2x2")
+            }
+            Divider()
+            ForEach(ElementCategory.allCases) { cat in
+                Button {
+                    withAnimation { categoryFilter = cat }
+                } label: {
+                    Label(cat.displayName, systemImage: categoryFilter == cat ? "checkmark" : cat.icon)
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "line.3.horizontal.decrease.circle\(categoryFilter == nil ? "" : ".fill")")
+                    .font(AppFont.captionEmphasis)
+                Text(categoryFilter?.displayName ?? String(localized: "Objects"))
+                    .font(AppFont.captionEmphasis).lineLimit(1)
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+            }
+            .foregroundStyle(categoryFilter == nil ? .white : Color.accentColor)
+            .padding(.horizontal, AppSpacing.base).padding(.vertical, 9)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
+        }
+    }
+
+    private var listsMenu: some View {
+        Menu {
+            Button { showZonesList = true } label: {
+                Label("Zones list", systemImage: "square.stack.3d.up")
+            }
+            Button { showObjectsList = true } label: {
+                Label("Objects list", systemImage: "cube.box")
+            }
+        } label: {
+            Image(systemName: "list.bullet")
+                .font(AppFont.headline)
+                .foregroundStyle(Color.primary.opacity(0.75))
+                .frame(width: 40, height: 40)
+                .glassCircle()
+        }
+        .accessibilityLabel("Lists")
+    }
+
+    // MARK: - Map search ("fly-to")
+
+    private var searchMatches: [PropertyElement] {
+        let q = mapSearchText.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return [] }
+        return elementService.elements.filter {
+            $0.name.matchesSearch(q) || $0.elementType.displayName.matchesSearch(q)
+        }
+    }
+
+    private var mapSearchOverlay: some View {
+        VStack(spacing: 8) {
+            PageSearchField(text: $mapSearchText, placeholder: "Search the map…")
+            if !mapSearchText.isEmpty {
+                VStack(spacing: 0) {
+                    if searchMatches.isEmpty {
+                        Text("No results")
+                            .font(AppFont.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, AppSpacing.base)
+                    } else {
+                        ForEach(searchMatches.prefix(6)) { el in
+                            Button {
+                                HapticFeedback.impact(.light)
+                                withAnimation(.easeOut(duration: 0.12)) {
+                                    showMapSearch = false
+                                    mapSearchText = ""
+                                }
+                                flyTo(element: el)
+                                selectedElement = el
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: el.elementType.icon)
+                                        .font(AppFont.footnoteEmphasis)
+                                        .foregroundStyle(el.elementType.accentColor)
+                                        .frame(width: 28)
+                                    Text(el.name)
+                                        .font(AppFont.footnote)
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Image(systemName: "location.fill")
+                                        .font(AppFont.label)
+                                        .foregroundStyle(Color.primary.opacity(0.35))
+                                }
+                                .padding(.horizontal, AppSpacing.md)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .liquidGlass(cornerRadius: 14)
+            }
+        }
+    }
+
+    /// Normalized on-photo position of an element (legacy rows default to centre).
+    private func normPoint(_ el: PropertyElement) -> CGPoint {
+        let nx = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionX
+        let ny = (el.positionX == 0 && el.positionY == 0) ? 0.5 : el.positionY
+        return CGPoint(x: nx, y: ny)
+    }
+
+    private func flyTo(element: PropertyElement) {
+        mapFocus = MapFocus(point: normPoint(element))
+    }
+
+    private func flyTo(zone: PropertyZone) {
+        let pts = zone.imagePoints
+        guard !pts.isEmpty else { return }
+        let n = Double(pts.count)
+        mapFocus = MapFocus(point: CGPoint(
+            x: pts.map(\.x).reduce(0, +) / n,
+            y: pts.map(\.y).reduce(0, +) / n
+        ))
+    }
+
+    /// The zone an element belongs to — geometric containment first, saved
+    /// link second. Shown in the inspector header.
+    private func zoneName(for el: PropertyElement) -> String? {
+        let p = normPoint(el)
+        if let z = zoneService.zones.first(where: { $0.containsImage(x: p.x, y: p.y) }) { return z.name }
+        if let id = el.zoneId { return zoneService.zones.first(where: { $0.id == id })?.name }
+        return nil
+    }
+
+    // MARK: - Zone selector — zones & their elements are hidden
     // until the user picks one here.
 
     private var zoneSelectorBar: some View {
@@ -442,7 +640,6 @@ struct DigitalTwinView: View {
             .overlay(Capsule().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
             .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
         }
-        .padding(.top, 10)
     }
 
     // MARK: - Empty state
@@ -467,10 +664,12 @@ struct DigitalTwinView: View {
 
     private func loadData() async {
         guard let pid = propertyService.primary?.id else { return }
-        if elementService.elements.isEmpty {
+        // Reload whenever the cached data belongs to another property, so a
+        // property switch swaps the twin's contents too.
+        if elementService.elements.first?.propertyId != pid {
             await elementService.load(propertyId: pid)
         }
-        if zoneService.zones.isEmpty {
+        if zoneService.zones.first?.propertyId != pid {
             await zoneService.load(propertyId: pid)
         }
     }
