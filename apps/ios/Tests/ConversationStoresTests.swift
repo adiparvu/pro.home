@@ -37,28 +37,31 @@ final class ConversationStoresTests: XCTestCase {
         XCTAssertNil(ConversationClearStore.clearedAt(id))
     }
 
-    func testApplyRemoteSetsCutoff() {
+    func testApplyRemoteSetsCutoff() throws {
         let id = freshID()
         ConversationClearStore.applyRemote(id, iso: "2026-01-01T00:00:00Z")
         let expected = ISODate.date(from: "2026-01-01T00:00:00Z")!
-        XCTAssertEqual(ConversationClearStore.clearedAt(id)?.timeIntervalSince1970,
+        let cleared = try XCTUnwrap(ConversationClearStore.clearedAt(id))
+        XCTAssertEqual(cleared.timeIntervalSince1970,
                        expected.timeIntervalSince1970, accuracy: 0.0001)
     }
 
-    func testApplyRemoteOnlyAdvancesForward() {
+    func testApplyRemoteOnlyAdvancesForward() throws {
         let id = freshID()
         ConversationClearStore.applyRemote(id, iso: "2026-06-01T00:00:00Z")
         let mid = ISODate.date(from: "2026-06-01T00:00:00Z")!
 
         // Earlier cutoff must be ignored (never move backward).
         ConversationClearStore.applyRemote(id, iso: "2026-01-01T00:00:00Z")
-        XCTAssertEqual(ConversationClearStore.clearedAt(id)?.timeIntervalSince1970,
+        let afterEarlier = try XCTUnwrap(ConversationClearStore.clearedAt(id))
+        XCTAssertEqual(afterEarlier.timeIntervalSince1970,
                        mid.timeIntervalSince1970, accuracy: 0.0001)
 
         // Later cutoff advances it forward.
         ConversationClearStore.applyRemote(id, iso: "2026-12-01T00:00:00Z")
         let later = ISODate.date(from: "2026-12-01T00:00:00Z")!
-        XCTAssertEqual(ConversationClearStore.clearedAt(id)?.timeIntervalSince1970,
+        let afterLater = try XCTUnwrap(ConversationClearStore.clearedAt(id))
+        XCTAssertEqual(afterLater.timeIntervalSince1970,
                        later.timeIntervalSince1970, accuracy: 0.0001)
     }
 
