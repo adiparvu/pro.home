@@ -260,9 +260,8 @@ extension DashboardView {
     }
 
     var netFormatted: String {
-        let sym = financialService.currencySymbol
-        let abs = Int(Swift.abs(financialService.currentMonthNet))
-        return financialService.currentMonthNet >= 0 ? "+\(abs)\(sym)" : "-\(abs)\(sym)"
+        let net = financialService.currentMonthNet
+        return "\(net >= 0 ? "+" : "")" + financialService.moneyDisplay(net)
     }
 
     var propertyCoordinate: CLLocationCoordinate2D {

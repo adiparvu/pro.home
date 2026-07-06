@@ -244,14 +244,13 @@ struct LocalAssistantView: View {
         let open = taskService.openCount
         let income = financialService.currentMonthIncome
         let expenses = financialService.currentMonthExpenses
-        let sym = financialService.currencySymbol
         let expiringDocs = documentService.expiringDocs.count
 
         let systemPrompt = """
         You are a helpful property management assistant for \(property).
         Current data:
         - Open tasks: \(open), Overdue: \(overdue)
-        - Monthly income: \(sym)\(Int(income)), Expenses: \(sym)\(Int(expenses))
+        - Monthly income: \(financialService.moneyDisplay(income)), Expenses: \(financialService.moneyDisplay(expenses))
         - Documents expiring soon: \(expiringDocs)
         Answer concisely. You run entirely on-device.
         """

@@ -84,7 +84,7 @@ struct InventoryItemPreview: View {
 
                 HStack(spacing: AppSpacing.sm) {
                     if item.purchasePrice > 0 {
-                        previewChip("eurosign.circle.fill", Text(verbatim: "€\(Int(item.purchasePrice))"), .blue)
+                        previewChip("eurosign.circle.fill", Text(verbatim: CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)), .blue)
                     }
                     previewChip("sparkles", Text(LocalizedStringKey(item.condition.capitalized)), .purple)
                     switch item.warrantyStatus {

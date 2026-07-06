@@ -269,8 +269,7 @@ struct ElementInspectorSheet: View {
 
     private var valueString: String {
         guard let v = current.estimatedValue, v > 0 else { return "—" }
-        let sym = currencyService.symbol(for: appSettings.preferredCurrency)
-        return "\(sym)\(Int(v))"
+        return CurrencyService.money(v, code: appSettings.preferredCurrency, whole: true)
     }
 
     private func statTile(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {

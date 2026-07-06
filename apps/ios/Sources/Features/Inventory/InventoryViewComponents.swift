@@ -57,7 +57,7 @@ struct InventoryRow: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
                     if item.purchasePrice > 0 {
-                        Text("€\(Int(item.purchasePrice))").font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+                        Text(CurrencyService.money(item.purchasePrice, code: "EUR", whole: true)).font(AppFont.captionStrong).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
                     }
                     switch item.warrantyStatus {
                     case .expiringSoon: Image(systemName: "exclamationmark.shield.fill").font(.system(size: 11)).foregroundStyle(.orange)

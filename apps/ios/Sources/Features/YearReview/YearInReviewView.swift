@@ -124,8 +124,7 @@ struct YearInReviewView: View {
     }
 
     private var expenseDisplay: String {
-        let sym = financialService.currencySymbol
-        return "\(sym)\(Int(expensesThisYear))"
+        financialService.moneyDisplay(expensesThisYear)
     }
 
     private func yearStat(value: String, label: LocalizedStringKey, icon: String, color: Color) -> some View {

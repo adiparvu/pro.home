@@ -224,7 +224,7 @@ struct InventoryView: View {
 
     private var summaryBar: some View {
         HStack(spacing: 8) {
-            infoTile("€\(Int(service.totalValue))", "Value")
+            infoTile(CurrencyService.money(service.totalValue, code: "EUR", whole: true), "Value")
             infoTile("\(service.items.count)", "Items")
             infoTile("\(service.loanedCount)", "Loaned", highlight: service.loanedCount > 0)
             infoTile("\(service.expiringWarrantyCount)", "Warranty !", highlight: service.expiringWarrantyCount > 0)

@@ -113,7 +113,7 @@ struct ItemDetailView: View {
             HStack(spacing: 8) {
                 conditionBadge
                 if live.purchasePrice > 0 {
-                    heroChip("€\(Int(live.purchasePrice))", icon: "eurosign.circle.fill")
+                    heroChip("\(CurrencyService.money(live.purchasePrice, code: "EUR", whole: true))", icon: "eurosign.circle.fill")
                 }
                 if !live.location.isEmpty {
                     heroChip(LocalizedStringKey(live.location.capitalized), icon: "mappin.circle.fill")
@@ -165,7 +165,7 @@ struct ItemDetailView: View {
             VStack(spacing: 0) {
                 if !live.brand.isEmpty       { dRow("building.2.fill", "Brand",   live.brand);       rowDiv }
                 if !live.serialNumber.isEmpty { dRow("number", "Serial",           live.serialNumber); rowDiv }
-                if live.purchasePrice > 0    { dRow("eurosign.circle.fill", "Value", "€\(Int(live.purchasePrice))"); rowDiv }
+                if live.purchasePrice > 0    { dRow("eurosign.circle.fill", "Value", CurrencyService.money(live.purchasePrice, code: "EUR", whole: true)); rowDiv }
                 if let pd = live.purchaseDate {
                     dRow("calendar", "Purchased", pd.formatted(date: .abbreviated, time: .omitted))
                     rowDiv
