@@ -383,6 +383,18 @@ platform :ios do
     actool_plist = "/tmp/actool_partial_info.plist"
     FileUtils.rm_f(actool_plist)
 
+    # Alternate app icons must be named explicitly or actool leaves them out
+    # of BOTH Assets.car and the partial Info.plist — which makes
+    # UIApplication.supportsAlternateIcons false on device ("Icons not
+    # available"). Derive the list from the catalog so new icon sets are
+    # picked up automatically, no hand-maintained flag list.
+    alternate_icons = Dir.glob(File.join(project_dir, "Resources", "Assets.xcassets", "*.appiconset"))
+      .map { |p| File.basename(p, ".appiconset") }
+      .reject { |n| n == "AppIcon" }
+      .sort
+    alternate_flags = alternate_icons.map { |n| "--alternate-app-icon '#{n}' " }.join
+    UI.message("Compiling #{alternate_icons.size} alternate app icons")
+
     sh(
       "xcrun actool '#{project_dir}/Resources/Assets.xcassets' " \
       "--compile '#{archive_app}' " \
@@ -392,13 +404,20 @@ platform :ios do
       "--minimum-deployment-target 17.0 " \
       "--platform iphoneos " \
       "--app-icon AppIcon " \
+      "#{alternate_flags}" \
       "--output-partial-info-plist '#{actool_plist}' 2>&1"
     )
 
-    if File.exist?(actool_plist)
-      sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1 || true")
-      UI.success("Merged actool partial plist into bundle Info.plist")
-    end
+    raise "actool did not produce a partial Info.plist" unless File.exist?(actool_plist)
+
+    # Replace any stale icon declarations, merge actool's, then verify the
+    # alternates actually landed — a silent miss here is exactly the
+    # "This device doesn't allow changing the app icon" bug.
+    sh("/usr/libexec/PlistBuddy -c 'Delete :CFBundleIcons' '#{archive_app}/Info.plist' 2>/dev/null || true")
+    sh("/usr/libexec/PlistBuddy -c 'Delete :CFBundleIcons~ipad' '#{archive_app}/Info.plist' 2>/dev/null || true")
+    sh("/usr/libexec/PlistBuddy -c 'Merge #{actool_plist}' '#{archive_app}/Info.plist' 2>&1")
+    sh("/usr/libexec/PlistBuddy -c 'Print :CFBundleIcons:CFBundleAlternateIcons' '#{archive_app}/Info.plist' > /dev/null")
+    UI.success("Merged actool partial plist — #{alternate_icons.size} alternate icons declared")
 
     # Ensure localised string files are present in the archive. The
     # Localizable.xcstrings catalog is NOT compiled by the XcodeGen project, so
