@@ -1534,6 +1534,9 @@ enum ChatDisappearStore {
     }
 
     /// Persists a TTL change so every participant's client picks it up.
+    /// MainActor because it reads PropertyService.activePropertyId; callers
+    /// are button actions, which already run there.
+    @MainActor
     static func pushToServer(serverKey: String, seconds: TimeInterval) {
         guard let pid = PropertyService.activePropertyId,
               let uid = supabase.auth.currentSession?.user.id else { return }
