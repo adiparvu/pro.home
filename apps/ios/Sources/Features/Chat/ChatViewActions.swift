@@ -99,6 +99,16 @@ extension ChatView {
         )
     }
 
+    func sendContacts(_ payloads: [SharedContactPayload]) async {
+        guard let pid = propertyId, !payloads.isEmpty,
+              let body = SharedContactPayload.encodeGroup(payloads) else { return }
+        MessageSounds.sent()
+        try? await messageService.send(
+            propertyId: pid, senderName: senderName, body: body, attachmentType: "contact"
+        )
+        HapticFeedback.success()
+    }
+
     func sendContact(_ formatted: String) async {
         guard let pid = propertyId else { return }
         MessageSounds.sent()

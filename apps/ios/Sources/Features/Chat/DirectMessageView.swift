@@ -253,7 +253,9 @@ struct DirectMessageView: View {
             }
         }
         .sheet(isPresented: $showContactPicker) {
-            ChatContactPicker { formatted in Task { await sendDMContact(formatted) } }
+            ContactMultiPicker(members: familyService.members) { payloads in
+                Task { await sendDMContacts(payloads) }
+            }
         }
         .fullScreenCover(isPresented: $showCameraPicker) {
             DMCameraPickerView(isPresented: $showCameraPicker) { img in
@@ -395,6 +397,7 @@ struct DirectMessageView: View {
     }
 
     private func dmSnippet(_ m: DirectMessage) -> String {
+        if m.isContactShare { return "👤 Contact" }
         let lower = m.body.lowercased()
         if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
         if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
@@ -559,6 +562,7 @@ struct DirectMessageView: View {
                                     hasTail: !nextSameSender,
                                     myName: myName,
                                     partner: member,
+                                    members: familyService.members,
                                     myAvatarURL: profileService.profile?.avatarUrl.flatMap { URL(string: $0) },
                                     outgoingColor: chatTheme.id == "appDefault" ? nil : chatTheme.outgoingBubble,
                                     repliedMessage: msg.replyTo.flatMap { rid in
@@ -839,6 +843,7 @@ struct DirectMessageView: View {
     }
 
     private func replyPreviewText(_ msg: DirectMessage) -> String {
+        if msg.isContactShare { return "👤 Contact" }
         let lower = msg.body.lowercased()
         if lower.contains("/dm-audio/") || lower.hasSuffix(".m4a") { return "🎤 Voice message" }
         if lower.contains("/dm-images/") || lower.hasSuffix(".jpg") || lower.hasSuffix(".jpeg") { return "📷 Photo" }
@@ -1087,6 +1092,12 @@ struct DirectMessageView: View {
     }
 
     @MainActor
+    private func sendDMContacts(_ payloads: [SharedContactPayload]) async {
+        guard !payloads.isEmpty,
+              let body = SharedContactPayload.encodeDM(payloads) else { return }
+        await sendDMContact(body)
+    }
+
     private func sendDMContact(_ formatted: String) async {
         guard let pid = propertyService.primary?.id else { return }
         MessageSounds.sent()
@@ -1098,7 +1109,9 @@ struct DirectMessageView: View {
             let sent: DirectMessage = try await supabase
                 .from("direct_messages")
                 .insert(Payload(sender_name: myName, recipient_name: member.name,
-                                body: "👤 \(formatted)", property_id: pid.uuidString,
+                                body: formatted.hasPrefix(SharedContactPayload.dmMarker)
+                                    ? formatted : "👤 \(formatted)",
+                                property_id: pid.uuidString,
                                 sender_id: supabase.auth.currentSession?.user.id.uuidString,
                                 recipient_member_id: member.id.uuidString,
                                 expires_at: dmExpiresAt))
@@ -1280,6 +1293,7 @@ private struct DMBubble: View {
     let hasTail: Bool
     var myName: String = ""
     var partner: FamilyMember? = nil
+    var members: [FamilyMember] = []
     var myAvatarURL: URL? = nil
     var outgoingColor: Color? = nil
     var repliedMessage: DirectMessage? = nil
@@ -1331,10 +1345,11 @@ private struct DMBubble: View {
         .accessibilityLabel("Forward")
     }
 
-    private enum DMMessageType { case text, image, audio, deleted }
+    private enum DMMessageType { case text, image, audio, contacts, deleted }
 
     private var messageType: DMMessageType {
         if message.deletedForAll == true { return .deleted }
+        if message.isContactShare { return .contacts }
         let lower = message.body.lowercased()
         if lower.hasSuffix(".m4a") || lower.contains("/dm-audio/") { return .audio }
         if lower.contains("supabase") &&
@@ -1378,6 +1393,11 @@ private struct DMBubble: View {
                             hasTail: hasTail
                         )
                     case .image: imageBubble
+                    case .contacts:
+                        ContactCardBubble(payloads: SharedContactPayload.decode(message.body),
+                                          isOwn: isOwn,
+                                          bubbleColor: outgoingColor ?? Color.accentColor,
+                                          hasTail: hasTail, members: members)
                     case .text:  textBubble
                     }
                 }

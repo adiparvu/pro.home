@@ -640,6 +640,7 @@ struct MessageBubble: View {
     static func replyPreview(_ m: Message) -> String {
         if m.isPollMessage { return "📊 Poll" }
         if m.isEventMessage { return "📅 Event" }
+        if m.isContactShare { return "👤 Contact" }
         if m.isAudioMessage { return "🎤 Voice message" }
         if m.isImageMessage { return "📷 Photo" }
         if m.isVideoMessage { return "🎥 Video" }
@@ -810,6 +811,10 @@ struct MessageBubble: View {
                        bubbleColor: ownBubbleColor, onVote: { onPollVote?($0) })
         } else if message.isEventMessage, let event = ChatEvent.decode(message.body) {
             EventBubble(event: event, isOwn: isOwn, bubbleColor: ownBubbleColor)
+        } else if message.isContactShare {
+            ContactCardBubble(payloads: SharedContactPayload.decode(message.body),
+                              isOwn: isOwn, bubbleColor: ownBubbleColor,
+                              hasTail: isGroupEnd, members: members)
         } else if message.isStickerMessage, let stickerId = message.body {
             StickerBubble(stickerId: stickerId)
         } else if message.isLocationMessage, let lat = message.latitude, let lon = message.longitude {

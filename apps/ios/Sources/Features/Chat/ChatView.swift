@@ -456,7 +456,9 @@ struct ChatView: View {
             }
         }
         .sheet(isPresented: $showContactPicker) {
-            ChatContactPicker { formatted in Task { await sendContact(formatted) } }
+            ContactMultiPicker(members: familyService.members) { payloads in
+                Task { await sendContacts(payloads) }
+            }
         }
         .sheet(isPresented: $showPollComposer) {
             PollComposerView { question, options, multi in
