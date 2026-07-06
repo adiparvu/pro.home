@@ -3,10 +3,12 @@ import ContactsUI
 
 // MARK: - iMessage-style attachment menu
 
-/// Vertical translucent action panel modeled on iMessage's "+" menu: one
-/// action per row — a colored 44pt icon disc on the left, a large regular
-/// label on the right — floating on ultra-thin material.
+/// The iOS 26 iMessage "+" menu, faithfully: a floating CLEAR Liquid Glass
+/// panel anchored above the compose bar (not a detented sheet), colourful
+/// app-style icon discs, plain 17pt labels, and a tap anywhere outside to
+/// dismiss. Presented as an overlay by the chat views.
 struct ChatAttachmentSheet: View {
+    @Binding var isPresented: Bool
     var onPhotos: () -> Void
     var onCamera: () -> Void
     var onLocation: (() -> Void)? = nil
@@ -16,75 +18,75 @@ struct ChatAttachmentSheet: View {
     var onEvent: (() -> Void)? = nil
     var onSendLater: (() -> Void)? = nil
     var onStickers: (() -> Void)? = nil
-    @Environment(\.dismiss) private var dismiss
 
     private func pick(_ action: @escaping () -> Void) {
-        dismiss()
-        // Let the sheet finish dismissing before presenting the next one.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: action)
+        withAnimation(.snappy(duration: 0.22)) { isPresented = false }
+        // Let the panel finish closing before presenting the next surface.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: action)
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.base) {
-                row("Photos", "photo.on.rectangle.angled", .blue) { pick(onPhotos) }
-                // Semantic grays (not fixed white values) so the discs stay
-                // visible in dark mode too.
-                row("Camera", "camera.fill", Color(.systemGray)) { pick(onCamera) }
-                if let onLocation {
-                    row("Location", "location.fill", .green) { pick(onLocation) }
+        ZStack(alignment: .bottomLeading) {
+            // Tap-outside catcher with the system-style dim.
+            Color.black.opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.snappy(duration: 0.22)) { isPresented = false }
                 }
-                row("Contact", "person.crop.circle.fill", Color(.systemGray2)) { pick(onContact) }
-                if let onDocument {
-                    row("Document", "doc.fill", .indigo) { pick(onDocument) }
+                .accessibilityLabel(Text("Cancel"))
+
+            VStack(alignment: .leading, spacing: 4) {
+                row("Camera", "camera.fill", [Color(white: 0.35), Color(white: 0.15)]) { pick(onCamera) }
+                row("Photos", "photo.on.rectangle.angled", [.pink, .orange]) { pick(onPhotos) }
+                if let onStickers {
+                    row("Stickers", "face.smiling", [.purple, .indigo]) { pick(onStickers) }
                 }
                 if let onPoll {
-                    row("Poll", "chart.bar.fill", .orange) { pick(onPoll) }
+                    row("Poll", "chart.bar.fill", [.yellow, .orange]) { pick(onPoll) }
                 }
                 if let onEvent {
-                    row("Event", "calendar", .red) { pick(onEvent) }
+                    row("Event", "calendar", [.red, .pink]) { pick(onEvent) }
+                }
+                if let onLocation {
+                    row("Location", "location.fill", [.green, .teal]) { pick(onLocation) }
+                }
+                row("Contact", "person.crop.circle.fill", [.blue, .cyan]) { pick(onContact) }
+                if let onDocument {
+                    row("Document", "doc.fill", [.indigo, .blue]) { pick(onDocument) }
                 }
                 if let onSendLater {
-                    row("Send Later", "clock.badge", .brandSkyBlue) { pick(onSendLater) }
-                }
-                if let onStickers {
-                    row("Stickers", "face.smiling", .yellow) { pick(onStickers) }
+                    row("Send Later", "clock.badge", [.brandSkyBlue, .blue]) { pick(onSendLater) }
                 }
             }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.vertical, AppSpacing.xxl)
+            .padding(.vertical, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.xs)
+            .frame(width: 300, alignment: .leading)
+            .mediaGlass(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .padding(.leading, AppSpacing.base)
+            .padding(.bottom, 8)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .presentationDetents([.height(520), .large])
-        .presentationBackground(.ultraThinMaterial)
-        .presentationCornerRadius(AppRadius.sheet)
-        .presentationDragIndicator(.hidden)
     }
 
-    private func row(_ label: String, _ icon: String, _ color: Color, _ action: @escaping () -> Void) -> some View {
+    private func row(_ label: LocalizedStringKey, _ icon: String, _ colors: [Color],
+                     _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: AppSpacing.lg) {
-                // iMessage-style filled disc: a gradient of the action colour
-                // with a white glyph — reads on the glass in any appearance,
-                // where the old pale wash + tinted glyph faded into light
-                // wallpapers.
+            HStack(spacing: AppSpacing.base) {
                 ZStack {
                     Circle()
-                        .fill(LinearGradient(colors: [color, color.opacity(0.72)],
+                        .fill(LinearGradient(colors: colors,
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: icon)
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(color.isLight ? Color.black.opacity(0.75) : .white)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
                 }
-                .frame(width: 44, height: 44)
-                .shadow(color: color.opacity(0.30), radius: 6, y: 2)
-                Text(LocalizedStringKey(label))
-                    .font(AppFont.menuRow)
-                    .foregroundStyle(Color.primary)
+                .frame(width: 34, height: 34)
+                Text(label)
+                    .font(.system(size: 17))
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.xs)
+            .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

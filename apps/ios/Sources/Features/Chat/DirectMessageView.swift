@@ -234,14 +234,19 @@ struct DirectMessageView: View {
         .sheet(isPresented: $showThemePicker, onDismiss: { themeRefresh += 1 }) {
             ChatThemePicker(scope: themeScope)
         }
-        .sheet(isPresented: $showAttachmentSheet) {
-            ChatAttachmentSheet(
+        .overlay(alignment: .bottomLeading) {
+            if showAttachmentSheet {
+                ChatAttachmentSheet(
+                    isPresented: $showAttachmentSheet,
                 onPhotos: { showPhotoPicker = true },
                 onCamera: { showCameraPicker = true },
                 onContact: { showContactPicker = true },
                 onSendLater: { showSendLater = true }
             )
+                .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
+            }
         }
+        .animation(.snappy(duration: 0.22), value: showAttachmentSheet)
         .sheet(isPresented: $showSendLater) {
             if let uid = supabase.auth.currentSession?.user.id {
                 SendLaterSheet(context: .dm(

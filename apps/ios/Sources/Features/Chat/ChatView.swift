@@ -437,8 +437,10 @@ struct ChatView: View {
             AddFamilyMemberSheet(propertyId: propertyId, propertyName: propertyService.primary?.name)
                 .environment(familyService)
         }
-        .sheet(isPresented: $showAttachmentSheet) {
-            ChatAttachmentSheet(
+        .overlay(alignment: .bottomLeading) {
+            if showAttachmentSheet {
+                ChatAttachmentSheet(
+                    isPresented: $showAttachmentSheet,
                 onPhotos: { showPhotoPickerTrigger = true },
                 onCamera: { showCameraSheet = true },
                 onLocation: { showLocationSheet = true },
@@ -449,7 +451,10 @@ struct ChatView: View {
                 onSendLater: { showSendLater = true },
                 onStickers: { showStickerPicker = true }
             )
+                .transition(.scale(scale: 0.1, anchor: .bottomLeading).combined(with: .opacity))
+            }
         }
+        .animation(.snappy(duration: 0.22), value: showAttachmentSheet)
         .sheet(isPresented: $showSendLater) {
             if let pid = propertyId, let uid = supabase.auth.currentSession?.user.id {
                 SendLaterSheet(context: .group(propertyId: pid, authorId: uid, authorName: senderName))

@@ -303,8 +303,7 @@ struct NFCWalletView: View {
                 title: "No NFC tags yet",
                 message: "Scan an NFC tag to link it to a room,\nappliance, or element in your property.",
                 actionLabel: "Scan First Tag",
-                action: { scanForNewTag() },
-                tint: .blue
+                action: { scanForNewTag() }
             )
             .disabled(!NFCScanService.isSupported)
             Spacer()

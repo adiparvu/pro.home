@@ -3,11 +3,12 @@ import SwiftUI
 // MARK: - The app's one empty-state voice
 //
 // Every list, gallery and feed speaks the same way when it has nothing to
-// show: a soft glass disc with the feature's symbol, a calm title, one
-// optional explanatory line, and (when there's an obvious next step) a
-// single capsule action. Empty is a starting point, not an error — the
-// tone stays warm and the layout identical everywhere, so the app feels
-// written by one hand.
+// show: the feature's symbol on a clear Liquid Glass disc, a calm title,
+// one optional explanatory line, and (when there's an obvious next step) a
+// single glass capsule action. Monochrome and adaptive — the glyph renders
+// hierarchically in the label color, never in an accent tint, so the state
+// reads native in both light and dark. Empty is a starting point, not an
+// error — the tone stays warm and the layout identical everywhere.
 
 struct EmptyStateView: View {
     let icon: String
@@ -15,26 +16,15 @@ struct EmptyStateView: View {
     var message: LocalizedStringKey? = nil
     var actionLabel: LocalizedStringKey? = nil
     var action: (() -> Void)? = nil
-    /// Accent of the disc + action; defaults to the app accent.
-    var tint: Color = .accentColor
 
     var body: some View {
         VStack(spacing: 14) {
-            ZStack {
-                Circle().fill(.ultraThinMaterial)
-                Circle().fill(tint.opacity(0.08))
-                Image(systemName: icon)
-                    .font(.system(size: 30, weight: .medium))
-                    .foregroundStyle(tint.opacity(0.85))
-            }
-            .frame(width: 76, height: 76)
-            .overlay(
-                Circle().strokeBorder(
-                    LinearGradient(colors: [.white.opacity(0.25), tint.opacity(0.12)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 0.8
-                )
-            )
+            Image(systemName: icon)
+                .font(.system(size: 30, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 76, height: 76)
+                .glassCircle()
 
             Text(title)
                 .font(AppFont.headline)
@@ -56,10 +46,10 @@ struct EmptyStateView: View {
                 } label: {
                     Text(actionLabel)
                         .font(AppFont.subheadline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, AppSpacing.xl)
                         .padding(.vertical, AppSpacing.sm)
-                        .background(tint, in: Capsule())
+                        .glassCapsule()
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 4)

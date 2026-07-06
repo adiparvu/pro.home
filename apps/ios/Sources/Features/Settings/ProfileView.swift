@@ -247,8 +247,10 @@ struct ProfileView: View {
 
     private var accountSection: some View {
         SettingsGroup(title: "Account") {
-            NavSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit profile") {
-                EditProfileView().environment(profileService)
+            // FormScaffold forms carry their own NavigationStack, so this must
+            // present as a sheet — pushing it nests stacks and pops the page.
+            TapSettingsRow(icon: "pencil.circle.fill", color: .blue, label: "Edit profile") {
+                showEdit = true
             }
             TapSettingsRow(icon: "envelope.fill", color: .orange, label: "Change email") {
                 showChangeEmail = true
