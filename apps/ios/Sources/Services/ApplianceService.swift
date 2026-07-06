@@ -17,6 +17,10 @@ final class ApplianceService {
     }
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if appliances.isEmpty, let cached = ServiceCache.load([Appliance].self, entity: "appliances", propertyId: propertyId) {
+            appliances = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -26,6 +30,7 @@ final class ApplianceService {
                 .eq("property_id", value: propertyId.uuidString)
                 .order("created_at", ascending: true)
                 .execute().value
+            ServiceCache.save(appliances, entity: "appliances", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription

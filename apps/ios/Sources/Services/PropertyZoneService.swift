@@ -11,6 +11,10 @@ final class PropertyZoneService {
     var error: String?
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if zones.isEmpty, let cached = ServiceCache.load([PropertyZone].self, entity: "zones", propertyId: propertyId) {
+            zones = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -21,6 +25,7 @@ final class PropertyZoneService {
                 .order("sort_order", ascending: true)
                 .execute()
                 .value
+            ServiceCache.save(zones, entity: "zones", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
         }

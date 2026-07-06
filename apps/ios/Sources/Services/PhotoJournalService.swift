@@ -15,6 +15,10 @@ final class PhotoJournalService {
     }
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if entries.isEmpty, let cached = ServiceCache.load([PhotoJournalEntry].self, entity: "journal", propertyId: propertyId) {
+            entries = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -24,6 +28,7 @@ final class PhotoJournalService {
                 .eq("property_id", value: propertyId.uuidString)
                 .order("taken_at", ascending: false)
                 .execute().value
+            ServiceCache.save(entries, entity: "journal", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
         }

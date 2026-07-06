@@ -13,6 +13,10 @@ final class PropertyElementService {
     // MARK: - Elements CRUD
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if elements.isEmpty, let cached = ServiceCache.load([PropertyElement].self, entity: "elements", propertyId: propertyId) {
+            elements = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -23,6 +27,7 @@ final class PropertyElementService {
                 .order("sort_order", ascending: true)
                 .execute()
                 .value
+            ServiceCache.save(elements, entity: "elements", propertyId: propertyId)
         } catch {
             self.error = error.localizedDescription
         }

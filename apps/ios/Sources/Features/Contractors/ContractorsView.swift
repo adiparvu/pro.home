@@ -42,6 +42,11 @@ final class ContractorService {
     var error: String?
 
     func load() async {
+        let pid = PropertyService.activePropertyId
+        // Paint the last known state instantly; the network refresh follows.
+        if contractors.isEmpty, let cached = ServiceCache.load([ContractorModel].self, entity: "contractors", propertyId: pid) {
+            contractors = cached
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -49,7 +54,7 @@ final class ContractorService {
             // narrows it to the selected home and the cap just prevents an
             // unbounded select as the table grows over the years.
             var query = supabase.from("contractors").select()
-            if let pid = PropertyService.activePropertyId {
+            if let pid {
                 query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
             }
             contractors = try await query
@@ -57,6 +62,7 @@ final class ContractorService {
                 .limit(500)
                 .execute()
                 .value
+            ServiceCache.save(contractors, entity: "contractors", propertyId: pid)
         } catch {
             self.error = error.localizedDescription
         }

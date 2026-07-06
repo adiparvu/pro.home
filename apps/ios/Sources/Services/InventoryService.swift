@@ -15,6 +15,10 @@ final class InventoryService {
     init() {}
 
     func load(propertyId: UUID) async {
+        // Paint the last known state instantly; the network refresh follows.
+        if items.isEmpty, let cached = ServiceCache.load([InventoryItem].self, entity: "inventory", propertyId: propertyId) {
+            items = cached
+        }
         currentPropertyId = propertyId
         currentUserId = supabase.auth.currentSession?.user.id
         isLoading = true
@@ -28,6 +32,7 @@ final class InventoryService {
                 .execute()
                 .value
             items = records.map { $0.toInventoryItem() }
+            ServiceCache.save(items, entity: "inventory", propertyId: propertyId)
         } catch {
             if error is CancellationError { return }
             self.error = error.localizedDescription
