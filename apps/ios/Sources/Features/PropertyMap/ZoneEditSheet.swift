@@ -117,8 +117,10 @@ struct ZoneEditSheet: View {
                         .resizable()
                         .scaledToFill()
                 } else if let urlStr = photoUrl, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { img in img.resizable().scaledToFill() }
-                        placeholder: { Color.primary.opacity(AppOpacity.hairline) }
+                    StorageImage(url: url) { phase in
+                        if let img = phase.image { img.resizable().scaledToFill() }
+                        else { Color.primary.opacity(AppOpacity.hairline) }
+                    }
                 } else {
                     PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                         VStack(spacing: 8) {

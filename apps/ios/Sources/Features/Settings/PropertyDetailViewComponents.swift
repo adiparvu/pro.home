@@ -50,7 +50,7 @@ extension PropertyDetailView {
     private func photoHeader(_ property: PropertyModel) -> some View {
         ZStack(alignment: .bottomTrailing) {
             if let urlStr = property.photoUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     switch phase {
                     case .success(let img):
                         img.resizable().scaledToFill()

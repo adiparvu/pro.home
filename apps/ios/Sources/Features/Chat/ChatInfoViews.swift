@@ -340,7 +340,7 @@ struct MediaGalleryView: View {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 3) {
                         ForEach(urls, id: \.self) { url in
-                            AsyncImage(url: url) { phase in
+                            StorageImage(url: url) { phase in
                                 if case .success(let img) = phase {
                                     img.resizable().scaledToFill()
                                 } else {
@@ -1705,7 +1705,7 @@ struct GroupChatAvatarLarge: View {
     var body: some View {
         ZStack {
             if let urlStr = photoUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill().clipShape(Circle())
                     } else { placeholder }

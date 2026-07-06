@@ -197,7 +197,7 @@ struct PropertyElementDetailView: View {
         if !urls.isEmpty {
             TabView {
                 ForEach(urls, id: \.self) { u in
-                    AsyncImage(url: URL(string: u)) { phase in
+                    StorageImage(source: u) { phase in
                         if case .success(let img) = phase { img.resizable().scaledToFill() }
                         else { Color.primary.opacity(AppOpacity.hairline) }
                     }

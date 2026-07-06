@@ -533,7 +533,7 @@ private struct AerialElementPin: View {
             ZStack {
                 if let cover = element.coverPhotoUrl, let url = URL(string: cover) {
                     // Cover thumbnail pin
-                    AsyncImage(url: url) { phase in
+                    StorageImage(url: url) { phase in
                         if case .success(let img) = phase { img.resizable().scaledToFill() }
                         else { element.elementType.accentColor.opacity(0.5) }
                     }

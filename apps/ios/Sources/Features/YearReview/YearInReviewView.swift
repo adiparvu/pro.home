@@ -197,7 +197,7 @@ struct YearInReviewView: View {
             }
             Spacer()
             if let thumb {
-                AsyncImage(url: thumb) { phase in
+                StorageImage(url: thumb) { phase in
                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                     else { Color.primary.opacity(0.06) }
                 }

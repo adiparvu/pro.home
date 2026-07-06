@@ -149,10 +149,12 @@ struct ZoneDetailView: View {
         ZStack(alignment: .bottom) {
             // Background: drone/cover photo if available, else type gradient
             if let urlStr = zone.photoUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    heroGradient
+                StorageImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        heroGradient
+                    }
                 }
                 // Dim photo so text/overlay remain readable
                 .overlay(Color.black.opacity(0.35))

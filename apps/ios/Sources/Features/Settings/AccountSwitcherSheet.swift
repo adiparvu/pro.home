@@ -113,7 +113,7 @@ private struct AvatarCircle: View {
     var body: some View {
         Group {
             if let urlStr = account.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {

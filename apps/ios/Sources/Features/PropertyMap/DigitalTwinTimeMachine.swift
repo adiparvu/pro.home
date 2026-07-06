@@ -60,7 +60,7 @@ struct TwinTimeMachineOverlay: View {
                 Color.black
                 Group {
                     if let url = current.url {
-                        AsyncImage(url: url) { phase in
+                        StorageImage(url: url) { phase in
                             if case .success(let img) = phase {
                                 img.resizable().scaledToFill()
                             } else {

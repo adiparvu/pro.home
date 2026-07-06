@@ -260,8 +260,8 @@ struct AnimatedTabBar: View {
     @ViewBuilder
     private func iconView(_ tab: AppTab, isSelected: Bool) -> some View {
         if tab == .settings, let urlStr = profileService.profile?.avatarUrl,
-           let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
+           !urlStr.isEmpty {
+            StorageImage(source: urlStr) { phase in
                 if let img = phase.image {
                     img.resizable().scaledToFill()
                         .frame(width: 26, height: 26)

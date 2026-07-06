@@ -49,7 +49,7 @@ struct FullScreenImageViewer: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable()

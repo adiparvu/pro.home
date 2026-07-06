@@ -243,7 +243,7 @@ struct StoryViewer: View {
             Color.black.ignoresSafeArea()
 
             if item?.mediaUrl != nil {
-                AsyncImage(url: mediaURL) { phase in
+                StorageImage(url: mediaURL) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFit()
                     } else {

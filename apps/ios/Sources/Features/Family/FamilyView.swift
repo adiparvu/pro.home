@@ -158,7 +158,7 @@ struct MemberAvatar: View {
 
     var body: some View {
         if let urlStr = member.avatarUrl, let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                 else { initials }
             }

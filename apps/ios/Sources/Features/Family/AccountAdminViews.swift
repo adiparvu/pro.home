@@ -65,7 +65,7 @@ struct AccountMemberRow: View {
     private var avatar: some View {
         ZStack {
             if let urlStr = profile?.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {
@@ -182,7 +182,7 @@ struct AccountReviewSheet: View {
         VStack(spacing: 10) {
             ZStack {
                 if let urlStr = profile?.avatarUrl, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { phase in
+                    StorageImage(url: url) { phase in
                         if case .success(let img) = phase {
                             img.resizable().scaledToFill()
                         } else {

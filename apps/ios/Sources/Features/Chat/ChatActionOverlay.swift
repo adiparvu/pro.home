@@ -103,7 +103,7 @@ struct ChatActionOverlay: View {
     @ViewBuilder
     private var bubble: some View {
         if imageStored != nil {
-            AsyncImage(url: imageURL) { phase in
+            StorageImage(url: imageURL) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
                 } else {

@@ -252,7 +252,7 @@ struct DashboardView: View {
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
             if let url = profileService.profile?.avatarUrl.flatMap(URL.init) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                             .frame(width: 42, height: 42)

@@ -123,7 +123,7 @@ struct ElementNotesSection: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(note.photos, id: \.self) { u in
-                                AsyncImage(url: URL(string: u)) { phase in
+                                StorageImage(source: u) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }
@@ -282,7 +282,7 @@ struct ElementNoteEditorSheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(photoURLs, id: \.self) { u in
-                                AsyncImage(url: URL(string: u)) { phase in
+                                StorageImage(source: u) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }

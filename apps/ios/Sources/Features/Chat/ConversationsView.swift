@@ -943,7 +943,7 @@ private struct GroupChatAvatar: View {
     var body: some View {
         ZStack {
             if let urlStr = photoUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     switch phase {
                     case .success(let img):
                         img.resizable().scaledToFill()

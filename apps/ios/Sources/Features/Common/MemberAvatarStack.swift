@@ -56,7 +56,7 @@ struct MemberAvatarStack: View {
     private func avatarCircle(_ item: Item) -> some View {
         Group {
             if let urlStr = item.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {
@@ -104,7 +104,7 @@ struct GroupHeaderAvatar: View {
         Button { onTap?() } label: {
             ZStack {
                 if let urlStr = photoUrl, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { phase in
+                    StorageImage(url: url) { phase in
                         if case .success(let img) = phase {
                             img.resizable().scaledToFill()
                         } else { montage }
@@ -144,7 +144,7 @@ struct GroupHeaderAvatar: View {
     private func ownerCircle(_ s: CGFloat) -> some View {
         Group {
             if let urlStr = ownerAvatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                     else { initialBadge(ownerInitial, ringColor, s) }
                 }
@@ -159,7 +159,7 @@ struct GroupHeaderAvatar: View {
     private func memberCircle(_ m: FamilyMember, _ s: CGFloat) -> some View {
         Group {
             if let urlStr = m.avatarUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                     else { initialBadge(m.initials, m.swiftColor, s) }
                 }

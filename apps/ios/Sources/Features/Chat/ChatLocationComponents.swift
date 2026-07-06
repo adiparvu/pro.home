@@ -162,7 +162,7 @@ struct ChatMapAvatar: View {
     var body: some View {
         ZStack {
             if let id = senderId, let url = MemberDirectory.shared.avatarURL(for: id) {
-                AsyncImage(url: url) { phase in
+                StorageImage(url: url) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {

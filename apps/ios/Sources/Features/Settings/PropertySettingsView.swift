@@ -112,7 +112,7 @@ struct PropertySettingsView: View {
     @ViewBuilder
     private func propertyThumb(_ p: PropertyModel) -> some View {
         if let urlStr = p.photoUrl, let url = URL(string: urlStr) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                 else { thumbPlaceholder }
             }

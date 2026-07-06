@@ -131,7 +131,7 @@ extension PropertyElementDetailView {
                         HStack(spacing: 10) {
                             ForEach(localElement.photos, id: \.self) { urlStr in
                                 if let url = URL(string: urlStr) {
-                                    AsyncImage(url: url) { phase in
+                                    StorageImage(url: url) { phase in
                                         if case .success(let img) = phase {
                                             img.resizable().scaledToFill()
                                         } else {

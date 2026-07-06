@@ -321,7 +321,7 @@ struct AddPropertyElementView: View {
                 } label: {
                     ZStack {
                         if let coverURL, let url = URL(string: coverURL) {
-                            AsyncImage(url: url) { phase in
+                            StorageImage(url: url) { phase in
                                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                                 else { Color.primary.opacity(AppOpacity.hairline) }
                             }
@@ -354,7 +354,7 @@ struct AddPropertyElementView: View {
                     HStack(spacing: 10) {
                         ForEach(galleryURLs, id: \.self) { urlStr in
                             if let url = URL(string: urlStr) {
-                                AsyncImage(url: url) { phase in
+                                StorageImage(url: url) { phase in
                                     if case .success(let img) = phase { img.resizable().scaledToFill() }
                                     else { Color.primary.opacity(AppOpacity.hairline) }
                                 }

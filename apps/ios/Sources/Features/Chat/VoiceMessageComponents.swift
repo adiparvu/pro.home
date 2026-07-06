@@ -228,7 +228,7 @@ struct AudioBubble: View {
         ZStack(alignment: .bottomTrailing) {
             Group {
                 if let avatarURL {
-                    AsyncImage(url: avatarURL) { phase in
+                    StorageImage(url: avatarURL) { phase in
                         if case .success(let img) = phase {
                             img.resizable().scaledToFill()
                         } else {

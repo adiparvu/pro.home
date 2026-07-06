@@ -122,7 +122,7 @@ struct PropertyInsightsSections: View {
                     HStack(spacing: AppSpacing.sm) {
                         ForEach(photos.entries.prefix(12)) { entry in
                             Button { fullscreenPhoto = entry } label: {
-                                AsyncImage(url: URL(string: entry.photoUrl)) { phase in
+                                StorageImage(source: entry.photoUrl) { phase in
                                     if case .success(let img) = phase {
                                         img.resizable().scaledToFill()
                                     } else {
@@ -310,7 +310,7 @@ private struct PhotoLightbox: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
-            AsyncImage(url: URL(string: entry.photoUrl)) { phase in
+            StorageImage(source: entry.photoUrl) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFit()
                 } else {

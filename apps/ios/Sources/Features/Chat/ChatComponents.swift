@@ -734,7 +734,7 @@ struct MessageBubble: View {
         ZStack {
             Circle().fill(color.opacity(0.18))
             if let avatarURL {
-                AsyncImage(url: avatarURL) { phase in
+                StorageImage(url: avatarURL) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {
@@ -1100,7 +1100,7 @@ struct ChatImageBubble: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 if case .success(let img) = phase {
                     img.resizable().scaledToFill()
                         .frame(maxWidth: 220, maxHeight: 160)

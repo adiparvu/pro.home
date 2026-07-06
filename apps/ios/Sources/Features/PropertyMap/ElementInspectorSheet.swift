@@ -182,7 +182,7 @@ struct ElementInspectorSheet: View {
     @ViewBuilder
     private var thumbnail: some View {
         if let cover = current.coverPhotoUrl, let url = URL(string: cover) {
-            AsyncImage(url: url) { phase in
+            StorageImage(url: url) { phase in
                 if case .success(let img) = phase { img.resizable().scaledToFill() }
                 else { current.elementType.accentColor.opacity(0.4) }
             }

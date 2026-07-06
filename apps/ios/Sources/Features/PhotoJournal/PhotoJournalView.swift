@@ -262,7 +262,7 @@ private struct PhotoGridCell: View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
             .overlay(
-                AsyncImage(url: URL(string: entry.photoUrl)) { phase in
+                StorageImage(source: entry.photoUrl) { phase in
                     switch phase {
                     case .empty:
                         Rectangle()
@@ -311,7 +311,7 @@ private struct PhotoEntryDetailSheet: View {
                 Color.black.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        AsyncImage(url: URL(string: entry.photoUrl)) { phase in
+                        StorageImage(source: entry.photoUrl) { phase in
                             switch phase {
                             case .success(let image):
                                 image
