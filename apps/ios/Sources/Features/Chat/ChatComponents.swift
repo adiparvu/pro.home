@@ -288,6 +288,15 @@ struct UnreadDivider: View {
 
 // MARK: - Message Bubble
 
+/// The bubble's frame within the row, so the swipe glyphs can center on the
+/// bubble itself rather than on the (name + quote + timestamp) row.
+private struct BubbleFrameKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 struct MessageBubble: View {
     let message: Message
     let isOwn: Bool
@@ -394,28 +403,25 @@ struct MessageBubble: View {
         return .sent
     }
 
-    // Swipe affordance, pinned to a screen edge (WhatsApp-style) rather than to
-    // the bubble: swipe-right-to-reply always shows the reply glyph on the LEFT
-    // edge of the screen (as in WhatsApp, for both your own and incoming
-    // messages); swipe-left-for-details shows the info glyph on the RIGHT edge.
-    // The glyph scales and fades in with the swipe so the gesture feels physical.
-    @ViewBuilder private var swipeIndicator: some View {
+    // Swipe affordance, pinned to a screen edge (WhatsApp-style) but centered
+    // on the BUBBLE's vertical middle — the row also contains the sender name,
+    // a quoted reply and the timestamp, so centering on the row dropped the
+    // glyph next to the timestamp whenever a quote made the row tall. The
+    // bubble reports its frame through an anchor preference and the glyph is
+    // positioned at its midY.
+    @ViewBuilder private func swipeIndicator(in geo: GeometryProxy,
+                                             bubble: Anchor<CGRect>?) -> some View {
+        let midY = bubble.map { geo[$0].midY } ?? geo.size.height / 2
         if swipeOffset > 12 {
             let progress = min(1, (swipeOffset - 12) / 60)
-            HStack(spacing: 0) {
-                swipeGlyph("arrowshape.turn.up.left.fill", progress: progress)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .allowsHitTesting(false)
+            swipeGlyph("arrowshape.turn.up.left.fill", progress: progress)
+                .position(x: AppSpacing.lg + 17, y: midY)
+                .allowsHitTesting(false)
         } else if swipeOffset < -12 {
             let progress = min(1, (-swipeOffset - 12) / 60)
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                swipeGlyph("info.circle.fill", progress: progress)
-            }
-            .padding(.horizontal, AppSpacing.lg)
-            .allowsHitTesting(false)
+            swipeGlyph("info.circle.fill", progress: progress)
+                .position(x: geo.size.width - AppSpacing.lg - 17, y: midY)
+                .allowsHitTesting(false)
         }
     }
 
@@ -462,6 +468,8 @@ struct MessageBubble: View {
                         .accessibilityHint("Jump to the replied message")
                 }
                 bubbleContent
+                    // The swipe glyph centers on this frame (see swipeIndicator).
+                    .anchorPreference(key: BubbleFrameKey.self, value: .bounds) { $0 }
                     // Brief accent wash when the reader jumped here from a reply.
                     .overlay {
                         if isHighlighted {
@@ -498,7 +506,12 @@ struct MessageBubble: View {
             }
         }
         .contentShape(Rectangle())
-        .overlay { swipeIndicator }
+        .overlayPreferenceValue(BubbleFrameKey.self) { anchor in
+            GeometryReader { geo in
+                swipeIndicator(in: geo, bubble: anchor)
+            }
+            .allowsHitTesting(false)
+        }
         .simultaneousGesture(
             // Only a decisively horizontal drag engages the reply/details swipe;
             // anything with real vertical travel is left to the scroll view, so
