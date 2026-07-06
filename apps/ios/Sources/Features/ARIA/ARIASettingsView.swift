@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import PhotosUI
 
 // MARK: - ARIA Settings View
 
@@ -7,6 +8,10 @@ struct ARIASettingsView: View {
     // Identity
     @AppStorage("prvio.aria.customName") var assistantName = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") var avatarIcon = "sparkles"
+    @AppStorage("prvio.aria.avatarKind") var avatarKind = "icon"
+    @AppStorage("prvio.aria.avatarEmoji") var avatarEmoji = "✨"
+    @AppStorage("prvio.aria.avatarRev") var avatarRevision = 0
+    @State private var avatarPhotoItem: PhotosPickerItem?
 
     // Personality
     @AppStorage("prvio.aria.personality") var personality = "balanced"
@@ -143,6 +148,66 @@ struct ARIASettingsView: View {
                     }
                 }
                 .padding(.horizontal, AppSpacing.base)
+
+                // Beyond icons: the assistant can wear an emoji or a photo of
+                // the owner's choosing — same identity everywhere it speaks.
+                HStack(spacing: 10) {
+                    ARIAAvatar(size: 40)
+
+                    Button {
+                        HapticFeedback.selection()
+                        avatarKind = "emoji"
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(avatarEmoji.isEmpty ? "✨" : avatarEmoji)
+                            Text("Emoji").font(AppFont.caption)
+                        }
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
+                        .background(avatarKind == "emoji" ? Color.accentColor.opacity(0.18)
+                                                          : Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    if avatarKind == "emoji" {
+                        TextField("✨", text: Binding(
+                            get: { avatarEmoji },
+                            set: { avatarEmoji = String($0.suffix(1)) }
+                        ))
+                        .frame(width: 44)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 5)
+                        .background(Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                    }
+
+                    PhotosPicker(selection: $avatarPhotoItem, matching: .images) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "photo.fill").font(AppFont.caption)
+                            Text("Photo").font(AppFont.caption)
+                        }
+                        .padding(.horizontal, AppSpacing.md).padding(.vertical, 7)
+                        .background(avatarKind == "photo" ? Color.accentColor.opacity(0.18)
+                                                          : Color.primary.opacity(AppOpacity.subtleFill),
+                                    in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .onChange(of: avatarPhotoItem) { _, item in
+                        guard let item else { return }
+                        Task {
+                            if let data = try? await item.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data),
+                               ARIAAvatarStore.savePhoto(image) {
+                                avatarKind = "photo"
+                                avatarRevision += 1
+                            }
+                            avatarPhotoItem = nil
+                        }
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, AppSpacing.base)
                 .padding(.bottom, AppSpacing.md)
             }
 
@@ -175,6 +240,7 @@ struct ARIASettingsView: View {
         return Button {
             HapticFeedback.selection()
             avatarIcon = option.icon
+            avatarKind = "icon"
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: option.icon)

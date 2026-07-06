@@ -128,6 +128,8 @@ serve(async (req) => {
     const message: string = body.message
     const propertyId: string | undefined = body.propertyId ?? body.property_id
     const language: string | undefined = body.language
+    const tone: string | undefined = body.tone
+    const assistantName: string = (body.assistant_name ?? "ARIA").toString().slice(0, 40) || "ARIA"
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: "Empty message" }), { status: 400, headers: cors })
     }
@@ -141,7 +143,7 @@ serve(async (req) => {
       .limit(20)
 
     // Load property context
-    const [tasksRes, finRes, propRes] = await Promise.all([
+    const [tasksRes, finRes, propRes, docsRes, delivRes] = await Promise.all([
       supabase
         .from("maintenance_tasks")
         .select("title, status, priority, due_date")
@@ -157,11 +159,25 @@ serve(async (req) => {
       propertyId
         ? supabase.from("properties").select("name, address_line1, city, health_score").eq("id", propertyId).single()
         : Promise.resolve({ data: null }),
+      supabase
+        .from("documents")
+        .select("name, expires_at")
+        .not("expires_at", "is", null)
+        .lte("expires_at", new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
+        .gte("expires_at", new Date().toISOString().split("T")[0])
+        .limit(5),
+      supabase
+        .from("packages")
+        .select("title, status, expected_date")
+        .in("status", ["expected", "out_for_delivery"])
+        .limit(5),
     ])
 
     const tasks = tasksRes.data ?? []
     const financials = finRes.data ?? []
     const property = propRes.data as { name?: string; address_line1?: string; city?: string; health_score?: number } | null
+    const expiringDocs = (docsRes?.data ?? []) as Array<{ name: string; expires_at: string }>
+    const deliveries = (delivRes?.data ?? []) as Array<{ title: string; status: string; expected_date?: string }>
 
     const taskCtx = tasks.length > 0
       ? tasks.map((t: { title: string; priority: string; status: string; due_date?: string }) =>
@@ -177,6 +193,13 @@ serve(async (req) => {
         financials.slice(0, 5).map((f: { title: string; amount: number; type: string }) => `• ${f.title}: ${currency}${f.amount} (${f.type})`).join("\n")
       : "No recent financial records."
 
+    const docsCtx = expiringDocs.length > 0
+      ? expiringDocs.map((d) => `• ${d.name} expires ${d.expires_at}`).join("\n")
+      : ""
+    const delivCtx = deliveries.length > 0
+      ? deliveries.map((d) => `• ${d.title} (${d.status}${d.expected_date ? `, expected ${d.expected_date}` : ""})`).join("\n")
+      : ""
+
     const propCtx = property
       ? `Property: ${property.name ?? "Home"} — ${property.address_line1 ?? ""}, ${property.city ?? ""}${property.health_score ? ` | Health: ${property.health_score}/100` : ""}`
       : ""
@@ -187,10 +210,21 @@ serve(async (req) => {
       ? `Always respond in the user's selected app language (BCP-47: ${language}). Do NOT switch languages even if the user writes in a different one.`
       : "Always respond in the same language the user writes in."
 
-    const systemPrompt = `You are ARIA, the intelligent AI assistant built into PRVHouse — a smart property management app.
+    // Owner-chosen personality (device setting, sent per request).
+    const toneInstruction = tone === "friendly"
+      ? "Tone: warm and encouraging — celebrate wins, keep it human."
+      : tone === "professional" || tone === "formal"
+      ? "Tone: professional and precise. No exclamation marks, no small talk."
+      : tone === "concise"
+      ? "Tone: as few words as fully helpful. Prefer tight bullet lists."
+      : ""
+
+    const systemPrompt = `You are ${assistantName}, the intelligent AI assistant built into PRVHouse — a smart property management app.
 You help the owner manage their property with practical, specific, and concise advice.
 ${langInstruction}
+${toneInstruction}
 Keep responses under 200 words unless a detailed breakdown is requested.
+Ground answers in the property data below — cite the actual task names, amounts and dates instead of speaking generically.
 You have access to tools to create tasks, mark plants as watered, and query property health. Use them when the user's intent clearly matches.
 
 ${propCtx ? `PROPERTY:\n${propCtx}\n` : ""}
@@ -198,7 +232,7 @@ OPEN TASKS (last 5):
 ${taskCtx}
 
 FINANCES (last 30 days):
-${finCtx}`
+${finCtx}${docsCtx ? `\n\nDOCUMENTS EXPIRING SOON:\n${docsCtx}` : ""}${delivCtx ? `\n\nACTIVE DELIVERIES:\n${delivCtx}` : ""}`
 
     const claudeMessages: Array<{ role: string; content: unknown }> = [
       ...(history ?? []).reverse().map((m: { role: string; content: string }) => ({

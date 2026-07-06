@@ -25,6 +25,20 @@ struct ARIAView: View {
     @AppStorage("prvio.avatarRingColorName") private var avatarRingColorName: String = "blue"
     @AppStorage("prvio.aria.customName") private var assistantName: String = "ARIA"
     @AppStorage("prvio.aria.avatarIcon") private var avatarIcon: String = "sparkles"
+    @AppStorage("prvio.aria.personality") private var aiTone: String = "balanced"
+    @State private var showAriaTheme = false
+    @State private var ariaThemeRefresh = 0
+
+    private var ariaTheme: ChatTheme {
+        _ = ariaThemeRefresh
+        let d = UserDefaults.standard
+        return .resolved(
+            themeID: d.string(forKey: "prvio.chatTheme.aria") ?? "",
+            bubbleHex: d.string(forKey: "prvio.chatBubbleHex.aria") ?? "",
+            bgID: d.string(forKey: "prvio.chatBgID.aria") ?? "",
+            bgImage: d.string(forKey: "prvio.chatBgImage.aria") ?? ""
+        )
+    }
     @State private var messages: [ARIAMessage] = []
     @State private var input = ""
     @State private var isThinking = false
@@ -39,7 +53,9 @@ struct ARIAView: View {
 
     var body: some View {
         ZStack {
-            appBackground.ignoresSafeArea()
+            // The assistant's conversation is a real chat: it takes the same
+            // per-conversation theme/background system (scope "aria").
+            ariaTheme.background
 
             VStack(spacing: 0) {
                 messageList
@@ -48,6 +64,9 @@ struct ARIAView: View {
         }
         .navigationTitle(assistantName)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showAriaTheme, onDismiss: { ariaThemeRefresh += 1 }) {
+            ChatThemePicker(scope: "aria")
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -67,6 +86,17 @@ struct ARIAView: View {
                     ownerInitial: String((profileService.profile?.preferredName ?? "U").prefix(1)).uppercased(),
                     ringColor: avatarRingColor(for: avatarRingColorName)
                 )
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticFeedback.impact(.light)
+                    showAriaTheme = true
+                } label: {
+                    Image(systemName: "paintbrush.fill")
+                        .font(AppFont.footnoteEmphasis)
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel(Text("Background"))
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -378,8 +408,11 @@ struct ARIAView: View {
                     let message: String
                     let property_id: String?
                     let language: String
+                    let tone: String
+                    let assistant_name: String
                 }
-                let payload = ARIAChatPayload(message: text, property_id: propId, language: lang)
+                let payload = ARIAChatPayload(message: text, property_id: propId, language: lang,
+                                              tone: aiTone, assistant_name: assistantName)
                 let rawResponse: Data = try await supabase.functions
                     .invoke("aria-chat", options: .init(body: payload))
 
@@ -555,12 +588,7 @@ private struct ARIAMessageBubble: View {
             if isUser { Spacer(minLength: 48) }
 
             if !isUser {
-                ZStack {
-                    Circle().fill(.ultraThinMaterial).frame(width: 28, height: 28)
-                    Image(systemName: "sparkles")
-                        .font(AppFont.captionStrong)
-                        .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-                }
+                ARIAAvatar(size: 28)
             }
 
             Text(LocalizedStringKey(message.content))

@@ -664,15 +664,7 @@ struct ConversationsView: View {
 
     private var ariaRow: some View {
         HStack(spacing: 12) {
-            ZStack {
-                Circle().fill(LinearGradient(
-                    colors: [Color.brandPurple, Color.brandPrimaryBlue],
-                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                Image(systemName: "sparkles")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 52, height: 52)
+            ARIAAvatar(size: 52)
             VStack(alignment: .leading, spacing: 3) {
                 Text(UserDefaults.standard.string(forKey: "prvio.aria.customName") ?? "ARIA")
                     .font(AppFont.headline)
