@@ -19,7 +19,6 @@ final class AppRouter {
     enum RoutedDestination: String, Identifiable {
         case aria           // fullScreenCover
         case newTask
-        case familyChat
         case addExpense
         case inventoryScan
         case inventoryAdd
@@ -40,10 +39,29 @@ final class AppRouter {
         var id: String { rawValue }
     }
 
-    /// The single routed sheet slot (MainTabView presents it).
+    /// The single routed sheet slot (MainTabView presents it). Reserved for
+    /// self-contained tasks — creation forms, scanning, the notification
+    /// panel — per the HIG's modality rule.
     var activeDestination: RoutedDestination?
     /// The single routed full-screen-cover slot (ARIA today).
     var activeCover: RoutedDestination?
+
+    // MARK: - Content pages push, tasks present
+    //
+    // Content modules (Finances, Documents, Inventory…) are destinations,
+    // not tasks: they push onto the current tab's navigation stack — large
+    // title, edge-swipe back, context preserved — instead of floating up as
+    // sheets. Each tab's NavigationStack binds its own path here.
+
+    /// Per-tab pushed content pages (value-based navigation destinations).
+    var tabPaths: [AppTab: [RoutedDestination]] = [:]
+
+    /// Pushes a content page onto the current tab's stack (no-op when that
+    /// page is already on top, so a double-tap can't stack duplicates).
+    func push(_ destination: RoutedDestination) {
+        guard tabPaths[selectedTab]?.last != destination else { return }
+        tabPaths[selectedTab, default: []].append(destination)
+    }
 
     // Deep link destinations
     var deepLinkTaskId: UUID?
@@ -129,27 +147,52 @@ final class AppRouter {
 
     private func apply(_ route: AppRoute) {
         switch route {
+        // Tabs
         case .home:
             selectedTab = .home
         case .tasks(let id):
             selectedTab = .tasks
             deepLinkTaskId = id
+        case .chat, .familyChat:
+            // The family conversation IS the chat tab — switching there beats
+            // presenting a second copy of it as a sheet.
+            selectedTab = .chat
+        case .twin:
+            selectedTab = .digitalTwin
+        case .settings:
+            selectedTab = .settings
+
+        // Content destinations — push on the current tab (HIG: hierarchical
+        // navigation for places, modality for tasks).
+        case .plants(let id):
+            deepLinkPlantId = id
+            push(.plants)
+        case .supplies:
+            push(.supplies)
+        case .deliveries:
+            push(.deliveries)
+        case .documents:
+            push(.documents)
+        case .finances:
+            push(.finances)
+        case .inventory:
+            push(.inventory)
+        case .family:
+            push(.family)
+        case .profile:
+            selectedTab = .settings
+            push(.profile)
+        case .contractors:
+            push(.contractors)
+        case .paintColors:
+            push(.paintColors)
+        case .photoJournal:
+            push(.photoJournal)
+
+        // Self-contained tasks — sheets / covers.
         case .newTask:
             selectedTab = .tasks
             activeDestination = .newTask
-        case .plants(let id):
-            selectedTab = .home
-            deepLinkPlantId = id
-            activeDestination = .plants
-        case .supplies:
-            selectedTab = .settings
-            activeDestination = .supplies
-        case .deliveries:
-            activeDestination = .deliveries
-        case .chat:
-            selectedTab = .chat
-        case .familyChat:
-            activeDestination = .familyChat
         case .scan:
             activeDestination = .inventoryScan
         case .receipts:
@@ -159,27 +202,6 @@ final class AppRouter {
             activeDestination = .notifications
         case .aria:
             activeCover = .aria
-        case .twin:
-            selectedTab = .digitalTwin
-        case .settings:
-            selectedTab = .settings
-        case .documents:
-            activeDestination = .documents
-        case .finances:
-            activeDestination = .finances
-        case .inventory:
-            activeDestination = .inventory
-        case .family:
-            activeDestination = .family
-        case .profile:
-            selectedTab = .settings
-            activeDestination = .profile
-        case .contractors:
-            activeDestination = .contractors
-        case .paintColors:
-            activeDestination = .paintColors
-        case .photoJournal:
-            activeDestination = .photoJournal
         case .addSupply:
             activeDestination = .addSupply
         }
@@ -187,18 +209,21 @@ final class AppRouter {
 
     func perform(_ action: DashboardQuickAction) {
         switch action {
+        // Destinations go through navigate() so an open sheet is dismissed
+        // first and the push lands on a visible stack.
         case .aria:       navigate(to: .aria)
         case .finances:   navigate(to: .finances)
+        case .chat:       navigate(to: .chat)
+        case .waterPlant: navigate(to: .plants(id: nil))
+        case .documents:  navigate(to: .documents)
+        case .deliveries: navigate(to: .deliveries)
+        case .digitalTwin: selectedTab = .digitalTwin
+        // Creation tasks stay modal (single slot swaps content by itself).
         case .newTask:    activeDestination = .newTask
-        case .chat:       activeDestination = .familyChat
         case .addExpense: activeDestination = .addExpense
         case .scan:       activeDestination = .inventoryScan
         case .addItem:    activeDestination = .inventoryAdd
         case .addSupply:  activeDestination = .addSupply
-        case .waterPlant: activeDestination = .plants
-        case .documents:  activeDestination = .documents
-        case .deliveries: activeDestination = .deliveries
-        case .digitalTwin: selectedTab = .digitalTwin
         }
     }
 

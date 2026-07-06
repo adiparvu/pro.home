@@ -219,10 +219,11 @@ struct DashboardView: View {
             .accessibilityLabel(notificationService.unreadCount > 0
                                 ? "Notifications, new" : "Notifications")
 
-            // The avatar goes straight to the Profile page itself.
+            // The avatar goes straight to the Profile page itself — pushed,
+            // so the dashboard stays underneath.
             Button {
                 HapticFeedback.impact(.light)
-                router.activeDestination = .profile
+                router.push(.profile)
             } label: {
                 avatarCircle
             }
@@ -527,11 +528,11 @@ struct DashboardView: View {
             router.selectedTab = .tasks
             router.deepLinkTaskId = t.id
         case .plant:
-            router.activeDestination = .plants
+            router.push(.plants)
         case .delivery:
-            router.activeDestination = .deliveries
+            router.push(.deliveries)
         case .birthday:
-            router.activeDestination = .family
+            router.push(.family)
         }
     }
 }

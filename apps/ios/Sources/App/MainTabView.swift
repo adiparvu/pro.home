@@ -42,40 +42,42 @@ struct MainTabView: View {
         let visibleTabs = AppTab.visible(for: propertyService.myRole)
         return TabView(selection: $router.selectedTab) {
             if visibleTabs.contains(.home) {
-                NavigationStack { DashboardView() }
+                NavigationStack(path: path(for: .home)) { routedRoot { DashboardView() } }
                     .tabItem { Image(systemName: "house.fill") }
                     .tag(AppTab.home)
             }
 
             if visibleTabs.contains(.digitalTwin) {
-                NavigationStack { PropertyTabView() }
+                NavigationStack(path: path(for: .digitalTwin)) { routedRoot { PropertyTabView() } }
                     .tabItem { Image(systemName: "square.stack.3d.up.fill") }
                     .tag(AppTab.digitalTwin)
             }
 
             if visibleTabs.contains(.tasks) {
-                NavigationStack { TasksView() }
+                NavigationStack(path: path(for: .tasks)) { routedRoot { TasksView() } }
                     .tabItem { Image(systemName: "checklist") }
                     .tag(AppTab.tasks)
                     .badge(taskService.overdueCount > 0 ? taskService.overdueCount : 0)
             }
 
-            NavigationStack {
-                ConversationsView()
-                    .environment(messageService)
-                    .environment(directMessageService)
-                    .environment(presenceService)
-                    .environment(familyService)
-                    .environment(propertyService)
-                    .environment(profileService)
-                    .environment(stickerService)
-                    .environment(tabBarVis)
-                    .environment(router)
+            NavigationStack(path: path(for: .chat)) {
+                routedRoot {
+                    ConversationsView()
+                        .environment(messageService)
+                        .environment(directMessageService)
+                        .environment(presenceService)
+                        .environment(familyService)
+                        .environment(propertyService)
+                        .environment(profileService)
+                        .environment(stickerService)
+                        .environment(tabBarVis)
+                        .environment(router)
+                }
             }
             .tabItem { Image(systemName: "bubble.left.and.bubble.right.fill") }
             .tag(AppTab.chat)
 
-            NavigationStack { SettingsView() }
+            NavigationStack(path: path(for: .settings)) { routedRoot { SettingsView() } }
                 .tabItem { Image(systemName: "person.crop.circle.fill") }
                 .tag(AppTab.settings)
         }
@@ -92,7 +94,7 @@ struct MainTabView: View {
             router.activeDestination = .newTask
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonWaterPlants)) { _ in
-            router.activeDestination = .plants
+            router.navigate(to: .plants(id: nil))
         }
         .onReceive(NotificationCenter.default.publisher(for: .actionButtonOpenARIA)) { _ in
             router.navigate(to: .aria)
@@ -182,12 +184,57 @@ struct MainTabView: View {
         }
     }
 
-    // MARK: - Routed presentations
+    // MARK: - Routed navigation
     //
-    // One `.sheet(item:)` + one `.fullScreenCover(item:)` for every globally
-    // routed destination. A single slot per presentation style means a new
-    // destination swaps the content instead of being silently dropped the way
-    // a second `.sheet(isPresented:)` in a chain of 17 was.
+    // The HIG split, wired app-wide: content modules PUSH onto the active
+    // tab's stack (destinations — large title, edge-swipe back), while
+    // self-contained tasks PRESENT (one sheet slot + one cover slot, which
+    // can never race themselves).
+
+    /// Binding into the router's per-tab pushed-pages path.
+    private func path(for tab: AppTab) -> Binding<[AppRouter.RoutedDestination]> {
+        Binding(get: { router.tabPaths[tab] ?? [] },
+                set: { router.tabPaths[tab] = $0 })
+    }
+
+    /// Registers the routed content pages on a tab's stack root.
+    private func routedRoot<Root: View>(@ViewBuilder _ root: () -> Root) -> some View {
+        root().navigationDestination(for: AppRouter.RoutedDestination.self) { destination in
+            routedPage(destination)
+        }
+    }
+
+    /// Content modules, pushed. Services arrive through the environment the
+    /// tab stacks already live in — same as any NavigationLink in the app.
+    @ViewBuilder
+    private func routedPage(_ destination: AppRouter.RoutedDestination) -> some View {
+        switch destination {
+        case .finances:
+            FinancesView()
+        case .documents:
+            DocumentsView()
+        case .inventory:
+            InventoryView()
+        case .family:
+            FamilyView()
+        case .contractors:
+            ContractorsView()
+        case .deliveries:
+            DeliveriesView()
+        case .supplies:
+            SuppliesView()
+        case .paintColors:
+            PaintColorsView()
+        case .photoJournal:
+            PhotoJournalView()
+        case .plants:
+            PlantsView()
+        case .profile:
+            ProfileView()
+        default:
+            EmptyView()
+        }
+    }
 
     @ViewBuilder
     private func routedCover(_ destination: AppRouter.RoutedDestination) -> some View {
@@ -205,6 +252,8 @@ struct MainTabView: View {
         }
     }
 
+    /// Self-contained tasks, presented modally (the HIG's modality rule) —
+    /// content modules push via routedPage instead.
     @ViewBuilder
     private func routedSheet(_ destination: AppRouter.RoutedDestination) -> some View {
         switch destination {
@@ -216,101 +265,10 @@ struct MainTabView: View {
             NavigationStack { InventoryView(autoScan: true) }
         case .inventoryAdd:
             NavigationStack { InventoryView(autoAdd: true) }
-        case .inventory:
-            NavigationStack { InventoryView() }
         case .addSupply:
             AddSupplyItemSheet(list: nil, editingItem: nil)
                 .environment(supplyService)
                 .environment(propertyService)
-        case .plants:
-            NavigationStack {
-                PlantsView()
-                    .environment(plantService)
-                    .environment(propertyService)
-            }
-        case .familyChat:
-            NavigationStack {
-                ConversationsView()
-                    .environment(messageService)
-                    .environment(directMessageService)
-                    .environment(presenceService)
-                    .environment(familyService)
-                    .environment(propertyService)
-                    .environment(profileService)
-                    .environment(stickerService)
-                    .environment(tabBarVis)
-                    .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        case .documents:
-            NavigationStack {
-                DocumentsView()
-                    .environment(documentService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        case .family:
-            NavigationStack {
-                FamilyView()
-                    .environment(familyService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        case .contractors:
-            NavigationStack {
-                ContractorsView()
-                    .environment(contractorService)
-                    .environment(propertyService)
-                    .environment(router)
-            }
-            .presentationDragIndicator(.visible)
-        case .deliveries:
-            NavigationStack {
-                DeliveriesView()
-                    .environment(deliveryService)
-            }
-            .presentationDragIndicator(.visible)
-        case .finances:
-            NavigationStack {
-                FinancesView()
-                    .environment(financialService)
-                    .environment(propertyService)
-                    .environment(budgetService)
-                    .environment(currencyService)
-                    .environment(appSettings)
-                    .environment(tabBarVis)
-            }
-            .presentationDragIndicator(.visible)
-        case .supplies:
-            NavigationStack {
-                SuppliesView()
-                    .environment(supplyService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        case .paintColors:
-            NavigationStack {
-                PaintColorsView()
-                    .environment(paintColorService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        case .photoJournal:
-            NavigationStack {
-                PhotoJournalView()
-                    .environment(photoJournalService)
-                    .environment(propertyService)
-            }
-            .presentationDragIndicator(.visible)
-        case .profile:
-            NavigationStack {
-                ProfileView()
-                    .environment(profileService)
-                    .environment(notificationScheduler)
-                    .environment(taskService)
-                    .environment(documentService)
-            }
-            .presentationDragIndicator(.visible)
         case .notifications:
             NavigationStack {
                 NotificationCenterView(service: notificationService)
@@ -318,8 +276,9 @@ struct MainTabView: View {
                     .environment(router)
             }
             .presentationDragIndicator(.visible)
-        case .aria:
-            // ARIA is always full-screen-cover presented (routedCover).
+        default:
+            // Content modules never land in the sheet slot; ARIA is always
+            // cover-presented (routedCover).
             EmptyView()
         }
     }
