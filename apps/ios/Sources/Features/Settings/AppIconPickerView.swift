@@ -1,59 +1,97 @@
 import SwiftUI
 
-// MARK: - App Icon Picker (scenic carousel)
+// MARK: - App Icon Picker
 //
-// One slide per theme: artwork, name, apply. No info paragraphs — the compact
-// progress capsule replaces the old dot-per-theme pager, whose 36 dots forced
-// the whole layout wider than the screen (the "button off-screen" bug).
+// The Tide Guide layout, faithfully: a title + one-line promise, a paging
+// carousel with ONE hero icon centered and the next family peeking from the
+// edge, a compact position capsule (19 families would overflow a dot pager),
+// a row of circular "tint" swatches — the current family's variant designs —
+// and a full-width glass pill that reads "Active" when the shown icon is the
+// installed one. The moon button previews the night face of paired themes;
+// with the auto day/night switch off it also picks which face gets installed.
 
 struct AppIconPickerView: View {
     @Environment(IconManager.self) private var iconManager
     @Environment(\.colorScheme) private var colorScheme
 
-    private let themes = AppIconCatalog.all
-    @State private var index = 0
+    private let families = AppIconFamilies.all
+
+    /// The family the carousel is resting on (scroll-position binding).
+    @State private var familyID: String?
+    /// Chosen variant per family, so browsing away and back keeps the pick.
+    @State private var variantByFamily: [String: String] = [:]
+    /// Moon-button override for paired themes (nil = follow the system).
+    @State private var previewDark: Bool?
     @State private var showError = false
-    /// Which face of the current pair the user tapped while the auto day/night
-    /// switch is off (true = dark). nil until a face is tapped; reset per slide.
-    @State private var pickedDarkFace: Bool?
 
     private var ro: Bool { Locale.appIsRomanian }
-    private var current: AppIconTheme { themes[min(index, themes.count - 1)] }
 
-    /// True when the two faces of the current pair are individual choices
-    /// (auto day/night switch off). The default primary icon is excluded —
-    /// the asset catalog switches it on its own and a face can't be pinned.
+    private var currentFamily: IconFamily {
+        families.first { $0.id == familyID } ?? families[0]
+    }
+
+    private func variant(of family: IconFamily) -> AppIconTheme {
+        family.variants.first { $0.id == variantByFamily[family.id] } ?? family.variants[0]
+    }
+
+    private var current: AppIconTheme { variant(of: currentFamily) }
+
+    /// The face the artwork shows right now.
+    private var showsDark: Bool {
+        guard current.hasPair else { return false }
+        return previewDark ?? (colorScheme == .dark)
+    }
+
+    /// True when the pair faces are individual choices (auto-switch off).
     private var picksFaces: Bool { !iconManager.autoSwitch && current.hasPair && !current.isDefault }
 
-    /// The face of `current` that Apply installs. It follows the system
-    /// appearance by default; with the auto-switch off, the face the user
-    /// tapped wins, falling back to the face already installed.
+    /// The face Apply installs: previewed face when faces are individual
+    /// choices, the system appearance otherwise.
     private var appliesDarkFace: Bool {
-        guard picksFaces else { return colorScheme == .dark }
-        if let pickedDarkFace { return pickedDarkFace }
-        if iconManager.appliedIconName == current.darkIcon { return true }
-        if iconManager.appliedIconName == current.lightIcon { return false }
+        guard current.hasPair else { return false }
+        if picksFaces {
+            if let previewDark { return previewDark }
+            if iconManager.appliedIconName == current.darkIcon { return true }
+            if iconManager.appliedIconName == current.lightIcon { return false }
+        }
         return colorScheme == .dark
     }
 
+    private var isApplied: Bool {
+        iconManager.selected.id == current.id
+            && iconManager.appliedIconName == current.iconName(isDark: appliesDarkFace)
+    }
+
     var body: some View {
-        ZStack {
-            backdrop
-            VStack(spacing: 0) {
-                header
-                homePreview
-                carousel
-                pager
-                applyBar
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            titleBlock
+            Spacer(minLength: AppSpacing.md)
+            carousel
+            pagerCapsule
+                .frame(maxWidth: .infinity)
+                .padding(.top, AppSpacing.lg)
+            Spacer(minLength: AppSpacing.md)
+            variantRow
+            autoSwitchToggle
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.top, AppSpacing.md)
+            applyBar
         }
+        .background(appBackground.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            index = themes.firstIndex(of: iconManager.selected) ?? 0
+        .toolbar {
+            if current.hasPair {
+                ToolbarItem(placement: .topBarTrailing) { faceToggle }
+            }
         }
-        .onChange(of: index) { _, _ in pickedDarkFace = nil }
-        .onChange(of: iconManager.autoSwitch) { _, _ in pickedDarkFace = nil }
+        .onAppear {
+            let installed = iconManager.selected
+            let family = AppIconFamilies.family(containing: installed.id)
+            familyID = family.id
+            variantByFamily[family.id] = installed.id
+        }
+        .onChange(of: familyID) { _, _ in HapticFeedback.selection() }
         .alert(ro ? "Iconițele nu sunt disponibile" : "Icons not available",
                isPresented: $showError) {
             Button("OK", role: .cancel) {}
@@ -63,137 +101,83 @@ struct AppIconPickerView: View {
         }
     }
 
-    // MARK: Backdrop — the current icon, blurred into an ambient stage
+    // MARK: Title
 
-    private var backdrop: some View {
-        ZStack {
-            appBackground
-            Image(current.lightPreview)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 480, height: 480)
-                .blur(radius: 90)
-                .opacity(0.5)
-                .offset(y: -110)
-                .id(current.id)
-                .transition(.opacity)
-            Rectangle().fill(.ultraThinMaterial)
-        }
-        .ignoresSafeArea()
-        .animation(.smooth(duration: 0.5), value: current.id)
-    }
-
-    // MARK: Header
-
-    private var header: some View {
-        VStack(spacing: 4) {
-            Text(ro ? "Iconița aplicației" : "App Icon")
-                .font(AppFont.title3)
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(ro ? "Personalizează iconița" : "Customize Your Icon")
+                .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(.primary)
-            Text(current.category.title.uppercased())
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(1.4)
+            Text(ro ? "Alege iconița și nuanța care arată așa cum vrei tu PRVIO pe ecranul principal."
+                    : "Pick an icon and tint that matches how you want PRVIO to look on your Home Screen.")
+                .font(.system(size: 17))
                 .foregroundStyle(.secondary)
-                .contentTransition(.opacity)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.top, AppSpacing.sm)
-        .padding(.bottom, AppSpacing.md)
-    }
-
-    // MARK: Home-screen context preview
-    //
-    // A miniature Home Screen with the CANDIDATE icon sitting among dimmed
-    // generic apps, on a wallpaper made from the artwork itself. The change
-    // is confirmed here, in context — SpringBoard repaints off-screen pages
-    // lazily, so this is where the user actually sees the result.
-
-    private var homePreview: some View {
-        let faceAsset = appliesDarkFace ? (current.darkPreview ?? current.lightPreview)
-                                        : current.lightPreview
-        return ZStack {
-            Image(faceAsset)
-                .resizable()
-                .scaledToFill()
-                .blur(radius: 42)
-                .overlay(Color.black.opacity(0.25))
-            HStack(alignment: .top, spacing: 20) {
-                dummyIcon("phone.fill", [Color(red: 0.20, green: 0.78, blue: 0.35),
-                                         Color(red: 0.10, green: 0.60, blue: 0.25)])
-                dummyIcon("envelope.fill", [Color(red: 0.35, green: 0.65, blue: 0.98),
-                                            Color(red: 0.15, green: 0.45, blue: 0.90)])
-                VStack(spacing: 5) {
-                    Image(faceAsset)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 54, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: .black.opacity(0.30), radius: 5, y: 3)
-                        .id(faceAsset)
-                    Text(verbatim: "PRVIO")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.5), radius: 1, y: 1)
-                }
-                dummyIcon("music.note", [Color(red: 0.98, green: 0.35, blue: 0.45),
-                                         Color(red: 0.85, green: 0.20, blue: 0.55)])
-                dummyIcon("camera.fill", [Color(white: 0.45), Color(white: 0.25)])
-            }
-            .padding(.top, 6)
-        }
-        .frame(height: 132)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .strokeBorder(.white.opacity(0.12), lineWidth: 0.7)
-        )
         .padding(.horizontal, AppSpacing.xl)
-        .padding(.bottom, AppSpacing.xs)
-        .animation(.smooth(duration: 0.35), value: faceAsset)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Preview"))
+        .padding(.top, AppSpacing.sm)
     }
 
-    /// A dimmed stand-in app so the candidate reads "on a real Home Screen".
-    private func dummyIcon(_ symbol: String, _ colors: [Color]) -> some View {
-        VStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 54, height: 54)
-                .overlay(
-                    Image(systemName: symbol)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(.white)
-                )
-            // No label: the eye should land on the candidate, which has one.
-            Color.clear.frame(height: 12)
+    // MARK: Day/night preview toggle (paired themes only)
+
+    private var faceToggle: some View {
+        Button {
+            HapticFeedback.selection()
+            withAnimation(.smooth(duration: 0.3)) { previewDark = !showsDark }
+        } label: {
+            Image(systemName: showsDark ? "moon.fill" : "sun.max.fill")
+                .font(AppFont.subheadline)
+                .foregroundStyle(.primary)
+                .frame(width: 34, height: 34)
+                .glassCircle()
+                .contentTransition(.symbolEffect(.replace))
         }
-        .opacity(0.55)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(ro ? "Fața zi/noapte" : "Day/night face"))
     }
 
-    // MARK: Carousel — one slide per theme
+    // MARK: Carousel — one hero per family, neighbour peeking at the edge
 
     private var carousel: some View {
-        TabView(selection: $index) {
-            ForEach(themes.indices, id: \.self) { i in
-                IconSlide(theme: themes[i],
-                          isCurrent: i == index,
-                          facesSelectable: !iconManager.autoSwitch && themes[i].hasPair && !themes[i].isDefault,
-                          pickedDark: i == index ? appliesDarkFace : nil,
-                          pickFace: { pickedDarkFace = $0 })
-                    .tag(i)
-                    .padding(.horizontal, AppSpacing.xl)
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: AppSpacing.lg) {
+                ForEach(families) { family in
+                    heroArtwork(for: family)
+                        .containerRelativeFrame(.horizontal)
+                        .scrollTransition { content, phase in
+                            content
+                                .scaleEffect(phase.isIdentity ? 1 : 0.85)
+                                .opacity(phase.isIdentity ? 1 : 0.5)
+                        }
+                }
             }
+            .scrollTargetLayout()
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .animation(.smooth, value: index)
+        .contentMargins(.horizontal, 44, for: .scrollContent)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $familyID)
+        .frame(height: 320)
     }
 
-    // MARK: Pager — fixed-width progress capsule (never wider than the screen)
+    private func heroArtwork(for family: IconFamily) -> some View {
+        let theme = variant(of: family)
+        let dark = family.id == currentFamily.id ? showsDark : (colorScheme == .dark)
+        let asset = dark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
+        return IconArtwork(name: asset, size: 300)
+            .id(asset)
+            .transition(.opacity)
+            .animation(.smooth(duration: 0.3), value: asset)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(Text(theme.name))
+    }
 
-    private var pager: some View {
+    // MARK: Position capsule (19 families — a dot pager can't fit)
+
+    private var pagerCapsule: some View {
+        let index = families.firstIndex(of: currentFamily) ?? 0
         let trackWidth: CGFloat = 132
         let thumbWidth: CGFloat = 14
-        let progress = themes.count > 1 ? CGFloat(index) / CGFloat(themes.count - 1) : 0
+        let progress = families.count > 1 ? CGFloat(index) / CGFloat(families.count - 1) : 0
         return HStack(spacing: 10) {
             Capsule()
                 .fill(Color.primary.opacity(0.12))
@@ -204,162 +188,106 @@ struct AppIconPickerView: View {
                         .frame(width: thumbWidth, height: 4)
                         .offset(x: (trackWidth - thumbWidth) * progress)
                 }
-            Text("\(index + 1)/\(themes.count)")
+            Text("\(index + 1)/\(families.count)")
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
         .frame(height: 16)
-        .animation(.snappy, value: index)
-        .padding(.vertical, AppSpacing.sm)
+        .animation(.snappy, value: familyID)
     }
 
-    // MARK: Apply bar
+    // MARK: Variant swatches — the family's designs as circular "tints"
 
-    private var applyBar: some View {
-        // Applied only when the exact installed icon matches the face Apply
-        // targets, so an individually picked pair face re-enables the button.
-        let isApplied = iconManager.selected.id == current.id
-            && iconManager.appliedIconName == current.iconName(isDark: appliesDarkFace)
-        return VStack(spacing: 10) {
-            autoSwitchToggle
-            Button {
-                guard iconManager.supportsAlternateIcons else { showError = true; return }
-                HapticFeedback.success()
-                iconManager.select(current, isDark: appliesDarkFace)
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: isApplied ? "checkmark.circle.fill" : "square.and.arrow.down")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text(isApplied ? (ro ? "Aplicată" : "Applied")
-                                   : (ro ? "Aplică iconița" : "Apply icon"))
-                        .font(AppFont.subheadline)
+    private var variantRow: some View {
+        VStack(spacing: AppSpacing.md) {
+            Text(current.name)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+                .contentTransition(.opacity)
+                .animation(.smooth(duration: 0.25), value: current.id)
+
+            HStack(spacing: AppSpacing.lg) {
+                ForEach(currentFamily.variants) { theme in
+                    swatch(theme)
                 }
-                // A compact centered pill, not a full-width bar.
-                .padding(.horizontal, 26)
-                .padding(.vertical, 12)
-                .foregroundStyle(isApplied ? Color.primary : .white)
-                .background(
-                    isApplied ? AnyShapeStyle(.ultraThinMaterial)
-                              : AnyShapeStyle(LinearGradient(colors: [Color.accentColor, Color.brandPurple],
-                                                             startPoint: .leading, endPoint: .trailing)),
-                    in: Capsule()
-                )
-                .shadow(color: isApplied ? .clear : Color.accentColor.opacity(0.3), radius: 12, y: 5)
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
-            .disabled(isApplied)
-            .animation(.snappy, value: isApplied)
+            .frame(height: 56)
         }
-        .padding(.horizontal, AppSpacing.xl)
-        .padding(.bottom, AppSpacing.lg)
+        .frame(maxWidth: .infinity)
     }
+
+    private func swatch(_ theme: AppIconTheme) -> some View {
+        let isSelected = theme.id == current.id
+        let asset = showsDark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.25)) {
+                variantByFamily[currentFamily.id] = theme.id
+            }
+        } label: {
+            Image(asset)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 44, height: 44)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.15), lineWidth: 0.5))
+                .padding(3)
+                .overlay {
+                    if isSelected {
+                        Circle().strokeBorder(Color.accentColor, lineWidth: 2)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(theme.name))
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    // MARK: Auto day/night switch
 
     private var autoSwitchToggle: some View {
         @Bindable var iconManager = iconManager
         return HStack(spacing: 10) {
             Image(systemName: "circle.lefthalf.filled")
-                .foregroundStyle(Color.brandPurple)
+                .foregroundStyle(.primary)
             Text(ro ? "Schimbare automată zi/noapte" : "Auto day/night switch")
                 .font(AppFont.footnoteEmphasis)
             Spacer()
-            Toggle("", isOn: $iconManager.autoSwitch).labelsHidden().tint(Color.brandPurple)
+            Toggle("", isOn: $iconManager.autoSwitch).labelsHidden()
         }
         .padding(.horizontal, AppSpacing.base)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
-}
 
-// MARK: - One slide
+    // MARK: Apply — "Active" when the shown icon is the installed one
 
-private struct IconSlide: View {
-    let theme: AppIconTheme
-    let isCurrent: Bool
-    /// True when the pair faces are individual choices (auto-switch off).
-    var facesSelectable: Bool = false
-    /// The face Apply currently targets (true = dark); nil off the current slide.
-    var pickedDark: Bool? = nil
-    var pickFace: (Bool) -> Void = { _ in }
-
-    private var ro: Bool { Locale.appIsRomanian }
-
-    var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            Spacer(minLength: 0)
-
-            // Artwork — a paired theme shows its light + dark faces side by side
-            // (no per-icon labels; the auto-switch toggle below explains it),
-            // a single theme shows one large icon. With the auto-switch off,
-            // each face of a pair is tappable and carries a selection mark.
-            HStack(spacing: 18) {
-                face(theme.lightPreview, size: theme.hasPair ? 122 : 176, isDark: false)
-                if let dark = theme.darkPreview {
-                    face(dark, size: 122, isDark: true)
-                }
+    private var applyBar: some View {
+        Button {
+            guard iconManager.supportsAlternateIcons else { showError = true; return }
+            HapticFeedback.success()
+            iconManager.select(current, isDark: appliesDarkFace)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: isApplied ? "checkmark" : "square.and.arrow.down")
+                    .font(AppFont.headline)
+                Text(isApplied ? (ro ? "Activă" : "Active")
+                               : (ro ? "Setează iconița" : "Set Icon"))
+                    .font(AppFont.headline)
             }
-            .scaleEffect(isCurrent ? 1 : 0.9)
-            .animation(.smooth, value: isCurrent)
-
-            VStack(spacing: 6) {
-                Text(theme.name)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                // Fills the space under the name and tells the user what the pair
-                // means without cluttering the icons with badges. When the faces
-                // are individual choices the "adapts" claim would be false, so
-                // fall back to the category title (as single themes do).
-                if theme.hasPair && !facesSelectable {
-                    Label(ro ? "Se adaptează la tema telefonului" : "Adapts to your theme",
-                          systemImage: "circle.lefthalf.filled")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(theme.category.title)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer(minLength: 0)
+            .foregroundStyle(isApplied ? Color.secondary : Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .mediaGlass(in: Capsule(), interactive: !isApplied)
+            .contentShape(Capsule())
         }
-    }
-
-    /// One artwork face. When the faces are selectable, tapping one marks it
-    /// and Apply installs exactly that icon.
-    private func face(_ name: String, size: CGFloat, isDark: Bool) -> some View {
-        let selectable = facesSelectable && theme.hasPair && pickedDark != nil
-        let isPicked = selectable && pickedDark == isDark
-        return IconArtwork(name: name, size: size)
-            .overlay {
-                if isPicked {
-                    RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
-                        .strokeBorder(Color.accentColor, lineWidth: 2.5)
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if isPicked {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 22))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.accentColor)
-                        .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
-                        .offset(x: 7, y: -7)
-                        .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous))
-            .onTapGesture {
-                guard selectable else { return }
-                pickFace(isDark)
-            }
-            .accessibilityLabel(Text(isDark ? "Night" : "Day"))
-            .accessibilityAddTraits(isPicked ? [.isButton, .isSelected] : .isButton)
-            .animation(.snappy, value: isPicked)
+        .buttonStyle(.plain)
+        .disabled(isApplied)
+        .animation(.snappy, value: isApplied)
+        .padding(.horizontal, AppSpacing.xl)
+        .padding(.top, AppSpacing.md)
+        .padding(.bottom, AppSpacing.lg)
     }
 }
 
@@ -379,9 +307,7 @@ private struct IconArtwork: View {
                 RoundedRectangle(cornerRadius: size * 0.2237, style: .continuous)
                     .strokeBorder(.white.opacity(0.14), lineWidth: 0.5)
             )
-            // A soft, tight contact shadow — not a wide grey halo. The earlier
-            // radius:18 spread bled a grey cloud well past the icon edges, which
-            // read as an unwanted "background" around every preview.
+            // A soft, tight contact shadow — not a wide grey halo.
             .shadow(color: .black.opacity(0.16), radius: 7, y: 4)
     }
 }

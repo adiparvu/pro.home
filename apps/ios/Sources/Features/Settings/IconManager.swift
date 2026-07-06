@@ -238,6 +238,47 @@ enum AppIconCatalog {
     }
 }
 
+// MARK: - Icon families (carousel page = family, swatches = its variants)
+//
+// The picker browses FAMILIES — one hero icon per page — and offers each
+// family's related designs as swatch "tints" below, like the system icon
+// customizers. Every catalog theme belongs to exactly one family (verified
+// by AppIconFamilyTests), so nothing can silently drop out of the gallery.
+
+struct IconFamily: Identifiable, Equatable {
+    let id: String
+    let variantIDs: [String]
+    var variants: [AppIconTheme] { variantIDs.map(AppIconCatalog.theme(id:)) }
+}
+
+enum AppIconFamilies {
+    static let all: [IconFamily] = [
+        IconFamily(id: "default",     variantIDs: ["default"]),
+        IconFamily(id: "glass",       variantIDs: ["glass"]),
+        IconFamily(id: "classic",     variantIDs: ["classic"]),
+        IconFamily(id: "roseGold",    variantIDs: ["roseGold", "rose-mocha", "rose-noir"]),
+        IconFamily(id: "baroque",     variantIDs: ["baroque", "baroque-cream", "baroque-floral"]),
+        IconFamily(id: "metallic",    variantIDs: ["metallic", "metallic-gold"]),
+        IconFamily(id: "noir-metals", variantIDs: ["gold-noir", "silver-noir"]),
+        IconFamily(id: "forest",      variantIDs: ["forest", "forest-royal"]),
+        IconFamily(id: "emerald",     variantIDs: ["emerald", "emerald-gloss", "emerald-marble"]),
+        IconFamily(id: "sunset",      variantIDs: ["sunset"]),
+        IconFamily(id: "lavender",    variantIDs: ["lavender", "lavender-royal"]),
+        IconFamily(id: "arctic",      variantIDs: ["arctic"]),
+        IconFamily(id: "crimson",     variantIDs: ["crimson"]),
+        IconFamily(id: "dazzle",      variantIDs: ["dazzle", "dazzle-splatter", "dazzle-cosmic", "dazzle-floral"]),
+        IconFamily(id: "neon",        variantIDs: ["noir", "neon-magenta"]),
+        IconFamily(id: "retro",       variantIDs: ["retro-vapor", "retro-pixel", "vapor-pixel"]),
+        IconFamily(id: "midnight",    variantIDs: ["midnight"]),
+        IconFamily(id: "carbon",      variantIDs: ["carbon"]),
+        IconFamily(id: "minimal",     variantIDs: ["minimal", "minimal-outline"]),
+    ]
+
+    static func family(containing themeID: String) -> IconFamily {
+        all.first { $0.variantIDs.contains(themeID) } ?? all[0]
+    }
+}
+
 // MARK: - Color scheme watcher (placed as .background() in root view)
 
 struct IconColorSchemeWatcher: View {

@@ -44,7 +44,7 @@ struct PropertySettingsView: View {
         .navigationTitle("My Property")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

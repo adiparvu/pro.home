@@ -32,12 +32,7 @@ struct ChatSettingsView: View {
     /// The global chat theme (per-conversation overrides don't apply here).
     private var globalTheme: ChatTheme {
         _ = themeRefresh
-        let d = UserDefaults.standard
-        return .resolved(themeID: d.string(forKey: "prvio.chatTheme") ?? "appDefault",
-                         bubbleHex: d.string(forKey: "prvio.chatBubbleHex") ?? "",
-                         bgID: d.string(forKey: "prvio.chatBgID") ?? "",
-                         bgImage: d.string(forKey: "prvio.chatBgImage") ?? "",
-                         bgAnim: d.string(forKey: "prvio.chatBgAnim") ?? "")
+        return .effective(scope: nil)
     }
 
     /// Human label for the group conversation's disappearing-message timer.

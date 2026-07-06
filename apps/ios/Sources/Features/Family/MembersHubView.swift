@@ -100,7 +100,7 @@ struct MembersHubView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text("Search…"))
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

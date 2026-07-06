@@ -27,6 +27,9 @@ struct DirectMessageView: View {
     @AppStorage("prvio.chatBubbleHex") private var chatBubbleHex = ""
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var themeRefresh = 0
+    /// False until the first batch of messages lands — the initial fill must
+    /// not animate (bubbles springing into place read as an entry flash).
+    @State private var chatDidLoad = false
     @State private var editingMessage: DirectMessage? = nil
     @State private var editText = ""
     @State private var menuMessage: DirectMessage? = nil
@@ -92,13 +95,10 @@ struct DirectMessageView: View {
     private var themeScope: String { member.id.uuidString }
     private var chatTheme: ChatTheme {
         _ = themeRefresh
-        let d = UserDefaults.standard
-        let t = d.string(forKey: "prvio.chatTheme.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatThemeID
-        let b = d.string(forKey: "prvio.chatBubbleHex.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBubbleHex
-        let g = d.string(forKey: "prvio.chatBgID.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBgID
-        let i = d.string(forKey: "prvio.chatBgImage.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? (d.string(forKey: "prvio.chatBgImage") ?? "")
-        let a = d.string(forKey: "prvio.chatBgAnim.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? (d.string(forKey: "prvio.chatBgAnim") ?? "")
-        return .resolved(themeID: t, bubbleHex: b, bgID: g, bgImage: i, bgAnim: a)
+        // The @AppStorage globals establish observation so a live global
+        // change re-renders; resolution itself is centralized in effective().
+        _ = (chatThemeID, chatBubbleHex, chatBgID)
+        return .effective(scope: themeScope)
     }
     private var draftKey: String { "draft.dm.\(member.id.uuidString)" }
     private var pendingOutbox: [PendingMessage] {
@@ -279,6 +279,7 @@ struct DirectMessageView: View {
             await directMessageService.subscribeRealtime(propertyId: pid, myName: myName)
         }
         .onAppear {
+            themeRefresh &+= 1
             // Freeze the prior last-seen BEFORE markRead overwrites it, so the
             // divider marks where this session started — not messages that
             // arrive while we're reading.
@@ -649,24 +650,26 @@ struct DirectMessageView: View {
                         }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.bottom, AppSpacing.md)
-                        .animation(.spring(response: 0.35, dampingFraction: 0.86), value: conversationMessages.count)
+                        .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: conversationMessages.count)
                     }
+                    .defaultScrollAnchor(.bottom)
                     .scrollDismissesKeyboard(.immediately)
-                    .onChange(of: conversationMessages.count) { _, _ in
+                    .onChange(of: conversationMessages.count) { old, _ in
+                        defer { chatDidLoad = true }
                         let isOwnLatest = conversationMessages.last?.senderName == myName
                         // Only auto-scroll & mark read when the user is already at the
                         // bottom, or when the new message is one we just sent ourselves.
                         guard !showJumpToLatest || isOwnLatest else { return }
                         if let last = conversationMessages.last {
-                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                            if old == 0 {
+                                // First fill: land instantly, no visible jump.
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            } else {
+                                withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                            }
                         }
                         directMessageService.markRead(partner: member.name)
                         Task { await directMessageService.markReadRemote(partner: member.name, myName: myName) }
-                    }
-                    .onAppear {
-                        if let last = conversationMessages.last {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
                     }
                     .onChange(of: scrollTarget) { _, target in
                         guard let t = target else { return }

@@ -464,17 +464,7 @@ private func memberAvatarURL(_ member: FamilyMember) -> URL? {
 /// Effective theme for a conversation scope — the per-conversation override
 /// wins, otherwise the global default (mirrors ChatView/DirectMessageView).
 private func conversationTheme(scope: String) -> ChatTheme {
-    let d = UserDefaults.standard
-    func value(_ base: String) -> String {
-        d.string(forKey: "\(base).\(scope)").flatMap { $0.isEmpty ? nil : $0 }
-            ?? (d.string(forKey: base) ?? "")
-    }
-    let themeID = value("prvio.chatTheme")
-    return .resolved(themeID: themeID.isEmpty ? "appDefault" : themeID,
-                     bubbleHex: value("prvio.chatBubbleHex"),
-                     bgID: value("prvio.chatBgID"),
-                     bgImage: value("prvio.chatBgImage"),
-                     bgAnim: value("prvio.chatBgAnim"))
+    .effective(scope: scope)
 }
 
 /// 22×22 preview of a conversation theme: the wallpaper gradient when the

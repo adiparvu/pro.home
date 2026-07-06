@@ -63,6 +63,9 @@ struct ChatView: View {
     @AppStorage("prvio.chatBgID") private var chatBgID = ""
     @State private var showThemePicker = false
     @State private var themeRefresh = 0
+    /// False until the first batch of messages lands — the initial fill must
+    /// not animate (bubbles springing into place read as an entry flash).
+    @State private var chatDidLoad = false
     @State private var audioRecorder = ChatAudioRecorder()
     @State var outbox = OfflineOutbox()
 
@@ -72,13 +75,10 @@ struct ChatView: View {
     // Per-conversation override wins; otherwise the global default is used.
     private var chatTheme: ChatTheme {
         _ = themeRefresh
-        let d = UserDefaults.standard
-        let t = d.string(forKey: "prvio.chatTheme.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatThemeID
-        let b = d.string(forKey: "prvio.chatBubbleHex.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBubbleHex
-        let g = d.string(forKey: "prvio.chatBgID.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? chatBgID
-        let i = d.string(forKey: "prvio.chatBgImage.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? (d.string(forKey: "prvio.chatBgImage") ?? "")
-        let a = d.string(forKey: "prvio.chatBgAnim.\(themeScope)").flatMap { $0.isEmpty ? nil : $0 } ?? (d.string(forKey: "prvio.chatBgAnim") ?? "")
-        return .resolved(themeID: t, bubbleHex: b, bgID: g, bgImage: i, bgAnim: a)
+        // The @AppStorage globals establish observation so a live global
+        // change re-renders; resolution itself is centralized in effective().
+        _ = (chatThemeID, chatBubbleHex, chatBgID)
+        return .effective(scope: themeScope)
     }
     private var pendingOutbox: [PendingMessage] {
         guard let pid = propertyId else { return [] }
@@ -346,6 +346,7 @@ struct ChatView: View {
             if online { Task { await flushOutbox() } }
         }
         .onAppear {
+            themeRefresh &+= 1
             withAnimation(.easeInOut(duration: 0.2)) { tabBarVis.isHidden = true }
             if text.isEmpty, let d = UserDefaults.standard.string(forKey: draftKey), !d.isEmpty { text = d }
         }
@@ -725,12 +726,13 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.top, AppSpacing.sm)
-                .animation(.spring(response: 0.35, dampingFraction: 0.86), value: msgs.count)
+                .animation(chatDidLoad ? .spring(response: 0.35, dampingFraction: 0.86) : nil, value: msgs.count)
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: messageService.messages.count) { old, new in
                 guard !messageService.messages.isEmpty else { return }
+                defer { chatDidLoad = true }
                 if old == 0 {
                     proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                 } else {
@@ -744,13 +746,12 @@ struct ChatView: View {
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    // Land on the unread divider when there's a backlog, otherwise
-                    // rest at the newest message like usual.
-                    if unreadDividerId != nil {
+                // defaultScrollAnchor(.bottom) already rests on the newest
+                // message from the first frame — a delayed corrective jump here
+                // read as an entry flash. Only the unread divider needs one.
+                if unreadDividerId != nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         proxy.scrollTo("UNREAD_DIVIDER", anchor: .top)
-                    } else {
-                        proxy.scrollTo("CHAT_BOTTOM", anchor: .bottom)
                     }
                 }
             }

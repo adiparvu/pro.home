@@ -16,13 +16,33 @@ enum ChatBackgroundStore {
     static func url(for fileName: String) -> URL? {
         fileName.isEmpty ? nil : dir.appendingPathComponent(fileName)
     }
+
+    /// Decoded wallpapers, keyed by file name. The chat re-evaluates its body
+    /// constantly (typing, presence, scroll) and the background used to hit
+    /// `UIImage(contentsOfFile:)` — a synchronous main-thread JPEG decode —
+    /// on every single pass, which read as a heavy entry stutter.
+    private static let decoded = NSCache<NSString, UIImage>()
+
+    /// The wallpaper image for a stored file name, decoded once and cached.
+    static func image(named fileName: String) -> UIImage? {
+        if let hit = decoded.object(forKey: fileName as NSString) { return hit }
+        guard let url = url(for: fileName),
+              let img = UIImage(contentsOfFile: url.path) else { return nil }
+        decoded.setObject(img, forKey: fileName as NSString)
+        return img
+    }
+
     /// Persist an image for the given scope and return the stored file name.
     static func save(_ image: UIImage, scope: String?) -> String? {
         let safe = (scope ?? "global").replacingOccurrences(of: "/", with: "_")
         let name = "chatbg-\(safe).jpg"
         guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
-        do { try data.write(to: dir.appendingPathComponent(name)); return name }
-        catch { return nil }
+        do {
+            try data.write(to: dir.appendingPathComponent(name))
+            // The name is scope-stable, so a re-upload must drop the old decode.
+            decoded.removeObject(forKey: name as NSString)
+            return name
+        } catch { return nil }
     }
 }
 
@@ -108,10 +128,43 @@ struct ChatTheme: Identifiable {
         )
     }
 
+    /// The one authority for what a conversation actually shows.
+    ///
+    /// `scope == nil` resolves the global default. For a conversation scope,
+    /// THEME and BUBBLE fall back per-field to the global values, but the
+    /// three BACKGROUND keys are one setting: the picker clears the other two
+    /// ("" = explicitly none) when one is chosen, so a per-field fallback
+    /// would resurrect a stale global photo over a freshly picked preset —
+    /// the "background never changes" bug. If ANY scoped background key is
+    /// set, the scoped background layer wins wholesale.
+    static func effective(scope: String?, defaults d: UserDefaults = .standard) -> ChatTheme {
+        func nonEmpty(_ key: String) -> String? {
+            d.string(forKey: key).flatMap { $0.isEmpty ? nil : $0 }
+        }
+        let gTheme = nonEmpty("prvio.chatTheme") ?? "appDefault"
+        let gBubble = nonEmpty("prvio.chatBubbleHex") ?? ""
+        var bg = nonEmpty("prvio.chatBgID") ?? ""
+        var img = nonEmpty("prvio.chatBgImage") ?? ""
+        var anim = nonEmpty("prvio.chatBgAnim") ?? ""
+        var theme = gTheme
+        var bubble = gBubble
+        if let scope {
+            theme = nonEmpty("prvio.chatTheme.\(scope)") ?? gTheme
+            bubble = nonEmpty("prvio.chatBubbleHex.\(scope)") ?? gBubble
+            let sBg = d.string(forKey: "prvio.chatBgID.\(scope)") ?? ""
+            let sImg = d.string(forKey: "prvio.chatBgImage.\(scope)") ?? ""
+            let sAnim = d.string(forKey: "prvio.chatBgAnim.\(scope)") ?? ""
+            if !(sBg.isEmpty && sImg.isEmpty && sAnim.isEmpty) {
+                bg = sBg; img = sImg; anim = sAnim
+            }
+        }
+        return .resolved(themeID: theme, bubbleHex: bubble, bgID: bg,
+                         bgImage: img, bgAnim: anim)
+    }
+
     @ViewBuilder var background: some View {
         if let name = backgroundImage,
-           let url = ChatBackgroundStore.url(for: name),
-           let img = UIImage(contentsOfFile: url.path) {
+           let img = ChatBackgroundStore.image(named: name) {
             Image(uiImage: img)
                 .resizable()
                 .scaledToFill()

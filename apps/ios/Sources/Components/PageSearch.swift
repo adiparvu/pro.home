@@ -8,10 +8,11 @@ import SwiftUI
 //   @State private var searchText = ""
 //
 //   .searchable(text: $searchText,
-//               placement: .navigationBarDrawer(displayMode: .automatic))
+//               placement: .navigationBarDrawer(displayMode: .always))
 //
-// The drawer sits under the page title and collapses on scroll, exactly
-// like Notes or Mail — a separate magnifier button would duplicate it.
+// The drawer sits pinned under the page title with its space reserved from
+// the first frame — .automatic made it flash over the large title during
+// the push transition. A separate magnifier button would duplicate it.
 // Filter the displayed collection with `matchesSearch`. `SearchIconButton`
 // and the inline `PageSearchField` remain only for surfaces outside a
 // navigation bar (the Digital Twin's floating map-search overlay).
