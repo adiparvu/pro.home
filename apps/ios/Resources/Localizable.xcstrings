@@ -1,6 +1,56 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Layers": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Straturi" } }
+      }
+    },
+    "Buried utilities": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Utilit\u0103\u021bi \u00eengropate" } }
+      }
+    },
+    "Underground zones outlined on the same photo": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Zonele subterane conturate pe aceea\u0219i fotografie" } }
+      }
+    },
+    "Open tasks": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Taskuri deschise" } }
+      }
+    },
+    "Pulsing badge on elements with work to do": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Insign\u0103 pulsant\u0103 pe elementele cu treab\u0103 de f\u0103cut" } }
+      }
+    },
+    "Health tint": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Tent\u0103 de s\u0103n\u0103tate" } }
+      }
+    },
+    "Zones colored by the health of what's inside": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Zonele colorate dup\u0103 s\u0103n\u0103tatea a ce con\u021bin" } }
+      }
+    },
+    "Journal photos": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Fotografii din jurnal" } }
+      }
+    },
+    "Photo counts anchored to their zones": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Num\u0103rul de fotografii ancorat pe zonele lor" } }
+      }
+    },
+    "Journal": {
+      "localizations": {
+        "ro": { "stringUnit": { "state": "translated", "value": "Jurnal" } }
+      }
+    },
     "Search the map\u2026": {
       "localizations": {
         "ro": { "stringUnit": { "state": "translated", "value": "Caut\u0103 pe hart\u0103\u2026" } }

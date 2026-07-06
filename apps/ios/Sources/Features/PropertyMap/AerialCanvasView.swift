@@ -31,6 +31,16 @@ struct AerialCanvasView: View {
     /// When set, the canvas zooms in and centers on this normalized point
     /// (search results, "show on map" actions).
     var focus: MapFocus? = nil
+    // Live layers (Faza 3): all optional, all rendered over the same photo.
+    /// Zones drawn with a dashed "underground" outline (buried utilities).
+    var dashedZoneIds: Set<UUID> = []
+    /// Per-zone fill/stroke override (health tinting).
+    var zoneTintOverride: [UUID: Color] = [:]
+    /// Pulsing badge color per element id (open tasks: red = urgent/overdue).
+    var elementBadges: [UUID: Color] = [:]
+    /// Photo-count bubbles anchored at zone centroids (journal layer).
+    var journalBadges: [TwinJournalBadge] = []
+    var onJournalBadgeTap: (UUID) -> Void = { _ in }
     var pinMode: Bool = false
     var zoneDrawMode: Bool = false
     var draftZonePoints: [CGPoint] = []   // normalized 0–1
@@ -184,6 +194,13 @@ struct AerialCanvasView: View {
                     }
                 }
 
+                // Journal layer: photo-count bubbles at zone centroids.
+                if !pinMode && !zoneDrawMode && !reshapeMode {
+                    ForEach(journalBadges) { badge in
+                        journalBadgeView(badge, size: geo.size)
+                    }
+                }
+
                 if interactive && reshapeMode { reshapeOverlay(size: geo.size) }
 
                 if interactive && pinMode { placeBanner }
@@ -224,7 +241,8 @@ struct AerialCanvasView: View {
 
     @ViewBuilder
     private func pinView(_ el: PropertyElement, size: CGSize) -> some View {
-        let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames)
+        let pin = AerialElementPin(element: el, dragging: dragId == el.id, showName: showNames,
+                                   badge: elementBadges[el.id])
             .position(pinPoint(el, size))
         if interactive {
             let base = pin
@@ -317,6 +335,36 @@ struct AerialCanvasView: View {
         return CGPoint(x: nx * size.width, y: ny * size.height)
     }
 
+    // MARK: - Journal badges
+
+    @ViewBuilder
+    private func journalBadgeView(_ badge: TwinJournalBadge, size: CGSize) -> some View {
+        Button {
+            HapticFeedback.impact(.light)
+            onJournalBadgeTap(badge.id)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "photo.fill")
+                    .font(.system(size: 10, weight: .bold))
+                Text("\(badge.count)")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, AppSpacing.sm).padding(.vertical, 4)
+            .background {
+                ZStack {
+                    Capsule().fill(.ultraThinMaterial)
+                    Capsule().fill(Color.orange.opacity(0.45))
+                }
+            }
+            .overlay(Capsule().strokeBorder(.white.opacity(0.6), lineWidth: 1))
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+        }
+        .buttonStyle(.plain)
+        .position(x: badge.point.x * size.width, y: badge.point.y * size.height - 22)
+        .accessibilityLabel("Journal photos")
+    }
+
     private func clampNorm(_ p: CGPoint, in size: CGSize) -> CGPoint {
         CGPoint(
             x: min(max(p.x / max(size.width, 1), 0), 1),
@@ -330,9 +378,16 @@ struct AerialCanvasView: View {
     private func zoneShape(_ zone: PropertyZone, size: CGSize) -> some View {
         let pts = zone.imagePoints
         let interactable = interactive && !pinMode && !zoneDrawMode && !reshapeMode
+        let tint = zoneTintOverride[zone.id] ?? zone.tint
+        let dashed = dashedZoneIds.contains(zone.id)
         ZStack {
-            NormPolygon(points: pts).fill(zone.tint.opacity(0.22))
-            NormPolygon(points: pts).stroke(zone.tint, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+            NormPolygon(points: pts).fill(tint.opacity(dashed ? 0.12 : 0.22))
+            NormPolygon(points: pts).stroke(
+                tint,
+                style: dashed
+                    ? StrokeStyle(lineWidth: 2, lineJoin: .round, dash: [7, 5])
+                    : StrokeStyle(lineWidth: 2, lineJoin: .round)
+            )
         }
         .contentShape(NormPolygon(points: pts))
         .onTapGesture { if interactable { onZoneTap(zone) } }
@@ -437,6 +492,8 @@ private struct AerialElementPin: View {
     let element: PropertyElement
     var dragging: Bool = false
     var showName: Bool = true
+    /// Live-layer badge (open tasks) — pulses unless Reduce Motion is on.
+    var badge: Color? = nil
 
     private let size: CGFloat = 28
 
@@ -472,6 +529,12 @@ private struct AerialElementPin: View {
                         .padding(2)
                         .background(Circle().fill(.black.opacity(0.55)))
                         .offset(x: 4, y: -4)
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                if let badge {
+                    PulsingBadge(color: badge)
+                        .offset(x: -5, y: -5)
                 }
             }
             .shadow(color: .black.opacity(0.35), radius: 3, y: 1)

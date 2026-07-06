@@ -15,6 +15,7 @@ struct DigitalTwinView: View {
     @Environment(AppSettings.self) var appSettings
     @Environment(DocumentService.self) var documentService
     @Environment(TaskService.self) var taskService
+    @Environment(PhotoJournalService.self) var photoJournalService
 
     @State private var selectedElement: PropertyElement?
     @State private var pinMode = false
@@ -38,6 +39,16 @@ struct DigitalTwinView: View {
     @State private var mapSearchText = ""
     @State private var showZonesList = false
     @State private var showObjectsList = false
+    @State private var showLayers = false
+    @State private var showJournal = false
+
+    // Live layers (Faza 3) — persisted so the twin reopens as it was left.
+    @AppStorage("prvio.twin.layer.utilities") private var layerUtilities = false
+    @AppStorage("prvio.twin.layer.tasks") private var layerTasks = false
+    @AppStorage("prvio.twin.layer.health") private var layerHealth = false
+    @AppStorage("prvio.twin.layer.journal") private var layerJournal = false
+
+    private var anyLayerActive: Bool { layerUtilities || layerTasks || layerHealth || layerJournal }
 
     enum ZoneViewKind: Equatable { case hidden, all, zone(UUID) }
 
@@ -47,10 +58,79 @@ struct DigitalTwinView: View {
     private var displayedZones: [PropertyZone] {
         let base = reshapeZoneId == nil ? zoneService.zones : zoneService.zones.filter { $0.id != reshapeZoneId }
         if editingOverlayActive { return base }
+        var visible: [PropertyZone]
         switch zoneView {
-        case .hidden:        return []
-        case .all:           return base
-        case .zone(let id):  return base.filter { $0.id == id }
+        case .hidden:        visible = []
+        case .all:           visible = base
+        case .zone(let id):  visible = base.filter { $0.id == id }
+        }
+        // Health tinting only makes sense over every zone at once.
+        if layerHealth { visible = base }
+        // The buried-utilities layer surfaces underground zones on the same
+        // photo even while the zones lens is off.
+        if layerUtilities {
+            for z in base where z.layer == .utility && !visible.contains(where: { $0.id == z.id }) {
+                visible.append(z)
+            }
+        }
+        return visible
+    }
+
+    // MARK: - Live layer data
+
+    private var dashedZoneIds: Set<UUID> {
+        guard layerUtilities else { return [] }
+        return Set(zoneService.zones.filter { $0.layer == .utility }.map(\.id))
+    }
+
+    /// Health tint per zone: the average health of the elements inside it
+    /// (geometric containment or saved link), falling back to the zone's own
+    /// score when it's empty.
+    private var zoneTintOverride: [UUID: Color] {
+        guard layerHealth else { return [:] }
+        var tint: [UUID: Color] = [:]
+        for zone in zoneService.zones {
+            let inside = elementService.elements.filter { el in
+                let p = normPoint(el)
+                return zone.containsImage(x: p.x, y: p.y) || el.zoneId == zone.id
+            }
+            let score = inside.isEmpty
+                ? zone.healthScore
+                : inside.reduce(0) { $0 + $1.healthScore } / inside.count
+            tint[zone.id] = score >= 80 ? Color.brandSuccess : score >= 50 ? .orange : .red
+        }
+        return tint
+    }
+
+    /// Pulsing badge per element with open work: red for overdue or urgent
+    /// tasks, orange for the rest.
+    private var elementBadges: [UUID: Color] {
+        guard layerTasks else { return [:] }
+        var badges: [UUID: Color] = [:]
+        for task in taskService.tasks where !task.isCompleted && task.status != "cancelled" {
+            guard let elId = task.elementId else { continue }
+            let urgent = task.isOverdue || task.priority == "urgent" || task.priority == "high"
+            if urgent { badges[elId] = .red }
+            else if badges[elId] == nil { badges[elId] = .orange }
+        }
+        return badges
+    }
+
+    /// Journal photo counts anchored at their zone's centroid.
+    private var journalBadges: [TwinJournalBadge] {
+        guard layerJournal else { return [] }
+        return zoneService.zones.compactMap { zone in
+            let pts = zone.imagePoints
+            guard !pts.isEmpty else { return nil }
+            let count = photoJournalService.entries.filter { $0.zoneId == zone.id }.count
+            guard count > 0 else { return nil }
+            let n = Double(pts.count)
+            return TwinJournalBadge(
+                id: zone.id,
+                point: CGPoint(x: pts.map(\.x).reduce(0, +) / n,
+                               y: pts.map(\.y).reduce(0, +) / n),
+                count: count
+            )
         }
     }
 
@@ -91,6 +171,11 @@ struct DigitalTwinView: View {
                     zones: displayedZones,
                     interactive: true,
                     focus: mapFocus,
+                    dashedZoneIds: dashedZoneIds,
+                    zoneTintOverride: zoneTintOverride,
+                    elementBadges: elementBadges,
+                    journalBadges: journalBadges,
+                    onJournalBadgeTap: { _ in showJournal = true },
                     pinMode: pinMode,
                     zoneDrawMode: zoneDrawMode,
                     draftZonePoints: draftZonePoints,
@@ -147,6 +232,15 @@ struct DigitalTwinView: View {
                 if reshapeZoneId != nil {
                     reshapeToolbar
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
+
+                if anyLayerActive && !editingOverlayActive {
+                    TwinLayersLegend(utilities: layerUtilities, tasks: layerTasks,
+                                     health: layerHealth, journal: layerJournal)
+                        .padding(.leading, AppSpacing.lg)
+                        .padding(.bottom, 40)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .transition(.opacity)
                 }
             } else {
                 emptyState
@@ -242,6 +336,19 @@ struct DigitalTwinView: View {
             .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showLayers) {
+            TwinLayersSheet(utilities: $layerUtilities, tasks: $layerTasks,
+                            health: $layerHealth, journal: $layerJournal)
+                .presentationDetents([.height(430)])
+                .presentationBackgroundInteraction(.enabled)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showJournal) {
+            NavigationStack { PhotoJournalView() }
+                .environment(photoJournalService)
+                .environment(propertyService)
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showZonesList) {
             NavigationStack { ZonesListView() }
                 .presentationDragIndicator(.visible)
@@ -290,6 +397,17 @@ struct DigitalTwinView: View {
             controlButton(icon: controlsExpanded ? "xmark" : "ellipsis", tint: .white) {
                 withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { controlsExpanded.toggle() }
                 HapticFeedback.impact(.medium)
+            }
+
+            // The layers switcher is always one tap away — it's how the twin
+            // becomes "live" (utilities, tasks, health, journal).
+            controlButton(
+                icon: "square.3.layers.3d\(anyLayerActive ? ".top.filled" : "")",
+                tint: anyLayerActive ? Color.accentColor : .white,
+                label: "Layers"
+            ) {
+                showLayers = true
+                HapticFeedback.impact(.light)
             }
 
             if controlsExpanded {
