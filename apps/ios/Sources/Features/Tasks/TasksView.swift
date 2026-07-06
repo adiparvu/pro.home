@@ -272,21 +272,12 @@ struct TasksView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "checklist")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.primary.opacity(0.18))
-            Text(emptyTitle)
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.55))
-            if filter == .all {
-                Button("Add your first task") { showAdd = true }
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.accentColor)
-            }
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "checklist",
+            title: emptyTitle,
+            actionLabel: filter == .all ? "Add your first task" : nil,
+            action: filter == .all ? { showAdd = true } : nil
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

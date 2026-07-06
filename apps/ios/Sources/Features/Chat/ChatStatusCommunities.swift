@@ -405,17 +405,11 @@ struct CommunitiesView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "person.3.sequence.fill")
-                .font(.system(size: 44)).foregroundStyle(Color.accentColor.opacity(0.6))
-            Text("Organizează grupuri")
-                .font(.system(size: 17, weight: .semibold))
-            Text("Creează grupuri separate pentru muncitori, familie sau orice altă echipă.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-        }
-        .padding(.top, 40)
+        EmptyStateView(
+            icon: "person.3.sequence.fill",
+            title: "Organizează grupuri",
+            message: "Creează grupuri separate pentru muncitori, familie sau orice altă echipă."
+        )
     }
 }
 

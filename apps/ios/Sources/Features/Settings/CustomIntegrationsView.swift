@@ -90,20 +90,11 @@ struct CustomIntegrationsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "puzzlepiece.extension.fill")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            Text("No integrations yet")
-                .font(AppFont.subheadline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.emphasis))
-            Text("Each integration gets its own key that you can pause, rotate or revoke at any time.")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xxl)
+        EmptyStateView(
+            icon: "puzzlepiece.extension.fill",
+            title: "No integrations yet",
+            message: "Each integration gets its own key that you can pause, rotate or revoke at any time."
+        )
     }
 
     private var addButton: some View {

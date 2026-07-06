@@ -295,32 +295,16 @@ struct NFCWalletView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                Image(systemName: "wave.3.right")
-                    .font(.system(size: 34, weight: .light))
-                    .foregroundStyle(Color.blue.opacity(0.45))
-            }
-            Text("No NFC tags yet")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Scan an NFC tag to link it to a room,\nappliance, or element in your property.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button { scanForNewTag() } label: {
-                Label("Scan First Tag", systemImage: "wave.3.right.circle.fill")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, AppSpacing.xxl).padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
+            EmptyStateView(
+                icon: "wave.3.right",
+                title: "No NFC tags yet",
+                message: "Scan an NFC tag to link it to a room,\nappliance, or element in your property.",
+                actionLabel: "Scan First Tag",
+                action: { scanForNewTag() },
+                tint: .blue
+            )
             .disabled(!NFCScanService.isSupported)
             Spacer()
         }

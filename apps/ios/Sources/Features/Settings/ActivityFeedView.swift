@@ -460,22 +460,16 @@ struct ActivityFeedView: View {
     // MARK: Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
+        VStack {
             Spacer()
-            Image(systemName: "clock.badge.questionmark")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.primary.opacity(0.12))
-            Text("No activity in this period")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("Activities appear automatically as you\nadd tasks, documents, and transactions.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.3))
-                .multilineTextAlignment(.center)
+            EmptyStateView(
+                icon: "clock.badge.questionmark",
+                title: "No activity in this period",
+                message: "Activities appear automatically as you\nadd tasks, documents, and transactions."
+            )
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 40)
     }
 
     // MARK: Helpers

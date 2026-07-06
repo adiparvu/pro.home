@@ -236,33 +236,14 @@ struct PlantsView: View {
     // MARK: - States
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Text("🪴")
-                .font(.system(size: 60))
-            Text("No plants added")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Add plants to track\nwatering and their health status.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-            Button { showAddPlant = true } label: {
-                Label("Add first plant", systemImage: "plus")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 13)
-                    .background(
-                        Color.accentColor,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-            }
-            .buttonStyle(.plain)
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "leaf.fill",
+            title: "No plants added",
+            message: "Add plants to track\nwatering and their health status.",
+            actionLabel: "Add first plant",
+            action: { showAddPlant = true }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
 
     private var loadingState: some View {
@@ -275,16 +256,10 @@ struct PlantsView: View {
     }
 
     private var noPropertyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "house.slash")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.primary.opacity(0.12))
-            Text("No property added")
-                .font(AppFont.headline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "house.slash",
+            title: "No property added"
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

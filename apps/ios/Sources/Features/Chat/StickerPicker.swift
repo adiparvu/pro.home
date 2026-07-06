@@ -225,26 +225,12 @@ struct StickerPicker: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: selectedCategoryId == "favorites" ? "heart.fill"
-                  : selectedCategoryId == "recent" ? "clock.fill" : "face.smiling")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.primary.opacity(0.14))
-            Group {
-                if selectedCategoryId == "favorites" {
-                    Text("No favorites yet")
-                } else if selectedCategoryId == "recent" {
-                    Text("No stickers used yet")
-                } else {
-                    Text("No stickers")
-                }
-            }
-            .font(.system(size: 15))
-            .foregroundStyle(Color.primary.opacity(0.38))
-            Spacer()
-        }
-        .frame(height: 200)
+        EmptyStateView(
+            icon: selectedCategoryId == "favorites" ? "heart.fill"
+                  : selectedCategoryId == "recent" ? "clock.fill" : "face.smiling",
+            title: selectedCategoryId == "favorites" ? "No favorites yet"
+                   : selectedCategoryId == "recent" ? "No stickers used yet" : "No stickers"
+        )
     }
 }
 

@@ -170,19 +170,12 @@ struct NotificationCenterView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "bell.slash")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.primary.opacity(0.18))
-            Text("No notifications")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text("You're all caught up!")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.3))
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "bell.slash",
+            title: "No notifications",
+            message: "You're all caught up!"
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Navigation

@@ -166,14 +166,12 @@ struct SearchView: View {
     // MARK: - Empty
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack {
             Spacer()
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 40))
-                .foregroundStyle(Color.primary.opacity(0.15))
-            Text("No results for \"\(query)\"")
-                .font(.subheadline)
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
+            EmptyStateView(
+                icon: "doc.text.magnifyingglass",
+                title: "No results for \"\(query)\""
+            )
             Spacer()
         }
     }

@@ -298,15 +298,13 @@ struct UtilityView: View {
     }
 
     private func emptyState(type: (id: String, icon: String, color: Color, label: String, unit: String)?) -> some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             Spacer(minLength: 40)
-            Image(systemName: type?.icon ?? "bolt.fill")
-                .font(.system(size: 44)).foregroundStyle(Color.primary.opacity(0.18))
-            Text(String(format: String(localized: "No %@ bills yet"), type?.label ?? ""))
-                .font(.system(size: 16)).foregroundStyle(Color.primary.opacity(AppOpacity.secondaryText))
-            Text("Tap + to add manually or scan an invoice to extract data automatically.")
-                .font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.3))
-                .multilineTextAlignment(.center).padding(.horizontal, 32)
+            EmptyStateView(
+                icon: type?.icon ?? "bolt.fill",
+                title: "No \(type?.label ?? "") bills yet",
+                message: "Tap + to add manually or scan an invoice to extract data automatically."
+            )
             Spacer(minLength: 40)
         }
     }

@@ -182,34 +182,14 @@ struct AppliancesView: View {
     // MARK: - States
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "cube.box.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.primary.opacity(0.15))
-            Text("No appliances yet")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Track warranties, model numbers, and maintenance for all your home appliances.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Button {
-                showAdd = true
-            } label: {
-                Label("Add your first appliance", systemImage: "plus")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "cube.box.fill",
+            title: "No appliances yet",
+            message: "Track warranties, model numbers, and maintenance for all your home appliances.",
+            actionLabel: "Add your first appliance",
+            action: { showAdd = true }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
 
     private var loadingState: some View {

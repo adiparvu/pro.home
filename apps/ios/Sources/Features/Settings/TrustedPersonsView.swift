@@ -145,25 +145,11 @@ struct TrustedPersonsView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.hairline))
-                    .frame(width: 64, height: 64)
-                Image(systemName: "person.2.badge.key.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(Color.primary.opacity(0.3))
-            }
-            Text("Nicio persoană de încredere")
-                .font(AppFont.body)
-                .foregroundStyle(.primary)
-            Text("Adaugă persoane care te pot ajuta cu recuperarea contului")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        EmptyStateView(
+            icon: "person.2.badge.key.fill",
+            title: "Nicio persoană de încredere",
+            message: "Adaugă persoane care te pot ajuta cu recuperarea contului"
+        )
     }
 
     // MARK: - Add button

@@ -204,34 +204,14 @@ struct PaintColorsView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "paintpalette.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.primary.opacity(0.15))
-            Text("No colors saved yet")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.6))
-            Text("Save paint colors for each room so you can easily reorder or touch up later.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Button {
-                showAdd = true
-            } label: {
-                Label("Add first color", systemImage: "plus")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "paintpalette.fill",
+            title: "No colors saved yet",
+            message: "Save paint colors for each room so you can easily reorder or touch up later.",
+            actionLabel: "Add first color",
+            action: { showAdd = true }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
 
     // MARK: - Share / Print

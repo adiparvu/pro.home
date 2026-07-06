@@ -136,19 +136,13 @@ struct PropertySettingsView: View {
     // MARK: - Empty
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             Spacer(minLength: 60)
-            Image(systemName: "house.circle")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.primary.opacity(0.2))
-            Text("No property found")
-                .font(AppFont.title3)
-                .foregroundStyle(Color.primary.opacity(0.55))
-            Text("Your property data will appear here once it's configured.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.38))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            EmptyStateView(
+                icon: "house.circle",
+                title: "No property found",
+                message: "Your property data will appear here once it's configured."
+            )
         }
     }
 }

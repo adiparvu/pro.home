@@ -42,20 +42,11 @@ struct StarredMessagesView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "flag.slash")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.primary.opacity(0.18))
-            Text("No starred messages")
-                .font(.system(size: 17, weight: .semibold))
-            Text("Mark a message to find it here later.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-            Spacer()
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "flag.slash",
+            title: "No starred messages",
+            message: "Mark a message to find it here later."
+        )
     }
 }
 

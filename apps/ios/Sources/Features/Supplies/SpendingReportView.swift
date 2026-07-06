@@ -314,11 +314,7 @@ struct SpendingReportView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "chart.bar").font(.system(size: 40)).foregroundStyle(Color.primary.opacity(0.1))
-            Text(String(localized: "report_no_data")).font(.system(size: 15)).foregroundStyle(Color.primary.opacity(0.4))
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 40)
+        EmptyStateView(icon: "chart.bar", title: "report_no_data")
     }
 
     // MARK: - Data helpers

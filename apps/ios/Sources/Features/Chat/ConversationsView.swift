@@ -690,23 +690,13 @@ struct ConversationsView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                Image(systemName: "bubble.left.and.bubble.right.fill")
-                    .font(.system(size: 30))
-                    .foregroundStyle(Color.accentColor)
-            }
-            Text("Nicio conversație")
-                .font(AppFont.title3)
-            Text("Adaugă membri familiei pentru a începe.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            EmptyStateView(
+                icon: "bubble.left.and.bubble.right.fill",
+                title: "Nicio conversație",
+                message: "Adaugă membri familiei pentru a începe."
+            )
             Spacer()
         }
     }

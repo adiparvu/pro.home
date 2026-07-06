@@ -126,25 +126,11 @@ struct AuditLogView: View {
     // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.hairline))
-                    .frame(width: 64, height: 64)
-                Image(systemName: "clock.badge.checkmark")
-                    .font(.system(size: 28))
-                    .foregroundStyle(Color.primary.opacity(0.3))
-            }
-            Text("Nicio activitate înregistrată")
-                .font(AppFont.body)
-                .foregroundStyle(.primary)
-            Text("Activitățile de securitate vor apărea aici")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(0.4))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
+        EmptyStateView(
+            icon: "clock.badge.checkmark",
+            title: "Nicio activitate înregistrată",
+            message: "Activitățile de securitate vor apărea aici"
+        )
     }
 
     // MARK: - Helpers

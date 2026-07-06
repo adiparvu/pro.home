@@ -337,15 +337,12 @@ struct ContactsInviteView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Spacer()
-            Image(systemName: "person.2.slash")
-                .font(.system(size: 44, weight: .light))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-            Text("No contacts found").font(AppFont.headline).foregroundStyle(.primary)
-            Button { onManualEntry() } label: { Text("Add manually").font(AppFont.subheadline) }
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "person.2.slash",
+            title: "No contacts found",
+            actionLabel: "Add manually",
+            action: onManualEntry
+        )
     }
 
     // Stable per-name color so a contact looks consistent between sessions.

@@ -214,24 +214,11 @@ extension FinancesView {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.primary.opacity(AppOpacity.hairline))
-                    .frame(width: 72, height: 72)
-                Image(systemName: "banknote")
-                    .font(.system(size: 28))
-                    .foregroundStyle(Color.primary.opacity(0.25))
-            }
-            Text("No transactions")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(0.55))
-            Text("Add your first transaction by tapping +")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 48)
+        EmptyStateView(
+            icon: "banknote",
+            title: "No transactions",
+            message: "Add your first transaction by tapping +"
+        )
     }
 
     // MARK: Helpers

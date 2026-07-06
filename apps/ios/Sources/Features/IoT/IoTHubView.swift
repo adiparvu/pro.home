@@ -349,31 +349,16 @@ struct IoTHubView: View {
 
     // MARK: - Empty state
 
-    private func iotEmptyState(icon: String, title: String, body: String) -> some View {
-        VStack(spacing: 14) {
+    private func iotEmptyState(icon: String, title: LocalizedStringKey, body: LocalizedStringKey) -> some View {
+        VStack {
             Spacer()
-            ZStack {
-                Circle().fill(Color.accentColor.opacity(0.1)).frame(width: 72, height: 72)
-                Image(systemName: icon)
-                    .font(.system(size: 28, weight: .light))
-                    .foregroundStyle(Color.accentColor.opacity(0.5))
-            }
-            Text(title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
-            Text(body)
-                .font(.system(size: 13))
-                .foregroundStyle(Color.primary.opacity(AppOpacity.disabled))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            Button { addAction() } label: {
-                Label("Add", systemImage: "plus")
-                    .font(AppFont.footnoteEmphasis)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22).padding(.vertical, 11)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-            }
-            .buttonStyle(.plain)
+            EmptyStateView(
+                icon: icon,
+                title: title,
+                message: body,
+                actionLabel: "Add",
+                action: { addAction() }
+            )
             Spacer()
         }
     }

@@ -1,6 +1,228 @@
 {
   "sourceLanguage": "ro",
   "strings": {
+    "Activează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Enable" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Activează" } }
+      }
+    },
+    "Adaugă": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă" } }
+      }
+    },
+    "Adaugă membri": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add members" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă membri" } }
+      }
+    },
+    "Adaugă membri familiei pentru a începe.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add family members to get started." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă membri familiei pentru a începe." } }
+      }
+    },
+    "Adaugă în listă": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add to list" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Adaugă în listă" } }
+      }
+    },
+    "Anulează secretizarea": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove secrecy" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Anulează secretizarea" } }
+      }
+    },
+    "Arhivează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Archive" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Arhivează" } }
+      }
+    },
+    "Blochează pe %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Block %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Blochează pe %@" } }
+      }
+    },
+    "Caută grupuri, persoane…": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search groups, people…" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Caută grupuri, persoane…" } }
+      }
+    },
+    "Conversația va fi golită și arhivată pe acest dispozitiv.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The conversation will be cleared and archived on this device." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Conversația va fi golită și arhivată pe acest dispozitiv." } }
+      }
+    },
+    "Conversație nouă": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New conversation" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Conversație nouă" } }
+      }
+    },
+    "Conversații arhivate": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Archived conversations" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Conversații arhivate" } }
+      }
+    },
+    "Creează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Create" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Creează" } }
+      }
+    },
+    "Creează grupuri separate pentru muncitori, familie sau orice altă echipă.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Create separate groups for workers, family or any other team." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Creează grupuri separate pentru muncitori, familie sau orice altă echipă." } }
+      }
+    },
+    "Deblochează pe %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unblock %@" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Deblochează pe %@" } }
+      }
+    },
+    "Detașează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unpin" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Detașează" } }
+      }
+    },
+    "Dezarhivează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unarchive" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Dezarhivează" } }
+      }
+    },
+    "Fixează": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pin" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Fixează" } }
+      }
+    },
+    "Golește": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Golește" } }
+      }
+    },
+    "Golește conversația": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear conversation" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Golește conversația" } }
+      }
+    },
+    "Golești conversația?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear this conversation?" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Golești conversația?" } }
+      }
+    },
+    "Marchează citit": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mark as read" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Marchează citit" } }
+      }
+    },
+    "Marchează necitit": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mark as unread" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Marchează necitit" } }
+      }
+    },
+    "Mesajele acestui grup vor fi șterse definitiv.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This group's messages will be permanently deleted." } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Mesajele acestui grup vor fi șterse definitiv." } }
+      }
+    },
+    "Muncă": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Work" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Muncă" } }
+      }
+    },
+    "Nicio conversație": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No conversations" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Nicio conversație" } }
+      }
+    },
+    "Oprește": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stop" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprește" } }
+      }
+    },
+    "Oprește sunetul": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mute" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Oprește sunetul" } }
+      }
+    },
+    "Organizează grupuri": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Organize groups" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Organizează grupuri" } }
+      }
+    },
+    "Pornește sunetul": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unmute" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Pornește sunetul" } }
+      }
+    },
+    "Scoate din listă": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove from list" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Scoate din listă" } }
+      }
+    },
+    "Secretizează conversația": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Make conversation secret" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Secretizează conversația" } }
+      }
+    },
+    "Șterge conversația": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete conversation" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Șterge conversația" } }
+      }
+    },
+    "Ștergi conversația?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delete this conversation?" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "Ștergi conversația?" } }
+      }
+    },
+    "📍 Locație": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "📍 Location" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "📍 Locație" } }
+      }
+    },
+    "📎 Fișier": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "📎 File" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "📎 Fișier" } }
+      }
+    },
+    "🚫 Mesaj șters": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "🚫 Deleted message" } },
+        "ro": { "stringUnit": { "state": "translated", "value": "🚫 Mesaj șters" } }
+      }
+    },
     "Start the private conversation": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Start the private conversation" } },

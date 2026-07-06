@@ -224,43 +224,18 @@ struct PhotoJournalView: View {
     // MARK: - States
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
+        VStack {
             Spacer()
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(colors: [Color.accentColor.opacity(0.22),
-                                                Color.accentColor.opacity(0.06)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .frame(width: 96, height: 96)
-                Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 40))
-                    .foregroundStyle(Color.accentColor)
-            }
-            Text("Start your renovation diary")
-                .font(AppFont.title3)
-                .foregroundStyle(.primary)
-            Text("Capture before and after photos, track progress, and document every improvement to your home.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.secondaryTextColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Button {
-                showAdd = true
-            } label: {
-                Label("Add first photo", systemImage: "camera.fill")
-                    .font(AppFont.subheadline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 13)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
+            EmptyStateView(
+                icon: "photo.on.rectangle.angled",
+                title: "Start your renovation diary",
+                message: "Capture before and after photos, track progress, and document every improvement to your home.",
+                actionLabel: "Add first photo",
+                action: { showAdd = true }
+            )
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
     }
 
     private var loadingState: some View {
