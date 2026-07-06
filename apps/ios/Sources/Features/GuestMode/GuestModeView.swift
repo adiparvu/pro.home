@@ -191,21 +191,9 @@ struct GuestModeView: View {
     // MARK: - Share Button
 
     private var shareButtonCard: some View {
-        Button {
+        GlassWideButton(icon: "square.and.arrow.up", label: "Share Guest Info") {
             shareGuestInfo()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(AppFont.headline)
-                Text("Share Guest Info")
-                    .font(AppFont.headline)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.lg)
-            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

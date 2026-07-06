@@ -145,6 +145,48 @@ struct GlassActionButton: View {
     }
 }
 
+// MARK: - GlassWideButton
+//
+// The sanctioned full-width primary action — "Generate PDF", "Share",
+// "Save" — as a clear interactive Liquid Glass capsule with a monochrome
+// label. Never a tinted or gradient rectangle: prominence comes from
+// size and placement, the material stays native and adapts to iOS.
+struct GlassWideButton: View {
+    var icon: String? = nil
+    let label: LocalizedStringKey
+    /// Shows a spinner and disables the button (e.g. while exporting).
+    var isBusy: Bool = false
+    var action: () -> Void
+
+    var body: some View {
+        Button {
+            HapticFeedback.impact(.medium)
+            action()
+        } label: {
+            HStack(spacing: 10) {
+                if isBusy {
+                    ProgressView()
+                } else {
+                    if let icon {
+                        Image(systemName: icon)
+                            .font(AppFont.headline)
+                    }
+                    Text(label)
+                        .font(AppFont.headline)
+                }
+            }
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .mediaGlass(in: Capsule(), interactive: true)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(isBusy)
+        .accessibilityLabel(Text(label))
+    }
+}
+
 // MARK: - GlassCard
 
 struct GlassCard<Content: View>: View {

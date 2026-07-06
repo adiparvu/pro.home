@@ -163,31 +163,10 @@ struct PropertyReportView: View {
     // MARK: - Generate Button
 
     private var generateButton: some View {
-        Button {
-            HapticFeedback.impact(.medium)
+        GlassWideButton(icon: "arrow.down.doc.fill", label: "Generate PDF",
+                        isBusy: isGenerating) {
             Task { await generate() }
-        } label: {
-            ZStack {
-                LinearGradient(
-                    colors: [.blue, .indigo],
-                    startPoint: .leading, endPoint: .trailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-                if isGenerating {
-                    ProgressView().tint(.white)
-                } else {
-                    Label("Generate PDF", systemImage: "arrow.down.doc.fill")
-                        .font(AppFont.headline)
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .shadow(color: .blue.opacity(0.35), radius: 12, y: 4)
         }
-        .buttonStyle(.plain)
-        .disabled(isGenerating)
     }
 
     // MARK: - Helpers
