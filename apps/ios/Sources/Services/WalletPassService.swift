@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import PassKit
 import UIKit
 
 @MainActor
-final class WalletPassService: ObservableObject {
+@Observable
+final class WalletPassService {
     static let shared = WalletPassService()
 
-    @Published var canAddPasses: Bool = false
+    var canAddPasses: Bool = false
 
     private init() {
         canAddPasses = PKPassLibrary.isPassLibraryAvailable()

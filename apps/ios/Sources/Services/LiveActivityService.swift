@@ -6,7 +6,7 @@ import Foundation
 // methods below, and this service starts / updates / ends the system activity
 // accordingly — always gated by the user's Live Activity preferences.
 @MainActor
-final class LiveActivityService: ObservableObject {
+final class LiveActivityService {
     static let shared = LiveActivityService()
     private init() {}
 

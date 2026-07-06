@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Security
 import AuthenticationServices
 
@@ -48,7 +49,8 @@ private enum KeychainStore {
 }
 
 @MainActor
-final class AutoFillCredentialService: ObservableObject {
+@Observable
+final class AutoFillCredentialService {
     static let shared = AutoFillCredentialService()
 
     struct PropertyCredential: Identifiable, Codable {
@@ -86,7 +88,7 @@ final class AutoFillCredentialService: ObservableObject {
         }
     }
 
-    @Published var credentials: [PropertyCredential] = []
+    var credentials: [PropertyCredential] = []
 
     private init() { load() }
 

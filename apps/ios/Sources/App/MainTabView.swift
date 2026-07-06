@@ -241,65 +241,7 @@ struct MainTabView: View {
         .environment(directMessageService)
         .environment(presenceService)
         .environment(proactiveEngine)
-        .task {
-            // Property + role must resolve first — the tab layout and every
-            // property-scoped load depend on them. Currency + profile are
-            // independent, so they run concurrently with that.
-            async let currency: Void = currencyService.refresh()
-            async let profile: Void = loadProfileAndSettings()
-            await propertyService.load()
-            await propertyService.loadMyRole()
-            redirectIfTabHidden()
-            _ = await (currency, profile)
-
-            // Everything below is independent network I/O. Fanning it out with
-            // async let overlaps the round-trips instead of paying their sum,
-            // which is the single biggest win for cold-start latency.
-            let propId = propertyService.primary?.id
-            async let tasksLoad: Void = taskService.load()
-            async let financialLoad: Void = financialService.load()
-            async let documentsLoad: Void = documentService.load()
-            async let familyLoad: Void = familyService.load()
-            async let contractorLoad: Void = contractorService.load()
-            await tasksLoad; await financialLoad; await documentsLoad
-            await familyLoad; await contractorLoad
-
-            if let propId {
-                async let messagesLoad: Void = messageService.load(propertyId: propId)
-                async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
-                async let suppliesLoad: Void = supplyService.load(propertyId: propId)
-                async let receiptsLoad: Void = receiptService.load(propertyId: propId)
-                async let plantsLoad: Void = plantService.load(propertyId: propId)
-                async let appliancesLoad: Void = applianceService.load(propertyId: propId)
-                async let journalLoad: Void = photoJournalService.load(propertyId: propId)
-                async let paintLoad: Void = paintColorService.load(propertyId: propId)
-                async let valueLoad: Void = propertyValueService.load(propertyId: propId)
-                async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
-                async let budgetLoad: Void = budgetService.load(propertyId: propId)
-                await messagesLoad; await deliveriesLoad; await suppliesLoad
-                await receiptsLoad; await plantsLoad; await appliancesLoad
-                await journalLoad; await paintLoad; await valueLoad
-                await inventoryLoad; await budgetLoad
-            }
-
-            notificationScheduler.registerCategories()
-            await notificationScheduler.reschedule(
-                tasks: taskService.tasks,
-                documents: documentService.documents
-            )
-            writeWidgetSnapshot()
-            updateDynamicShortcuts()
-            await indexSpotlight()
-            await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
-            // Live Activities: property context + the "Start When App Opens" /
-            // "Start on a Schedule" preferences, now that data is loaded.
-            LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
-            LiveActivityService.shared.evaluateAutoStart(
-                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
-            proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
-                                    records: financialService.records, tasks: taskService.tasks)
-            ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
-        }
+        .task { await reloadWorld(reason: .coldStart) }
         .task {
             // Presence heartbeat: advertise ourselves and refresh members' status
             // on a slow cadence while the app is foregrounded.
@@ -321,43 +263,12 @@ struct MainTabView: View {
             }
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
-            guard let newPropId else { return }
             // Switching property is a full context switch: the role, every
             // property-scoped module, the group chat and the glanceable
             // surfaces all re-point at the newly selected home — only the
             // person-level things (profile, appearance, accounts) survive.
-            Task {
-                await propertyService.loadMyRole()
-                redirectIfTabHidden()
-                async let tasksLoad: Void = taskService.load()
-                async let financialLoad: Void = financialService.load()
-                async let documentsLoad: Void = documentService.load()
-                async let familyLoad: Void = familyService.load()
-                async let contractorLoad: Void = contractorService.load()
-                async let chatNameLoad: Void = propertyService.loadGroupChatName()
-                async let messagesLoad: Void = messageService.load(propertyId: newPropId)
-                await tasksLoad; await financialLoad; await documentsLoad
-                await familyLoad; await contractorLoad; await chatNameLoad
-                await messagesLoad
-                await deliveryService.load(propertyId: newPropId)
-                await supplyService.load(propertyId: newPropId)
-                await receiptService.load(propertyId: newPropId)
-                await plantService.load(propertyId: newPropId)
-                await applianceService.load(propertyId: newPropId)
-                await photoJournalService.load(propertyId: newPropId)
-                await paintColorService.load(propertyId: newPropId)
-                await propertyValueService.load(propertyId: newPropId)
-                await inventoryService.load(propertyId: newPropId)
-                await budgetService.load(propertyId: newPropId)
-                await notificationScheduler.reschedule(
-                    tasks: taskService.tasks,
-                    documents: documentService.documents
-                )
-                LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
-                writeWidgetSnapshot()
-                updateDynamicShortcuts()
-                await indexSpotlight()
-            }
+            guard newPropId != nil else { return }
+            Task { await reloadWorld(reason: .propertySwitch) }
         }
         .onChange(of: profileService.profile) { _, profile in
             if let profile, let s = auth.session {
@@ -370,38 +281,7 @@ struct MainTabView: View {
         }
         .onChange(of: auth.session?.user.id) { oldId, newId in
             guard let newId, newId != oldId else { return }
-            Task {
-                await propertyService.load()
-                // Refresh the signed-in user's role on the primary property so
-                // role-gated UI (tab bar + Settings) matches the account we just
-                // switched to. Must run after load() populates `primary`.
-                await propertyService.loadMyRole()
-                await taskService.load()
-                await financialService.load()
-                await documentService.load()
-                await familyService.load()
-                await profileService.load(userId: newId)
-                if let profile = profileService.profile {
-                    appSettings.loadFromProfile(profile)
-                }
-                if let propId = propertyService.primary?.id {
-                    await messageService.load(propertyId: propId)
-                }
-                if let propId = propertyService.primary?.id {
-                    await deliveryService.load(propertyId: propId)
-                    await supplyService.load(propertyId: propId)
-                    await receiptService.load(propertyId: propId)
-                    await plantService.load(propertyId: propId)
-                    await applianceService.load(propertyId: propId)
-                    await photoJournalService.load(propertyId: propId)
-                    await paintColorService.load(propertyId: propId)
-                    await propertyValueService.load(propertyId: propId)
-                    await inventoryService.load(propertyId: propId)
-                    await budgetService.load(propertyId: propId)
-                }
-                writeWidgetSnapshot()
-                updateDynamicShortcuts()
-            }
+            Task { await reloadWorld(reason: .accountSwitch(userId: newId)) }
         }
         .onChange(of: router.selectedTab) { _, _ in
             tabBarVis.scrollOffset = 0
@@ -415,6 +295,97 @@ struct MainTabView: View {
 
     /// If the selected tab isn't available to the current role (e.g. a guest on
     /// the Home tab), fall back to Chat, which every role can see.
+    // MARK: - The one startup / context-switch orchestration
+    //
+    // Cold start, property switch and account switch used to carry three
+    // hand-copied ~25-call load blocks that drifted apart (the account path
+    // had quietly lost contractors, Spotlight and notification rescheduling).
+    // One method, one order, three entry reasons — the paths can't diverge.
+
+    private enum ReloadReason {
+        case coldStart
+        case propertySwitch
+        case accountSwitch(userId: UUID)
+    }
+
+    private func reloadWorld(reason: ReloadReason) async {
+        // Phase 1 — identity: property list + role decide the tab layout and
+        // every property-scoped load below.
+        switch reason {
+        case .coldStart:
+            // Currency + profile are independent; overlap them with the
+            // property resolution.
+            async let currency: Void = currencyService.refresh()
+            async let profile: Void = loadProfileAndSettings()
+            await propertyService.load()
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+            _ = await (currency, profile)
+        case .accountSwitch(let userId):
+            await propertyService.load()
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+            await profileService.load(userId: userId)
+            if let profile = profileService.profile {
+                appSettings.loadFromProfile(profile)
+            }
+        case .propertySwitch:
+            await propertyService.loadMyRole()
+            redirectIfTabHidden()
+        }
+
+        // Phase 2 — data. Independent network I/O fanned out with async let:
+        // the round-trips overlap instead of paying their sum, and every
+        // service decodes off the main actor (PropertyRepo).
+        let propId = propertyService.primary?.id
+        async let tasksLoad: Void = taskService.load()
+        async let financialLoad: Void = financialService.load()
+        async let documentsLoad: Void = documentService.load()
+        async let familyLoad: Void = familyService.load()
+        async let contractorLoad: Void = contractorService.load()
+        async let chatNameLoad: Void = propertyService.loadGroupChatName()
+        await tasksLoad; await financialLoad; await documentsLoad
+        await familyLoad; await contractorLoad; await chatNameLoad
+
+        if let propId {
+            async let messagesLoad: Void = messageService.load(propertyId: propId)
+            async let deliveriesLoad: Void = deliveryService.load(propertyId: propId)
+            async let suppliesLoad: Void = supplyService.load(propertyId: propId)
+            async let receiptsLoad: Void = receiptService.load(propertyId: propId)
+            async let plantsLoad: Void = plantService.load(propertyId: propId)
+            async let appliancesLoad: Void = applianceService.load(propertyId: propId)
+            async let journalLoad: Void = photoJournalService.load(propertyId: propId)
+            async let paintLoad: Void = paintColorService.load(propertyId: propId)
+            async let valueLoad: Void = propertyValueService.load(propertyId: propId)
+            async let inventoryLoad: Void = inventoryService.load(propertyId: propId)
+            async let budgetLoad: Void = budgetService.load(propertyId: propId)
+            await messagesLoad; await deliveriesLoad; await suppliesLoad
+            await receiptsLoad; await plantsLoad; await appliancesLoad
+            await journalLoad; await paintLoad; await valueLoad
+            await inventoryLoad; await budgetLoad
+        }
+
+        // Phase 3 — glanceable surfaces, always in the same order.
+        notificationScheduler.registerCategories()
+        await notificationScheduler.reschedule(
+            tasks: taskService.tasks,
+            documents: documentService.documents
+        )
+        writeWidgetSnapshot()
+        updateDynamicShortcuts()
+        await indexSpotlight()
+        await notificationScheduler.schedulePlantWateringNotifications(plantService.plants)
+        LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
+        if case .coldStart = reason {
+            // "Start When App Opens" belongs to launch, not to context switches.
+            LiveActivityService.shared.evaluateAutoStart(
+                deliveries: deliveryService.deliveries, tasks: taskService.tasks)
+        }
+        proactiveEngine.analyze(appliances: applianceService.appliances, elements: elementService.elements,
+                                records: financialService.records, tasks: taskService.tasks)
+        ProactiveEngine.cacheForBackground(appliances: applianceService.appliances, elements: elementService.elements)
+    }
+
     private func redirectIfTabHidden() {
         if !AppTab.visible(for: propertyService.myRole).contains(router.selectedTab) {
             router.selectedTab = .chat

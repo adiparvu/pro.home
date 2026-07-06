@@ -57,7 +57,7 @@ struct AddToWalletButton: UIViewRepresentable {
 // MARK: - NFCWalletView
 
 struct NFCWalletView: View {
-    @StateObject private var nfc = NFCScanService.shared
+    @State private var nfc = NFCScanService.shared
 
     @State private var tags: [NFCTag] = []
     @State private var showAddSheet    = false

@@ -1,12 +1,14 @@
 import Foundation
+import Observation
 import PassKit
 import UIKit
 
 @MainActor
-final class ApplePayService: NSObject, ObservableObject {
+@Observable
+final class ApplePayService: NSObject {
     static let shared = ApplePayService()
 
-    @Published var isAvailable: Bool = false
+    var isAvailable: Bool = false
 
     private override init() {
         super.init()

@@ -369,10 +369,13 @@ struct DirectMessageView: View {
         unreadResolved = true
     }
 
-    /// True when older messages exist beyond the current render window.
+    /// True when older messages exist beyond the current render window —
+    /// either already in memory or still on the server.
     private var hasMoreOlder: Bool {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && conversationMessages.count > visibleCount
+            && (conversationMessages.count > visibleCount
+                || (!conversationMessages.isEmpty
+                    && !directMessageService.exhaustedOlder.contains(member.name)))
     }
 
     private var pinnedMessages: [DirectMessage] {
@@ -511,20 +514,38 @@ struct DirectMessageView: View {
                                     // Anchor the current top message so inserting
                                     // an older page above it doesn't jump the view.
                                     let anchor = shown.first?.id
-                                    visibleCount += Self.pageSize
-                                    if let anchor {
-                                        DispatchQueue.main.async {
-                                            proxy.scrollTo(anchor, anchor: .top)
+                                    let target = visibleCount + Self.pageSize
+                                    if target > conversationMessages.count,
+                                       let pid = propertyService.primary?.id {
+                                        // The window outgrew memory — pull the
+                                        // next older page from the server first.
+                                        Task {
+                                            await directMessageService.loadOlder(
+                                                propertyId: pid, myName: myName, otherName: member.name)
+                                            visibleCount = target
+                                            if let anchor { proxy.scrollTo(anchor, anchor: .top) }
+                                        }
+                                    } else {
+                                        visibleCount = target
+                                        if let anchor {
+                                            DispatchQueue.main.async {
+                                                proxy.scrollTo(anchor, anchor: .top)
+                                            }
                                         }
                                     }
                                 } label: {
-                                    Text("Load older messages")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.accentColor)
-                                }
+                                    if directMessageService.isLoadingOlder {
+                                        ProgressView().controlSize(.small)
+                                    } else {
+                                        Text("Load older messages")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                } 
                                 .buttonStyle(.plain)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.sm)
+                                .disabled(directMessageService.isLoadingOlder)
                             }
                             ForEach(Array(shown.enumerated()), id: \.element.id) { idx, msg in
                                 let isOwn = msg.senderName == myName

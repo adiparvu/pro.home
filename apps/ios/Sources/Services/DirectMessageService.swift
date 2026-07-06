@@ -131,6 +131,69 @@ final class DirectMessageService {
         messages(with: partner, myName: myName).max { $0.createdAt < $1.createdAt }
     }
 
+    // MARK: - Older history (per conversation, server-paged)
+
+    /// Conversations whose full server history is already in memory
+    /// (an older-page fetch came back empty). Keyed by the partner's name.
+    private(set) var exhaustedOlder: Set<String> = []
+    var isLoadingOlder = false
+
+    /// Pulls the next older page for one conversation and merges it in.
+    /// Returns how many new rows arrived; 0 marks the thread exhausted so
+    /// the UI can retire its load-older affordance.
+    @discardableResult
+    func loadOlder(propertyId: UUID, myName: String, otherName: String) async -> Int {
+        guard !isLoadingOlder else { return 0 }
+        let thread = messages(with: otherName, myName: myName)
+        guard let oldest = thread.min(by: { $0.createdAt < $1.createdAt }) else { return 0 }
+        isLoadingOlder = true
+        defer { isLoadingOlder = false }
+        do {
+            let rows = try await Self.fetchOlder(propertyId: propertyId, myName: myName,
+                                                 otherName: otherName, before: oldest.createdAt)
+            let known = Set(dms.map(\.id))
+            let fresh = rows.filter { !known.contains($0.id) }
+            guard !fresh.isEmpty else {
+                exhaustedOlder.insert(otherName)
+                return 0
+            }
+            // The page is strictly older than everything in this thread, so
+            // prepending (ascending) keeps per-thread order correct; other
+            // threads are untouched by their own filters.
+            dms.insert(contentsOf: fresh.reversed(), at: 0)
+            return fresh.count
+        } catch {
+            return 0
+        }
+    }
+
+    /// Network + JSON decode off the main actor.
+    nonisolated private static func fetchRecent(propertyId: UUID, myName: String) async throws -> [DirectMessage] {
+        try await supabase
+            .from("direct_messages")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .or("sender_name.eq.\(myName),recipient_name.eq.\(myName)")
+            .order("created_at", ascending: false)
+            .limit(1000)
+            .execute()
+            .value
+    }
+
+    nonisolated private static func fetchOlder(propertyId: UUID, myName: String,
+                                               otherName: String, before: String) async throws -> [DirectMessage] {
+        try await supabase
+            .from("direct_messages")
+            .select()
+            .eq("property_id", value: propertyId.uuidString)
+            .or("and(sender_name.eq.\(myName),recipient_name.eq.\(otherName)),and(sender_name.eq.\(otherName),recipient_name.eq.\(myName))")
+            .lt("created_at", value: before)
+            .order("created_at", ascending: false)
+            .limit(100)
+            .execute()
+            .value
+    }
+
     func unreadCount(from partner: String, myName: String) -> Int {
         _ = localRevision  // observe local-state changes (last-seen timestamps)
         let lastSeen = lastSeenDate(for: partner)
@@ -156,16 +219,11 @@ final class DirectMessageService {
             // Fetch the most recent 1000 (newest first), then show oldest→newest.
             // Previously this ordered ascending, which returned the *oldest* 1000
             // and could hide recent messages once a property had many DMs.
-            let rows: [DirectMessage] = try await supabase
-                .from("direct_messages")
-                .select()
-                .eq("property_id", value: propertyId.uuidString)
-                .or("sender_name.eq.\(myName),recipient_name.eq.\(myName)")
-                .order("created_at", ascending: false)
-                .limit(1000)
-                .execute()
-                .value
+            // The fetch + decode run off the main actor (nonisolated helper) —
+            // this was the last big main-thread JSON decode in the app.
+            let rows = try await Self.fetchRecent(propertyId: propertyId, myName: myName)
             dms = rows.reversed()
+            exhaustedOlder.removeAll()
             // Anything addressed to us that this device just fetched counts as
             // delivered — stamp it so the sender's ticks advance to "delivered".
             await markDelivered(myName: myName)

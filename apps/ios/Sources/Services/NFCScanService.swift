@@ -1,14 +1,15 @@
 import Foundation
 import CoreNFC
-import Combine
+import Observation
 
 @MainActor
-final class NFCScanService: NSObject, ObservableObject {
+@Observable
+final class NFCScanService: NSObject {
     static let shared = NFCScanService()
 
-    @Published var lastScannedPayload: String?
-    @Published var isScanning = false
-    @Published var errorMessage: String?
+    var lastScannedPayload: String?
+    var isScanning = false
+    var errorMessage: String?
 
     private var session: NFCNDEFReaderSession?
     private var onScan: ((String) -> Void)?

@@ -1,15 +1,16 @@
 import Foundation
 import HomeKit
-import Combine
+import Observation
 
 @MainActor
-final class HomeKitService: NSObject, ObservableObject {
+@Observable
+final class HomeKitService: NSObject {
     static let shared = HomeKitService()
 
-    @Published var homes: [HMHome] = []
-    @Published var accessories: [HMAccessory] = []
-    @Published var isAuthorized = false
-    @Published var authorizationStatus: HMHomeManagerAuthorizationStatus = .determined
+    var homes: [HMHome] = []
+    var accessories: [HMAccessory] = []
+    var isAuthorized = false
+    var authorizationStatus: HMHomeManagerAuthorizationStatus = .determined
 
     private var _manager: HMHomeManager?
 
