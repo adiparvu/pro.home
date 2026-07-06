@@ -45,11 +45,14 @@ final class ContractorService {
         isLoading = true
         defer { isLoading = false }
         do {
-            // RLS already scopes this to the caller's household; the cap just
-            // prevents an unbounded select as the table grows over the years.
-            contractors = try await supabase
-                .from("contractors")
-                .select()
+            // RLS scopes this to the caller's household; the property filter
+            // narrows it to the selected home and the cap just prevents an
+            // unbounded select as the table grows over the years.
+            var query = supabase.from("contractors").select()
+            if let pid = PropertyService.activePropertyId {
+                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
+            }
+            contractors = try await query
                 .order("name")
                 .limit(500)
                 .execute()

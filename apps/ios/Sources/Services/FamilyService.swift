@@ -13,9 +13,13 @@ final class FamilyService {
         isLoading = true
         defer { isLoading = false }
         do {
-            members = try await supabase
-                .from("family_members")
-                .select()
+            var query = supabase.from("family_members").select()
+            if let pid = PropertyService.activePropertyId {
+                // Scope to the selected home; legacy rows without a property
+                // stay visible rather than silently disappearing.
+                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
+            }
+            members = try await query
                 .order("created_at", ascending: true)
                 .execute()
                 .value

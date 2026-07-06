@@ -37,7 +37,15 @@ final class PropertyService {
         return properties.first
     }
 
-    func select(_ property: PropertyModel) { selectedPropertyId = property.id }
+    func select(_ property: PropertyModel) {
+        selectedPropertyId = property.id
+        Self.activePropertyId = property.id
+    }
+
+    /// Mirror of `primary?.id` readable from any service without holding a
+    /// reference to this instance. Switching property re-points every
+    /// property-scoped query in the app at the newly selected home.
+    static private(set) var activePropertyId: UUID?
 
     /// The group chat's own name, stored in `chat_group_settings` — deliberately
     /// separate from the property's name, so renaming the chat never renames the
@@ -127,6 +135,7 @@ final class PropertyService {
             if error is CancellationError { return }
             self.error = error.localizedDescription
         }
+        Self.activePropertyId = primary?.id
     }
 
     func create(name: String, addressLine1: String, city: String, country: String,

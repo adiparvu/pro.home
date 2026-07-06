@@ -315,9 +315,23 @@ struct MainTabView: View {
         }
         .onChange(of: propertyService.primary?.id) { _, newPropId in
             guard let newPropId else { return }
+            // Switching property is a full context switch: the role, every
+            // property-scoped module, the group chat and the glanceable
+            // surfaces all re-point at the newly selected home — only the
+            // person-level things (profile, appearance, accounts) survive.
             Task {
                 await propertyService.loadMyRole()
                 redirectIfTabHidden()
+                async let tasksLoad: Void = taskService.load()
+                async let financialLoad: Void = financialService.load()
+                async let documentsLoad: Void = documentService.load()
+                async let familyLoad: Void = familyService.load()
+                async let contractorLoad: Void = contractorService.load()
+                async let chatNameLoad: Void = propertyService.loadGroupChatName()
+                async let messagesLoad: Void = messageService.load(propertyId: newPropId)
+                await tasksLoad; await financialLoad; await documentsLoad
+                await familyLoad; await contractorLoad; await chatNameLoad
+                await messagesLoad
                 await deliveryService.load(propertyId: newPropId)
                 await supplyService.load(propertyId: newPropId)
                 await receiptService.load(propertyId: newPropId)
@@ -328,6 +342,11 @@ struct MainTabView: View {
                 await propertyValueService.load(propertyId: newPropId)
                 await inventoryService.load(propertyId: newPropId)
                 await budgetService.load(propertyId: newPropId)
+                await notificationScheduler.reschedule(
+                    tasks: taskService.tasks,
+                    documents: documentService.documents
+                )
+                LiveActivityService.shared.propertyName = propertyService.primary?.name ?? ""
                 writeWidgetSnapshot()
                 updateDynamicShortcuts()
                 await indexSpotlight()

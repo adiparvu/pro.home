@@ -28,9 +28,13 @@ final class TaskService {
         isLoading = true
         defer { isLoading = false }
         do {
-            tasks = try await supabase
-                .from("maintenance_tasks")
-                .select()
+            var query = supabase.from("maintenance_tasks").select()
+            if let pid = PropertyService.activePropertyId {
+                // Scope to the selected home; legacy rows without a property
+                // stay visible rather than silently disappearing.
+                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
+            }
+            tasks = try await query
                 .order("created_at", ascending: false)
                 .execute()
                 .value

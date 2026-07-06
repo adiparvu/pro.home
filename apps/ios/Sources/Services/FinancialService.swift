@@ -59,9 +59,13 @@ final class FinancialService {
         isLoading = true
         defer { isLoading = false }
         do {
-            records = try await supabase
-                .from("financial_records")
-                .select()
+            var query = supabase.from("financial_records").select()
+            if let pid = PropertyService.activePropertyId {
+                // Scope to the selected home; legacy rows without a property
+                // stay visible rather than silently disappearing.
+                query = query.or("property_id.eq.\(pid.uuidString),property_id.is.null")
+            }
+            records = try await query
                 .order("date", ascending: false)
                 .execute()
                 .value
