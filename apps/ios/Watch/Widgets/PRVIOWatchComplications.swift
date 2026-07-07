@@ -12,6 +12,10 @@ import SwiftUI
 struct PRVIOWatchWidgetBundle: WidgetBundle {
     var body: some Widget {
         PRVIOStatusComplication()
+        PRVIOTasksComplication()
+        PRVIOWaterComplication()
+        PRVIOShoppingComplication()
+        PRVIODeliveriesComplication()
     }
 }
 
@@ -27,6 +31,152 @@ struct PRVIOStatusComplication: Widget {
         .description(NSLocalizedString("watch_complication_desc", comment: ""))
         .supportedFamilies([.accessoryCircular, .accessoryCorner,
                             .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Domain complications
+//
+// One complication per domain, so the watch face composes exactly what its
+// owner cares about — each deep-links to its own page in the watch app.
+
+struct PRVIOTasksComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchTasks", provider: WatchPayloadProvider()) { entry in
+            DomainComplicationView(
+                count: entry.payload?.snapshot.openTaskCount ?? 0,
+                icon: "checklist",
+                label: Text("watch_tasks"),
+                urgent: (entry.payload?.snapshot.overdueTaskCount ?? 0) > 0,
+                detail: entry.payload?.snapshot.criticalTaskTitle,
+                url: URL(string: "prvio://tasks")
+            )
+            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+        }
+        .configurationDisplayName("PRVIO · Tasks")
+        .description(NSLocalizedString("watch_comp_tasks_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct PRVIOWaterComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchWater", provider: WatchPayloadProvider()) { entry in
+            DomainComplicationView(
+                count: entry.payload?.snapshot.plantsNeedingWater ?? 0,
+                icon: "drop.fill",
+                label: Text("watch_water"),
+                urgent: false,
+                detail: entry.payload?.snapshot.plantNames.first,
+                url: URL(string: "prvio://plants")
+            )
+            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+        }
+        .configurationDisplayName("PRVIO · Water")
+        .description(NSLocalizedString("watch_comp_water_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct PRVIOShoppingComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchShopping", provider: WatchPayloadProvider()) { entry in
+            DomainComplicationView(
+                count: entry.payload?.snapshot.pendingSupplyCount ?? 0,
+                icon: "cart.fill",
+                label: Text("watch_shopping"),
+                urgent: false,
+                detail: nil,
+                url: URL(string: "prvio://shopping")
+            )
+            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+        }
+        .configurationDisplayName("PRVIO · Shopping")
+        .description(NSLocalizedString("watch_comp_shopping_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct PRVIODeliveriesComplication: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "PRVIOWatchDeliveries", provider: WatchPayloadProvider()) { entry in
+            DomainComplicationView(
+                count: entry.payload?.snapshot.activeDeliveryCount ?? 0,
+                icon: "shippingbox.fill",
+                label: Text("watch_deliveries"),
+                urgent: false,
+                detail: nil,
+                url: URL(string: "prvio://deliveries")
+            )
+            .containerBackground(for: .widget) { AccessoryWidgetBackground() }
+        }
+        .configurationDisplayName("PRVIO · Deliveries")
+        .description(NSLocalizedString("watch_comp_deliveries_desc", comment: ""))
+        .supportedFamilies([.accessoryCircular, .accessoryCorner,
+                            .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Domain complication faces
+
+private struct DomainComplicationView: View {
+    let count: Int
+    let icon: String
+    let label: Text
+    let urgent: Bool
+    let detail: String?
+    let url: URL?
+
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        Group {
+            switch family {
+            case .accessoryCircular:
+                VStack(spacing: 0) {
+                    Image(systemName: icon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                    Text(verbatim: "\(count)")
+                        .font(.system(.body, design: .rounded).weight(.bold))
+                        .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                }
+            case .accessoryCorner:
+                Text(verbatim: "\(count)")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                    .widgetCurvesContent()
+                    .widgetLabel { label }
+            case .accessoryRectangular:
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: icon)
+                            .font(.system(size: 11, weight: .semibold))
+                        label
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    Text(verbatim: "\(count)")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(urgent ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                    if let detail, !detail.isEmpty {
+                        Text(detail)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            default:
+                HStack(spacing: 3) {
+                    Image(systemName: icon)
+                    Text(verbatim: "\(count)")
+                    label
+                }
+            }
+        }
+        .widgetURL(url)
     }
 }
 
