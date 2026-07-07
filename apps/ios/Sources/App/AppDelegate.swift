@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
 #if DEBUG
-        print("[Push] APNs registration failed: \(error)")
+        debugLog("[Push] APNs registration failed: \(error)")
 #endif
     }
 

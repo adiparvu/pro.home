@@ -52,7 +52,7 @@ final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
             try session.setActive(true)
         } catch {
 #if DEBUG
-            print("[Recorder] session error: \(error)")
+            debugLog("[Recorder] session error: \(error)")
 #endif
             return
         }
@@ -69,7 +69,7 @@ final class ChatAudioRecorder: NSObject, AVAudioRecorderDelegate {
             recorder = try AVAudioRecorder(url: url, settings: settings)
         } catch {
 #if DEBUG
-            print("[Recorder] init error: \(error)")
+            debugLog("[Recorder] init error: \(error)")
 #endif
             try? session.setActive(false)
             return

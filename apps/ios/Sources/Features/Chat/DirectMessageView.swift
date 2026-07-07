@@ -1239,7 +1239,7 @@ struct DirectMessageView: View {
             HapticFeedback.impact(.light)
         } catch {
 #if DEBUG
-            print("[DM] image error: \(error)")
+            debugLog("[DM] image error: \(error)")
 #endif
         }
     }
@@ -1275,7 +1275,7 @@ struct DirectMessageView: View {
             HapticFeedback.impact(.light)
         } catch {
 #if DEBUG
-            print("[DM] audio error: \(error)")
+            debugLog("[DM] audio error: \(error)")
 #endif
         }
     }

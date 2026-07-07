@@ -299,7 +299,7 @@ struct ZoneEditSheet: View {
                     .absoluteString
             } catch {
                 #if DEBUG
-                print("[ZoneEditSheet] photo upload error: \(error)")
+                debugLog("[ZoneEditSheet] photo upload error: \(error)")
                 #endif
             }
         }

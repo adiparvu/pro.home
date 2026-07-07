@@ -241,7 +241,7 @@ struct NotificationsSettingsView: View {
             }
         } catch {
             #if DEBUG
-            print("[Notifications] permission error: \(error)")
+            debugLog("[Notifications] permission error: \(error)")
             #endif
         }
     }

@@ -150,7 +150,7 @@ struct OnboardingView: View {
                 newPropertyId = resp.value.id
             } catch {
                 #if DEBUG
-                print("[Onboarding] property insert error: \(error)")
+                debugLog("[Onboarding] property insert error: \(error)")
                 #endif
                 saveError = error.localizedDescription
             }

@@ -75,7 +75,7 @@ final class UtilityService {
                 .value
         } catch {
             #if DEBUG
-            print("UtilityService.load error:", error)
+            debugLog("UtilityService.load error:", error)
             #endif
         }
     }
@@ -93,7 +93,7 @@ final class UtilityService {
             entries.sort { $0.readingDate > $1.readingDate }
         } catch {
             #if DEBUG
-            print("UtilityService.add error:", error)
+            debugLog("UtilityService.add error:", error)
             #endif
         }
     }
@@ -108,7 +108,7 @@ final class UtilityService {
             entries.removeAll { $0.id == e.id }
         } catch {
             #if DEBUG
-            print("UtilityService.delete error:", error)
+            debugLog("UtilityService.delete error:", error)
             #endif
         }
     }
