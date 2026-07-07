@@ -98,6 +98,7 @@ final class AppSettings {
     private func visibleKey(_ host: FloatingButtonHost) -> String {
         "prvio.fab.\(host.rawValue).on"
     }
+    private static let fabMasterKey = "prvio.fab.enabled"
 
     func fabActions(_ host: FloatingButtonHost) -> [DashboardQuickAction] {
         _ = fabRevision  // observe floating-button config changes
@@ -105,7 +106,29 @@ final class AppSettings {
         return raw.split(separator: ",").compactMap { DashboardQuickAction(rawValue: String($0)) }
     }
 
+    /// The global gate for every floating button. Missing key → on, so the
+    /// dial keeps behaving exactly as before this switch existed.
+    var fabMasterEnabled: Bool {
+        _ = fabRevision  // observe floating-button config changes
+        return (UserDefaults.standard.object(forKey: Self.fabMasterKey) as? Bool) ?? true
+    }
+
+    func setFabMasterEnabled(_ on: Bool) {
+        // Only the gate key changes — the per-page keys stay untouched, so
+        // turning the master back on restores the previous per-page choices.
+        fabRevision &+= 1
+        UserDefaults.standard.set(on, forKey: Self.fabMasterKey)
+    }
+
+    /// What the pages actually render: master gate AND the per-page choice.
     func fabVisible(_ host: FloatingButtonHost) -> Bool {
+        fabMasterEnabled && fabPageVisible(host)
+    }
+
+    /// The per-page choice on its own, ignoring the master gate — the
+    /// settings UI reads this so page toggles don't all show "off" while
+    /// the master switch is off.
+    func fabPageVisible(_ host: FloatingButtonHost) -> Bool {
         _ = fabRevision  // observe floating-button config changes
         if UserDefaults.standard.object(forKey: visibleKey(host)) == nil { return host.defaultVisible }
         return UserDefaults.standard.bool(forKey: visibleKey(host))
@@ -115,6 +138,18 @@ final class AppSettings {
         // Direct UserDefaults writes aren't observable, so bump the revision.
         fabRevision &+= 1
         UserDefaults.standard.set(on, forKey: visibleKey(host))
+    }
+
+    /// Restores the factory floating-button configuration by clearing every
+    /// override key — defaults then come from the hosts themselves.
+    func resetFabConfiguration() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: Self.fabMasterKey)
+        for host in FloatingButtonHost.allCases {
+            defaults.removeObject(forKey: actionsKey(host))
+            defaults.removeObject(forKey: visibleKey(host))
+        }
+        fabRevision &+= 1
     }
 
     func isFabActionEnabled(_ host: FloatingButtonHost, _ action: DashboardQuickAction) -> Bool {

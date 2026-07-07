@@ -267,6 +267,21 @@ final class AppRouter {
             navigate(to: .family)
         case "profile":
             navigate(to: .profile)
+        case "nfc":
+            // A physical tag written by the NFC wallet (prvio://nfc/<tagId>).
+            // Resolve the saved tag and open the place it's linked to: zones,
+            // elements and appliances all live in the property twin — the
+            // closest existing route (there is no appliances AppRoute).
+            guard let tag = pathComponents.first.flatMap(NFCTagStore.tag(withId:)) else {
+                navigate(to: .home)
+                return
+            }
+            switch tag.linkedType {
+            case "zone", "element", "appliance":
+                navigate(to: .twin)
+            default:
+                navigate(to: .home)
+            }
         default:
             break
         }

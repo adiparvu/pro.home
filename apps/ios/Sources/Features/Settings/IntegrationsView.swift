@@ -55,9 +55,11 @@ struct IntegrationsView: View {
         }
         .sheet(item: $vm.activeSheet) { sheet in
             switch sheet {
-            case .siriShortcuts: NavigationStack { SiriShortcutsView() }
-            case .nfcWallet:     NavigationStack { NFCWalletView() }
-            case .iotHub:        NavigationStack { IoTHubView() }
+            case .siriShortcuts:  NavigationStack { SiriShortcutsView() }
+            case .nfcWallet:      NavigationStack { NFCWalletView() }
+            case .iotHub:         NavigationStack { IoTHubView() }
+            case .receiptScanner: ReceiptScannerView()   // brings its own NavigationStack
+            case .emailImport:    AutoImportView()       // brings its own NavigationStack
             }
         }
     }

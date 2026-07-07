@@ -1,6 +1,7 @@
 import SwiftUI
 import EventKit
 import Contacts
+import PassKit
 
 // MARK: - Status
 
@@ -16,12 +17,14 @@ enum IntegrationStatus: Equatable {
 // MARK: - Sheet destination
 
 enum IntegrationSheet: Identifiable {
-    case siriShortcuts, nfcWallet, iotHub
+    case siriShortcuts, nfcWallet, iotHub, receiptScanner, emailImport
     var id: Int {
         switch self {
-        case .siriShortcuts: return 1
-        case .nfcWallet:     return 2
-        case .iotHub:        return 3
+        case .siriShortcuts:  return 1
+        case .nfcWallet:      return 2
+        case .iotHub:         return 3
+        case .receiptScanner: return 4
+        case .emailImport:    return 5
         }
     }
 }
@@ -33,15 +36,13 @@ final class IntegrationsViewModel: ObservableObject {
     @Published var calendarStatus: IntegrationStatus = .notConnected
     @Published var remindersStatus: IntegrationStatus = .notConnected
     @Published var contactsStatus: IntegrationStatus = .notConnected
-    @Published var homeKitStatus: IntegrationStatus = .deepLink("Conectează")
+    @Published var homeKitStatus: IntegrationStatus = .deepLink(String(localized: "Conectează"))
     @Published var showCalendarSuccess = false
     @Published var showContactsSuccess = false
     @Published var showPermissionDenied = false
     @Published var iCloudAvailable = false
     @Published var applePayAvailable = false
     @Published var nfcAvailable = false
-    @Published var connectedCouriers: Set<String> = []
-    @Published var emailImportStatus: IntegrationStatus = .notConnected
     @Published var activeSheet: IntegrationSheet? = nil
     var tasks: [MaintenanceTask] = []
     var property: PropertyModel? = nil
@@ -50,7 +51,6 @@ final class IntegrationsViewModel: ObservableObject {
     private lazy var store = EKEventStore()
     private let calendarSyncedKey = "prvio.calendar.synced_ids"
     private let reminderSyncedKey = "prvio.reminders.synced_ids"
-    private let couriersKey = "prvio.couriers.connected"
 
     func checkStatuses() async {
         calendarStatus = await checkCalendarAccess() ? .connected : .notConnected
@@ -62,50 +62,24 @@ final class IntegrationsViewModel: ObservableObject {
         iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil
         applePayAvailable = ApplePayService.shared.isAvailable
         nfcAvailable = NFCScanService.isSupported
-        loadCourierStatuses()
         // HomeKit checked lazily — do NOT access HMHomeManager here to avoid
         // a crash when the provisioning profile lacks the HomeKit capability.
     }
 
-    // MARK: - Courier integration
+    // MARK: - Apple Pay
 
-    func courierStatus(_ id: String) -> IntegrationStatus {
-        connectedCouriers.contains(id) ? .active("Conectat") : .deepLink("Conectează")
-    }
-
-    func connectCourier(_ id: String, deepLink: String) {
-        if connectedCouriers.contains(id) {
-            connectedCouriers.remove(id)
-        } else {
-            connectedCouriers.insert(id)
-            if let url = URL(string: deepLink) {
-                UIApplication.shared.open(url)
-            }
-        }
-        persistCourierStatuses()
-    }
-
-    func activateEmailImport() {
-        emailImportStatus = .deepLink("Configurează")
-        if let url = URL(string: "message://") ?? URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
-        }
-    }
-
-    private func loadCourierStatuses() {
-        let saved = UserDefaults.standard.stringArray(forKey: couriersKey) ?? []
-        connectedCouriers = Set(saved)
-    }
-
-    private func persistCourierStatuses() {
-        UserDefaults.standard.set(Array(connectedCouriers), forKey: couriersKey)
+    /// Opens the system's Apple Pay card-setup flow (Wallet). Only offered
+    /// when the device has no eligible card configured yet.
+    func openApplePaySetup() {
+        guard PKPassLibrary.isPassLibraryAvailable() else { return }
+        PKPassLibrary().openPaymentSetup()
     }
 
     func activateHomeKit() {
         // Only called from an explicit user tap — safe to initialize HMHomeManager here.
         HomeKitService.shared.requestAccess()
         homeKitStatus = HomeKitService.shared.currentAuthorizationStatus
-            ? .active("Conectat") : .deepLink("Conectează")
+            ? .active(String(localized: "Conectat")) : .deepLink(String(localized: "Conectează"))
         if let url = URL(string: "homeapp://") {
             UIApplication.shared.open(url)
         }

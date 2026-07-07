@@ -63,12 +63,14 @@ struct NFCWalletView: View {
     @State private var showAddSheet    = false
     @State private var pendingUID: String?
     @State private var addingTagId: UUID?
+    @State private var writingTagId: UUID?
     @State private var showScanError   = false
     @State private var scanErrorMsg    = ""
     @State private var showWalletError = false
     @State private var walletErrorMsg  = ""
-
-    private let storageKey = "prvio.nfcTags"
+    @State private var showWriteError   = false
+    @State private var writeErrorMsg    = ""
+    @State private var showWriteSuccess = false
 
     var body: some View {
         ZStack {
@@ -123,6 +125,14 @@ struct NFCWalletView: View {
         .alert("Apple Wallet", isPresented: $showWalletError) {
             Button("OK", role: .cancel) {}
         } message: { Text(walletErrorMsg) }
+        .alert("Write Tag", isPresented: $showWriteError) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(writeErrorMsg) }
+        .alert("Tag written", isPresented: $showWriteSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Scanning it with an iPhone now opens the linked page directly.")
+        }
     }
 
     // MARK: - Card section (card + controls)
@@ -150,6 +160,25 @@ struct NFCWalletView: View {
                 }
 
                 Spacer()
+
+                if writingTagId == tag.id {
+                    ProgressView()
+                        .tint(.primary)
+                        .frame(width: 44, height: 44)
+                } else {
+                    Button {
+                        writeTag(tag)
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(AppFont.captionEmphasis)
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .background(Color.primary.opacity(0.08),
+                                        in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Write Tag"))
+                }
 
                 Button {
                     rescanTag(tag)
@@ -293,6 +322,36 @@ struct NFCWalletView: View {
         }
     }
 
+    // MARK: - Write deep link to the physical tag
+
+    /// Writes `prvio://nfc/<tagId>` as an NDEF URI record, so scanning the
+    /// physical tag with the iPhone opens the app straight on the linked
+    /// zone, appliance or element.
+    private func writeTag(_ tag: NFCTag) {
+        guard NFCScanService.isSupported else {
+            scanErrorMsg = String(localized: "NFC is not available on this device.")
+            showScanError = true
+            return
+        }
+        guard let url = URL(string: "prvio://nfc/\(tag.id.uuidString)") else { return }
+        HapticFeedback.impact(.medium)
+        writingTagId = tag.id
+        nfc.write(url: url,
+                  prompt: String(localized: "Hold iPhone near the tag to write the link")) { result in
+            writingTagId = nil
+            switch result {
+            case .success:
+                HapticFeedback.success()
+                showWriteSuccess = true
+            case .failure(.canceled):
+                break
+            case .failure(let error):
+                writeErrorMsg = error.errorDescription ?? ""
+                showWriteError = true
+            }
+        }
+    }
+
     // MARK: - Empty state
 
     private var emptyState: some View {
@@ -306,22 +365,53 @@ struct NFCWalletView: View {
                 action: { scanForNewTag() }
             )
             .disabled(!NFCScanService.isSupported)
+
+            emptyStateInfoCard
+
             Spacer()
         }
     }
 
-    // MARK: - Persistence
+    /// What a registered tag unlocks — shown while the wallet is still empty.
+    private var emptyStateInfoCard: some View {
+        GlassCard(padding: 14) {
+            VStack(spacing: 0) {
+                infoRow(icon: "wallet.pass",
+                        text: "Add your tags to Apple Wallet")
+                Rectangle()
+                    .fill(Color.primary.opacity(AppOpacity.hairline))
+                    .frame(height: 0.4)
+                    .padding(.leading, 36)
+                infoRow(icon: "link",
+                        text: "Written tags open the linked page directly")
+            }
+        }
+        .padding(.horizontal, AppSpacing.xl)
+    }
+
+    private func infoRow(icon: String, text: LocalizedStringKey) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(AppFont.footnote)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.primary)
+                .frame(width: 26)
+            Text(text)
+                .font(AppFont.caption)
+                .foregroundStyle(Color.primary.opacity(AppOpacity.mediumText))
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, AppSpacing.sm)
+    }
+
+    // MARK: - Persistence (NFCTagStore — same "prvio.nfcTags" key as always)
 
     private func saveTags() {
-        if let data = try? JSONEncoder().encode(tags) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
+        NFCTagStore.save(tags)
     }
 
     private func loadTags() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let saved = try? JSONDecoder().decode([NFCTag].self, from: data) else { return }
-        tags = saved
+        tags = NFCTagStore.load()
     }
 }
 
