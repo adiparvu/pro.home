@@ -107,6 +107,9 @@ extension Color {
     /// Bright accent blue — the lighter, more saturated companion to
     /// `brandPrimaryBlue`, used for highlights and secondary accents.
     static let brandSkyBlue = Color(red: 0.35, green: 0.65, blue: 1.0)
+    /// Vibrant magenta-pink — the warm stop of the story-ring "unseen"
+    /// gradient; usable for other semantic pink accents.
+    static let brandPink = Color(red: 0.88, green: 0.19, blue: 0.42)
 }
 
 // MARK: - Spacing
