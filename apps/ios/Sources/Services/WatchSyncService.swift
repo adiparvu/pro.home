@@ -19,9 +19,35 @@ import WidgetKit
 final class WatchSyncService: NSObject, WCSessionDelegate {
     static let shared = WatchSyncService()
 
+    private static let lastPushKey = "prvio.watch.lastPush"
+
     /// The payload that arrived before the session finished activating —
     /// pushed as soon as activation completes so a cold start isn't dropped.
     private var pending: WatchPayload?
+
+    /// Snapshot of the phone↔watch link for the settings hub. nil when
+    /// WatchConnectivity is unsupported or the session hasn't activated yet.
+    struct LinkStatus {
+        let paired: Bool
+        let installed: Bool
+        let reachable: Bool
+    }
+
+    var linkStatus: LinkStatus? {
+        guard WCSession.isSupported() else { return nil }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return nil }
+        return LinkStatus(paired: session.isPaired,
+                          installed: session.isWatchAppInstalled,
+                          reachable: session.isReachable)
+    }
+
+    /// When the last payload actually left for the watch.
+    var lastPushAt: Date? {
+        let t = UserDefaults(suiteName: SharedDataStore.suiteName)?
+            .double(forKey: Self.lastPushKey) ?? 0
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
+    }
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -40,7 +66,11 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
         guard let data = try? JSONEncoder().encode(payload) else { return }
         // applicationContext keeps only the newest value — exactly right for
         // a state snapshot; no queue to back up, nothing to retry.
-        try? session.updateApplicationContext(["payload": data])
+        do {
+            try session.updateApplicationContext(["payload": data])
+            UserDefaults(suiteName: SharedDataStore.suiteName)?
+                .set(Date().timeIntervalSince1970, forKey: Self.lastPushKey)
+        } catch {}
     }
 
     // MARK: WCSessionDelegate

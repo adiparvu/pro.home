@@ -320,10 +320,22 @@ struct IconColorSchemeWatcher: View {
 
 // MARK: - Icon Manager
 
+/// One face of a paired (day/night) icon theme.
+enum IconFace: String {
+    case light, dark
+}
+
 @MainActor
 @Observable
 final class IconManager {
     var selected: AppIconTheme
+
+    /// When set, this exact half of a pair stays installed regardless of the
+    /// system appearance — the user explicitly chose it. nil = the pair rides
+    /// the merged day/night asset and switches automatically.
+    var pinnedFace: IconFace? {
+        didSet { UserDefaults.standard.set(pinnedFace?.rawValue, forKey: "prvio.pinnedIconFace") }
+    }
 
     @ObservationIgnored @AppStorage("prvio.selectedIconThemeId") private var savedId: String = "default"
 
@@ -345,6 +357,7 @@ final class IconManager {
         let id = UserDefaults.standard.string(forKey: "prvio.selectedIconThemeId") ?? "default"
         selected = AppIconCatalog.theme(id: id)
         autoSwitch = (UserDefaults.standard.object(forKey: "prvio.autoSwitchIcon") as? Bool) ?? true
+        pinnedFace = UserDefaults.standard.string(forKey: "prvio.pinnedIconFace").flatMap(IconFace.init)
     }
 
     var supportsAlternateIcons: Bool { UIApplication.shared.supportsAlternateIcons }
@@ -353,12 +366,22 @@ final class IconManager {
     /// Lets the picker mark the precise pair face that is applied.
     var appliedIconName: String? { lastAppliedName }
 
-    /// The asset to install for a theme: pair themes with auto-switch ride
-    /// the merged day/night asset (iOS adapts it silently); auto-switch off
-    /// pins the specific face the user chose.
+    /// The asset to install for a theme: an explicitly pinned face wins;
+    /// otherwise pair themes with auto-switch ride the merged day/night
+    /// asset (iOS adapts it silently); auto-switch off falls back to the
+    /// face matching the current appearance.
     private func resolvedName(for theme: AppIconTheme, isDark: Bool) -> String? {
-        if theme.hasPair, autoSwitch, let paired = theme.pairedIcon { return paired }
+        if theme.hasPair {
+            if let face = pinnedFace { return theme.iconName(isDark: face == .dark) }
+            if autoSwitch, let paired = theme.pairedIcon { return paired }
+        }
         return theme.iconName(isDark: isDark)
+    }
+
+    /// What `apply` would install right now — lets the picker decide whether
+    /// the shown configuration is already the active one.
+    func expectedName(for theme: AppIconTheme, isDark: Bool) -> String? {
+        resolvedName(for: theme, isDark: isDark)
     }
 
     func apply(_ theme: AppIconTheme, isDark: Bool, force: Bool = false) {
@@ -386,7 +409,10 @@ final class IconManager {
         }
     }
 
-    func select(_ theme: AppIconTheme, isDark: Bool) {
+    /// `pinFace` non-nil installs exactly that half of a pair and keeps it
+    /// through appearance changes; nil restores automatic day/night.
+    func select(_ theme: AppIconTheme, isDark: Bool, pinFace: IconFace? = nil) {
+        pinnedFace = theme.hasPair ? pinFace : nil
         suppressAutoUntil = Date().addingTimeInterval(2.5)
         apply(theme, isDark: isDark, force: true)
     }
@@ -396,7 +422,8 @@ final class IconManager {
     /// job left is migrating users still on a legacy per-face name (installed
     /// before the merge) onto the merged asset, once.
     func colorSchemeChanged(isDark: Bool) {
-        guard autoSwitch, selected.hasPair, let paired = selected.pairedIcon,
+        guard pinnedFace == nil,
+              autoSwitch, selected.hasPair, let paired = selected.pairedIcon,
               lastAppliedName != nil, lastAppliedName != paired,
               AppIconCatalog.theme(forIconName: lastAppliedName).id == selected.id else { return }
         guard Date() >= suppressAutoUntil else { return }

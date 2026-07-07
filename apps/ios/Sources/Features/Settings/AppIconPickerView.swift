@@ -20,6 +20,9 @@ struct AppIconPickerView: View {
     @State private var familyID: String?
     /// Chosen variant per family, so browsing away and back keeps the pick.
     @State private var variantByFamily: [String: String] = [:]
+    /// Face choice for the shown pair: nil = automatic day/night, a face =
+    /// exactly that half gets installed and stays, whatever the appearance.
+    @State private var pickedFace: IconFace?
     @State private var showError = false
 
     private var ro: Bool { Locale.appIsRomanian }
@@ -38,9 +41,14 @@ struct AppIconPickerView: View {
     /// day/night switching just happens, like the primary icon.
     private var appliesDarkFace: Bool { current.hasPair && colorScheme == .dark }
 
+    /// The face the big preview shows: the explicit pick wins, otherwise the
+    /// system appearance.
+    private var previewsDarkFace: Bool { pickedFace.map { $0 == .dark } ?? (colorScheme == .dark) }
+
     private var isApplied: Bool {
         iconManager.selected.id == current.id
-            && iconManager.appliedIconName == current.iconName(isDark: appliesDarkFace)
+            && iconManager.pinnedFace == (current.hasPair ? pickedFace : nil)
+            && iconManager.appliedIconName == iconManager.expectedName(for: current, isDark: appliesDarkFace)
     }
 
     var body: some View {
@@ -53,6 +61,10 @@ struct AppIconPickerView: View {
                 .padding(.top, AppSpacing.lg)
             Spacer(minLength: AppSpacing.md)
             variantRow
+            if current.hasPair {
+                facePicker
+                    .padding(.top, AppSpacing.md)
+            }
             applyBar
         }
         .background(appBackground.ignoresSafeArea())
@@ -66,8 +78,13 @@ struct AppIconPickerView: View {
             let family = AppIconFamilies.family(containing: installed.id)
             familyID = family.id
             variantByFamily[family.id] = installed.id
+            pickedFace = iconManager.pinnedFace
         }
-        .onChange(of: familyID) { _, _ in HapticFeedback.selection() }
+        .onChange(of: familyID) { _, _ in
+            HapticFeedback.selection()
+            syncPickedFace()
+        }
+        .onChange(of: variantByFamily) { _, _ in syncPickedFace() }
         .alert(ro ? "Iconițele nu sunt disponibile" : "Icons not available",
                isPresented: $showError) {
             Button("OK", role: .cancel) {}
@@ -119,15 +136,22 @@ struct AppIconPickerView: View {
 
     private func heroArtwork(for family: IconFamily) -> some View {
         let theme = variant(of: family)
-        // Paired themes show the face matching the system appearance — the
-        // installed icon adapts the same way, automatically. No identity
+        // Paired themes show the explicitly picked face on the current page,
+        // otherwise the face matching the system appearance. No identity
         // tricks here: an .id() swap inside the lazy carousel used to break
         // the scroll targets (frozen slides, page stuck after applying).
-        let asset = colorScheme == .dark ? (theme.darkPreview ?? theme.lightPreview)
-                                         : theme.lightPreview
+        let dark = family.id == currentFamily.id ? previewsDarkFace : (colorScheme == .dark)
+        let asset = dark ? (theme.darkPreview ?? theme.lightPreview)
+                         : theme.lightPreview
         return IconArtwork(name: asset, size: 300)
             .frame(maxWidth: .infinity)
             .accessibilityLabel(Text(theme.name))
+    }
+
+    /// Keep the face choice honest while browsing: on the installed theme it
+    /// mirrors what is actually pinned, elsewhere it resets to automatic.
+    private func syncPickedFace() {
+        pickedFace = current.id == iconManager.selected.id ? iconManager.pinnedFace : nil
     }
 
     // MARK: Position capsule (19 families — a dot pager can't fit)
@@ -178,7 +202,7 @@ struct AppIconPickerView: View {
 
     private func swatch(_ theme: AppIconTheme) -> some View {
         let isSelected = theme.id == current.id
-        let asset = colorScheme == .dark ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
+        let asset = previewsDarkFace ? (theme.darkPreview ?? theme.lightPreview) : theme.lightPreview
         return Button {
             HapticFeedback.selection()
             withAnimation(.snappy(duration: 0.25)) {
@@ -203,13 +227,57 @@ struct AppIconPickerView: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
+    // MARK: Face picker — Auto / Day / Night for paired themes
+    //
+    // Auto rides the merged day/night asset (switches with the system);
+    // choosing a face installs exactly that half and keeps it pinned.
+
+    private var facePicker: some View {
+        HStack(spacing: AppSpacing.xs) {
+            faceOption(nil,    label: ro ? "Automat" : "Auto",  icon: "circle.lefthalf.filled")
+            faceOption(.light, label: ro ? "Zi" : "Day",        icon: "sun.max.fill")
+            faceOption(.dark,  label: ro ? "Noapte" : "Night",  icon: "moon.fill")
+        }
+        .padding(AppSpacing.xs)
+        .background(Color.subtleFill, in: Capsule())
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func faceOption(_ face: IconFace?, label: String, icon: String) -> some View {
+        let isOn = pickedFace == face
+        return Button {
+            HapticFeedback.selection()
+            withAnimation(.snappy(duration: 0.25)) { pickedFace = face }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(AppFont.caption)
+                Text(label)
+                    .font(AppFont.captionEmphasis)
+            }
+            .foregroundStyle(isOn ? Color.primary : Color.secondary)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, 7)
+            .background {
+                if isOn {
+                    Capsule().fill(Color.accentColor.opacity(0.18))
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+    }
+
     // MARK: Apply — "Active" when the shown icon is the installed one
 
     private var applyBar: some View {
         Button {
             guard iconManager.supportsAlternateIcons else { showError = true; return }
             HapticFeedback.success()
-            iconManager.select(current, isDark: appliesDarkFace)
+            iconManager.select(current, isDark: appliesDarkFace, pinFace: current.hasPair ? pickedFace : nil)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: isApplied ? "checkmark" : "square.and.arrow.down")
